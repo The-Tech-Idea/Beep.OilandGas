@@ -1,7 +1,9 @@
-﻿@page "/exploration/well-program"
+@page "/exploration/well-program"
 @page "/exploration/well-program/new"
 @page "/exploration/well-program/{Id}"
+@using System.Linq
 @inject ApiClient ApiClient
+@inject IExplorationServiceClient ExplorationService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -9,7 +11,7 @@
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
 
-    @* ── Header ──────────────────────────────────────────────────────────── *@
+    @* Header *@
     <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-6">
         <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
                        OnClick='() => NavigationManager.NavigateTo("/exploration")'
@@ -17,28 +19,44 @@
         <MudStack Spacing="0">
             <MudText Typo="Typo.h5">Approve Well Programme</MudText>
             <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
-                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Complete all steps to submit for sign-off</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName - Complete all steps to submit for sign-off</MudText>
                 <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.Explore">Exploration</MudChip>
             </MudStack>
         </MudStack>
     </MudStack>
 
-    @* ── 5-Step Wizard ───────────────────────────────────────────────────── *@
+    @if (_isLoadingProspects)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
     <MudStepper @bind-ActiveIndex="_step"
                 Linear="true"
                 Color="Color.Primary"
                 Class="mb-4">
 
-        @* Step 1: Well Objectives *@
         <MudStep Title="Well Objectives"
                  Icon="@Icons.Material.Filled.Flag"
                  CompletedIcon="@Icons.Material.Filled.CheckCircle">
             <MudGrid Spacing="3" Class="pt-4">
                 <MudItem xs="12" md="6">
-                    <MudSelect T="string" @bind-Value="_form.ProspectId" Label="Linked Prospect" Variant="Variant.Outlined" Required="true">
-                        <MudSelectItem T="string" Value="@("1")">Eagle Ford South</MudSelectItem>
-                        <MudSelectItem T="string" Value="@("7")">Permian Wolfcamp Deep</MudSelectItem>
+                    <MudSelect T="string"
+                               @bind-Value="_form.ProspectId"
+                               @bind-Value:after="OnProspectChangedAsync"
+                               Label="Linked Prospect"
+                               Variant="Variant.Outlined"
+                               Required="true">
+                        @foreach (var prospect in _prospects)
+                        {
+                            <MudSelectItem T="string" Value="@prospect.Id">@prospect.Name</MudSelectItem>
+                        }
                     </MudSelect>
+                    @if (!_isLoadingProspects && _prospects.Count == 0)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Warning" Class="mt-1">
+                            No active field prospects are available to seed this well program.
+                        </MudText>
+                    }
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <MudTextField @bind-Value="_form.WellName" Label="Proposed Well Name" Variant="Variant.Outlined" Required="true" />
@@ -59,25 +77,23 @@
                                   Lines="4"
                                   Variant="Variant.Outlined"
                                   Required="true"
-                                  Placeholder="Define the primary objectives: test trap integrity, confirm reservoir quality, appraise resource…" />
+                                  Placeholder="Define the primary objectives: test trap integrity, confirm reservoir quality, appraise resource." />
                 </MudItem>
                 <MudItem xs="12">
                     <MudTextField @bind-Value="_form.ExpectedOutcome"
                                   Label="Expected Outcome (success case)"
                                   Lines="2"
                                   Variant="Variant.Outlined"
-                                  Placeholder="e.g. Discovery of 50–200 MMBO recoverable in Lower Eagle Ford Shale" />
+                                  Placeholder="Summarize the live prospect evaluation outcome and success case." />
                 </MudItem>
             </MudGrid>
             <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-4">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="NextStep"
-                           Disabled="@(!Step1Valid)">
-                    Continue →
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="NextStep" Disabled="@(!Step1Valid)">
+                    Continue
                 </MudButton>
             </MudStack>
         </MudStep>
 
-        @* Step 2: Technical Summary *@
         <MudStep Title="Technical Summary"
                  Icon="@Icons.Material.Filled.Engineering"
                  CompletedIcon="@Icons.Material.Filled.CheckCircle">
@@ -107,22 +123,21 @@
                                   Label="Drilling Program Overview"
                                   Lines="4"
                                   Variant="Variant.Outlined"
-                                  Placeholder="Describe casing program, BHA, drilling fluids, testing program…" />
+                                  Placeholder="Describe casing program, BHA, drilling fluids, and testing scope." />
                 </MudItem>
             </MudGrid>
             <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
-                <MudButton Variant="Variant.Text" OnClick="PrevStep">← Back</MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="NextStep">Continue →</MudButton>
+                <MudButton Variant="Variant.Text" OnClick="PrevStep">Back</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="NextStep">Continue</MudButton>
             </MudStack>
         </MudStep>
 
-        @* Step 3: Risk Assessment *@
         <MudStep Title="Risk Assessment"
                  Icon="@Icons.Material.Filled.Shield"
                  CompletedIcon="@Icons.Material.Filled.CheckCircle">
             <MudPaper Elevation="0" Class="pt-4">
-                <MudText Typo="Typo.subtitle2" Class="mb-3">Technical &amp; Operational Risks</MudText>
-                <MudDataGrid T="RiskItem" Items="@_form.Risks" Dense="true" Hover="true" Striped="true" Class="mb-4">
+                <MudText Typo="Typo.subtitle2" Class="mb-3">Technical and Operational Risks</MudText>
+                <MudDataGrid T="WellProgramRiskItem" Items="@_form.Risks" Dense="true" Hover="true" Striped="true" Class="mb-4">
                     <Columns>
                         <PropertyColumn Property="r => r.Description" Title="Risk" />
                         <TemplateColumn Title="Likelihood">
@@ -145,6 +160,13 @@
                             </CellTemplate>
                         </TemplateColumn>
                     </Columns>
+                    <NoRecordsContent>
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                No prospect evaluation risks are available for the selected program yet.
+                            </MudText>
+                        </MudStack>
+                    </NoRecordsContent>
                 </MudDataGrid>
                 <MudTextField @bind-Value="_form.HseConsiderations"
                               Label="HSE Considerations"
@@ -153,19 +175,19 @@
                               Placeholder="Identify key HSE hazards and planned controls" />
             </MudPaper>
             <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
-                <MudButton Variant="Variant.Text" OnClick="PrevStep">← Back</MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="NextStep">Continue →</MudButton>
+                <MudButton Variant="Variant.Text" OnClick="PrevStep">Back</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="NextStep">Continue</MudButton>
             </MudStack>
         </MudStep>
 
-        @* Step 4: Cost Estimate (AFE) *@
         <MudStep Title="Cost Estimate (AFE)"
                  Icon="@Icons.Material.Filled.AttachMoney"
                  CompletedIcon="@Icons.Material.Filled.CheckCircle">
             <MudPaper Elevation="0" Class="pt-4">
                 <MudText Typo="Typo.subtitle2" Class="mb-3">AFE Line Items</MudText>
-                <MudDataGrid T="AfeLine" Items="@_form.AfeLines" Dense="true" Hover="true" Striped="true">
+                <MudDataGrid T="WellProgramAfeLine" Items="@_form.AfeLines" Dense="true" Hover="true" Striped="true">
                     <Columns>
+                        <PropertyColumn Property="l => l.AfeNumber" Title="AFE #" />
                         <PropertyColumn Property="l => l.Category" Title="Category" />
                         <PropertyColumn Property="l => l.Description" Title="Description" />
                         <TemplateColumn Title="Cost (USD)">
@@ -174,6 +196,13 @@
                             </CellTemplate>
                         </TemplateColumn>
                     </Columns>
+                    <NoRecordsContent>
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                No live AFE line items are linked to the selected prospect yet.
+                            </MudText>
+                        </MudStack>
+                    </NoRecordsContent>
                 </MudDataGrid>
                 <MudStack Class="mt-2 pa-2" Spacing="1">
                     <MudStack Row="true" Spacing="2" Justify="Justify.SpaceBetween">
@@ -187,25 +216,35 @@
                 </MudStack>
             </MudPaper>
             <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
-                <MudButton Variant="Variant.Text" OnClick="PrevStep">← Back</MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="NextStep">Continue →</MudButton>
+                <MudButton Variant="Variant.Text" OnClick="PrevStep">Back</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="NextStep">Continue</MudButton>
             </MudStack>
         </MudStep>
 
-        @* Step 5: Approval Sign-off *@
         <MudStep Title="Approval Sign-off"
                  Icon="@Icons.Material.Filled.Gavel"
                  CompletedIcon="@Icons.Material.Filled.CheckCircle">
             <MudGrid Spacing="3" Class="pt-4">
-                @* Summary card *@
                 <MudItem xs="12">
                     <MudPaper Elevation="1" Class="pa-4">
                         <MudText Typo="Typo.h6" Class="mb-3">Program Summary</MudText>
                         <MudGrid Spacing="2">
-                            <MudItem xs="6" md="3"><MudText Typo="Typo.caption" Color="Color.Secondary">Well Name</MudText><MudText>@_form.WellName</MudText></MudItem>
-                            <MudItem xs="6" md="3"><MudText Typo="Typo.caption" Color="Color.Secondary">Target Zone</MudText><MudText>@_form.TargetZone</MudText></MudItem>
-                            <MudItem xs="6" md="3"><MudText Typo="Typo.caption" Color="Color.Secondary">Planned TD</MudText><MudText>@_form.PlannedTdM m</MudText></MudItem>
-                            <MudItem xs="6" md="3"><MudText Typo="Typo.caption" Color="Color.Secondary">Total AFE</MudText><MudText>USD @(_form.AfeLines.Sum(l => l.CostUsd) * 1.15m).ToString("N0")</MudText></MudItem>
+                            <MudItem xs="6" md="3">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Well Name</MudText>
+                                <MudText>@_form.WellName</MudText>
+                            </MudItem>
+                            <MudItem xs="6" md="3">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Target Zone</MudText>
+                                <MudText>@_form.TargetZone</MudText>
+                            </MudItem>
+                            <MudItem xs="6" md="3">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Planned TD</MudText>
+                                <MudText>@_form.PlannedTdM m</MudText>
+                            </MudItem>
+                            <MudItem xs="6" md="3">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Total AFE</MudText>
+                                <MudText>USD @(_form.AfeLines.Sum(l => l.CostUsd) * 1.15m).ToString("N0")</MudText>
+                            </MudItem>
                         </MudGrid>
                         <MudDivider Class="my-3" />
                         <MudText Typo="Typo.caption" Color="Color.Secondary">Objectives</MudText>
@@ -221,7 +260,6 @@
                                   Placeholder="Optional: add sign-off notes or conditions" />
                 </MudItem>
 
-                @* Decision buttons *@
                 <MudItem xs="12">
                     <MudStack Row="true" Spacing="2" Justify="Justify.FlexStart">
                         <MudButton Variant="Variant.Filled"
@@ -246,7 +284,7 @@
                 </MudItem>
             </MudGrid>
             <MudStack Row="true" Justify="Justify.FlexStart" Class="mt-4">
-                <MudButton Variant="Variant.Text" OnClick="PrevStep">← Back</MudButton>
+                <MudButton Variant="Variant.Text" OnClick="PrevStep">Back</MudButton>
             </MudStack>
         </MudStep>
 
@@ -259,18 +297,37 @@
 
     private string _fieldName = string.Empty;
     private int _step;
-
-    private WellProgramForm _form = new();
+    private bool _isLoadingProspects;
+    private List<ProspectOption> _prospects = new();
+    private readonly WellProgramForm _form = new();
 
     protected override async Task OnInitializedAsync()
     {
+        _isLoadingProspects = true;
+
         try
         {
             var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        catch
+        {
+            // Field name is non-critical.
+        }
+
+        try
+        {
+            await LoadProspectsAsync();
+
+            var prospectId = ResolveProspectId();
+            if (!string.IsNullOrWhiteSpace(prospectId))
+                await LoadProspectDraftAsync(prospectId);
+        }
+        finally
+        {
+            _isLoadingProspects = false;
+        }
     }
 
     private bool Step1Valid =>
@@ -278,62 +335,165 @@
         !string.IsNullOrWhiteSpace(_form.WellName) &&
         !string.IsNullOrWhiteSpace(_form.Objectives);
 
-    protected override void OnInitialized()
+    private void NextStep()
     {
-        // Pre-populate AFE lines and risks with defaults
-        _form.Risks = new()
-        {
-            new("Drilling hazards (abnormal pressure)", "Medium", "High",   "Mud weight programme reviewed by drilling engineer"),
-            new("Formation damage",                     "Low",    "Medium", "Use non-damaging fluid system in target interval"),
-            new("H₂S exposure",                        "Low",    "High",   "H₂S monitoring plan; SCSSSV installed"),
-        };
-
-        _form.AfeLines = new()
-        {
-            new("Drilling",    "Rig day rate (60 days @ $80k/day)",  4_800_000m),
-            new("Drilling",    "Mud, chemicals, bits",               850_000m),
-            new("Cementing",   "Casing programme",                   420_000m),
-            new("Evaluation",  "Wireline logging suite",             380_000m),
-            new("Evaluation",  "DST equipment and supervision",      290_000m),
-            new("Location",    "Site prep and access road",          120_000m),
-        };
+        if (_step < 4)
+            _step++;
     }
 
-    private void NextStep() { if (_step < 4) _step++; }
-    private void PrevStep() { if (_step > 0) _step--; }
-
-    private void ApproveProgram() => _ = SubmitDecisionAsync("Approved");
-    private void DeferProgram()   => _ = SubmitDecisionAsync("Deferred");
-    private void RejectProgram()  => _ = SubmitDecisionAsync("Rejected");
-
-    private async Task SubmitDecisionAsync(string decision)
+    private void PrevStep()
     {
-        var prospectId = string.IsNullOrWhiteSpace(Id) || string.Equals(Id, "new", StringComparison.OrdinalIgnoreCase)
-            ? _form.ProspectId
-            : Id;
+        if (_step > 0)
+            _step--;
+    }
 
-        if (!string.IsNullOrWhiteSpace(prospectId))
+    private Task ApproveProgram() => SubmitDecisionAsync("APPROVED");
+
+    private Task DeferProgram() => SubmitDecisionAsync("DEFERRED");
+
+    private Task RejectProgram() => SubmitDecisionAsync("REJECTED");
+
+    private async Task LoadProspectsAsync()
+    {
+        try
         {
+            var prospects = await ExplorationService.GetProspectsAsync();
+            _prospects = prospects
+                .Where(p => !string.Equals(p.ACTIVE_IND, "N", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(p => p.PROSPECT_NAME)
+                .Select(p => new ProspectOption(
+                    p.PROSPECT_ID ?? string.Empty,
+                    p.PROSPECT_NAME ?? p.PROSPECT_ID ?? "Unnamed prospect"))
+                .Where(p => !string.IsNullOrWhiteSpace(p.Id))
+                .ToList();
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error loading field prospects.", Severity.Warning);
+        }
+    }
+
+    private async Task LoadProspectDraftAsync(string prospectId)
+    {
+        _form.Risks = new List<WellProgramRiskItem>();
+        _form.AfeLines = new List<WellProgramAfeLine>();
+
+        try
+        {
+            var prospect = await ExplorationService.GetProspectAsync(prospectId);
+            if (prospect == null)
+                return;
+
+            _form.ProspectId = prospect.PROSPECT_ID ?? prospectId;
+
+            if (string.IsNullOrWhiteSpace(_form.WellName))
+                _form.WellName = BuildWellName(prospect);
+
+            if (string.IsNullOrWhiteSpace(_form.TargetZone))
+                _form.TargetZone = prospect.PROSPECT_TYPE ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(_form.Objectives) && !string.IsNullOrWhiteSpace(prospect.REMARK))
+                _form.Objectives = prospect.REMARK;
+
             try
             {
-                await ApiClient.PostAsync<ProspectDecisionPayload, object>(
-                    $"api/field/current/exploration/prospects/{Uri.EscapeDataString(prospectId)}/decision",
-                    new ProspectDecisionPayload(decision, _form.ApproverComments));
+                var evaluation = await ExplorationService.EvaluateProspectAsync(prospectId);
+
+                if (string.IsNullOrWhiteSpace(_form.Objectives) && !string.IsNullOrWhiteSpace(evaluation.Recommendation))
+                    _form.Objectives = evaluation.Recommendation;
+
+                if (string.IsNullOrWhiteSpace(_form.ExpectedOutcome))
+                    _form.ExpectedOutcome = BuildExpectedOutcome(evaluation);
+
+                _form.Risks = BuildRiskItems(evaluation);
             }
             catch (Exception)
             {
-                Snackbar.Add("Error submitting decision.", Severity.Error);
-                return;
+                _form.Risks = new List<WellProgramRiskItem>();
             }
+
+            try
+            {
+                var afeLines = await ExplorationService.GetProspectAfeLinesAsync(prospectId);
+                _form.AfeLines = afeLines
+                    .Select(line => new WellProgramAfeLine(
+                        line.AfeNumber,
+                        line.Category,
+                        line.Description,
+                        line.CostUsd))
+                    .ToList();
+            }
+            catch (Exception)
+            {
+                _form.AfeLines = new List<WellProgramAfeLine>();
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error loading prospect details for the well program.", Severity.Warning);
+        }
+    }
+
+    private async Task OnProspectChangedAsync()
+    {
+        ResetProspectDraft();
+
+        if (string.IsNullOrWhiteSpace(_form.ProspectId))
+            return;
+
+        await LoadProspectDraftAsync(_form.ProspectId);
+    }
+
+    private string? ResolveProspectId()
+    {
+        if (!string.IsNullOrWhiteSpace(Id) && !string.Equals(Id, "new", StringComparison.OrdinalIgnoreCase))
+            return Id;
+
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        return query.TryGetValue("prospectId", out var prospectId) ? prospectId.ToString() : null;
+    }
+
+    private async Task SubmitDecisionAsync(string decision)
+    {
+        var prospectId = !string.IsNullOrWhiteSpace(_form.ProspectId)
+            ? _form.ProspectId
+            : ResolveProspectId();
+
+        if (string.IsNullOrWhiteSpace(prospectId))
+        {
+            Snackbar.Add("Select a prospect before submitting a well program decision.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            await ExplorationService.RecordProspectDecisionAsync(prospectId, decision, _form.ApproverComments);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error submitting decision.", Severity.Error);
+            return;
         }
 
         Snackbar.Add(
-            $"Well program {decision.ToLower()}.",
-            decision == "Approved" ? Severity.Success : decision == "Deferred" ? Severity.Warning : Severity.Error);
+            $"Well program {decision.ToLowerInvariant()}.",
+            decision == "APPROVED" ? Severity.Success : decision == "DEFERRED" ? Severity.Warning : Severity.Error);
+
         NavigationManager.NavigateTo("/exploration");
     }
 
-    private class WellProgramForm
+    private void ResetProspectDraft()
+    {
+        _form.WellName = string.Empty;
+        _form.TargetZone = string.Empty;
+        _form.Objectives = string.Empty;
+        _form.ExpectedOutcome = string.Empty;
+        _form.Risks = new List<WellProgramRiskItem>();
+        _form.AfeLines = new List<WellProgramAfeLine>();
+    }
+
+    private sealed class WellProgramForm
     {
         public string ProspectId { get; set; } = string.Empty;
         public string WellName { get; set; } = string.Empty;
@@ -348,29 +508,72 @@
         public string DrillingProgram { get; set; } = string.Empty;
         public string HseConsiderations { get; set; } = string.Empty;
         public string ApproverComments { get; set; } = string.Empty;
-        public List<RiskItem> Risks { get; set; } = new();
-        public List<AfeLine> AfeLines { get; set; } = new();
+        public List<WellProgramRiskItem> Risks { get; set; } = new();
+        public List<WellProgramAfeLine> AfeLines { get; set; } = new();
     }
 
-    private record RiskItem(string Description, string Likelihood, string Impact, string Mitigation);
-    private record AfeLine(string Category, string Description, decimal CostUsd);
+    private sealed record ProspectOption(string Id, string Name);
+
+    private sealed record WellProgramRiskItem(string Description, string Likelihood, string Impact, string Mitigation);
+
+    private sealed record WellProgramAfeLine(string AfeNumber, string Category, string Description, decimal CostUsd);
 
     private static Color GetRiskColor(string level) => level switch
     {
-        "High"   => Color.Error,
+        "High" => Color.Error,
         "Medium" => Color.Warning,
-        _        => Color.Success
+        _ => Color.Success
     };
 
-    // Local API DTOs
-    private class ProspectApiDto
+    private static string BuildWellName(Beep.OilandGas.PPDM39.Models.PROSPECT prospect)
+        => string.IsNullOrWhiteSpace(prospect.PROSPECT_NAME)
+            ? string.Empty
+            : $"{prospect.PROSPECT_NAME} A-01";
+
+    private static string BuildExpectedOutcome(Beep.OilandGas.Models.Data.ProspectIdentification.ProspectEvaluation evaluation)
     {
-        public string? ProspectId  { get; set; }
-        public string? WellName    { get; set; }
-        public string? TargetZone  { get; set; }
-        public string? WellType    { get; set; }
-        public string? Objectives  { get; set; }
+        var resourceParts = new List<string>();
+
+        if (evaluation.EstimatedOilResources.HasValue)
+            resourceParts.Add($"Oil {evaluation.EstimatedOilResources.Value:N0} {evaluation.ResourceUnit ?? string.Empty}".Trim());
+
+        if (evaluation.EstimatedGasResources.HasValue)
+            resourceParts.Add($"Gas {evaluation.EstimatedGasResources.Value:N0} {evaluation.ResourceUnit ?? string.Empty}".Trim());
+
+        var probability = evaluation.ProbabilityOfSuccess.GetValueOrDefault();
+        if (probability > 1)
+            probability /= 100m;
+
+        var success = evaluation.ProbabilityOfSuccess.HasValue
+            ? $"POS {probability:P0}"
+            : string.Empty;
+
+        return string.Join("; ", resourceParts.Append(success).Where(part => !string.IsNullOrWhiteSpace(part)));
     }
 
-    private record ProspectDecisionPayload(string Decision, string? Comments);
+    private static List<WellProgramRiskItem> BuildRiskItems(Beep.OilandGas.Models.Data.ProspectIdentification.ProspectEvaluation evaluation)
+    {
+        return (evaluation.RiskFactors ?? new List<Beep.OilandGas.Models.Data.ProspectIdentification.RiskFactor>())
+            .Where(risk => !string.IsNullOrWhiteSpace(risk.Description))
+            .Select(risk => new WellProgramRiskItem(
+                risk.Description,
+                FormatLikelihood(risk.Probability),
+                string.IsNullOrWhiteSpace(risk.Impact) ? "Unknown" : risk.Impact,
+                string.IsNullOrWhiteSpace(risk.Mitigation) ? "No mitigation recorded" : risk.Mitigation))
+            .ToList();
+    }
+
+    private static string FormatLikelihood(decimal probability)
+    {
+        if (probability > 1)
+            probability /= 100m;
+
+        if (probability >= 0.67m)
+            return "High";
+
+        if (probability >= 0.34m)
+            return "Medium";
+
+        return probability > 0 ? "Low" : "Unknown";
+    }
 }

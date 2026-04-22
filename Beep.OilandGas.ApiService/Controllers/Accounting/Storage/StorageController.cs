@@ -42,7 +42,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
                 {
                     var facility = _service.StorageManager.GetFacility(facilityId);
                     if (facility == null)
-                        return NotFound(new { error = $"Storage facility {facilityId} not found" });
+                            return NotFound(new { error = $"Storage facility {facilityId} not found." });
                     return Ok(new { FacilityId = facility.FacilityId, FacilityName = facility.FacilityName, Location = facility.Location });
                 }
                 
@@ -52,7 +52,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
                     return Ok(tankBatteries.Select(tb => new { BatteryId = tb.BatteryId, BatteryName = tb.BatteryName, LeaseId = tb.LeaseId }));
                 }
                 
-                return BadRequest(new { error = "Either facilityId or leaseId parameter is required" });
+                    return BadRequest(new { error = "Either facility ID or lease ID parameter is required." });
             }
             catch (Exception ex)
             {

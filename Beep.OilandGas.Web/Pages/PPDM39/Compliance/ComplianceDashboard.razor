@@ -1,6 +1,6 @@
 ﻿@page "/ppdm39/compliance"
 @using Beep.OilandGas.Models.Data.Compliance
-@inject Beep.OilandGas.Web.Services.ApiClient ApiClient
+@inject Beep.OilandGas.Web.Services.IComplianceServiceClient ComplianceClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -108,15 +108,10 @@ else
         _error   = null;
         try
         {
-            _obligations  = await ApiClient.GetAsync<List<ObligationSummary>>(
-                               $"/api/field/current/compliance/obligations?year={_selectedYear}")
-                           ?? new();
-            _score        = await ApiClient.GetAsync<ComplianceScoreCard>(
-                               $"/api/field/current/compliance/score?year={_selectedYear}");
-            var overdue   = await ApiClient.GetAsync<List<ObligationSummary>>(
-                               "/api/field/current/compliance/obligations/overdue") ?? new();
-            var upcoming  = await ApiClient.GetAsync<List<ObligationSummary>>(
-                               "/api/field/current/compliance/obligations/upcoming?daysAhead=30") ?? new();
+            _obligations  = await ComplianceClient.GetAllObligationsAsync(_selectedYear);
+            _score        = await ComplianceClient.GetScoreAsync(_selectedYear);
+            var overdue   = await ComplianceClient.GetOverdueObligationsAsync();
+            var upcoming  = await ComplianceClient.GetUpcomingObligationsAsync(30);
             _overdueCount  = overdue.Count;
             _upcomingCount = upcoming.Count;
         }

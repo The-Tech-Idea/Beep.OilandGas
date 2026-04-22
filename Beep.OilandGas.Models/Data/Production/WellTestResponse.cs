@@ -27,6 +27,17 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref WellIdValue, value); }
 
         }
+        private string? UwiValue;
+
+        public string? Uwi
+
+        {
+
+            get { return this.UwiValue; }
+
+            set { SetProperty(ref UwiValue, value); }
+
+        }
         private string? WellboreIdValue;
 
         public string? WellboreId
@@ -141,6 +152,72 @@ namespace Beep.OilandGas.Models.Data
             get { return this.TestStatusValue; }
 
             set { SetProperty(ref TestStatusValue, value); }
+
+        }
+        private decimal? RunNumValue;
+
+        public decimal? RunNum
+
+        {
+
+            get { return this.RunNumValue; }
+
+            set { SetProperty(ref RunNumValue, value); }
+
+        }
+        private decimal? OilFlowAmountValue;
+
+        public decimal? OilFlowAmount
+
+        {
+
+            get { return this.OilFlowAmountValue; }
+
+            set { SetProperty(ref OilFlowAmountValue, value); }
+
+        }
+        private decimal? GasFlowAmountValue;
+
+        public decimal? GasFlowAmount
+
+        {
+
+            get { return this.GasFlowAmountValue; }
+
+            set { SetProperty(ref GasFlowAmountValue, value); }
+
+        }
+        private decimal? WaterFlowAmountValue;
+
+        public decimal? WaterFlowAmount
+
+        {
+
+            get { return this.WaterFlowAmountValue; }
+
+            set { SetProperty(ref WaterFlowAmountValue, value); }
+
+        }
+        private decimal? BswPercentValue;
+
+        public decimal? BswPercent
+
+        {
+
+            get { return this.BswPercentValue; }
+
+            set { SetProperty(ref BswPercentValue, value); }
+
+        }
+        private decimal? WaterCutPercentValue;
+
+        public decimal? WaterCutPercent
+
+        {
+
+            get { return this.WaterCutPercentValue; }
+
+            set { SetProperty(ref WaterCutPercentValue, value); }
 
         }
         

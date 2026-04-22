@@ -1,0 +1,756 @@
+@page "/ppdm39/calculations/well-test-analysis"
+@page "/analysis/well-test"
+@using System.Linq
+@using System.Security.Claims
+@using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.WellTestAnalysis
+@using Beep.OilandGas.PPDM39.Models
+@inject ApiClient ApiClient
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ICalculationServiceClient CalculationService
+@inject IDevelopmentServiceClient DevelopmentClient
+@inject IProductionServiceClient ProductionClient
+@inject ILifeCycleService LifeCycleService
+@inject ISnackbar Snackbar
+
+<PageTitle>Run Well Test Analysis</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Run Well Test Analysis</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName - Pressure transient interpretation from stored PPDM tests or manual time-pressure data</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.Science">Production Diagnostics</MudChip>
+                <MudChip T="string" Size="Size.Small" Color="@(_useStoredTestData ? Color.Primary : Color.Warning)">@(_useStoredTestData ? "Stored PPDM Test" : "Manual Data")</MudChip>
+                <MudChip T="string" Size="Size.Small" Color="Color.Default">@GetSourceSummary()</MudChip>
+            </MudStack>
+        </MudStack>
+        <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                   StartIcon="@Icons.Material.Filled.Refresh"
+                   OnClick="ReloadHistoryAsync"
+                   Disabled="@(_isRunning || string.IsNullOrWhiteSpace(_selectedWellId))">
+            Refresh History
+        </MudButton>
+    </MudStack>
+
+    <MudPaper Class="pa-4 mb-4" Elevation="1">
+        <MudGrid Spacing="3">
+            <MudItem xs="12" md="4">
+                <MudSelect T="string" Label="Well" Variant="Variant.Outlined"
+                           Value="@_selectedWellId" ValueChanged="OnWellChanged">
+                    @foreach (var well in _wells)
+                    {
+                        <MudSelectItem Value="@well.UWI">@well.DisplayName</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudSelect T="string" Label="Stored Well Test" Variant="Variant.Outlined"
+                           Value="@_selectedTestId" ValueChanged="OnTestChanged"
+                           Disabled="@(!_useStoredTestData || _availableTests.Count == 0)">
+                    @foreach (var test in _availableTests)
+                    {
+                        <MudSelectItem Value="@test.TestId">@FormatTestDisplay(test)</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudSelect T="string" Label="Analysis Type" Variant="Variant.Outlined" @bind-Value="@_analysisType">
+                    <MudSelectItem Value="@("BUILDUP")">Build-up</MudSelectItem>
+                    <MudSelectItem Value="@("DRAWDOWN")">Drawdown</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudSelect T="string" Label="Method" Variant="Variant.Outlined" @bind-Value="@_analysisMethod">
+                    <MudSelectItem Value="@("HORNER")">Horner</MudSelectItem>
+                    <MudSelectItem Value="@("MDH")">MDH</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudSwitch @bind-Value="@_useStoredTestData" Color="Color.Primary">Use stored PPDM test data</MudSwitch>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudSwitch @bind-Value="@_isGasWell" Color="Color.Info">Gas well</MudSwitch>
+            </MudItem>
+            <MudItem xs="12" md="7">
+                <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                               StartIcon="@Icons.Material.Filled.List"
+                               OnClick="LoadAvailableTestsAsync"
+                               Disabled="@(_isRunning || string.IsNullOrWhiteSpace(_selectedWellId))">
+                        Refresh Tests
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.PlayArrow"
+                               OnClick="RunAnalysisAsync"
+                               Disabled="@(_isRunning || string.IsNullOrWhiteSpace(_selectedWellId))">
+                        @if (_isRunning)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                            <MudText Class="ms-2">Running</MudText>
+                        }
+                        else
+                        {
+                            <MudText>Run Analysis</MudText>
+                        }
+                    </MudButton>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudGrid Spacing="3" Class="mb-4">
+        <MudItem xs="12" md="7">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Reservoir And Test Inputs</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_flowRate" Label="Flow Rate" Variant="Variant.Outlined" Min="0" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_productionTime" Label="Production Time (hr)" Variant="Variant.Outlined" Min="0" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_wellboreRadius" Label="Wellbore Radius (ft)" Variant="Variant.Outlined" Min="0.01m" /></MudItem>
+
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_formationThickness" Label="Formation Thickness (ft)" Variant="Variant.Outlined" Min="1" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_porosity" Label="Porosity" Variant="Variant.Outlined" Min="0.01m" Max="1" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_totalCompressibility" Label="Total Compressibility" Variant="Variant.Outlined" Min="0.000001m" Format="0.000000" /></MudItem>
+
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_oilViscosity" Label="Oil Viscosity (cp)" Variant="Variant.Outlined" Min="0.01m" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_oilFormationVolumeFactor" Label="Oil FVF" Variant="Variant.Outlined" Min="0.1m" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_reservoirTemperature" Label="Reservoir Temp (F)" Variant="Variant.Outlined" Min="1" /></MudItem>
+
+                        <MudItem xs="12" sm="6" md="6"><MudNumericField T="decimal" @bind-Value="@_initialReservoirPressure" Label="Initial Reservoir Pressure (psi)" Variant="Variant.Outlined" Min="0" /></MudItem>
+                        <MudItem xs="12" sm="6" md="6"><MudNumericField T="decimal" @bind-Value="@_gasSpecificGravity" Label="Gas Specific Gravity" Variant="Variant.Outlined" Min="0.1m" Disabled="@(!_isGasWell)" /></MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="5">
+            <MudCard Elevation="2" Class="h-100">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Selected Test Context</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (_useStoredTestData && _selectedTestSummary != null)
+                    {
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">Test ID: @_selectedTestSummary.TestId</MudText></MudItem>
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">Type: @(_selectedTestSummary.TestType ?? "Unknown")</MudText></MudItem>
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">Date: @FormatDate(_selectedTestSummary.TestDate)</MudText></MudItem>
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">Duration: @FormatNullableDecimal(_selectedTestSummary.TestDuration, 2)</MudText></MudItem>
+                            <MudItem xs="12"><MudText Typo="Typo.body2">Status: @(_selectedTestSummary.TestStatus ?? "Unknown")</MudText></MudItem>
+                        </MudGrid>
+                    }
+                    else if (_useStoredTestData)
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.Science" Color="Color.Secondary" Class="og-icon-xl" />
+                            <MudText Typo="Typo.h6">No stored test selected</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Pick a well test from PPDM to use stored time-pressure measurements.</MudText>
+                        </MudStack>
+                    }
+                    else
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.EditNote" Color="Color.Warning" Class="og-icon-xl" />
+                            <MudText Typo="Typo.h6">Manual Input Mode</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Enter at least three time-pressure points below to run the analysis without a stored PPDM test.</MudText>
+                        </MudStack>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    @if (!_useStoredTestData)
+    {
+        <MudCard Elevation="2" Class="mb-4">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.subtitle1">Manual Time-Pressure Data</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudGrid Spacing="2" Class="mb-3">
+                    <MudItem xs="12" sm="5" md="3">
+                        <MudNumericField T="decimal?" @bind-Value="@_newPointTime" Label="Time (hr)" Variant="Variant.Outlined" Min="0.001m" />
+                    </MudItem>
+                    <MudItem xs="12" sm="5" md="3">
+                        <MudNumericField T="decimal?" @bind-Value="@_newPointPressure" Label="Pressure (psi)" Variant="Variant.Outlined" Min="0" />
+                    </MudItem>
+                    <MudItem xs="12" sm="2" md="6">
+                        <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddManualPoint">
+                                Add Point
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.ClearAll" OnClick="ClearManualPoints" Disabled="@(_manualPoints.Count == 0)">
+                                Clear
+                            </MudButton>
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
+
+                @if (_manualPoints.Count > 0)
+                {
+                    <MudDataGrid T="WellTestDataPoint" Items="@_manualPoints" Dense="true" Hover="true" ReadOnly="true">
+                        <Columns>
+                            <TemplateColumn Title="Time (hr)">
+                                <CellTemplate>
+                                    <MudText Typo="Typo.body2">@FormatNullableDecimal(context.Item.Time, 3)</MudText>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Pressure (psi)">
+                                <CellTemplate>
+                                    <MudText Typo="Typo.body2">@FormatNullableDecimal(context.Item.Pressure, 2)</MudText>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Remove">
+                                <CellTemplate>
+                                    <MudButton Variant="Variant.Text" Color="Color.Error"
+                                               StartIcon="@Icons.Material.Filled.Delete"
+                                               OnClick="@(() => RemoveManualPoint(context.Item))">
+                                        Remove
+                                    </MudButton>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">No manual points added yet.</MudText>
+                }
+            </MudCardContent>
+        </MudCard>
+    }
+
+    @if (_currentResult != null)
+    {
+        <CalculationKpiSection Metrics="@GetResultKpis()" Class="mb-4" />
+
+        <CalculationResultTabs SummaryItems="@GetSummaryFacts()" Class="mb-4">
+            <AdditionalTabs>
+            <MudTabPanel Text="Diagnostic Points" Icon="@Icons.Material.Filled.TableChart">
+                <MudPaper Elevation="0" Class="pa-0">
+                    @if (_currentResult.DiagnosticPoints != null && _currentResult.DiagnosticPoints.Count > 0)
+                    {
+                        <MudDataGrid T="WellTestDataPoint" Items="@_currentResult.DiagnosticPoints" Dense="true" Hover="true" ReadOnly="true">
+                            <Columns>
+                                <TemplateColumn Title="Time (hr)">
+                                    <CellTemplate>
+                                        <MudText Typo="Typo.body2">@FormatNullableDecimal(context.Item.Time, 3)</MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Pressure (psi)">
+                                    <CellTemplate>
+                                        <MudText Typo="Typo.body2">@FormatNullableDecimal(context.Item.Pressure, 2)</MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                        </MudDataGrid>
+                    }
+                    else
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">No diagnostic points are stored for this analysis result.</MudText>
+                        </MudStack>
+                    }
+                </MudPaper>
+            </MudTabPanel>
+            <MudTabPanel Text="Derivative" Icon="@Icons.Material.Filled.MultilineChart">
+                <MudPaper Elevation="0" Class="pa-0">
+                    @if (_currentResult.DerivativePoints != null && _currentResult.DerivativePoints.Count > 0)
+                    {
+                        <MudDataGrid T="WellTestDataPoint" Items="@_currentResult.DerivativePoints" Dense="true" Hover="true" ReadOnly="true">
+                            <Columns>
+                                <TemplateColumn Title="Time (hr)">
+                                    <CellTemplate>
+                                        <MudText Typo="Typo.body2">@FormatNullableDecimal(context.Item.Time, 3)</MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Pressure Derivative">
+                                    <CellTemplate>
+                                        <MudText Typo="Typo.body2">@FormatNullableDecimal(context.Item.Pressure, 4)</MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                        </MudDataGrid>
+                    }
+                    else
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Derivative data was not available for this analysis result.</MudText>
+                        </MudStack>
+                    }
+                </MudPaper>
+            </MudTabPanel>
+            </AdditionalTabs>
+        </CalculationResultTabs>
+    }
+
+    <MudCard Elevation="2">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.subtitle1">Saved Well Test Analyses</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent Class="pa-0">
+            @if (_history.Count > 0)
+            {
+                <MudDataGrid T="WELL_TEST_ANALYSIS_RESULT" Items="@_history" Dense="true" Hover="true" ReadOnly="true">
+                    <Columns>
+                        <TemplateColumn Title="Date">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@context.Item.CALCULATION_DATE.ToString("dd MMM yyyy")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Test ID">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@(context.Item.TEST_ID ?? "N/A")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Type">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@(context.Item.ANALYSIS_TYPE ?? "N/A")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Method">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@(context.Item.ANALYSIS_METHOD ?? "N/A")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Permeability">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@FormatDecimal(context.Item.PERMEABILITY, 2)</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Skin">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@FormatDecimal(context.Item.SKIN_FACTOR, 2)</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Open">
+                            <CellTemplate>
+                                <MudButton Variant="Variant.Text" Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.Visibility"
+                                           OnClick="@(() => OpenHistoryResultAsync(context.Item.CALCULATION_ID))">
+                                    Open
+                                </MudButton>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            }
+            else if (!_isLoading)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.Science" Color="Color.Secondary" Class="og-icon-xl" />
+                    <MudText Typo="Typo.h6">No saved well test analyses yet</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Run an analysis for the selected well to start building interpretation history.</MudText>
+                </MudStack>
+            }
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private string _fieldName = string.Empty;
+    private string? _currentUserId;
+    private string? _selectedWellId;
+    private string? _selectedTestId;
+    private bool _useStoredTestData = true;
+    private bool _isGasWell;
+    private bool _isLoading = true;
+    private bool _isRunning;
+    private string _analysisType = "BUILDUP";
+    private string _analysisMethod = "HORNER";
+
+    private decimal _flowRate = 500m;
+    private decimal _productionTime = 24m;
+    private decimal _wellboreRadius = 0.25m;
+    private decimal _formationThickness = 50m;
+    private decimal _porosity = 0.18m;
+    private decimal _totalCompressibility = 0.00001m;
+    private decimal _oilViscosity = 1.5m;
+    private decimal _oilFormationVolumeFactor = 1.2m;
+    private decimal _reservoirTemperature = 180m;
+    private decimal _initialReservoirPressure = 3500m;
+    private decimal _gasSpecificGravity = 0.65m;
+
+    private decimal? _newPointTime;
+    private decimal? _newPointPressure;
+
+    private WELL_TEST_ANALYSIS_RESULT? _currentResult;
+    private List<WELL_TEST_ANALYSIS_RESULT> _history = new List<WELL_TEST_ANALYSIS_RESULT>();
+    private List<WellOptionDto> _wells = new List<WellOptionDto>();
+    private List<WellTestResponse> _availableTests = new List<WellTestResponse>();
+    private List<WellTestDataPoint> _manualPoints = new List<WellTestDataPoint>();
+
+    private WellTestResponse? _selectedTestSummary => _availableTests.FirstOrDefault(test => string.Equals(test.TestId, _selectedTestId, StringComparison.OrdinalIgnoreCase));
+
+    private sealed class WellOptionDto
+    {
+        public string UWI { get; set; } = string.Empty;
+        public string? WELL_NAME { get; set; }
+        public string? ASSIGNED_FIELD { get; set; }
+        public string DisplayName => string.IsNullOrWhiteSpace(WELL_NAME) ? UWI : $"{UWI} - {WELL_NAME}";
+    }
+
+    private static WellOptionDto MapWell(WELL well)
+    {
+        return new WellOptionDto
+        {
+            UWI = well.UWI,
+            WELL_NAME = well.WELL_NAME,
+            ASSIGNED_FIELD = well.ASSIGNED_FIELD
+        };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            await LoadFieldContextAsync();
+            await LoadUserAsync();
+            await LoadWellsAsync();
+            await ReloadHistoryAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadFieldContextAsync()
+    {
+        try
+        {
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
+            if (summary != null)
+            {
+                _fieldName = summary.FieldName ?? _fieldName;
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private async Task LoadUserAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+    }
+
+    private async Task LoadWellsAsync()
+    {
+        try
+        {
+            _wells = (await DevelopmentClient.GetWellsAsync()).Select(MapWell).ToList();
+            if (_wells.Count > 0)
+            {
+                _selectedWellId ??= _wells[0].UWI;
+                _fieldName = _wells[0].ASSIGNED_FIELD ?? _fieldName;
+                await LoadAvailableTestsAsync();
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load wells for Well Test Analysis.", Severity.Warning);
+        }
+    }
+
+    private async Task LoadAvailableTestsAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedWellId))
+        {
+            _availableTests = new List<WellTestResponse>();
+            _selectedTestId = null;
+            return;
+        }
+
+        try
+        {
+            _availableTests = await ProductionClient.GetWellTestsAsync(_selectedWellId);
+            _availableTests = _availableTests
+                .OrderByDescending(test => test.TestDate ?? test.TestStartDate ?? DateTime.MinValue)
+                .ToList();
+
+            _selectedTestId = _availableTests.FirstOrDefault()?.TestId;
+            ApplySelectedTestDefaults();
+        }
+        catch (Exception)
+        {
+            _availableTests = new List<WellTestResponse>();
+            _selectedTestId = null;
+            Snackbar.Add("Failed to load well tests for the selected well.", Severity.Warning);
+        }
+    }
+
+    private async Task OnWellChanged(string? wellId)
+    {
+        _selectedWellId = wellId;
+        _currentResult = null;
+        await LoadAvailableTestsAsync();
+        await ReloadHistoryAsync();
+    }
+
+    private Task OnTestChanged(string? testId)
+    {
+        _selectedTestId = testId;
+        ApplySelectedTestDefaults();
+        return Task.CompletedTask;
+    }
+
+    private void ApplySelectedTestDefaults()
+    {
+        var test = _selectedTestSummary;
+        if (test == null)
+            return;
+
+        if (!string.IsNullOrWhiteSpace(test.TestType))
+        {
+            _analysisType = test.TestType.Contains("DRAW", StringComparison.OrdinalIgnoreCase) ? "DRAWDOWN" : "BUILDUP";
+        }
+
+        if (test.TestDuration.HasValue && test.TestDuration.Value > 0)
+        {
+            _productionTime = test.TestDuration.Value;
+        }
+    }
+
+    private async Task RunAnalysisAsync()
+    {
+        if (!ValidateAnalysisRequest())
+        {
+            return;
+        }
+
+        _isRunning = true;
+        try
+        {
+            var request = BuildRequest();
+            _currentResult = await CalculationService.PerformWellTestAnalysisAsync(request);
+            await ReloadHistoryAsync();
+            Snackbar.Add("Well test analysis completed.", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error running well test analysis.", Severity.Error);
+        }
+        finally
+        {
+            _isRunning = false;
+        }
+    }
+
+    private bool ValidateAnalysisRequest()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedWellId))
+        {
+            Snackbar.Add("Select a well before running analysis.", Severity.Warning);
+            return false;
+        }
+
+        if (_useStoredTestData)
+        {
+            if (string.IsNullOrWhiteSpace(_selectedTestId))
+            {
+                Snackbar.Add("Select a stored PPDM well test or switch to manual data entry.", Severity.Warning);
+                return false;
+            }
+
+            return true;
+        }
+
+        if (_manualPoints.Count < 3)
+        {
+            Snackbar.Add("Add at least three manual time-pressure points before running analysis.", Severity.Warning);
+            return false;
+        }
+
+        return true;
+    }
+
+    private WellTestAnalysisCalculationRequest BuildRequest()
+    {
+        return new WellTestAnalysisCalculationRequest
+        {
+            WellId = _selectedWellId,
+            TestId = _useStoredTestData ? _selectedTestId : null,
+            AnalysisType = _analysisType,
+            AnalysisMethod = _analysisMethod,
+            PressureTimeData = _useStoredTestData ? null : _manualPoints.OrderBy(point => point.Time ?? decimal.Zero).ToList(),
+            FlowRate = _flowRate,
+            WellboreRadius = _wellboreRadius,
+            FormationThickness = _formationThickness,
+            Porosity = _porosity,
+            TotalCompressibility = _totalCompressibility,
+            OilViscosity = _oilViscosity,
+            OilFormationVolumeFactor = _oilFormationVolumeFactor,
+            ProductionTime = _productionTime,
+            IsGasWell = _isGasWell,
+            GasSpecificGravity = _isGasWell ? _gasSpecificGravity : null,
+            ReservoirTemperature = _reservoirTemperature,
+            InitialReservoirPressure = _initialReservoirPressure,
+            UserId = _currentUserId
+        };
+    }
+
+    private async Task ReloadHistoryAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedWellId))
+        {
+            _history = new List<WELL_TEST_ANALYSIS_RESULT>();
+            return;
+        }
+
+        _history = await CalculationService.GetWellTestAnalysisHistoryAsync(_selectedWellId, _selectedTestId, null);
+        _history = _history
+            .OrderByDescending(result => result.CALCULATION_DATE)
+            .ToList();
+    }
+
+    private async Task OpenHistoryResultAsync(string calculationId)
+    {
+        if (string.IsNullOrWhiteSpace(calculationId))
+        {
+            Snackbar.Add("The selected analysis does not have a calculation ID.", Severity.Warning);
+            return;
+        }
+
+        var result = await CalculationService.GetWellTestAnalysisResultAsync(calculationId);
+        if (result == null)
+        {
+            Snackbar.Add("Unable to load the selected Well Test Analysis result.", Severity.Warning);
+            return;
+        }
+
+        _currentResult = result;
+        Snackbar.Add("Saved well test analysis loaded.", Severity.Success);
+    }
+
+    private void AddManualPoint()
+    {
+        if (!_newPointTime.HasValue || !_newPointPressure.HasValue)
+        {
+            Snackbar.Add("Enter both time and pressure before adding a point.", Severity.Warning);
+            return;
+        }
+
+        _manualPoints.Add(new WellTestDataPoint
+        {
+            Time = _newPointTime,
+            Pressure = _newPointPressure
+        });
+
+        _manualPoints = _manualPoints
+            .OrderBy(point => point.Time ?? decimal.Zero)
+            .ToList();
+
+        _newPointTime = null;
+        _newPointPressure = null;
+    }
+
+    private void RemoveManualPoint(WellTestDataPoint point)
+    {
+        _manualPoints.Remove(point);
+        _manualPoints = _manualPoints
+            .OrderBy(item => item.Time ?? decimal.Zero)
+            .ToList();
+    }
+
+    private void ClearManualPoints()
+    {
+        _manualPoints = new List<WellTestDataPoint>();
+    }
+
+    private string GetSourceSummary()
+    {
+        return _useStoredTestData
+            ? $"{_availableTests.Count} stored tests"
+            : $"{_manualPoints.Count} manual points";
+    }
+
+    private static string FormatTestDisplay(WellTestResponse test)
+    {
+        var date = test.TestDate?.ToString("dd MMM yyyy") ?? "No date";
+        return $"{test.TestId} - {date}";
+    }
+
+    private static string FormatDate(DateTime? value)
+    {
+        return value?.ToString("dd MMM yyyy") ?? "N/A";
+    }
+
+    private IReadOnlyList<CalculationKpiMetric> GetResultKpis()
+    {
+        if (_currentResult == null)
+            return Array.Empty<CalculationKpiMetric>();
+
+        return new CalculationKpiMetric[]
+        {
+            new() { Label = "Permeability", Value = FormatDecimal(_currentResult.PERMEABILITY, 2), Unit = "md", ValueColor = Color.Primary, Icon = Icons.Material.Filled.Speed, TrendIcon = Icons.Material.Filled.Analytics, TrendColor = Color.Primary, TrendText = "Reservoir mobility" },
+            new() { Label = "Skin Factor", Value = FormatDecimal(_currentResult.SKIN_FACTOR, 2), ValueColor = Color.Warning, Icon = Icons.Material.Filled.LayersClear, TrendIcon = Icons.Material.Filled.Tune, TrendColor = Color.Warning, TrendText = "Near-wellbore effect" },
+            new() { Label = "Reservoir Pressure", Value = FormatDecimal(_currentResult.RESERVOIR_PRESSURE, 2), Unit = "psi", ValueColor = Color.Success, Icon = Icons.Material.Filled.Compress, TrendIcon = Icons.Material.Filled.Insights, TrendColor = Color.Success, TrendText = "Pressure support" },
+            new() { Label = "Productivity Index", Value = FormatDecimal(_currentResult.PRODUCTIVITY_INDEX, 3), ValueColor = Color.Info, Icon = Icons.Material.Filled.TrendingUp, TrendIcon = Icons.Material.Filled.ShowChart, TrendColor = Color.Info, TrendText = "Deliverability" }
+        };
+    }
+
+    private IReadOnlyList<CalculationFactItem> GetSummaryFacts()
+    {
+        if (_currentResult == null)
+            return Array.Empty<CalculationFactItem>();
+
+        return new CalculationFactItem[]
+        {
+            new() { Label = "Calculation ID", Value = _currentResult.CALCULATION_ID ?? "N/A" },
+            new() { Label = "Well ID", Value = _currentResult.WELL_ID ?? "N/A" },
+            new() { Label = "Test ID", Value = _currentResult.TEST_ID ?? "N/A" },
+            new() { Label = "Status", Value = _currentResult.STATUS ?? "Unknown" },
+            new() { Label = "Type", Value = _currentResult.ANALYSIS_TYPE ?? "N/A" },
+            new() { Label = "Method", Value = _currentResult.ANALYSIS_METHOD ?? "N/A" },
+            new() { Label = "Model", Value = GetIdentifiedModel(_currentResult) },
+            new() { Label = "Calculated", Value = _currentResult.CALCULATION_DATE.ToString("dd MMM yyyy HH:mm") },
+            new() { Label = "Flow Efficiency", Value = FormatDecimal(_currentResult.FLOW_EFFICIENCY, 3) },
+            new() { Label = "Damage Ratio", Value = FormatDecimal(_currentResult.DAMAGE_RATIO, 3) },
+            new() { Label = "Radius Of Investigation", Value = FormatDecimal(_currentResult.RADIUS_OF_INVESTIGATION, 2) },
+            new() { Label = "R-Squared", Value = FormatDecimal(_currentResult.R_SQUARED, 4) }
+        };
+    }
+
+    private static string FormatDecimal(decimal value, int decimals = 2)
+    {
+        return value.ToString($"N{decimals}");
+    }
+
+    private static string FormatNullableDecimal(decimal? value, int decimals = 2)
+    {
+        return value.HasValue ? value.Value.ToString($"N{decimals}") : "N/A";
+    }
+
+    private static string GetIdentifiedModel(WELL_TEST_ANALYSIS_RESULT result)
+    {
+        if (!string.IsNullOrWhiteSpace(result.IDENTIFIED_MODEL))
+            return result.IDENTIFIED_MODEL;
+
+        if (!string.IsNullOrWhiteSpace(result.IDENTIFIED_MODEL_STRING))
+            return result.IDENTIFIED_MODEL_STRING;
+
+        return "Not identified";
+    }
+}

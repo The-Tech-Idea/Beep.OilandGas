@@ -8,6 +8,7 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject ICalculationServiceClient CalculationService
+@inject IProductionServiceClient ProductionService
 @inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Track Production Forecasts</PageTitle>
@@ -64,28 +65,22 @@
         <MudCardContent Class="pa-0">
             @if (_forecasts != null && _forecasts.Any())
             {
-                <MudDataGrid T="ProductionForecastResult" Items="@_forecasts" Dense="true" Hover="true" Striped="true"
+                <MudDataGrid T="ProductionForecastResponse" Items="@_forecasts" Dense="true" Hover="true" Striped="true"
                              SortMode="SortMode.Multiple" Filterable="true">
                     <Columns>
                         <PropertyColumn Property="f => f.ForecastId" Title="Forecast ID" />
-                        <TemplateColumn Title="Method">
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2">@context.Item.ForecastMethod.ToString()</MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
+                        <PropertyColumn Property="f => f.ForecastMethod" Title="Method" />
                         <TemplateColumn Title="Forecast Date">
                             <CellTemplate>
                                 <MudText Typo="Typo.body2">
-                                    @context.Item.ForecastDate.ToString("dd MMM yyyy")
+                                    @(context.Item.ForecastStartDate?.ToString("dd MMM yyyy") ?? "—")
                                 </MudText>
                             </CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="End Date">
                             <CellTemplate>
                                 <MudText Typo="Typo.body2">
-                                    @((context.Item.ForecastPoints != null && context.Item.ForecastPoints.Any())
-                                        ? context.Item.ForecastPoints.Last().Date.ToString("dd MMM yyyy")
-                                        : "—")
+                                    @(context.Item.ForecastEndDate?.ToString("dd MMM yyyy") ?? "—")
                                 </MudText>
                             </CellTemplate>
                         </TemplateColumn>
@@ -127,7 +122,7 @@
 
 @code {
     private string _fieldName = string.Empty;
-    private List<ProductionForecastResult>? _forecasts;
+    private List<ProductionForecastResponse>? _forecasts;
     private bool _isLoading = false;
     private string? _currentUserId;
 
@@ -151,14 +146,11 @@
         _isLoading = true;
         try
         {
-            // Try to load from API endpoint if it exists, otherwise use empty list
-            // The service client doesn't have a method to list all forecasts yet
-            var forecasts = await ApiClient.GetAsync<List<ProductionForecastResult>>("/api/production/field/forecasts") ?? new();            _forecasts = forecasts ?? new List<ProductionForecastResult>();
+            _forecasts = await ProductionService.GetForecastsAsync();
         }
         catch (Exception)
         {
-            // If endpoint doesn't exist, start with empty list
-            _forecasts = new List<ProductionForecastResult>();
+            _forecasts = new List<ProductionForecastResponse>();
         }
         finally
         {
@@ -205,29 +197,5 @@
         }
     }
 
-    private string GetPropertyValue(ProductionForecastResult forecast, string propertyName)
-    {
-        return propertyName switch
-        {
-            "FORECAST_ID" => forecast.ForecastId,
-            "FORECAST_NAME" => $"Forecast {forecast.ForecastMethod}",
-            "FORECAST_TYPE" => forecast.ForecastMethod.ToString(),
-            "START_DATE" => forecast.ForecastDate.ToString("yyyy-MM-dd"),
-            "END_DATE" => forecast.ForecastPoints.Any() ? forecast.ForecastPoints.Last().Date.ToString("yyyy-MM-dd") : "N/A",
-            "FORECAST_STATUS" => forecast.Status ?? "Active",
-            _ => "N/A"
-        };
-    }
-
-    private string FormatDate(string? dateStr)
-    {
-        if (string.IsNullOrEmpty(dateStr) || dateStr == "N/A")
-            return "N/A";
-
-        if (DateTime.TryParse(dateStr, out var date))
-            return date.ToString("yyyy-MM-dd");
-
-        return dateStr;
-    }
 }
 

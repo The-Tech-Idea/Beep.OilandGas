@@ -1,4 +1,6 @@
+@using System
 @using System.Collections.Generic
+@using Microsoft.AspNetCore.Components
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -38,11 +40,31 @@
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
 
+    [Parameter] public string? WellId { get; set; }
+    [Parameter] public string? AbandonmentType { get; set; }
+    [Parameter] public DateTime? AbandonmentDate { get; set; }
+    [Parameter] public string? AbandonmentStatus { get; set; }
+
     private string _wellId = string.Empty;
     private string _abandonmentType = string.Empty;
     private DateTime? _abandonmentDate;
     private string _abandonmentStatus = string.Empty;
     private string _description = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrWhiteSpace(WellId))
+            _wellId = WellId;
+
+        if (string.IsNullOrWhiteSpace(_abandonmentType) && !string.IsNullOrWhiteSpace(AbandonmentType))
+            _abandonmentType = AbandonmentType;
+
+        if (!_abandonmentDate.HasValue && AbandonmentDate.HasValue)
+            _abandonmentDate = AbandonmentDate;
+
+        if (string.IsNullOrWhiteSpace(_abandonmentStatus) && !string.IsNullOrWhiteSpace(AbandonmentStatus))
+            _abandonmentStatus = AbandonmentStatus;
+    }
 
     private void Cancel()
     {
@@ -57,21 +79,16 @@
             return;
         }
 
-        var abandonmentData = new Dictionary<string, object>
-        {
-            { "ABANDONMENT_TYPE", _abandonmentType },
-            { "ABANDONMENT_STATUS", _abandonmentStatus },
-            { "DESCRIPTION", _description }
-        };
-
-        if (_abandonmentDate.HasValue)
-            abandonmentData["ABANDONMENT_DATE"] = _abandonmentDate.Value;
-
         var result = new Dictionary<string, object>
         {
             { "wellId", _wellId },
-            { "abandonmentData", abandonmentData }
+            { "abandonmentType", _abandonmentType },
+            { "abandonmentStatus", _abandonmentStatus },
+            { "description", _description }
         };
+
+        if (_abandonmentDate.HasValue)
+            result["abandonmentDate"] = _abandonmentDate.Value;
 
         MudDialog.Close(DialogResult.Ok(result));
     }

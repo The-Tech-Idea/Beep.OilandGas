@@ -60,7 +60,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                    return BadRequest(new { error = "No active field selected." });
                 }
 
                 var productionService = _fieldOrchestrator.GetProductionService();
@@ -97,12 +97,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                        return BadRequest(new { error = "No active field selected." });
                 }
 
                 if (string.IsNullOrWhiteSpace(userId))
                 {
-                    return BadRequest(new { error = "userId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var productionService = _fieldOrchestrator.GetProductionService();
@@ -137,7 +137,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                    return BadRequest(new { error = "No active field selected." });
                 }
 
                 var productionService = _fieldOrchestrator.GetProductionService();
@@ -172,7 +172,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                    return BadRequest(new { error = "No active field selected." });
                 }
 
                 var productionService = _fieldOrchestrator.GetProductionService();
@@ -208,7 +208,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                    return BadRequest(new { error = "No active field selected." });
                 }
 
                 var productionService = _fieldOrchestrator.GetProductionService();
@@ -243,7 +243,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                    return BadRequest(new { error = "No active field selected." });
                 }
 
                 var productionService = _fieldOrchestrator.GetProductionService();

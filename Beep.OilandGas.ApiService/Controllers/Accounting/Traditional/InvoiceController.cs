@@ -83,7 +83,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             {
                 var invoice = _service.TraditionalAccounting.Invoice.GetInvoice(id);
                 if (invoice == null)
-                    return NotFound(new { error = $"Invoice with ID {id} not found" });
+                        return NotFound(new { error = $"Invoice with ID {id} not found." });
 
                 return Ok(new
                 {
@@ -152,7 +152,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for invoice");
-                return StatusCode(500, new { error = "Invoice created but GL posting failed"});
+                    return StatusCode(500, new { error = "Invoice created but GL posting failed." });
             }
             catch (Exception ex)
             {

@@ -36,10 +36,10 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("{entityType}")]
         public async Task<ActionResult<Dictionary<string, object>>> GetDefaults(string entityType, [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(entityType))
+                return BadRequest(new { error = "Entity type is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(entityType))
-                    return BadRequest(new { error = "Entity type is required." });
                 _logger.LogInformation("Getting defaults for entity type {EntityType}", entityType);
                 
                 var result = new Dictionary<string, object>
@@ -65,10 +65,10 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("well-status/{statusId}/facets")]
         public async Task<ActionResult> GetWellStatusFacets(string statusId, [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(statusId))
+                return BadRequest(new { error = "Status ID is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(statusId))
-                    return BadRequest(new { error = "Status ID is required." });
                 _logger.LogInformation("Getting well status facets for status {StatusId}", statusId);
                 var facets = await _wellServices.GetWellStatusFacetsAsync(statusId);
                 

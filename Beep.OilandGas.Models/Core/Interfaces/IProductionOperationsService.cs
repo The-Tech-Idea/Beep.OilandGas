@@ -30,6 +30,21 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task RecordProductionDataAsync(ProductionData productionData, string userId);
 
         /// <summary>
+        /// Creates an operational cost record.
+        /// </summary>
+        Task<PRODUCTION_COSTS> CreateOperationAsync(PRODUCTION_COSTS request, string userId);
+
+        /// <summary>
+        /// Gets an operational cost record by ID.
+        /// </summary>
+        Task<PRODUCTION_COSTS?> GetOperationStatusAsync(string operationId);
+
+        /// <summary>
+        /// Updates an operational cost record.
+        /// </summary>
+        Task<PRODUCTION_COSTS> UpdateOperationAsync(string operationId, PRODUCTION_COSTS request, string userId);
+
+        /// <summary>
         /// Optimizes production operations.
         /// </summary>
         /// <param name="wellUWI">Well UWI</param>

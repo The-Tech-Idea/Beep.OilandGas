@@ -2,6 +2,7 @@
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
+@inject IProductionServiceClient ProductionService
 
 <PageTitle>Monitor Production Field Register</PageTitle>
 
@@ -44,23 +45,9 @@
                 <MudDataGrid T="FIELD" Items="@_fields" Dense="true" Hover="true" Striped="true"
                              SortMode="SortMode.Multiple" Filterable="true">
                     <Columns>
-                        <TemplateColumn Title="Field ID">
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "FIELD_ID")</MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
-                        <TemplateColumn Title="Field Name">
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2" Color="Color.Primary">
-                                    @GetPropertyValue(context.Item, "FIELD_NAME")
-                                </MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
-                        <TemplateColumn Title="Type">
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "FIELD_TYPE")</MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
+                        <PropertyColumn Property="f => f.FIELD_ID" Title="Field ID" />
+                        <PropertyColumn Property="f => f.FIELD_NAME" Title="Field Name" />
+                        <PropertyColumn Property="f => f.FIELD_TYPE" Title="Type" />
                     </Columns>
                     <NoRecordsContent>
                         <MudStack AlignItems="AlignItems.Center" Class="pa-6">
@@ -110,7 +97,8 @@
         _isLoading = true;
         try
         {
-            _fields = await ApiClient.GetAsync<List<FIELD>>("/api/production/fields") ?? new();        }
+            _fields = await ProductionService.GetFieldsAsync();
+        }
         catch (Exception)
         {
             Snackbar.Add("Error loading fields.", Severity.Error);
@@ -121,11 +109,6 @@
         }
     }
 
-    private string GetPropertyValue(object obj, string propertyName)
-    {
-        var prop = obj.GetType().GetProperty(propertyName);
-        return prop?.GetValue(obj)?.ToString() ?? "N/A";
-    }
 }
 
 

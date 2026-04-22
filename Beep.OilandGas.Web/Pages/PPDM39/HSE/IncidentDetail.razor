@@ -2,6 +2,7 @@
 @using Beep.OilandGas.Models.Data.HSE
 @using Beep.OilandGas.Web.Services
 @inject ApiClient ApiClient
+@inject IHSEServiceClient HSEClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -339,11 +340,11 @@
         _error   = null;
         try
         {
-            _incident       = await ApiClient.GetAsync<HSEIncidentRecord>($"/api/field/current/hse/incidents/{Uri.EscapeDataString(IncidentId)}");
-            _causes         = await ApiClient.GetAsync<List<CauseFinding>>($"/api/field/current/hse/incidents/{Uri.EscapeDataString(IncidentId)}/causes") ?? new();
-            _cas            = await ApiClient.GetAsync<List<CAStatus>>($"/api/field/current/hse/incidents/{Uri.EscapeDataString(IncidentId)}/cas") ?? new();
-            _barrierSummary = await ApiClient.GetAsync<BarrierSummary>($"/api/field/current/hse/incidents/{Uri.EscapeDataString(IncidentId)}/barriers/summary");
-            _rcaComplete    = await ApiClient.GetAsync<bool>($"/api/field/current/hse/incidents/{Uri.EscapeDataString(IncidentId)}/rca-complete");
+            _incident       = await HSEClient.GetIncidentAsync(IncidentId);
+            _causes         = await HSEClient.GetIncidentCausesAsync(IncidentId);
+            _cas            = await HSEClient.GetIncidentCorrectiveActionsAsync(IncidentId);
+            _barrierSummary = await HSEClient.GetIncidentBarrierSummaryAsync(IncidentId);
+            _rcaComplete    = await HSEClient.IsIncidentRcaCompleteAsync(IncidentId);
 
             if (_incident is not null)
             {
@@ -367,9 +368,13 @@
     {
         try
         {
-            await ApiClient.PostAsync<TransitionIncidentRequest, object>(
-                $"/api/field/current/hse/incidents/{Uri.EscapeDataString(IncidentId)}/transition",
+            var transitioned = await HSEClient.TransitionIncidentAsync(
+                IncidentId,
                 new TransitionIncidentRequest { Trigger = trigger });
+
+            if (!transitioned)
+                throw new InvalidOperationException("Transition failed.");
+
             await LoadAsync();
         }
         catch (Exception) { _error = "Transition failed."; Snackbar.Add(_error, Severity.Error); }
@@ -388,12 +393,16 @@
         if (string.IsNullOrWhiteSpace(_newCauseDesc)) return;
         try
         {
-            await ApiClient.PostAsync<AddCauseRequest, object>(
-                $"/api/field/current/hse/incidents/{Uri.EscapeDataString(IncidentId)}/causes",
+            var added = await HSEClient.AddIncidentCauseAsync(
+                IncidentId,
                 new AddCauseRequest(_newCauseType, _newCauseDesc, _newCauseCategory, _causes.Count + 1));
+
+            if (!added)
+                throw new InvalidOperationException("Failed to add cause.");
+
             _showAddCause = false;
-            _causes = await ApiClient.GetAsync<List<CauseFinding>>($"/api/field/current/hse/incidents/{Uri.EscapeDataString(IncidentId)}/causes") ?? new();
-            _rcaComplete = await ApiClient.GetAsync<bool>($"/api/field/current/hse/incidents/{Uri.EscapeDataString(IncidentId)}/rca-complete");
+            _causes = await HSEClient.GetIncidentCausesAsync(IncidentId);
+            _rcaComplete = await HSEClient.IsIncidentRcaCompleteAsync(IncidentId);
         }
         catch (Exception) { _error = "Failed to add cause."; Snackbar.Add(_error, Severity.Error); }
     }
@@ -416,10 +425,12 @@
                 _newCADue ?? DateTime.Today.AddDays(30),
                 string.Empty);
 
-            await ApiClient.PostAsync<AddCARequest, object>(
-                $"/api/field/current/hse/incidents/{Uri.EscapeDataString(IncidentId)}/cas", request);
+            var added = await HSEClient.AddIncidentCorrectiveActionAsync(IncidentId, request);
+            if (!added)
+                throw new InvalidOperationException("Failed to add corrective action.");
+
             _showAddCA = false;
-            _cas = await ApiClient.GetAsync<List<CAStatus>>($"/api/field/current/hse/incidents/{Uri.EscapeDataString(IncidentId)}/cas") ?? new();
+            _cas = await HSEClient.GetIncidentCorrectiveActionsAsync(IncidentId);
         }
         catch (Exception) { _error = "Failed to add CA."; Snackbar.Add(_error, Severity.Error); }
     }
@@ -428,9 +439,11 @@
     {
         try
         {
-            await ApiClient.PostAsync<object, object>(
-                $"/api/field/current/hse/incidents/{Uri.EscapeDataString(IncidentId)}/cas/{stepSeq}/complete", new());
-            _cas = await ApiClient.GetAsync<List<CAStatus>>($"/api/field/current/hse/incidents/{Uri.EscapeDataString(IncidentId)}/cas") ?? new();
+            var completed = await HSEClient.CompleteIncidentCorrectiveActionAsync(IncidentId, stepSeq);
+            if (!completed)
+                throw new InvalidOperationException("Failed to complete corrective action.");
+
+            _cas = await HSEClient.GetIncidentCorrectiveActionsAsync(IncidentId);
         }
         catch (Exception) { _error = "Failed to complete CA."; Snackbar.Add(_error, Severity.Error); }
     }

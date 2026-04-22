@@ -1,5 +1,6 @@
 ﻿@page "/exploration/seismic"
 @inject ApiClient ApiClient
+@inject IExplorationServiceClient ExplorationService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -17,7 +18,8 @@
             </MudStack>
         </MudStack>
         <MudButton Variant="Variant.Outlined" Color="Color.Info" Size="Size.Small"
-                   StartIcon="@Icons.Material.Filled.Add">Add Survey</MudButton>
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick='() => NavigationManager.NavigateTo("/ppdm39/exploration/seismic-surveys")'>Add Survey</MudButton>
     </MudStack>
 
     @* ── KPI Row ─────────────────────────────────────────────────────────── *@
@@ -30,10 +32,10 @@
                      ValueColor="Color.Primary" />
         </MudItem>
         <MudItem xs="12" sm="4">
-            <KpiCard Label="Coverage"
-                     Value="@_surveys.Sum(s => s.AreaKm2).ToString("N0")"
-                     Unit="km²"
-                     Icon="@Icons.Material.Filled.Map"
+            <KpiCard Label="3D Surveys"
+                     Value="@_surveys.Count(s => string.Equals(s.SurveyType, "3D", StringComparison.OrdinalIgnoreCase)).ToString()"
+                     Unit="surveys"
+                     Icon="@Icons.Material.Filled.ViewInAr"
                      ValueColor="Color.Info" />
         </MudItem>
         <MudItem xs="12" sm="4">
@@ -71,9 +73,9 @@
                     <StatusBadge Status="@context.Item.Status" />
                 </CellTemplate>
             </PropertyColumn>
-            <PropertyColumn Property="x => x.AreaKm2" Title="Area (km²)" Format="N0" />
-            <PropertyColumn Property="x => x.Vintage" Title="Vintage" />
-            <PropertyColumn Property="x => x.LinkedProspects" Title="Linked Prospects" />
+            <PropertyColumn Property="x => x.Dimension" Title="Dimension" />
+            <PropertyColumn Property="x => x.StartDateLabel" Title="Start" />
+            <PropertyColumn Property="x => x.CompletedDateLabel" Title="Completed" />
             <TemplateColumn Title="Actions" CellClass="d-flex justify-end">
                 <CellTemplate>
                     <MudTooltip Text="View details">
@@ -81,7 +83,7 @@
                                        Title="View details"
                                        Size="Size.Small"
                                        Color="Color.Primary"
-                                       OnClick="@(() => Snackbar.Add($"Opening {context.Item.Name}…", Severity.Info))" />
+                                       OnClick='@(() => NavigationManager.NavigateTo($"/ppdm39/exploration/seismic-surveys/{Uri.EscapeDataString(context.Item.Id)}/lines"))' />
                     </MudTooltip>
                 </CellTemplate>
             </TemplateColumn>
@@ -96,17 +98,12 @@
                         <ProcessTimeline Steps="@context.Item.Stages" />
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudText Typo="Typo.subtitle2" Class="mb-2">Linked Prospects</MudText>
-                        @foreach (var p in context.Item.LinkedProspectList)
-                        {
-                            <MudChip T="string"
-                                     Size="Size.Small"
-                                     Color="Color.Primary"
-                                     Class="ma-1"
-                                     OnClick="@(() => NavigationManager.NavigateTo($"/exploration/prospect/{Uri.EscapeDataString(p.Id)}"))">
-                                @p.Name
-                            </MudChip>
-                        }
+                        <MudText Typo="Typo.subtitle2" Class="mb-2">Survey Details</MudText>
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.body2"><strong>Source:</strong> @context.Item.Source</MudText>
+                            <MudText Typo="Typo.body2"><strong>Subtype:</strong> @context.Item.SurveyType</MudText>
+                            <MudText Typo="Typo.body2"><strong>Remarks:</strong> @context.Item.Remarks</MudText>
+                        </MudStack>
                     </MudItem>
                 </MudGrid>
             </MudPaper>
@@ -132,22 +129,23 @@
 
         try
         {
-            var surveys = await ApiClient.GetAsync<List<SEIS_ACQTN_SURVEY>>(
-                "/api/field/current/exploration/seismic-surveys") ?? new();
+            var surveys = await ExplorationService.GetSeismicSurveysAsync();
             if (surveys.Count > 0)
             {
-                _surveys = surveys.Select(s => new SeismicSurveyRow(
-                    id:              s.SEIS_ACQTN_SURVEY_ID ?? string.Empty,
-                    name:            s.ACQTN_SURVEY_NAME ?? s.SEIS_ACQTN_SURVEY_ID ?? "Unknown",
-                    type:            s.SEIS_SET_SUBTYPE ?? "3D",
-                    status:          s.ACTIVE_IND == "Y" ? "ACTIVE" : "COMPLETE",
-                    area:            0,
-                    vintage:         s.COMPLETED_DATE?.Year ?? 0,
-                    completionYear:  s.COMPLETED_DATE?.Year ?? 0,
-                    linkedProspects: string.Empty,
-                    stages:          new(),
-                    prospectList:    new()
-                )).ToList();
+                _surveys = surveys
+                    .Select(s => new SeismicSurveyRow(
+                        s.SEIS_ACQTN_SURVEY_ID ?? string.Empty,
+                        s.ACQTN_SURVEY_NAME ?? s.SEIS_ACQTN_SURVEY_ID ?? "Unknown",
+                        GetSurveyType(s),
+                        s.SEIS_DIMENSION ?? "Not specified",
+                        GetSurveyStatus(s),
+                        s.SOURCE ?? "Not specified",
+                        s.REMARK ?? "No remarks recorded",
+                        s.START_DATE,
+                        s.COMPLETED_DATE,
+                        BuildStages(s)))
+                    .OrderByDescending(s => s.StartDate ?? s.CompletedDate)
+                    .ToList();
             }
         }
         catch (Exception)
@@ -158,26 +156,61 @@
 
     private class SeismicSurveyRow
     {
-        public string Id { get; set; }
-        public string Name { get; set; }
-        public string SurveyType { get; set; }
-        public string Status { get; set; }
-        public double AreaKm2 { get; set; }
-        public int Vintage { get; set; }
-        public int CompletionYear { get; set; }
-        public string LinkedProspects { get; set; }
-        public List<ProcessStep> Stages { get; set; }
-        public List<ProspectRef> LinkedProspectList { get; set; }
+        public string Id { get; }
+        public string Name { get; }
+        public string SurveyType { get; }
+        public string Dimension { get; }
+        public string Status { get; }
+        public string Source { get; }
+        public string Remarks { get; }
+        public DateTime? StartDate { get; }
+        public DateTime? CompletedDate { get; }
+        public string StartDateLabel => FormatDate(StartDate);
+        public string CompletedDateLabel => FormatDate(CompletedDate);
+        public int CompletionYear => CompletedDate?.Year ?? 0;
+        public List<ProcessStep> Stages { get; }
 
-        public SeismicSurveyRow(string id, string name, string type, string status, double area,
-            int vintage, int completionYear, string linkedProspects,
-            List<ProcessStep> stages, List<ProspectRef> prospectList)
+        public SeismicSurveyRow(string id, string name, string surveyType, string dimension, string status,
+            string source, string remarks, DateTime? startDate, DateTime? completedDate, List<ProcessStep> stages)
         {
-            Id = id; Name = name; SurveyType = type; Status = status; AreaKm2 = area;
-            Vintage = vintage; CompletionYear = completionYear;
-            LinkedProspects = linkedProspects; Stages = stages; LinkedProspectList = prospectList;
+            Id = id;
+            Name = name;
+            SurveyType = surveyType;
+            Dimension = dimension;
+            Status = status;
+            Source = source;
+            Remarks = remarks;
+            StartDate = startDate;
+            CompletedDate = completedDate;
+            Stages = stages;
         }
     }
 
-    private record ProspectRef(string Id, string Name);
+    private static string GetSurveyType(SEIS_ACQTN_SURVEY survey)
+        => !string.IsNullOrWhiteSpace(survey.SEIS_SET_SUBTYPE) ? survey.SEIS_SET_SUBTYPE : survey.SEIS_DIMENSION ?? "Unknown";
+
+    private static string GetSurveyStatus(SEIS_ACQTN_SURVEY survey)
+    {
+        if (survey.COMPLETED_DATE.HasValue)
+            return "COMPLETE";
+
+        return string.Equals(survey.ACTIVE_IND, "Y", StringComparison.OrdinalIgnoreCase)
+            ? "ACTIVE"
+            : "INACTIVE";
+    }
+
+    private static List<ProcessStep> BuildStages(SEIS_ACQTN_SURVEY survey)
+    {
+        var registeredDate = survey.ROW_CREATED_DATE ?? survey.EFFECTIVE_DATE;
+
+        return new List<ProcessStep>
+        {
+            new("Registered", FormatDate(registeredDate), registeredDate.HasValue, !survey.START_DATE.HasValue && !survey.COMPLETED_DATE.HasValue),
+            new("Acquisition", FormatDate(survey.START_DATE), survey.START_DATE.HasValue, survey.START_DATE.HasValue && !survey.COMPLETED_DATE.HasValue),
+            new("Completed", FormatDate(survey.COMPLETED_DATE), survey.COMPLETED_DATE.HasValue, false)
+        };
+    }
+
+    private static string FormatDate(DateTime? value)
+        => value?.ToString("yyyy-MM-dd") ?? "Pending";
 }

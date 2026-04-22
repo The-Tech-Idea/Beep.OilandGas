@@ -1,6 +1,6 @@
 ﻿@page "/ppdm39/compliance/obligation/{ObligationId}"
 @using Beep.OilandGas.Models.Data.Compliance
-@inject Beep.OilandGas.Web.Services.ApiClient ApiClient
+@inject Beep.OilandGas.Web.Services.IComplianceServiceClient ComplianceClient
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -19,7 +19,7 @@ else
 {
     <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
         <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
-                       OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/compliance"))" />
+                       Href="@GetBackHref()" />
         <MudText Typo="Typo.h5">Obligation: @_detail.ObligationId</MudText>
         <MudSpacer />
         <MudChip T="string" Color="@StatusColor(_detail.ObligStatus)" Size="Size.Medium">
@@ -50,6 +50,14 @@ else
             <MudPaper Elevation="2" Class="pa-4">
                 <MudText Typo="Typo.subtitle1" Class="mb-3"><b>Actions</b></MudText>
                 <MudStack Spacing="2">
+                    @if (!string.IsNullOrWhiteSpace(ContinueTo))
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.ArrowForward"
+                                   Href="@ContinueTo">
+                            Continue to Development Plan
+                        </MudButton>
+                    }
                     @if (_detail.ObligStatus == ObligationStatus.Pending)
                     {
                         <MudButton Variant="Variant.Filled" Color="Color.Success"
@@ -98,6 +106,12 @@ else
 @code {
     [Parameter] public string ObligationId { get; set; } = string.Empty;
 
+    [SupplyParameterFromQuery(Name = "returnTo")]
+    public string? ReturnTo { get; set; }
+
+    [SupplyParameterFromQuery(Name = "continueTo")]
+    public string? ContinueTo { get; set; }
+
     private string           _loadedId = string.Empty;
     private bool             _loading = true;
     private string?          _error;
@@ -122,8 +136,7 @@ else
         _error   = null;
         try
         {
-            _detail = await ApiClient.GetAsync<ObligationDetailModel>(
-                          $"/api/field/current/compliance/obligations/{Uri.EscapeDataString(ObligationId)}");
+            _detail = await ComplianceClient.GetObligationAsync(ObligationId);
         }
         catch (Exception)
         {
@@ -136,7 +149,7 @@ else
     {
         try
         {
-            await ApiClient.PostAsync<object>($"/api/field/current/compliance/obligations/{Uri.EscapeDataString(ObligationId)}/submit?submitDate={DateTime.UtcNow:O}", null!);
+            await ComplianceClient.SubmitObligationAsync(ObligationId, DateTime.UtcNow);
             Snackbar.Add("Obligation marked as submitted.", Severity.Success);
             await LoadAsync();
         }
@@ -153,8 +166,7 @@ else
 
         try
         {
-            await ApiClient.PostAsync<object>(
-                $"/api/field/current/compliance/obligations/{ObligationId}/waive?reason=User+waived", null!);
+            await ComplianceClient.WaiveObligationAsync(ObligationId, "User waived");
             Snackbar.Add("Obligation waived.", Severity.Info);
             await LoadAsync();
         }
@@ -180,4 +192,7 @@ else
         ObligationStatus.Waived          => Color.Default,
         _                                => Color.Info,
     };
+
+    private string GetBackHref()
+        => string.IsNullOrWhiteSpace(ReturnTo) ? "/ppdm39/compliance" : ReturnTo;
 }

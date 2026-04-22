@@ -1,10 +1,13 @@
 ﻿@page "/ppdm39/calculations/gaslift"
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.GasLift
-@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.PPDM39.Models
 @inject ISnackbar Snackbar
 @inject ICalculationServiceClient CalculationService
 @inject ApiClient ApiClient
+@inject IDevelopmentServiceClient DevelopmentClient
+@inject ILifeCycleService LifeCycleService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Analyse Gas Lift Performance</PageTitle>
 
@@ -57,21 +60,42 @@
         <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-4" />
     }
 
-    @if (_performanceData != null)
+    @if (_potentialResult != null || _valveDesignResult != null)
     {
-        <MudPaper Class="pa-4 mt-4">
-            <MudText Typo="Typo.h6" Class="mb-4">Gas Lift Performance</MudText>
-            <MudStack Spacing="2">
-                <MudText>Well UWI: @_performanceData.WELL_UWI</MudText>
-                <MudText>Production Rate: @($"{_performanceData.PRODUCTION_RATE:F2}") BBL/D</MudText>
-                <MudText>Gas Injection Rate: @($"{_performanceData.GAS_INJECTION_RATE:F2}") MCF/D</MudText>
-                <MudText>Efficiency: @($"{_performanceData.EFFICIENCY:F2}")%</MudText>
-            </MudStack>
-        </MudPaper>
+        <LiftRecommendationCard Title="Lift Workflow Recommendation"
+                                Subtitle="Gas lift candidate review"
+                                Icon="@Icons.Material.Filled.BubbleChart"
+                                IconColor="Color.Info"
+                                Headline="@GetGasLiftRecommendationHeadline()"
+                                Summary="@GetGasLiftRecommendationSummary()"
+                                ImpactText="@GetGasLiftRecommendationImpactText()"
+                                Severity="@GetGasLiftRecommendationSeverity()"
+                                Facts="@GetGasLiftRecommendationFacts()"
+                                Class="mt-4">
+            <Actions>
+                <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.AutoGraph"
+                           Href="@GetWellPerformanceUrl()">
+                    Open Well Performance Optimizer
+                </MudButton>
+                @if (_potentialResult != null && _valveDesignResult == null)
+                {
+                    <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Secondary"
+                               StartIcon="@Icons.Material.Filled.Tune"
+                               OnClick="DesignValves"
+                               Disabled="@_isDesigning">
+                        Run Valve Design
+                    </MudButton>
+                }
+            </Actions>
+        </LiftRecommendationCard>
     }
 </MudContainer>
 
 @code {
+    [SupplyParameterFromQuery(Name = "wellId")]
+    public string? WellId { get; set; }
+
     private string _fieldName = string.Empty;
     private string _wellUWI = string.Empty;
     private decimal _minGasInjectionRate = 100;
@@ -84,7 +108,8 @@
     private bool _isAnalyzing = false;
     private bool _isDesigning = false;
     private bool _isLoading = false;
-    private GAS_LIFT_PERFORMANCE? _performanceData = null;
+    private GAS_LIFT_POTENTIAL_RESULT? _potentialResult;
+    private GAS_LIFT_VALVE_DESIGN_RESULT? _valveDesignResult;
 
     private sealed class WellDto
     {
@@ -101,7 +126,7 @@
         {
             try
             {
-                var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+                var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
                 if (summary != null)
                     _fieldName = summary.FieldName ?? _fieldName;
             }
@@ -109,11 +134,17 @@
 
             try
             {
-                var wells = await ApiClient.GetAsync<List<WellDto>>("api/field/current/development/wells") ?? new();                if (wells != null && wells.Count > 0)
+                var wells = (await DevelopmentClient.GetWellsAsync()).Select(MapWell).ToList();
+                if (wells.Count > 0)
                 {
-                    _fieldName = wells[0].ASSIGNED_FIELD ?? _fieldName;
-                    _wellUWI = wells[0].UWI;
-                    _designWellUWI = wells[0].UWI;
+                    var preferredWellId = wells.Any(well => string.Equals(well.UWI, WellId, StringComparison.OrdinalIgnoreCase))
+                        ? WellId!
+                        : wells[0].UWI;
+
+                    var selectedWell = wells.First(well => string.Equals(well.UWI, preferredWellId, StringComparison.OrdinalIgnoreCase));
+                    _fieldName = selectedWell.ASSIGNED_FIELD ?? _fieldName;
+                    _wellUWI = selectedWell.UWI;
+                    _designWellUWI = selectedWell.UWI;
                 }
             }
             catch (Exception)
@@ -131,7 +162,7 @@
     {
         try
         {
-            var well = await ApiClient.GetAsync<WellDto>($"api/field/current/development/wells/{Uri.EscapeDataString(uwi)}");
+            var well = MapWell(await DevelopmentClient.GetWellAsync(uwi));
             return new GAS_LIFT_WELL_PROPERTIES
             {
                 WELL_DEPTH = well?.FINAL_TD ?? 5000,
@@ -154,6 +185,22 @@
         }
     }
 
+    private static WellDto MapWell(WELL? well)
+    {
+        if (well == null)
+        {
+            return new WellDto();
+        }
+
+        return new WellDto
+        {
+            UWI = well.UWI,
+            WELL_NAME = well.WELL_NAME,
+            FINAL_TD = well.FINAL_TD,
+            ASSIGNED_FIELD = well.ASSIGNED_FIELD
+        };
+    }
+
     private async Task AnalyzePotential()
     {
         if (string.IsNullOrEmpty(_wellUWI))
@@ -166,8 +213,10 @@
         try
         {
             var wellProperties = await LoadWellPropertiesAsync(_wellUWI);
-            var result = await CalculationService.AnalyzeGasLiftPotentialAsync(
+            _valveDesignResult = null;
+            _potentialResult = await CalculationService.AnalyzeGasLiftPotentialAsync(
                 wellProperties, _minGasInjectionRate, _maxGasInjectionRate, _numberOfPoints);
+            _designWellUWI = _wellUWI;
             Snackbar.Add("Gas lift potential analysis completed", Severity.Success);
         }
         catch (Exception)
@@ -192,7 +241,7 @@
         try
         {
             var wellProperties = await LoadWellPropertiesAsync(_designWellUWI);
-            var result = await CalculationService.DesignGasLiftValvesAsync(
+            _valveDesignResult = await CalculationService.DesignGasLiftValvesAsync(
                 wellProperties, _gasInjectionPressure, _numberOfValves, _useSIUnits);
             Snackbar.Add("Gas lift valve design completed", Severity.Success);
         }
@@ -204,6 +253,105 @@
         {
             _isDesigning = false;
         }
+    }
+
+    private IReadOnlyList<RecommendationFactItem> GetGasLiftRecommendationFacts()
+    {
+        var facts = new List<RecommendationFactItem>();
+
+        if (_potentialResult != null)
+        {
+            facts.Add(new RecommendationFactItem
+            {
+                Label = "Optimal Injection",
+                Value = $"{FormatNullableDecimal(_potentialResult.OPTIMAL_GAS_INJECTION_RATE, 1)} MCF/D",
+                ValueColor = Color.Info
+            });
+            facts.Add(new RecommendationFactItem
+            {
+                Label = "Maximum Production",
+                Value = $"{FormatNullableDecimal(_potentialResult.MAXIMUM_PRODUCTION_RATE, 1)} BBL/D",
+                ValueColor = Color.Success
+            });
+            facts.Add(new RecommendationFactItem
+            {
+                Label = "Gas/Liquid Ratio",
+                Value = FormatNullableDecimal(_potentialResult.OPTIMAL_GAS_LIQUID_RATIO, 2),
+                ValueColor = Color.Primary
+            });
+        }
+
+        if (_valveDesignResult != null)
+        {
+            facts.Add(new RecommendationFactItem
+            {
+                Label = "Expected Production",
+                Value = $"{_valveDesignResult.EXPECTED_PRODUCTION_RATE.ToString("N1")} BBL/D",
+                ValueColor = Color.Success
+            });
+            facts.Add(new RecommendationFactItem
+            {
+                Label = "Valve Injection",
+                Value = $"{_valveDesignResult.TOTAL_GAS_INJECTION_RATE.ToString("N1")} MCF/D",
+                ValueColor = Color.Warning
+            });
+        }
+
+        return facts;
+    }
+
+    private string GetGasLiftRecommendationHeadline()
+    {
+        if (_valveDesignResult != null)
+            return "Advance gas lift design to operating review";
+
+        return "Evaluate gas lift as a lift candidate";
+    }
+
+    private string GetGasLiftRecommendationSummary()
+    {
+        var parts = new List<string>();
+
+        if (_potentialResult != null)
+        {
+            parts.Add($"Potential analysis indicates up to {FormatNullableDecimal(_potentialResult.MAXIMUM_PRODUCTION_RATE, 1)} BBL/D at an optimal gas injection rate of {FormatNullableDecimal(_potentialResult.OPTIMAL_GAS_INJECTION_RATE, 1)} MCF/D.");
+        }
+
+        if (_valveDesignResult != null)
+        {
+            parts.Add($"Valve design projects {_valveDesignResult.EXPECTED_PRODUCTION_RATE.ToString("N1")} BBL/D using {_valveDesignResult.TOTAL_GAS_INJECTION_RATE.ToString("N1")} MCF/D total injection.");
+        }
+
+        return string.Join(" ", parts);
+    }
+
+    private string GetGasLiftRecommendationImpactText()
+    {
+        return "Workflow handoff: compare this gas-lift candidate against the current production gap before intervention planning.";
+    }
+
+    private Severity GetGasLiftRecommendationSeverity()
+    {
+        if (_valveDesignResult != null)
+            return Severity.Success;
+
+        if (_potentialResult?.MAXIMUM_PRODUCTION_RATE > 0)
+            return Severity.Info;
+
+        return Severity.Warning;
+    }
+
+    private string GetWellPerformanceUrl()
+    {
+        var wellId = !string.IsNullOrWhiteSpace(_designWellUWI) ? _designWellUWI : _wellUWI;
+        return string.IsNullOrWhiteSpace(wellId)
+            ? "/production/well-performance"
+            : $"/production/well-performance?wellId={Uri.EscapeDataString(wellId)}";
+    }
+
+    private static string FormatNullableDecimal(decimal? value, int decimals = 1)
+    {
+        return value.HasValue ? value.Value.ToString($"N{decimals}") : "N/A";
     }
 }
 

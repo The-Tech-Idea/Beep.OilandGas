@@ -562,11 +562,17 @@ var explorationTables = await _metadata.GetTablesBySubjectAreaAsync("EXPLORATION
    - Use MudBlazor CSS utilities (`pa-4`, `mb-2`, etc.) — no inline `style=""`.
    - Dark mode support is automatic when using `Color.*` and theme CSS variables.
 
-5. **PPDMTreeView stays in Data Management — separate from engineer UX.**
+5. **Read local MudBlazor docs before changing Blazor UI.**
+    - Start with `Beep.OilandGas.Web/MudBlazor_Docs/README.md`.
+    - Read the matching local docs before editing `.razor`, layout, theme, dialog, nav, grid, tabs, stepper, or shared-component files.
+    - For shell/provider work, read `Layouts.txt`, `Theme.txt`, `Services.txt`, `AppBar.txt`, `Drawer.txt`, and `PopOver.txt` first.
+    - Do not guess component parameter names or provider behavior when a local MudBlazor doc exists.
+
+6. **PPDMTreeView stays in Data Management — separate from engineer UX.**
    - Data management (PPDM TreeView, raw CRUD) lives at `/ppdm39/data-management`.
    - Engineer workflow pages do NOT link back to raw CRUD as a primary action.
 
-6. **Navigation follows the petroleum engineer's work sequence:**
+7. **Navigation follows the petroleum engineer's work sequence:**
    ```
    Dashboard → Exploration → Development → Production → Reservoir → Economics → HSE & Compliance → Data Management
    ```
@@ -576,6 +582,7 @@ var explorationTables = await _metadata.GetTablesBySubjectAreaAsync("EXPLORATION
 - Use `KpiCard` component (in `Components/Shared/`) for all KPI displays on dashboards.
 - Use `StatusBadge` component for all status chips (well status, process status, etc.).
 - Use `ProcessTimeline` component for showing process step history.
+- Before changing shared MudBlazor components, read the relevant local docs in `Beep.OilandGas.Web/MudBlazor_Docs/` first.
 - Multi-step processes use `MudStepper` — maximum 5 steps per wizard.
 - Kanban boards: maximum 6 columns; drag triggers a transition dialog (not silent).
 

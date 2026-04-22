@@ -1,6 +1,6 @@
 ﻿@page "/ppdm39/compliance/ghg"
 @using Beep.OilandGas.Models.Data.Compliance
-@inject Beep.OilandGas.Web.Services.ApiClient ApiClient
+@inject Beep.OilandGas.Web.Services.IComplianceServiceClient ComplianceClient
 @inject ISnackbar Snackbar
 
 <PageTitle>GHG Emission Report</PageTitle>
@@ -102,9 +102,7 @@
         _report  = null;
         try
         {
-            _report = await ApiClient.PostAsync<object, GHGEmissionReport>(
-                $"/api/field/current/compliance/ghg/report?year={_year}&jurisdiction={_jurisdiction}",
-                null!);
+            _report = await ComplianceClient.GenerateGhgReportAsync(_year, _jurisdiction);
             if (_report is null)
                 _error = "No report data returned.";
         }

@@ -1,0 +1,79 @@
+@typeparam TItem
+@using System.Linq
+
+<MudCard Elevation="@Elevation" Class="@Class">
+    @if (HeaderContent != null || !string.IsNullOrWhiteSpace(Title) || HeaderActions != null)
+    {
+        @if (HeaderActions != null)
+        {
+            <MudCardHeader>
+                <CardHeaderContent>
+                    @if (HeaderContent != null)
+                    {
+                        @HeaderContent
+                    }
+                    else
+                    {
+                        <MudText Typo="@TitleTypo">@Title</MudText>
+                    }
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    @HeaderActions
+                </CardHeaderActions>
+            </MudCardHeader>
+        }
+        else
+        {
+            <MudCardHeader>
+                <CardHeaderContent>
+                    @if (HeaderContent != null)
+                    {
+                        @HeaderContent
+                    }
+                    else
+                    {
+                        <MudText Typo="@TitleTypo">@Title</MudText>
+                    }
+                </CardHeaderContent>
+            </MudCardHeader>
+        }
+    }
+    <MudCardContent Class="@ContentClass">
+        @if (HasItems)
+        {
+            <MudDataGrid T="TItem" Items="@SafeItems" Dense="@Dense" Hover="@Hover" Striped="@Striped">
+                <Columns>
+                    @ColumnContent
+                </Columns>
+            </MudDataGrid>
+        }
+        else if (EmptyContent != null)
+        {
+            @EmptyContent
+        }
+        else if (!string.IsNullOrWhiteSpace(EmptyText))
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-4">@EmptyText</MudText>
+        }
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public Typo TitleTypo { get; set; } = Typo.subtitle1;
+    [Parameter] public int Elevation { get; set; } = 2;
+    [Parameter] public string Class { get; set; } = string.Empty;
+    [Parameter] public string ContentClass { get; set; } = "pa-0";
+    [Parameter] public bool Dense { get; set; } = true;
+    [Parameter] public bool Hover { get; set; } = true;
+    [Parameter] public bool Striped { get; set; } = true;
+    [Parameter] public string EmptyText { get; set; } = string.Empty;
+    [Parameter] public IEnumerable<TItem>? Items { get; set; }
+    [Parameter, EditorRequired] public RenderFragment? ColumnContent { get; set; }
+    [Parameter] public RenderFragment? HeaderContent { get; set; }
+    [Parameter] public RenderFragment? HeaderActions { get; set; }
+    [Parameter] public RenderFragment? EmptyContent { get; set; }
+
+    private IEnumerable<TItem> SafeItems => Items ?? Array.Empty<TItem>();
+    private bool HasItems => SafeItems.Any();
+}

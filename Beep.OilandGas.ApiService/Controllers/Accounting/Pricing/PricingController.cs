@@ -43,7 +43,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
                 {
                     var index = indexManager.GetLatestPrice(indexName);
                     if (index == null)
-                        return NotFound(new { error = $"Price index {indexName} not found" });
+                            return NotFound(new { error = $"Price index {indexName} not found." });
                     return Ok(new List<PriceIndex> { new PriceIndex
                     {
                         IndexName = index.IndexName,
@@ -127,7 +127,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
 
                 var ticket = _service.ProductionManager.GetRunTicket(request.RunTicketNumber);
                 if (ticket == null)
-                    return NotFound(new { error = $"Run ticket {request.RunTicketNumber} not found" });
+                    return NotFound(new { error = $"Run ticket {request.RunTicketNumber} not found." });
 
                 PricingMethod pricingMethod;
                 if (!Enum.TryParse<PricingMethod>(request.PricingMethod, true, out pricingMethod))

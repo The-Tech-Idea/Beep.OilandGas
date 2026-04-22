@@ -13,6 +13,8 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
+using System.Globalization;
+using System.Text.Json;
 
 namespace Beep.OilandGas.ProductionOperations.Services
 {
@@ -29,6 +31,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
         private readonly string _connectionName;
         private readonly ILogger<ProductionOperationsService>? _logger;
         private const string PDEN_VOL_SUMMARY_TABLE = "PDEN_VOL_SUMMARY";
+        private const string PRODUCTION_COSTS_TABLE = "PRODUCTION_COSTS";
 
         public ProductionOperationsService(
             IDMEEditor editor,
@@ -133,32 +136,137 @@ namespace Beep.OilandGas.ProductionOperations.Services
             _logger?.LogInformation("Successfully recorded production data {ProductionId}", productionData.ProductionId);
         }
 
+        public async Task<PRODUCTION_COSTS> CreateOperationAsync(PRODUCTION_COSTS request, string userId)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
+
+            PrepareOperationForWrite(request, null);
+
+            var repo = CreateProductionCostsRepository();
+            await repo.InsertAsync(request, userId);
+
+            _logger?.LogInformation("Created production operation cost record {OperationId}", request.PRODUCTION_COST_ID);
+
+            return await GetOperationStatusAsync(request.PRODUCTION_COST_ID) ?? request;
+        }
+
+        public async Task<PRODUCTION_COSTS?> GetOperationStatusAsync(string operationId)
+        {
+            if (string.IsNullOrWhiteSpace(operationId))
+                throw new ArgumentException("Operation ID cannot be null or empty", nameof(operationId));
+
+            var repo = CreateProductionCostsRepository();
+            var entity = await repo.GetByIdAsync(operationId);
+            return entity as PRODUCTION_COSTS;
+        }
+
+        public async Task<PRODUCTION_COSTS> UpdateOperationAsync(string operationId, PRODUCTION_COSTS request, string userId)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            if (string.IsNullOrWhiteSpace(operationId))
+                throw new ArgumentException("Operation ID cannot be null or empty", nameof(operationId));
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
+
+            var existing = await GetOperationStatusAsync(operationId);
+            if (existing == null)
+                throw new InvalidOperationException($"Production operation cost record {operationId} was not found.");
+
+            request.PRODUCTION_COST_ID = operationId;
+            PrepareOperationForWrite(request, existing);
+
+            var repo = CreateProductionCostsRepository();
+            await repo.UpdateAsync(request, userId);
+
+            _logger?.LogInformation("Updated production operation cost record {OperationId}", operationId);
+
+            return await GetOperationStatusAsync(operationId) ?? request;
+        }
+
         public async Task<List<ProductionOptimizationRecommendation>> OptimizeProductionAsync(string wellUWI, Dictionary<string, object> optimizationGoals)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
-            if (optimizationGoals == null || optimizationGoals.Count == 0)
-                throw new ArgumentException("Optimization goals cannot be null or empty", nameof(optimizationGoals));
+
+            optimizationGoals ??= new Dictionary<string, object>();
 
             _logger?.LogInformation("Optimizing production for well {WellUWI} with {GoalCount} optimization goals",
                 wellUWI, optimizationGoals.Count);
 
-            var recommendations = new List<ProductionOptimizationRecommendation>
+            var productionHistory = await GetProductionDataAsync(wellUWI, null, DateTime.UtcNow.AddDays(-90), DateTime.UtcNow);
+            if (productionHistory.Count == 0)
+                throw new InvalidOperationException($"No production history is available for well {wellUWI}.");
+
+            var orderedHistory = productionHistory
+                .OrderBy(record => record.ProductionDate)
+                .ToList();
+            var latest = orderedHistory[^1];
+            var averageOil = orderedHistory.Average(record => record.OilVolume);
+            var averageGas = orderedHistory.Average(record => record.GasVolume);
+            var waterCut = CalculateWaterCut(latest.OilVolume, latest.WaterVolume);
+            var oilShortfallPct = CalculateShortfallPct(latest.OilVolume, averageOil);
+            var gasOilRatio = latest.OilVolume > 0m ? latest.GasVolume / latest.OilVolume : 0m;
+
+            var maxWaterCutPct = GetGoalDecimal(optimizationGoals, "maxWaterCutPct", 60m);
+            var maxOilShortfallPct = GetGoalDecimal(optimizationGoals, "maxOilShortfallPct", 10m);
+            var maxGasOilRatio = GetGoalDecimal(optimizationGoals, "maxGasOilRatio", 1.5m);
+
+            var recommendations = new List<ProductionOptimizationRecommendation>();
+
+            if (oilShortfallPct > maxOilShortfallPct)
             {
-                new ProductionOptimizationRecommendation
+                recommendations.Add(new ProductionOptimizationRecommendation
                 {
                     RecommendationId = _defaults.FormatIdForTable("OPTIMIZATION_REC", Guid.NewGuid().ToString()),
                     WellUWI = wellUWI,
-                    RecommendationType = "Choke Optimization",
-                    Description = "Adjust choke size to optimize production",
-                    ExpectedImprovement = 5.0m, // 5% improvement
-                    Priority = "High"
-                }
-            };
+                    RecommendationType = "Restore Base Production",
+                    Description = $"Latest oil volume {latest.OilVolume:N2} is {oilShortfallPct:N1}% below the 90-day average {averageOil:N2}. Review choke, artificial-lift, and near-wellbore restrictions.",
+                    ExpectedImprovement = decimal.Round(oilShortfallPct, 2, MidpointRounding.AwayFromZero),
+                    Priority = oilShortfallPct >= 25m ? "High" : "Medium"
+                });
+            }
 
-            _logger?.LogWarning("OptimizeProductionAsync not fully implemented - requires optimization logic");
+            if (waterCut > maxWaterCutPct)
+            {
+                recommendations.Add(new ProductionOptimizationRecommendation
+                {
+                    RecommendationId = _defaults.FormatIdForTable("OPTIMIZATION_REC", Guid.NewGuid().ToString()),
+                    WellUWI = wellUWI,
+                    RecommendationType = "Water Handling Review",
+                    Description = $"Latest water cut is {waterCut:N1}% with water volume {latest.WaterVolume:N2}. Review conformance, drawdown, and water handling constraints.",
+                    ExpectedImprovement = decimal.Round(waterCut - maxWaterCutPct, 2, MidpointRounding.AwayFromZero),
+                    Priority = waterCut >= 80m ? "High" : "Medium"
+                });
+            }
 
-            await Task.CompletedTask;
+            if (gasOilRatio > maxGasOilRatio)
+            {
+                recommendations.Add(new ProductionOptimizationRecommendation
+                {
+                    RecommendationId = _defaults.FormatIdForTable("OPTIMIZATION_REC", Guid.NewGuid().ToString()),
+                    WellUWI = wellUWI,
+                    RecommendationType = "Gas Handling / Lift Review",
+                    Description = $"Latest gas-to-oil ratio is {gasOilRatio:N2} against a 90-day average gas volume of {averageGas:N2}. Review gas lift, separator constraints, and surface backpressure.",
+                    ExpectedImprovement = decimal.Round(gasOilRatio - maxGasOilRatio, 2, MidpointRounding.AwayFromZero),
+                    Priority = gasOilRatio >= maxGasOilRatio * 1.5m ? "High" : "Medium"
+                });
+            }
+
+            if (recommendations.Count == 0)
+            {
+                recommendations.Add(new ProductionOptimizationRecommendation
+                {
+                    RecommendationId = _defaults.FormatIdForTable("OPTIMIZATION_REC", Guid.NewGuid().ToString()),
+                    WellUWI = wellUWI,
+                    RecommendationType = "Continue Monitoring",
+                    Description = $"Latest production is tracking within the recent baseline. Oil {latest.OilVolume:N2}, gas {latest.GasVolume:N2}, water {latest.WaterVolume:N2}, water cut {waterCut:N1}%.",
+                    ExpectedImprovement = 0m,
+                    Priority = "Low"
+                });
+            }
+
             return recommendations;
         }
 
@@ -485,6 +593,86 @@ namespace Beep.OilandGas.ProductionOperations.Services
                 ValidRecords = 0,
                 InvalidRecords = 0
             });
+        }
+
+        private PPDMGenericRepository CreateProductionCostsRepository()
+        {
+            return new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(PRODUCTION_COSTS), _connectionName, PRODUCTION_COSTS_TABLE, null);
+        }
+
+        private void PrepareOperationForWrite(PRODUCTION_COSTS request, PRODUCTION_COSTS? existing)
+        {
+            request.PRODUCTION_COST_ID = string.IsNullOrWhiteSpace(request.PRODUCTION_COST_ID)
+                ? existing?.PRODUCTION_COST_ID ?? _defaults.FormatIdForTable(PRODUCTION_COSTS_TABLE, Guid.NewGuid().ToString())
+                : request.PRODUCTION_COST_ID;
+
+            request.PROPERTY_ID = string.IsNullOrWhiteSpace(request.PROPERTY_ID)
+                ? existing?.PROPERTY_ID ?? string.Empty
+                : request.PROPERTY_ID;
+            if (string.IsNullOrWhiteSpace(request.PROPERTY_ID))
+                throw new ArgumentException("PROPERTY_ID is required.", nameof(request));
+
+            request.ROW_ID = string.IsNullOrWhiteSpace(request.ROW_ID)
+                ? existing?.ROW_ID ?? Guid.NewGuid().ToString("N")
+                : request.ROW_ID;
+            request.COST_PERIOD ??= existing?.COST_PERIOD ?? DateTime.UtcNow.Date;
+            request.OPERATING_COSTS ??= existing?.OPERATING_COSTS;
+            request.WORKOVER_COSTS ??= existing?.WORKOVER_COSTS;
+            request.MAINTENANCE_COSTS ??= existing?.MAINTENANCE_COSTS;
+            request.TOTAL_PRODUCTION_COSTS ??= CalculateTotalProductionCosts(request);
+        }
+
+        private static decimal CalculateTotalProductionCosts(PRODUCTION_COSTS request)
+        {
+            return (request.OPERATING_COSTS ?? 0m)
+                + (request.WORKOVER_COSTS ?? 0m)
+                + (request.MAINTENANCE_COSTS ?? 0m);
+        }
+
+        private static decimal CalculateWaterCut(decimal oilVolume, decimal waterVolume)
+        {
+            var totalLiquid = oilVolume + waterVolume;
+            if (totalLiquid <= 0m)
+                return 0m;
+
+            return decimal.Round(waterVolume / totalLiquid * 100m, 2, MidpointRounding.AwayFromZero);
+        }
+
+        private static decimal CalculateShortfallPct(decimal latestValue, decimal averageValue)
+        {
+            if (averageValue <= 0m || latestValue >= averageValue)
+                return 0m;
+
+            return decimal.Round((averageValue - latestValue) / averageValue * 100m, 2, MidpointRounding.AwayFromZero);
+        }
+
+        private static decimal GetGoalDecimal(Dictionary<string, object> optimizationGoals, string key, decimal defaultValue)
+        {
+            if (!optimizationGoals.TryGetValue(key, out var value) || value == null)
+                return defaultValue;
+
+            return value switch
+            {
+                decimal decimalValue => decimalValue,
+                double doubleValue => Convert.ToDecimal(doubleValue),
+                float floatValue => Convert.ToDecimal(floatValue),
+                int intValue => intValue,
+                long longValue => longValue,
+                string stringValue when decimal.TryParse(stringValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsed) => parsed,
+                JsonElement jsonElement => ParseGoalJsonElement(jsonElement, defaultValue),
+                _ => defaultValue
+            };
+        }
+
+        private static decimal ParseGoalJsonElement(JsonElement jsonElement, decimal defaultValue)
+        {
+            return jsonElement.ValueKind switch
+            {
+                JsonValueKind.Number when jsonElement.TryGetDecimal(out var decimalValue) => decimalValue,
+                JsonValueKind.String when decimal.TryParse(jsonElement.GetString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var parsed) => parsed,
+                _ => defaultValue
+            };
         }
     }
 }

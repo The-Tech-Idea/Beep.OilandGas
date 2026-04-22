@@ -1,6 +1,8 @@
 ﻿@page "/ppdm39/well-details/status"
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
+@inject ILifeCycleService LifeCycleService
+@inject IWellStatusServiceClient WellStatusClient
 @inject ISnackbar Snackbar
 
 <PageTitle>Track Well Status History</PageTitle>
@@ -96,7 +98,7 @@
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
@@ -114,7 +116,7 @@
         _isLoading = true;
         try
         {
-            var statusDict = await ApiClient.GetAsync<Dictionary<string, WELL_STATUS>>($"/api/well/uwi/{Uri.EscapeDataString(_searchUwi)}/status");
+            var statusDict = await WellStatusClient.GetCurrentStatusAsync(_searchUwi);
             if (statusDict != null)
             {
                 _status = statusDict.Values.ToList();

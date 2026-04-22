@@ -2,6 +2,7 @@
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject ApiClient ApiClient
+@using Beep.OilandGas.Models.Data.Production
 
 <PageTitle>Screen EOR Candidates</PageTitle>
 
@@ -200,7 +201,7 @@
         _loading = true;
         try
         {
-            var summary = await ApiClient.GetAsync<ReservoirSummaryDto>("api/field/current/reservoir/dashboard/summary");
+            var summary = await ApiClient.GetAsync<ReservoirDashboardSummary>("api/field/current/reservoir/dashboard/summary");
             if (summary != null)
             {
                 _ooip      = summary.OoipMmbbl;
@@ -212,14 +213,6 @@
             Snackbar.Add("Failed to load reservoir data.", Severity.Warning);
         }
         finally { _loading = false; }
-    }
-
-    private class ReservoirSummaryDto
-    {
-        public double OoipMmbbl         { get; set; }
-        public double RecoveryFactorPct { get; set; }
-        public double Reserves2PMmbbl   { get; set; }
-        public int    ActivePoolCount   { get; set; }
     }
 
     private void OnMethodSelected(DataGridRowClickEventArgs<EorMethod> args)

@@ -1,5 +1,5 @@
 @using Beep.OilandGas.Models.Data.Compliance
-@inject Beep.OilandGas.Web.Services.ApiClient ApiClient
+@inject Beep.OilandGas.Web.Services.IComplianceServiceClient ComplianceClient
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -68,8 +68,7 @@
                 _actualAmt,
                 _notes);
 
-            await ApiClient.PostAsync<RecordPaymentRequest, object>(
-                $"/api/field/current/compliance/obligations/{ObligationId}/payment", request);
+            await ComplianceClient.RecordPaymentAsync(ObligationId, request);
 
             Snackbar.Add("Payment recorded.", Severity.Success);
             MudDialog.Close(DialogResult.Ok(true));

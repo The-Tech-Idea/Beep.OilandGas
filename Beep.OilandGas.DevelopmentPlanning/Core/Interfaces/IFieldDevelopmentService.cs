@@ -60,6 +60,11 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<FacilityResponse> CreateFacilityForFieldAsync(string fieldId, FacilityRequest facilityData, string userId);
 
         /// <summary>
+        /// Update a facility (must belong to the specified field)
+        /// </summary>
+        Task<FacilityResponse> UpdateFacilityForFieldAsync(string fieldId, string facilityId, FacilityRequest facilityData, string userId);
+
+        /// <summary>
         /// Get pipelines for a specific field
         /// </summary>
         Task<List<PIPELINE>> GetPipelinesForFieldAsync(string fieldId, List<AppFilter>? additionalFilters = null);

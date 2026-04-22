@@ -1,12 +1,14 @@
 ﻿@page "/ppdm39/calculations/nodalanalysis"
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.NodalAnalysis
-@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.PPDM39.Models
 @using System.Security.Claims
 @inject ISnackbar Snackbar
 @inject ICalculationServiceClient CalculationService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ApiClient ApiClient
+@inject IDevelopmentServiceClient DevelopmentClient
+@inject ILifeCycleService LifeCycleService
 
 <PageTitle>Perform Nodal Analysis</PageTitle>
 
@@ -106,11 +108,20 @@
         public string? WellName { get; set; }
     }
 
+    private static WellOptionDto MapWell(WELL well)
+    {
+        return new WellOptionDto
+        {
+            UWI = well.UWI,
+            WellName = well.WELL_NAME
+        };
+    }
+
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
@@ -120,7 +131,7 @@
         _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
         try
         {
-            var wells = await ApiClient.GetAsync<List<WellOptionDto>>("api/field/current/development/wells") ?? new();            _wells = wells ?? new();
+            _wells = (await DevelopmentClient.GetWellsAsync()).Select(MapWell).ToList();
             _selectedWellUWI = _wells.FirstOrDefault()?.UWI;
             if (!string.IsNullOrEmpty(_selectedWellUWI))
                 _analysisHistory = await CalculationService.GetNodalAnalysisHistoryAsync(_selectedWellUWI);

@@ -1,6 +1,8 @@
 ﻿@page "/production/allocation"
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
+@inject IDevelopmentServiceClient DevelopmentService
+@inject IProductionServiceClient ProductionService
 
 <PageTitle>Allocate Production Volumes</PageTitle>
 
@@ -87,6 +89,7 @@
                 <MudCardContent Class="pa-0">
                     <MudDataGrid T="WellAllocation" Items="@_allocations" Dense="true"
                                  EditMode="DataGridEditMode.Cell"
+                                 CommittedItemChanges="@CommitAllocationChangesAsync"
                                  ReadOnly="@(_allocationStatus == "LOCKED")">
                         <Columns>
                             <PropertyColumn Property="a => a.WellName" Title="Well" IsEditable="false" />
@@ -272,8 +275,20 @@
         _loading = true;
         try
         {
+            try
+            {
+                var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+                if (summary != null)
+                    _fieldName = summary.FieldName ?? _fieldName;
+            }
+            catch
+            {
+                // Field name is supplemental.
+            }
+
             // Load development wells
-            var wells = await ApiClient.GetAsync<List<WellDto>>("api/field/current/development/wells") ?? new();            if (wells == null || wells.Count == 0)
+            var wells = await DevelopmentService.GetWellsAsync();
+            if (wells.Count == 0)
             {
                 _loading = false;
                 return;
@@ -289,7 +304,7 @@
                 {
                     var perf = perfs[i];
                     return new WellAllocation(
-                        wellName: w.WellName ?? w.UWI ?? "Unknown",
+                        wellName: w.WELL_NAME ?? w.UWI ?? "Unknown",
                         uwi:      w.UWI ?? string.Empty,
                         testRate: perf?.OilRate ?? 0,
                         uptime:   1.0,
@@ -303,7 +318,7 @@
 
             // Compute field total as sum of well rates; allocation factor from ratios
             _fieldTotal = _allocations.Sum(a => a.TestRateBopd);
-            RecalculateAllocation();
+            ApplyCalculatedAllocation(showToast: false);
         }
         catch (Exception)
         {
@@ -312,13 +327,12 @@
         finally { _loading = false; }
     }
 
-    private async Task<WellPerfDto?> LoadWellPerfAsync(string uwi)
+    private async Task<ProductionWellPerformanceDto?> LoadWellPerfAsync(string uwi)
     {
         if (string.IsNullOrEmpty(uwi)) return null;
         try
         {
-            return await ApiClient.GetAsync<WellPerfDto>(
-                $"api/field/current/production/wells/{Uri.EscapeDataString(uwi)}/performance");
+            return await ProductionService.GetWellPerformanceAsync(uwi);
         }
         catch { return null; }
     }
@@ -327,14 +341,20 @@
     {
         try
         {
-            await ApiClient.PatchAsync<AllocationPatchRequest, object>(
-                $"api/field/current/production/allocation/{Uri.EscapeDataString(_selectedPeriod)}/wells/{Uri.EscapeDataString(item.Uwi)}",
-                new AllocationPatchRequest
+            var success = await ProductionService.PatchAllocationAsync(
+                _selectedPeriod,
+                item.Uwi,
+                new ProductionAllocationPatchRequest
                 {
                     AllocatedOilBopd   = item.AllocatedOilBopd,
                     AllocatedGasMmscfd = item.AllocatedGasMmscfd,
                     AllocatedWaterBopd = item.AllocatedWaterBopd,
                 });
+
+            if (!success)
+            {
+                Snackbar.Add($"Allocation change for {item.WellName} could not be synced.", Severity.Warning);
+            }
         }
         catch
         {
@@ -342,14 +362,18 @@
         }
     }
 
-    private class AllocationPatchRequest
+    private async Task<DataGridEditFormAction> CommitAllocationChangesAsync(WellAllocation item)
     {
-        public double AllocatedOilBopd   { get; set; }
-        public double AllocatedGasMmscfd { get; set; }
-        public double AllocatedWaterBopd { get; set; }
+        await OnAllocationChanged(item);
+        return DataGridEditFormAction.Close;
     }
 
     private void RecalculateAllocation()
+    {
+        ApplyCalculatedAllocation(showToast: true);
+    }
+
+    private void ApplyCalculatedAllocation(bool showToast)
     {
         var totalTestWeighted = _allocations.Sum(a => a.TestRateBopd * a.UptimeFraction);
         foreach (var a in _allocations)
@@ -361,26 +385,17 @@
                 ? Math.Round(a.AllocationFactor * _fieldTotal)
                 : a.TestRateBopd;
         }
-        Snackbar.Add("Allocation recalculated from well test ratios", Severity.Info);
+
+        if (showToast)
+        {
+            Snackbar.Add("Allocation recalculated from well test ratios", Severity.Info);
+        }
     }
 
     private void SubmitAllocation()
     {
         _allocationStatus = "SUBMITTED";
         Snackbar.Add($"Allocation for {_selectedPeriod} submitted for approval", Severity.Success);
-    }
-
-    private class WellDto
-    {
-        public string? UWI      { get; set; }
-        public string? WellName { get; set; }
-    }
-
-    private class WellPerfDto
-    {
-        public double OilRate   { get; set; }
-        public double GasRate   { get; set; }
-        public double WaterRate { get; set; }
     }
 
     private class WellAllocation

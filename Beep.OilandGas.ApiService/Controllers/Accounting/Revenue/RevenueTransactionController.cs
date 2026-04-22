@@ -76,7 +76,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for revenue transaction");
-                return StatusCode(500, new { error = "Revenue transaction created but GL posting failed"});
+                    return StatusCode(500, new { error = "Revenue transaction created but GL posting failed." });
             }
             catch (Exception ex)
             {

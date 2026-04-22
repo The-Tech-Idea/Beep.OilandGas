@@ -2,6 +2,7 @@
 @using Beep.OilandGas.Models.Data.WorkOrder
 @using Beep.OilandGas.Web.Services
 @inject ApiClient ApiClient
+@inject IWorkOrderServiceClient WorkOrderService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -145,10 +146,7 @@
         _error   = null;
         try
         {
-            var from  = _weekStart.ToString("o");
-            var to    = _weekStart.AddDays(28).ToString("o");
-            _slots = await ApiClient.GetAsync<List<CalendarSlot>>(
-                $"/api/field/current/workorder/calendar?from={Uri.EscapeDataString(from)}&to={Uri.EscapeDataString(to)}") ?? new();
+            _slots = await WorkOrderService.GetCalendarAsync(_weekStart, _weekStart.AddDays(28));
         }
         catch (Exception) { _error = "Failed to load calendar."; Snackbar.Add(_error, Severity.Error); }
         finally { _loading = false; }

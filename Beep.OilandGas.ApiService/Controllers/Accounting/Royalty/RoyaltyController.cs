@@ -80,7 +80,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for royalty payment");
-                return StatusCode(500, new { error = "Royalty payment created but GL posting failed"});
+                    return StatusCode(500, new { error = "Royalty payment created but GL posting failed." });
             }
             catch (Exception ex)
             {
@@ -104,7 +104,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
                     return BadRequest(ModelState);
 
                 if (string.IsNullOrEmpty(request.FieldId))
-                    return BadRequest(new { error = "FieldId is required" });
+                        return BadRequest(new { error = "Field ID is required." });
 
                 var startDate = request.CALCULATION_DATE.Date;
                 var endDate = request.CALCULATION_DATE.Date;
@@ -200,7 +200,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
             try
             {
                 if (string.IsNullOrEmpty(ownerId))
-                    return BadRequest(new { error = "ownerId parameter is required" });
+                        return BadRequest(new { error = "Owner ID parameter is required." });
 
                 var payments = _service.RoyaltyManager.GetPaymentsByOwner(ownerId).ToList();
                 var dtos = payments.Select(MapToRoyaltyPaymentDto).ToList();

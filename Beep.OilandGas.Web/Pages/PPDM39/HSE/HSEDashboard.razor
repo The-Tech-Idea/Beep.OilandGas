@@ -1,7 +1,7 @@
 ﻿@page "/ppdm39/hse"
 @using Beep.OilandGas.Models.Data.HSE
 @using Beep.OilandGas.Web.Services
-@inject ApiClient ApiClient
+@inject IHSEServiceClient HSEClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -246,9 +246,8 @@
         _error   = null;
         try
         {
-            _incidents = await ApiClient.GetAsync<List<HSEIncidentRecord>>(
-                "/api/field/current/hse/incidents") ?? new();
-            _kpi = await ApiClient.GetAsync<HSEKPISet>("/api/field/current/hse/kpi");
+            _incidents = await HSEClient.GetIncidentsAsync();
+            _kpi = await HSEClient.GetKpisAsync();
         }
         catch (Exception) { _error = "Failed to load HSE data."; Snackbar.Add(_error, Severity.Error); }
         finally { _loading = false; }
@@ -282,8 +281,7 @@
                 Description:  _report.Description,
                 Jurisdiction: _report.Jurisdiction);
 
-            await ApiClient.PostAsync<ReportIncidentRequest, HSEIncidentRecord>(
-                "/api/field/current/hse/incidents", request);
+            await HSEClient.ReportIncidentAsync(request);
 
             _showReport = false;
             await LoadAsync();

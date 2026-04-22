@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Calculations;
 
 namespace Beep.OilandGas.EnhancedRecovery.Services
 {
@@ -38,6 +39,18 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         /// Gets gas injection operations.
         /// </summary>
         Task<List<GasInjection>> GetGasInjectionOperationsAsync(string? fieldId = null);
+
+        /// <summary>
+        /// Calculates pilot economics for an EOR implementation.
+        /// </summary>
+        Task<EOREconomicAnalysis> AnalyzeEOReconomicsAsync(
+            string fieldId,
+            double estimatedIncrementalOil,
+            double oilPrice,
+            double capitalCost,
+            double operatingCostPerBarrel,
+            int projectLifeYears,
+            double discountRate = 0.10);
     }
 }
 

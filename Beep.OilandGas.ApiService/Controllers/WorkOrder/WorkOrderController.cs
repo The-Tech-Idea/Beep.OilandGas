@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Beep.OilandGas.LifeCycle.Services.Accounting;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.WorkOrder;
 using Microsoft.AspNetCore.Authorization;
@@ -16,6 +17,7 @@ public class WorkOrderController : ControllerBase
     private readonly IContractorManagementService _contractors;
     private readonly ICostCaptureService          _costs;
     private readonly IInspectionService           _inspection;
+    private readonly WorkOrderAccountingService   _accounting;
     private readonly IFieldOrchestrator           _fieldOrchestrator;
     private readonly ILogger<WorkOrderController> _logger;
 
@@ -25,6 +27,7 @@ public class WorkOrderController : ControllerBase
         IContractorManagementService contractors,
         ICostCaptureService costs,
         IInspectionService inspection,
+        WorkOrderAccountingService accounting,
         IFieldOrchestrator fieldOrchestrator,
         ILogger<WorkOrderController> logger)
     {
@@ -33,6 +36,7 @@ public class WorkOrderController : ControllerBase
         _contractors       = contractors;
         _costs             = costs;
         _inspection        = inspection;
+        _accounting        = accounting;
         _fieldOrchestrator = fieldOrchestrator;
         _logger            = logger;
     }
@@ -45,7 +49,7 @@ public class WorkOrderController : ControllerBase
         [FromQuery] string? state = null, [FromQuery] string? woSubType = null)
     {
         var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest("No active field selected.");
+            if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest(new { error = "No active field selected." });
         var result = await _workOrders.GetByFieldAsync(fieldId, state, woSubType);
         return Ok(result);
     }
@@ -54,10 +58,11 @@ public class WorkOrderController : ControllerBase
     [HttpGet("{instanceId}")]
     public async Task<ActionResult<WorkOrderDetailModel>> GetDetailAsync(string instanceId)
     {
+        if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
         var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest("No active field selected.");
+        if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest(new { error = "No active field selected." });
         var detail = await _workOrders.GetByIdAsync(fieldId, instanceId);
-        if (detail is null) return NotFound();
+        if (detail is null) return NotFound(new { error = $"Work order {instanceId} not found." });
         return Ok(detail);
     }
 
@@ -68,7 +73,7 @@ public class WorkOrderController : ControllerBase
     {
         var userId  = UserId();
         var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest("No active field selected.");
+        if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest(new { error = "No active field selected." });
 
         request.FieldId = fieldId;
         var result = await _workOrders.CreateAsync(request, userId);
@@ -80,9 +85,10 @@ public class WorkOrderController : ControllerBase
     public async Task<ActionResult<WorkOrderSummary>> TransitionAsync(
         string instanceId, [FromBody] TransitionWorkOrderRequest request)
     {
-        var userId  = UserId();
+        if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
+        var userId = UserId();
         var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest("No active field selected.");
+        if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest(new { error = "No active field selected." });
 
         try
         {
@@ -100,10 +106,11 @@ public class WorkOrderController : ControllerBase
     [HttpGet("{instanceId}/transitions")]
     public async Task<ActionResult<List<string>>> GetTransitionsAsync(string instanceId)
     {
+        if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
         var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest("No active field selected.");
+        if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest(new { error = "No active field selected." });
         var detail = await _workOrders.GetByIdAsync(fieldId, instanceId);
-        if (detail is null) return NotFound();
+        if (detail is null) return NotFound(new { error = $"Work order {instanceId} not found." });
         var transitions = _workOrders.GetAvailableTransitions(detail.State, detail.WoSubType);
         return Ok(transitions);
     }
@@ -112,8 +119,9 @@ public class WorkOrderController : ControllerBase
     [Authorize(Roles = "Supervisor,Manager,Admin")]
     public async Task<IActionResult> DeleteAsync(string instanceId)
     {
+        if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
         var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest("No active field selected.");
+        if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest(new { error = "No active field selected." });
         await _workOrders.DeleteAsync(fieldId, instanceId, UserId());
         return NoContent();
     }
@@ -150,7 +158,7 @@ public class WorkOrderController : ControllerBase
         [FromQuery] DateTime? to   = null)
     {
         var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest("No active field selected.");
+        if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest(new { error = "No active field selected." });
         var start  = from ?? DateTime.UtcNow.AddDays(-7);
         var end    = to   ?? DateTime.UtcNow.AddDays(30);
         var result = await _scheduling.GetFieldCalendarAsync(fieldId, start, end);
@@ -164,6 +172,7 @@ public class WorkOrderController : ControllerBase
         [FromQuery] DateTime from,
         [FromQuery] DateTime to)
     {
+            if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
         var conflicts = await _scheduling.GetConflictsAsync(equipmentId, from, to, instanceId);
         return Ok(conflicts);
     }
@@ -193,6 +202,7 @@ public class WorkOrderController : ControllerBase
         [FromQuery] string stepId)
     {
         if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
+            if (string.IsNullOrWhiteSpace(baId)) return BadRequest(new { error = "Business associate ID is required." });
         await _contractors.RemoveContractorAsync(instanceId, stepId, baId, UserId());
         return NoContent();
     }
@@ -203,6 +213,7 @@ public class WorkOrderController : ControllerBase
         [FromQuery] string woType,
         [FromQuery] string jurisdiction = "USA")
     {
+            if (string.IsNullOrWhiteSpace(baId)) return BadRequest(new { error = "Business associate ID is required." });
         var result = await _contractors.ValidateContractorAsync(baId, woType, jurisdiction);
         return Ok(result);
     }
@@ -215,6 +226,60 @@ public class WorkOrderController : ControllerBase
         if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
         var result = await _costs.GetVarianceSummaryAsync(instanceId);
         return Ok(result);
+    }
+
+    [HttpGet("{instanceId}/afe")]
+    public async Task<ActionResult<object>> GetLinkedAfeAsync(string instanceId)
+    {
+        if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
+
+        var afe = await _accounting.GetAFEForWorkOrderAsync(instanceId);
+        if (afe == null)
+            return NotFound(new { error = $"No AFE linked to work order {instanceId}." });
+
+        return Ok(new
+        {
+            AfeId = afe.AFE_ID,
+            AfeNumber = afe.AFE_NUMBER,
+            AfeName = afe.AFE_NAME,
+            EstimatedCost = afe.ESTIMATED_COST,
+            ActualCost = afe.ACTUAL_COST,
+            Status = afe.STATUS,
+            Description = afe.DESCRIPTION,
+            WorkOrderId = instanceId
+        });
+    }
+
+    [HttpPost("{instanceId}/afe")]
+    public async Task<ActionResult<object>> CreateOrLinkAfeAsync(string instanceId)
+    {
+        if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
+
+        try
+        {
+            var afe = await _accounting.CreateOrLinkAFEAsync(instanceId, UserId());
+            return Ok(new
+            {
+                AfeId = afe.AFE_ID,
+                AfeNumber = afe.AFE_NUMBER,
+                AfeName = afe.AFE_NAME,
+                EstimatedCost = afe.ESTIMATED_COST,
+                ActualCost = afe.ACTUAL_COST,
+                Status = afe.STATUS,
+                Description = afe.DESCRIPTION,
+                WorkOrderId = instanceId
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Cannot create or link AFE for work order {WorkOrderId}", instanceId);
+            return BadRequest(new { error = "Unable to create or link an AFE for this work order." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating or linking AFE for work order {WorkOrderId}", instanceId);
+            return StatusCode(500, new { error = "An internal error occurred." });
+        }
     }
 
     [HttpPost("{instanceId}/costs/afe")]

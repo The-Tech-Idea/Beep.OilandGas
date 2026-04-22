@@ -159,7 +159,11 @@ namespace Beep.OilandGas.GasProperties.Services
             }
 
             // Save components
-            if (composition.Components != null && composition.Components.Count > 0)
+            var componentsToPersist = composition.Components != null && composition.Components.Count > 0
+                ? composition.Components
+                : BuildComponentsFromFixedFractions(composition);
+
+            if (componentsToPersist.Count > 0)
             {
                 // Create repository for components
                 var componentRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
@@ -177,17 +181,18 @@ namespace Beep.OilandGas.GasProperties.Services
                 }
 
                 // Insert new components
-                foreach (var component in composition.Components)
+                foreach (var component in componentsToPersist)
                 {
                     var componentId = _defaults.FormatIdForTable("GAS_COMPONENT", Guid.NewGuid().ToString());
-                    var newComponent = new GasComposition
+                    var componentName = string.IsNullOrWhiteSpace(component.ComponentName) ? component.Name : component.ComponentName;
+                    var newComponent = new GAS_COMPOSITION_COMPONENT
                     {
-                        ComponentId = componentId,
-                        CompositionId = composition.CompositionId,
-                        CompositionName = component.ComponentName ?? string.Empty,
-                        TotalMoleFraction = component.MoleFraction,
-                        MolecularWeight = component.MolecularWeight,
-                        ACTIVE_IND = "Y"
+                        GAS_COMPONENT_ID = componentId,
+                        GAS_COMPOSITION_ID = composition.CompositionId,
+                        COMPONENT_NAME = componentName ?? string.Empty,
+                        MOLE_FRACTION = component.MoleFraction,
+                        MOLECULAR_WEIGHT = component.MolecularWeight,
+                        COMPOSITION_DATE = composition.CompositionDate
                     };
 
                     // Prepare for insert (sets common columns)
@@ -265,6 +270,9 @@ namespace Beep.OilandGas.GasProperties.Services
                         MolecularWeight = componentEntity.MOLECULAR_WEIGHT ?? 0
                     });
                 }
+
+                ApplyFixedFractions(composition, composition.Components);
+                composition.TotalMoleFraction = composition.Components.Sum(component => component.MoleFraction);
             }
 
             _logger?.LogInformation("Successfully retrieved gas composition {CompositionId} with {ComponentCount} components", 
@@ -272,6 +280,115 @@ namespace Beep.OilandGas.GasProperties.Services
             
             return composition;
         }
+
+        private static List<GasComponent> BuildComponentsFromFixedFractions(GasComposition composition)
+        {
+            var components = new List<GasComponent>();
+
+            AddComponentIfPositive(components, "Methane", composition.MethaneFraction);
+            AddComponentIfPositive(components, "Ethane", composition.EthaneFraction);
+            AddComponentIfPositive(components, "Propane", composition.PropaneFraction);
+            AddComponentIfPositive(components, "i-Butane", composition.IButaneFraction);
+            AddComponentIfPositive(components, "n-Butane", composition.NButaneFraction);
+            AddComponentIfPositive(components, "i-Pentane", composition.IPentaneFraction);
+            AddComponentIfPositive(components, "n-Pentane", composition.NPentaneFraction);
+            AddComponentIfPositive(components, "C6+", composition.HexanePlusFraction);
+            AddComponentIfPositive(components, "Nitrogen", composition.NitrogenFraction);
+            AddComponentIfPositive(components, "Carbon Dioxide", composition.CarbonDioxideFraction);
+            AddComponentIfPositive(components, "Hydrogen Sulfide", composition.HydrogenSulfideFraction);
+
+            return components;
+        }
+
+        private static void AddComponentIfPositive(List<GasComponent> components, string name, decimal fraction)
+        {
+            if (fraction <= 0)
+            {
+                return;
+            }
+
+            components.Add(new GasComponent
+            {
+                Name = name,
+                ComponentName = name,
+                MoleFraction = fraction
+            });
+        }
+
+        private static void ApplyFixedFractions(GasComposition composition, IEnumerable<GasComponent> components)
+        {
+            composition.MethaneFraction = 0m;
+            composition.EthaneFraction = 0m;
+            composition.PropaneFraction = 0m;
+            composition.IButaneFraction = 0m;
+            composition.NButaneFraction = 0m;
+            composition.IPentaneFraction = 0m;
+            composition.NPentaneFraction = 0m;
+            composition.HexanePlusFraction = 0m;
+            composition.NitrogenFraction = 0m;
+            composition.CarbonDioxideFraction = 0m;
+            composition.HydrogenSulfideFraction = 0m;
+
+            foreach (var component in components)
+            {
+                var normalizedName = NormalizeComponentName(component.ComponentName);
+                switch (normalizedName)
+                {
+                    case "methane":
+                    case "c1":
+                        composition.MethaneFraction = component.MoleFraction;
+                        break;
+                    case "ethane":
+                    case "c2":
+                        composition.EthaneFraction = component.MoleFraction;
+                        break;
+                    case "propane":
+                    case "c3":
+                        composition.PropaneFraction = component.MoleFraction;
+                        break;
+                    case "ibutane":
+                    case "ic4":
+                        composition.IButaneFraction = component.MoleFraction;
+                        break;
+                    case "nbutane":
+                    case "nc4":
+                        composition.NButaneFraction = component.MoleFraction;
+                        break;
+                    case "ipentane":
+                    case "ic5":
+                        composition.IPentaneFraction = component.MoleFraction;
+                        break;
+                    case "npentane":
+                    case "nc5":
+                        composition.NPentaneFraction = component.MoleFraction;
+                        break;
+                    case "c6+":
+                    case "hexaneplus":
+                    case "c6plus":
+                        composition.HexanePlusFraction = component.MoleFraction;
+                        break;
+                    case "nitrogen":
+                    case "n2":
+                        composition.NitrogenFraction = component.MoleFraction;
+                        break;
+                    case "carbondioxide":
+                    case "co2":
+                        composition.CarbonDioxideFraction = component.MoleFraction;
+                        break;
+                    case "hydrogensulfide":
+                    case "h2s":
+                        composition.HydrogenSulfideFraction = component.MoleFraction;
+                        break;
+                }
+            }
+        }
+
+        private static string NormalizeComponentName(string? componentName) =>
+            (componentName ?? string.Empty)
+                .Trim()
+                .Replace("-", string.Empty, StringComparison.Ordinal)
+                .Replace(" ", string.Empty, StringComparison.Ordinal)
+                .ToLowerInvariant();
 
         /// <summary>
         /// Analyzes gas viscosity using Lee-Gonzalez-Eakin correlation.

@@ -2,6 +2,7 @@
 @page "/development/well-design/{Id}"
 @page "/development/well-design/new"
 @inject ApiClient ApiClient
+@inject IDevelopmentServiceClient DevelopmentServiceClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -277,6 +278,22 @@
                                     Assign Rig
                                 </MudButton>
                             }
+                            @if (_well.Status is "APPROVED" or "DRILLING" or "TD_REACHED" or "COMPLETE")
+                            {
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.PendingActions"
+                                           FullWidth="true" OnClick="OpenConstructionProgress">
+                                    Track Construction Progress
+                                </MudButton>
+                            }
+                            @if (_well.Status is "APPROVED" or "DRILLING" or "TD_REACHED" or "COMPLETE")
+                            {
+                                <MudButton Variant="Variant.Outlined" Color="Color.Warning"
+                                           StartIcon="@Icons.Material.Filled.Construction"
+                                           FullWidth="true" OnClick="OpenDrillingWorkflow">
+                                    @GetDrillingWorkflowActionLabel()
+                                </MudButton>
+                            }
                             @if (_well.Status == "APPROVED")
                             {
                                 <MudButton Variant="Variant.Filled" Color="Color.Success"
@@ -360,16 +377,15 @@
 
         try
         {
-            var wells = await ApiClient.GetAsync<List<WELL>>(
-                "/api/field/current/development/wells") ?? new();
+            var wells = await DevelopmentServiceClient.GetWellsAsync();
             if (wells.Count > 0)
             {
                 _wells = wells.Select(w => new WellDesignRow(
                     w.UWI ?? string.Empty,
                     w.WELL_NAME ?? w.UWI ?? "Unknown",
-                    w.WELL_LEVEL_TYPE ?? "Producer",
+                    w.WELL_TYPE ?? w.CURRENT_CLASS ?? w.WELL_LEVEL_TYPE ?? "Producer",
                     string.Empty,
-                    w.STATUS_TYPE ?? "DRAFT",
+                    w.CURRENT_STATUS ?? w.STATUS_TYPE ?? "DRAFT",
                     (decimal)(w.FINAL_TD),
                     string.Empty
                 )).ToList();
@@ -396,18 +412,18 @@
     {
         try
         {
-            var w = await ApiClient.GetAsync<WELL>(
-                $"/api/field/current/development/wells/{id}");
+            var w = await DevelopmentServiceClient.GetWellAsync(id);
             if (w != null)
             {
                 _well = new WellDetail
                 {
                     Id           = w.UWI ?? id,
                     WellName     = w.WELL_NAME ?? w.UWI ?? id,
-                    Type         = w.WELL_LEVEL_TYPE ?? "Producer",
-                    Status       = w.STATUS_TYPE ?? "DRAFT",
+                    Type         = w.WELL_TYPE ?? w.CURRENT_CLASS ?? w.WELL_LEVEL_TYPE ?? "Producer",
+                    Status       = w.CURRENT_STATUS ?? w.STATUS_TYPE ?? "DRAFT",
                     TargetZone   = string.Empty,
                     TargetDepthM = (int)(w.FINAL_TD),
+                    CurrentDepthM = (int)(w.DRILL_TD),
                 };
             }
         }
@@ -461,6 +477,28 @@
         _showAssignRigDialog = true;
     }
 
+    private void OpenDrillingWorkflow()
+    {
+        if (string.IsNullOrWhiteSpace(_well.Id))
+        {
+            Snackbar.Add("A saved well is required before launching drilling operations.", Severity.Warning);
+            return;
+        }
+
+        NavigationManager.NavigateTo(BuildDrillingWorkflowHref());
+    }
+
+    private void OpenConstructionProgress()
+    {
+        if (string.IsNullOrWhiteSpace(_well.Id))
+        {
+            Snackbar.Add("A saved well is required before opening construction progress.", Severity.Warning);
+            return;
+        }
+
+        NavigationManager.NavigateTo(BuildConstructionProgressHref());
+    }
+
     // \u2500\u2500 Rig assignment dialog state \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     private bool      _showAssignRigDialog = false;
     private bool      _assigningRig        = false;
@@ -477,8 +515,17 @@
         _assigningRig = true;
         try
         {
-            var payload = new { RigName = _rigName, MobDate = _rigMobDate };
-            await ApiClient.PutAsync<object>($"/api/field/current/development/wells/{_well.Id}/rig", payload);
+            var success = await DevelopmentServiceClient.AssignRigAsync(_well.Id, new DevelopmentAssignRigRequest
+            {
+                RigName = _rigName,
+                MobDate = _rigMobDate
+            });
+
+            if (!success)
+            {
+                throw new InvalidOperationException("The rig assignment request did not complete successfully.");
+            }
+
             _well.RigAssigned = _rigName;
             _showAssignRigDialog = false;
             Snackbar.Add($"Rig {_rigName} assigned to {_well.WellName}.", Severity.Success);
@@ -507,6 +554,72 @@
         _well.Status = "COMPLETE";
         Snackbar.Add($"{_well.WellName} marked complete.", Severity.Success);
     }
+
+    private string GetDrillingWorkflowActionLabel() =>
+        _well.Status == "APPROVED"
+            ? "Launch Drilling Operation"
+            : "Open Drilling Tracker";
+
+    private string BuildDrillingWorkflowHref()
+    {
+        var query = new List<string>
+        {
+            $"wellUwi={Uri.EscapeDataString(_well.Id)}",
+            $"wellName={Uri.EscapeDataString(_well.WellName)}",
+            $"sourceProcess={Uri.EscapeDataString("DEVELOPMENT")}",
+            $"returnTo={Uri.EscapeDataString(BuildWellDesignReturnTo())}"
+        };
+
+        if (_well.TargetDepthM > 0)
+        {
+            query.Add($"targetDepth={Uri.EscapeDataString(_well.TargetDepthM.ToString(System.Globalization.CultureInfo.InvariantCulture))}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(_well.RigAssigned))
+        {
+            query.Add($"rigName={Uri.EscapeDataString(_well.RigAssigned)}");
+        }
+
+        if (_well.Status == "APPROVED")
+        {
+            query.Insert(0, "openCreate=true");
+        }
+
+        return "/ppdm39/operations/drillingoperations?" + string.Join("&", query);
+    }
+
+    private string BuildConstructionProgressHref()
+    {
+        var query = new List<string>
+        {
+            $"wellUwi={Uri.EscapeDataString(_well.Id)}",
+            $"wellName={Uri.EscapeDataString(_well.WellName)}",
+            $"sourceProcess={Uri.EscapeDataString("DEVELOPMENT")}",
+            $"returnTo={Uri.EscapeDataString(BuildWellDesignReturnTo())}"
+        };
+
+        if (_well.TargetDepthM > 0)
+        {
+            query.Add($"targetDepth={Uri.EscapeDataString(_well.TargetDepthM.ToString(System.Globalization.CultureInfo.InvariantCulture))}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(_well.RigAssigned))
+        {
+            query.Add($"rigName={Uri.EscapeDataString(_well.RigAssigned)}");
+        }
+
+        if (_well.Status == "APPROVED")
+        {
+            query.Add("openDrillingCreate=true");
+        }
+
+        return "/development/construction?" + string.Join("&", query);
+    }
+
+    private string BuildWellDesignReturnTo() =>
+        string.IsNullOrWhiteSpace(_well.Id)
+            ? "/development/well-design"
+            : $"/development/well-design/{Uri.EscapeDataString(_well.Id)}";
 
     private class WellDesignRow
     {

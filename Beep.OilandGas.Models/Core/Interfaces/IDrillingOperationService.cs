@@ -16,21 +16,21 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// </summary>
         /// <param name="wellUWI">Optional well UWI to filter operations</param>
         /// <returns>List of drilling operations</returns>
-        Task<List<DRILLING_OPERATION>> GetDrillingOperationsAsync(string? wellUWI = null);
+        Task<List<DRILLING_OPERATION>> GetDrillingOperationsAsync(string? wellUWI = null, string? fieldId = null);
 
         /// <summary>
         /// Gets a drilling operation by ID (UWI).
         /// </summary>
         /// <param name="operationId">The operation ID (UWI)</param>
         /// <returns>The drilling operation, or null if not found</returns>
-        Task<DRILLING_OPERATION?> GetDrillingOperationAsync(string operationId);
+        Task<DRILLING_OPERATION?> GetDrillingOperationAsync(string operationId, string? fieldId = null);
 
         /// <summary>
         /// Creates a new drilling operation.
         /// </summary>
         /// <param name="createDto">The drilling operation creation data</param>
         /// <returns>The created drilling operation</returns>
-        Task<DRILLING_OPERATION> CreateDrillingOperationAsync(CREATE_DRILLING_OPERATION createDto);
+        Task<DRILLING_OPERATION> CreateDrillingOperationAsync(CREATE_DRILLING_OPERATION createDto, string? fieldId = null, string? userId = null);
 
         /// <summary>
         /// Updates an existing drilling operation.
@@ -38,14 +38,14 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="operationId">The operation ID (UWI)</param>
         /// <param name="updateDto">The drilling operation update data</param>
         /// <returns>The updated drilling operation</returns>
-        Task<DRILLING_OPERATION> UpdateDrillingOperationAsync(string operationId, UpdateDrillingOperation updateDto);
+        Task<DRILLING_OPERATION> UpdateDrillingOperationAsync(string operationId, UpdateDrillingOperation updateDto, string? fieldId = null, string? userId = null);
 
         /// <summary>
         /// Gets all drilling reports for a specific operation.
         /// </summary>
         /// <param name="operationId">The operation ID (UWI)</param>
         /// <returns>List of drilling reports</returns>
-        Task<List<DRILLING_REPORT>> GetDrillingReportsAsync(string operationId);
+        Task<List<DRILLING_REPORT>> GetDrillingReportsAsync(string operationId, string? fieldId = null);
 
         /// <summary>
         /// Creates a new drilling report for an operation.
@@ -53,7 +53,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="operationId">The operation ID (UWI)</param>
         /// <param name="createDto">The drilling report creation data</param>
         /// <returns>The created drilling report</returns>
-        Task<DRILLING_REPORT> CreateDrillingReportAsync(string operationId, CreateDrillingReport createDto);
+        Task<DRILLING_REPORT> CreateDrillingReportAsync(string operationId, CreateDrillingReport createDto, string? fieldId = null, string? userId = null);
     }
 }
 

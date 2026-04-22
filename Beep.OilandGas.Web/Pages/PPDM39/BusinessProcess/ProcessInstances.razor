@@ -1,5 +1,5 @@
 @page "/ppdm39/process/instances"
-@inject ApiClient ApiClient
+@inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -103,7 +103,8 @@
     {
         try
         {
-            var data = await ApiClient.GetAsync<List<ProcessInstanceSummary>>("/api/field/current/process/instances") ?? new();            if (data != null)
+            var data = await BusinessProcessClient.GetInstancesAsync();
+            if (data.Count > 0)
             {
                 _instances = data.Select(i => new InstanceRow(
                     i.InstanceId,
@@ -115,6 +116,10 @@
                     i.StartedAt,
                     i.StartedBy
                 )).ToList();
+            }
+            else
+            {
+                _instances = new();
             }
         }
         catch

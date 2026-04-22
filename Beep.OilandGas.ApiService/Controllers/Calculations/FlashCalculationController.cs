@@ -45,7 +45,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             try
             {
                 if (request.Conditions == null)
-                    return BadRequest(new { error = "Conditions are required" });
+                        return BadRequest(new { error = "Conditions are required." });
                 var result = _service.PerformMultiStageFlash(request.Conditions, request.Stages);
                 return Ok(result);
             }

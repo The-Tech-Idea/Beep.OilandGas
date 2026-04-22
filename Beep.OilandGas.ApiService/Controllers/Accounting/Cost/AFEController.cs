@@ -119,7 +119,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
 
                 var afe = await repository.GetByIdAsync(id) as AFE;
                 if (afe == null)
-                    return NotFound(new { error = $"AFE with ID {id} not found" });
+                    return NotFound(new { error = $"AFE with ID {id} not found." });
 
                 return Ok(new
                 {
@@ -149,7 +149,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
                 var connName   = _service.DefaultConnectionName;
                 var repository = _service.GetRepository(typeof(AFE), connName, "AFE");
                 var afe        = await repository.GetByIdAsync(id) as AFE;
-                if (afe == null) return NotFound(new { error = $"AFE {id} not found" });
+                    if (afe == null) return NotFound(new { error = $"AFE {id} not found." });
 
                 afe.ACTIVE_IND        = "A";  // approved
                 afe.ROW_CHANGED_BY    = userId ?? "system";
@@ -171,7 +171,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
                 var connName   = _service.DefaultConnectionName;
                 var repository = _service.GetRepository(typeof(AFE), connName, "AFE");
                 var afe        = await repository.GetByIdAsync(id) as AFE;
-                if (afe == null) return NotFound(new { error = $"AFE {id} not found" });
+                    if (afe == null) return NotFound(new { error = $"AFE {id} not found." });
 
                 afe.ACTIVE_IND        = "R";  // returned
                 afe.ROW_CHANGED_BY    = userId ?? "system";

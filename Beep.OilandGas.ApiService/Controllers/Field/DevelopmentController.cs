@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.LifeCycle;
 using Beep.OilandGas.Models.Data.Production;
 using Beep.OilandGas.Models.Data.Development;
@@ -13,22 +14,7 @@ using Microsoft.Extensions.Logging;
 namespace Beep.OilandGas.ApiService.Controllers.Field
 {
     /// <summary>
-    /// API controller for Development phase business workflows, field-scoped
-    /// 
-    /// NOTE: For CRUD operations (Create, Read, Update, Delete), please use DataManagementController:
-    /// - Get pools: GET /api/datamanagement/POOL
-    /// - Get pool: GET /api/datamanagement/POOL/{id}
-    /// - Create pool: POST /api/datamanagement/POOL
-    /// - Update pool: PUT /api/datamanagement/POOL/{id}
-    /// - Get development wells: GET /api/datamanagement/WELL with filters
-    /// - Create development well: POST /api/datamanagement/WELL
-    /// - Get wellbores: GET /api/datamanagement/WELL with filters
-    /// - Get facilities: GET /api/datamanagement/FACILITY
-    /// - Create facility: POST /api/datamanagement/FACILITY
-    /// - Get pipelines: GET /api/datamanagement/PIPELINE
-    /// - Create pipeline: POST /api/datamanagement/PIPELINE
-    /// 
-    /// This controller focuses on development workflow processes via DevelopmentProcessService.
+    /// API controller for field-scoped development planning queries, selected CRUD, and workflow processes.
     /// </summary>
     [ApiController]
     [Route("api/field/current/development")]
@@ -60,7 +46,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<List<WELL>>> GetWellsAsync()
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
             try
             {
                 var wells = await _developmentService.GetDevelopmentWellsForFieldAsync(fieldId);
@@ -73,18 +59,168 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }
         }
 
+        /// <summary>GET /api/field/current/development/facilities</summary>
+        [HttpGet("facilities")]
+        public async Task<ActionResult<List<FACILITY>>> GetFacilitiesAsync()
+        {
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
+            try
+            {
+                var facilities = await _developmentService.GetFacilitiesForFieldAsync(fieldId);
+                return Ok(facilities ?? new List<FACILITY>());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching development facilities for field {FieldId}", fieldId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>GET /api/field/current/development/pools</summary>
+        [HttpGet("pools")]
+        public async Task<ActionResult<List<POOL>>> GetPoolsAsync()
+        {
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
+            try
+            {
+                var pools = await _developmentService.GetPoolsForFieldAsync(fieldId);
+                return Ok(pools ?? new List<POOL>());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching development pools for field {FieldId}", fieldId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>POST /api/field/current/development/pools</summary>
+        [HttpPost("pools")]
+        public async Task<ActionResult<POOL>> CreatePoolAsync([FromBody] PoolRequest request, [FromQuery] string? userId = null)
+        {
+            if (request == null)
+                return BadRequest(new { error = "Pool request is required." });
+            if (string.IsNullOrWhiteSpace(request.PoolName))
+                return BadRequest(new { error = "Pool name is required." });
+
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
+
+            try
+            {
+                var resolvedUserId = userId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
+                var pool = await _developmentService.CreatePoolForFieldAsync(fieldId, request, resolvedUserId);
+                return Ok(pool);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating pool for field {FieldId}", fieldId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>PUT /api/field/current/development/pools/{poolId}</summary>
+        [HttpPut("pools/{poolId}")]
+        public async Task<ActionResult<POOL>> UpdatePoolAsync(string poolId, [FromBody] PoolRequest request, [FromQuery] string? userId = null)
+        {
+            if (string.IsNullOrWhiteSpace(poolId))
+                return BadRequest(new { error = "Pool ID is required." });
+            if (request == null)
+                return BadRequest(new { error = "Pool request is required." });
+            if (string.IsNullOrWhiteSpace(request.PoolName))
+                return BadRequest(new { error = "Pool name is required." });
+
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
+
+            try
+            {
+                var resolvedUserId = userId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
+                var pool = await _developmentService.UpdatePoolForFieldAsync(fieldId, poolId, request, resolvedUserId);
+                return Ok(pool);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Pool {PoolId} not found for field {FieldId}", poolId, fieldId);
+                return NotFound(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating pool {PoolId} for field {FieldId}", poolId, fieldId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>POST /api/field/current/development/facilities</summary>
+        [HttpPost("facilities")]
+        public async Task<ActionResult<FacilityResponse>> CreateFacilityAsync([FromBody] FacilityRequest request, [FromQuery] string? userId = null)
+        {
+            if (request == null)
+                return BadRequest(new { error = "Facility request is required." });
+            if (string.IsNullOrWhiteSpace(request.FacilityName))
+                return BadRequest(new { error = "Facility name is required." });
+
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
+
+            try
+            {
+                var resolvedUserId = userId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
+                var facility = await _developmentService.CreateFacilityForFieldAsync(fieldId, request, resolvedUserId);
+                return Ok(facility);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating facility for field {FieldId}", fieldId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>PUT /api/field/current/development/facilities/{facilityId}</summary>
+        [HttpPut("facilities/{facilityId}")]
+        public async Task<ActionResult<FacilityResponse>> UpdateFacilityAsync(string facilityId, [FromBody] FacilityRequest request, [FromQuery] string? userId = null)
+        {
+            if (string.IsNullOrWhiteSpace(facilityId))
+                return BadRequest(new { error = "Facility ID is required." });
+            if (request == null)
+                return BadRequest(new { error = "Facility request is required." });
+            if (string.IsNullOrWhiteSpace(request.FacilityName))
+                return BadRequest(new { error = "Facility name is required." });
+
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
+
+            try
+            {
+                var resolvedUserId = userId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
+                var facility = await _developmentService.UpdateFacilityForFieldAsync(fieldId, facilityId, request, resolvedUserId);
+                return Ok(facility);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Facility {FacilityId} not found for field {FieldId}", facilityId, fieldId);
+                return NotFound(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating facility {FacilityId} for field {FieldId}", facilityId, fieldId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
         /// <summary>GET /api/field/current/development/wells/{uwi}</summary>
         [HttpGet("wells/{uwi}")]
         public async Task<ActionResult<WELL>> GetWellAsync(string uwi)
         {
             if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
             try
             {
                 var wells = await _developmentService.GetDevelopmentWellsForFieldAsync(fieldId);
                 var well = wells?.FirstOrDefault(w => w.UWI == uwi);
-                if (well == null) return NotFound();
+                if (well == null) return NotFound(new { error = $"Well {uwi} not found in field {fieldId}." });
                 return Ok(well);
             }
             catch (Exception ex)
@@ -112,17 +248,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                        return BadRequest(new { error = "No active field selected." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.PoolId))
                 {
-                    return BadRequest(new { error = "PoolId is required" });
+                        return BadRequest(new { error = "Pool ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var instance = await _developmentProcessService.StartPoolDefinitionProcessAsync(
@@ -149,12 +285,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                 {
-                    return BadRequest(new { error = "InstanceId is required" });
+                        return BadRequest(new { error = "Instance ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var result = await _developmentProcessService.DelineatePoolAsync(
@@ -181,12 +317,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                 {
-                    return BadRequest(new { error = "InstanceId is required" });
+                        return BadRequest(new { error = "Instance ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var result = await _developmentProcessService.AssignReservesAsync(
@@ -213,12 +349,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                 {
-                    return BadRequest(new { error = "InstanceId is required" });
+                        return BadRequest(new { error = "Instance ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var result = await _developmentProcessService.ApprovePoolAsync(request.InstanceId, request.UserId);
@@ -241,12 +377,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                 {
-                    return BadRequest(new { error = "InstanceId is required" });
+                        return BadRequest(new { error = "Instance ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var result = await _developmentProcessService.ActivatePoolAsync(request.InstanceId, request.UserId);
@@ -275,17 +411,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                        return BadRequest(new { error = "No active field selected." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.FacilityId))
                 {
-                    return BadRequest(new { error = "FacilityId is required" });
+                        return BadRequest(new { error = "Facility ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var instance = await _developmentProcessService.StartFacilityDevelopmentProcessAsync(
@@ -318,17 +454,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                        return BadRequest(new { error = "No active field selected." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.WellId))
                 {
-                    return BadRequest(new { error = "WellId is required" });
+                        return BadRequest(new { error = "Well ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var instance = await _developmentProcessService.StartWellDevelopmentProcessAsync(
@@ -361,17 +497,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                        return BadRequest(new { error = "No active field selected." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.PipelineId))
                 {
-                    return BadRequest(new { error = "PipelineId is required" });
+                        return BadRequest(new { error = "Pipeline ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var instance = await _developmentProcessService.StartPipelineDevelopmentProcessAsync(
@@ -397,7 +533,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<DevelopmentDashboardSummary>> GetDashboardSummaryAsync()
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
             try
             {
                 var summary = await _developmentService.GetDevelopmentDashboardSummaryAsync(fieldId);
@@ -415,7 +551,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<List<DevelopmentWellStatusDto>>> GetDashboardWellsAsync()
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
             try
             {
                 var wells = await _developmentService.GetDevelopmentWellStatusAsync(fieldId);
@@ -433,7 +569,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<ConstructionProgressDto>> GetConstructionProgressAsync()
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
             try
             {
                 var wells      = await _developmentService.GetDevelopmentWellsForFieldAsync(fieldId);
@@ -496,7 +632,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         {
             if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
             var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
             try
@@ -504,7 +640,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 // Store rig assignment via well status update using the data service
                 var wells = await _developmentService.GetDevelopmentWellsForFieldAsync(fieldId);
                 var well  = wells?.FirstOrDefault(w => w.UWI == uwi);
-                if (well == null) return NotFound(new { error = $"Well {uwi} not found in field {fieldId}" });
+                    if (well == null) return NotFound(new { error = $"Well {uwi} not found in field {fieldId}." });
 
                 well.STATUS_TYPE    = $"RIG:{request.RigName}";
                 well.ROW_CHANGED_BY   = userId;
@@ -540,7 +676,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<FdpStatusResponse>> GetCurrentFdpAsync()
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
             try
             {
                 var instance = await _developmentProcessService.GetCurrentFdpStatusAsync(fieldId);
@@ -584,7 +720,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             [FromBody] SubmitFdpDraftRequest request)
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
             var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
             try

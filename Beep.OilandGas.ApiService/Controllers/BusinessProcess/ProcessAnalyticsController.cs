@@ -47,7 +47,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrWhiteSpace(fieldId))
-                return BadRequest("No active field selected.");
+                    return BadRequest(new { error = "No active field selected." });
 
             var range  = DateRangeFilter.LastNDays(days);
             var result = await _analytics.GetDashboardSummaryAsync(fieldId, range, exposureHours);
@@ -64,7 +64,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrWhiteSpace(fieldId))
-                return BadRequest("No active field selected.");
+                    return BadRequest(new { error = "No active field selected." });
 
             var result = await _analytics.GetWorkOrderKPIsAsync(fieldId, DateRangeFilter.LastNDays(days));
             return Ok(result);
@@ -80,7 +80,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrWhiteSpace(fieldId))
-                return BadRequest("No active field selected.");
+                    return BadRequest(new { error = "No active field selected." });
 
             var result = await _analytics.GetGateReviewKPIsAsync(fieldId, DateRangeFilter.LastNDays(days));
             return Ok(result);
@@ -99,7 +99,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrWhiteSpace(fieldId))
-                return BadRequest("No active field selected.");
+                    return BadRequest(new { error = "No active field selected." });
 
             var result = await _analytics.GetHSEKPIsAsync(
                 fieldId, DateRangeFilter.LastNDays(days), exposureHours);
@@ -116,7 +116,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrWhiteSpace(fieldId))
-                return BadRequest("No active field selected.");
+                    return BadRequest(new { error = "No active field selected." });
 
             var result = await _analytics.GetComplianceKPIsAsync(fieldId, DateRangeFilter.LastNDays(days));
             return Ok(result);
@@ -132,7 +132,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrWhiteSpace(fieldId))
-                return BadRequest("No active field selected.");
+                    return BadRequest(new { error = "No active field selected." });
 
             var result = await _analytics.GetProductionTrendAsync(
                 fieldId, DateRangeFilter.LastNDays(days));
@@ -152,7 +152,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrWhiteSpace(fieldId))
-                return BadRequest("No active field selected.");
+                    return BadRequest(new { error = "No active field selected." });
 
             var result = await _analytics.GetReservesMaturationAsync(fieldId);
             return Ok(result);

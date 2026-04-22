@@ -1,7 +1,9 @@
 ﻿@page "/production"
+@using Beep.OilandGas.Models.Data.Production
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject ApiClient ApiClient
+@inject IProductionServiceClient ProductionService
 
 <PageTitle>Daily Operations Center</PageTitle>
 
@@ -242,10 +244,6 @@
 
     private List<ProductionWellStatusDto> _wells = new();
 
-    private record ProductionWellStatusDto(
-        string WellId, string WellName, string Status,
-        double OilRate, double GasRate, double WaterCut, DateTime? LastTestDate);
-
     private record ProductionAlert(string Message, string WellName, string Time, string Severity);
     private List<ProductionAlert> _alerts = new();
 
@@ -262,17 +260,25 @@
         _loading = true;
         try
         {
-            var summary = await ApiClient.GetAsync<ProductionSummaryApiDto>(
-                "api/field/current/production/dashboard/summary");
+            var summary = await ProductionService.GetDashboardSummaryAsync();
             if (summary != null)
             {
                 _totalWells    = summary.TotalWells;
                 _openWorkOrders = summary.OpenWorkOrders;
             }
 
-            var wells = await ApiClient.GetAsync<List<ProductionWellStatusDto>>(
-                "api/field/current/production/dashboard/wells") ?? new();
-            _wells = wells;
+            _wells = await ProductionService.GetDashboardWellsAsync();
+            _alerts = _wells
+                .Where(w => !string.Equals(w.Status, "PRODUCING", StringComparison.OrdinalIgnoreCase) || w.WaterCut >= 60)
+                .Select(w => new ProductionAlert(
+                    string.Equals(w.Status, "PRODUCING", StringComparison.OrdinalIgnoreCase)
+                        ? $"Elevated water cut detected ({w.WaterCut:N0}%)"
+                        : $"{w.Status} well requires operations review",
+                    w.WellName,
+                    w.LastTestDate?.ToString("dd MMM yyyy") ?? "Current",
+                    string.Equals(w.Status, "PRODUCING", StringComparison.OrdinalIgnoreCase) ? "MEDIUM" : "HIGH"))
+                .Take(6)
+                .ToList();
         }
         catch (Exception)
         {
@@ -309,11 +315,4 @@
         "MEDIUM" => Color.Warning,
         _        => Color.Info,
     };
-
-    private class ProductionSummaryApiDto
-    {
-        public string FieldId        { get; set; } = string.Empty;
-        public int    TotalWells     { get; set; }
-        public int    OpenWorkOrders { get; set; }
-    }
 }

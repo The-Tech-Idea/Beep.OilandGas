@@ -1,5 +1,5 @@
 @page "/ppdm39/process/instances/{Id}"
-@inject ApiClient ApiClient
+@inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -122,7 +122,7 @@
     {
         try
         {
-            var inst = await ApiClient.GetAsync<ProcessInstance>($"/api/field/current/process/instances/{Uri.EscapeDataString(Id)}");
+            var inst = await BusinessProcessClient.GetInstanceAsync(Id);
             if (inst != null)
             {
                 _processName     = inst.ProcessId;
@@ -144,9 +144,14 @@
                 _steps = new();
             }
 
-            var history = await ApiClient.GetAsync<List<ProcessHistoryEntry>>($"/api/field/current/process/instances/{Uri.EscapeDataString(Id)}/history") ?? new();            if (history != null)
+            var history = await BusinessProcessClient.GetHistoryAsync(Id);
+            if (history.Count > 0)
             {
                 _history = history.Select(h => new HistoryRow(h.Timestamp, h.Action, h.Notes, h.PerformedBy)).ToList();
+            }
+            else
+            {
+                _history = new();
             }
         }
         catch

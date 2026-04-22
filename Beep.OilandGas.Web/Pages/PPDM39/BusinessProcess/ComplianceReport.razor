@@ -1,6 +1,7 @@
 ﻿@page "/ppdm39/compliance/report"
 @attribute [Authorize(Roles = "Compliance,Manager,Admin")]
 @inject ApiClient ApiClient
+@inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -111,6 +112,20 @@
 
     private MudForm _form = null!;
 
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch
+        {
+            // Header field name is helpful but non-blocking for report submission.
+        }
+    }
+
     private async Task SubmitReportAsync()
     {
         await _form.ValidateAsync();
@@ -128,8 +143,7 @@
                 ReportData           = _reportData,
                 SubmissionReference  = _submissionReference
             };
-            await ApiClient.PostAsync<ComplianceReportRequest, object>(
-                "/api/field/current/process/compliance/reports", request);
+            await BusinessProcessClient.SubmitComplianceReportAsync(request);
             Snackbar.Add("Compliance report submitted successfully.", Severity.Success);
             NavigationManager.NavigateTo("/ppdm39/compliance");
         }

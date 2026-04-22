@@ -44,13 +44,15 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             [FromBody] GateReviewSubmitRequest request)
         {
             if (string.IsNullOrWhiteSpace(gateId))
-                return BadRequest("gateId is required.");
-            if (request == null || string.IsNullOrWhiteSpace(request.EntityId))
-                return BadRequest("EntityId is required in the request body.");
+                    return BadRequest(new { error = "Gate ID is required." });
+                if (request == null)
+                    return BadRequest(new { error = "Request body is required." });
+                if (string.IsNullOrWhiteSpace(request.EntityId))
+                    return BadRequest(new { error = "EntityId is required in the request body." });
 
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
-                return BadRequest("No active field selected.");
+                    return BadRequest(new { error = "No active field selected." });
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
 
@@ -81,7 +83,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error submitting gate review {GateId} for entity {EntityId}", gateId, request.EntityId);
-                return StatusCode(500, "Error submitting gate review.");
+                return StatusCode(500, new { error = "Error submitting gate review." });
             }
         }
 
@@ -97,11 +99,11 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             [FromBody] GateReviewDecisionRequest request)
         {
             if (string.IsNullOrWhiteSpace(gateId))
-                return BadRequest("gateId is required.");
+                    return BadRequest(new { error = "Gate ID is required." });
             if (request == null)
-                return BadRequest("Request body is required.");
+                    return BadRequest(new { error = "Request body is required." });
             if (request.Decision != GateDecision.Approve)
-                return BadRequest("Decision must be 'Approve' for this endpoint.");
+                    return BadRequest(new { error = "Decision must be 'Approve' for this endpoint." });
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
 
@@ -109,13 +111,13 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             {
                 var success = await _processService.ApproveStepAsync(gateId, userId, request.Comments, userId);
                 if (!success)
-                    return NotFound($"Gate '{gateId}' not found or not in a state that can be approved.");
+                    return NotFound(new { error = $"Gate '{gateId}' not found or not in a state that can be approved." });
                 return NoContent();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error approving gate {GateId}", gateId);
-                return StatusCode(500, "Error approving gate.");
+                return StatusCode(500, new { error = "Error approving gate." });
             }
         }
 
@@ -131,11 +133,13 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             [FromBody] GateReviewDecisionRequest request)
         {
             if (string.IsNullOrWhiteSpace(gateId))
-                return BadRequest("gateId is required.");
-            if (request == null || string.IsNullOrWhiteSpace(request.Comments))
-                return BadRequest("A rejection reason (Comments) is required.");
+                    return BadRequest(new { error = "Gate ID is required." });
+                if (request == null)
+                    return BadRequest(new { error = "Request body is required." });
+                if (string.IsNullOrWhiteSpace(request.Comments))
+                    return BadRequest(new { error = "A rejection reason (Comments) is required." });
             if (request.Decision != GateDecision.Reject)
-                return BadRequest("Decision must be 'Reject' for this endpoint.");
+                    return BadRequest(new { error = "Decision must be 'Reject' for this endpoint." });
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
 
@@ -143,13 +147,13 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             {
                 var success = await _processService.RejectStepAsync(gateId, userId, request.Comments, userId);
                 if (!success)
-                    return NotFound($"Gate '{gateId}' not found or not in a state that can be rejected.");
+                    return NotFound(new { error = $"Gate '{gateId}' not found or not in a state that can be rejected." });
                 return NoContent();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error rejecting gate {GateId}", gateId);
-                return StatusCode(500, "Error rejecting gate.");
+                return StatusCode(500, new { error = "Error rejecting gate." });
             }
         }
 
@@ -165,11 +169,11 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             [FromBody] GateReviewDecisionRequest request)
         {
             if (string.IsNullOrWhiteSpace(gateId))
-                return BadRequest("gateId is required.");
+                    return BadRequest(new { error = "Gate ID is required." });
             if (request == null)
-                return BadRequest("Request body is required.");
+                    return BadRequest(new { error = "Request body is required." });
             if (request.Decision != GateDecision.Defer)
-                return BadRequest("Decision must be 'Defer' for this endpoint.");
+                    return BadRequest(new { error = "Decision must be 'Defer' for this endpoint." });
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
             var deferNote = request.DeferTargetDate.HasValue
@@ -181,7 +185,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
                 // Transition to a DEFERRED state via the process service
                 var success = await _processService.TransitionStateAsync(gateId, "DEFERRED", userId);
                 if (!success)
-                    return NotFound($"Gate '{gateId}' not found or cannot be deferred.");
+                    return NotFound(new { error = $"Gate '{gateId}' not found or cannot be deferred." });
 
                 // Record deferral in history
                 var instance = await _processService.GetProcessInstanceAsync(gateId);
@@ -203,7 +207,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deferring gate {GateId}", gateId);
-                return StatusCode(500, "Error deferring gate.");
+                return StatusCode(500, new { error = "Error deferring gate." });
             }
         }
 
@@ -216,7 +220,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
-                return BadRequest("No active field selected.");
+                    return BadRequest(new { error = "No active field selected." });
 
             try
             {
@@ -249,7 +253,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error listing gate reviews for field {FieldId}", fieldId);
-                return StatusCode(500, "Error retrieving gate reviews.");
+                return StatusCode(500, new { error = "Error retrieving gate reviews." });
             }
         }
 
@@ -260,13 +264,13 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         public async Task<ActionResult<ProcessInstanceSummary>> GetGateAsync(string gateId)
         {
             if (string.IsNullOrWhiteSpace(gateId))
-                return BadRequest("gateId is required.");
+                    return BadRequest(new { error = "Gate ID is required." });
 
             try
             {
                 var instance = await _processService.GetProcessInstanceAsync(gateId);
                 if (instance == null)
-                    return NotFound($"Gate review '{gateId}' not found.");
+                    return NotFound(new { error = $"Gate review '{gateId}' not found." });
 
                 var summary = new ProcessInstanceSummary
                 {
@@ -286,7 +290,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving gate {GateId}", gateId);
-                return StatusCode(500, "Error retrieving gate review.");
+                return StatusCode(500, new { error = "Error retrieving gate review." });
             }
         }
 
@@ -298,7 +302,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
-                return BadRequest("No active field selected.");
+                    return BadRequest(new { error = "No active field selected." });
 
             try
             {
@@ -333,7 +337,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving pending gates for field {FieldId}", fieldId);
-                return StatusCode(500, "Error retrieving pending gate reviews.");
+                return StatusCode(500, new { error = "Error retrieving pending gate reviews." });
             }
         }
 
@@ -344,14 +348,20 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         public async Task<ActionResult<GateChecklistResponse>> GetChecklistAsync(string gateId)
         {
             if (string.IsNullOrWhiteSpace(gateId))
-                return BadRequest("gateId is required.");
+                    return BadRequest(new { error = "Gate ID is required." });
 
             try
             {
-                var gateProcessId = $"GATE_{gateId.ToUpperInvariant()}";
-                var definition = await _processService.GetProcessDefinitionAsync(gateProcessId);
+                var instance = await _processService.GetProcessInstanceAsync(gateId);
+                if (instance == null)
+                    return NotFound(new { error = $"Gate review '{gateId}' not found." });
+
+                if (string.IsNullOrWhiteSpace(instance.ProcessId))
+                    return NotFound(new { error = $"Gate review '{gateId}' does not have a process definition." });
+
+                var definition = await _processService.GetProcessDefinitionAsync(instance.ProcessId);
                 if (definition == null)
-                    return NotFound($"Gate definition '{gateId}' not found.");
+                    return NotFound(new { error = $"Gate definition '{instance.ProcessId}' not found." });
 
                 // Extract checklist items from the gate process configuration
                 var checklist = new GateChecklistResponse { GateId = gateId };
@@ -368,14 +378,8 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving checklist for gate {GateId}", gateId);
-                return StatusCode(500, "Error retrieving gate checklist.");
+                return StatusCode(500, new { error = "Error retrieving gate checklist." });
             }
         }
-    }
-
-    public class GateChecklistResponse
-    {
-        public string GateId { get; set; } = string.Empty;
-        public List<string> RequiredDocuments { get; set; } = new();
     }
 }

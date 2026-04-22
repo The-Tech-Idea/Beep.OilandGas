@@ -1,10 +1,15 @@
 ﻿@page "/ppdm39/operations/enhancedrecovery"
+@using System.Globalization
+@using System.Linq
 @using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.Calculations
 @using Beep.OilandGas.Models.Data.EnhancedRecovery
+@using Beep.OilandGas.Models.Data.Operations
 @using Beep.OilandGas.Client.App
 @inject ISnackbar Snackbar
-@inject IOperationsServiceClient OperationsService
+@inject IEnhancedRecoveryServiceClient EnhancedRecoveryService
 @inject ApiClient ApiClient
+@inject ILifeCycleService LifeCycleService
 
 <PageTitle>Evaluate Enhanced Oil Recovery</PageTitle>
 
@@ -34,7 +39,8 @@
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AnalyzeEOR" Disabled="@_isAnalyzing">
                     Analyze EOR Potential
                 </MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="CalculateRecoveryFactor" Disabled="@_isCalculating">
+                <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="CalculateRecoveryFactor"
+                           Disabled="@(_isCalculating || string.IsNullOrWhiteSpace(_eorResult?.OperationId))">
                     Calculate Recovery Factor
                 </MudButton>
             </MudStack>
@@ -48,7 +54,17 @@
         @if (_eorResult != null)
         {
             <MudPaper Class="pa-4 mt-4" Elevation="2">
-                <MudText Typo="Typo.h6" Class="mb-4">EOR Analysis Results</MudText>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+                    <MudText Typo="Typo.h6">EOR Analysis Results</MudText>
+                    @if (_eorEconomics != null)
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                                   StartIcon="@Icons.Material.Filled.ArrowForward"
+                                   Href="@GetEconomicsHandoffHref()">
+                            Open in Economics
+                        </MudButton>
+                    }
+                </MudStack>
                 <MudStack Spacing="2">
                     <MudText>Operation ID: @_eorResult.OperationId</MudText>
                     <MudText>EOR Type: @_eorResult.EORType</MudText>
@@ -61,14 +77,138 @@
     </MudPaper>
 
     <MudPaper Class="pa-4 mt-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.h6">Pilot Economics</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Convert the selected EOR case into a pilot economics package before detailed evaluation.</MudText>
+            </MudStack>
+            @if (_eorEconomics != null)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.TrendingUp"
+                           Href="@GetEconomicsHandoffHref()">
+                    Continue to Economics
+                </MudButton>
+            }
+        </MudStack>
+
+        <MudGrid Spacing="3">
+            <MudItem xs="12" sm="6" md="4">
+                <MudNumericField T="double" @bind-Value="@_estimatedIncrementalOil" Label="Estimated Incremental Oil (bbl)"
+                                 Variant="Variant.Outlined" Format="N0" Step="1000" Min="0" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="4">
+                <MudNumericField T="double" @bind-Value="@_pilotOilPrice" Label="Oil Price ($/bbl)"
+                                 Variant="Variant.Outlined" Format="N1" Step="1" Min="0" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="4">
+                <MudNumericField T="double" @bind-Value="@_pilotCapexMm" Label="Pilot CAPEX ($MM)"
+                                 Variant="Variant.Outlined" Format="N1" Step="1" Min="0" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="4">
+                <MudNumericField T="double" @bind-Value="@_pilotOpexPerBbl" Label="OPEX ($/bbl)"
+                                 Variant="Variant.Outlined" Format="N1" Step="0.5" Min="0" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="4">
+                <MudNumericField T="int" @bind-Value="@_pilotProjectLifeYears" Label="Project Life (years)"
+                                 Variant="Variant.Outlined" Step="1" Min="1" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="4">
+                <MudNumericField T="double" @bind-Value="@_pilotDiscountRatePct" Label="Discount Rate %"
+                                 Variant="Variant.Outlined" Format="N1" Step="0.5" Min="0" />
+            </MudItem>
+        </MudGrid>
+
+        <MudStack Row="true" Spacing="2" Class="mt-4">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Calculate"
+                       OnClick="AnalyzePilotEconomics"
+                       Disabled="@_isAnalyzingEconomics">
+                Analyze Pilot Economics
+            </MudButton>
+            @if (_eorEconomics != null)
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                           StartIcon="@Icons.Material.Filled.ArrowForward"
+                           Href="@GetEconomicsHandoffHref()">
+                    Open Detailed Economics
+                </MudButton>
+            }
+        </MudStack>
+
+        @if (_eorEconomics != null)
+        {
+            <MudGrid Class="mt-4" Spacing="3">
+                <MudItem xs="12" sm="6" md="3">
+                    <KpiCard Label="Pilot NPV" Value="@GetPilotNpvValue()" Unit="$MM"
+                             ValueColor="@(_eorEconomics.NetPresentValue > 0 ? Color.Success : Color.Error)"
+                             Icon="@Icons.Material.Filled.TrendingUp"
+                             TrendIcon="@Icons.Material.Filled.Calculate" TrendColor="Color.Info" TrendText="Domain EOR economics" />
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <KpiCard Label="Pilot IRR" Value="@GetPilotIrrValue()" Unit="%"
+                             ValueColor="@(_eorEconomics.InternalRateOfReturn > (_pilotDiscountRatePct / 100d) ? Color.Success : Color.Warning)"
+                             Icon="@Icons.Material.Filled.Percent"
+                             TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Success" TrendText="vs hurdle" />
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <KpiCard Label="Payback" Value="@GetPilotPaybackValue()" Unit="yrs"
+                             ValueColor="Color.Info" Icon="@Icons.Material.Filled.Schedule"
+                             TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Pilot case" />
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <KpiCard Label="P/I Ratio" Value="@GetPilotPiValue()" Unit="x"
+                             ValueColor="@(_eorEconomics.ProfitabilityIndex > 1 ? Color.Success : Color.Error)"
+                             Icon="@Icons.Material.Filled.BarChart"
+                             TrendIcon="@Icons.Material.Filled.Assessment" TrendColor="Color.Info" TrendText="Pilot economics" />
+                </MudItem>
+            </MudGrid>
+        }
+    </MudPaper>
+
+    <MudPaper Class="pa-4 mt-4">
         <MudText Typo="Typo.h6" Class="mb-4">Injection Management</MudText>
         <MudStack Spacing="3">
             <MudTextField @bind-Value="@_injectionWellId" Label="Injection Well ID" Variant="Variant.Outlined" />
             <MudNumericField @bind-Value="@_injectionRate" Label="Injection Rate" Variant="Variant.Outlined" />
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ManageInjection" Disabled="@_isManaging">
-                Manage Injection
-            </MudButton>
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="LoadInjection" Disabled="@(_isLoadingInjection || _isManaging)">
+                    Load Stored Injection
+                </MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ManageInjection" Disabled="@(_isManaging || _isLoadingInjection)">
+                    Manage Injection
+                </MudButton>
+            </MudStack>
         </MudStack>
+
+        @if (_injectionResult != null)
+        {
+            <MudPaper Class="pa-4 mt-4" Elevation="1">
+                <MudText Typo="Typo.subtitle1">Stored Injection Operation</MudText>
+                <MudGrid Class="mt-2" Spacing="3">
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Operation ID</MudText>
+                        <MudText Typo="Typo.body1">@_injectionResult.OperationId</MudText>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Injection Well</MudText>
+                        <MudText Typo="Typo.body1">@_injectionResult.WellUWI</MudText>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Rate</MudText>
+                        <MudText Typo="Typo.body1">@FormatInjectionRate(_injectionResult)</MudText>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Last Injection</MudText>
+                        <MudText Typo="Typo.body1">@FormatInjectionDate(_injectionResult.OperationDate)</MudText>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Status</MudText>
+                        <MudText Typo="Typo.body1">@(_injectionResult.Status ?? "Unknown")</MudText>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        }
     </MudPaper>
 </MudContainer>
 
@@ -78,11 +218,21 @@
     private string _eorMethod = "WaterFlooding";
     private string _injectionWellId = string.Empty;
     private decimal _injectionRate = 1000;
+    private double _estimatedIncrementalOil;
+    private double _pilotOilPrice = 75.0;
+    private double _pilotCapexMm;
+    private double _pilotOpexPerBbl = 18.0;
+    private int _pilotProjectLifeYears = 10;
+    private double _pilotDiscountRatePct = 10.0;
     private bool _isAnalyzing = false;
     private bool _isCalculating = false;
+    private bool _isAnalyzingEconomics = false;
     private bool _isManaging = false;
+    private bool _isLoadingInjection = false;
     private bool _isLoading = false;
     private EnhancedRecoveryOperation? _eorResult;
+    private EOREconomicAnalysis? _eorEconomics;
+    private InjectionOperation? _injectionResult;
 
     private class FieldInfoDto
     {
@@ -95,7 +245,7 @@
         _isLoading = true;
         try
         {
-            var field = await ApiClient.GetAsync<FieldInfoDto>("api/field/current");
+            var field = await LifeCycleService.GetCurrentFieldAsync();
             if (field != null)
             {
                 _fieldId   = field.FieldId   ?? string.Empty;
@@ -120,7 +270,8 @@
         _isAnalyzing = true;
         try
         {
-            _eorResult = await OperationsService.AnalyzeEORPotentialAsync(_fieldId, _eorMethod);
+            _eorResult = await EnhancedRecoveryService.AnalyzeEORPotentialAsync(_fieldId, _eorMethod);
+            SeedPilotEconomicsFromResult();
             Snackbar.Add("EOR potential analysis completed", Severity.Success);
         }
         catch (Exception)
@@ -141,11 +292,17 @@
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(_eorResult?.OperationId))
+        {
+            Snackbar.Add("Run EOR potential analysis first so recovery factor uses a real EOR operation.", Severity.Warning);
+            return;
+        }
+
         _isCalculating = true;
         try
         {
-            var projectId = Guid.NewGuid().ToString(); // Would come from selected project
-            _eorResult = await OperationsService.CalculateRecoveryFactorAsync(projectId);
+            _eorResult = await EnhancedRecoveryService.CalculateRecoveryFactorAsync(_eorResult.OperationId);
+            SeedPilotEconomicsFromResult();
             Snackbar.Add("Recovery factor calculated", Severity.Success);
         }
         catch (Exception)
@@ -169,7 +326,8 @@
         _isManaging = true;
         try
         {
-            var result = await OperationsService.ManageInjectionAsync(_injectionWellId, _injectionRate);
+            await EnhancedRecoveryService.ManageInjectionAsync(_injectionWellId, _injectionRate);
+            await LoadInjectionOperationAsync(showLoadedFeedback: false, showMissingFeedback: false);
             Snackbar.Add("Injection operation managed successfully", Severity.Success);
         }
         catch (Exception)
@@ -181,6 +339,151 @@
             _isManaging = false;
         }
     }
+
+    private async Task LoadInjection()
+    {
+        if (string.IsNullOrEmpty(_injectionWellId))
+        {
+            Snackbar.Add("Please enter an Injection Well ID", Severity.Warning);
+            return;
+        }
+
+        await LoadInjectionOperationAsync(showLoadedFeedback: true, showMissingFeedback: true);
+    }
+
+    private async Task AnalyzePilotEconomics()
+    {
+        if (string.IsNullOrWhiteSpace(_fieldId))
+        {
+            Snackbar.Add("Please enter a Field ID", Severity.Warning);
+            return;
+        }
+
+        if (_estimatedIncrementalOil <= 0)
+        {
+            Snackbar.Add("Enter an estimated incremental oil volume before running pilot economics.", Severity.Warning);
+            return;
+        }
+
+        if (_pilotCapexMm <= 0)
+        {
+            Snackbar.Add("Pilot CAPEX must be greater than zero.", Severity.Warning);
+            return;
+        }
+
+        _isAnalyzingEconomics = true;
+        try
+        {
+            _eorEconomics = await EnhancedRecoveryService.AnalyzeEconomicsAsync(new AnalyzeEOREconomicsRequest
+            {
+                FieldId = _fieldId,
+                EstimatedIncrementalOil = _estimatedIncrementalOil,
+                OilPrice = _pilotOilPrice,
+                CapitalCostMm = _pilotCapexMm,
+                OperatingCostPerBarrel = _pilotOpexPerBbl,
+                ProjectLifeYears = _pilotProjectLifeYears,
+                DiscountRatePct = _pilotDiscountRatePct
+            });
+
+            Snackbar.Add("Pilot economics calculated", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error analyzing pilot economics.", Severity.Error);
+        }
+        finally
+        {
+            _isAnalyzingEconomics = false;
+        }
+    }
+
+    private void SeedPilotEconomicsFromResult()
+    {
+        if (_eorResult?.ProductionIncrease is > 0m && _estimatedIncrementalOil <= 0)
+            _estimatedIncrementalOil = (double)_eorResult.ProductionIncrease.Value;
+    }
+
+    private async Task LoadInjectionOperationAsync(bool showLoadedFeedback, bool showMissingFeedback)
+    {
+        _isLoadingInjection = true;
+        try
+        {
+            var operations = await EnhancedRecoveryService.GetInjectionOperationsAsync(_injectionWellId);
+            _injectionResult = operations
+                .OrderByDescending(o => o.OperationDate)
+                .FirstOrDefault();
+
+            if (_injectionResult == null)
+            {
+                if (showMissingFeedback)
+                    Snackbar.Add("No stored injection operation was found for this well.", Severity.Info);
+                return;
+            }
+
+            if (_injectionResult.InjectionRate.HasValue)
+                _injectionRate = _injectionResult.InjectionRate.Value;
+
+            if (showLoadedFeedback)
+                Snackbar.Add("Stored injection operation loaded", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error loading injection operation.", Severity.Error);
+        }
+        finally
+        {
+            _isLoadingInjection = false;
+        }
+    }
+
+    private string GetEconomicsHandoffHref()
+    {
+        if (_eorEconomics == null)
+            return "/economics/evaluation";
+
+        var query = new List<string>
+        {
+            $"sourceProcess={Uri.EscapeDataString("ENHANCED_RECOVERY")}",
+            $"scenarioName={Uri.EscapeDataString($"{_eorMethod} Pilot")}",
+            $"eorMethod={Uri.EscapeDataString(_eorMethod)}",
+            $"oilPrice={Uri.EscapeDataString(_pilotOilPrice.ToString(CultureInfo.InvariantCulture))}",
+            $"discountRate={Uri.EscapeDataString(_pilotDiscountRatePct.ToString(CultureInfo.InvariantCulture))}",
+            $"opexBbl={Uri.EscapeDataString(_pilotOpexPerBbl.ToString(CultureInfo.InvariantCulture))}",
+            $"capexMm={Uri.EscapeDataString(_pilotCapexMm.ToString(CultureInfo.InvariantCulture))}",
+            $"incrementalOilBbl={Uri.EscapeDataString(_estimatedIncrementalOil.ToString(CultureInfo.InvariantCulture))}",
+            $"pilotNpvMm={Uri.EscapeDataString((_eorEconomics.NetPresentValue / 1_000_000d).ToString(CultureInfo.InvariantCulture))}",
+            $"pilotIrrPct={Uri.EscapeDataString((_eorEconomics.InternalRateOfReturn * 100d).ToString(CultureInfo.InvariantCulture))}",
+            $"profitabilityIndex={Uri.EscapeDataString(_eorEconomics.ProfitabilityIndex.ToString(CultureInfo.InvariantCulture))}",
+            $"paybackYears={Uri.EscapeDataString(_eorEconomics.PaybackPeriodYears.ToString(CultureInfo.InvariantCulture))}",
+            $"returnTo={Uri.EscapeDataString("/ppdm39/operations/enhancedrecovery")}"
+        };
+
+        return "/economics/evaluation?" + string.Join("&", query);
+    }
+
+    private string GetPilotNpvValue()
+        => _eorEconomics == null ? string.Empty : (_eorEconomics.NetPresentValue / 1_000_000d).ToString("N1");
+
+    private string GetPilotIrrValue()
+        => _eorEconomics == null ? string.Empty : (_eorEconomics.InternalRateOfReturn * 100d).ToString("N1");
+
+    private string GetPilotPaybackValue()
+        => _eorEconomics == null ? string.Empty : _eorEconomics.PaybackPeriodYears.ToString("N1");
+
+    private string GetPilotPiValue()
+        => _eorEconomics == null ? string.Empty : _eorEconomics.ProfitabilityIndex.ToString("N2");
+
+    private static string FormatInjectionRate(InjectionOperation operation)
+    {
+        if (!operation.InjectionRate.HasValue)
+            return "N/A";
+
+        var unit = string.IsNullOrWhiteSpace(operation.InjectionRateUnit) ? "BBL/D" : operation.InjectionRateUnit;
+        return $"{operation.InjectionRate.Value:N0} {unit}";
+    }
+
+    private static string FormatInjectionDate(DateTime value)
+        => value == default ? "N/A" : value.ToString("yyyy-MM-dd");
 }
 
 

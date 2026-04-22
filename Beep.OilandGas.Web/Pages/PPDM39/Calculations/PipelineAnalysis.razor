@@ -1,13 +1,12 @@
 ﻿@page "/ppdm39/calculations/pipelineanalysis"
 @using Beep.OilandGas.Models.Data.Calculations
 @using Beep.OilandGas.Models.Data
-@using Beep.OilandGas.Models.Core.Interfaces
-@using Beep.OilandGas.Client.App
 @using System.Security.Claims
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject ICalculationServiceClient CalculationService
 @inject AuthenticationStateProvider AuthStateProvider
+@inject ILifeCycleService LifeCycleService
 
 <PageTitle>Analyse Pipeline Flow</PageTitle>
 
@@ -79,7 +78,7 @@
         {
             try
             {
-                var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+                var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
                 if (summary != null)
                     _fieldName = summary.FieldName ?? _fieldName;
             }

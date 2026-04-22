@@ -63,8 +63,8 @@ namespace Beep.OilandGas.FlashCalculations.Services
             var results = new List<FlashResult>();
             
             // Perform first stage
-            var firstStageResult = FlashCalculator.PerformIsothermalFlash(conditions);
-            results.Add(firstStageResult);
+            var previousStageResult = FlashCalculator.PerformIsothermalFlash(conditions);
+            results.Add(previousStageResult);
 
             // For subsequent stages, use liquid from previous stage as feed
             var currentFeed = conditions;
@@ -75,10 +75,11 @@ namespace Beep.OilandGas.FlashCalculations.Services
                 {
                     PRESSURE = currentFeed.PRESSURE,
                     TEMPERATURE = currentFeed.TEMPERATURE,
-                    FEED_COMPOSITION = firstStageResult.LiquidComposition.Select(component => 
+                    FEED_COMPOSITION = previousStageResult.LiquidComposition.Select(component => 
                         new FLASH_COMPONENT
                         {
                             NAME = component.ComponentName,
+                            COMPONENT_NAME = component.ComponentName,
                             MOLE_FRACTION = component.Fraction
                         }).ToList()
                 };
@@ -86,6 +87,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
                 var stageResult = FlashCalculator.PerformIsothermalFlash(nextStageConditions);
                 results.Add(stageResult);
                 currentFeed = nextStageConditions;
+                previousStageResult = stageResult;
             }
 
             _logger?.LogInformation("Multi-stage flash calculation completed with {Stages} stages", stages);

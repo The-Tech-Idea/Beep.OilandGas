@@ -1,0 +1,401 @@
+@page "/ppdm39/calculations/compressor-analysis"
+@page "/analysis/compressor"
+@using System.Linq
+@using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.Calculations
+@using Beep.OilandGas.PPDM39.Models
+@inject ApiClient ApiClient
+@inject ICalculationServiceClient CalculationService
+@inject IDevelopmentServiceClient DevelopmentClient
+@inject ILifeCycleService LifeCycleService
+@inject ISnackbar Snackbar
+
+<PageTitle>Run Compressor Analysis</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Run Compressor Analysis</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName - Facility compression checks with live field facilities and adjustable machine assumptions</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.Air">Facility Optimization</MudChip>
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning">@(_request.CompressorType ?? "CENTRIFUGAL")</MudChip>
+                <MudChip T="string" Size="Size.Small" Color="Color.Default">@GetSelectedFacilityLabel()</MudChip>
+            </MudStack>
+        </MudStack>
+    </MudStack>
+
+    <MudPaper Class="pa-4 mb-4" Elevation="1">
+        <MudGrid Spacing="3">
+            <MudItem xs="12" md="4">
+                <MudSelect T="string" Label="Facility" Variant="Variant.Outlined"
+                           Value="@_selectedFacilityId" ValueChanged="OnFacilityChanged">
+                    @foreach (var facility in _facilities)
+                    {
+                        <MudSelectItem Value="@facility.FACILITY_ID">@facility.DisplayName</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudSelect T="string" Label="Compressor Type" Variant="Variant.Outlined" @bind-Value="@_request.CompressorType">
+                    <MudSelectItem Value="@("CENTRIFUGAL")">Centrifugal</MudSelectItem>
+                    <MudSelectItem Value="@("RECIPROCATING")">Reciprocating</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudSelect T="string" Label="Analysis Type" Variant="Variant.Outlined" @bind-Value="@_request.AnalysisType">
+                    <MudSelectItem Value="@("POWER")">Power</MudSelectItem>
+                    <MudSelectItem Value="@("PRESSURE")">Pressure</MudSelectItem>
+                    <MudSelectItem Value="@("EFFICIENCY")">Efficiency</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                               StartIcon="@Icons.Material.Filled.Sync"
+                               OnClick="LoadFacilitiesAsync"
+                               Disabled="@_isRunning">
+                        Refresh Facilities
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.PlayArrow"
+                               OnClick="RunAnalysisAsync"
+                               Disabled="@(_isRunning || string.IsNullOrWhiteSpace(_selectedFacilityId))">
+                        @if (_isRunning)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                            <MudText Class="ms-2">Running</MudText>
+                        }
+                        else
+                        {
+                            <MudText>Run Analysis</MudText>
+                        }
+                    </MudButton>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudGrid Spacing="3" Class="mb-4">
+        <MudItem xs="12" md="7">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Operating And Machine Inputs</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.SuctionPressure" Label="Suction Pressure (psia)" Variant="Variant.Outlined" Min="1m" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.DischargePressure" Label="Discharge Pressure (psia)" Variant="Variant.Outlined" Min="1m" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.SuctionTemperature" Label="Suction Temperature (R)" Variant="Variant.Outlined" Min="400m" /></MudItem>
+
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.FlowRate" Label="Gas Flow Rate (Mscf/day)" Variant="Variant.Outlined" Min="1m" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.GasSpecificGravity" Label="Gas Specific Gravity" Variant="Variant.Outlined" Min="0.1m" Max="2.0m" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.PolytropicEfficiency" Label="Polytropic Efficiency" Variant="Variant.Outlined" Min="0.1m" Max="1m" Disabled="@IsReciprocating()" /></MudItem>
+
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="int?" @bind-Value="@_request.NumberOfStages" Label="Number Of Stages" Variant="Variant.Outlined" Min="1" Disabled="@IsReciprocating()" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.CylinderDisplacement" Label="Cylinder Displacement (ACFM)" Variant="Variant.Outlined" Min="1m" Disabled="@(!IsReciprocating())" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.VolumetricEfficiency" Label="Volumetric Efficiency" Variant="Variant.Outlined" Min="0.1m" Max="1m" Disabled="@(!IsReciprocating())" /></MudItem>
+
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="int?" @bind-Value="@_request.NumberOfCylinders" Label="Number Of Cylinders" Variant="Variant.Outlined" Min="1" Disabled="@(!IsReciprocating())" /></MudItem>
+                        <MudItem xs="12" sm="6" md="8">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-4">
+                                Centrifugal runs focus on stage and polytropic assumptions. Reciprocating runs emphasize displacement and volumetric performance. All runs stay tied to a live facility in the active field.
+                            </MudText>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="5">
+            <MudCard Elevation="2" Class="h-100">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Selected Facility Context</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (_selectedFacility != null)
+                    {
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">Facility ID: @_selectedFacility.FACILITY_ID</MudText></MudItem>
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">Type: @(_selectedFacility.FACILITY_TYPE ?? "N/A")</MudText></MudItem>
+                            <MudItem xs="12"><MudText Typo="Typo.body2">Name: @(_selectedFacility.FACILITY_LONG_NAME ?? _selectedFacility.FACILITY_SHORT_NAME ?? "N/A")</MudText></MudItem>
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">Primary Field: @(_selectedFacility.PRIMARY_FIELD_ID ?? _fieldName)</MudText></MudItem>
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">Active: @(_selectedFacility.ACTIVE_IND == "Y" ? "Yes" : "Planned")</MudText></MudItem>
+                        </MudGrid>
+                    }
+                    else
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.Air" Color="Color.Secondary" Class="og-icon-xl" />
+                            <MudText Typo="Typo.h6">No facility selected</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Select a live facility from the active field before running the compressor workbench.</MudText>
+                        </MudStack>
+                    }
+
+                    @if (_currentResult != null)
+                    {
+                        <MudDivider Class="my-3" />
+                        <MudText Typo="Typo.body2">Latest status: @(_currentResult.Status ?? "Unknown")</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Result ID: @(_currentResult.CalculationId ?? "N/A")</MudText>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    @if (_currentResult != null)
+    {
+        <CalculationKpiSection Metrics="@GetResultKpis()" Class="mb-4" />
+
+        <CalculationResultTabs SummaryItems="@GetSummaryFacts()"
+                               InputSnapshotItems="@GetInputSnapshotFacts()" />
+    }
+</MudContainer>
+
+@code {
+    private string _fieldName = string.Empty;
+    private string? _selectedFacilityId;
+    private bool _isLoading = true;
+    private bool _isRunning;
+
+    private CompressorAnalysisRequest _request = CreateDefaultRequest();
+    private CompressorAnalysisResult? _currentResult;
+    private FacilityOptionDto? _selectedFacility;
+    private List<FacilityOptionDto> _facilities = new();
+
+    private sealed class FacilityOptionDto
+    {
+        public string FACILITY_ID { get; set; } = string.Empty;
+        public string? FACILITY_LONG_NAME { get; set; }
+        public string? FACILITY_SHORT_NAME { get; set; }
+        public string? FACILITY_TYPE { get; set; }
+        public string? PRIMARY_FIELD_ID { get; set; }
+        public string? ACTIVE_IND { get; set; }
+
+        public string DisplayName => FACILITY_LONG_NAME ?? FACILITY_SHORT_NAME ?? FACILITY_ID;
+    }
+
+    private static FacilityOptionDto MapFacility(FACILITY facility)
+    {
+        return new FacilityOptionDto
+        {
+            FACILITY_ID = facility.FACILITY_ID,
+            FACILITY_LONG_NAME = facility.FACILITY_LONG_NAME,
+            FACILITY_SHORT_NAME = facility.FACILITY_SHORT_NAME,
+            FACILITY_TYPE = facility.FACILITY_TYPE,
+            PRIMARY_FIELD_ID = facility.PRIMARY_FIELD_ID,
+            ACTIVE_IND = facility.ACTIVE_IND
+        };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            await LoadFieldContextAsync();
+            await LoadFacilitiesAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadFieldContextAsync()
+    {
+        try
+        {
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
+            if (summary != null)
+            {
+                _fieldName = summary.FieldName ?? _fieldName;
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private async Task LoadFacilitiesAsync()
+    {
+        try
+        {
+            _facilities = (await DevelopmentClient.GetFacilitiesAsync()).Select(MapFacility).ToList();
+            if (_facilities.Count > 0)
+            {
+                _selectedFacilityId ??= _facilities[0].FACILITY_ID;
+                ApplySelectedFacility();
+            }
+        }
+        catch
+        {
+            Snackbar.Add("Failed to load facilities for Compressor Analysis.", Severity.Warning);
+        }
+    }
+
+    private Task OnFacilityChanged(string? facilityId)
+    {
+        _selectedFacilityId = facilityId;
+        _currentResult = null;
+        ApplySelectedFacility();
+        return Task.CompletedTask;
+    }
+
+    private void ApplySelectedFacility()
+    {
+        _selectedFacility = _facilities.FirstOrDefault(facility => facility.FACILITY_ID == _selectedFacilityId);
+        _request.FacilityId = _selectedFacility?.FACILITY_ID;
+        if (_selectedFacility != null)
+        {
+            _fieldName = _selectedFacility.PRIMARY_FIELD_ID ?? _fieldName;
+        }
+    }
+
+    private async Task RunAnalysisAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedFacilityId))
+        {
+            Snackbar.Add("Select a live facility before running Compressor Analysis.", Severity.Warning);
+            return;
+        }
+
+        if (!_request.SuctionPressure.HasValue || !_request.DischargePressure.HasValue || _request.SuctionPressure <= 0 || _request.DischargePressure <= _request.SuctionPressure)
+        {
+            Snackbar.Add("Enter valid suction and discharge pressures with discharge pressure greater than suction pressure.", Severity.Warning);
+            return;
+        }
+
+        if (!_request.FlowRate.HasValue || _request.FlowRate <= 0)
+        {
+            Snackbar.Add("Enter a flow rate greater than zero.", Severity.Warning);
+            return;
+        }
+
+        _isRunning = true;
+        _request.FacilityId = _selectedFacilityId;
+
+        try
+        {
+            _currentResult = await CalculationService.PerformCompressorAnalysisAsync(_request);
+            if (string.Equals(_currentResult.Status, "FAILED", StringComparison.OrdinalIgnoreCase))
+            {
+                Snackbar.Add(_currentResult.ErrorMessage ?? "Compressor Analysis failed.", Severity.Error);
+                return;
+            }
+
+            Snackbar.Add("Compressor Analysis completed successfully.", Severity.Success);
+        }
+        catch
+        {
+            Snackbar.Add("Failed to run Compressor Analysis.", Severity.Error);
+        }
+        finally
+        {
+            _isRunning = false;
+        }
+    }
+
+    private bool IsReciprocating()
+    {
+        return string.Equals(_request.CompressorType, "RECIPROCATING", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static CompressorAnalysisRequest CreateDefaultRequest()
+    {
+        return new CompressorAnalysisRequest
+        {
+            CompressorType = "CENTRIFUGAL",
+            AnalysisType = "POWER",
+            SuctionPressure = 100m,
+            DischargePressure = 500m,
+            SuctionTemperature = 520m,
+            FlowRate = 5000m,
+            GasSpecificGravity = 0.65m,
+            PolytropicEfficiency = 0.75m,
+            NumberOfStages = 2,
+            CylinderDisplacement = 1200m,
+            VolumetricEfficiency = 0.85m,
+            NumberOfCylinders = 2
+        };
+    }
+
+    private string GetSelectedFacilityLabel()
+    {
+        return _selectedFacility?.DisplayName
+            ?? (string.IsNullOrWhiteSpace(_selectedFacilityId) ? "No facility selected" : _selectedFacilityId);
+    }
+
+    private IReadOnlyList<CalculationKpiMetric> GetResultKpis()
+    {
+        if (_currentResult == null)
+            return Array.Empty<CalculationKpiMetric>();
+
+        return new CalculationKpiMetric[]
+        {
+            new() { Label = "Power Required", Value = FormatDecimal(_currentResult.PowerRequired, 2), Unit = "hp", ValueColor = Color.Primary, Icon = Icons.Material.Filled.Bolt, TrendIcon = Icons.Material.Filled.Power, TrendColor = Color.Primary, TrendText = "Estimated driver load" },
+            new() { Label = "Compression Ratio", Value = FormatDecimal(_currentResult.CompressionRatio, 2), ValueColor = Color.Info, Icon = Icons.Material.Filled.CompareArrows, TrendIcon = Icons.Material.Filled.Air, TrendColor = Color.Info, TrendText = "Discharge / suction" },
+            new() { Label = "Discharge Temp", Value = FormatDecimal(_currentResult.DischargeTemperature, 1), Unit = "R", ValueColor = Color.Warning, Icon = Icons.Material.Filled.LocalFireDepartment, TrendIcon = Icons.Material.Filled.Thermostat, TrendColor = Color.Warning, TrendText = "Predicted outlet temperature" },
+            new() { Label = "Flow Rate", Value = FormatDecimal(_currentResult.FlowRate, 2), Unit = "Mscf/day", ValueColor = Color.Success, Icon = Icons.Material.Filled.Speed, TrendIcon = Icons.Material.Filled.ShowChart, TrendColor = Color.Success, TrendText = "Requested throughput" }
+        };
+    }
+
+    private IReadOnlyList<CalculationFactItem> GetSummaryFacts()
+    {
+        if (_currentResult == null)
+            return Array.Empty<CalculationFactItem>();
+
+        return new CalculationFactItem[]
+        {
+            new() { Label = "Calculation ID", Value = _currentResult.CalculationId ?? "N/A" },
+            new() { Label = "Facility ID", Value = _currentResult.FacilityId ?? "N/A" },
+            new() { Label = "Compressor Type", Value = _currentResult.CompressorType ?? "N/A" },
+            new() { Label = "Analysis Type", Value = _currentResult.AnalysisType ?? "N/A" },
+            new() { Label = "Calculated", Value = _currentResult.CalculationDate.ToString("dd MMM yyyy HH:mm") },
+            new() { Label = "Suction Pressure", Value = $"{FormatDecimal(_currentResult.SuctionPressure, 2)} psia" },
+            new() { Label = "Discharge Pressure", Value = $"{FormatDecimal(_currentResult.DischargePressure, 2)} psia" },
+            new() { Label = "Polytropic Efficiency", Value = FormatDecimal(_currentResult.PolytropicEfficiency, 3) },
+            new() { Label = "Adiabatic Efficiency", Value = FormatDecimal(_currentResult.AdiabaticEfficiency, 3) },
+            new() { Label = "Overall Efficiency", Value = FormatDecimal(_currentResult.OverallEfficiency, 3) },
+            new() { Label = "Cylinder Displacement", Value = FormatNullableDecimal(_currentResult.CylinderDisplacement, 2) },
+            new() { Label = "Volumetric Efficiency", Value = FormatNullableDecimal(_currentResult.VolumetricEfficiency, 3) },
+            new() { Label = "Status", Value = _currentResult.Status ?? "Unknown" }
+        };
+    }
+
+    private IReadOnlyList<CalculationFactItem> GetInputSnapshotFacts()
+    {
+        return new CalculationFactItem[]
+        {
+            new() { Label = "Requested Compressor Type", Value = _request.CompressorType ?? "N/A" },
+            new() { Label = "Requested Analysis Type", Value = _request.AnalysisType ?? "N/A" },
+            new() { Label = "Field", Value = _fieldName },
+            new() { Label = "Requested Flow", Value = $"{FormatNullableDecimal(_request.FlowRate, 2)} Mscf/day" },
+            new() { Label = "Requested Suction Pressure", Value = $"{FormatNullableDecimal(_request.SuctionPressure, 2)} psia" },
+            new() { Label = "Requested Discharge Pressure", Value = $"{FormatNullableDecimal(_request.DischargePressure, 2)} psia" },
+            new() { Label = "Polytropic Efficiency", Value = FormatNullableDecimal(_request.PolytropicEfficiency, 3) },
+            new() { Label = "Number Of Stages", Value = _request.NumberOfStages?.ToString() ?? "N/A" },
+            new() { Label = "Number Of Cylinders", Value = _request.NumberOfCylinders?.ToString() ?? "N/A" }
+        };
+    }
+
+    private static string FormatDecimal(decimal value, int digits)
+    {
+        return value.ToString($"N{digits}");
+    }
+
+    private static string FormatNullableDecimal(decimal? value, int digits)
+    {
+        return value.HasValue ? value.Value.ToString($"N{digits}") : "N/A";
+    }
+}

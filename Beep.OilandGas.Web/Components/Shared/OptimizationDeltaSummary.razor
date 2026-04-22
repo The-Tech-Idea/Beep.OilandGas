@@ -1,0 +1,62 @@
+@using System.Linq
+
+@if (HasContent)
+{
+    <MudAlert Severity="@Severity" Variant="@Variant" Dense="@Dense" Class="@Class">
+        <MudStack Spacing="@StackSpacing">
+            @if (!string.IsNullOrWhiteSpace(ActionLabel))
+            {
+                <MudText Typo="@ActionTypo">Last action: @ActionLabel</MudText>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(SummaryText))
+            {
+                <MudText Typo="@SummaryTypo">@SummaryText</MudText>
+            }
+
+            @if (HasItems)
+            {
+                <MudGrid Spacing="@GridSpacing">
+                    @foreach (var item in SafeItems)
+                    {
+                        <MudItem xs="@Xs" sm="@Sm" md="@Md">
+                            <MudPaper Elevation="0" Class="@ItemPaperClass">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@item.Label</MudText>
+                                <MudText Typo="Typo.body2">Baseline: @item.BaselineValue</MudText>
+                                <MudText Typo="Typo.body2">Optimized: @item.OptimizedValue</MudText>
+                                <MudText Typo="Typo.body2" Color="@item.DeltaColor">Change: @item.DeltaValue</MudText>
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+            else if (!string.IsNullOrWhiteSpace(EmptyText))
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@EmptyText</MudText>
+            }
+        </MudStack>
+    </MudAlert>
+}
+
+@code {
+    [Parameter] public string? ActionLabel { get; set; }
+    [Parameter] public string? SummaryText { get; set; }
+    [Parameter] public IEnumerable<OptimizationDeltaItem>? Items { get; set; }
+    [Parameter] public string EmptyText { get; set; } = string.Empty;
+    [Parameter] public Severity Severity { get; set; } = Severity.Info;
+    [Parameter] public Variant Variant { get; set; } = Variant.Outlined;
+    [Parameter] public bool Dense { get; set; }
+    [Parameter] public string Class { get; set; } = string.Empty;
+    [Parameter] public int StackSpacing { get; set; } = 2;
+    [Parameter] public int GridSpacing { get; set; } = 2;
+    [Parameter] public int Xs { get; set; } = 12;
+    [Parameter] public int Sm { get; set; } = 6;
+    [Parameter] public int Md { get; set; } = 4;
+    [Parameter] public string ItemPaperClass { get; set; } = "pa-3 h-100";
+    [Parameter] public Typo ActionTypo { get; set; } = Typo.subtitle2;
+    [Parameter] public Typo SummaryTypo { get; set; } = Typo.body2;
+
+    private bool HasItems => Items?.Any() == true;
+    private bool HasContent => !string.IsNullOrWhiteSpace(ActionLabel) || !string.IsNullOrWhiteSpace(SummaryText) || HasItems || !string.IsNullOrWhiteSpace(EmptyText);
+    private IEnumerable<OptimizationDeltaItem> SafeItems => Items ?? Array.Empty<OptimizationDeltaItem>();
+}

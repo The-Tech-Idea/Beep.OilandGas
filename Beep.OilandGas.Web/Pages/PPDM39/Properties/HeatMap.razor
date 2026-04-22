@@ -6,6 +6,7 @@
 @inject ISnackbar Snackbar
 @inject IPropertiesServiceClient PropertiesService
 @inject ApiClient ApiClient
+@inject ILifeCycleService LifeCycleService
 @inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Generate Field Heat Map</PageTitle>
@@ -90,7 +91,7 @@
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
             _currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
 
-            var field = await ApiClient.GetAsync<FieldResponse>("api/field/current");
+            var field = await LifeCycleService.GetCurrentFieldAsync();
             if (field != null)
             {
                 _fieldId = field.FieldId ?? string.Empty;

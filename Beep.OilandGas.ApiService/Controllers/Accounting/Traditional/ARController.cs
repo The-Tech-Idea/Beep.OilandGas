@@ -48,7 +48,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             {
                 var invoice = _service.TraditionalAccounting.AccountsReceivable.GetARInvoice(id);
                 if (invoice == null)
-                    return NotFound(new { error = $"AR invoice with ID {id} not found" });
+                        return NotFound(new { error = $"AR invoice with ID {id} not found." });
 
                 return Ok(new
                 {
@@ -118,7 +118,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for AR invoice");
-                return StatusCode(500, new { error = "AR invoice created but GL posting failed"});
+                    return StatusCode(500, new { error = "AR invoice created but GL posting failed." });
             }
             catch (Exception ex)
             {

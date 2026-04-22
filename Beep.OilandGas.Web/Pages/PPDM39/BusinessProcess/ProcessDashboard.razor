@@ -1,5 +1,7 @@
 @page "/ppdm39/process"
 @inject ApiClient ApiClient
+@inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
+@inject Beep.OilandGas.Web.Services.IComplianceServiceClient ComplianceClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @using Beep.OilandGas.Models.Data
@@ -196,10 +198,10 @@
 
 @code {
     private string _fieldName = string.Empty;
-    private int _activeInstances = 12;
-    private int _pendingGates    = 3;
-    private int _openIncidents   = 2;
-    private int _obligationsDue  = 5;
+    private int _activeInstances = 0;
+    private int _pendingGates    = 0;
+    private int _openIncidents   = 0;
+    private int _obligationsDue  = 0;
 
     private List<InstanceRow>   _instances       = new();
     private List<GateRow>       _pendingGateList  = new();
@@ -217,8 +219,15 @@
 
         try
         {
-            // Active process instances
-            var instances = await ApiClient.GetAsync<List<ProcessInstanceSummary>>("/api/field/current/process/instances") ?? new();            if (instances != null)
+            var instancesTask = BusinessProcessClient.GetInstancesAsync();
+            var gatesTask = BusinessProcessClient.GetPendingGatesAsync();
+            var incidentsTask = BusinessProcessClient.GetHseIncidentsAsync(status: "open");
+            var obligationsTask = ComplianceClient.GetUpcomingObligationsAsync(30);
+
+            await Task.WhenAll(instancesTask, gatesTask, incidentsTask, obligationsTask);
+
+            var instances = instancesTask.Result;
+            if (instances.Count > 0)
             {
                 _instances = instances.Select(i => new InstanceRow(
                     i.InstanceId,
@@ -229,9 +238,14 @@
                 )).ToList();
                 _activeInstances = _instances.Count;
             }
+            else
+            {
+                _instances = new();
+                _activeInstances = 0;
+            }
 
-            // Pending gate reviews
-            var gates = await ApiClient.GetAsync<List<ProcessInstanceSummary>>("/api/field/current/gates/pending") ?? new();            if (gates != null)
+            var gates = gatesTask.Result;
+            if (gates.Count > 0)
             {
                 _pendingGateList = gates.Select(g => new GateRow(
                     string.IsNullOrWhiteSpace(g.ProcessName) ? g.ProcessId : g.ProcessName,
@@ -239,9 +253,14 @@
                 )).ToList();
                 _pendingGates = _pendingGateList.Count;
             }
+            else
+            {
+                _pendingGateList = new();
+                _pendingGates = 0;
+            }
 
-            // Open HSE incidents
-            var incidents = await ApiClient.GetAsync<List<ProcessInstanceSummary>>("/api/field/current/process/hse/incidents?status=open") ?? new();            if (incidents != null)
+            var incidents = incidentsTask.Result ?? new();
+            if (incidents.Count > 0)
             {
                 _openIncidentList = incidents.Select(i => new IncidentRow(
                     i.EntityId,
@@ -250,6 +269,13 @@
                 )).ToList();
                 _openIncidents = _openIncidentList.Count;
             }
+            else
+            {
+                _openIncidentList = new();
+                _openIncidents = 0;
+            }
+
+            _obligationsDue = obligationsTask.Result.Count;
         }
         catch
         {

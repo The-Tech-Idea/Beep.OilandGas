@@ -70,7 +70,7 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
 
                 var workOrder = await workOrderRepo.GetByIdAsync(workOrderId) as WORK_ORDER;
                 if (workOrder == null)
-                    return NotFound(new { error = $"Work order {workOrderId} not found" });
+                    return NotFound(new { error = $"Work order {workOrderId} not found." });
 
                 // Convert WORK_ORDER to WorkOrderResponse
                 var workOrderResponse = new WorkOrderResponse
@@ -192,15 +192,15 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
 
                 var workOrder = await workOrderRepo.GetByIdAsync(workOrderId) as WORK_ORDER;
                 if (workOrder == null)
-                    return NotFound(new { error = $"Work order {workOrderId} not found" });
+                    return NotFound(new { error = $"Work order {workOrderId} not found." });
 
                 // Try to extract AFE_ID from REMARK (format: "AFE_ID:xxx")
                 if (string.IsNullOrEmpty(workOrder.REMARK))
-                    return NotFound(new { error = $"No AFE linked to work order {workOrderId}" });
+                    return NotFound(new { error = $"No AFE linked to work order {workOrderId}." });
 
                 var afeIdMatch = System.Text.RegularExpressions.Regex.Match(workOrder.REMARK, @"AFE_ID:([^\s]+)");
                 if (!afeIdMatch.Success)
-                    return NotFound(new { error = $"No AFE linked to work order {workOrderId}" });
+                    return NotFound(new { error = $"No AFE linked to work order {workOrderId}." });
 
                 var afeId = afeIdMatch.Groups[1].Value;
                 var afeRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
@@ -208,7 +208,7 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
 
                 var afe = await afeRepo.GetByIdAsync(afeId) as AFE;
                 if (afe == null)
-                    return NotFound(new { error = $"AFE {afeId} not found" });
+                    return NotFound(new { error = $"AFE {afeId} not found." });
 
                 return Ok(new
                 {

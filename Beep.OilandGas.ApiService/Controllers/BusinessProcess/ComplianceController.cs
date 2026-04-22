@@ -46,7 +46,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
-                return BadRequest("No active field selected.");
+                    return BadRequest(new { error = "No active field selected." });
 
             try
             {
@@ -72,7 +72,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving compliance obligations for field {FieldId}", fieldId);
-                return StatusCode(500, "Error retrieving obligations.");
+                return StatusCode(500, new { error = "Error retrieving obligations." });
             }
         }
 
@@ -84,11 +84,11 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             [FromQuery] int daysAhead = 30)
         {
             if (daysAhead < 0)
-                return BadRequest("daysAhead must be a non-negative integer.");
+                    return BadRequest(new { error = "daysAhead must be a non-negative integer." });
 
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
-                return BadRequest("No active field selected.");
+                    return BadRequest(new { error = "No active field selected." });
 
             try
             {
@@ -113,7 +113,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving due obligations for field {FieldId}", fieldId);
-                return StatusCode(500, "Error retrieving due obligations.");
+                return StatusCode(500, new { error = "Error retrieving due obligations." });
             }
         }
 
@@ -125,17 +125,17 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             [FromBody] ComplianceReportRequest request)
         {
             if (request == null)
-                return BadRequest("Request body is required.");
+                 return BadRequest(new { error = "Request body is required." });
             if (string.IsNullOrWhiteSpace(request.ObligationType))
-                return BadRequest("ObligationType is required.");
+                 return BadRequest(new { error = "ObligationType is required." });
             if (string.IsNullOrWhiteSpace(request.JurisdictionTag))
-                return BadRequest("JurisdictionTag is required.");
+                 return BadRequest(new { error = "JurisdictionTag is required." });
             if (request.PeriodEnd <= request.PeriodStart)
-                return BadRequest("PeriodEnd must be after PeriodStart.");
+                 return BadRequest(new { error = "PeriodEnd must be after PeriodStart." });
 
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
-                return BadRequest("No active field selected.");
+                 return BadRequest(new { error = "No active field selected." });
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
 
@@ -176,7 +176,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error submitting compliance report for field {FieldId}", fieldId);
-                return StatusCode(500, "Error submitting compliance report.");
+                return StatusCode(500, new { error = "Error submitting compliance report." });
             }
         }
 
@@ -187,13 +187,13 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         public async Task<ActionResult<ProcessInstanceSummary>> GetReportStatusAsync(string reportId)
         {
             if (string.IsNullOrWhiteSpace(reportId))
-                return BadRequest("reportId is required.");
+                    return BadRequest(new { error = "Report ID is required." });
 
             try
             {
                 var instance = await _processService.GetProcessInstanceAsync(reportId);
                 if (instance == null)
-                    return NotFound($"Report '{reportId}' not found.");
+                    return NotFound(new { error = $"Report '{reportId}' not found." });
 
                 var summary = new ProcessInstanceSummary
                 {
@@ -213,7 +213,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving status for report {ReportId}", reportId);
-                return StatusCode(500, "Error retrieving report status.");
+                return StatusCode(500, new { error = "Error retrieving report status." });
             }
         }
 
@@ -229,11 +229,11 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             [FromBody] RemediationRequest request)
         {
             if (string.IsNullOrWhiteSpace(reportId))
-                return BadRequest("reportId is required.");
+                    return BadRequest(new { error = "Report ID is required." });
 
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
-                return BadRequest("No active field selected.");
+                    return BadRequest(new { error = "No active field selected." });
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
 
@@ -241,7 +241,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             {
                 var sourceReport = await _processService.GetProcessInstanceAsync(reportId);
                 if (sourceReport == null)
-                    return NotFound($"Report '{reportId}' not found.");
+                    return NotFound(new { error = $"Report '{reportId}' not found." });
 
                 // Start a remediation process linked to the source report
                 var remediationInstance = await _processService.StartProcessAsync(
@@ -267,7 +267,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error starting remediation for report {ReportId}", reportId);
-                return StatusCode(500, "Error starting remediation.");
+                return StatusCode(500, new { error = "Error starting remediation." });
             }
         }
     }

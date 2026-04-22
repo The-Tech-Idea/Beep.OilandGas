@@ -2,6 +2,7 @@
 @using Beep.OilandGas.Models.Data.WorkOrder
 @using Beep.OilandGas.Web.Services
 @inject ApiClient ApiClient
+@inject IWorkOrderServiceClient WorkOrderService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -18,6 +19,14 @@
             </MudText>
         </MudStack>
         <MudStack Row="true" Spacing="2">
+            @if (!string.IsNullOrWhiteSpace(ReturnTo))
+            {
+                <MudButton StartIcon="@Icons.Material.Outlined.ArrowBack"
+                           Variant="Variant.Outlined" Color="Color.Secondary"
+                           Href="@ReturnTo">
+                    Back to Optimizer
+                </MudButton>
+            }
             <MudIconButton Icon="@Icons.Material.Outlined.CalendarMonth"
                            Href="/ppdm39/workorder/calendar"
                            Title="Calendar view" Color="Color.Default" />
@@ -147,6 +156,27 @@
 </MudDialog>
 
 @code {
+    [SupplyParameterFromQuery(Name = "wellId")]
+    public string? WellId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "openCreate")]
+    public bool OpenCreate { get; set; }
+
+    [SupplyParameterFromQuery(Name = "subType")]
+    public string? SuggestedSubType { get; set; }
+
+    [SupplyParameterFromQuery(Name = "title")]
+    public string? SuggestedTitle { get; set; }
+
+    [SupplyParameterFromQuery(Name = "description")]
+    public string? SuggestedDescription { get; set; }
+
+    [SupplyParameterFromQuery(Name = "linkAfe")]
+    public bool LinkAfeOnCreate { get; set; }
+
+    [SupplyParameterFromQuery(Name = "returnTo")]
+    public string? ReturnTo { get; set; }
+
     private List<WorkOrderSummary> _workOrders = new();
     private string?                _fieldName;
     private string?                _filterSubType;
@@ -179,7 +209,14 @@
             _fieldName = summary?.FieldName;
         }
         catch { }
+
+        if (!string.IsNullOrWhiteSpace(SuggestedSubType))
+            _filterSubType = SuggestedSubType;
+
         await LoadWorkOrders();
+
+        if (OpenCreate)
+            OpenCreateDialogFromRecommendation();
     }
 
     private async Task LoadWorkOrders()
@@ -188,9 +225,7 @@
         _error   = null;
         try
         {
-            var qs = _filterSubType is not null ? $"?woSubType={_filterSubType}" : string.Empty;
-            _workOrders = await ApiClient.GetAsync<List<WorkOrderSummary>>(
-                $"/api/field/current/workorder{qs}") ?? new();
+            _workOrders = await WorkOrderService.GetWorkOrdersAsync(woSubType: _filterSubType);
         }
         catch (Exception) { _error = "Failed to load work orders."; Snackbar.Add(_error, Severity.Error); }
         finally { _loading = false; }
@@ -208,15 +243,47 @@
         _showCreate = true;
     }
 
+    private void OpenCreateDialogFromRecommendation()
+    {
+        _create = new CreateWorkOrderRequest
+        {
+            WoSubType = !string.IsNullOrWhiteSpace(SuggestedSubType) ? SuggestedSubType : WorkOrderSubType.Corrective,
+            InstanceName = SuggestedTitle ?? string.Empty,
+            EquipmentId = WellId ?? string.Empty,
+            Description = SuggestedDescription ?? string.Empty
+        };
+        _showCreate = true;
+    }
+
     private async Task SubmitCreateAsync()
     {
         if (_createForm is not null) await _createForm.ValidateAsync();
         if (!_createValid) return;
         try
         {
-            await ApiClient.PostAsync<CreateWorkOrderRequest, WorkOrderSummary>(
-                "/api/field/current/workorder", _create);
+            var created = await WorkOrderService.CreateWorkOrderAsync(_create);
+
+            AFEResponse? linkedAfe = null;
+            if (created is not null && LinkAfeOnCreate)
+            {
+                linkedAfe = await WorkOrderService.CreateOrLinkAfeAsync(created.InstanceId);
+                if (!string.IsNullOrWhiteSpace(linkedAfe.AfeNumber))
+                    Snackbar.Add($"Work order {created.InstanceId} created and linked to AFE {linkedAfe.AfeNumber}.", Severity.Success);
+                else
+                    Snackbar.Add($"Work order {created.InstanceId} created. AFE linking is available from the work-order detail page.", Severity.Warning);
+            }
+
             _showCreate = false;
+
+            if (created is not null && (OpenCreate || LinkAfeOnCreate))
+            {
+                var detailHref = string.IsNullOrWhiteSpace(ReturnTo)
+                    ? $"/ppdm39/workorder/{Uri.EscapeDataString(created.InstanceId)}"
+                    : $"/ppdm39/workorder/{Uri.EscapeDataString(created.InstanceId)}?returnTo={Uri.EscapeDataString(ReturnTo)}";
+                NavigationManager.NavigateTo(detailHref);
+                return;
+            }
+
             await LoadWorkOrders();
         }
         catch (Exception) { _error = "Failed to create work order."; Snackbar.Add(_error, Severity.Error); }

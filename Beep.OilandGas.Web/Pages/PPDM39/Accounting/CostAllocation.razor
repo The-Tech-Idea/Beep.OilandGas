@@ -1,7 +1,9 @@
 ﻿@page "/ppdm39/accounting/cost-allocation"
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.Accounting
+@using CostAllocationRequestDto = Beep.OilandGas.Models.Data.Accounting.Cost.CostAllocationRequest
 @inject ApiClient ApiClient
+@inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
 
 <PageTitle>Allocate Field Operating Costs</PageTitle>
@@ -60,11 +62,19 @@
                             <MudStack Spacing="2">
                                 <MudStack Row="true" Spacing="2">
                                     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg">Allocation Method</MudText>
-                                    <MudText Typo="Typo.body2">@_allocationResult.AllocationMethod</MudText>
+                                    <MudText Typo="Typo.body2">@_allocationMethod</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg">Total Operating Costs</MudText>
+                                    <MudText Typo="Typo.body2">@FormatCurrency(_allocationResult.TotalOperatingCosts?.ToString())</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg">Total Capital Costs</MudText>
+                                    <MudText Typo="Typo.body2">@FormatCurrency(_allocationResult.TotalCapitalCosts?.ToString())</MudText>
                                 </MudStack>
                                 <MudStack Row="true" Spacing="2">
                                     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg">Total Allocated</MudText>
-                                    <MudText Typo="Typo.body2" Color="Color.Warning">@FormatCurrency(_allocationResult.TotalAllocated.ToString())</MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Warning">@FormatCurrency(GetTotalAllocated().ToString())</MudText>
                                 </MudStack>
                             </MudStack>
                         </MudCardContent>
@@ -72,7 +82,7 @@
                 </MudItem>
             </MudGrid>
 
-            @if (_allocationResult.AllocationEntries != null && _allocationResult.AllocationEntries.Any())
+            @if (_allocationResult.AllocationDetails != null && _allocationResult.AllocationDetails.Any())
             {
                 <MudCard Elevation="2" Class="mt-4">
                     <MudCardHeader>
@@ -81,20 +91,29 @@
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MudDataGrid T="AllocationEntry" Items="@_allocationResult.AllocationEntries" Dense="true" Hover="true" Striped="true"
+                        <MudDataGrid T="CostAllocationBreakdown" Items="@_allocationResult.AllocationDetails" Dense="true" Hover="true" Striped="true"
                                      SortMode="SortMode.Multiple">
                             <Columns>
-                                <PropertyColumn Property="e => e.SourceCostCenter" Title="Source Cost Centre" />
-                                <PropertyColumn Property="e => e.TargetCostCenter" Title="Target Cost Centre" />
-                                <PropertyColumn Property="e => e.AllocationBasis" Title="Allocation Basis" />
+                                <PropertyColumn Property="e => e.EntityType" Title="Entity Type" />
+                                <PropertyColumn Property="e => e.EntityName" Title="Entity Name" />
                                 <TemplateColumn Title="Allocated Amount">
                                     <CellTemplate>
-                                        <MudText Typo="Typo.body2">@FormatCurrency(context.Item.AllocationAmount.ToString())</MudText>
+                                        <MudText Typo="Typo.body2">@FormatCurrency(context.Item.TotalAllocatedCost.ToString())</MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Operating Cost">
+                                    <CellTemplate>
+                                        <MudText Typo="Typo.body2">@FormatCurrency(context.Item.AllocatedOperatingCost.ToString())</MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Capital Cost">
+                                    <CellTemplate>
+                                        <MudText Typo="Typo.body2">@FormatCurrency(context.Item.AllocatedCapitalCost.ToString())</MudText>
                                     </CellTemplate>
                                 </TemplateColumn>
                                 <TemplateColumn Title="Allocation %">
                                     <CellTemplate>
-                                        <MudText Typo="Typo.body2">@FormatDecimal(context.Item.AllocationPercent.ToString())%</MudText>
+                                        <MudText Typo="Typo.body2">@FormatDecimal(context.Item.AllocationPercentage.ToString())%</MudText>
                                     </CellTemplate>
                                 </TemplateColumn>
                             </Columns>
@@ -111,21 +130,25 @@
 </MudContainer>
 
 @code {
+    private string _fieldId = string.Empty;
     private string _fieldName = string.Empty;
     private CostAllocationMethod _allocationMethod = CostAllocationMethod.DirectAllocation;
     private DateTime? _allocationDate = DateTime.Today;
     private decimal? _totalOperatingCosts;
     private decimal? _totalCapitalCosts;
     private bool _isLoading = false;
-    private CostAllocationResult? _allocationResult;
+    private CostAllocationComputationResult? _allocationResult;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             if (summary != null)
+            {
+                _fieldId = summary.FieldId ?? string.Empty;
                 _fieldName = summary.FieldName ?? _fieldName;
+            }
         }
         catch { /* field name is non-critical */ }
     }
@@ -138,22 +161,29 @@
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(_fieldId))
+        {
+            Snackbar.Add("No active field is available for cost allocation.", Severity.Error);
+            return;
+        }
+
         _isLoading = true;
         try
         {
-            var request = new Dictionary<string, object>
+            var request = new CostAllocationRequestDto
             {
-                { "AllocationDate", _allocationDate.Value },
-                { "AllocationMethod", _allocationMethod.ToString() }
+                FieldId = _fieldId,
+                AllocationDate = _allocationDate.Value,
+                AllocationMethod = _allocationMethod.ToString()
             };
 
             if (_totalOperatingCosts.HasValue)
-                request["TotalOperatingCosts"] = _totalOperatingCosts.Value;
+                request.TotalOperatingCosts = _totalOperatingCosts.Value;
 
             if (_totalCapitalCosts.HasValue)
-                request["TotalCapitalCosts"] = _totalCapitalCosts.Value;
+                request.TotalCapitalCosts = _totalCapitalCosts.Value;
 
-            _allocationResult = await ApiClient.PostAsync<Dictionary<string, object>, CostAllocationResult>(
+            _allocationResult = await ApiClient.PostAsync<CostAllocationRequestDto, CostAllocationComputationResult>(
                 "/api/accounting/cost/allocations/allocate",
                 request);
 
@@ -189,5 +219,10 @@
             return value.ToString("F2");
 
         return valueStr;
+    }
+
+    private decimal GetTotalAllocated()
+    {
+        return (_allocationResult?.TotalOperatingCosts ?? 0m) + (_allocationResult?.TotalCapitalCosts ?? 0m);
     }
 }

@@ -2,6 +2,8 @@
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject ApiClient ApiClient
+@inject IComplianceServiceClient ComplianceClient
+@inject ILifeCycleService LifeCycleService
 @using Beep.OilandGas.Models.Data.Compliance
 
 <PageTitle>Compliance Calendar</PageTitle>
@@ -16,6 +18,14 @@
             <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Regulatory &amp; permit compliance schedule</MudText>
         </MudStack>
         <MudStack Row="true" Spacing="2">
+            @if (!string.IsNullOrWhiteSpace(ReturnTo))
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                           StartIcon="@Icons.Material.Filled.ArrowBack"
+                           Href="@ReturnTo">
+                    Back
+                </MudButton>
+            }
             <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="AddObligation">
                 Add Obligation
             </MudButton>
@@ -151,6 +161,7 @@
     <DialogContent>
         <MudStack Spacing="3">
             <MudSelect @bind-Value="_newObligType" Label="Obligation Type" Variant="Variant.Outlined" Required="true">
+                <MudSelectItem Value='@("Permit")'>Permit / Lease Regulatory Review</MudSelectItem>
                 <MudSelectItem Value="@ObligationType.OnrrProductionReport">ONRR Production Report</MudSelectItem>
                 <MudSelectItem Value="@ObligationType.OnrrRoyaltyPayment">ONRR Royalty Payment</MudSelectItem>
                 <MudSelectItem Value="@ObligationType.BseeSemsAudit">BSEE SEMS Audit</MudSelectItem>
@@ -178,9 +189,49 @@
 </MudDialog>
 
 @code {
+    [SupplyParameterFromQuery(Name = "openCreate")]
+    public bool OpenCreate { get; set; }
+
+    [SupplyParameterFromQuery(Name = "obligType")]
+    public string? PrefillObligType { get; set; }
+
+    [SupplyParameterFromQuery(Name = "jurisdiction")]
+    public string? PrefillJurisdiction { get; set; }
+
+    [SupplyParameterFromQuery(Name = "description")]
+    public string? PrefillDescription { get; set; }
+
+    [SupplyParameterFromQuery(Name = "leaseId")]
+    public string? LeaseId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "leaseNumber")]
+    public string? LeaseNumber { get; set; }
+
+    [SupplyParameterFromQuery(Name = "leaseName")]
+    public string? LeaseName { get; set; }
+
+    [SupplyParameterFromQuery(Name = "sourceProcess")]
+    public string? SourceProcess { get; set; }
+
+    [SupplyParameterFromQuery(Name = "returnTo")]
+    public string? ReturnTo { get; set; }
+
+    [SupplyParameterFromQuery(Name = "wellId")]
+    public string? WellId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "abandonmentId")]
+    public string? AbandonmentId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "processInstanceId")]
+    public string? ProcessInstanceId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "handoffReason")]
+    public string? HandoffReason { get; set; }
+
     private string _fieldName = string.Empty;
     private string _filter = "All";
     private bool _loading = true;
+    private string? _prefillKey;
 
     private List<ObligationDto> _obligations = new();
 
@@ -216,7 +267,7 @@
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
@@ -225,27 +276,24 @@
         _loading = true;
         try
         {
-            var raw = await ApiClient.GetAsync<List<ObligationApiDto>>("api/field/current/compliance/obligations") ?? new();            if (raw != null)
-                _obligations = raw.Select(r => new ObligationDto(
-                    r.ObligationId,
-                    r.ObligationType,
-                    r.JurisdictionTag,
-                    r.DueDate.ToLocalTime().ToString("dd MMM yyyy"),
-                    r.Status,
-                    r.AssignedTo)).ToList();
+            var obligations = await ComplianceClient.GetAllObligationsAsync();
+            _obligations = obligations.Select(r => new ObligationDto(
+                r.ObligationId,
+                r.ObligType,
+                r.Jurisdiction,
+                r.DueDate.ToLocalTime().ToString("dd MMM yyyy"),
+                r.Status,
+                string.Empty)).ToList();
         }
         catch (Exception) { Snackbar.Add("Failed to load obligations.", Severity.Warning); }
         finally { _loading = false; }
+
+        ApplyQueryPrefill();
     }
 
-    private class ObligationApiDto
+    protected override void OnParametersSet()
     {
-        public string   ObligationId   { get; set; } = string.Empty;
-        public string   ObligationType { get; set; } = string.Empty;
-        public string   JurisdictionTag{ get; set; } = string.Empty;
-        public DateTime DueDate        { get; set; } = DateTime.UtcNow;
-        public string   Status         { get; set; } = string.Empty;
-        public string   AssignedTo     { get; set; } = string.Empty;
+        ApplyQueryPrefill();
     }
 
     private Color ObligationColor(string status) => status switch
@@ -283,23 +331,29 @@
         _addingObligation = true;
         try
         {
-            var fieldInfo = await ApiClient.GetAsync<FieldInfoDto>("/api/field/current");
+            var fieldInfo = await LifeCycleService.GetCurrentFieldAsync();
             var req = new CreateObligationRequest(
                 FieldId:     fieldInfo?.FieldId ?? string.Empty,
                 ObligType:   _newObligType,
                 DueDate:     _newObligDueDate ?? DateTime.Today.AddMonths(1),
                 Jurisdiction: _newObligJurisdiction,
-                Description: _newObligDescription);
-            var id = await ApiClient.PostAsync<CreateObligationRequest, string>(
-                "/api/field/current/compliance/obligations", req);
+                Description: _newObligDescription,
+                CreatedByProcess: ResolveCreatedByProcess());
+            var id = await ComplianceClient.CreateObligationAsync(req);
             var newRow = new ObligationDto(
                 id ?? Guid.NewGuid().ToString(),
                 _newObligType, _newObligJurisdiction,
                 (_newObligDueDate ?? DateTime.Today.AddMonths(1)).ToString("dd MMM yyyy"),
-                "PENDING", string.Empty);
+                ObligationStatus.Pending, string.Empty);
             _obligations.Add(newRow);
             _showAddObligationDialog = false;
             Snackbar.Add("Obligation added.", Severity.Success);
+
+            if (!string.IsNullOrWhiteSpace(id) && HasWorkflowHandoffContext())
+            {
+                NavigationManager.NavigateTo(BuildObligationDetailHref(id));
+                return;
+            }
         }
         catch (Exception) { Snackbar.Add("Error adding obligation.", Severity.Error); }
         finally { _addingObligation = false; }
@@ -308,4 +362,153 @@
     private record FieldInfoDto(string FieldId, string FieldName);
 
     private void ExportCalendar()  => Snackbar.Add("Calendar export queued", Severity.Success);
+
+    private void ApplyQueryPrefill()
+    {
+        var key = string.Join("|",
+            OpenCreate,
+            PrefillObligType ?? string.Empty,
+            PrefillJurisdiction ?? string.Empty,
+            PrefillDescription ?? string.Empty,
+            LeaseId ?? string.Empty,
+            LeaseNumber ?? string.Empty,
+            LeaseName ?? string.Empty,
+            SourceProcess ?? string.Empty,
+            WellId ?? string.Empty,
+            AbandonmentId ?? string.Empty,
+            ProcessInstanceId ?? string.Empty,
+            HandoffReason ?? string.Empty,
+            ReturnTo ?? string.Empty);
+
+        if (!OpenCreate || string.Equals(_prefillKey, key, StringComparison.Ordinal))
+            return;
+
+        _newObligType = string.IsNullOrWhiteSpace(PrefillObligType) ? "Permit" : PrefillObligType;
+        _newObligJurisdiction = PrefillJurisdiction ?? string.Empty;
+        _newObligDescription = !string.IsNullOrWhiteSpace(PrefillDescription)
+            ? PrefillDescription
+            : BuildWorkflowObligationDescription();
+        _newObligDueDate = DateTime.Today.AddMonths(1);
+        _showAddObligationDialog = true;
+        _prefillKey = key;
+    }
+
+    private bool HasLeaseHandoffContext()
+    {
+        return !string.IsNullOrWhiteSpace(LeaseId)
+            || !string.IsNullOrWhiteSpace(LeaseNumber)
+            || !string.IsNullOrWhiteSpace(LeaseName)
+            || string.Equals(SourceProcess, "LEASE_ACQUISITION", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool HasDecommissioningHandoffContext()
+    {
+        return !string.IsNullOrWhiteSpace(WellId)
+            || !string.IsNullOrWhiteSpace(AbandonmentId)
+            || !string.IsNullOrWhiteSpace(ProcessInstanceId)
+            || string.Equals(SourceProcess, "DECOMMISSIONING", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool HasWorkflowHandoffContext() => HasLeaseHandoffContext() || HasDecommissioningHandoffContext();
+
+    private string? ResolveCreatedByProcess()
+    {
+        if (!string.IsNullOrWhiteSpace(SourceProcess))
+            return SourceProcess;
+
+        return HasLeaseHandoffContext() ? "LEASE_ACQUISITION" : null;
+    }
+
+    private string BuildObligationDetailHref(string obligationId)
+    {
+        var detailPath = $"/ppdm39/compliance/obligation/{Uri.EscapeDataString(obligationId)}";
+        var query = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(ReturnTo))
+            query.Add($"returnTo={Uri.EscapeDataString(ReturnTo)}");
+
+        var continueTo = BuildDevelopmentPlanHref(obligationId);
+        if (!string.IsNullOrWhiteSpace(continueTo))
+            query.Add($"continueTo={Uri.EscapeDataString(continueTo)}");
+
+        return query.Count == 0
+            ? detailPath
+            : detailPath + "?" + string.Join("&", query);
+    }
+
+    private string? BuildDevelopmentPlanHref(string obligationId)
+    {
+        if (!HasLeaseHandoffContext())
+            return null;
+
+        var detailPath = $"/ppdm39/compliance/obligation/{Uri.EscapeDataString(obligationId)}";
+        var query = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(_newObligJurisdiction))
+            query.Add($"jurisdiction={Uri.EscapeDataString(_newObligJurisdiction)}");
+
+        if (!string.IsNullOrWhiteSpace(_newObligType))
+            query.Add($"permitList={Uri.EscapeDataString(_newObligType)}");
+
+        var notes = BuildDevelopmentRegulatoryNotes();
+        if (!string.IsNullOrWhiteSpace(notes))
+            query.Add($"regulatoryNotes={Uri.EscapeDataString(notes)}");
+
+        query.Add($"returnTo={Uri.EscapeDataString(detailPath)}");
+
+        return "/development/fdp/new?" + string.Join("&", query);
+    }
+
+    private string BuildDevelopmentRegulatoryNotes()
+    {
+        if (!string.IsNullOrWhiteSpace(_newObligDescription))
+            return _newObligDescription;
+
+        return BuildLeaseObligationDescription();
+    }
+
+    private string BuildWorkflowObligationDescription()
+    {
+        if (HasDecommissioningHandoffContext())
+            return BuildDecommissioningObligationDescription();
+
+        return BuildLeaseObligationDescription();
+    }
+
+    private string BuildLeaseObligationDescription()
+    {
+        var label = !string.IsNullOrWhiteSpace(LeaseNumber)
+            ? LeaseNumber
+            : LeaseId;
+
+        if (!string.IsNullOrWhiteSpace(LeaseName) && !string.IsNullOrWhiteSpace(label))
+            return $"Regulatory review and permit setup for lease {label} - {LeaseName}";
+
+        if (!string.IsNullOrWhiteSpace(LeaseName))
+            return $"Regulatory review and permit setup for lease {LeaseName}";
+
+        if (!string.IsNullOrWhiteSpace(label))
+            return $"Regulatory review and permit setup for lease {label}";
+
+        return "Regulatory review and permit setup for lease acquisition";
+    }
+
+    private string BuildDecommissioningObligationDescription()
+    {
+        var label = !string.IsNullOrWhiteSpace(WellId)
+            ? WellId
+            : AbandonmentId;
+
+        var description = !string.IsNullOrWhiteSpace(label)
+            ? $"Plug and abandonment compliance closeout for well {label}"
+            : "Plug and abandonment compliance closeout";
+
+        if (!string.IsNullOrWhiteSpace(AbandonmentId) && !string.Equals(label, AbandonmentId, StringComparison.OrdinalIgnoreCase))
+            description += $" ({AbandonmentId})";
+
+        if (!string.IsNullOrWhiteSpace(HandoffReason))
+            description += $". Trigger: {HandoffReason}";
+
+        return description;
+    }
 }

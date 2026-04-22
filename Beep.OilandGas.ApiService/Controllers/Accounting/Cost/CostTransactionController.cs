@@ -83,7 +83,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for cost transaction");
-                return StatusCode(500, new { error = "Cost transaction created but GL posting failed"});
+                    return StatusCode(500, new { error = "Cost transaction created but GL posting failed." });
             }
             catch (Exception ex)
             {

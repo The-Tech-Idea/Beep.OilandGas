@@ -1,6 +1,7 @@
 ﻿@page "/ppdm39/accounting/royalties"
 @using Beep.OilandGas.Models.Data.ProductionAccounting
 @inject ApiClient ApiClient
+@inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 
@@ -125,6 +126,7 @@
 </MudContainer>
 
 @code {
+    private string _fieldId = string.Empty;
     private string _fieldName = string.Empty;
     private List<ROYALTY_CALCULATION>? _royalties;
     private bool _isLoading = false;
@@ -135,9 +137,12 @@
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             if (summary != null)
+            {
+                _fieldId = summary.FieldId ?? string.Empty;
                 _fieldName = summary.FieldName ?? _fieldName;
+            }
         }
         catch { /* field name is non-critical */ }
 
@@ -150,13 +155,16 @@
         try
         {
             var queryParams = new List<string>();
+            if (!string.IsNullOrWhiteSpace(_fieldId))
+                queryParams.Add($"fieldId={Uri.EscapeDataString(_fieldId)}");
             if (_filterStartDate.HasValue)
                 queryParams.Add($"startDate={_filterStartDate.Value:yyyy-MM-dd}");
             if (_filterEndDate.HasValue)
                 queryParams.Add($"endDate={_filterEndDate.Value:yyyy-MM-dd}");
 
             var query = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
-            _royalties = await ApiClient.GetAsync<List<ROYALTY_CALCULATION>>($"/api/accounting/royalty/calculations{query}") ?? new();        }
+            _royalties = await ApiClient.GetAsync<List<ROYALTY_CALCULATION>>($"/api/accounting/royalty/calculations{query}") ?? new();
+        }
         catch (Exception)
         {
             Snackbar.Add("Error loading royalty calculations.", Severity.Error);
@@ -171,7 +179,11 @@
     private async Task OpenCalculateDialog()
     {
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<RoyaltyCalculationDialog>("Calculate Royalties", options);
+        var parameters = new DialogParameters
+        {
+            [nameof(RoyaltyCalculationDialog.FieldId)] = _fieldId
+        };
+        var dialog = await DialogService.ShowAsync<RoyaltyCalculationDialog>("Calculate Royalties", parameters, options);
         var result = await dialog.Result;
 
         if (result?.Canceled == false)

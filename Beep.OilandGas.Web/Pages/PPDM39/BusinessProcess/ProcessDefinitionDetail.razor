@@ -1,5 +1,6 @@
 ﻿@page "/ppdm39/process/definitions/{Id}"
 @inject ApiClient ApiClient
+@inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -176,7 +177,7 @@
     {
         try
         {
-            _def = await ApiClient.GetAsync<ProcessDefinition>($"/api/field/current/process/definitions/{Uri.EscapeDataString(Id)}");
+            _def = await BusinessProcessClient.GetDefinitionAsync(Id);
             if (_def != null)
             {
                 _steps = (_def.Steps ?? new())
@@ -211,14 +212,13 @@
         _starting = true;
         try
         {
-            var request = new
+            var request = new ProcessInstanceRequest
             {
                 ProcessId  = Id,
                 EntityId   = _startEntityId,
                 EntityType = _startEntityType
             };
-            var instance = await ApiClient.PostAsync<object, ProcessInstanceSummary>(
-                "/api/field/current/process/instances", request);
+            var instance = await BusinessProcessClient.StartInstanceAsync(request);
             _showStartDialog = false;
             Snackbar.Add("Process instance started.", Severity.Success);
             if (instance != null)

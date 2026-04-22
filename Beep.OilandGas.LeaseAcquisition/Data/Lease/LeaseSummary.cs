@@ -50,5 +50,77 @@ namespace Beep.OilandGas.Models.Data.Lease
            set { SetProperty(ref StatusValue, value); }
 
        }
+
+       private string LeaseTypeValue = string.Empty;
+
+       public string LeaseType
+
+       {
+
+           get { return this.LeaseTypeValue; }
+
+           set { SetProperty(ref LeaseTypeValue, value); }
+
+       }
+
+       private string FieldIdValue = string.Empty;
+
+       public string FieldId
+
+       {
+
+           get { return this.FieldIdValue; }
+
+           set { SetProperty(ref FieldIdValue, value); }
+
+       }
+
+       private DateTime? EffectiveDateValue;
+
+       public DateTime? EffectiveDate
+
+       {
+
+           get { return this.EffectiveDateValue; }
+
+           set { SetProperty(ref EffectiveDateValue, value); }
+
+       }
+
+       private DateTime? ExpirationDateValue;
+
+       public DateTime? ExpirationDate
+
+       {
+
+           get { return this.ExpirationDateValue; }
+
+           set { SetProperty(ref ExpirationDateValue, value); }
+
+       }
+
+       private int? PrimaryTermMonthsValue;
+
+       public int? PrimaryTermMonths
+
+       {
+
+           get { return this.PrimaryTermMonthsValue; }
+
+           set { SetProperty(ref PrimaryTermMonthsValue, value); }
+
+       }
+
+       private decimal WorkingInterestValue;
+
+       public decimal WorkingInterest
+
+       {
+
+           get { return this.WorkingInterestValue; }
+
+           set { SetProperty(ref WorkingInterestValue, value); }
+
+       }
     }
 }

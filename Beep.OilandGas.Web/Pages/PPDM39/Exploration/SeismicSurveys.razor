@@ -1,6 +1,8 @@
 ﻿@page "/ppdm39/exploration/seismic-surveys"
+@using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
+@inject IExplorationServiceClient ExplorationService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
@@ -40,21 +42,21 @@
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Label="2D Surveys"
-                     Value="@((_surveys?.Count(s => GetPropertyValue(s, "SURVEY_TYPE") == "2D") ?? 0).ToString())"
+                     Value="@((_surveys?.Count(s => IsSurveyType(s, "2D")) ?? 0).ToString())"
                      ValueColor="Color.Info" Icon="@Icons.Material.Filled.Timeline"
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
                      TrendText="Line surveys" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Label="3D Surveys"
-                     Value="@((_surveys?.Count(s => GetPropertyValue(s, "SURVEY_TYPE") == "3D") ?? 0).ToString())"
+                     Value="@((_surveys?.Count(s => IsSurveyType(s, "3D")) ?? 0).ToString())"
                      ValueColor="Color.Success" Icon="@Icons.Material.Filled.ViewInAr"
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
                      TrendText="Volume surveys" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Label="4D / Other"
-                     Value="@((_surveys?.Count(s => GetPropertyValue(s, "SURVEY_TYPE") != "2D" && GetPropertyValue(s, "SURVEY_TYPE") != "3D") ?? 0).ToString())"
+                     Value="@((_surveys?.Count(s => !IsSurveyType(s, "2D") && !IsSurveyType(s, "3D")) ?? 0).ToString())"
                      ValueColor="Color.Warning" Icon="@Icons.Material.Filled.BlurOn"
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
                      TrendText="Time-lapse / other" />
@@ -71,28 +73,38 @@
                     <Columns>
                         <TemplateColumn Title="Survey ID">
                             <CellTemplate>
-                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "SEISMIC_SURVEY_ID")</MudText>
+                                <MudText Typo="Typo.body2">@context.Item.SEIS_ACQTN_SURVEY_ID</MudText>
                             </CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="Survey Name">
                             <CellTemplate>
                                 <MudText Typo="Typo.body2" Color="Color.Primary">
-                                    @GetPropertyValue(context.Item, "SURVEY_NAME")
+                                    @context.Item.ACQTN_SURVEY_NAME
                                 </MudText>
                             </CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="Type">
                             <CellTemplate>
                                 <MudChip T="string" Size="Size.Small" Color="Color.Info">
-                                    @GetPropertyValue(context.Item, "SURVEY_TYPE")
+                                    @GetSurveyType(context.Item)
                                 </MudChip>
                             </CellTemplate>
                         </TemplateColumn>
-                        <TemplateColumn Title="Acquisition Date">
+                        <TemplateColumn Title="Start Date">
                             <CellTemplate>
                                 <MudText Typo="Typo.body2">
-                                    @FormatDate(GetPropertyValue(context.Item, "ACQUISITION_DATE"))
+                                    @FormatDate(context.Item.START_DATE)
                                 </MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Completed">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@FormatDate(context.Item.COMPLETED_DATE)</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Status">
+                            <CellTemplate>
+                                <StatusBadge Status="@GetStatus(context.Item)" />
                             </CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="Actions" Sortable="false">
@@ -102,11 +114,6 @@
                                                StartIcon="@Icons.Material.Filled.Visibility"
                                                OnClick="@(() => ViewSurveyLines(context.Item))">
                                         Lines
-                                    </MudButton>
-                                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
-                                               StartIcon="@Icons.Material.Filled.Edit"
-                                               OnClick="@(() => OpenEditDialog(context.Item))">
-                                        Edit
                                     </MudButton>
                                 </MudStack>
                             </CellTemplate>
@@ -165,7 +172,8 @@
         _isLoading = true;
         try
         {
-            _surveys = await ApiClient.GetAsync<List<SEIS_ACQTN_SURVEY>>("/api/field/current/exploration/seismic-surveys") ?? new();        }
+            _surveys = await ExplorationService.GetSeismicSurveysAsync();
+        }
         catch (Exception)
         {
             Snackbar.Add("Error loading seismic surveys.", Severity.Error);
@@ -187,9 +195,8 @@
         {
             try
             {
-                var created = await ApiClient.PostAsync<object, Dictionary<string, object>>(
-                    "/api/field/current/exploration/seismic-surveys",
-                    surveyData);
+                var request = BuildSurveyRequest(surveyData);
+                await ExplorationService.CreateSeismicSurveyAsync(request);
                 
                 Snackbar.Add("Seismic survey created successfully", Severity.Success);
                 await LoadSurveys();
@@ -201,50 +208,59 @@
         }
     }
 
-    private async Task OpenEditDialog(object survey)
+    private void ViewSurveyLines(SEIS_ACQTN_SURVEY survey)
     {
-        var surveyId = GetPropertyValue(survey, "SEISMIC_SURVEY_ID");
-        if (string.IsNullOrEmpty(surveyId))
-            return;
-
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var parameters = new DialogParameters { ["Survey"] = survey };
-        var dialog = await DialogService.ShowAsync<SeismicSurveyEditDialog>("Edit Seismic Survey", parameters, options);
-        var result = await dialog.Result;
-
-        if (result?.Canceled == false && result.Data is Dictionary<string, object> surveyData)
-        {
-            Snackbar.Add("Edit functionality will be available in the API controller", Severity.Info);
-            await LoadSurveys();
-        }
-    }
-
-    private async Task ViewSurveyLines(object survey)
-    {
-        var surveyId = GetPropertyValue(survey, "SEISMIC_SURVEY_ID");
+        var surveyId = survey.SEIS_ACQTN_SURVEY_ID;
         if (string.IsNullOrEmpty(surveyId))
             return;
 
         NavigationManager.NavigateTo($"/ppdm39/exploration/seismic-surveys/{Uri.EscapeDataString(surveyId)}/lines");
     }
 
-    private string GetPropertyValue(object obj, string propertyName)
+    private static bool IsSurveyType(SEIS_ACQTN_SURVEY survey, string surveyType)
+        => string.Equals(GetSurveyType(survey), surveyType, StringComparison.OrdinalIgnoreCase);
+
+    private static string GetSurveyType(SEIS_ACQTN_SURVEY survey)
+        => !string.IsNullOrWhiteSpace(survey.SEIS_SET_SUBTYPE) ? survey.SEIS_SET_SUBTYPE : survey.SEIS_DIMENSION ?? "Unknown";
+
+    private static string GetStatus(SEIS_ACQTN_SURVEY survey)
     {
-        if (obj is IDictionary<string, object> dict && dict.ContainsKey(propertyName))
-        {
-            return dict[propertyName]?.ToString() ?? "N/A";
-        }
-        return "N/A";
+        if (survey.COMPLETED_DATE.HasValue)
+            return "COMPLETE";
+
+        return string.Equals(survey.ACTIVE_IND, "Y", StringComparison.OrdinalIgnoreCase)
+            ? "ACTIVE"
+            : "INACTIVE";
     }
 
-    private string FormatDate(string? dateStr)
+    private static string FormatDate(DateTime? date)
+        => date?.ToString("yyyy-MM-dd") ?? "Pending";
+
+    private static SeismicSurveyRequest BuildSurveyRequest(Dictionary<string, object> surveyData)
     {
-        if (string.IsNullOrEmpty(dateStr) || dateStr == "N/A")
-            return "N/A";
+        surveyData.TryGetValue("SURVEY_NAME", out var surveyName);
+        surveyData.TryGetValue("SURVEY_TYPE", out var surveyType);
+        surveyData.TryGetValue("DESCRIPTION", out var description);
+        surveyData.TryGetValue("ACQUISITION_DATE", out var acquisitionDate);
+        surveyData.TryGetValue("AREA_COVERED", out var areaCovered);
 
-        if (DateTime.TryParse(dateStr, out var date))
-            return date.ToString("yyyy-MM-dd");
+        DateTime? parsedAcquisitionDate = acquisitionDate as DateTime?;
+        if (!parsedAcquisitionDate.HasValue && acquisitionDate != null && DateTime.TryParse(acquisitionDate.ToString(), out var dateValue))
+            parsedAcquisitionDate = dateValue;
 
-        return dateStr;
+        decimal? parsedArea = areaCovered as decimal?;
+        if (!parsedArea.HasValue && areaCovered != null && decimal.TryParse(areaCovered.ToString(), out var areaValue))
+            parsedArea = areaValue;
+
+        return new SeismicSurveyRequest
+        {
+            SurveyName = surveyName?.ToString() ?? string.Empty,
+            SurveyType = surveyType?.ToString(),
+            Description = description?.ToString(),
+            SurveyStartDate = parsedAcquisitionDate,
+            SurveyArea = parsedArea,
+            SurveyAreaOuom = parsedArea.HasValue ? "KM2" : null,
+            Status = "PLANNED"
+        };
     }
 }

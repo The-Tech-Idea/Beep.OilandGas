@@ -58,7 +58,8 @@ public class HSEController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
         var result = await _hse.GetByIdAsync(incidentId);
-        return result is null ? NotFound() : Ok(result);
+        if (result is null) return NotFound(new { error = $"Incident {incidentId} not found." });
+        return Ok(result);
     }
 
     [HttpPost("incidents")]
@@ -75,7 +76,7 @@ public class HSEController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
         var ok = await _hse.TransitionAsync(incidentId, request.Trigger, request.Reason, UserId);
-        return ok ? NoContent() : BadRequest("Invalid transition");
+        return ok ? NoContent() : BadRequest(new { error = "Invalid transition." });
     }
 
     [HttpPut("incidents/{incidentId}/tier")]
@@ -101,7 +102,10 @@ public class HSEController : ControllerBase
 
     [HttpGet("incidents/{incidentId}/causes")]
     public async Task<ActionResult<List<CauseFinding>>> GetCausesAsync(string incidentId)
-        => Ok(await _rca.GetCauseChainAsync(incidentId));
+        {
+            if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
+            return Ok(await _rca.GetCauseChainAsync(incidentId));
+        }
 
     [HttpPost("incidents/{incidentId}/causes")]
     public async Task<ActionResult> AddCauseAsync(
@@ -114,13 +118,19 @@ public class HSEController : ControllerBase
 
     [HttpGet("incidents/{incidentId}/rca-complete")]
     public async Task<ActionResult<bool>> IsRCACompleteAsync(string incidentId)
-        => Ok(await _rca.IsRCACompleteAsync(incidentId));
+        {
+            if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
+            return Ok(await _rca.IsRCACompleteAsync(incidentId));
+        }
 
     // ── Barriers ───────────────────────────────────────────────────────────────
 
     [HttpGet("incidents/{incidentId}/barriers")]
     public async Task<ActionResult<List<BarrierRecord>>> GetBarriersAsync(string incidentId)
-        => Ok(await _barriers.GetBarriersForIncidentAsync(incidentId));
+        {
+            if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
+            return Ok(await _barriers.GetBarriersForIncidentAsync(incidentId));
+        }
 
     [HttpPost("incidents/{incidentId}/barriers")]
     public async Task<ActionResult> AddBarrierAsync(
@@ -136,6 +146,7 @@ public class HSEController : ControllerBase
         string incidentId, string equipId, [FromQuery] string status)
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
+            if (string.IsNullOrWhiteSpace(equipId)) return BadRequest(new { error = "Equipment ID is required." });
         if (string.IsNullOrWhiteSpace(status)) return BadRequest(new { error = "Status is required." });
         await _barriers.SetBarrierStatusAsync(incidentId, equipId, status, UserId);
         return NoContent();
@@ -143,13 +154,19 @@ public class HSEController : ControllerBase
 
     [HttpGet("incidents/{incidentId}/barriers/summary")]
     public async Task<ActionResult<BarrierSummary>> GetBarrierSummaryAsync(string incidentId)
-        => Ok(await _barriers.GetBarrierSummaryAsync(incidentId));
+        {
+            if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
+            return Ok(await _barriers.GetBarrierSummaryAsync(incidentId));
+        }
 
     // ── Corrective Actions ─────────────────────────────────────────────────────
 
     [HttpGet("incidents/{incidentId}/cas")]
     public async Task<ActionResult<List<CAStatus>>> GetCAsAsync(string incidentId)
-        => Ok(await _ca.GetCAStatusAsync(incidentId));
+        {
+            if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
+            return Ok(await _ca.GetCAStatusAsync(incidentId));
+        }
 
     [HttpPost("incidents/{incidentId}/ca-plan")]
     public async Task<ActionResult<string>> CreateCAPlanAsync(string incidentId)
@@ -197,11 +214,17 @@ public class HSEController : ControllerBase
 
     [HttpGet("hazop/{studyId}")]
     public async Task<ActionResult<HAZOPSummary>> GetStudySummaryAsync(string studyId)
-        => Ok(await _hazop.GetSummaryAsync(studyId));
+        {
+            if (string.IsNullOrWhiteSpace(studyId)) return BadRequest(new { error = "Study ID is required." });
+            return Ok(await _hazop.GetSummaryAsync(studyId));
+        }
 
     [HttpGet("hazop/{studyId}/nodes")]
     public async Task<ActionResult<List<HAZOPNode>>> GetNodesAsync(string studyId)
-        => Ok(await _hazop.GetNodesAsync(studyId));
+        {
+            if (string.IsNullOrWhiteSpace(studyId)) return BadRequest(new { error = "Study ID is required." });
+            return Ok(await _hazop.GetNodesAsync(studyId));
+        }
 
     [HttpPost("hazop/{studyId}/nodes")]
     public async Task<ActionResult<string>> AddNodeAsync(

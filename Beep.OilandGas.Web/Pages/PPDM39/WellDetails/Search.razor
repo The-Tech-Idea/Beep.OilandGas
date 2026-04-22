@@ -2,6 +2,8 @@
 @using Beep.OilandGas.PPDM39.Models
 @using Beep.OilandGas.Models.Data
 @inject ApiClient ApiClient
+@inject ILifeCycleService LifeCycleService
+@inject IWellLookupServiceClient WellLookupClient
 @inject ISnackbar Snackbar
 
 <PageTitle>Search Wells</PageTitle>
@@ -67,7 +69,7 @@
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
@@ -85,7 +87,7 @@
         _isLoading = true;
         try
         {
-            _well = await ApiClient.GetAsync<WELL>($"/api/well/uwi/{Uri.EscapeDataString(_searchUwi)}");
+            _well = await WellLookupClient.GetWellAsync(_searchUwi);
             if (_well == null)
             {
                 Snackbar.Add($"Well with UWI '{_searchUwi}' not found", Severity.Info);

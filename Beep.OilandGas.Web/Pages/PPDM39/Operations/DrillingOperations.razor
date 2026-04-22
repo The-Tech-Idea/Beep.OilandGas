@@ -4,7 +4,7 @@
 @using Beep.OilandGas.Client.App
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
-@inject IOperationsServiceClient OperationsService
+@inject IDrillingServiceClient DrillingService
 
 <PageTitle>Monitor Drilling Operations</PageTitle>
 
@@ -20,10 +20,36 @@
                          Icon="@Icons.Material.Filled.Construction">Operations</MudChip>
             </MudStack>
         </MudStack>
-        <MudButton Variant="Variant.Filled" Color="Color.Warning"
-                   StartIcon="@Icons.Material.Filled.Add"
-                   OnClick="OpenCreateDialog">Create Drilling Operation</MudButton>
+        <MudStack Row="true" Spacing="2">
+            @if (!string.IsNullOrWhiteSpace(ReturnTo))
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                           StartIcon="@Icons.Material.Filled.ArrowBack"
+                           Href="@ReturnTo">
+                    Back
+                </MudButton>
+            }
+            <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="OpenCreateDialog">Create Drilling Operation</MudButton>
+        </MudStack>
     </MudStack>
+
+    @if (HasDevelopmentHandoffContext)
+    {
+        <MudPaper Elevation="1" Class="pa-4 mb-4">
+            <MudStack Spacing="1">
+                <MudText Typo="Typo.subtitle2">Development Handoff Active</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Well @WellUwi is being handed off from development planning into drilling operations.
+                </MudText>
+                @if (!string.IsNullOrWhiteSpace(WellName))
+                {
+                    <MudText Typo="Typo.body2">Well name: @WellName</MudText>
+                }
+            </MudStack>
+        </MudPaper>
+    }
 
     @if (_isLoading)
     {
@@ -65,6 +91,11 @@
                         <PropertyColumn Property="o => o.OPERATION_ID" Title="Operation ID" />
                         <PropertyColumn Property="o => o.WELL_UWI" Title="Well UWI" />
                         <PropertyColumn Property="o => o.WELL_NAME" Title="Well Name" />
+                        <TemplateColumn Title="Rig">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@(string.IsNullOrWhiteSpace(context.Item.RIG_NAME) ? "\u2014" : context.Item.RIG_NAME)</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
                         <TemplateColumn Title="Spud Date">
                             <CellTemplate>
                                 <MudText Typo="Typo.body2">@(context.Item.SPUD_DATE?.ToString("dd MMM yyyy") ?? "\u2014")</MudText>
@@ -83,9 +114,9 @@
                         <TemplateColumn Title="" Sortable="false">
                             <CellTemplate>
                                 <MudStack Row="true" Spacing="1">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Title="Edit operation" Size="Size.Small" Color="Color.Primary"
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Title="Update operation status" Size="Size.Small" Color="Color.Primary"
                                                    OnClick="@(() => OpenEditDialog(context.Item))" />
-                                    <MudIconButton Icon="@Icons.Material.Filled.Description" Title="View reports" Size="Size.Small" Color="Color.Default"
+                                    <MudIconButton Icon="@Icons.Material.Filled.Description" Title="Open drilling reports" Size="Size.Small" Color="Color.Default"
                                                    OnClick="@(() => ViewReports(context.Item.OPERATION_ID))" />
                                 </MudStack>
                             </CellTemplate>
@@ -104,7 +135,7 @@
                 <MudStack AlignItems="AlignItems.Center" Class="pa-8">
                     <MudIcon Icon="@Icons.Material.Filled.Construction" Color="Color.Secondary" Class="og-icon-xl" />
                     <MudText Typo="Typo.h6">No drilling operations found</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">Create the first drilling operation for this field.</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@GetEmptyStateMessage()</MudText>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning"
                                StartIcon="@Icons.Material.Filled.Add"
                                OnClick="OpenCreateDialog" Class="mt-2">Create Drilling Operation</MudButton>
@@ -115,10 +146,197 @@
 
 </MudContainer>
 
+<MudDialog @bind-IsVisible="_showCreateDialog">
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Construction" Color="Color.Warning" />
+            <MudText Typo="Typo.h6">Create Drilling Operation</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            @if (!string.IsNullOrWhiteSpace(_newWellName))
+            {
+                <MudTextField Value="@_newWellName" Label="Well Name" Variant="Variant.Outlined" ReadOnly="true" />
+            }
+            <MudTextField @bind-Value="_newWellUwi" Label="Well UWI" Variant="Variant.Outlined" Required="true" />
+            <MudDatePicker @bind-Date="_newPlannedSpudDate" Label="Planned Spud Date" Variant="Variant.Outlined" />
+            <MudNumericField T="decimal?" @bind-Value="_newTargetDepth" Label="Target Depth" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="_newDrillingContractor" Label="Drilling Contractor" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="_newRigName" Label="Rig Name" Variant="Variant.Outlined" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showCreateDialog = false)" Disabled="@_creatingOperation">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                   StartIcon="@Icons.Material.Filled.Save"
+                   Disabled="@_creatingOperation"
+                   OnClick="SubmitCreateOperationAsync">
+            @(_creatingOperation ? "Saving…" : "Create Drilling Operation")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudDialog @bind-IsVisible="_showStatusDialog">
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">Update Operation Status</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            @if (_selectedOperation != null)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    @_selectedOperation.WELL_NAME (@_selectedOperation.WELL_UWI)
+                </MudText>
+            }
+            <MudSelect T="string" @bind-Value="_selectedOperationStatus" Label="Status" Variant="Variant.Outlined">
+                <MudSelectItem Value="@("Active")">Active</MudSelectItem>
+                <MudSelectItem Value="@("Inactive")">Inactive</MudSelectItem>
+            </MudSelect>
+            <MudNumericField T="decimal?" @bind-Value="_selectedOperationCurrentDepth"
+                             Label="Current Depth (ft)" Variant="Variant.Outlined" Min="0" />
+            <MudDatePicker @bind-Date="_selectedOperationCompletionDate"
+                           Label="Completion Date" Variant="Variant.Outlined"
+                           Disabled="@(_selectedOperationStatus == "Active")" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showStatusDialog = false)" Disabled="@_updatingOperation">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Save"
+                   Disabled="@_updatingOperation"
+                   OnClick="SubmitUpdateOperationAsync">
+            @(_updatingOperation ? "Saving…" : "Save Status")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudDialog @bind-IsVisible="_showReportsDialog">
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Description" Color="Color.Default" />
+            <MudText Typo="Typo.h6">Drilling Reports</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.subtitle2">@_reportsWellLabel</MudText>
+                @if (!string.IsNullOrWhiteSpace(_reportsOperationId))
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Operation: @_reportsOperationId</MudText>
+                }
+            </MudStack>
+
+            @if (_loadingReports)
+            {
+                <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+            }
+            else if (_operationReports.Count > 0)
+            {
+                <MudDataGrid T="DRILLING_REPORT" Items="@_operationReports" Dense="true" Hover="true" Striped="true" Filterable="false">
+                    <Columns>
+                        <TemplateColumn Title="Report Date">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@(context.Item.REPORT_DATE?.ToString("dd MMM yyyy") ?? "\u2014")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Remarks">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@(GetReportRemarks(context.Item))</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info">No drilling reports have been logged for this operation yet.</MudAlert>
+            }
+
+            <MudDivider />
+
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.subtitle2">Log Daily Report</MudText>
+                <MudDatePicker @bind-Date="_newReportDate" Label="Report Date" Variant="Variant.Outlined" />
+                <MudTextField @bind-Value="_newReportRemarks"
+                              Label="Remarks"
+                              Variant="Variant.Outlined"
+                              Lines="4"
+                              Required="true"
+                              RequiredError="Remarks are required" />
+            </MudStack>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showReportsDialog = false)" Disabled="@_creatingReport">Close</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.NoteAdd"
+                   Disabled="@(_creatingReport || string.IsNullOrWhiteSpace(_reportsOperationId))"
+                   OnClick="SubmitCreateReportAsync">
+            @(_creatingReport ? "Saving…" : "Log Report")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
 @code {
+    [SupplyParameterFromQuery(Name = "openCreate")]
+    public bool OpenCreate { get; set; }
+
+    [SupplyParameterFromQuery(Name = "wellUwi")]
+    public string? WellUwi { get; set; }
+
+    [SupplyParameterFromQuery(Name = "wellName")]
+    public string? WellName { get; set; }
+
+    [SupplyParameterFromQuery(Name = "targetDepth")]
+    public string? TargetDepth { get; set; }
+
+    [SupplyParameterFromQuery(Name = "rigName")]
+    public string? RigName { get; set; }
+
+    [SupplyParameterFromQuery(Name = "sourceProcess")]
+    public string? SourceProcess { get; set; }
+
+    [SupplyParameterFromQuery(Name = "returnTo")]
+    public string? ReturnTo { get; set; }
+
     private string _fieldName = string.Empty;
     private List<DRILLING_OPERATION>? _operations;
     private bool _isLoading = false;
+    private bool _showCreateDialog;
+    private bool _creatingOperation;
+    private bool _showStatusDialog;
+    private bool _updatingOperation;
+    private bool _showReportsDialog;
+    private bool _loadingReports;
+    private bool _creatingReport;
+    private string _newWellUwi = string.Empty;
+    private string _newWellName = string.Empty;
+    private DateTime? _newPlannedSpudDate = DateTime.Today.AddDays(30);
+    private decimal? _newTargetDepth;
+    private string _newDrillingContractor = string.Empty;
+    private string _newRigName = string.Empty;
+    private DRILLING_OPERATION? _selectedOperation;
+    private string _selectedOperationStatus = "Active";
+    private decimal? _selectedOperationCurrentDepth;
+    private DateTime? _selectedOperationCompletionDate;
+    private string _reportsOperationId = string.Empty;
+    private string _reportsWellLabel = string.Empty;
+    private List<DRILLING_REPORT> _operationReports = new();
+    private DateTime? _newReportDate = DateTime.Today;
+    private string _newReportRemarks = string.Empty;
+    private string? _prefillKey;
+    private string? _loadedWellUwi;
+    private bool _hasInitialized;
+
+    private bool HasDevelopmentHandoffContext =>
+        !string.IsNullOrWhiteSpace(WellUwi)
+        || !string.IsNullOrWhiteSpace(WellName)
+        || string.Equals(SourceProcess, "DEVELOPMENT", StringComparison.OrdinalIgnoreCase);
 
     protected override async Task OnInitializedAsync()
     {
@@ -130,7 +348,25 @@
         }
         catch { /* field name is non-critical */ }
 
+        _loadedWellUwi = WellUwi;
         await LoadOperations();
+        ApplyQueryPrefill();
+        _hasInitialized = true;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!_hasInitialized)
+            return;
+
+        if (!string.Equals(_loadedWellUwi ?? string.Empty, WellUwi ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+        {
+            _loadedWellUwi = WellUwi;
+            _prefillKey = null;
+            await LoadOperations();
+        }
+
+        ApplyQueryPrefill();
     }
 
     private async Task LoadOperations()
@@ -138,7 +374,7 @@
         _isLoading = true;
         try
         {
-            _operations = await OperationsService.GetDrillingOperationsAsync();
+            _operations = await DrillingService.GetDrillingOperationsAsync(WellUwi);
         }
         catch (Exception)
         {
@@ -151,63 +387,234 @@
         }
     }
 
-    private async Task OpenCreateDialog()
+    private void OpenCreateDialog()
     {
+        ResetCreateDialog();
+        _showCreateDialog = true;
+    }
+
+    private async Task SubmitCreateOperationAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newWellUwi))
+        {
+            Snackbar.Add("Well UWI is required.", Severity.Warning);
+            return;
+        }
+
+        _creatingOperation = true;
         try
         {
             var createDto = new CREATE_DRILLING_OPERATION
             {
-                WellUWI = Guid.NewGuid().ToString(), // Would come from dialog
-                PlannedSpudDate = DateTime.Now.AddDays(30),
-                TargetDepth = 10000,
-                DrillingContractor = "Contractor Name",
-                RigName = "Rig-001",
-                EstimatedDailyCost = 50000
+                WellUWI = _newWellUwi,
+                WellName = string.IsNullOrWhiteSpace(_newWellName) ? null : _newWellName,
+                PlannedSpudDate = _newPlannedSpudDate,
+                TargetDepth = _newTargetDepth,
+                DrillingContractor = string.IsNullOrWhiteSpace(_newDrillingContractor) ? null : _newDrillingContractor,
+                RigName = string.IsNullOrWhiteSpace(_newRigName) ? null : _newRigName
             };
 
-            var operation = await OperationsService.CreateDrillingOperationAsync(createDto);
+            await DrillingService.CreateDrillingOperationAsync(createDto);
             Snackbar.Add("Drilling operation created successfully", Severity.Success);
+            _showCreateDialog = false;
             await LoadOperations();
         }
         catch (Exception)
         {
             Snackbar.Add("Error creating drilling operation.", Severity.Error);
         }
+        finally
+        {
+            _creatingOperation = false;
+        }
     }
 
-    private async Task OpenEditDialog(DRILLING_OPERATION operation)
+    private void OpenEditDialog(DRILLING_OPERATION operation)
     {
-        try
-        {
-            var updateDto = new UpdateDrillingOperation
-            {
-                Status = operation.STATUS,
-                CurrentDepth = operation.CURRENT_DEPTH,
-                DailyCost = operation.DAILY_COST,
-                CompletionDate = operation.COMPLETION_DATE
-            };
-
-            var updated = await OperationsService.UpdateDrillingOperationAsync(operation.OPERATION_ID, updateDto);
-            Snackbar.Add("Drilling operation updated successfully", Severity.Success);
-            await LoadOperations();
-        }
-        catch (Exception)
-        {
-            Snackbar.Add("Error updating drilling operation.", Severity.Error);
-        }
+        _selectedOperation = operation;
+        _selectedOperationStatus = NormalizeOperationStatus(operation.STATUS);
+        _selectedOperationCurrentDepth = operation.CURRENT_DEPTH;
+        _selectedOperationCompletionDate = operation.COMPLETION_DATE;
+        _showStatusDialog = true;
     }
 
     private async Task ViewReports(string operationId)
     {
+        _reportsOperationId = operationId;
+        _reportsWellLabel = _operations?.FirstOrDefault(o => o.OPERATION_ID == operationId)?.WELL_NAME
+            ?? _operations?.FirstOrDefault(o => o.OPERATION_ID == operationId)?.WELL_UWI
+            ?? operationId;
+        _showReportsDialog = true;
+        _newReportDate = DateTime.Today;
+        _newReportRemarks = string.Empty;
+
         try
         {
-            var reports = await OperationsService.GetDrillingReportsAsync(operationId);
-            Snackbar.Add($"Found {reports.Count} drilling reports", Severity.Info);
+            await LoadReportsAsync(operationId);
         }
         catch (Exception)
         {
             Snackbar.Add("Error loading drilling reports.", Severity.Error);
         }
+    }
+
+    private void ApplyQueryPrefill()
+    {
+        var key = string.Join("|",
+            OpenCreate,
+            WellUwi ?? string.Empty,
+            WellName ?? string.Empty,
+            TargetDepth ?? string.Empty,
+            RigName ?? string.Empty,
+            SourceProcess ?? string.Empty,
+            ReturnTo ?? string.Empty);
+
+        if (!OpenCreate || string.Equals(_prefillKey, key, StringComparison.Ordinal))
+            return;
+
+        if (!string.IsNullOrWhiteSpace(WellUwi)
+            && _operations?.Any(o => string.Equals(o.WELL_UWI, WellUwi, StringComparison.OrdinalIgnoreCase)) == true)
+        {
+            Snackbar.Add($"A drilling operation already exists for {WellUwi}.", Severity.Info);
+            _prefillKey = key;
+            return;
+        }
+
+        ResetCreateDialog();
+        _showCreateDialog = true;
+        _prefillKey = key;
+    }
+
+    private void ResetCreateDialog()
+    {
+        _newWellUwi = WellUwi ?? string.Empty;
+        _newWellName = WellName ?? string.Empty;
+        _newPlannedSpudDate = DateTime.Today.AddDays(30);
+        _newTargetDepth = ParseDecimal(TargetDepth);
+        _newDrillingContractor = string.Empty;
+        _newRigName = RigName ?? string.Empty;
+    }
+
+    private string GetEmptyStateMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(WellUwi))
+            return $"No drilling operations are currently recorded for well {WellUwi}.";
+
+        return "Create the first drilling operation for this field.";
+    }
+
+    private static decimal? ParseDecimal(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        return decimal.TryParse(value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : null;
+    }
+
+    private async Task SubmitUpdateOperationAsync()
+    {
+        if (_selectedOperation == null)
+            return;
+
+        _updatingOperation = true;
+        try
+        {
+            await DrillingService.UpdateDrillingOperationAsync(_selectedOperation.OPERATION_ID, new UpdateDrillingOperation
+            {
+                Status = _selectedOperationStatus,
+                CurrentDepth = _selectedOperationCurrentDepth,
+                CompletionDate = _selectedOperationStatus == "Active" ? null : _selectedOperationCompletionDate
+            });
+
+            Snackbar.Add("Drilling operation status updated successfully", Severity.Success);
+            _showStatusDialog = false;
+            await LoadOperations();
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error updating drilling operation status.", Severity.Error);
+        }
+        finally
+        {
+            _updatingOperation = false;
+        }
+    }
+
+    private async Task LoadReportsAsync(string operationId)
+    {
+        _loadingReports = true;
+        try
+        {
+            _operationReports = await DrillingService.GetDrillingReportsAsync(operationId);
+        }
+        finally
+        {
+            _loadingReports = false;
+        }
+    }
+
+    private async Task SubmitCreateReportAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_reportsOperationId))
+            return;
+
+        if (_newReportDate == null)
+        {
+            Snackbar.Add("Report date is required.", Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_newReportRemarks))
+        {
+            Snackbar.Add("Report remarks are required.", Severity.Warning);
+            return;
+        }
+
+        _creatingReport = true;
+        try
+        {
+            await DrillingService.CreateDrillingReportAsync(_reportsOperationId, new CreateDrillingReport
+            {
+                ReportDate = _newReportDate.Value,
+                Remarks = _newReportRemarks.Trim()
+            });
+
+            Snackbar.Add("Drilling report logged successfully", Severity.Success);
+            _newReportDate = DateTime.Today;
+            _newReportRemarks = string.Empty;
+            await LoadReportsAsync(_reportsOperationId);
+            await LoadOperations();
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error logging drilling report.", Severity.Error);
+        }
+        finally
+        {
+            _creatingReport = false;
+        }
+    }
+
+    private static string NormalizeOperationStatus(string? status)
+    {
+        if (string.Equals(status, "Inactive", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(status, "Completed", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(status, "COMPLETE", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Inactive";
+        }
+
+        return "Active";
+    }
+
+    private static string GetReportRemarks(DRILLING_REPORT report)
+    {
+        if (!string.IsNullOrWhiteSpace(report.REMARKS))
+            return report.REMARKS;
+
+        return "No remarks recorded.";
     }
 }
 

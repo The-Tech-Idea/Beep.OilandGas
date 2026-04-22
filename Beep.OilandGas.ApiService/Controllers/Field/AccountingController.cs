@@ -3,7 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
+using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.ProductionAccounting.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
@@ -14,15 +17,18 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
     {
         private readonly IFieldOrchestrator _fieldOrchestrator;
         private readonly IAccountingService _accountingService;
+        private readonly ProductionAccountingService _productionAccountingService;
         private readonly ILogger<AccountingController> _logger;
 
         public AccountingController(
             IFieldOrchestrator fieldOrchestrator,
             IAccountingService accountingService,
+            ProductionAccountingService productionAccountingService,
             ILogger<AccountingController> logger)
         {
             _fieldOrchestrator  = fieldOrchestrator  ?? throw new ArgumentNullException(nameof(fieldOrchestrator));
             _accountingService  = accountingService  ?? throw new ArgumentNullException(nameof(accountingService));
+            _productionAccountingService = productionAccountingService ?? throw new ArgumentNullException(nameof(productionAccountingService));
             _logger             = logger;
         }
 
@@ -32,20 +38,22 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<List<AccountingActivityDto>>> GetRecentActivitiesAsync()
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
             try
             {
-                var receivables = await _accountingService.GetAllReceivablesAsync();
-                var activities = (receivables ?? new())
-                    .Select(r => new AccountingActivityDto
+                var endDate = DateTime.UtcNow.Date;
+                var startDate = endDate.AddMonths(-3);
+                var revenueTransactions = await _productionAccountingService.GetRevenueTransactionsAsync(fieldId, startDate, endDate);
+                var activities = revenueTransactions
+                    .Select(t => new AccountingActivityDto
                     {
-                        ActivityType = "RECEIVABLE",
-                        Date         = r.INVOICE_DATE?.ToString("yyyy-MM-dd") ?? string.Empty,
-                        Description  = $"Invoice {r.INVOICE_NUMBER} — Customer: {r.CUSTOMER} — Amount: {r.ORIGINAL_AMOUNT:N2}",
-                        Amount       = r.ORIGINAL_AMOUNT,
-                        Status       = r.STATUS ?? "UNKNOWN",
-                        ReferenceId  = r.RECEIVABLE_ID ?? string.Empty,
+                        ActivityType = string.IsNullOrWhiteSpace(t.REVENUE_TYPE) ? "REVENUE" : t.REVENUE_TYPE,
+                        Date         = t.TRANSACTION_DATE?.ToString("yyyy-MM-dd") ?? string.Empty,
+                        Description  = string.IsNullOrWhiteSpace(t.DESCRIPTION) ? $"Revenue {t.REVENUE_TRANSACTION_ID}" : t.DESCRIPTION,
+                        Amount       = t.NET_REVENUE ?? t.GROSS_REVENUE ?? 0m,
+                        Status       = "ACTIVE",
+                        ReferenceId  = t.REVENUE_TRANSACTION_ID,
                     })
                     .OrderByDescending(a => a.Date)
                     .Take(100)
@@ -62,28 +70,23 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
         /// <summary>GET /api/field/current/accounting/production-summary</summary>
         [HttpGet("production-summary")]
-        public async Task<ActionResult<ProductionAccountingSummaryDto>> GetProductionSummaryAsync()
+        public async Task<ActionResult<ProductionAccountingSummaryDto>> GetProductionSummaryAsync([FromQuery] DateTime? periodEnd = null)
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
             try
             {
-                var receivables = await _accountingService.GetAllReceivablesAsync() ?? new();
-                var transactions = await _accountingService.GetSalesTransactionsByDateRangeAsync(
-                    DateTime.UtcNow.AddMonths(-6), DateTime.UtcNow) ?? new();
-
-                var grossRevenue = transactions.Sum(t => t.TOTAL_AMOUNT);
-                var outstanding  = receivables
-                    .Where(r => r.STATUS != "PAID")
-                    .Sum(r => r.ORIGINAL_AMOUNT);
+                var effectivePeriodEnd = periodEnd?.Date ?? DateTime.UtcNow.Date;
+                var accountingStatus = await _productionAccountingService.GetAccountingStatusAsync(fieldId, effectivePeriodEnd);
 
                 return Ok(new ProductionAccountingSummaryDto
                 {
-                    GrossRevenue   = grossRevenue,
-                    TotalOpex      = 0m,
-                    NetRevenue     = grossRevenue,
-                    OpenInvoices   = receivables.Count(r => r.STATUS != "PAID"),
-                    OutstandingUsd = outstanding,
+                    GrossRevenue   = accountingStatus.TotalRevenue,
+                    TotalOpex      = accountingStatus.TotalCosts,
+                    NetRevenue     = accountingStatus.NetIncome,
+                    OpenInvoices   = 0,
+                    OutstandingUsd = 0m,
+                    PeriodStatus   = accountingStatus.PeriodStatus,
                 });
             }
             catch (Exception ex)
@@ -95,24 +98,28 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
         /// <summary>GET /api/field/current/accounting/revenue-lines</summary>
         [HttpGet("revenue-lines")]
-        public async Task<ActionResult<List<RevenueLine>>> GetRevenueLinesAsync()
+        public async Task<ActionResult<List<RevenueLine>>> GetRevenueLinesAsync([FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
             try
             {
-                var transactions = await _accountingService.GetSalesTransactionsByDateRangeAsync(
-                    DateTime.UtcNow.AddMonths(-6), DateTime.UtcNow) ?? new();
+                var effectiveEndDate = endDate?.Date ?? DateTime.UtcNow.Date;
+                var effectiveStartDate = startDate?.Date ?? new DateTime(effectiveEndDate.Year, effectiveEndDate.Month, 1);
+                var transactions = await _productionAccountingService.GetRevenueTransactionsAsync(
+                    fieldId,
+                    effectiveStartDate,
+                    effectiveEndDate);
 
                 var lines = transactions.Select(t => new RevenueLine
                 {
-                    Description = $"Sale {t.SALES_TRANSACTION_ID}",
-                    Product     = "OIL",
-                    Volume      = t.NET_VOLUME,
-                    Unit        = "Bbl",
-                    Price       = t.PRICE_PER_BARREL,
-                    AmountUsd   = t.TOTAL_AMOUNT,
-                    Type        = "REVENUE",
+                    Description = string.IsNullOrWhiteSpace(t.DESCRIPTION) ? $"Revenue {t.REVENUE_TRANSACTION_ID}" : t.DESCRIPTION,
+                    Product     = (t.GAS_VOLUME ?? 0m) > 0m && (t.OIL_VOLUME ?? 0m) <= 0m ? "GAS" : "OIL",
+                    Volume      = (t.GAS_VOLUME ?? 0m) > 0m && (t.OIL_VOLUME ?? 0m) <= 0m ? (t.GAS_VOLUME ?? 0m) : (t.OIL_VOLUME ?? 0m),
+                    Unit        = (t.GAS_VOLUME ?? 0m) > 0m && (t.OIL_VOLUME ?? 0m) <= 0m ? "Mcf" : "Bbl",
+                    Price       = (t.GAS_VOLUME ?? 0m) > 0m && (t.OIL_VOLUME ?? 0m) <= 0m ? (t.GAS_PRICE ?? 0m) : (t.OIL_PRICE ?? 0m),
+                    AmountUsd   = t.NET_REVENUE ?? t.GROSS_REVENUE ?? 0m,
+                    Type        = string.IsNullOrWhiteSpace(t.REVENUE_TYPE) ? "REVENUE" : t.REVENUE_TYPE,
                 }).ToList();
 
                 return Ok(lines);
@@ -123,36 +130,31 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
+
+        /// <summary>POST /api/field/current/accounting/close-period</summary>
+        [HttpPost("close-period")]
+        public async Task<IActionResult> ClosePeriodAsync([FromBody] CloseAccountingPeriodRequest request)
+        {
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
+            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
+            if (request == null || request.PeriodEnd == default)
+                return BadRequest(new { error = "A valid period end date is required." });
+
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+                var succeeded = await _productionAccountingService.ClosePeriodAsync(fieldId, request.PeriodEnd.Date, userId);
+                if (!succeeded)
+                    return StatusCode(500, new { error = "Period close failed." });
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error closing accounting period for field {FieldId}", fieldId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
     }
 
-    // ── Response DTOs ─────────────────────────────────────────────────────────
-    public class AccountingActivityDto
-    {
-        public string  ActivityType { get; set; } = string.Empty;
-        public string  Date         { get; set; } = string.Empty;
-        public string  Description  { get; set; } = string.Empty;
-        public decimal Amount       { get; set; }
-        public string  Status       { get; set; } = string.Empty;
-        public string  ReferenceId  { get; set; } = string.Empty;
-    }
-
-    public class ProductionAccountingSummaryDto
-    {
-        public decimal GrossRevenue   { get; set; }
-        public decimal TotalOpex      { get; set; }
-        public decimal NetRevenue     { get; set; }
-        public int     OpenInvoices   { get; set; }
-        public decimal OutstandingUsd { get; set; }
-    }
-
-    public class RevenueLine
-    {
-        public string  Description { get; set; } = string.Empty;
-        public string  Product     { get; set; } = string.Empty;
-        public decimal Volume      { get; set; }
-        public string  Unit        { get; set; } = string.Empty;
-        public decimal Price       { get; set; }
-        public decimal AmountUsd   { get; set; }
-        public string  Type        { get; set; } = string.Empty;
-    }
 }

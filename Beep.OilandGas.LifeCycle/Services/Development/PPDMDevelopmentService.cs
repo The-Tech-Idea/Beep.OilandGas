@@ -154,16 +154,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
 
                 var entityType = typeof(POOL);
 
-                // Convert DTO to PPDM model
-                var poolEntity = _mappingService.ConvertDTOToPPDMModel<POOL, PoolRequest>(poolData);
-
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
                     entityType, _connectionName, "POOL", null);
 
                 var formattedId = _defaults.FormatIdForTable("POOL", poolId);
-                // Set the ID property on the entity before updating
-                poolEntity.POOL_ID = formattedId;
-                var result = await repo.UpdateAsync(poolEntity, userId);
+                ApplyPoolRequest(existingPool, poolData);
+                existingPool.POOL_ID = formattedId;
+                existingPool.FIELD_ID = _defaults.FormatIdForTable("POOL", fieldId);
+
+                var result = await repo.UpdateAsync(existingPool, userId);
                 
                 // Return PPDM model directly
                 return (POOL)result;
@@ -218,13 +217,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 {
                     new AppFilter
                     {
-                        FieldName = "FIELD_ID",
+                        FieldName = "ASSIGNED_FIELD",
                         FilterValue = _defaults.FormatIdForTable("WELL", fieldId),
                         Operator = "="
                     },
                     new AppFilter
                     {
-                        FieldName = "WELL_TYPE",
+                        FieldName = "CURRENT_CLASS",
                         FilterValue = "DEVELOPMENT",
                         Operator = "="
                     }
@@ -369,7 +368,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                         typeof(WELL), _connectionName, "WELL", null);
                     var directFilters = new List<AppFilter>
                     {
-                        new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("WELL", fieldId) },
+                        new AppFilter { FieldName = "ASSIGNED_FIELD", Operator = "=", FilterValue = _defaults.FormatIdForTable("WELL", fieldId) },
                         new AppFilter { FieldName = "WELL_LEVEL_TYPE", Operator = "=", FilterValue = "WELLBORE" }
                     };
                     if (additionalFilters != null) directFilters.AddRange(additionalFilters);
@@ -442,7 +441,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 {
                     new AppFilter
                     {
-                        FieldName = "FIELD_ID",
+                        FieldName = "PRIMARY_FIELD_ID",
                         FilterValue = _defaults.FormatIdForTable("FACILITY", fieldId),
                         Operator = "="
                     }
@@ -478,6 +477,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
 
                 // FACILITY field link is PRIMARY_FIELD_ID (not FIELD_ID)
                 facilityEntity.PRIMARY_FIELD_ID = _defaults.FormatIdForTable("FACILITY", fieldId);
+                ApplyFacilityRequest(facilityEntity, facilityData);
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
                     typeof(FACILITY), _connectionName, "FACILITY", null);
@@ -491,6 +491,105 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 _logger?.LogError(ex, $"Error creating facility for field: {fieldId}");
                 throw;
             }
+        }
+
+        public async Task<FacilityResponse> UpdateFacilityForFieldAsync(string fieldId, string facilityId, FacilityRequest facilityData, string userId)
+        {
+            try
+            {
+                var existingFacility = await GetFacilityForFieldAsync(fieldId, facilityId);
+                if (existingFacility == null)
+                {
+                    throw new InvalidOperationException($"Facility {facilityId} not found or does not belong to field {fieldId}");
+                }
+
+                var metadata = await _metadata.GetTableMetadataAsync("FACILITY");
+                if (metadata == null)
+                {
+                    throw new InvalidOperationException("FACILITY table metadata not found");
+                }
+
+                ApplyFacilityRequest(existingFacility, facilityData);
+                existingFacility.FACILITY_ID = _defaults.FormatIdForTable("FACILITY", facilityId);
+                existingFacility.PRIMARY_FIELD_ID = _defaults.FormatIdForTable("FACILITY", fieldId);
+
+                var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(FACILITY), _connectionName, "FACILITY", null);
+
+                var result = await repo.UpdateAsync(existingFacility, userId);
+
+                return _mappingService.ConvertPPDMModelToDTO<FacilityResponse, FACILITY>((FACILITY)result);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, $"Error updating facility {facilityId} for field: {fieldId}");
+                throw;
+            }
+        }
+
+        private async Task<FACILITY?> GetFacilityForFieldAsync(string fieldId, string facilityId)
+        {
+            var facilities = await GetFacilitiesForFieldAsync(fieldId, new List<AppFilter>
+            {
+                new AppFilter
+                {
+                    FieldName = "FACILITY_ID",
+                    FilterValue = _defaults.FormatIdForTable("FACILITY", facilityId),
+                    Operator = "="
+                }
+            });
+
+            return facilities.FirstOrDefault();
+        }
+
+        private static void ApplyPoolRequest(POOL poolEntity, PoolRequest poolData)
+        {
+            if (!string.IsNullOrWhiteSpace(poolData.PoolName))
+            {
+                poolEntity.POOL_NAME = poolData.PoolName.Trim();
+            }
+
+            poolEntity.POOL_TYPE = NormalizeString(poolData.PoolType);
+            poolEntity.POOL_STATUS = NormalizeString(poolData.Status);
+            poolEntity.REMARK = NormalizeString(poolData.Description);
+
+            if (!string.IsNullOrWhiteSpace(poolData.StratUnitId))
+            {
+                poolEntity.STRAT_UNIT_ID = poolData.StratUnitId.Trim();
+            }
+        }
+
+        private static void ApplyFacilityRequest(FACILITY facilityEntity, FacilityRequest facilityData)
+        {
+            if (!string.IsNullOrWhiteSpace(facilityData.FacilityName))
+            {
+                var facilityName = facilityData.FacilityName.Trim();
+                facilityEntity.FACILITY_LONG_NAME = facilityName;
+                facilityEntity.FACILITY_SHORT_NAME = facilityName;
+            }
+
+            facilityEntity.FACILITY_TYPE = NormalizeString(facilityData.FacilityType);
+            facilityEntity.DESCRIPTION = NormalizeString(facilityData.Description);
+            facilityEntity.REMARK = NormalizeString(facilityData.Status);
+            facilityEntity.ACTIVE_IND = MapFacilityStatusToActiveIndicator(facilityData.Status);
+        }
+
+        private static string NormalizeString(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
+        }
+
+        private static string MapFacilityStatusToActiveIndicator(string? status)
+        {
+            return string.IsNullOrWhiteSpace(status) ||
+                   status.Equals("PLANNED", StringComparison.OrdinalIgnoreCase) ||
+                   status.Equals("DESIGN", StringComparison.OrdinalIgnoreCase) ||
+                   status.Equals("CONSTRUCTION", StringComparison.OrdinalIgnoreCase) ||
+                   status.Equals("INACTIVE", StringComparison.OrdinalIgnoreCase) ||
+                   status.Equals("DECOMMISSIONED", StringComparison.OrdinalIgnoreCase) ||
+                   status.Equals("ABANDONED", StringComparison.OrdinalIgnoreCase)
+                ? "N"
+                : "Y";
         }
 
         public async Task<List<PIPELINE>> GetPipelinesForFieldAsync(string fieldId, List<AppFilter>? additionalFilters = null)

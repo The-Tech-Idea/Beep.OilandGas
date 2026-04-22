@@ -68,7 +68,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             {
                 var ticket = _service.ProductionManager.GetRunTicket(id);
                 if (ticket == null)
-                    return NotFound(new { error = $"Run ticket with ID {id} not found" });
+                        return NotFound(new { error = $"Run ticket with ID {id} not found." });
 
                 return Ok(MapToRunTicketDto(ticket));
             }
@@ -133,7 +133,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for run ticket");
-                return StatusCode(500, new { error = "Run ticket created but GL posting failed"});
+                    return StatusCode(500, new { error = "Run ticket created but GL posting failed." });
             }
             catch (Exception ex)
             {

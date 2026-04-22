@@ -1,7 +1,7 @@
 ﻿@page "/ppdm39/hse/hazop/{StudyId}"
 @using Beep.OilandGas.Models.Data.HSE
 @using Beep.OilandGas.Web.Services
-@inject ApiClient ApiClient
+@inject IHSEServiceClient HSEClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -244,8 +244,8 @@
         _error   = null;
         try
         {
-            _summary = await ApiClient.GetAsync<HAZOPSummary>($"/api/field/current/hse/hazop/{Uri.EscapeDataString(StudyId)}");
-            _nodes   = await ApiClient.GetAsync<List<HAZOPNode>>($"/api/field/current/hse/hazop/{Uri.EscapeDataString(StudyId)}/nodes") ?? new();
+            _summary = await HSEClient.GetHazopStudyAsync(StudyId);
+            _nodes   = await HSEClient.GetHazopNodesAsync(StudyId);
         }
         catch (Exception) { _error = "Failed to load HAZOP study."; Snackbar.Add(_error, Severity.Error); }
         finally { _loading = false; }
@@ -263,8 +263,8 @@
         if (string.IsNullOrWhiteSpace(_newNodeName)) return;
         try
         {
-            await ApiClient.PostAsync<AddNodeRequest, string>(
-                $"/api/field/current/hse/hazop/{StudyId}/nodes",
+            await HSEClient.AddHazopNodeAsync(
+                StudyId,
                 new AddNodeRequest(_newNodeName, _newNodeSafeguard));
             _showAddNode = false;
             await LoadAsync();
@@ -287,8 +287,9 @@
         if (string.IsNullOrWhiteSpace(_newDeviation) || string.IsNullOrWhiteSpace(_newConsequence)) return;
         try
         {
-            await ApiClient.PostAsync<AddDeviationRequest, string>(
-                $"/api/field/current/hse/hazop/{StudyId}/nodes/{_targetNodeSeq}/deviations",
+            await HSEClient.AddHazopDeviationAsync(
+                StudyId,
+                _targetNodeSeq,
                 new AddDeviationRequest(_newGuideWord, _newDeviation, _newConsequence));
             _showAddDeviation = false;
             await LoadAsync();
@@ -300,9 +301,10 @@
     {
         try
         {
-            await ApiClient.PutAsync<object>(
-                $"/api/field/current/hse/hazop/{StudyId}/nodes/{nodeSeq}/deviations/{condSeq}/status?status=CLOSED",
-                new());
+            var updated = await HSEClient.UpdateHazopDeviationStatusAsync(StudyId, nodeSeq, condSeq, "CLOSED");
+            if (!updated)
+                throw new InvalidOperationException("Failed to close deviation.");
+
             await LoadAsync();
         }
         catch (Exception) { _error = "Failed to close deviation."; Snackbar.Add(_error, Severity.Error); }

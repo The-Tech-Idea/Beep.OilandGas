@@ -2,6 +2,8 @@
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject ApiClient ApiClient
+@inject IDevelopmentServiceClient DevelopmentClient
+@using Beep.OilandGas.PPDM39.Models
 
 <PageTitle>Characterise Reservoir Properties</PageTitle>
 
@@ -233,8 +235,8 @@
         _loading = true;
         try
         {
-            var wells = await ApiClient.GetAsync<List<WellDto>>("api/field/current/development/wells") ?? new();            if (wells != null)
-                _correlations = wells.Select(w => new CorrelationEntry(
+            var wells = (await DevelopmentClient.GetWellsAsync()).Select(MapWell).ToList();
+            _correlations = wells.Select(w => new CorrelationEntry(
                     w.UWI ?? "Unknown",
                     0,
                     (double)(w.FINAL_TD ?? 0),
@@ -256,6 +258,17 @@
         public string?  WELL_NAME  { get; set; }
         public decimal? FINAL_TD   { get; set; }
         public string?  ACTIVE_IND { get; set; }
+    }
+
+    private static WellDto MapWell(WELL well)
+    {
+        return new WellDto
+        {
+            UWI = well.UWI,
+            WELL_NAME = well.WELL_NAME,
+            FINAL_TD = well.FINAL_TD,
+            ACTIVE_IND = well.ACTIVE_IND
+        };
     }
 
     private void ExportReport() =>

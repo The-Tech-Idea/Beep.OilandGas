@@ -1,5 +1,7 @@
 ﻿@page "/development"
+@using Beep.OilandGas.Models.Data.Production
 @inject ApiClient ApiClient
+@inject IDevelopmentServiceClient DevelopmentServiceClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -154,10 +156,10 @@
                         }
                         else
                         {
-                            <MudList T="DevWellDto" Dense="true">
+                            <MudList T="DevelopmentWellStatusDto" Dense="true">
                                 @foreach (var w in _activeWells)
                                 {
-                                    <MudListItem T="DevWellDto" Value="w"
+                                    <MudListItem T="DevelopmentWellStatusDto" Value="w"
                                                  OnClick='() => NavigationManager.NavigateTo($"/development/well-design/{Uri.EscapeDataString(w.WellId)}")'>
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="pr-2">
                                             <MudStack Spacing="0">
@@ -210,11 +212,7 @@
     private int _completedWells;
     private int _plannedWells;
 
-    private List<DevWellDto> _activeWells = new();
-
-    private record DevWellDto(
-        string WellId, string WellName, string WellType,
-        string DrillingStatus, double CurrentDepthM, double TargetDepthM);
+    private List<DevelopmentWellStatusDto> _activeWells = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -229,8 +227,7 @@
         _loading = true;
         try
         {
-            var summary = await ApiClient.GetAsync<DevSummaryApiDto>(
-                "api/field/current/development/dashboard/summary");
+            var summary = await DevelopmentServiceClient.GetDashboardSummaryAsync();
             if (summary != null)
             {
                 _totalWells    = summary.TotalWells;
@@ -239,32 +236,12 @@
                 _plannedWells  = summary.PlannedWells;
             }
 
-            var wells = await ApiClient.GetAsync<List<DevWellDto>>(
-                "api/field/current/development/dashboard/wells") ?? new();
-            _activeWells = wells;
+            _activeWells = await DevelopmentServiceClient.GetDashboardWellsAsync();
         }
         catch (Exception)
         {
             Snackbar.Add("Failed to load development data.", Severity.Warning);
         }
         finally { _loading = false; }
-    }
-
-    private Color StatusColor(string status) => status?.ToUpperInvariant() switch
-    {
-        "DRILLING"   => Color.Primary,
-        "COMPLETE"   => Color.Success,
-        "PRODUCING"  => Color.Success,
-        "PLANNED"    => Color.Default,
-        _            => Color.Default,
-    };
-
-    private class DevSummaryApiDto
-    {
-        public string FieldId        { get; set; } = string.Empty;
-        public int    TotalWells     { get; set; }
-        public int    DrillingWells  { get; set; }
-        public int    CompletedWells { get; set; }
-        public int    PlannedWells   { get; set; }
     }
 }

@@ -1253,6 +1253,12 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IProductionOper
         editor, commonColumnHandler, defaults, metadata, connectionName, logger);
 });
 
+builder.Services.AddScoped<IProductionManagementService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    return new ProductionManagementService(editor, connectionName);
+});
+
 // Prospect Identification Service
 builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IProspectIdentificationService>(sp =>
 {

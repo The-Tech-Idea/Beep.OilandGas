@@ -1,5 +1,6 @@
 @using System.Collections.Generic
 @using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.Accounting.Royalty
 
 <MudDialog>
     <DialogContent>
@@ -44,6 +45,7 @@
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     [Inject] ApiClient ApiClient { get; set; } = default!;
     [Inject] ISnackbar Snackbar { get; set; } = default!;
+    [Parameter] public string FieldId { get; set; } = string.Empty;
 
     private string _poolId = string.Empty;
     private DateTime? _calculationDate = DateTime.Today;
@@ -65,31 +67,34 @@
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(FieldId))
+        {
+            Snackbar.Add("No active field is available for royalty calculation.", Severity.Error);
+            return;
+        }
+
         try
         {
-            var request = new Dictionary<string, object>
+            var request = new CalculateRoyaltyRequest
             {
-                { "CalculationDate", _calculationDate.Value }
+                FieldId = FieldId,
+                CalculationDate = _calculationDate.Value,
+                PoolId = string.IsNullOrWhiteSpace(_poolId) ? null : _poolId,
+                OilRoyaltyRate = _oilRoyaltyRate,
+                GasRoyaltyRate = _gasRoyaltyRate,
+                OilPrice = _oilPrice,
+                GasPrice = _gasPrice
             };
 
-            if (!string.IsNullOrWhiteSpace(_poolId))
-                request["PoolId"] = _poolId;
-
-            if (_oilRoyaltyRate.HasValue)
-                request["OilRoyaltyRate"] = _oilRoyaltyRate.Value;
-
-            if (_gasRoyaltyRate.HasValue)
-                request["GasRoyaltyRate"] = _gasRoyaltyRate.Value;
-
-            if (_oilPrice.HasValue)
-                request["OilPrice"] = _oilPrice.Value;
-
-            if (_gasPrice.HasValue)
-                request["GasPrice"] = _gasPrice.Value;
-
-            var result = await ApiClient.PostAsync<object, Dictionary<string, object>>(
+            var succeeded = await ApiClient.PostAsync(
                 "/api/accounting/royalty/calculate",
                 request);
+
+            if (!succeeded)
+            {
+                Snackbar.Add("Error calculating royalties.", Severity.Error);
+                return;
+            }
 
             Snackbar.Add("Royalty calculation completed successfully", Severity.Success);
             MudDialog.Close(DialogResult.Ok(true));

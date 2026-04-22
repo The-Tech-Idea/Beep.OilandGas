@@ -1,7 +1,9 @@
 ﻿@page "/ppdm39/accounting/volume-reconciliation"
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Data
+@using VolumeReconciliationRequestDto = Beep.OilandGas.Models.Data.ProductionAccounting.VolumeReconciliationRequest
 @inject ApiClient ApiClient
+@inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
 
 <PageTitle>Reconcile Production Volumes</PageTitle>
@@ -131,6 +133,7 @@
 </MudContainer>
 
 @code {
+    private string _fieldId = string.Empty;
     private string _fieldName = string.Empty;
     private DateTime? _startDate = DateTime.Today.AddMonths(-1);
     private DateTime? _endDate = DateTime.Today;
@@ -141,9 +144,12 @@
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             if (summary != null)
+            {
+                _fieldId = summary.FieldId ?? string.Empty;
                 _fieldName = summary.FieldName ?? _fieldName;
+            }
         }
         catch { /* field name is non-critical */ }
     }
@@ -156,16 +162,23 @@
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(_fieldId))
+        {
+            Snackbar.Add("No active field is available for reconciliation.", Severity.Error);
+            return;
+        }
+
         _isLoading = true;
         try
         {
-            var request = new
+            var request = new VolumeReconciliationRequestDto
             {
+                FieldId = _fieldId,
                 StartDate = _startDate.Value,
                 EndDate = _endDate.Value
             };
 
-            _reconciliationResult = await ApiClient.PostAsync<object, VolumeReconciliationResult>(
+            _reconciliationResult = await ApiClient.PostAsync<VolumeReconciliationRequestDto, VolumeReconciliationResult>(
                 "/api/accounting/allocation/reconcile",
                 request);
 

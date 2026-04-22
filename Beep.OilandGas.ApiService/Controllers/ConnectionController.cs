@@ -42,7 +42,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting all connections");
-                return StatusCode(500, new { error = "Failed to get connections"});
+                    return StatusCode(500, new { error = "Failed to get connections." });
             }
         }
 
@@ -58,14 +58,14 @@ namespace Beep.OilandGas.ApiService.Controllers
                 var connection = _connectionService.GetConnection(connectionName);
                 if (connection == null)
                 {
-                    return NotFound(new { error = $"Connection '{connectionName}' not found" });
+                        return NotFound(new { error = $"Connection '{connectionName}' not found." });
                 }
                 return Ok(connection);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting connection {ConnectionName}", connectionName);
-                return StatusCode(500, new { error = "Failed to get connection"});
+                    return StatusCode(500, new { error = "Failed to get connection." });
             }
         }
 
@@ -79,7 +79,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             {
                 if (request == null || string.IsNullOrEmpty(request.ConnectionName))
                 {
-                    return BadRequest(new { error = "Connection name is required" });
+                        return BadRequest(new { error = "Connection name is required." });
                 }
 
                 var result = await _connectionService.TestConnectionAsync(request.ConnectionName);
@@ -111,7 +111,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting current connection");
-                return StatusCode(500, new { error = "Failed to get current connection"});
+                    return StatusCode(500, new { error = "Failed to get current connection." });
             }
         }
 
@@ -125,7 +125,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             {
                 if (request == null || string.IsNullOrEmpty(request.ConnectionName))
                 {
-                    return BadRequest(new { error = "Connection name is required" });
+                        return BadRequest(new { error = "Connection name is required." });
                 }
 
                 var result = _connectionService.SetCurrentConnection(request.ConnectionName, request.UserId);
@@ -154,7 +154,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             {
                 if (request == null || string.IsNullOrEmpty(request.ConnectionName))
                 {
-                    return BadRequest(new { error = "Connection name is required" });
+                        return BadRequest(new { error = "Connection name is required." });
                 }
 
                 // Note: Database creation is handled by PPDM39SetupController

@@ -143,18 +143,31 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
                     throw new InvalidOperationException("PROSPECT table metadata not found");
                 }
 
-                var entityType = typeof(PROSPECT);
-
-                // Convert DTO to PPDM model
-                var prospectEntity = _mappingService.ConvertDTOToPPDMModel<PROSPECT, ProspectRequest>(prospectData);
-
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
                     typeof(PROSPECT), _connectionName, "PROSPECT", null);
 
-                var formattedId = _defaults.FormatIdForTable("PROSPECT", prospectId);
-                // Set the ID property directly
-                prospectEntity.PROSPECT_ID = formattedId;
-                var result = await repo.UpdateAsync(prospectEntity, userId);
+                if (!string.IsNullOrWhiteSpace(prospectData.ProspectName))
+                    existingProspect.PROSPECT_NAME = prospectData.ProspectName;
+
+                if (!string.IsNullOrWhiteSpace(prospectData.Status))
+                    existingProspect.PROSPECT_STATUS = prospectData.Status;
+
+                if (!string.IsNullOrWhiteSpace(prospectData.ProspectType))
+                    existingProspect.PROSPECT_TYPE = prospectData.ProspectType;
+
+                if (prospectData.Description != null)
+                    existingProspect.REMARK = prospectData.Description;
+
+                if (prospectData.DiscoveryDate.HasValue)
+                    existingProspect.DISCOVERY_DATE = prospectData.DiscoveryDate;
+
+                if (prospectData.EstimatedOilVolume.HasValue)
+                    existingProspect.AREA_SIZE = prospectData.EstimatedOilVolume;
+
+                if (!string.IsNullOrWhiteSpace(prospectData.EstimatedVolumeOuom))
+                    existingProspect.AREA_SIZE_OUOM = prospectData.EstimatedVolumeOuom;
+
+                var result = await repo.UpdateAsync(existingProspect, userId);
                 
                 // Return PPDM model directly
                 return (PROSPECT)result;
@@ -308,13 +321,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
 
                 // Convert DTO to PPDM model
                 var surveyEntity = _mappingService.ConvertDTOToPPDMModel<SEIS_ACQTN_SURVEY, SeismicSurveyRequest>(surveyData);
-                
-                // Set FIELD_ID automatically using reflection
-                var fieldIdProp = entityType.GetProperty("FIELD_ID", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                if (fieldIdProp != null && fieldIdProp.CanWrite)
-                {
-                    fieldIdProp.SetValue(surveyEntity, _defaults.FormatIdForTable("SEIS_ACQTN_SURVEY", fieldId));
-                }
+
+                // SEIS_ACQTN_SURVEY links to the active field through AREA_ID + AREA_TYPE.
+                surveyEntity.AREA_ID = _defaults.FormatIdForTable("SEIS_ACQTN_SURVEY", fieldId);
+                surveyEntity.AREA_TYPE = "FIELD";
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
                     entityType, _connectionName, "SEIS_ACQTN_SURVEY", null);

@@ -32,6 +32,16 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<WELL_TEST_ANALYSIS_RESULT> PerformWellTestAnalysisAsync(WellTestAnalysisCalculationRequest request);
 
         /// <summary>
+        /// Performs choke analysis.
+        /// </summary>
+        Task<ChokeAnalysisResult> PerformChokeAnalysisAsync(ChokeAnalysisRequest request);
+
+        /// <summary>
+        /// Performs compressor analysis.
+        /// </summary>
+        Task<CompressorAnalysisResult> PerformCompressorAnalysisAsync(CompressorAnalysisRequest request);
+
+        /// <summary>
         /// Performs Flash Calculation
         /// </summary>
         Task<FlashCalculationResult> PerformFlashCalculationAsync(FlashCalculationRequest request);

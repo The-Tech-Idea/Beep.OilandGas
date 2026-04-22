@@ -1,0 +1,423 @@
+@page "/ppdm39/calculations/choke-analysis"
+@page "/analysis/choke"
+@using System.Linq
+@using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.Calculations
+@using Beep.OilandGas.PPDM39.Models
+@inject ApiClient ApiClient
+@inject ICalculationServiceClient CalculationService
+@inject IDevelopmentServiceClient DevelopmentClient
+@inject ILifeCycleService LifeCycleService
+@inject ISnackbar Snackbar
+
+<PageTitle>Run Choke Analysis</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Run Choke Analysis</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName - Production choke tuning with live well context and engineer-adjustable gas assumptions</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Icon="@Icons.Material.Filled.Tune">Production Tuning</MudChip>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info">@(_request.AnalysisType ?? "DOWNHOLE")</MudChip>
+                <MudChip T="string" Size="Size.Small" Color="Color.Default">@GetSelectedWellLabel()</MudChip>
+            </MudStack>
+        </MudStack>
+    </MudStack>
+
+    <MudPaper Class="pa-4 mb-4" Elevation="1">
+        <MudGrid Spacing="3">
+            <MudItem xs="12" md="4">
+                <MudSelect T="string" Label="Well" Variant="Variant.Outlined"
+                           Value="@_selectedWellId" ValueChanged="OnWellChanged">
+                    @foreach (var well in _wells)
+                    {
+                        <MudSelectItem Value="@well.UWI">@well.DisplayName</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudSelect T="string" Label="Analysis Type" Variant="Variant.Outlined" @bind-Value="@_request.AnalysisType">
+                    <MudSelectItem Value="@("DOWNHOLE")">Downhole Flow</MudSelectItem>
+                    <MudSelectItem Value="@("UPHOLE")">Uphole Flow</MudSelectItem>
+                    <MudSelectItem Value="@("PRESSURE")">Pressure Check</MudSelectItem>
+                    <MudSelectItem Value="@("SIZING")">Choke Sizing</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudSelect T="string" Label="Choke Type" Variant="Variant.Outlined" @bind-Value="@_request.ChokeType">
+                    <MudSelectItem Value="@("BEAN")">Bean</MudSelectItem>
+                    <MudSelectItem Value="@("FIXED")">Fixed</MudSelectItem>
+                    <MudSelectItem Value="@("ADJUSTABLE")">Adjustable</MudSelectItem>
+                    <MudSelectItem Value="@("POSITIVE")">Positive</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                               StartIcon="@Icons.Material.Filled.Sync"
+                               OnClick="LoadSelectedWellContextAsync"
+                               Disabled="@(_isRunning || string.IsNullOrWhiteSpace(_selectedWellId))">
+                        Refresh Well Context
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.PlayArrow"
+                               OnClick="RunAnalysisAsync"
+                               Disabled="@(_isRunning || string.IsNullOrWhiteSpace(_selectedWellId))">
+                        @if (_isRunning)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                            <MudText Class="ms-2">Running</MudText>
+                        }
+                        else
+                        {
+                            <MudText>Run Analysis</MudText>
+                        }
+                    </MudButton>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudGrid Spacing="3" Class="mb-4">
+        <MudItem xs="12" md="7">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Choke And Gas Inputs</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.ChokeDiameter" Label="Choke Diameter (in)" Variant="Variant.Outlined" Min="0.05m" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.DischargeCoefficient" Label="Discharge Coefficient" Variant="Variant.Outlined" Min="0.1m" Max="1.5m" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.FlowRate" Label="Flow Rate (Mscf/day)" Variant="Variant.Outlined" Min="1m" /></MudItem>
+
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.UpstreamPressure" Label="Upstream Pressure (psia)" Variant="Variant.Outlined" Min="1m" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.DownstreamPressure" Label="Downstream Pressure (psia)" Variant="Variant.Outlined" Min="0m" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.Temperature" Label="Temperature (R)" Variant="Variant.Outlined" Min="400m" /></MudItem>
+
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.GasSpecificGravity" Label="Gas Specific Gravity" Variant="Variant.Outlined" Min="0.1m" Max="2.0m" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.ZFactor" Label="Z-Factor" Variant="Variant.Outlined" Min="0.1m" Max="2.0m" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-4">
+                                The backend uses the selected well for live production context and falls back to PPDM well-test gas-oil ratio when explicit gas data is not supplied.
+                            </MudText>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="5">
+            <MudCard Elevation="2" Class="h-100">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Selected Well Context</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (_selectedWell != null)
+                    {
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">UWI: @_selectedWell.UWI</MudText></MudItem>
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">Name: @(_selectedWell.WELL_NAME ?? "N/A")</MudText></MudItem>
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">Base Depth: @FormatNullableDecimal(_selectedWell.BASE_DEPTH, 0)</MudText></MudItem>
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">Final TD: @FormatNullableDecimal(_selectedWell.FINAL_TD, 0)</MudText></MudItem>
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">Drill TD: @FormatNullableDecimal(_selectedWell.DRILL_TD, 0)</MudText></MudItem>
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">Field: @(_selectedWell.ASSIGNED_FIELD ?? _fieldName)</MudText></MudItem>
+                        </MudGrid>
+                    }
+                    else
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.Tune" Color="Color.Secondary" Class="og-icon-xl" />
+                            <MudText Typo="Typo.h6">No well selected</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Select a live development well before running the choke workbench.</MudText>
+                        </MudStack>
+                    }
+
+                    @if (_currentResult != null)
+                    {
+                        <MudDivider Class="my-3" />
+                        <MudText Typo="Typo.body2">Latest status: @(_currentResult.Status ?? "Unknown")</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Result ID: @(_currentResult.CalculationId ?? "N/A")</MudText>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    @if (_currentResult != null)
+    {
+        <CalculationKpiSection Metrics="@GetResultKpis()" Class="mb-4" />
+
+        <CalculationResultTabs SummaryItems="@GetSummaryFacts()"
+                               InputSnapshotItems="@GetInputSnapshotFacts()" />
+    }
+</MudContainer>
+
+@code {
+    private string _fieldName = string.Empty;
+    private string? _selectedWellId;
+    private bool _isLoading = true;
+    private bool _isRunning;
+
+    private ChokeAnalysisRequest _request = CreateDefaultRequest();
+    private ChokeAnalysisResult? _currentResult;
+    private WellOptionDto? _selectedWell;
+    private List<WellOptionDto> _wells = new();
+
+    private sealed class WellOptionDto
+    {
+        public string UWI { get; set; } = string.Empty;
+        public string? WELL_NAME { get; set; }
+        public string? ASSIGNED_FIELD { get; set; }
+        public decimal? BASE_DEPTH { get; set; }
+        public decimal? FINAL_TD { get; set; }
+        public decimal? DRILL_TD { get; set; }
+
+        public string DisplayName => string.IsNullOrWhiteSpace(WELL_NAME) ? UWI : $"{UWI} - {WELL_NAME}";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            await LoadFieldContextAsync();
+            await LoadWellsAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadFieldContextAsync()
+    {
+        try
+        {
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
+            if (summary != null)
+            {
+                _fieldName = summary.FieldName ?? _fieldName;
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private async Task LoadWellsAsync()
+    {
+        try
+        {
+            var wells = await DevelopmentClient.GetWellsAsync();
+            _wells = wells.Select(MapWell).ToList();
+            if (_wells.Count > 0)
+            {
+                _selectedWellId ??= _wells[0].UWI;
+                await LoadSelectedWellContextAsync();
+            }
+        }
+        catch
+        {
+            Snackbar.Add("Failed to load wells for Choke Analysis.", Severity.Warning);
+        }
+    }
+
+    private async Task OnWellChanged(string? wellId)
+    {
+        _selectedWellId = wellId;
+        _currentResult = null;
+        await LoadSelectedWellContextAsync();
+    }
+
+    private async Task LoadSelectedWellContextAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedWellId))
+        {
+            _selectedWell = null;
+            _request.WellId = null;
+            return;
+        }
+
+        try
+        {
+            var well = await DevelopmentClient.GetWellAsync(_selectedWellId);
+            _selectedWell = MapWell(well);
+            ApplyWellDefaults(_selectedWell);
+        }
+        catch
+        {
+            Snackbar.Add("Failed to load the selected well context for Choke Analysis.", Severity.Warning);
+        }
+    }
+
+    private void ApplyWellDefaults(WellOptionDto? well)
+    {
+        if (well == null)
+        {
+            return;
+        }
+
+        _fieldName = well.ASSIGNED_FIELD ?? _fieldName;
+        _request.WellId = well.UWI;
+    }
+
+    private static WellOptionDto MapWell(WELL well)
+    {
+        return new WellOptionDto
+        {
+            UWI = well.UWI,
+            WELL_NAME = well.WELL_NAME,
+            ASSIGNED_FIELD = well.ASSIGNED_FIELD,
+            BASE_DEPTH = well.BASE_DEPTH,
+            FINAL_TD = well.FINAL_TD,
+            DRILL_TD = well.DRILL_TD
+        };
+    }
+
+    private async Task RunAnalysisAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedWellId))
+        {
+            Snackbar.Add("Select a live well before running Choke Analysis.", Severity.Warning);
+            return;
+        }
+
+        if (!_request.ChokeDiameter.HasValue || _request.ChokeDiameter <= 0)
+        {
+            Snackbar.Add("Enter a choke diameter greater than zero.", Severity.Warning);
+            return;
+        }
+
+        if (!_request.FlowRate.HasValue || _request.FlowRate <= 0)
+        {
+            Snackbar.Add("Enter a flow rate greater than zero.", Severity.Warning);
+            return;
+        }
+
+        _isRunning = true;
+        _request.WellId = _selectedWellId;
+
+        try
+        {
+            _currentResult = await CalculationService.PerformChokeAnalysisAsync(_request);
+            if (string.Equals(_currentResult.Status, "FAILED", StringComparison.OrdinalIgnoreCase))
+            {
+                Snackbar.Add(_currentResult.ErrorMessage ?? "Choke Analysis failed.", Severity.Error);
+                return;
+            }
+
+            Snackbar.Add("Choke Analysis completed successfully.", Severity.Success);
+        }
+        catch
+        {
+            Snackbar.Add("Failed to run Choke Analysis.", Severity.Error);
+        }
+        finally
+        {
+            _isRunning = false;
+        }
+    }
+
+    private static ChokeAnalysisRequest CreateDefaultRequest()
+    {
+        return new ChokeAnalysisRequest
+        {
+            AnalysisType = "DOWNHOLE",
+            ChokeDiameter = 0.5m,
+            ChokeType = "FIXED",
+            DischargeCoefficient = 0.85m,
+            UpstreamPressure = 1250m,
+            DownstreamPressure = 350m,
+            Temperature = 540m,
+            GasSpecificGravity = 0.65m,
+            ZFactor = 0.9m,
+            FlowRate = 500m
+        };
+    }
+
+    private string GetSelectedWellLabel()
+    {
+        return _selectedWell?.DisplayName
+            ?? (string.IsNullOrWhiteSpace(_selectedWellId) ? "No well selected" : _selectedWellId);
+    }
+
+    private bool IsCriticalFlow()
+    {
+        return _currentResult != null
+            && _currentResult.PressureRatio > 0
+            && _currentResult.PressureRatio < _currentResult.CriticalPressureRatio;
+    }
+
+    private IReadOnlyList<CalculationKpiMetric> GetResultKpis()
+    {
+        if (_currentResult == null)
+            return Array.Empty<CalculationKpiMetric>();
+
+        return new CalculationKpiMetric[]
+        {
+            new() { Label = "Flow Rate", Value = FormatDecimal(_currentResult.FlowRate, 2), Unit = "Mscf/day", ValueColor = Color.Primary, Icon = Icons.Material.Filled.Speed, TrendIcon = Icons.Material.Filled.TrendingUp, TrendColor = Color.Primary, TrendText = "Calculated throughput" },
+            new() { Label = "Pressure Ratio", Value = FormatDecimal(_currentResult.PressureRatio, 3), ValueColor = Color.Info, Icon = Icons.Material.Filled.CompareArrows, TrendIcon = Icons.Material.Filled.Compress, TrendColor = Color.Info, TrendText = "Downstream / upstream" },
+            new() { Label = "Downstream Pressure", Value = FormatDecimal(_currentResult.DownstreamPressure, 2), Unit = "psia", ValueColor = Color.Success, Icon = Icons.Material.Filled.South, TrendIcon = Icons.Material.Filled.CheckCircle, TrendColor = Color.Success, TrendText = "Predicted outlet pressure" },
+            new() { Label = "Flow Regime", Value = _currentResult.FlowRegime ?? "N/A", ValueColor = IsCriticalFlow() ? Color.Warning : Color.Secondary, Icon = Icons.Material.Filled.Tune, TrendIcon = IsCriticalFlow() ? Icons.Material.Filled.WarningAmber : Icons.Material.Filled.CheckCircle, TrendColor = IsCriticalFlow() ? Color.Warning : Color.Success, TrendText = $"Critical ratio {FormatDecimal(_currentResult.CriticalPressureRatio, 3)}" }
+        };
+    }
+
+    private IReadOnlyList<CalculationFactItem> GetSummaryFacts()
+    {
+        if (_currentResult == null)
+            return Array.Empty<CalculationFactItem>();
+
+        return new CalculationFactItem[]
+        {
+            new() { Label = "Calculation ID", Value = _currentResult.CalculationId ?? "N/A" },
+            new() { Label = "Well ID", Value = _currentResult.WellId ?? "N/A" },
+            new() { Label = "Analysis Type", Value = _currentResult.AnalysisType ?? "N/A" },
+            new() { Label = "Calculated", Value = _currentResult.CalculationDate.ToString("dd MMM yyyy HH:mm") },
+            new() { Label = "Choke Diameter", Value = $"{FormatDecimal(_currentResult.ChokeDiameter, 3)} in" },
+            new() { Label = "Choke Type", Value = _currentResult.ChokeType ?? "N/A" },
+            new() { Label = "Discharge Coefficient", Value = FormatDecimal(_currentResult.DischargeCoefficient, 3) },
+            new() { Label = "Status", Value = _currentResult.Status ?? "Unknown" },
+            new() { Label = "Upstream Pressure", Value = $"{FormatDecimal(_currentResult.UpstreamPressure, 2)} psia" },
+            new() { Label = "Downstream Pressure", Value = $"{FormatDecimal(_currentResult.DownstreamPressure, 2)} psia" },
+            new() { Label = "Pressure Ratio", Value = FormatDecimal(_currentResult.PressureRatio, 3) },
+            new() { Label = "Critical Pressure Ratio", Value = FormatDecimal(_currentResult.CriticalPressureRatio, 3) }
+        };
+    }
+
+    private IReadOnlyList<CalculationFactItem> GetInputSnapshotFacts()
+    {
+        return new CalculationFactItem[]
+        {
+            new() { Label = "Requested Analysis", Value = _request.AnalysisType ?? "N/A" },
+            new() { Label = "Requested Choke Type", Value = _request.ChokeType ?? "N/A" },
+            new() { Label = "Field", Value = _fieldName },
+            new() { Label = "Requested Flow", Value = $"{FormatNullableDecimal(_request.FlowRate, 2)} Mscf/day" },
+            new() { Label = "Requested Upstream Pressure", Value = $"{FormatNullableDecimal(_request.UpstreamPressure, 2)} psia" },
+            new() { Label = "Requested Downstream Pressure", Value = $"{FormatNullableDecimal(_request.DownstreamPressure, 2)} psia" },
+            new() { Label = "Gas Specific Gravity", Value = FormatNullableDecimal(_request.GasSpecificGravity, 3) },
+            new() { Label = "Temperature", Value = $"{FormatNullableDecimal(_request.Temperature, 1)} R" },
+            new() { Label = "Z-Factor", Value = FormatNullableDecimal(_request.ZFactor, 3) }
+        };
+    }
+
+    private static string FormatDecimal(decimal value, int digits)
+    {
+        return value.ToString($"N{digits}");
+    }
+
+    private static string FormatNullableDecimal(decimal? value, int digits)
+    {
+        return value.HasValue ? value.Value.ToString($"N{digits}") : "N/A";
+    }
+}

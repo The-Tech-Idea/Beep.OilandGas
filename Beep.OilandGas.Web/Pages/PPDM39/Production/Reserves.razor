@@ -2,6 +2,7 @@
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
+@inject IProductionServiceClient ProductionService
 
 <PageTitle>Classify Production Reserves</PageTitle>
 
@@ -44,14 +45,12 @@
                 <MudDataGrid T="RESERVE_ENTITY" Items="@_reserves" Dense="true" Hover="true" Striped="true"
                              SortMode="SortMode.Multiple" Filterable="true">
                     <Columns>
-                        <TemplateColumn Title="Reserve ID">
+                        <PropertyColumn Property="r => r.RESENT_ID" Title="Reserve ID" />
+                        <PropertyColumn Property="r => r.RESENT_LONG_NAME" Title="Reserve Name" />
+                        <PropertyColumn Property="r => r.PRIMARY_PRODUCT_TYPE" Title="Primary Product" />
+                        <TemplateColumn Title="Effective Date">
                             <CellTemplate>
-                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "RESERVE_ID")</MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
-                        <TemplateColumn Title="Reserve Date">
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "RESERVE_DATE")</MudText>
+                                <MudText Typo="Typo.body2">@(context.Item.EFFECTIVE_DATE?.ToString("dd MMM yyyy") ?? "—")</MudText>
                             </CellTemplate>
                         </TemplateColumn>
                     </Columns>
@@ -99,7 +98,8 @@
         _isLoading = true;
         try
         {
-            _reserves = await ApiClient.GetAsync<List<RESERVE_ENTITY>>("/api/production/reserves") ?? new();        }
+            _reserves = await ProductionService.GetReservesAsync();
+        }
         catch (Exception)
         {
             Snackbar.Add("Error loading reserves.", Severity.Error);
@@ -110,10 +110,5 @@
         }
     }
 
-    private string GetPropertyValue(object obj, string propertyName)
-    {
-        var prop = obj.GetType().GetProperty(propertyName);
-        return prop?.GetValue(obj)?.ToString() ?? "N/A";
-    }
 }
 

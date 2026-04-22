@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Calculations;
+using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
@@ -114,7 +115,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                 var result = await _calculationService.GetCalculationResultAsync(calculationId, "DCA");
                 if (result == null)
                 {
-                    return NotFound(new { error = $"DCA calculation {calculationId} not found" });
+                        return NotFound(new { error = $"DCA calculation {calculationId} not found." });
                 }
 
                 if (result is DCAResult dcaResult)
@@ -154,6 +155,70 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting DCA results");
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        #endregion
+
+        #region Choke Analysis
+
+        /// <summary>
+        /// Perform Choke Analysis.
+        /// </summary>
+        [HttpPost("choke")]
+        public async Task<ActionResult<ChokeAnalysisResult>> PerformChokeAnalysis([FromBody] ChokeAnalysisRequest request, [FromQuery] string? userId = null)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(userId))
+                {
+                    request.UserId = userId;
+                }
+
+                var result = await _calculationService.PerformChokeAnalysisAsync(request);
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid Choke Analysis request");
+                return BadRequest(new { error = "An internal error occurred." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error performing Choke Analysis");
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        #endregion
+
+        #region Compressor Analysis
+
+        /// <summary>
+        /// Perform Compressor Analysis.
+        /// </summary>
+        [HttpPost("compressor")]
+        public async Task<ActionResult<CompressorAnalysisResult>> PerformCompressorAnalysis([FromBody] CompressorAnalysisRequest request, [FromQuery] string? userId = null)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(userId))
+                {
+                    request.UserId = userId;
+                }
+
+                var result = await _calculationService.PerformCompressorAnalysisAsync(request);
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid Compressor Analysis request");
+                return BadRequest(new { error = "An internal error occurred." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error performing Compressor Analysis");
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
@@ -208,7 +273,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                 var result = await _calculationService.GetCalculationResultAsync(calculationId, "ECONOMIC");
                 if (result == null)
                 {
-                    return NotFound(new { error = $"Economic Analysis calculation {calculationId} not found" });
+                        return NotFound(new { error = $"Economic Analysis calculation {calculationId} not found." });
                 }
 
                 if (result is EconomicAnalysisResult economicResult)
@@ -302,7 +367,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                 var result = await _calculationService.GetCalculationResultAsync(calculationId, "NODAL");
                 if (result == null)
                 {
-                    return NotFound(new { error = $"Nodal Analysis calculation {calculationId} not found" });
+                        return NotFound(new { error = $"Nodal Analysis calculation {calculationId} not found." });
                 }
 
                 if (result is NodalAnalysisResult nodalResult)
@@ -342,6 +407,97 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting Nodal Analysis results");
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        #endregion
+
+        #region Well Test Analysis
+
+        /// <summary>
+        /// Perform Well Test Analysis
+        /// </summary>
+        [HttpPost("well-test")]
+        public async Task<ActionResult<WELL_TEST_ANALYSIS_RESULT>> PerformWellTestAnalysis([FromBody] WellTestAnalysisCalculationRequest request, [FromQuery] string? userId = null)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(userId))
+                {
+                    request.UserId = userId;
+                }
+
+                var result = await _calculationService.PerformWellTestAnalysisAsync(request);
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid Well Test Analysis request");
+                return BadRequest(new { error = "An internal error occurred." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error performing Well Test Analysis");
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>
+        /// Get Well Test Analysis result by ID
+        /// </summary>
+        [HttpGet("well-test/{calculationId}")]
+        public async Task<ActionResult<WELL_TEST_ANALYSIS_RESULT>> GetWellTestAnalysisResult(string calculationId)
+        {
+            if (string.IsNullOrWhiteSpace(calculationId)) return BadRequest(new { error = "Calculation ID is required." });
+            try
+            {
+                var result = await _calculationService.GetCalculationResultAsync(calculationId, "WELL_TEST");
+                if (result == null)
+                {
+                    return NotFound(new { error = $"Well Test Analysis calculation {calculationId} not found." });
+                }
+
+                if (result is WELL_TEST_ANALYSIS_RESULT wellTestResult)
+                {
+                    return Ok(wellTestResult);
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting Well Test Analysis result");
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>
+        /// Get Well Test Analysis results for a well or field
+        /// </summary>
+        [HttpGet("well-test")]
+        public async Task<ActionResult<List<WELL_TEST_ANALYSIS_RESULT>>> GetWellTestAnalysisResults(
+            [FromQuery] string? wellId = null,
+            [FromQuery] string? testId = null,
+            [FromQuery] string? fieldId = null)
+        {
+            try
+            {
+                var results = await _calculationService.GetCalculationResultsAsync(wellId, null, fieldId, "WELL_TEST");
+                var history = results.WellTestResults;
+
+                if (!string.IsNullOrWhiteSpace(testId))
+                {
+                    history = history
+                        .Where(result => string.Equals(result.TEST_ID, testId, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                }
+
+                return Ok(history);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting Well Test Analysis results");
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }

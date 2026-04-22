@@ -6,15 +6,25 @@ namespace Beep.OilandGas.Models.Data.Operations
 {
     public class CalculateRecoveryFactorRequest : ModelEntityBase
     {
-        private string ProjectIdValue = string.Empty;
+        private string OperationIdValue = string.Empty;
+
+        public string OperationId
+
+        {
+
+            get { return this.OperationIdValue; }
+
+            set { SetProperty(ref OperationIdValue, value); }
+
+        }
 
         public string ProjectId
 
         {
 
-            get { return this.ProjectIdValue; }
+            get { return this.OperationIdValue; }
 
-            set { SetProperty(ref ProjectIdValue, value); }
+            set { SetProperty(ref OperationIdValue, value); }
 
         }
     }

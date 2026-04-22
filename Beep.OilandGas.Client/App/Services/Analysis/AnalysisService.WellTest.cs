@@ -14,7 +14,10 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<WELL_TEST_DATA, WELL_TEST_ANALYSIS_RESULT>("/api/welltest/buildup", request, cancellationToken);
+                return await PostAsync<WellTestAnalysisCalculationRequest, WELL_TEST_ANALYSIS_RESULT>(
+                    "/api/calculations/well-test",
+                    MapWellTestCalculationRequest(request, "BUILDUP"),
+                    cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -22,7 +25,10 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<WELL_TEST_DATA, WELL_TEST_ANALYSIS_RESULT>("/api/welltest/drawdown", request, cancellationToken);
+                return await PostAsync<WellTestAnalysisCalculationRequest, WELL_TEST_ANALYSIS_RESULT>(
+                    "/api/calculations/well-test",
+                    MapWellTestCalculationRequest(request, "DRAWDOWN"),
+                    cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -30,7 +36,10 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<WELL_TEST_DATA, WELL_TEST_ANALYSIS_RESULT>("/api/welltest/derivative", request, cancellationToken);
+                return await PostAsync<WellTestAnalysisCalculationRequest, WELL_TEST_ANALYSIS_RESULT>(
+                    "/api/calculations/well-test",
+                    MapWellTestCalculationRequest(request, ResolveLegacyAnalysisType(request)),
+                    cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -38,7 +47,10 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<WELL_TEST_DATA, WELL_TEST_ANALYSIS_RESULT>("/api/welltest/interpret", request, cancellationToken);
+                return await PostAsync<WellTestAnalysisCalculationRequest, WELL_TEST_ANALYSIS_RESULT>(
+                    "/api/calculations/well-test",
+                    MapWellTestCalculationRequest(request, ResolveLegacyAnalysisType(request)),
+                    cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -51,5 +63,56 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         }
 
         #endregion
+
+        private static WellTestAnalysisCalculationRequest MapWellTestCalculationRequest(WELL_TEST_DATA request, string analysisType)
+        {
+            return new WellTestAnalysisCalculationRequest
+            {
+                WellId = request.AREA_ID,
+                TestId = request.WELL_TEST_DATA_ID,
+                AnalysisType = analysisType,
+                AnalysisMethod = "HORNER",
+                PressureTimeData = BuildPressureTimeData(request),
+                FlowRate = request.FLOW_RATE,
+                WellboreRadius = request.WELLBORE_RADIUS,
+                FormationThickness = request.FORMATION_THICKNESS,
+                Porosity = request.POROSITY,
+                TotalCompressibility = request.TOTAL_COMPRESSIBILITY,
+                OilViscosity = request.OIL_VISCOSITY,
+                OilFormationVolumeFactor = request.OIL_FORMATION_VOLUME_FACTOR,
+                ProductionTime = request.PRODUCTION_TIME,
+                IsGasWell = request.IS_GAS_WELL,
+                GasSpecificGravity = request.GAS_SPECIFIC_GRAVITY,
+                ReservoirTemperature = request.RESERVOIR_TEMPERATURE,
+                InitialReservoirPressure = request.INITIAL_RESERVOIR_PRESSURE
+            };
+        }
+
+        private static List<WellTestDataPoint>? BuildPressureTimeData(WELL_TEST_DATA request)
+        {
+            if (request.Time == null || request.Pressure == null || request.Time.Count == 0 || request.Time.Count != request.Pressure.Count)
+            {
+                return null;
+            }
+
+            var points = new List<WellTestDataPoint>(request.Time.Count);
+            for (var index = 0; index < request.Time.Count; index++)
+            {
+                points.Add(new WellTestDataPoint
+                {
+                    Time = (decimal)request.Time[index],
+                    Pressure = (decimal)request.Pressure[index]
+                });
+            }
+
+            return points;
+        }
+
+        private static string ResolveLegacyAnalysisType(WELL_TEST_DATA request)
+        {
+            return request.TEST_TYPE?.IndexOf("DRAW", StringComparison.OrdinalIgnoreCase) >= 0
+                ? "DRAWDOWN"
+                : "BUILDUP";
+        }
     }
 }

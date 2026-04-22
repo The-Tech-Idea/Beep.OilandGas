@@ -2,6 +2,7 @@
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject ApiClient ApiClient
+@using Beep.OilandGas.Models.Data.Production
 
 <PageTitle>Classify Field Reserves</PageTitle>
 
@@ -223,7 +224,7 @@
         _loading = true;
         try
         {
-            var summaryTask = ApiClient.GetAsync<ReservoirSummaryDto>("api/field/current/reservoir/dashboard/summary");
+            var summaryTask = ApiClient.GetAsync<ReservoirDashboardSummary>("api/field/current/reservoir/dashboard/summary");
             var poolsTask   = ApiClient.GetAsync<List<ReservoirPoolDto>>("api/field/current/reservoir/dashboard/pools");
             await Task.WhenAll(summaryTask, poolsTask);
 
@@ -250,26 +251,6 @@
             Snackbar.Add("Failed to load reserves data.", Severity.Warning);
         }
         finally { _loading = false; }
-    }
-
-    private class ReservoirSummaryDto
-    {
-        public double OoipMmbbl                { get; set; }
-        public double RecoveryFactorPct        { get; set; }
-        public double Reserves1PMmbbl          { get; set; }
-        public double Reserves2PMmbbl          { get; set; }
-        public double Reserves3PMmbbl          { get; set; }
-        public double ContingentResourcesMmbbl { get; set; }
-        public int    ActivePoolCount          { get; set; }
-    }
-
-    private class ReservoirPoolDto
-    {
-        public string? PoolId    { get; set; }
-        public string? PoolName  { get; set; }
-        public string? Status    { get; set; }
-        public double  AreaAcres { get; set; }
-        public string? Formation { get; set; }
     }
 
     private void SubmitForCertification()

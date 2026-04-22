@@ -94,6 +94,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("reference/{statusType}")]
         public async Task<ActionResult<WellServices.FacetTypeDto>> GetFacetReferenceByType(string statusType)
         {
+            if (string.IsNullOrWhiteSpace(statusType))
+                return BadRequest(new { error = "Status type is required." });
             try
             {
                 var values     = await _wellServices.GetFacetValuesAsync(statusType);
@@ -134,6 +136,10 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("reference/{statusType}/qualifiers/{status}")]
         public async Task<ActionResult<List<WellServices.FacetQualifierDto>>> GetQualifiers(string statusType, string status)
         {
+            if (string.IsNullOrWhiteSpace(statusType))
+                return BadRequest(new { error = "Status type is required." });
+            if (string.IsNullOrWhiteSpace(status))
+                return BadRequest(new { error = "Status is required." });
             try
             {
                 var result = await _wellServices.GetFacetQualifiersAsync(statusType, status);
@@ -154,6 +160,12 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<List<WellServices.FacetQualifierValueDto>>> GetQualifierValues(
             string statusType, string status, string qualifier)
         {
+            if (string.IsNullOrWhiteSpace(statusType))
+                return BadRequest(new { error = "Status type is required." });
+            if (string.IsNullOrWhiteSpace(status))
+                return BadRequest(new { error = "Status is required." });
+            if (string.IsNullOrWhiteSpace(qualifier))
+                return BadRequest(new { error = "Qualifier is required." });
             try
             {
                 var result = await _wellServices.GetFacetQualifierValuesAsync(statusType, status, qualifier);
@@ -247,7 +259,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
             if (request == null)
-                return BadRequest("Request body is required");
+                    return BadRequest(new { error = "Request body is required." });
 
             // Ensure UWI from route is used (prevents spoofing via body).
             request.UWI = uwi;

@@ -1,6 +1,6 @@
 ﻿@page "/ppdm39/process/gates/{Id}"
 @attribute [Authorize(Roles = "GateApprover,Manager,Admin")]
-@inject ApiClient ApiClient
+@inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
@@ -125,7 +125,7 @@
         try
         {
             // Load gate summary
-            var gate = await ApiClient.GetAsync<ProcessInstanceSummary>($"/api/field/current/gates/{Uri.EscapeDataString(Id)}");
+            var gate = await BusinessProcessClient.GetGateAsync(Id);
             if (gate != null)
             {
                 _gateName    = string.IsNullOrWhiteSpace(gate.ProcessName) ? gate.ProcessId : gate.ProcessName;
@@ -136,7 +136,7 @@
             }
 
             // Load checklist
-            var cl = await ApiClient.GetAsync<GateChecklistResponse>($"/api/field/current/gates/{Uri.EscapeDataString(Id)}/checklist");
+            var cl = await BusinessProcessClient.GetGateChecklistAsync(Id);
             if (cl?.RequiredDocuments != null)
             {
                 _checklist = cl.RequiredDocuments
@@ -163,7 +163,7 @@
             {
                 Decision = GateDecision.Approve, Comments = _comments
             };
-            await ApiClient.PostAsync<GateReviewDecisionRequest, object>($"/api/field/current/gates/{Uri.EscapeDataString(Id)}/approve", req);
+            await BusinessProcessClient.ApproveGateAsync(Id, req);
             Snackbar.Add("Gate approved.", Severity.Success);
             NavigationManager.NavigateTo("/ppdm39/process/gates");
         }
@@ -184,7 +184,7 @@
             {
                 Decision = GateDecision.Reject, Comments = _comments
             };
-            await ApiClient.PostAsync<GateReviewDecisionRequest, object>($"/api/field/current/gates/{Uri.EscapeDataString(Id)}/reject", req);
+            await BusinessProcessClient.RejectGateAsync(Id, req);
             Snackbar.Add("Gate rejected.", Severity.Warning);
             NavigationManager.NavigateTo("/ppdm39/process/gates");
         }
@@ -201,16 +201,10 @@
                 Comments        = _comments,
                 DeferTargetDate = _deferDate
             };
-            await ApiClient.PostAsync<GateReviewDecisionRequest, object>($"/api/field/current/gates/{Uri.EscapeDataString(Id)}/defer", req);
+            await BusinessProcessClient.DeferGateAsync(Id, req);
             Snackbar.Add("Gate deferred.", Severity.Info);
             NavigationManager.NavigateTo("/ppdm39/process/gates");
         }
         catch (Exception) { Snackbar.Add("Deferral failed.", Severity.Error); }
-    }
-
-    private class GateChecklistResponse
-    {
-        public string GateId { get; set; } = string.Empty;
-        public List<string> RequiredDocuments { get; set; } = new();
     }
 }

@@ -1,0 +1,29 @@
+@using System.Linq
+
+@if (Metrics?.Any() == true)
+{
+    <MudGrid Spacing="@Spacing" Class="@Class">
+        @foreach (var metric in Metrics)
+        {
+            <MudItem xs="@Xs" sm="@Sm" md="@Md">
+                <KpiCard Label="@metric.Label"
+                         Value="@metric.Value"
+                         Unit="@metric.Unit"
+                         ValueColor="@metric.ValueColor"
+                         Icon="@metric.Icon"
+                         TrendIcon="@metric.TrendIcon"
+                         TrendColor="@metric.TrendColor"
+                         TrendText="@metric.TrendText" />
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    [Parameter] public IEnumerable<CalculationKpiMetric>? Metrics { get; set; }
+    [Parameter] public string Class { get; set; } = string.Empty;
+    [Parameter] public int Spacing { get; set; } = 3;
+    [Parameter] public int Xs { get; set; } = 12;
+    [Parameter] public int Sm { get; set; } = 6;
+    [Parameter] public int Md { get; set; } = 3;
+}

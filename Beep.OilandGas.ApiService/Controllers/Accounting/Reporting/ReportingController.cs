@@ -81,7 +81,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
 
                 var lease = _service.LeaseManager.GetLease(request.LEASE_ID);
                 if (lease == null)
-                    return NotFound(new { error = $"Lease {request.LEASE_ID} not found" });
+                    return NotFound(new { error = $"Lease {request.LEASE_ID} not found." });
 
                 var runTickets = _service.ProductionManager.GetRunTicketsByLease(request.LEASE_ID)
                     .Where(t => t.TicketDateTime >= request.StartDate && t.TicketDateTime <= request.EndDate)

@@ -1,6 +1,5 @@
 @using Beep.OilandGas.Models.Data.DataManagement
 @using Beep.OilandGas.Models.Data
-@using Beep.OilandGas.Client.App
 @using System.Net.Http.Json
 @using TheTechIdea.Beep.ConfigUtil
 
@@ -238,7 +237,6 @@
     [Inject] ApiClient ApiClient { get; set; } = default!;
     [Inject] ISnackbar Snackbar { get; set; } = default!;
     [Inject] NavigationManager NavigationManager { get; set; } = default!;
-    [Inject] IBeepOilandGasApp BeepApp { get; set; } = default!;
 
     private enum SetupMode
     {

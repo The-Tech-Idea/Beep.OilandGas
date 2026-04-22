@@ -1,6 +1,7 @@
 ﻿@page "/exploration/prospect/{Id}"
 @page "/exploration/prospect/new"
 @inject ApiClient ApiClient
+@inject IExplorationServiceClient ExplorationService
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -183,7 +184,7 @@
                                        Color="Color.Primary"
                                        StartIcon="@Icons.Material.Filled.Assignment"
                                        FullWidth="true"
-                                       OnClick='() => NavigationManager.NavigateTo($"/exploration/well-program/new?prospectId={Uri.EscapeDataString(Id)}")'>
+                                       OnClick='() => NavigationManager.NavigateTo($"/exploration/well-program/new?prospectId={Uri.EscapeDataString(_loadedId)}")'>
                                 Request Well Program
                             </MudButton>
                             <MudButton Variant="Variant.Outlined"
@@ -242,8 +243,7 @@
         }
         try
         {
-            var p = await ApiClient.GetAsync<PROSPECT>(
-                $"/api/field/current/exploration/prospects/{Id}");
+            var p = await ExplorationService.GetProspectAsync(Id);
             if (p != null)
             {
                 _prospect = new ProspectViewModel
@@ -291,6 +291,12 @@
 
     private async Task AdvanceStage()
     {
+        if (string.IsNullOrWhiteSpace(_loadedId) || _loadedId == "new")
+        {
+            Snackbar.Add("Save the prospect before advancing stage.", Severity.Warning);
+            return;
+        }
+
         var parameters = new DialogParameters<StageAdvanceDialog>
         {
             { x => x.ProspectName, _prospect.Name },
@@ -299,14 +305,53 @@
         var dialog = await DialogService.ShowAsync<StageAdvanceDialog>("Advance Stage", parameters);
         var result = await dialog.Result;
         if (result is { Canceled: false })
-            Snackbar.Add("Prospect advanced to Drill Candidate", Severity.Success);
+        {
+            try
+            {
+                await ExplorationService.RecordProspectDecisionAsync(_loadedId, "APPROVED", "Advanced from prospect detail.");
+                Snackbar.Add("Prospect advanced to Drill Candidate.", Severity.Success);
+                await LoadProspectAsync();
+            }
+            catch (Exception)
+            {
+                Snackbar.Add("Failed to advance prospect stage.", Severity.Error);
+            }
+        }
     }
 
-    private void DropProspect()
+    private async Task DropProspect()
     {
-        _prospect.Status = "ARCHIVED";
-        Snackbar.Add($"'{_prospect.Name}' has been dropped and archived.", Severity.Warning);
-        NavigationManager.NavigateTo("/exploration/prospect-board");
+        if (string.IsNullOrWhiteSpace(_loadedId) || _loadedId == "new")
+        {
+            NavigationManager.NavigateTo("/exploration/prospect-board");
+            return;
+        }
+
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            "Drop Prospect",
+            $"Are you sure you want to drop prospect {_prospect.Name}?",
+            yesText: "Drop",
+            cancelText: "Cancel");
+
+        if (confirmed != true)
+            return;
+
+        try
+        {
+            var deleted = await ExplorationService.DeleteProspectAsync(_loadedId);
+            if (!deleted)
+            {
+                Snackbar.Add("Prospect could not be dropped.", Severity.Warning);
+                return;
+            }
+
+            Snackbar.Add($"'{_prospect.Name}' has been dropped.", Severity.Warning);
+            NavigationManager.NavigateTo("/exploration/prospect-board");
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to drop prospect.", Severity.Error);
+        }
     }
 
     private class ProspectViewModel

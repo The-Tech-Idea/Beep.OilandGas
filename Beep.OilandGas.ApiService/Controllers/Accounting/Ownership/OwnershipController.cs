@@ -39,7 +39,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
             try
             {
                 if (string.IsNullOrEmpty(propertyOrLeaseId))
-                    return BadRequest(new { error = "Property or lease ID is required" });
+                        return BadRequest(new { error = "Property or lease ID is required." });
 
                 var date = asOfDate ?? DateTime.Now;
                 var interests = _service.OwnershipManager.GetOwnershipInterests(propertyOrLeaseId, date).ToList();
@@ -85,7 +85,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
                 var interests = _service.OwnershipManager.GetOwnershipInterests(request.PROPERTY_OR_LEASE_ID, request.EFFECTIVE_DATE);
                 var interest = interests.FirstOrDefault(i => i.OWNER_ID == ownerInfo.OWNER_ID);
                 if (interest == null)
-                    return StatusCode(500, new { error = "Failed to create ownership interest" });
+                    return StatusCode(500, new { error = "Failed to create ownership interest." });
 
                 return Ok(MapToOwnershipInterestDto(interest));
             }

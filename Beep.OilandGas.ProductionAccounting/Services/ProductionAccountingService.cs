@@ -298,7 +298,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 status.AccountingMethod = await GetAccountingMethodAsync(fieldId, connectionName);
 
                 // Get period status
-                status.PeriodStatus = await GetPeriodStatusAsync(fieldId, connectionName);
+                status.PeriodStatus = await GetPeriodStatusAsync(fieldId, date, connectionName);
 
                 _logger?.LogInformation(
                     "Accounting status retrieved for field {FieldId}: Production={Production}, Revenue={Revenue}, Royalty={Royalty}, Costs={Costs}, NetIncome={NetIncome}",
@@ -370,6 +370,46 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new ProductionAccountingException(
                     $"Failed to close period for field {fieldId}", ex);
             }
+        }
+
+        public async Task<List<REVENUE_TRANSACTION>> GetRevenueTransactionsAsync(
+            string fieldId,
+            DateTime startDate,
+            DateTime endDate,
+            string connectionName = "PPDM39")
+        {
+            if (string.IsNullOrWhiteSpace(fieldId))
+                throw new ArgumentNullException(nameof(fieldId));
+
+            var metadata = await _metadata.GetTableMetadataAsync("REVENUE_TRANSACTION");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(REVENUE_TRANSACTION);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, connectionName, "REVENUE_TRANSACTION");
+
+            var propertyFilters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = fieldId },
+                new AppFilter { FieldName = "TRANSACTION_DATE", Operator = ">=", FilterValue = startDate.ToString("yyyy-MM-dd") },
+                new AppFilter { FieldName = "TRANSACTION_DATE", Operator = "<=", FilterValue = endDate.ToString("yyyy-MM-dd") },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            var transactions = (await repo.GetAsync(propertyFilters))?.OfType<REVENUE_TRANSACTION>().ToList() ?? new List<REVENUE_TRANSACTION>();
+            if (transactions.Count > 0)
+                return transactions;
+
+            var fieldFilters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId },
+                new AppFilter { FieldName = "TRANSACTION_DATE", Operator = ">=", FilterValue = startDate.ToString("yyyy-MM-dd") },
+                new AppFilter { FieldName = "TRANSACTION_DATE", Operator = "<=", FilterValue = endDate.ToString("yyyy-MM-dd") },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            return (await repo.GetAsync(fieldFilters))?.OfType<REVENUE_TRANSACTION>().ToList() ?? new List<REVENUE_TRANSACTION>();
         }
 
         // Private helper methods
@@ -565,21 +605,34 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
-        private async Task<string> GetPeriodStatusAsync(string fieldId, string cn)
+        private async Task<string> GetPeriodStatusAsync(string fieldId, DateTime asOfDate, string cn)
         {
             try
             {
-                // Returns "Open" until a PERIOD_CLOSE table is added to track reconciliation status.
-                // When the table exists, query it for: unallocated production, unrecognized revenue,
-                // and unbalanced GL entries — then set to "Closed" when all are reconciled.
+                var metadata = await _metadata.GetTableMetadataAsync("JOURNAL_ENTRY");
+                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                    ?? typeof(JOURNAL_ENTRY);
 
-                _logger?.LogDebug("Period status for field {FieldId}: Open (default)", fieldId);
-                return "Open";
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, cn, "JOURNAL_ENTRY");
+
+                var entryNumber = $"PC-{fieldId}-{asOfDate:yyyyMM}";
+                var entries = await repo.GetAsync(new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "ENTRY_NUMBER", Operator = "=", FilterValue = entryNumber },
+                    new AppFilter { FieldName = "ENTRY_TYPE", Operator = "=", FilterValue = "PERIOD_CLOSE" },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+                });
+
+                var periodStatus = entries != null && entries.Any() ? "CLOSED" : "OPEN";
+                _logger?.LogDebug("Period status for field {FieldId} and period {Period}: {Status}", fieldId, asOfDate.ToString("yyyy-MM"), periodStatus);
+                return periodStatus;
             }
             catch (Exception ex)
             {
                 _logger?.LogWarning(ex, "Error retrieving period status for field {FieldId}", fieldId);
-                return "Open";  // Safe default
+                return "OPEN";
             }
         }
 

@@ -40,7 +40,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             {
                 var inventory = _service.ProductionManager.GetTankInventory(id);
                 if (inventory == null)
-                    return NotFound(new { error = $"Tank inventory with ID {id} not found" });
+                        return NotFound(new { error = $"Tank inventory with ID {id} not found." });
 
                 return Ok(new
                 {

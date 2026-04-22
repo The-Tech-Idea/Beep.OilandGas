@@ -118,7 +118,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for inventory transaction");
-                return StatusCode(500, new { error = "Transaction created but GL posting failed"});
+                    return StatusCode(500, new { error = "Transaction created but GL posting failed." });
             }
             catch (Exception ex)
             {
@@ -141,7 +141,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             {
                 var transaction = _service.TraditionalAccounting.Inventory.GetTransaction(id);
                 if (transaction == null)
-                    return NotFound(new { error = $"Inventory transaction with ID {id} not found" });
+                        return NotFound(new { error = $"Inventory transaction with ID {id} not found." });
 
                 return Ok(new
                 {

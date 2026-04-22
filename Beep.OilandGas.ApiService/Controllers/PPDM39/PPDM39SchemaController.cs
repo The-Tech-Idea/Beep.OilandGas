@@ -133,8 +133,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<ModuleInstallResultDto>> InstallModuleAsync(
             string connectionName, string moduleName)
         {
-            if (string.IsNullOrWhiteSpace(connectionName)) return BadRequest(new ModuleInstallResultDto { Success = false, Message = "Connection name is required." });
-            if (string.IsNullOrWhiteSpace(moduleName)) return BadRequest(new ModuleInstallResultDto { Success = false, Message = "Module name is required." });
+                if (string.IsNullOrWhiteSpace(connectionName)) return BadRequest(new { error = "Connection name is required." });
+                if (string.IsNullOrWhiteSpace(moduleName)) return BadRequest(new { error = "Module name is required." });
             try
             {
                 var def = _tracker.GetModuleDefinition(moduleName);
@@ -248,7 +248,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPost("{connectionName}/install-all")]
         public async Task<ActionResult<AllModulesInstallResultDto>> InstallAllModulesAsync(string connectionName)
         {
-            if (string.IsNullOrWhiteSpace(connectionName)) return BadRequest(new AllModulesInstallResultDto { Success = false, Message = "Connection name is required." });
+              if (string.IsNullOrWhiteSpace(connectionName)) return BadRequest(new { error = "Connection name is required." });
             try
             {
                 var ds = _editor.GetDataSource(connectionName);

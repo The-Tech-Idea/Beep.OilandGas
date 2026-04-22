@@ -1,6 +1,6 @@
 ﻿@page "/ppdm39/hse/incidents/{Id}"
 @attribute [Authorize(Roles = "SafetyOfficer,Manager,Admin,User")]
-@inject ApiClient ApiClient
+@inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -222,7 +222,7 @@
     {
         try
         {
-            var inst = await ApiClient.GetAsync<ProcessInstance>($"/api/field/current/process/hse/incidents/{Uri.EscapeDataString(Id)}");
+            var inst = await BusinessProcessClient.GetHseIncidentAsync(Id);
             if (inst != null)
             {
                 _incidentType = inst.EntityType;
@@ -263,8 +263,11 @@
     {
         try
         {
-            var req = new { Summary = _rcaDraft };
-            await ApiClient.PostAsync<object, object>($"/api/field/current/process/hse/incidents/{Uri.EscapeDataString(Id)}/rca", req);
+            var req = new HSEIncidentUpdateRequest
+            {
+                RcaSummary = _rcaDraft
+            };
+            await BusinessProcessClient.SubmitHseIncidentRcaAsync(Id, req);
             _rcaSummary = _rcaDraft;
             Snackbar.Add("RCA submitted.", Severity.Success);
         }
@@ -275,8 +278,11 @@
     {
         try
         {
-            var req = new { Status = "COMPLETED" };
-            await ApiClient.PatchAsync<object, object>($"/api/field/current/process/hse/incidents/{Uri.EscapeDataString(Id)}/actions/{Uri.EscapeDataString(actionId)}", req);
+            var req = new CorrectiveActionCloseRequest
+            {
+                Notes = "Marked completed from incident detail."
+            };
+            await BusinessProcessClient.CloseHseCorrectiveActionAsync(Id, actionId, req);
             var action = _correctiveActions.FirstOrDefault(a => a.ActionId == actionId);
             if (action != null)
             {
@@ -292,8 +298,11 @@
     {
         try
         {
-            var req = new { Notes = _closeNotes };
-            await ApiClient.PostAsync<object, object>($"/api/field/current/process/hse/incidents/{Uri.EscapeDataString(Id)}/close", req);
+            var req = new IncidentCloseRequest
+            {
+                Reason = _closeNotes
+            };
+            await BusinessProcessClient.CloseHseIncidentAsync(Id, req);
             _status = "CLOSED";
             Snackbar.Add("Incident closed.", Severity.Success);
             NavigationManager.NavigateTo("/ppdm39/hse/incidents");
@@ -332,17 +341,16 @@
         _addingAction = true;
         try
         {
-            var request = new AddCARequest(
-                CADescription:    _caDescription,
-                CAType:           _caType,
-                DueDate:          _caDueDate,
-                ResponsibleBaId:  _caResponsibleBaId);
+            var request = new HSEIncidentUpdateRequest
+            {
+                AssignedToUserId = _caResponsibleBaId,
+                CorrectiveActions = new List<string> { _caDescription }
+            };
 
-            var actionId = await ApiClient.PostAsync<AddCARequest, string>(
-                $"/api/field/current/process/hse/incidents/{Id}/cas", request);
+            await BusinessProcessClient.RaiseHseCorrectiveActionsAsync(Id, request);
 
             _correctiveActions.Add(new ActionRow(
-                actionId ?? Guid.NewGuid().ToString(),
+                Guid.NewGuid().ToString(),
                 _caDescription,
                 _caResponsibleBaId,
                 _caDueDate,

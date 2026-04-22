@@ -1,0 +1,215 @@
+@page "/account/dashboard"
+@attribute [Authorize]
+@inject IAccountManagementService AccountService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+
+<PageTitle>My Account - Beep Oil & Gas</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.False" Class="pa-0 og-page-bg">
+    <MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+        <MudPaper Class="pa-4 mb-6 og-terminal-card" Elevation="0">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudStack Row="true" Spacing="1">
+                    <div class="og-terminal-dot og-terminal-dot--red"></div>
+                    <div class="og-terminal-dot og-terminal-dot--yellow"></div>
+                    <div class="og-terminal-dot og-terminal-dot--green"></div>
+                </MudStack>
+                <MudText Color="Color.Secondary" Class="og-terminal-prompt">
+                    ~/account <span class="og-terminal-success">$</span> cat dashboard.json | jq
+                </MudText>
+            </MudStack>
+        </MudPaper>
+
+        <MudText Typo="Typo.h3" Class="mb-2 og-terminal-heading">
+            <span class="og-terminal-success">const</span> <span class="og-terminal-warning">user_dashboard</span> <span class="og-terminal-primary">=</span> <span class="og-terminal-secondary">{"{"}</span>
+        </MudText>
+        <MudText Typo="Typo.subtitle1" Class="mb-6 og-terminal-code" Color="Color.Secondary">
+            // Welcome back! Here's an overview of your account
+        </MudText>
+
+        @if (isLoading)
+        {
+            <MudGrid>
+                @for (int i = 0; i < 6; i++)
+                {
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" />
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+        else if (profile == null)
+        {
+            <MudPaper Elevation="0" Class="pa-6 og-terminal-card-error">
+                <MudText Color="Color.Error" Class="og-terminal-code mb-4">
+                    // Error: Unable to load account information
+                </MudText>
+                <MudButton Variant="Variant.Filled" OnClick="LoadDashboard"
+                           Class="og-terminal-code">
+                    retry()
+                </MudButton>
+            </MudPaper>
+        }
+        else
+        {
+            <MudGrid Class="mb-6">
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard Elevation="0" Class="h-100 og-terminal-card">
+                        <MudCardContent Class="d-flex align-center">
+                            <MudAvatar Size="Size.Large" Class="mr-4 og-avatar-success">
+                                <MudIcon Icon="@Icons.Material.Filled.AccountCircle" />
+                            </MudAvatar>
+                            <div>
+                                <MudText Typo="Typo.h4" Class="og-terminal-value-success">
+                                    @(profile.EmailConfirmed ? "Verified" : "Unverified")
+                                </MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-terminal-code">
+                                    email_status
+                                </MudText>
+                            </div>
+                        </MudCardContent>
+                        <MudCardActions Class="og-terminal-actions">
+                            <MudButton Variant="Variant.Text" Href="/Account/Manage/Email" Color="Color.Primary" Class="og-terminal-code">
+                                manage_email()
+                            </MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard Elevation="0" Class="h-100 og-terminal-card">
+                        <MudCardContent Class="d-flex align-center">
+                            <MudAvatar Size="Size.Large" Class="mr-4 og-avatar-info">
+                                <MudIcon Icon="@Icons.Material.Filled.Security" />
+                            </MudAvatar>
+                            <div>
+                                <MudText Typo="Typo.h4" Class="og-terminal-value-info">
+                                    @(profile.TwoFactorEnabled ? "Enabled" : "Disabled")
+                                </MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-terminal-code">
+                                    two_factor_auth
+                                </MudText>
+                            </div>
+                        </MudCardContent>
+                        <MudCardActions Class="og-terminal-actions">
+                            <MudButton Variant="Variant.Text" Href="/Account/Manage/TwoFactorAuthentication" Color="Color.Primary" Class="og-terminal-code">
+                                manage_2fa()
+                            </MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard Elevation="0" Class="h-100 og-terminal-card">
+                        <MudCardContent Class="d-flex align-center">
+                            <MudAvatar Size="Size.Large" Class="mr-4 og-avatar-secondary">
+                                <MudIcon Icon="@Icons.Material.Filled.Link" />
+                            </MudAvatar>
+                            <div>
+                                <MudText Typo="Typo.h4" Class="og-terminal-value-secondary">
+                                    @externalLoginsCount
+                                </MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-terminal-code">
+                                    external_logins
+                                </MudText>
+                            </div>
+                        </MudCardContent>
+                        <MudCardActions Class="og-terminal-actions">
+                            <MudButton Variant="Variant.Text" Href="/Account/Manage/ExternalLogins" Color="Color.Primary" Class="og-terminal-code">
+                                manage_logins()
+                            </MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+
+            <MudPaper Elevation="0" Class="pa-4 mb-6 og-terminal-card">
+                <MudText Typo="Typo.h5" Class="og-terminal-heading mb-4">
+                    <span class="og-terminal-primary">quick_actions</span><span class="og-terminal-warning">[]</span>
+                </MudText>
+
+                <MudGrid>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudButton Variant="Variant.Outlined"
+                                   FullWidth="true"
+                                   Href="/Account/Manage"
+                                   StartIcon="@Icons.Material.Filled.Person"
+                                   Class="og-terminal-code">
+                            edit_profile()
+                        </MudButton>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudButton Variant="Variant.Outlined"
+                                   FullWidth="true"
+                                   Href="/Account/Manage/ChangePassword"
+                                   StartIcon="@Icons.Material.Filled.Lock"
+                                   Class="og-terminal-code">
+                            change_password()
+                        </MudButton>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudButton Variant="Variant.Outlined"
+                                   FullWidth="true"
+                                   Href="/Account/Manage/PersonalData"
+                                   StartIcon="@Icons.Material.Filled.Download"
+                                   Class="og-terminal-code">
+                            download_data()
+                        </MudButton>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Error"
+                                   FullWidth="true"
+                                   Href="/Account/Manage/PersonalData"
+                                   StartIcon="@Icons.Material.Filled.Delete"
+                                   Class="og-terminal-code">
+                            delete_account()
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+
+            <MudText Typo="Typo.body2" Class="mt-4 og-terminal-code" Color="Color.Secondary">
+                <span class="og-terminal-secondary">{"}"}</span>
+            </MudText>
+        }
+    </MudContainer>
+</MudContainer>
+
+@code {
+    private Beep.Foundation.IdentityServer.Shared.Services.UserProfile? profile;
+    private bool isLoading = true;
+    private int externalLoginsCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboard();
+    }
+
+    private async Task LoadDashboard()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            profile = await AccountService.GetProfileAsync();
+            var loginsInfo = await AccountService.GetExternalLoginsAsync();
+            externalLoginsCount = loginsInfo?.CurrentLogins.Count ?? 0;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading dashboard: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+}

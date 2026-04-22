@@ -2,6 +2,7 @@
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
+@inject IProductionServiceClient ProductionService
 
 <PageTitle>Track Production Pool Performance</PageTitle>
 
@@ -44,18 +45,8 @@
                 <MudDataGrid T="POOL" Items="@_pools" Dense="true" Hover="true" Striped="true"
                              SortMode="SortMode.Multiple" Filterable="true">
                     <Columns>
-                        <TemplateColumn Title="Pool ID">
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "POOL_ID")</MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
-                        <TemplateColumn Title="Pool Name">
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2" Color="Color.Primary">
-                                    @GetPropertyValue(context.Item, "POOL_NAME")
-                                </MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
+                        <PropertyColumn Property="p => p.POOL_ID" Title="Pool ID" />
+                        <PropertyColumn Property="p => p.POOL_NAME" Title="Pool Name" />
                     </Columns>
                     <NoRecordsContent>
                         <MudStack AlignItems="AlignItems.Center" Class="pa-6">
@@ -105,7 +96,8 @@
         _isLoading = true;
         try
         {
-            _pools = await ApiClient.GetAsync<List<POOL>>("/api/production/pools") ?? new();        }
+            _pools = await ProductionService.GetPoolsAsync();
+        }
         catch (Exception)
         {
             Snackbar.Add("Error loading pools.", Severity.Error);
@@ -116,11 +108,6 @@
         }
     }
 
-    private string GetPropertyValue(object obj, string propertyName)
-    {
-        var prop = obj.GetType().GetProperty(propertyName);
-        return prop?.GetValue(obj)?.ToString() ?? "N/A";
-    }
 }
 
 

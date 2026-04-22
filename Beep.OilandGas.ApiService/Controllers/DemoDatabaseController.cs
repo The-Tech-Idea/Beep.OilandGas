@@ -37,7 +37,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             {
                 if (request == null || string.IsNullOrEmpty(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var response = await _demoDatabaseService.CreateDemoDatabaseAsync(request);
@@ -73,7 +73,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             {
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var databases = _demoDatabaseService.GetUserDemoDatabases(userId);
@@ -82,7 +82,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting demo databases for user {UserId}", userId);
-                return StatusCode(500, new { error = "Failed to get demo databases"});
+                    return StatusCode(500, new { error = "Failed to get demo databases." });
             }
         }
 
@@ -107,7 +107,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error listing all demo databases");
-                return StatusCode(500, new { error = "Failed to list demo databases"});
+                    return StatusCode(500, new { error = "Failed to list demo databases." });
             }
         }
 
@@ -117,12 +117,10 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpDelete("{connectionName}")]
         public async Task<ActionResult<DeleteDemoDatabaseResponse>> DeleteDemoDatabase(string connectionName)
         {
-            try
-            {
-                if (string.IsNullOrEmpty(connectionName))
+                if (string.IsNullOrWhiteSpace(connectionName))
+                    return BadRequest(new { error = "Connection name is required." });
+                try
                 {
-                    return BadRequest(new { error = "Connection name is required" });
-                }
 
                 var response = await _demoDatabaseService.DeleteDemoDatabaseAsync(connectionName);
                 

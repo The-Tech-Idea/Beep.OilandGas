@@ -114,7 +114,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting database types");
-                return StatusCode(500, new { error = "Failed to get database types"});
+                    return StatusCode(500, new { error = "Failed to get database types." });
             }
         }
 
@@ -124,17 +124,17 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("driver-info/{databaseType}")]
         public ActionResult<DriverInfo> GetDriverInfo(string databaseType)
         {
+            if (string.IsNullOrWhiteSpace(databaseType))
+                return BadRequest(new { error = "Database type is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(databaseType))
-                    return BadRequest(new { error = "Database type is required." });
                 var driverInfo = _setupService.CheckDriver(databaseType);
                 return Ok(driverInfo);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting driver info for {DatabaseType}", databaseType);
-                return StatusCode(500, new { error = "Failed to get driver info"});
+                    return StatusCode(500, new { error = "Failed to get driver info." });
             }
         }
 
@@ -165,7 +165,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (config == null)
                 {
-                    return BadRequest(new { error = "Connection configuration is required" });
+                        return BadRequest(new { error = "Connection configuration is required." });
                 }
 
                 var mapped = MapToConnectionConfig(config);
@@ -195,7 +195,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request == null || string.IsNullOrEmpty(request.DatabaseType))
                 {
-                    return BadRequest(new { error = "Database type is required" });
+                        return BadRequest(new { error = "Database type is required." });
                 }
 
                 var driverInfo = _setupService.CheckDriver(request.DatabaseType);
@@ -204,7 +204,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking driver for {DatabaseType}", request?.DatabaseType);
-                return StatusCode(500, new { error = "Failed to check driver"});
+                    return StatusCode(500, new { error = "Failed to check driver." });
             }
         }
 
@@ -214,17 +214,17 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("scripts/{databaseType}")]
         public ActionResult<List<ModuleScriptInfo>> GetAvailableScripts(string databaseType)
         {
+            if (string.IsNullOrWhiteSpace(databaseType))
+                return BadRequest(new { error = "Database type is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(databaseType))
-                    return BadRequest(new { error = "Database type is required." });
                 var scripts = _setupService.GetAvailableScripts(databaseType);
                 return Ok(scripts);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting scripts for {DatabaseType}", databaseType);
-                return StatusCode(500, new { error = "Failed to get scripts"});
+                    return StatusCode(500, new { error = "Failed to get scripts." });
             }
         }
 
@@ -238,7 +238,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (payload == null || payload.Connection == null || string.IsNullOrEmpty(payload.ScriptName))
                 {
-                    return BadRequest(new { error = "Connection and script name are required" });
+                        return BadRequest(new { error = "Connection and script name are required." });
                 }
 
                 var mapped = MapToConnectionConfig(payload.Connection);
@@ -269,7 +269,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request == null || request.Connection == null)
                 {
-                    return BadRequest(new { error = "Connection configuration is required" });
+                        return BadRequest(new { error = "Connection configuration is required." });
                 }
 
                 var mapped = MapToConnectionConfig(request.Connection);
@@ -283,7 +283,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
 
                 if (request.ScriptNames == null || !request.ScriptNames.Any())
                 {
-                    return BadRequest(new { error = "No scripts to execute" });
+                    return BadRequest(new { error = "No scripts to execute." });
                 }
 
                 var result = await _setupService.ExecuteAllScriptsAsync(mapped, request.ScriptNames);
@@ -313,7 +313,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request == null || request.Connection == null)
                 {
-                    return BadRequest(new { error = "Connection configuration is required" });
+                        return BadRequest(new { error = "Connection configuration is required." });
                 }
 
                 var result = _setupService.SaveConnection(
@@ -349,7 +349,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting all connections");
-                return StatusCode(500, new { error = "Failed to get connections"});
+                    return StatusCode(500, new { error = "Failed to get connections." });
             }
         }
 
@@ -359,21 +359,21 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("connection/{connectionName}")]
         public ActionResult<ConnectionConfig> GetConnection(string connectionName)
         {
+            if (string.IsNullOrWhiteSpace(connectionName))
+                return BadRequest(new { error = "Connection name is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(connectionName))
-                    return BadRequest(new { error = "Connection name is required." });
                 var connection = _setupService.GetConnectionByName(connectionName);
                 if (connection == null)
                 {
-                    return NotFound(new { error = $"Connection '{connectionName}' not found" });
+                        return NotFound(new { error = $"Connection '{connectionName}' not found." });
                 }
                 return Ok(connection);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting connection {ConnectionName}", connectionName);
-                return StatusCode(500, new { error = "Failed to get connection"});
+                    return StatusCode(500, new { error = "Failed to get connection." });
             }
         }
 
@@ -391,7 +391,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting current connection");
-                return StatusCode(500, new { error = "Failed to get current connection"});
+                    return StatusCode(500, new { error = "Failed to get current connection." });
             }
         }
 
@@ -405,7 +405,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request == null || string.IsNullOrEmpty(request.ConnectionName))
                 {
-                    return BadRequest(new { error = "Connection name is required" });
+                        return BadRequest(new { error = "Connection name is required." });
                 }
 
                 var result = _setupService.SetCurrentConnection(request.ConnectionName);
@@ -434,7 +434,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request == null || request.Connection == null || string.IsNullOrEmpty(request.OriginalConnectionName))
                 {
-                    return BadRequest(new { error = "Original connection name and connection configuration are required" });
+                        return BadRequest(new { error = "Original connection name and connection configuration are required." });
                 }
 
                 var result = _setupService.UpdateConnection(
@@ -465,7 +465,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request == null || request.Connection == null)
                 {
-                    return BadRequest(new { error = "Connection configuration is required" });
+                        return BadRequest(new { error = "Connection configuration is required." });
                 }
 
                 var result = await _setupService.CheckSchemaPrivilegesAsync(MapToConnectionConfig(request.Connection), request.SchemaName);
@@ -493,7 +493,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request == null || request.Connection == null || string.IsNullOrEmpty(request.SchemaName))
                 {
-                    return BadRequest(new { error = "Connection configuration and schema name are required" });
+                        return BadRequest(new { error = "Connection configuration and schema name are required." });
                 }
 
                 var result = await _setupService.CreateSchemaAsync(MapToConnectionConfig(request.Connection), request.SchemaName);
@@ -521,7 +521,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request == null || string.IsNullOrEmpty(request.ConnectionName))
                 {
-                    return BadRequest(new { error = "Connection name is required" });
+                        return BadRequest(new { error = "Connection name is required." });
                 }
 
                 var result = await _setupService.DropDatabaseAsync(request.ConnectionName, request.SchemaName, request.DropIfExists);
@@ -549,7 +549,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request == null || string.IsNullOrEmpty(request.ConnectionName))
                 {
-                    return BadRequest(new { error = "Connection name is required" });
+                        return BadRequest(new { error = "Connection name is required." });
                 }
 
                 var result = await _setupService.RecreateDatabaseAsync(request.ConnectionName, request.SchemaName, request.BackupFirst, request.BackupPath);
@@ -577,7 +577,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request == null || string.IsNullOrEmpty(request.SourceConnectionName) || string.IsNullOrEmpty(request.TargetConnectionName))
                 {
-                    return BadRequest(new { error = "Source and target connection names are required" });
+                        return BadRequest(new { error = "Source and target connection names are required." });
                 }
 
                 // Start progress tracking
@@ -614,7 +614,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error starting database copy");
-                return StatusCode(500, new { error = "Failed to start database copy"});
+                    return StatusCode(500, new { error = "Failed to start database copy." });
             }
         }
 
@@ -629,13 +629,13 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (_progressTracking == null)
                 {
-                    return NotFound(new { error = "Progress tracking not available" });
+                        return NotFound(new { error = "Progress tracking not available." });
                 }
 
                 var progress = _progressTracking.GetProgress(operationId);
                 if (progress == null)
                 {
-                    return NotFound(new { error = $"Progress for operation {operationId} not found" });
+                        return NotFound(new { error = $"Progress for operation {operationId} not found." });
                 }
 
                 return Ok(progress);
@@ -643,7 +643,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting progress for operation {OperationId}", operationId);
-                return StatusCode(500, new { error = "Failed to get progress"});
+                    return StatusCode(500, new { error = "Failed to get progress." });
             }
         }
 
@@ -653,13 +653,10 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpDelete("connection/{connectionName}")]
         public ActionResult<DeleteConnectionResult> DeleteConnection(string connectionName)
         {
+            if (string.IsNullOrWhiteSpace(connectionName))
+                return BadRequest(new { error = "Connection name is required." });
             try
             {
-                if (string.IsNullOrEmpty(connectionName))
-                {
-                    return BadRequest(new { error = "Connection name is required" });
-                }
-
                 var result = _setupService.DeleteConnection(connectionName);
                 if (!result.Success)
                 {
@@ -692,7 +689,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request == null || string.IsNullOrEmpty(request.DatabaseType))
                 {
-                    return BadRequest(new { error = "Database type is required" });
+                        return BadRequest(new { error = "Database type is required." });
                 }
 
                 // Check driver status
@@ -734,10 +731,10 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("discover-scripts/{databaseType}")]
         public async Task<ActionResult<List<ScriptInfo>>> DiscoverScripts(string databaseType)
         {
+            if (string.IsNullOrWhiteSpace(databaseType))
+                return BadRequest(new { error = "Database type is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(databaseType))
-                    return BadRequest(new { error = "Database type is required." });
                 // Get all modules from registry
                 var allModules = ModuleDataRegistry.GetAllModules();
                 var allScripts = new List<ModuleScriptInfo>();
@@ -774,7 +771,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error discovering scripts for {DatabaseType}", databaseType);
-                return StatusCode(500, new { error = "Failed to discover scripts"});
+                    return StatusCode(500, new { error = "Failed to discover scripts." });
             }
         }
 
@@ -788,7 +785,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request == null || request.Connection == null || request.Options == null)
                 {
-                    return BadRequest(new { error = "Connection and options are required" });
+                        return BadRequest(new { error = "Connection and options are required." });
                 }
 
                 if (_dataManager == null)
@@ -796,7 +793,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     // Fallback to old service if DataManager not available
                     if (_databaseCreatorService == null)
                     {
-                        return StatusCode(500, new { error = "DataManager and DatabaseCreatorService not available" });
+                            return StatusCode(500, new { error = "DataManager and DatabaseCreatorService not available." });
                     }
                     return CreateDatabaseLegacy(request);
                 }
@@ -839,7 +836,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
 
                 if (!modulesToExecute.Any())
                 {
-                    return BadRequest(new { error = "No modules selected for execution" });
+                    return BadRequest(new { error = "No modules selected for execution." });
                 }
 
                 // Create execution options
@@ -945,13 +942,13 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (_dataManager == null)
                 {
-                    return StatusCode(500, new { error = "DataManager is not available" });
+                        return StatusCode(500, new { error = "DataManager is not available." });
                 }
 
                 var executionState = await _dataManager.GetExecutionStateAsync(executionId);
                 if (executionState == null)
                 {
-                    return NotFound(new { error = $"Execution state not found for {executionId}" });
+                        return NotFound(new { error = $"Execution state not found for {executionId}." });
                 }
 
                 var totalScripts = executionState.CompletedScripts.Count + executionState.FailedScripts.Count + executionState.PendingScripts.Count;
@@ -980,7 +977,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting creation progress for {ExecutionId}", executionId);
-                return StatusCode(500, new { error = "Failed to get progress"});
+                    return StatusCode(500, new { error = "Failed to get progress." });
             }
         }
 
@@ -994,7 +991,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request == null)
                 {
-                    return BadRequest(new { error = "Request is required" });
+                        return BadRequest(new { error = "Request is required." });
                 }
 
                 var connectionName = request.ConnectionName ?? "PPDM39";
@@ -1036,7 +1033,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request == null)
                 {
-                    return BadRequest(new { error = "Request is required" });
+                        return BadRequest(new { error = "Request is required." });
                 }
 
                 var connectionName = request.ConnectionName ?? "PPDM39";
@@ -1078,7 +1075,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request == null)
                 {
-                    return BadRequest(new { error = "Request is required" });
+                        return BadRequest(new { error = "Request is required." });
                 }
 
                 var connectionName = request.ConnectionName ?? "PPDM39";
@@ -1125,7 +1122,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting seed data categories");
-                return StatusCode(500, new { error = "Failed to get seed data categories"});
+                    return StatusCode(500, new { error = "Failed to get seed data categories." });
             }
         }
 
@@ -1139,7 +1136,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request == null)
                 {
-                    return BadRequest(new { error = "Request is required" });
+                        return BadRequest(new { error = "Request is required." });
                 }
 
                 var connectionName = request.ConnectionName ?? "PPDM39";
@@ -1192,17 +1189,17 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request == null)
                 {
-                    return BadRequest(new { error = "Request is required" });
+                        return BadRequest(new { error = "Request is required." });
                 }
 
                 if (_demoDataSeeder == null)
                 {
-                    return StatusCode(500, new { error = "DemoDataSeeder is not available" });
+                    return StatusCode(500, new { error = "DemoDataSeeder is not available." });
                 }
                 var workflowRequirement = _demoDataSeeder.GetSeedDataForWorkflow(workflowName);
                 if (workflowRequirement == null)
                 {
-                    return NotFound(new { error = $"Workflow '{workflowName}' not found" });
+                    return NotFound(new { error = $"Workflow '{workflowName}' not found." });
                 }
 
                 var connectionName = request.ConnectionName ?? "PPDM39";
@@ -1246,7 +1243,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request == null)
                 {
-                    return BadRequest(new { error = "Request is required" });
+                        return BadRequest(new { error = "Request is required." });
                 }
 
                 var response = new ScriptGenerationResponse
@@ -1569,7 +1566,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (_lovManagementService == null)
                 {
-                    return StatusCode(500, new { error = "LOVManagementService is not available" });
+                    return StatusCode(500, new { error = "LOVManagementService is not available." });
                 }
 
                 var types = await _lovManagementService.GetValueTypesAsync(connectionName ?? "PPDM39");
@@ -1578,7 +1575,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting LOV types");
-                return StatusCode(500, new { error = "Failed to get LOV types"});
+                    return StatusCode(500, new { error = "Failed to get LOV types." });
             }
         }
 
@@ -1593,7 +1590,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (_lovManagementService == null)
                 {
-                    return StatusCode(500, new { error = "LOVManagementService is not available" });
+                    return StatusCode(500, new { error = "LOVManagementService is not available." });
                 }
 
                 var lovs = await _lovManagementService.GetLOVByTypeAsync(valueType, category, connectionName ?? "PPDM39");
@@ -1623,7 +1620,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (_lovManagementService == null)
                 {
-                    return StatusCode(500, new { error = "LOVManagementService is not available" });
+                    return StatusCode(500, new { error = "LOVManagementService is not available." });
                 }
 
                 var lovs = await _lovManagementService.GetLOVByCategoryAsync(category, connectionName ?? "PPDM39");
@@ -1653,7 +1650,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (_lovManagementService == null)
                 {
-                    return StatusCode(500, new { error = "LOVManagementService is not available" });
+                    return StatusCode(500, new { error = "LOVManagementService is not available." });
                 }
 
                 var lovs = await _lovManagementService.GetLOVByModuleAsync(module, connectionName ?? "PPDM39");
@@ -1683,7 +1680,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (_lovManagementService == null)
                 {
-                    return StatusCode(500, new { error = "LOVManagementService is not available" });
+                    return StatusCode(500, new { error = "LOVManagementService is not available." });
                 }
 
                 var lovs = await _lovManagementService.GetLOVBySourceAsync(source, connectionName ?? "PPDM39");
@@ -1713,7 +1710,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (_lovManagementService == null)
                 {
-                    return StatusCode(500, new { error = "LOVManagementService is not available" });
+                    return StatusCode(500, new { error = "LOVManagementService is not available." });
                 }
 
                 var lovs = await _lovManagementService.GetHierarchicalLOVAsync(valueType, connectionName ?? "PPDM39");
@@ -1742,7 +1739,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (_lovManagementService == null)
                 {
-                    return StatusCode(500, new { error = "LOVManagementService is not available" });
+                    return StatusCode(500, new { error = "LOVManagementService is not available." });
                 }
 
                 var filters = new LOVRequest
@@ -1780,12 +1777,12 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (_lovManagementService == null)
                 {
-                    return StatusCode(500, new { error = "LOVManagementService is not available" });
+                    return StatusCode(500, new { error = "LOVManagementService is not available." });
                 }
 
                 if (lovDto == null)
                 {
-                    return BadRequest(new { error = "LOV data is required" });
+                    return BadRequest(new { error = "LOV data is required." });
                 }
 
                 var lov = new LIST_OF_VALUE
@@ -1831,12 +1828,12 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (_lovManagementService == null)
                 {
-                    return StatusCode(500, new { error = "LOVManagementService is not available" });
+                    return StatusCode(500, new { error = "LOVManagementService is not available." });
                 }
 
                 if (lovDto == null)
                 {
-                    return BadRequest(new { error = "LOV data is required" });
+                    return BadRequest(new { error = "LOV data is required." });
                 }
 
                 var lov = new LIST_OF_VALUE
@@ -1882,7 +1879,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (_lovManagementService == null)
                 {
-                    return StatusCode(500, new { error = "LOVManagementService is not available" });
+                        return StatusCode(500, new { error = "LOVManagementService is not available." });
                 }
 
                 var result = await _lovManagementService.DeleteLOVAsync(id, userId ?? "SYSTEM", connectionName ?? "PPDM39");
@@ -1917,13 +1914,13 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request == null || string.IsNullOrEmpty(request.FilePath))
                 {
-                    return BadRequest(new { error = "FilePath is required" });
+                        return BadRequest(new { error = "File path is required." });
                 }
 
                 var connectionName = request.ConnectionName ?? "PPDM39";
                 if (_csvLovImporter == null)
                 {
-                    return StatusCode(500, new { error = "CSVLOVImporter is not available" });
+                    return StatusCode(500, new { error = "CSVLOVImporter is not available." });
                 }
                 
                 var csvImporter = _csvLovImporter;
@@ -1961,7 +1958,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error importing LOVs");
-                return StatusCode(500, new { error = "Failed to import LOVs"});
+                    return StatusCode(500, new { error = "Failed to import LOVs." });
             }
         }
 
@@ -2557,7 +2554,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             try
             {
                 if (request == null || string.IsNullOrWhiteSpace(request.ConnectionName))
-                    return BadRequest(new { error = "connectionName is required" });
+                        return BadRequest(new { error = "Connection name is required." });
 
                 var fileName = string.IsNullOrWhiteSpace(request.FileName)
                     ? $"{request.ConnectionName}.db"

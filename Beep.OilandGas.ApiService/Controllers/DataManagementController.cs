@@ -69,14 +69,13 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpGet("{tableName}")]
         public async Task<ActionResult<List<object>>> GetTableRecords(string tableName, [FromQuery] List<AppFilter>? filters = null)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName))
-                    return BadRequest(new { error = "Table name is required" });
-
                 var repository = await GetRepositoryForTable(tableName);
                 if (repository == null)
-                    return NotFound(new { error = $"Table '{tableName}' not found" });
+                        return NotFound(new { error = $"Table '{tableName}' not found." });
 
                 var records = await repository.GetAsync(filters ?? new List<AppFilter>());
                 return Ok(records.ToList());
@@ -95,17 +94,15 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpGet("{tableName}/{id}")]
         public async Task<ActionResult<object>> GetTableRecord(string tableName, string id)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required." });
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { error = "Record ID is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName))
-                    return BadRequest(new { error = "Table name is required" });
-
-                if (string.IsNullOrWhiteSpace(id))
-                    return BadRequest(new { error = "Record ID is required" });
-
                 var repository = await GetRepositoryForTable(tableName);
                 if (repository == null)
-                    return NotFound(new { error = $"Table '{tableName}' not found" });
+                        return NotFound(new { error = $"Table '{tableName}' not found." });
 
                 // Handle composite keys (comma-separated)
                 object recordId = id;
@@ -116,7 +113,7 @@ namespace Beep.OilandGas.ApiService.Controllers
 
                 var record = await repository.GetByIdAsync(recordId);
                 if (record == null)
-                    return NotFound(new { error = $"Record with ID '{id}' not found in table '{tableName}'" });
+                    return NotFound(new { error = $"Record with ID '{id}' not found in table '{tableName}'." });
 
                 return Ok(record);
             }
@@ -134,19 +131,18 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpPost("{tableName}")]
         public async Task<ActionResult<object>> CreateTableRecord(string tableName, [FromBody] JsonElement entityJson)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName))
-                    return BadRequest(new { error = "Table name is required" });
-
                 var repository = await GetRepositoryForTable(tableName);
                 if (repository == null)
-                    return NotFound(new { error = $"Table '{tableName}' not found" });
+                        return NotFound(new { error = $"Table '{tableName}' not found." });
 
                 // Convert JSON to entity object
                 var entity = await ConvertJsonToEntity(entityJson, repository.EntityType);
                 if (entity == null)
-                    return BadRequest(new { error = "Invalid entity data" });
+                    return BadRequest(new { error = "Invalid entity data." });
 
                 // Get user ID from request (or use default)
                 var userId = GetUserIdFromRequest() ?? "SYSTEM";
@@ -169,17 +165,16 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpPost("{tableName}/batch")]
         public async Task<ActionResult<List<object>>> CreateTableRecordsBatch(string tableName, [FromBody] List<JsonElement> entitiesJson)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName))
-                    return BadRequest(new { error = "Table name is required" });
-
                 if (entitiesJson == null || entitiesJson.Count == 0)
-                    return BadRequest(new { error = "Entities array is required" });
+                        return BadRequest(new { error = "Entities array is required." });
 
                 var repository = await GetRepositoryForTable(tableName);
                 if (repository == null)
-                    return NotFound(new { error = $"Table '{tableName}' not found" });
+                        return NotFound(new { error = $"Table '{tableName}' not found." });
 
                 // Convert JSON array to entity objects
                 var entities = new List<object>();
@@ -191,7 +186,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                 }
 
                 if (entities.Count == 0)
-                    return BadRequest(new { error = "No valid entities to create" });
+                    return BadRequest(new { error = "No valid entities to create." });
 
                 // Get user ID from request (or use default)
                 var userId = GetUserIdFromRequest() ?? "SYSTEM";
@@ -213,22 +208,20 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpPut("{tableName}/{id}")]
         public async Task<ActionResult<object>> UpdateTableRecord(string tableName, string id, [FromBody] JsonElement entityJson)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required." });
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { error = "Record ID is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName))
-                    return BadRequest(new { error = "Table name is required" });
-
-                if (string.IsNullOrWhiteSpace(id))
-                    return BadRequest(new { error = "Record ID is required" });
-
                 var repository = await GetRepositoryForTable(tableName);
                 if (repository == null)
-                    return NotFound(new { error = $"Table '{tableName}' not found" });
+                    return NotFound(new { error = $"Table '{tableName}' not found." });
 
                 // Convert JSON to entity object
                 var entity = await ConvertJsonToEntity(entityJson, repository.EntityType);
                 if (entity == null)
-                    return BadRequest(new { error = "Invalid entity data" });
+                    return BadRequest(new { error = "Invalid entity data." });
 
                 // Get user ID from request (or use default)
                 var userId = GetUserIdFromRequest() ?? "SYSTEM";
@@ -250,19 +243,18 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpPut("{tableName}")]
         public async Task<ActionResult<object>> UpdateTableRecordFull(string tableName, [FromBody] JsonElement entityJson)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName))
-                    return BadRequest(new { error = "Table name is required" });
-
                 var repository = await GetRepositoryForTable(tableName);
                 if (repository == null)
-                    return NotFound(new { error = $"Table '{tableName}' not found" });
+                    return NotFound(new { error = $"Table '{tableName}' not found." });
 
                 // Convert JSON to entity object
                 var entity = await ConvertJsonToEntity(entityJson, repository.EntityType);
                 if (entity == null)
-                    return BadRequest(new { error = "Invalid entity data" });
+                    return BadRequest(new { error = "Invalid entity data." });
 
                 // Get user ID from request (or use default)
                 var userId = GetUserIdFromRequest() ?? "SYSTEM";
@@ -284,17 +276,15 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpDelete("{tableName}/{id}")]
         public async Task<ActionResult> DeleteTableRecord(string tableName, string id)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required." });
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { error = "Record ID is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName))
-                    return BadRequest(new { error = "Table name is required" });
-
-                if (string.IsNullOrWhiteSpace(id))
-                    return BadRequest(new { error = "Record ID is required" });
-
                 var repository = await GetRepositoryForTable(tableName);
                 if (repository == null)
-                    return NotFound(new { error = $"Table '{tableName}' not found" });
+                        return NotFound(new { error = $"Table '{tableName}' not found." });
 
                 // Handle composite keys (comma-separated)
                 object recordId = id;
@@ -305,7 +295,7 @@ namespace Beep.OilandGas.ApiService.Controllers
 
                 var deleted = await repository.DeleteAsync(recordId);
                 if (!deleted)
-                    return NotFound(new { error = $"Record with ID '{id}' not found in table '{tableName}'" });
+                    return NotFound(new { error = $"Record with ID '{id}' not found in table '{tableName}'." });
 
                 return NoContent();
             }
@@ -327,11 +317,10 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpPost("validate/{tableName}")]
         public async Task<ActionResult<ValidationResult>> ValidateEntity(string tableName, [FromBody] object entity)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName))
-                    return BadRequest(new { error = "Table name is required" });
-
                 var result = await _validationService.ValidateAsync(entity, tableName);
                 return Ok(result);
             }
@@ -349,11 +338,10 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpGet("validate/{tableName}/rules")]
         public async Task<ActionResult<List<ValidationRule>>> GetValidationRules(string tableName)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName))
-                    return BadRequest(new { error = "Table name is required" });
-
                 var rules = await _validationService.GetValidationRulesAsync(tableName);
                 return Ok(rules);
             }
@@ -373,11 +361,10 @@ namespace Beep.OilandGas.ApiService.Controllers
             string tableName,
             [FromBody] List<Dictionary<string, string>> rows)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName))
-                    return BadRequest(new { error = "Table name is required" });
-
                 if (rows == null || rows.Count == 0)
                     return Ok(new List<ForeignKeyValidationError>());
 
@@ -419,11 +406,10 @@ namespace Beep.OilandGas.ApiService.Controllers
             [FromBody] Dictionary<string, string> row,
             [FromQuery] int rowNumber = 0)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName))
-                    return BadRequest(new { error = "Table name is required" });
-
                 if (row == null || row.Count == 0)
                     return Ok(new List<ForeignKeyValidationError>());
 
@@ -466,11 +452,10 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpGet("quality/{tableName}/metrics")]
         public async Task<ActionResult<DATA_QUALITY_METRICS>> GetQualityMetrics(string tableName)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName))
-                    return BadRequest(new { error = "Table name is required" });
-
                 var metrics = await _qualityService.CalculateTableQualityMetricsAsync(tableName);
                 return Ok(metrics);
             }
@@ -488,11 +473,10 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpGet("quality/{tableName}/dashboard")]
         public async Task<ActionResult<QualityDashboardData>> GetQualityDashboard(string tableName)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName))
-                    return BadRequest(new { error = "Table name is required" });
-
                 var dashboard = await _qualityDashboardService.GetDashboardDataAsync(tableName);
                 return Ok(dashboard);
             }
@@ -535,14 +519,13 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpGet("metadata/{tableName}")]
         public async Task<ActionResult<PPDMTableMetadata>> GetTableMetadata(string tableName)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName))
-                    return BadRequest(new { error = "Table name is required" });
-
                 var meta = await _metadata.GetTableMetadataAsync(tableName);
                 if (meta == null)
-                    return NotFound(new { error = $"Metadata not found for table '{tableName}'" });
+                        return NotFound(new { error = $"Metadata not found for table '{tableName}'." });
 
                 return Ok(meta);
             }
@@ -563,13 +546,13 @@ namespace Beep.OilandGas.ApiService.Controllers
             [FromBody] TableValidationOptions? options = null)
         {
             if (string.IsNullOrWhiteSpace(tableName))
-                return BadRequest(new { error = "Table name is required" });
+                    return BadRequest(new { error = "Table name is required." });
             try
             {
                 var rules = await _validationService.GetValidationRulesAsync(tableName);
                 var repo  = await GetRepositoryForTable(tableName);
                 if (repo == null)
-                    return NotFound(new { error = $"Table '{tableName}' not found or has no mapped entity type" });
+                        return NotFound(new { error = $"Table '{tableName}' not found or has no mapped entity type." });
 
                 var allEntities = (await repo.GetAsync(new List<AppFilter>
                 {

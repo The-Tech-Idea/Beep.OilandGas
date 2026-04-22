@@ -1,7 +1,13 @@
 ﻿@page "/production/well-performance"
+@using Beep.OilandGas.Models.Data.WorkOrder
+@using Beep.OilandGas.Models.Data.Production
+@using Beep.OilandGas.Web.Services
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject IClientFileExportService ExportService
+@inject IDevelopmentServiceClient DevelopmentService
+@inject IProductionServiceClient ProductionService
 @using System.Security.Claims
 
 <PageTitle>Optimise Well Performance</PageTitle>
@@ -20,7 +26,8 @@
             </MudStack>
         </MudStack>
         <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
-                   StartIcon="@Icons.Material.Filled.Download">Export Analysis</MudButton>
+                   StartIcon="@Icons.Material.Filled.Download"
+                   OnClick="ExportAnalysisAsync">Export Analysis</MudButton>
     </MudStack>
 
     @* ── Well selector bar ───────────────────────────────────────────────── *@
@@ -50,7 +57,8 @@
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Label="Actual Rate" Value="@_selectedWell.OilRate.ToString("N0")" Unit="BOPD"
                      ValueColor="Color.Success" Icon="@Icons.Material.Filled.OilBarrel"
-                     TrendIcon="@Icons.Material.Filled.TrendingDown" TrendColor="Color.Warning" TrendText="-4% vs potential" />
+                     TrendIcon="@(PotentialGapBopd > 0 ? Icons.Material.Filled.TrendingDown : Icons.Material.Filled.TrendingFlat)"
+                     TrendColor="@(PotentialGapBopd > 0 ? Color.Warning : Color.Success)" TrendText="@ActualRateTrendText" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Label="Potential Rate" Value="@_selectedWell.PotentialRate.ToString("N0")" Unit="BOPD"
@@ -63,7 +71,7 @@
                      TrendIcon="@Icons.Material.Filled.TrendingDown" TrendColor="Color.Warning" TrendText="Target: 95%" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Cumulative Oil" Value="@_selectedWell.CumOil.ToString("N0")" Unit="MBBL"
+            <KpiCard Label="Cumulative Oil" Value="@CumOilDisplay" Unit="MBBL"
                      ValueColor="Color.Default" Icon="@Icons.Material.Filled.Storage"
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Since first oil" />
         </MudItem>
@@ -97,7 +105,7 @@
                                   Width="100%"
                                   Height="280px" />
                         <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
-                            Wellhead pressure (psi) and GOR (scf/bbl)
+                            Gas test-rate trend (Mscf/d)
                         </MudText>
                     </MudPaper>
                 </MudTabPanel>
@@ -166,35 +174,47 @@
                     </MudCardContent>
                 </MudCard>
 
-                @* Recommended action *@
-                <MudCard Elevation="2">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.subtitle1">Recommended Action</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudAlert Severity="Severity.Warning" Class="mb-3">
-                            <strong>@_recommendation?.Action</strong><br/>
-                            @_recommendation?.Rationale
-                        </MudAlert>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">
-                            Estimated uplift: <strong>@_recommendation?.UpliftBopd BOPD</strong>
-                        </MudText>
-                        <MudStack Spacing="2">
-                            <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary"
-                                       StartIcon="@Icons.Material.Filled.Build"
-                                       OnClick="CreateInterventionFromRecommendation">
-                                Create Intervention
+                <LiftRecommendationCard Title="Recommended Action"
+                                        Subtitle="Artificial-lift and intervention workflow"
+                                        Icon="@Icons.Material.Filled.AutoGraph"
+                                        IconColor="Color.Warning"
+                                        Headline="@(_recommendation?.Action ?? "Review current well state")"
+                                        Summary="@(_recommendation?.Rationale ?? "Run a performance analysis to generate a recommendation.")"
+                                        ImpactText="@GetRecommendationImpactText()"
+                                        Severity="@GetRecommendationSeverity()"
+                                        Facts="@GetRecommendationFacts()">
+                    <Actions>
+                        <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Build"
+                                   OnClick="CreateInterventionFromRecommendation">
+                            Create Intervention
+                        </MudButton>
+                        <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Secondary"
+                                   StartIcon="@Icons.Material.Filled.AutoGraph"
+                                   Href="@GetLiftStudyHref()">
+                            @GetLiftStudyLabel()
+                        </MudButton>
+                        @if (HasOperationalFollowUp())
+                        {
+                            <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Info"
+                                       StartIcon="@Icons.Material.Filled.Assignment"
+                                       Href="@GetWorkOrderIntakeHref()">
+                                Open Work Order Intake
                             </MudButton>
-                            <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Default"
-                                       StartIcon="@Icons.Material.Filled.AssignmentLate"
-                                       OnClick="LogDeviation">
-                                Log Deviation Only
+                            <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Success"
+                                       StartIcon="@Icons.Material.Filled.RequestQuote"
+                                       Href="@GetAfeIntakeHref()">
+                                Open AFE Intake
                             </MudButton>
-                        </MudStack>
-                    </MudCardContent>
-                </MudCard>
+                        }
+                        <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Default"
+                                   StartIcon="@Icons.Material.Filled.AssignmentLate"
+                                   Disabled="@(_loggingDeviation || string.IsNullOrWhiteSpace(_selectedWellId) || _analysis is null)"
+                                   OnClick="LogDeviation">
+                            @(_loggingDeviation ? "Logging Deviation..." : "Log Deviation Only")
+                        </MudButton>
+                    </Actions>
+                </LiftRecommendationCard>
 
                 @* Recent activities *@
                 <MudCard Elevation="2">
@@ -240,6 +260,7 @@
     private string _dcaB = "0.5";
     private string _dcaEur = "—";
     private bool   _loading = true;
+    private bool   _loggingDeviation;
 
     private record WellOption(string Id, string Name);
     private List<WellOption> _wellOptions = new();
@@ -249,6 +270,7 @@
 
     private List<PerformanceFinding> _findings   = new();
     private Recommendation?          _recommendation;
+    private WellPerformanceAnalysisResponse? _analysis;
 
     private record Recommendation(string Action, string Rationale, int UpliftBopd);
     private List<WellHistoryItem> _history = new();
@@ -274,10 +296,11 @@
         try
         {
             // Load well list for the selector
-            var wells = await ApiClient.GetAsync<List<WellListDto>>("api/field/current/development/wells") ?? new();            if (wells != null && wells.Count > 0)
+            var wells = await DevelopmentService.GetWellsAsync();
+            if (wells.Count > 0)
             {
                 _wellOptions = wells
-                    .Select(w => new WellOption(w.UWI ?? string.Empty, w.WellName ?? w.UWI ?? "Unknown"))
+                    .Select(w => new WellOption(w.UWI ?? string.Empty, w.WELL_NAME ?? w.UWI ?? "Unknown"))
                     .Where(o => !string.IsNullOrEmpty(o.Id))
                     .ToList();
             }
@@ -308,88 +331,78 @@
         if (string.IsNullOrEmpty(wellId)) return;
         try
         {
-            var perf = await ApiClient.GetAsync<WellPerformanceSummaryDto>(
-                $"api/field/current/production/wells/{Uri.EscapeDataString(wellId)}/performance");
+            var perf = await ProductionService.GetWellPerformanceAsync(wellId);
+            var analysis = await ProductionService.GetWellPerformanceAnalysisAsync(wellId);
             if (perf == null) return;
 
             _selectedWell = new WellDetail(perf.WellId, perf.Status,
                 perf.OilRate, perf.PotentialRate, perf.CumOil);
+            _analysis = analysis;
 
-            // ── Derive findings from performance numbers ──────────────────
-            _findings = new();
-            if (perf.PotentialRate > 0 && perf.OilRate < perf.PotentialRate * 0.9)
-            {
-                var gap = (int)(perf.PotentialRate - perf.OilRate);
-                var pct = (int)(100 - perf.OilRate / perf.PotentialRate * 100);
-                _findings.Add(new($"Rate {pct}% below potential",
-                    $"Current rate {perf.OilRate:N0} BOPD vs {perf.PotentialRate:N0} BOPD potential. Gap of {gap:N0} BOPD.",
-                    pct >= 40 ? "HIGH" : "MEDIUM"));
-            }
-            if (perf.WaterRate > 0 && perf.OilRate > 0)
-            {
-                var wc = perf.WaterRate / (perf.OilRate + perf.WaterRate) * 100;
-                if (wc > 60)
-                    _findings.Add(new($"High water cut ({wc:N0}%)",
-                        $"Water rate {perf.WaterRate:N0} BWPD against oil rate {perf.OilRate:N0} BOPD.",
-                        wc > 80 ? "HIGH" : "MEDIUM"));
-            }
-            if (perf.GasRate > 0 && perf.OilRate > 0)
-            {
-                var gor = perf.GasRate * 1000 / perf.OilRate; // scf/bbl
-                if (gor > 1000)
-                    _findings.Add(new($"Elevated GOR ({gor:N0} scf/bbl)",
-                        $"Gas-oil ratio suggests possible gas breakthrough or reservoir depletion.", "MEDIUM"));
-            }
-            if (_findings.Count == 0)
-                _findings.Add(new("Well performing within expected range",
-                    "No significant deviations detected. Continue routine monitoring.", "LOW"));
+            _findings = (analysis?.Findings ?? new List<WellPerformanceFinding>())
+                .Select(finding => new PerformanceFinding(finding.Title, finding.Detail, finding.Severity))
+                .ToList();
 
-            // ── Derive recommendation ─────────────────────────────────────
-            var highFindings = _findings.Where(f => f.Severity == "HIGH").ToList();
-            if (highFindings.Count > 0)
-            {
-                var uplift = (int)(perf.PotentialRate - perf.OilRate);
-                _recommendation = new("Well Intervention Required",
-                    string.Join(" ", highFindings.Select(f => f.Detail)),
-                    uplift > 0 ? uplift : 0);
-            }
-            else
-            {
-                _recommendation = new("Continue Production Monitoring",
-                    "Well is operating within expected parameters. Maintain current settings and review at next scheduled test.",
-                    0);
-            }
+            var serverRecommendation = analysis?.Recommendation;
+            _recommendation = serverRecommendation == null
+                ? null
+                : new Recommendation(
+                    serverRecommendation.Action,
+                    serverRecommendation.Rationale,
+                    serverRecommendation.UpliftBopd);
 
-            // ── Build history from well tests ─────────────────────────────
-            _history = (perf.WellTests ?? new())
-                .OrderByDescending(t => t.TestDate ?? DateTime.MinValue)
-                .Select(t => new WellHistoryItem(
-                    string.IsNullOrWhiteSpace(t.TestName)
-                        ? $"Well test — {t.TestType ?? "routine"}"
-                        : t.TestName,
-                    (t.TestDate ?? t.TestStartDate)?.ToString("dd MMM yyyy") ?? "—",
-                    t.CreateUser ?? "—"))
+            _history = (analysis?.History ?? new List<WellPerformanceHistoryItem>())
+                .Select(item => new WellHistoryItem(
+                    item.Event,
+                    FormatHistoryDate(item.EventDate),
+                    string.IsNullOrWhiteSpace(item.User) ? "—" : item.User))
                 .ToList();
 
             // ── Build chart series from well tests ────────────────────────
             var orderedTests = (perf.WellTests ?? new())
-                .Where(t => t.TestDate.HasValue)
-                .OrderBy(t => t.TestDate)
+                .Where(t => t.TestDate.HasValue || t.TestStartDate.HasValue || t.TestEndDate.HasValue)
+                .OrderBy(t => t.TestDate ?? t.TestStartDate ?? t.TestEndDate ?? DateTime.MinValue)
                 .ToList();
 
             if (orderedTests.Count >= 2)
             {
-                _rateLabels = orderedTests.Select(t => t.TestDate!.Value.ToString("MMM''yy")).ToArray();
-                // Rate series: actual vs potential (no per-test rate in WellTestResponse; show 0-based)
+                _rateLabels = orderedTests
+                    .Select(t => (t.TestDate ?? t.TestStartDate ?? t.TestEndDate ?? DateTime.MinValue).ToString("MMM''yy"))
+                    .ToArray();
                 _rateSeries = new()
                 {
+                    new ChartSeries<double>
+                    {
+                        Name = "Actual",
+                        Data = orderedTests.Select(t => (double)(t.OilFlowAmount ?? 0m)).ToArray()
+                    },
                     new ChartSeries<double> { Name = "Potential",
                         Data = Enumerable.Repeat(perf.PotentialRate, orderedTests.Count).ToArray() },
+                };
+                _pressureSeries = new()
+                {
+                    new ChartSeries<double>
+                    {
+                        Name = "Gas Rate",
+                        Data = orderedTests.Select(t => (double)(t.GasFlowAmount ?? 0m)).ToArray()
+                    }
                 };
                 _dcaLabels = _rateLabels;
                 _dcaSeries = new()
                 {
-                    new ChartSeries<double> { Name = "Tests", Data = Enumerable.Repeat(perf.OilRate, orderedTests.Count).ToArray() },
+                    new ChartSeries<double>
+                    {
+                        Name = "Tests",
+                        Data = orderedTests.Select(t => (double)(t.OilFlowAmount ?? 0m)).ToArray()
+                    },
+                };
+                _wcSeries = new()
+                {
+                    new ChartSeries<double>
+                    {
+                        Name = "Water Cut",
+                        Data = orderedTests.Select(t => (double)(t.BswPercent ?? t.WaterCutPercent ?? 0m)).ToArray()
+                    },
                 };
             }
             else
@@ -412,42 +425,259 @@
         }
     }
 
-    private class WellListDto
-    {
-        public string? UWI      { get; set; }
-        public string? WellName { get; set; }
-    }
-
-    private class WellPerformanceSummaryDto
-    {
-        public string  WellId        { get; set; } = string.Empty;
-        public string  Status        { get; set; } = string.Empty;
-        public double  OilRate       { get; set; }
-        public double  GasRate       { get; set; }
-        public double  WaterRate     { get; set; }
-        public double  PotentialRate { get; set; }
-        public double  CumOil        { get; set; }
-        public List<WellTestDto> WellTests { get; set; } = new();
-    }
-
-    private class WellTestDto
-    {
-        public string?   TestName      { get; set; }
-        public string?   TestType      { get; set; }
-        public DateTime? TestDate      { get; set; }
-        public DateTime? TestStartDate { get; set; }
-        public string?   CreateUser    { get; set; }
-    }
-
     private void CreateInterventionFromRecommendation() =>
-        NavigationManager.NavigateTo($"/production/intervention?wellId={Uri.EscapeDataString(_selectedWellId)}&type=INTERVENTION");
+        NavigationManager.NavigateTo($"/production/intervention?wellId={Uri.EscapeDataString(_selectedWellId)}&type=INTERVENTION&returnTo={Uri.EscapeDataString(GetReturnToHref())}");
 
-    private void LogDeviation() =>
-        Snackbar.Add("Deviation logged for review", Severity.Success);
+    private async Task LogDeviation()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedWellId) || _analysis == null)
+        {
+            Snackbar.Add("Load a well analysis before logging a deviation.", Severity.Warning);
+            return;
+        }
+
+        _loggingDeviation = true;
+        try
+        {
+            var request = new PerformanceDeviationRequest
+            {
+                Note = "Deviation logged from the well performance optimizer.",
+                RecommendationAction = _analysis.Recommendation?.Action,
+                RecommendationRationale = _analysis.Recommendation?.Rationale,
+                EstimatedUpliftBopd = _analysis.Recommendation?.UpliftBopd ?? 0,
+                Severity = _analysis.Findings.OrderBy(finding => SeverityRank(finding.Severity)).FirstOrDefault()?.Severity,
+                Findings = _analysis.Findings.Select(finding => finding.Title).ToList()
+            };
+
+            var result = await ProductionService.LogPerformanceDeviationAsync(_selectedWellId, request);
+            await LoadWellPerformanceAsync(_selectedWellId);
+            Snackbar.Add(result.Message ?? "Deviation logged for review.", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to log performance deviation.", Severity.Error);
+        }
+        finally
+        {
+            _loggingDeviation = false;
+        }
+    }
+
+    private async Task ExportAnalysisAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedWellId))
+        {
+            Snackbar.Add("Select a well before exporting analysis.", Severity.Warning);
+            return;
+        }
+
+        var payload = new
+        {
+            ExportType = "WellPerformanceRecommendationPackage",
+            ExportedAtUtc = DateTime.UtcNow,
+            FieldName = _fieldName,
+            SelectedWellId = _selectedWellId,
+            SelectedWell = new
+            {
+                _selectedWell.WellId,
+                _selectedWell.Status,
+                _selectedWell.OilRate,
+                _selectedWell.PotentialRate,
+                _selectedWell.CumOil,
+                EfficiencyPct
+            },
+            AnalysisContext = new
+            {
+                Period = _period,
+                DcaInitialDeclinePct = _dcaDi,
+                DcaBFactor = _dcaB,
+                DcaEstimatedEur = _dcaEur
+            },
+            Findings = _findings.Select(finding => new
+            {
+                finding.Title,
+                finding.Detail,
+                finding.Severity
+            }).ToList(),
+            Recommendation = _recommendation is null
+                ? null
+                : new
+                {
+                    _recommendation.Action,
+                    _recommendation.Rationale,
+                    _recommendation.UpliftBopd,
+                    ImpactText = GetRecommendationImpactText(),
+                    Severity = GetRecommendationSeverity().ToString()
+                },
+            FollowUps = new
+            {
+                LiftStudy = GetLiftStudyHref(),
+                Intervention = HasOperationalFollowUp()
+                    ? $"/production/intervention?wellId={Uri.EscapeDataString(_selectedWellId)}&type=INTERVENTION&returnTo={Uri.EscapeDataString(GetReturnToHref())}"
+                    : null,
+                WorkOrder = HasOperationalFollowUp() ? GetWorkOrderIntakeHref() : null,
+                Afe = HasOperationalFollowUp() ? GetAfeIntakeHref() : null,
+                ReturnTo = GetReturnToHref()
+            },
+            History = _history.Select(item => new
+            {
+                item.Event,
+                item.Date,
+                item.User
+            }).ToList()
+        };
+
+        await ExportService.DownloadJsonAsync($"well-performance-analysis-{DateTime.UtcNow:yyyyMMdd-HHmmss}", payload);
+        Snackbar.Add("Analysis package exported.", Severity.Success);
+    }
+
+    private bool HasOperationalFollowUp()
+    {
+        return _analysis?.Recommendation?.HasOperationalFollowUp ?? (_recommendation?.UpliftBopd > 0);
+    }
+
+    private Severity GetRecommendationSeverity()
+    {
+        return _recommendation?.UpliftBopd > 0 ? Severity.Warning : Severity.Success;
+    }
+
+    private string GetRecommendationImpactText()
+    {
+        if (_recommendation == null)
+            return "Run a performance analysis to generate an intervention and lift recommendation.";
+
+        return _recommendation.UpliftBopd > 0
+            ? $"Estimated uplift: {_recommendation.UpliftBopd:N0} BOPD. Validate the lift study before approving intervention work."
+            : "No material uplift identified. Keep the well on scheduled surveillance unless conditions change.";
+    }
+
+    private IReadOnlyList<RecommendationFactItem> GetRecommendationFacts()
+    {
+        var potentialGap = Math.Max(_selectedWell.PotentialRate - _selectedWell.OilRate, 0);
+        var liftStudyLabel = _analysis?.Recommendation?.RecommendedLiftStudy;
+
+        return new RecommendationFactItem[]
+        {
+            new() { Label = "Potential Gap", Value = $"{potentialGap:N0} BOPD", ValueColor = potentialGap > 0 ? Color.Warning : Color.Success },
+            new() { Label = "Well Efficiency", Value = EfficiencyPct + "%", ValueColor = potentialGap > 0 ? Color.Warning : Color.Success },
+            new() { Label = "Lift Study", Value = (liftStudyLabel ?? GetLiftStudyLabel()).Replace("Run ", string.Empty), ValueColor = Color.Info }
+        };
+    }
+
+    private string GetLiftStudyLabel()
+    {
+        return _analysis?.Recommendation?.RecommendedLiftStudy
+            ?? (ShouldRecommendGasLiftStudy() ? "Run Gas Lift Study" : "Run ESP Analysis");
+    }
+
+    private string GetLiftStudyHref()
+    {
+        var basePath = ShouldRecommendGasLiftStudy() ? "/ppdm39/calculations/gaslift" : "/analysis/pump-performance";
+        return string.IsNullOrWhiteSpace(_selectedWellId)
+            ? basePath
+            : $"{basePath}?wellId={Uri.EscapeDataString(_selectedWellId)}";
+    }
+
+    private string GetWorkOrderIntakeHref()
+    {
+        return BuildFollowUpHref(
+            "/ppdm39/workorder",
+            ("wellId", _selectedWellId),
+            ("openCreate", "true"),
+            ("linkAfe", HasOperationalFollowUp() ? "true" : null),
+            ("returnTo", GetReturnToHref()),
+            ("subType", GetRecommendedWorkOrderSubType()),
+            ("title", _recommendation?.Action),
+            ("description", _recommendation?.Rationale));
+    }
+
+    private string GetAfeIntakeHref()
+    {
+        return BuildFollowUpHref(
+            "/economics/afe",
+            ("wellId", _selectedWellId),
+            ("openCreate", "true"),
+            ("returnTo", GetReturnToHref()),
+            ("description", _recommendation?.Action),
+            ("budgetUsd", GetSuggestedAfeBudgetUsd()));
+    }
+
+    private string GetReturnToHref()
+    {
+        return string.IsNullOrWhiteSpace(_selectedWellId)
+            ? "/production/well-performance"
+            : $"/production/well-performance?wellId={Uri.EscapeDataString(_selectedWellId)}";
+    }
+
+    private string GetRecommendedWorkOrderSubType()
+    {
+        if (!string.IsNullOrWhiteSpace(_analysis?.Recommendation?.SuggestedWorkOrderSubType))
+            return _analysis.Recommendation.SuggestedWorkOrderSubType;
+
+        return HasOperationalFollowUp()
+            ? WorkOrderSubType.Corrective
+            : WorkOrderSubType.Preventive;
+    }
+
+    private string? GetSuggestedAfeBudgetUsd()
+    {
+        if (_analysis?.Recommendation?.SuggestedAfeBudgetUsd is decimal suggestedBudget && suggestedBudget > 0)
+            return suggestedBudget.ToString("F0");
+
+        if (!HasOperationalFollowUp())
+            return null;
+
+        var budget = Math.Max(_recommendation?.UpliftBopd ?? 0, 0) * 1000;
+        return budget > 0 ? budget.ToString("F0") : null;
+    }
+
+    private static string BuildFollowUpHref(string basePath, params (string Key, string? Value)[] parameters)
+    {
+        var query = parameters
+            .Where(parameter => !string.IsNullOrWhiteSpace(parameter.Value))
+            .Select(parameter => $"{parameter.Key}={Uri.EscapeDataString(parameter.Value!)}")
+            .ToArray();
+
+        return query.Length == 0
+            ? basePath
+            : $"{basePath}?{string.Join("&", query)}";
+    }
+
+    private bool ShouldRecommendGasLiftStudy()
+    {
+        return _findings.Any(finding => finding.Title.Contains("GOR", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string FormatHistoryDate(DateTime? value)
+    {
+        return value.HasValue && value.Value != DateTime.MinValue
+            ? value.Value.ToString("dd MMM yyyy")
+            : "—";
+    }
+
+    private static int SeverityRank(string? severity)
+    {
+        return severity?.ToUpperInvariant() switch
+        {
+            "HIGH" => 0,
+            "MEDIUM" => 1,
+            _ => 2
+        };
+    }
 
     private string EfficiencyPct => _selectedWell.PotentialRate > 0
         ? (_selectedWell.OilRate / _selectedWell.PotentialRate * 100).ToString("N0")
         : "0";
+
+    private double PotentialGapBopd => Math.Max(_selectedWell.PotentialRate - _selectedWell.OilRate, 0);
+
+    private string ActualRateTrendText => PotentialGapBopd > 0
+        ? $"{PotentialGapBopd:N0} BOPD below potential"
+        : "At current tested potential";
+
+    private string CumOilDisplay => _selectedWell.CumOil > 0
+        ? _selectedWell.CumOil.ToString("N0")
+        : "—";
 
     private string FindingFullClass(string sev) => $"pa-2 {FindingClass(sev)}";
 

@@ -1,14 +1,8 @@
 @page "/register-callback"
-@using Beep.OilandGas.Client.App
 @using Beep.OilandGas.Web.Components.Demo
 @using Beep.OilandGas.Web.Components.Connection
-@using Microsoft.AspNetCore.Components.Authorization
-@inject IDemoDatabaseService DemoDatabaseService
-@inject IBeepOilandGasApp BeepApp
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
-@inject AuthenticationStateProvider AuthStateProvider
-@inject ISnackbar Snackbar
 
 <PageTitle>Registration Complete - Setup Demo Database</PageTitle>
 
@@ -60,28 +54,6 @@
 </MudContainer>
 
 @code {
-    private string? _userId;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await GetCurrentUserId();
-    }
-
-    private async Task GetCurrentUserId()
-    {
-        try
-        {
-            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            _userId = authState.User?.FindFirst("sub")?.Value 
-                   ?? authState.User?.Identity?.Name 
-                   ?? "system";
-        }
-        catch
-        {
-            _userId = "system";
-        }
-    }
-
     private async Task ShowDemoDatabaseWizard()
     {
         var parameters = new DialogParameters();

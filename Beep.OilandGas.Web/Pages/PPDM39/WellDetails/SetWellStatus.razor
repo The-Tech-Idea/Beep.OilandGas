@@ -2,6 +2,8 @@
 @using Beep.OilandGas.PPDM39.Models
 @using Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL
 @inject ApiClient ApiClient
+@inject IWellLookupServiceClient WellLookupClient
+@inject IWellStatusServiceClient WellStatusClient
 @inject ISnackbar Snackbar
 
 <PageTitle>Classify Well Status</PageTitle>
@@ -391,8 +393,7 @@
         // Load qualifiers for this STATUS (may come from DB or catalog).
         try
         {
-            var quals = await ApiClient.GetAsync<List<WellServices.FacetQualifierDto>>(
-                $"/api/wellstatus/reference/{Uri.EscapeDataString(facet.StatusType)}/qualifiers/{Uri.EscapeDataString(newStatus)}");
+            var quals = await WellStatusClient.GetQualifiersAsync(facet.StatusType, newStatus);
             _qualifiers[tabIndex] = quals ?? new();
         }
         catch
@@ -420,8 +421,7 @@
         try
         {
             // Load page data — all 13 facets enriched with current WELL_STATUS values.
-            _facets = await ApiClient.GetAsync<List<WellServices.FacetTypeDto>>(
-                $"/api/wellstatus/{Uri.EscapeDataString(_searchUwi)}/page-data");
+            _facets = await WellStatusClient.GetFacetPageDataAsync(_searchUwi);
 
             if (_facets == null || _facets.Count == 0)
             {
@@ -433,15 +433,14 @@
             // Load well header for display.
             try
             {
-                _well = await ApiClient.GetAsync<WELL>($"/api/ppdm39/data/well/{Uri.EscapeDataString(_searchUwi)}");
+                _well = await WellLookupClient.GetWellAsync(_searchUwi);
             }
             catch { /* non-critical */ }
 
             // Load full status history for the history expansion panels.
             try
             {
-                _statusHistory = await ApiClient.GetAsync<List<WELL_STATUS>>(
-                    $"/api/wellstatus/{Uri.EscapeDataString(_searchUwi)}/history") ?? new();
+                _statusHistory = await WellStatusClient.GetStatusHistoryAsync(_searchUwi);
             }
             catch { _statusHistory = new(); }
 
@@ -487,8 +486,7 @@
         _isLoading = true;
         try
         {
-            var result = await ApiClient.PutAsync<WellServices.SetFacetRequest, WELL_STATUS>(
-                $"/api/wellstatus/{Uri.EscapeDataString(_searchUwi)}/facet", req);
+            var result = await WellStatusClient.SetFacetAsync(_searchUwi, req);
 
             if (result != null)
             {
@@ -534,8 +532,7 @@
                 req.ExpiryDate    = _expiryDates[idx];
                 try
                 {
-                    await ApiClient.PutAsync<WellServices.SetFacetRequest, WELL_STATUS>(
-                        $"/api/wellstatus/{Uri.EscapeDataString(_searchUwi)}/facet", req);
+                    await WellStatusClient.SetFacetAsync(_searchUwi, req);
                     saved++;
                 }
                 catch

@@ -3,7 +3,7 @@
 @using Beep.OilandGas.Models.Data.Analytics
 @using Beep.OilandGas.Web.Services
 @attribute [Authorize(Roles = "ReservesEngineer,Manager,Admin")]
-@inject ApiClient ApiClient
+@inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
 @inject ISnackbar Snackbar
 
 <PageTitle>Reserves Maturation Report</PageTitle>
@@ -150,8 +150,7 @@
         StateHasChanged();
         try
         {
-            _data = await ApiClient.GetAsync<ReservesMaturationSummary>(
-                "/api/field/current/process/analytics/reserves/maturation");
+            _data = await BusinessProcessClient.GetReservesMaturationAsync();
 
             if (_data is not null) BuildChartData();
         }

@@ -30,7 +30,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             try
             {
                 if (request.AnalysisParameters == null)
-                    return BadRequest(new { error = "AnalysisParameters are required" });
+                        return BadRequest(new { error = "Analysis parameters are required." });
                 var result = await _service.PerformNodalAnalysisAsync(request.WellUWI, request.AnalysisParameters);
                 return Ok(result);
             }

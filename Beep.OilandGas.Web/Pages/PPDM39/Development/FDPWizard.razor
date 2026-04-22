@@ -3,6 +3,7 @@
 @using Beep.OilandGas.Models.Data.Development
 @using Beep.OilandGas.Models.Data
 @inject ApiClient ApiClient
+@inject IDevelopmentServiceClient DevelopmentServiceClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -13,7 +14,7 @@
     @* ── Header ──────────────────────────────────────────────────────────── *@
     <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-6">
         <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
-                       OnClick='() => NavigationManager.NavigateTo("/development")'
+                       Href="@GetBackHref()"
                        Title="Back to Development" />
         <MudStack Spacing="0">
             <MudText Typo="Typo.h5">Build Field Development Plan</MudText>
@@ -328,9 +329,22 @@
 </MudContainer>
 
 @code {
+    [SupplyParameterFromQuery(Name = "jurisdiction")]
+    public string? PrefillJurisdiction { get; set; }
+
+    [SupplyParameterFromQuery(Name = "permitList")]
+    public string? PrefillPermitList { get; set; }
+
+    [SupplyParameterFromQuery(Name = "regulatoryNotes")]
+    public string? PrefillRegulatoryNotes { get; set; }
+
+    [SupplyParameterFromQuery(Name = "returnTo")]
+    public string? ReturnTo { get; set; }
+
     private string _fieldName = string.Empty;
     private bool _wizardMode;
     private int _step;
+    private string? _regulatoryPrefillKey;
 
     private FDPViewModel _fdp = new();
     private FDPDraft _draft = new();
@@ -340,6 +354,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _wizardMode = NavigationManager.Uri.EndsWith("/development/fdp/new", StringComparison.OrdinalIgnoreCase);
+
         try
         {
             var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
@@ -350,12 +366,18 @@
 
         try
         {
-            _fdpStatus = await ApiClient.GetAsync<FdpStatusResponse>("/api/field/current/development/fdp");
+            _fdpStatus = await DevelopmentServiceClient.GetFdpStatusAsync();
             if (_fdpStatus?.HasFdp == true && _fdpStatus.Steps.Count > 0)
             {
+                _fdp.Status = _fdpStatus.Status;
+                _fdp.LastUpdated = _fdpStatus.StartDate?.ToString("MMM yyyy") ?? string.Empty;
                 _fdpStatusHistory = _fdpStatus.Steps
                     .Select(s => new ProcessStep(s.StepName, s.CompletedDate, s.IsCompleted, s.IsActive))
                     .ToList();
+            }
+            else if (!_wizardMode)
+            {
+                _wizardMode = true;
             }
         }
         catch (Exception)
@@ -365,15 +387,14 @@
 
         try
         {
-            var wells = await ApiClient.GetAsync<List<WELL>>(
-                "/api/field/current/development/wells") ?? new();
+            var wells = await DevelopmentServiceClient.GetWellsAsync();
             if (wells.Count > 0)
             {
                 _draft.WellProgram = wells
                     .Where(w => w.ACTIVE_IND == "Y")
                     .Select(w => new WellRow(
                         w.UWI ?? string.Empty,
-                        w.WELL_TYPE ?? "Producer",
+                        w.WELL_TYPE ?? w.CURRENT_CLASS ?? "Producer",
                         string.Empty,
                         DateTime.Now.Year + 1))
                     .ToList();
@@ -383,6 +404,13 @@
         {
             Snackbar.Add("Failed to load development wells.", Severity.Warning);
         }
+
+        ApplyRegulatoryPrefill();
+    }
+
+    protected override void OnParametersSet()
+    {
+        ApplyRegulatoryPrefill();
     }
 
     private void StartRevision()
@@ -398,7 +426,7 @@
         _draft.WellProgram.Add(new("New Well", "Producer", "", DateTime.Now.Year + 1));
 
     private void TrackRegulatorResponse() =>
-        NavigationManager.NavigateTo("/ppdm39/permits-applications");
+        NavigationManager.NavigateTo($"/hse/compliance?returnTo={Uri.EscapeDataString("/development/fdp")}");
 
     private void SubmitFDP() => _ = SubmitFDPAsync();
 
@@ -437,8 +465,7 @@
                 }).ToList()
             };
 
-            var result = await ApiClient.PostAsync<SubmitFdpDraftRequest, SubmitFdpDraftResponse>(
-                "/api/field/current/development/fdp", request);
+            await DevelopmentServiceClient.SubmitFdpAsync(request);
 
             Snackbar.Add("FDP draft submitted for technical review.", Severity.Success);
             _wizardMode = false;
@@ -504,6 +531,31 @@
         _        => Color.Error
     };
     private static Color GetWellTypeColor(string wellType) => wellType == "Producer" ? Color.Primary : Color.Info;
+    private string GetBackHref() => string.IsNullOrWhiteSpace(ReturnTo) ? "/development" : ReturnTo;
+
+    private void ApplyRegulatoryPrefill()
+    {
+        var key = string.Join("|",
+            PrefillJurisdiction ?? string.Empty,
+            PrefillPermitList ?? string.Empty,
+            PrefillRegulatoryNotes ?? string.Empty,
+            ReturnTo ?? string.Empty);
+
+        if (string.Equals(_regulatoryPrefillKey, key, StringComparison.Ordinal))
+            return;
+
+        if (!string.IsNullOrWhiteSpace(PrefillJurisdiction) && string.IsNullOrWhiteSpace(_draft.Jurisdiction))
+            _draft.Jurisdiction = PrefillJurisdiction;
+
+        if (!string.IsNullOrWhiteSpace(PrefillPermitList) && string.IsNullOrWhiteSpace(_draft.PermitList))
+            _draft.PermitList = PrefillPermitList;
+
+        if (!string.IsNullOrWhiteSpace(PrefillRegulatoryNotes) && string.IsNullOrWhiteSpace(_draft.RegulatoryNotes))
+            _draft.RegulatoryNotes = PrefillRegulatoryNotes;
+
+        _regulatoryPrefillKey = key;
+    }
+
     private class WellRow
     {
         public string WellName { get; set; }

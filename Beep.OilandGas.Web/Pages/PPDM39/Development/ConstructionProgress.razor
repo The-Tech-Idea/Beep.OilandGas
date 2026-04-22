@@ -1,5 +1,6 @@
 ﻿@page "/development/construction"
 @inject ApiClient ApiClient
+@inject IDevelopmentServiceClient DevelopmentServiceClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -18,9 +19,32 @@
                 <MudChip T="string" Size="Size.Small" Color="Color.Primary" Icon="@Icons.Material.Filled.Construction">Development</MudChip>
             </MudStack>
         </MudStack>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
-                   StartIcon="@Icons.Material.Filled.AddTask">Log Milestone</MudButton>
+        <MudStack Row="true" Spacing="2">
+            @if (!string.IsNullOrWhiteSpace(ReturnTo))
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.ArrowBack"
+                           Href="@ReturnTo">
+                    Back
+                </MudButton>
+            }
+            <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Construction"
+                       OnClick="OpenDrillingWorkflow">
+                @GetDrillingWorkflowActionLabel()
+            </MudButton>
+        </MudStack>
     </MudStack>
+
+    @if (HasDevelopmentWorkflowContext)
+    {
+        <MudPaper Elevation="1" Class="pa-4 mb-4">
+            <MudStack Spacing="1">
+                <MudText Typo="Typo.subtitle2">Development Construction Handoff Active</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@GetWorkflowContextMessage()</MudText>
+            </MudStack>
+        </MudPaper>
+    }
 
     @* ── Project Health Banner ────────────────────────────────────────────── *@
     <MudPaper Elevation="2" Class="pa-3 mb-4">
@@ -228,6 +252,27 @@
 </MudContainer>
 
 @code {
+    [SupplyParameterFromQuery(Name = "wellUwi")]
+    public string? WellUwi { get; set; }
+
+    [SupplyParameterFromQuery(Name = "wellName")]
+    public string? WellName { get; set; }
+
+    [SupplyParameterFromQuery(Name = "targetDepth")]
+    public string? TargetDepth { get; set; }
+
+    [SupplyParameterFromQuery(Name = "rigName")]
+    public string? RigName { get; set; }
+
+    [SupplyParameterFromQuery(Name = "sourceProcess")]
+    public string? SourceProcess { get; set; }
+
+    [SupplyParameterFromQuery(Name = "returnTo")]
+    public string? ReturnTo { get; set; }
+
+    [SupplyParameterFromQuery(Name = "openDrillingCreate")]
+    public bool OpenDrillingCreate { get; set; }
+
     private string _fieldName = string.Empty;
     private bool   _loading   = true;
 
@@ -235,6 +280,11 @@
     private List<PunchItem>   _punchItems  = new();
     private List<ChartSeries<double>> _costSeries = new();
     private string[] _costLabels = Array.Empty<string>();
+
+    private bool HasDevelopmentWorkflowContext =>
+        !string.IsNullOrWhiteSpace(WellUwi)
+        || !string.IsNullOrWhiteSpace(WellName)
+        || string.Equals(SourceProcess, "DEVELOPMENT", StringComparison.OrdinalIgnoreCase);
 
     protected override async Task OnInitializedAsync()
     {
@@ -249,19 +299,18 @@
         _loading = true;
         try
         {
-            var progress = await ApiClient.GetAsync<ConstructionProgressDto>(
-                "api/field/current/development/construction-progress");
+            var progress = await DevelopmentServiceClient.GetConstructionProgressAsync();
             if (progress != null)
             {
-                _workGroups = (progress.WorkGroups ?? new()).Select(g => new WorkGroup(
-                    g.Title ?? string.Empty,
+                _workGroups = progress.WorkGroups.Select(g => new WorkGroup(
+                    g.Title,
                     Icons.Material.Filled.Construction,
                     Color.Primary,
-                    (g.Packages ?? new()).Select(p => new WorkPackage(
+                    g.Packages.Select(p => new WorkPackage(
                         p.Name, p.TargetDate, p.IsCompleted, p.IsActive, p.PercentComplete, p.Note)).ToList()
                 )).ToList();
 
-                _punchItems = (progress.PunchItems ?? new()).Select(p =>
+                _punchItems = progress.PunchItems.Select(p =>
                     new PunchItem(p.Description, p.Owner, p.DueDate, p.Category)).ToList();
             }
         }
@@ -270,34 +319,6 @@
             Snackbar.Add("Failed to load construction progress.", Severity.Error);
         }
         finally { _loading = false; }
-    }
-
-    // ── Response DTOs ─────────────────────────────────────────────────────
-    private class ConstructionProgressDto
-    {
-        public List<WorkGroupDto>? WorkGroups { get; set; }
-        public List<PunchItemDto>? PunchItems { get; set; }
-    }
-    private class WorkGroupDto
-    {
-        public string? Title { get; set; }
-        public List<WorkPackageDto>? Packages { get; set; }
-    }
-    private class WorkPackageDto
-    {
-        public string  Name            { get; set; } = string.Empty;
-        public string  TargetDate      { get; set; } = string.Empty;
-        public bool    IsCompleted     { get; set; }
-        public bool    IsActive        { get; set; }
-        public double  PercentComplete { get; set; }
-        public string  Note            { get; set; } = string.Empty;
-    }
-    private class PunchItemDto
-    {
-        public string Description { get; set; } = string.Empty;
-        public string Owner       { get; set; } = string.Empty;
-        public string DueDate     { get; set; } = string.Empty;
-        public string Category    { get; set; } = string.Empty;
     }
 
     private string PkgIcon(WorkPackage p) =>
@@ -319,6 +340,115 @@
     {
         var done = g.Packages.Count(p => p.IsCompleted);
         return $"{done}/{g.Packages.Count}";
+    }
+
+    private void OpenDrillingWorkflow() =>
+        NavigationManager.NavigateTo(BuildDrillingWorkflowHref());
+
+    private string GetDrillingWorkflowActionLabel()
+    {
+        if (OpenDrillingCreate && !string.IsNullOrWhiteSpace(WellUwi))
+            return "Launch Drilling Operation";
+
+        if (!string.IsNullOrWhiteSpace(WellUwi))
+            return "Open Drilling Tracker";
+
+        return "View Drilling Operations";
+    }
+
+    private string GetWorkflowContextMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(WellName) && !string.IsNullOrWhiteSpace(WellUwi))
+            return $"Construction progress is being reviewed for {WellName} ({WellUwi}) before drilling execution.";
+
+        if (!string.IsNullOrWhiteSpace(WellUwi))
+            return $"Construction progress is being reviewed for well {WellUwi} before drilling execution.";
+
+        return "Construction progress is currently part of the development-to-drilling workflow handoff.";
+    }
+
+    private string BuildDrillingWorkflowHref()
+    {
+        var query = new List<string>
+        {
+            $"returnTo={Uri.EscapeDataString(BuildConstructionProgressReturnTo())}"
+        };
+
+        if (!string.IsNullOrWhiteSpace(WellUwi))
+        {
+            query.Add($"wellUwi={Uri.EscapeDataString(WellUwi)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(WellName))
+        {
+            query.Add($"wellName={Uri.EscapeDataString(WellName)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(TargetDepth))
+        {
+            query.Add($"targetDepth={Uri.EscapeDataString(TargetDepth)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(RigName))
+        {
+            query.Add($"rigName={Uri.EscapeDataString(RigName)}");
+        }
+
+        if (HasDevelopmentWorkflowContext)
+        {
+            query.Add($"sourceProcess={Uri.EscapeDataString("DEVELOPMENT")}");
+        }
+
+        if (OpenDrillingCreate && !string.IsNullOrWhiteSpace(WellUwi))
+        {
+            query.Insert(0, "openCreate=true");
+        }
+
+        return "/ppdm39/operations/drillingoperations?" + string.Join("&", query);
+    }
+
+    private string BuildConstructionProgressReturnTo()
+    {
+        var query = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(WellUwi))
+        {
+            query.Add($"wellUwi={Uri.EscapeDataString(WellUwi)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(WellName))
+        {
+            query.Add($"wellName={Uri.EscapeDataString(WellName)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(TargetDepth))
+        {
+            query.Add($"targetDepth={Uri.EscapeDataString(TargetDepth)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(RigName))
+        {
+            query.Add($"rigName={Uri.EscapeDataString(RigName)}");
+        }
+
+        if (HasDevelopmentWorkflowContext)
+        {
+            query.Add($"sourceProcess={Uri.EscapeDataString("DEVELOPMENT")}");
+        }
+
+        if (OpenDrillingCreate)
+        {
+            query.Add("openDrillingCreate=true");
+        }
+
+        if (!string.IsNullOrWhiteSpace(ReturnTo))
+        {
+            query.Add($"returnTo={Uri.EscapeDataString(ReturnTo)}");
+        }
+
+        return query.Count == 0
+            ? "/development/construction"
+            : "/development/construction?" + string.Join("&", query);
     }
 
     private class WorkGroup

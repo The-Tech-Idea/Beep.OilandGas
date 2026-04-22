@@ -1,5 +1,8 @@
 ﻿@page "/ppdm39/accounting/dashboard"
+@using Beep.OilandGas.Models.Data.Accounting
 @inject ApiClient ApiClient
+@inject IAccountingServiceClient AccountingClient
+@inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
 
 <PageTitle>Monitor Accounting Activity</PageTitle>
@@ -122,7 +125,7 @@
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
@@ -136,8 +139,7 @@
         _isLoading = true;
         try
         {
-            _recentActivities = await ApiClient.GetAsync<List<AccountingActivityDto>>(
-                "api/field/current/accounting/recent-activities") ?? new();
+            _recentActivities = await AccountingClient.GetRecentActivitiesAsync();
         }
         catch (Exception)
         {
@@ -148,15 +150,5 @@
         {
             _isLoading = false;
         }
-    }
-
-    private class AccountingActivityDto
-    {
-        public string  ActivityType { get; set; } = string.Empty;
-        public string  Date         { get; set; } = string.Empty;
-        public string  Description  { get; set; } = string.Empty;
-        public decimal Amount       { get; set; }
-        public string  Status       { get; set; } = string.Empty;
-        public string  ReferenceId  { get; set; } = string.Empty;
     }
 }

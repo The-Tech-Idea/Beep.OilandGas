@@ -90,13 +90,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         [HttpGet("composition/{compositionId}")]
         public async Task<ActionResult<GasComposition>> GetComposition(string compositionId)
         {
+            if (string.IsNullOrWhiteSpace(compositionId))
+                return BadRequest(new { error = "Composition ID is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(compositionId))
-                    return BadRequest(new { error = "Composition ID is required." });
                 var result = await _service.GetGasCompositionAsync(compositionId);
                 if (result == null)
-                    return NotFound(new { error = $"Composition {compositionId} not found" });
+                        return NotFound(new { error = $"Composition {compositionId} not found." });
                 return Ok(result);
             }
             catch (Exception ex)

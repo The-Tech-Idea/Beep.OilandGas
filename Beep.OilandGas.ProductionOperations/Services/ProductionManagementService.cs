@@ -102,12 +102,20 @@ namespace Beep.OilandGas.ProductionOperations.Services
                 throw new ArgumentNullException(nameof(createRequest));
 
             var pdenUow = GetPDENUnitOfWork();
+            var operationDate = createRequest.OperationDate ?? DateTime.UtcNow;
             var pden = new PDEN
             {
                 PDEN_ID = Guid.NewGuid().ToString(),
-                PDEN_SUBTYPE = "PRODUCTION",
+                PDEN_SUBTYPE = string.IsNullOrWhiteSpace(createRequest.OperationType) ? "PRODUCTION" : createRequest.OperationType.Trim(),
                 ACTIVE_IND = "Y",
-                CURRENT_STATUS_DATE = createRequest.OperationDate ?? DateTime.UtcNow,
+                CURRENT_STATUS_DATE = operationDate,
+                EFFECTIVE_DATE = operationDate,
+                ON_PRODUCTION_DATE = operationDate,
+                LAST_PRODUCTION_DATE = operationDate,
+                PDEN_STATUS = string.IsNullOrWhiteSpace(createRequest.Status) ? "Planned" : createRequest.Status.Trim(),
+                CURRENT_OPERATOR = string.IsNullOrWhiteSpace(createRequest.AssignedTo) ? string.Empty : createRequest.AssignedTo.Trim(),
+                CURRENT_WELL_STR_NUMBER = string.IsNullOrWhiteSpace(createRequest.WellUWI) ? string.Empty : createRequest.WellUWI.Trim(),
+                REMARK = string.IsNullOrWhiteSpace(createRequest.Remarks) ? string.Empty : createRequest.Remarks.Trim(),
                 ROW_CREATED_DATE = DateTime.UtcNow,
                 ROW_CHANGED_DATE = DateTime.UtcNow
             };

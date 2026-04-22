@@ -2,6 +2,8 @@
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject ApiClient ApiClient
+@inject IDecommissioningServiceClient DecommissioningService
+@inject ILifeCycleService LifeCycleService
 
 <PageTitle>Execute Well P&amp;A Programme</PageTitle>
 
@@ -15,8 +17,16 @@
             <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Plug &amp; Abandonment program management</MudText>
         </MudStack>
         <MudStack Row="true" Spacing="2">
+            @if (!string.IsNullOrWhiteSpace(ReturnTo))
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                           StartIcon="@Icons.Material.Filled.ArrowBack"
+                           Href="@ReturnTo">
+                    Back
+                </MudButton>
+            }
             <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add"
-                       OnClick='@(() => NavigationManager.NavigateTo("/ppdm39/decommissioning/well-abandonment"))'>
+                       OnClick="NavigateToNewCampaign">
                 New Campaign
             </MudButton>
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
@@ -27,6 +37,26 @@
         </MudStack>
     </MudStack>
 
+    @if (HasHandoffContext)
+    {
+        <MudPaper Elevation="1" Class="pa-4 mb-4">
+            <MudStack Spacing="1">
+                <MudText Typo="Typo.subtitle2">Production Handoff Active</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Well @WellId has been transferred from the production intervention workflow into P&amp;A execution.
+                </MudText>
+                @if (!string.IsNullOrWhiteSpace(HandoffReason))
+                {
+                    <MudText Typo="Typo.body2">Reason: @HandoffReason</MudText>
+                }
+                @if (!string.IsNullOrWhiteSpace(ProcessInstanceId))
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Lifecycle instance: @ProcessInstanceId</MudText>
+                }
+            </MudStack>
+        </MudPaper>
+    }
+
     @* KPIs *@
     <MudGrid Class="mb-4" Spacing="3">
         <MudItem xs="12" sm="6" md="3">
@@ -35,7 +65,7 @@
                      TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Success" TrendText="On plan" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="In Progress" Value="@_wells.Count(w => w.Phase == "EXECUTION").ToString()" Unit="wells"
+            <KpiCard Label="In Progress" Value="@_wells.Count(w => IsExecutionPhase(w.Phase)).ToString()" Unit="wells"
                      ValueColor="Color.Warning" Icon="@Icons.Material.Filled.Engineering"
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Active campaigns" />
         </MudItem>
@@ -45,7 +75,7 @@
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="vs $28M budget" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Pending Approval" Value="@_wells.Count(w => w.Phase == "APPROVAL").ToString()" Unit="wells"
+            <KpiCard Label="Pending Approval" Value="@_wells.Count(w => IsApprovalPhase(w.Phase)).ToString()" Unit="wells"
                      ValueColor="Color.Error" Icon="@Icons.Material.Filled.Approval"
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Awaiting sign-off" />
         </MudItem>
@@ -65,8 +95,8 @@
                         <Columns>
                             <PropertyColumn Property="w => w.WellId"     Title="Well" />
                             <PropertyColumn Property="w => w.WellType"   Title="Type" />
-                            <PropertyColumn Property="w => w.SpudDate"   Title="Spud" />
-                            <PropertyColumn Property="w => w.PlannedPA"  Title="Planned P&A" />
+                            <PropertyColumn Property="w => w.ProgramStart"   Title="Start" />
+                            <PropertyColumn Property="w => w.TargetComplete"  Title="Target Complete" />
                             <PropertyColumn Property="w => w.EstCostUsd" Title="Est. Cost ($)" Format="N0" />
                             <TemplateColumn Title="Phase">
                                 <CellTemplate>
@@ -111,20 +141,33 @@
                             }
                         </MudTimeline>
                     </MudCardContent>
-                    <MudCardActions>
-                        @if (_selectedWell.Phase == "APPROVAL")
-                        {
-                            <MudButton Variant="Variant.Filled" Color="Color.Success" FullWidth="true"
-                                       OnClick="ApprovePA">
-                                Approve P&amp;A Programme
+                    <MudCardActions Class="pa-4 pt-0">
+                        <MudStack Spacing="2" Class="mud-width-full">
+                            @if (_selectedWell.Phase == "APPROVAL")
+                            {
+                                <MudButton Variant="Variant.Filled" Color="Color.Success" FullWidth="true"
+                                           OnClick="ApprovePA">
+                                    Approve P&amp;A Programme
+                                </MudButton>
+                            }
+                            else if (_selectedWell.Phase == "EXECUTION")
+                            {
+                                <MudButton Variant="Variant.Outlined" FullWidth="true" OnClick="UpdateProgress">
+                                    Update Progress
+                                </MudButton>
+                            }
+
+                            <MudButton Variant="Variant.Outlined" Color="Color.Info" FullWidth="true"
+                                       StartIcon="@Icons.Material.Filled.Gavel"
+                                       OnClick="LaunchComplianceForSelectedWell">
+                                Launch Closure Compliance
                             </MudButton>
-                        }
-                        else if (_selectedWell.Phase == "EXECUTION")
-                        {
-                            <MudButton Variant="Variant.Outlined" FullWidth="true" OnClick="UpdateProgress">
-                                Update Progress
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true"
+                                       StartIcon="@Icons.Material.Filled.AccountBalance"
+                                       OnClick="LaunchCloseoutAfeForSelectedWell">
+                                Open Closeout AFE
                             </MudButton>
-                        }
+                        </MudStack>
                     </MudCardActions>
                 </MudCard>
             }
@@ -150,6 +193,24 @@
 </MudContainer>
 
 @code {
+    [SupplyParameterFromQuery(Name = "wellId")]
+    public string? WellId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "abandonmentId")]
+    public string? AbandonmentId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "processInstanceId")]
+    public string? ProcessInstanceId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "sourceProcess")]
+    public string? SourceProcess { get; set; }
+
+    [SupplyParameterFromQuery(Name = "handoffReason")]
+    public string? HandoffReason { get; set; }
+
+    [SupplyParameterFromQuery(Name = "returnTo")]
+    public string? ReturnTo { get; set; }
+
     private string _fieldName = string.Empty;
     private PAWell? _selectedWell;
     private bool _loading = true;
@@ -157,29 +218,25 @@
     private int _paCompleted;
     private double _paCostMm;
 
-    private record PAWell(string WellId, string WellType, string SpudDate, string PlannedPA,
+    private record PAWell(string AbandonmentId, string WellId, string WellType, string ProgramStart, string TargetComplete,
         double EstCostUsd, string Phase);
 
     private List<PAWell> _wells = new();
 
     private record PAStep(string Name, string Details, bool IsComplete, bool IsActive);
-    private List<PAStep> _paSteps = new()
-    {
-        new("Preliminary Assessment", "Well history review, hazard identification",           true,  false),
-        new("Engineering Design",     "P&A programme & procedures written",                   true,  false),
-        new("Regulatory Submission",  "Permit application submitted",                          true,  false),
-        new("Regulatory Approval",    "Awaiting permit",                                      false, true ),
-        new("Mobilise Rig",           "Rig mobilisation",                                     false, false),
-        new("Execute P&A Operations", "Cement plugs, tubing retrieval, wellhead removal",     false, false),
-        new("Site Restoration",       "Location clean-up and verification",                   false, false),
-        new("Final Documentation",    "As-left well records submitted to regulator",          false, false),
-    };
+    private List<PAStep> _paSteps = BuildPaSteps(null);
+
+    private bool HasHandoffContext =>
+        !string.IsNullOrWhiteSpace(WellId)
+        || !string.IsNullOrWhiteSpace(AbandonmentId)
+        || !string.IsNullOrWhiteSpace(ProcessInstanceId)
+        || !string.IsNullOrWhiteSpace(SourceProcess);
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
@@ -188,56 +245,260 @@
         _loading = true;
         try
         {
-            var raw = await ApiClient.GetAsync<List<WellAbandonmentDto>>("api/field/current/decommissioning/wells-abandoned") ?? new();            if (raw != null)
-            {
-                _wells = raw.Select(r => new PAWell(
-                    r.WellId ?? r.AbandonmentId,
-                    r.AbandonmentType ?? "Well",
-                    r.AbandonmentStartDate?.ToLocalTime().ToString("MMM yyyy") ?? "—",
-                    r.AbandonmentEndDate?.ToLocalTime().ToString("MMM yyyy") ?? "TBD",
-                    0,
-                    r.Status ?? "PLANNED")).ToList();
+            var raw = await DecommissioningService.GetAbandonedWellsAsync();
+            var estimate = await DecommissioningService.EstimateCostsAsync();
 
-                _paCompleted = _wells.Count(w =>
-                    w.Phase.Equals("Complete", StringComparison.OrdinalIgnoreCase) ||
-                    w.Phase.Equals("COMPLETE", StringComparison.OrdinalIgnoreCase));
-                _paCostMm = 0;
-            }
+            _wells = raw.Select(r => new PAWell(
+                r.AbandonmentId,
+                r.WellId ?? r.AbandonmentId,
+                r.AbandonmentType ?? "Well",
+                FormatMonth(r.AbandonmentStartDate, "—"),
+                FormatMonth(r.AbandonmentEndDate, "TBD"),
+                (double)(r.AbandonmentCost ?? r.PluggingCost ?? 0m),
+                r.Status ?? "PLANNED")).ToList();
+
+            _paCompleted = _wells.Count(w => IsCompletedPhase(w.Phase));
+            var actualCostMm = _wells.Sum(w => w.EstCostUsd) / 1_000_000d;
+            var estimatedCostMm = (double)(estimate?.EstimatedWellAbandonmentCost ?? 0m) / 1_000_000d;
+            _paCostMm = actualCostMm > 0 ? actualCostMm : estimatedCostMm;
+
+            ApplySelectedWell();
         }
         catch (Exception) { Snackbar.Add("Failed to load wells.", Severity.Warning); }
         finally { _loading = false; }
     }
 
-    private class WellAbandonmentDto
+    protected override void OnParametersSet()
     {
-        public string    AbandonmentId       { get; set; } = string.Empty;
-        public string?   WellId              { get; set; }
-        public string?   AbandonmentType     { get; set; }
-        public string?   Status              { get; set; }
-        public DateTime? AbandonmentStartDate{ get; set; }
-        public DateTime? AbandonmentEndDate  { get; set; }
+        ApplySelectedWell();
     }
 
-    private void OnWellSelected(DataGridRowClickEventArgs<PAWell> args) =>
+    private void OnWellSelected(DataGridRowClickEventArgs<PAWell> args)
+    {
         _selectedWell = args.Item;
+        _paSteps = BuildPaSteps(args.Item.Phase);
+    }
 
     private async Task ApprovePA()
     {
         if (_selectedWell == null) return;
         try
         {
-            await ApiClient.PatchAsync<object, object>(
-                $"/api/field/current/decommissioning/wells-abandoned/{_selectedWell.WellId}/approve", new { });
+            var approved = await DecommissioningService.ApprovePAAsync(_selectedWell.AbandonmentId);
+            if (!approved)
+            {
+                Snackbar.Add("Approval failed.", Severity.Error);
+                return;
+            }
+
             Snackbar.Add($"{_selectedWell.WellId} P&A programme approved", Severity.Success);
             _selectedWell = null;
+            _paSteps = BuildPaSteps(null);
+            await OnInitializedAsync();
         }
         catch (Exception) { Snackbar.Add("Approval failed.", Severity.Error); }
     }
 
-    private void UpdateProgress() =>
-        NavigationManager.NavigateTo(_selectedWell != null
-            ? $"/ppdm39/decommissioning/well-abandonment?wellId={Uri.EscapeDataString(_selectedWell.WellId)}"
-            : "/ppdm39/decommissioning/well-abandonment");
+    private void NavigateToNewCampaign()
+    {
+        var query = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(WellId))
+            query.Add($"wellId={Uri.EscapeDataString(WellId)}");
+
+        if (!string.IsNullOrWhiteSpace(SourceProcess))
+            query.Add($"sourceProcess={Uri.EscapeDataString(SourceProcess)}");
+
+        if (!string.IsNullOrWhiteSpace(HandoffReason))
+            query.Add($"handoffReason={Uri.EscapeDataString(HandoffReason)}");
+
+        var returnTo = BuildPaWorkflowReturnTo();
+        if (!string.IsNullOrWhiteSpace(returnTo))
+            query.Add($"returnTo={Uri.EscapeDataString(returnTo)}");
+
+        var target = "/ppdm39/decommissioning/well-abandonment";
+        if (query.Count > 0)
+            target += "?" + string.Join("&", query);
+
+        NavigationManager.NavigateTo(target);
+    }
+
+    private void LaunchComplianceForSelectedWell()
+    {
+        if (_selectedWell == null)
+        {
+            Snackbar.Add("Select a P&A record first.", Severity.Warning);
+            return;
+        }
+
+        NavigationManager.NavigateTo(BuildComplianceHref(_selectedWell));
+    }
+
+    private void LaunchCloseoutAfeForSelectedWell()
+    {
+        if (_selectedWell == null)
+        {
+            Snackbar.Add("Select a P&A record first.", Severity.Warning);
+            return;
+        }
+
+        NavigationManager.NavigateTo(BuildCloseoutAfeHref(_selectedWell));
+    }
+
+    private void UpdateProgress()
+    {
+        var query = new List<string>();
+
+        if (_selectedWell != null)
+        {
+            query.Add($"wellId={Uri.EscapeDataString(_selectedWell.WellId)}");
+            query.Add($"abandonmentId={Uri.EscapeDataString(_selectedWell.AbandonmentId)}");
+        }
+        else if (!string.IsNullOrWhiteSpace(WellId))
+        {
+            query.Add($"wellId={Uri.EscapeDataString(WellId)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(ProcessInstanceId))
+            query.Add($"processInstanceId={Uri.EscapeDataString(ProcessInstanceId)}");
+
+        if (!string.IsNullOrWhiteSpace(SourceProcess))
+            query.Add($"sourceProcess={Uri.EscapeDataString(SourceProcess)}");
+
+        if (!string.IsNullOrWhiteSpace(HandoffReason))
+            query.Add($"handoffReason={Uri.EscapeDataString(HandoffReason)}");
+
+        var returnTo = BuildPaWorkflowReturnTo();
+        if (!string.IsNullOrWhiteSpace(returnTo))
+            query.Add($"returnTo={Uri.EscapeDataString(returnTo)}");
+
+        var target = "/ppdm39/decommissioning/well-abandonment";
+        if (query.Count > 0)
+            target += "?" + string.Join("&", query);
+
+        NavigationManager.NavigateTo(target);
+    }
+
+    private void ApplySelectedWell()
+    {
+        if (_wells.Count == 0)
+        {
+            _selectedWell = null;
+            _paSteps = BuildPaSteps(null);
+            return;
+        }
+
+        PAWell? selected = null;
+        if (!string.IsNullOrWhiteSpace(AbandonmentId))
+            selected = _wells.FirstOrDefault(w => string.Equals(w.AbandonmentId, AbandonmentId, StringComparison.OrdinalIgnoreCase));
+
+        if (selected == null && !string.IsNullOrWhiteSpace(WellId))
+            selected = _wells.FirstOrDefault(w => string.Equals(w.WellId, WellId, StringComparison.OrdinalIgnoreCase));
+
+        if (selected == null && _selectedWell != null)
+            selected = _wells.FirstOrDefault(w => w.AbandonmentId == _selectedWell.AbandonmentId);
+
+        _selectedWell = selected;
+        _paSteps = BuildPaSteps(_selectedWell?.Phase);
+    }
+
+    private string BuildPaWorkflowReturnTo()
+    {
+        var query = new List<string>();
+
+        var selectedWellId = _selectedWell?.WellId ?? WellId;
+        var selectedAbandonmentId = _selectedWell?.AbandonmentId ?? AbandonmentId;
+
+        if (!string.IsNullOrWhiteSpace(selectedWellId))
+            query.Add($"wellId={Uri.EscapeDataString(selectedWellId)}");
+
+        if (!string.IsNullOrWhiteSpace(selectedAbandonmentId))
+            query.Add($"abandonmentId={Uri.EscapeDataString(selectedAbandonmentId)}");
+
+        if (!string.IsNullOrWhiteSpace(ProcessInstanceId))
+            query.Add($"processInstanceId={Uri.EscapeDataString(ProcessInstanceId)}");
+
+        if (!string.IsNullOrWhiteSpace(SourceProcess))
+            query.Add($"sourceProcess={Uri.EscapeDataString(SourceProcess)}");
+
+        if (!string.IsNullOrWhiteSpace(HandoffReason))
+            query.Add($"handoffReason={Uri.EscapeDataString(HandoffReason)}");
+
+        if (!string.IsNullOrWhiteSpace(ReturnTo))
+            query.Add($"returnTo={Uri.EscapeDataString(ReturnTo)}");
+
+        return query.Count == 0
+            ? "/decommissioning/well-pa"
+            : "/decommissioning/well-pa?" + string.Join("&", query);
+    }
+
+    private string BuildComplianceHref(PAWell well)
+    {
+        var query = new List<string>
+        {
+            "openCreate=true",
+            $"obligType={Uri.EscapeDataString("Permit")}",
+            $"jurisdiction={Uri.EscapeDataString("Oil & Gas Regulator")}",
+            $"description={Uri.EscapeDataString(BuildComplianceDescription(well))}",
+            "sourceProcess=DECOMMISSIONING",
+            $"returnTo={Uri.EscapeDataString(BuildPaWorkflowReturnTo())}"
+        };
+
+        if (!string.IsNullOrWhiteSpace(well.WellId))
+            query.Add($"wellId={Uri.EscapeDataString(well.WellId)}");
+
+        if (!string.IsNullOrWhiteSpace(well.AbandonmentId))
+            query.Add($"abandonmentId={Uri.EscapeDataString(well.AbandonmentId)}");
+
+        if (!string.IsNullOrWhiteSpace(ProcessInstanceId))
+            query.Add($"processInstanceId={Uri.EscapeDataString(ProcessInstanceId)}");
+
+        if (!string.IsNullOrWhiteSpace(HandoffReason))
+            query.Add($"handoffReason={Uri.EscapeDataString(HandoffReason)}");
+
+        return "/hse/compliance?" + string.Join("&", query);
+    }
+
+    private string BuildCloseoutAfeHref(PAWell well)
+    {
+        var query = new List<string>
+        {
+            "openCreate=true",
+            $"wellId={Uri.EscapeDataString(well.WellId)}",
+            $"description={Uri.EscapeDataString(BuildCloseoutAfeDescription(well))}",
+            $"returnTo={Uri.EscapeDataString(BuildPaWorkflowReturnTo())}"
+        };
+
+        if (well.EstCostUsd > 0)
+        {
+            query.Add($"budgetUsd={Uri.EscapeDataString(well.EstCostUsd.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))}");
+        }
+
+        return "/economics/afe?" + string.Join("&", query);
+    }
+
+    private string BuildComplianceDescription(PAWell well)
+    {
+        var description = $"Plug and abandonment compliance closeout for well {well.WellId}";
+
+        if (!string.IsNullOrWhiteSpace(well.AbandonmentId))
+            description += $" ({well.AbandonmentId})";
+
+        if (!string.IsNullOrWhiteSpace(HandoffReason))
+            description += $". Trigger: {HandoffReason}";
+
+        return description;
+    }
+
+    private static string BuildCloseoutAfeDescription(PAWell well)
+    {
+        var description = $"P&A closeout AFE for well {well.WellId}";
+
+        if (!string.IsNullOrWhiteSpace(well.AbandonmentId))
+            description += $" ({well.AbandonmentId})";
+
+        return description;
+    }
 
     private Color StepColor(bool complete, bool active) => (complete, active) switch
     {
@@ -245,4 +506,57 @@
         (_, true) => Color.Primary,
         _         => Color.Default,
     };
+
+    private static string FormatMonth(DateTime? value, string fallback) =>
+        value?.ToLocalTime().ToString("MMM yyyy") ?? fallback;
+
+    private static bool IsApprovalPhase(string? phase)
+    {
+        var normalized = NormalizePhase(phase);
+        return normalized is "APPROVAL" or "PENDINGAPPROVAL";
+    }
+
+    private static bool IsExecutionPhase(string? phase)
+    {
+        var normalized = NormalizePhase(phase);
+        return normalized is "EXECUTION" or "INPROGRESS" or "ACTIVE";
+    }
+
+    private static bool IsCompletedPhase(string? phase)
+    {
+        var normalized = NormalizePhase(phase);
+        return normalized is "COMPLETE" or "COMPLETED" or "CLOSED";
+    }
+
+    private static string NormalizePhase(string? phase) =>
+        string.IsNullOrWhiteSpace(phase)
+            ? string.Empty
+            : phase.Trim().Replace(" ", string.Empty).Replace("_", string.Empty).ToUpperInvariant();
+
+    private static List<PAStep> BuildPaSteps(string? phase)
+    {
+        var (completedIndex, activeIndex) = NormalizePhase(phase) switch
+        {
+            "APPROVAL" or "PENDINGAPPROVAL" => (2, 3),
+            "EXECUTION" or "INPROGRESS" or "ACTIVE" => (4, 5),
+            "COMPLETE" or "COMPLETED" or "CLOSED" => (7, -1),
+            _ => (0, 1),
+        };
+
+        var stepDefinitions = new (string Name, string Details)[]
+        {
+            ("Preliminary Assessment", "Well history review, hazard identification"),
+            ("Engineering Design", "P&A programme & procedures written"),
+            ("Regulatory Submission", "Permit application submitted"),
+            ("Regulatory Approval", "Regulator sign-off and permit issuance"),
+            ("Mobilise Rig", "Rig mobilisation and site preparation"),
+            ("Execute P&A Operations", "Cement plugs, tubing retrieval, wellhead removal"),
+            ("Site Restoration", "Location clean-up and verification"),
+            ("Final Documentation", "As-left well records submitted to regulator"),
+        };
+
+        return stepDefinitions
+            .Select((step, index) => new PAStep(step.Name, step.Details, index <= completedIndex, index == activeIndex))
+            .ToList();
+    }
 }

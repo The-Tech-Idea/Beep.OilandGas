@@ -1,0 +1,407 @@
+@page "/ppdm39/calculations/oil-properties"
+@page "/analysis/oil-properties"
+@using System.Linq
+@using System.Security.Claims
+@using Beep.OilandGas.Models.Data
+@inject ApiClient ApiClient
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ICalculationServiceClient CalculationService
+@inject ILifeCycleService LifeCycleService
+@inject ISnackbar Snackbar
+
+<PageTitle>Analyze Oil Properties</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Analyze Oil Properties</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName - Black-oil property checks, saved compositions, and calculation history</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Icon="@Icons.Material.Filled.WaterDrop">Fluid Properties</MudChip>
+                @if (!string.IsNullOrWhiteSpace(_composition.CompositionId))
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Info">@_composition.CompositionId</MudChip>
+                }
+            </MudStack>
+        </MudStack>
+    </MudStack>
+
+    <MudGrid Spacing="3" Class="mb-4">
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="2" Class="h-100">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Oil State</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="_composition.CompositionName" Label="Composition Name" Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="_compositionLookupId" Label="Lookup Composition ID" Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudNumericField T="decimal" @bind-Value="_pressure" Label="Pressure (psia)" Variant="Variant.Outlined" Min="0" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudNumericField T="decimal" @bind-Value="_temperature" Label="Temperature (Rankine)" Variant="Variant.Outlined" Min="0" />
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.PlayArrow"
+                                   OnClick="CalculateAsync"
+                                   Disabled="@(_isRunning || _isSaving)">
+                            Calculate Properties
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Save"
+                                   OnClick="SaveCompositionAsync"
+                                   Disabled="@(_isRunning || _isSaving)">
+                            Save Composition
+                        </MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Default"
+                                   StartIcon="@Icons.Material.Filled.Download"
+                                   OnClick="LoadCompositionAsync"
+                                   Disabled="@(_isRunning || _isSaving || string.IsNullOrWhiteSpace(_compositionLookupId))">
+                            Load Composition
+                        </MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Success"
+                                   StartIcon="@Icons.Material.Filled.LibraryAdd"
+                                   OnClick="SaveResultAsync"
+                                   Disabled="@(_isRunning || _isSaving || _currentResult == null)">
+                            Save Result
+                        </MudButton>
+                    </MudStack>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="8">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Oil Composition Inputs</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12" sm="6" md="3"><MudNumericField T="decimal" @bind-Value="_composition.OilGravity" Label="API Gravity" Variant="Variant.Outlined" Min="0" /></MudItem>
+                        <MudItem xs="12" sm="6" md="3"><MudNumericField T="decimal" @bind-Value="_composition.GasOilRatio" Label="Gas Oil Ratio" Variant="Variant.Outlined" Min="0" /></MudItem>
+                        <MudItem xs="12" sm="6" md="3"><MudNumericField T="decimal" @bind-Value="_composition.WaterCut" Label="Water Cut" Variant="Variant.Outlined" Min="0" Max="1" /></MudItem>
+                        <MudItem xs="12" sm="6" md="3"><MudNumericField T="decimal" @bind-Value="_composition.BubblePointPressure" Label="Bubble Point Pressure" Variant="Variant.Outlined" Min="0" /></MudItem>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="_composition.Remarks" Label="Remarks" Lines="3" Variant="Variant.Outlined" />
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    @if (_currentResult != null)
+    {
+        <CalculationKpiSection Metrics="@GetResultKpis()" Class="mb-4" />
+
+        <MudCard Elevation="2" Class="mb-4">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.subtitle1">Current Oil Property Result</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6" md="3"><MudText Typo="Typo.body2">Calculation ID: @(_currentResult.CalculationId ?? "N/A")</MudText></MudItem>
+                    <MudItem xs="12" sm="6" md="3"><MudText Typo="Typo.body2">Pressure: @FormatDecimal(_currentResult.Pressure, 2) psia</MudText></MudItem>
+                    <MudItem xs="12" sm="6" md="3"><MudText Typo="Typo.body2">Temperature: @FormatDecimal(_currentResult.Temperature, 2) R</MudText></MudItem>
+                    <MudItem xs="12" sm="6" md="3"><MudText Typo="Typo.body2">Method: @(_currentResult.CorrelationMethod ?? "Standing")</MudText></MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
+    }
+
+    <MudCard Elevation="2">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.subtitle1">Saved Oil Property Results</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent Class="pa-0">
+            @if (_history.Count > 0)
+            {
+                <MudDataGrid T="OilPropertyResult" Items="@_history" Dense="true" Hover="true" ReadOnly="true">
+                    <Columns>
+                        <TemplateColumn Title="Date">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@context.Item.CalculationDate.ToString("dd MMM yyyy")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="FVF">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@FormatDecimal(context.Item.FormationVolumeFactor, 4)</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Density">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@FormatDecimal(context.Item.Density, 4)</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Viscosity">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@FormatDecimal(context.Item.Viscosity, 4)</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Open">
+                            <CellTemplate>
+                                <MudButton Variant="Variant.Text" Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.Visibility"
+                                           OnClick="@(() => OpenHistoryResult(context.Item))">
+                                    Open
+                                </MudButton>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            }
+            else if (!_isLoading)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.WaterDrop" Color="Color.Secondary" Class="og-icon-xl" />
+                    <MudText Typo="Typo.h6">No saved oil property results yet</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Save a calculated result to start building property history for this composition.</MudText>
+                </MudStack>
+            }
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private string _fieldName = string.Empty;
+    private string? _currentUserId;
+    private string _compositionLookupId = string.Empty;
+    private bool _isLoading = true;
+    private bool _isRunning;
+    private bool _isSaving;
+    private decimal _pressure = 2500m;
+    private decimal _temperature = 580m;
+    private OilComposition _composition = CreateComposition();
+    private OilPropertyResult? _currentResult;
+    private List<OilPropertyResult> _history = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            await LoadFieldContextAsync();
+            await LoadUserAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadFieldContextAsync()
+    {
+        try
+        {
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
+            if (summary != null)
+            {
+                _fieldName = summary.FieldName ?? _fieldName;
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private async Task LoadUserAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+    }
+
+    private async Task CalculateAsync()
+    {
+        _isRunning = true;
+        try
+        {
+            _currentResult = await CalculationService.CalculateOilPropertiesAsync(new CalculateOilPropertiesRequest
+            {
+                Composition = _composition,
+                Pressure = _pressure,
+                Temperature = _temperature
+            });
+
+            _currentResult.CompositionId = string.IsNullOrWhiteSpace(_currentResult.CompositionId)
+                ? _composition.CompositionId
+                : _currentResult.CompositionId;
+            Snackbar.Add("Oil properties calculated.", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error calculating oil properties.", Severity.Error);
+        }
+        finally
+        {
+            _isRunning = false;
+        }
+    }
+
+    private async Task SaveCompositionAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_composition.CompositionName))
+        {
+            Snackbar.Add("Enter a composition name before saving.", Severity.Warning);
+            return;
+        }
+
+        _composition.CompositionDate = _composition.CompositionDate == default ? DateTime.UtcNow : _composition.CompositionDate;
+
+        _isSaving = true;
+        try
+        {
+            var response = await CalculationService.SaveOilCompositionAsync(_composition, _currentUserId);
+            if (!string.IsNullOrWhiteSpace(response?.CompositionId))
+            {
+                _composition.CompositionId = response.CompositionId;
+                _compositionLookupId = response.CompositionId;
+            }
+
+            await ReloadHistoryAsync();
+            Snackbar.Add(response?.Message ?? "Oil composition saved.", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error saving oil composition.", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task LoadCompositionAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_compositionLookupId))
+        {
+            Snackbar.Add("Enter a composition ID to load.", Severity.Warning);
+            return;
+        }
+
+        _isLoading = true;
+        try
+        {
+            var composition = await CalculationService.GetOilCompositionAsync(_compositionLookupId);
+            if (composition == null)
+            {
+                Snackbar.Add("Oil composition not found.", Severity.Warning);
+                return;
+            }
+
+            _composition = composition;
+            _compositionLookupId = composition.CompositionId ?? string.Empty;
+            await ReloadHistoryAsync();
+            Snackbar.Add("Oil composition loaded.", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error loading oil composition.", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task SaveResultAsync()
+    {
+        if (_currentResult == null)
+        {
+            Snackbar.Add("Calculate oil properties before saving a result.", Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_composition.CompositionId))
+        {
+            Snackbar.Add("Save the composition first so the result can be linked to a composition ID.", Severity.Warning);
+            return;
+        }
+
+        _isSaving = true;
+        try
+        {
+            _currentResult.CompositionId = _composition.CompositionId;
+            _currentResult.CalculationDate = _currentResult.CalculationDate == default ? DateTime.UtcNow : _currentResult.CalculationDate;
+
+            var response = await CalculationService.SaveOilPropertyResultAsync(_currentResult, _currentUserId);
+            if (!string.IsNullOrWhiteSpace(response?.CalculationId))
+            {
+                _currentResult.CalculationId = response.CalculationId;
+            }
+
+            await ReloadHistoryAsync();
+            Snackbar.Add(response?.Message ?? "Oil property result saved.", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error saving oil property result.", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task ReloadHistoryAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_composition.CompositionId))
+        {
+            _history = new List<OilPropertyResult>();
+            return;
+        }
+
+        _history = await CalculationService.GetOilPropertyHistoryAsync(_composition.CompositionId);
+        _history = _history.OrderByDescending(result => result.CalculationDate).ToList();
+    }
+
+    private void OpenHistoryResult(OilPropertyResult result)
+    {
+        _currentResult = result;
+    }
+
+    private static OilComposition CreateComposition() => new()
+    {
+        CompositionId = string.Empty,
+        CompositionName = string.Empty,
+        CompositionDate = DateTime.UtcNow
+    };
+
+    private IReadOnlyList<CalculationKpiMetric> GetResultKpis()
+    {
+        if (_currentResult == null)
+            return Array.Empty<CalculationKpiMetric>();
+
+        return new CalculationKpiMetric[]
+        {
+            new() { Label = "Oil FVF", Value = FormatDecimal(_currentResult.FormationVolumeFactor, 4), Unit = "rb/stb", ValueColor = Color.Primary, Icon = Icons.Material.Filled.OpenInFull, TrendIcon = Icons.Material.Filled.TrendingUp, TrendColor = Color.Primary, TrendText = "Volumetric expansion" },
+            new() { Label = "Density", Value = FormatDecimal(_currentResult.Density, 4), Unit = "lb/ft3", ValueColor = Color.Warning, Icon = Icons.Material.Filled.Scale, TrendIcon = Icons.Material.Filled.Analytics, TrendColor = Color.Warning, TrendText = "In-situ density" },
+            new() { Label = "Viscosity", Value = FormatDecimal(_currentResult.Viscosity, 4), Unit = "cp", ValueColor = Color.Info, Icon = Icons.Material.Filled.WaterDrop, TrendIcon = Icons.Material.Filled.Speed, TrendColor = Color.Info, TrendText = "Mobility signal" },
+            new() { Label = "Compressibility", Value = FormatDecimal(_currentResult.Compressibility, 6), Unit = "1/psi", ValueColor = Color.Success, Icon = Icons.Material.Filled.TrackChanges, TrendIcon = Icons.Material.Filled.BubbleChart, TrendColor = Color.Success, TrendText = "Elastic response" }
+        };
+    }
+
+    private static string FormatDecimal(decimal value, int decimals = 2) => value.ToString($"N{decimals}");
+}

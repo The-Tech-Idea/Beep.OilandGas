@@ -1,0 +1,21 @@
+<MudPaper Elevation="@Elevation" Class="@PaperClass">
+    <MudGrid Spacing="@Spacing">
+        @foreach (var item in Items)
+        {
+            <MudItem xs="@Xs" sm="@Sm" md="@Md">
+                <MudText Typo="@TextTypo">@item.Label: @item.Value</MudText>
+            </MudItem>
+        }
+    </MudGrid>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired] public IEnumerable<CalculationFactItem> Items { get; set; } = Array.Empty<CalculationFactItem>();
+    [Parameter] public string PaperClass { get; set; } = "pa-4";
+    [Parameter] public int Elevation { get; set; }
+    [Parameter] public int Spacing { get; set; } = 2;
+    [Parameter] public int Xs { get; set; } = 12;
+    [Parameter] public int Sm { get; set; } = 6;
+    [Parameter] public int Md { get; set; } = 3;
+    [Parameter] public Typo TextTypo { get; set; } = Typo.body2;
+}

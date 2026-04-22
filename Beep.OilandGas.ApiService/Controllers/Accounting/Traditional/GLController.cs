@@ -76,7 +76,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             {
                 var account = _service.TraditionalAccounting.GeneralLedger.GetAccount(id);
                 if (account == null)
-                    return NotFound(new { error = $"GL account with ID {id} not found" });
+                        return NotFound(new { error = $"GL account with ID {id} not found." });
 
                 var dto = new GLAccount
                 {
@@ -216,7 +216,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             {
                 var entry = _service.TraditionalAccounting.JournalEntry.GetJournalEntry(id);
                 if (entry == null)
-                    return NotFound(new { error = $"Journal entry with ID {id} not found" });
+                        return NotFound(new { error = $"Journal entry with ID {id} not found." });
 
                 var lines = _service.TraditionalAccounting.JournalEntry.GetJournalEntryLines(id).ToList();
 

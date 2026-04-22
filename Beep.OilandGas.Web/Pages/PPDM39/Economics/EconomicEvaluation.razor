@@ -1,7 +1,12 @@
 ﻿@page "/economics/evaluation"
+@using System.Globalization
+@using Beep.OilandGas.Models.Data.Accounting
+@using Beep.OilandGas.Web.Services
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject ApiClient ApiClient
+@inject IAccountingServiceClient AccountingClient
+@inject IClientFileExportService ExportService
 
 <PageTitle>Run Economic Evaluation</PageTitle>
 
@@ -16,6 +21,18 @@
             <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — DCF &amp; sensitivity analysis</MudText>
         </MudStack>
         <MudStack Row="true" Spacing="2">
+            @if (!string.IsNullOrWhiteSpace(ReturnTo))
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                           StartIcon="@Icons.Material.Filled.ArrowBack"
+                           Href="@ReturnTo">
+                    Back
+                </MudButton>
+            }
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Download"
+                       OnClick="ExportEvaluationAsync">
+                Export
+            </MudButton>
             <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Refresh"
                        OnClick="RunEvaluation">
                 Recalculate
@@ -27,6 +44,41 @@
             </MudButton>
         </MudStack>
     </MudStack>
+
+    @if (IsEorHandoff)
+    {
+        <MudCard Elevation="2" Class="mb-4">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.subtitle1">Enhanced Recovery Handoff</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Pilot economics from the enhanced recovery screening workflow.</MudText>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    <MudChip T="string" Color="Color.Success" Variant="Variant.Filled">@(ScenarioName ?? "EOR Pilot")</MudChip>
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudGrid Spacing="3">
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">EOR Method</MudText>
+                        <MudText Typo="Typo.body1">@(string.IsNullOrWhiteSpace(EorMethod) ? "Not specified" : EorMethod)</MudText>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Incremental Oil</MudText>
+                        <MudText Typo="Typo.body1">@(PrefillIncrementalOilBbl?.ToString("N0", CultureInfo.InvariantCulture) ?? "—") bbl</MudText>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Pilot NPV</MudText>
+                        <MudText Typo="Typo.body1" Color="@(GetPilotNpvColor())">@(PrefillPilotNpvMm?.ToString("N1", CultureInfo.InvariantCulture) ?? "—") $MM</MudText>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Pilot IRR / P.I.</MudText>
+                        <MudText Typo="Typo.body1">@(PrefillPilotIrrPct?.ToString("N1", CultureInfo.InvariantCulture) ?? "—")% / @(PrefillProfitabilityIndex?.ToString("N2", CultureInfo.InvariantCulture) ?? "—")x</MudText>
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
+    }
 
     @* Assumptions panel *@
     <MudCard Elevation="2" Class="mb-4">
@@ -142,36 +194,27 @@
 
         @* Scenario comparison *@
         <MudItem xs="12" md="6">
-            <MudCard Elevation="2">
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.subtitle1">Scenario Comparison</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent Class="pa-0">
-                    <MudDataGrid T="ScenarioRow" Items="@_scenarios" Dense="true" Hover="true" Striped="true">
-                        <Columns>
-                            <PropertyColumn Property="sc => sc.Name" Title="Scenario" />
-                            <TemplateColumn Title="Oil Price">
-                                <CellTemplate><MudText Typo="Typo.body2">$@context.Item.OilPrice/bbl</MudText></CellTemplate>
-                            </TemplateColumn>
-                            <TemplateColumn Title="NPV10 ($MM)" SortBy="sc => sc.Npv10">
-                                <CellTemplate>
-                                    <MudText Color="@(context.Item.Npv10 > 0 ? Color.Success : Color.Error)">
-                                        <strong>@context.Item.Npv10.ToString("N0")</strong>
-                                    </MudText>
-                                </CellTemplate>
-                            </TemplateColumn>
-                            <TemplateColumn Title="IRR (%)">
-                                <CellTemplate><MudText Typo="Typo.body2">@context.Item.Irr.ToString("N1")%</MudText></CellTemplate>
-                            </TemplateColumn>
-                            <TemplateColumn Title="Go/No-Go">
-                                <CellTemplate><StatusBadge Status="@GetGoNoGoStatus(context.Item.Npv10)" /></CellTemplate>
-                            </TemplateColumn>
-                        </Columns>
-                    </MudDataGrid>
-                </MudCardContent>
-            </MudCard>
+            <ComparisonGridCard TItem="ScenarioRow" Items="@_scenarios" Title="Scenario Comparison">
+                <ColumnContent>
+                    <PropertyColumn T="ScenarioRow" TProperty="string" Property="sc => sc.Name" Title="Scenario" />
+                    <TemplateColumn T="ScenarioRow" Title="Oil Price">
+                        <CellTemplate><MudText Typo="Typo.body2">$@context.Item.OilPrice/bbl</MudText></CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn T="ScenarioRow" Title="NPV10 ($MM)" SortBy="sc => sc.Npv10">
+                        <CellTemplate>
+                            <MudText Color="@(context.Item.Npv10 > 0 ? Color.Success : Color.Error)">
+                                <strong>@context.Item.Npv10.ToString("N0")</strong>
+                            </MudText>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn T="ScenarioRow" Title="IRR (%)">
+                        <CellTemplate><MudText Typo="Typo.body2">@context.Item.Irr.ToString("N1")%</MudText></CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn T="ScenarioRow" Title="Go/No-Go">
+                        <CellTemplate><StatusBadge Status="@GetGoNoGoStatus(context.Item.Npv10)" /></CellTemplate>
+                    </TemplateColumn>
+                </ColumnContent>
+            </ComparisonGridCard>
         </MudItem>
 
         @* Cumulative NPV curve *@
@@ -199,6 +242,45 @@
 </MudContainer>
 
 @code {
+    [SupplyParameterFromQuery(Name = "sourceProcess")]
+    public string? SourceProcess { get; set; }
+
+    [SupplyParameterFromQuery(Name = "scenarioName")]
+    public string? ScenarioName { get; set; }
+
+    [SupplyParameterFromQuery(Name = "eorMethod")]
+    public string? EorMethod { get; set; }
+
+    [SupplyParameterFromQuery(Name = "oilPrice")]
+    public double? PrefillOilPrice { get; set; }
+
+    [SupplyParameterFromQuery(Name = "discountRate")]
+    public double? PrefillDiscountRate { get; set; }
+
+    [SupplyParameterFromQuery(Name = "opexBbl")]
+    public double? PrefillOpexBbl { get; set; }
+
+    [SupplyParameterFromQuery(Name = "capexMm")]
+    public double? PrefillCapexMm { get; set; }
+
+    [SupplyParameterFromQuery(Name = "incrementalOilBbl")]
+    public double? PrefillIncrementalOilBbl { get; set; }
+
+    [SupplyParameterFromQuery(Name = "pilotNpvMm")]
+    public double? PrefillPilotNpvMm { get; set; }
+
+    [SupplyParameterFromQuery(Name = "pilotIrrPct")]
+    public double? PrefillPilotIrrPct { get; set; }
+
+    [SupplyParameterFromQuery(Name = "profitabilityIndex")]
+    public double? PrefillProfitabilityIndex { get; set; }
+
+    [SupplyParameterFromQuery(Name = "paybackYears")]
+    public double? PrefillPaybackYears { get; set; }
+
+    [SupplyParameterFromQuery(Name = "returnTo")]
+    public string? ReturnTo { get; set; }
+
     private string _fieldName = string.Empty;
     private double _oilPrice = 75.0;
     private double _discountRate = 10.0;
@@ -215,6 +297,7 @@
     private double _irr;
     private double _paybackYears;
     private double _piRatio;
+    private string? _handoffPrefillKey;
 
     private List<ChartSeries<double>> _cashflowSeries = new();
     private string[] _cashflowYears = Array.Empty<string>();
@@ -244,6 +327,11 @@
         new("Stress",     40, 0, 0),
     };
 
+    private bool IsEorHandoff =>
+        string.Equals(SourceProcess, "ENHANCED_RECOVERY", StringComparison.OrdinalIgnoreCase)
+        || !string.IsNullOrWhiteSpace(EorMethod)
+        || !string.IsNullOrWhiteSpace(ScenarioName);
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -257,24 +345,22 @@
         _loading = true;
         try
         {
-            var summary = await ApiClient.GetAsync<AccountingSummaryDto>("api/field/current/accounting/production-summary");
+            var summary = await AccountingClient.GetProductionSummaryAsync();
             if (summary != null)
-                _grossRevenue = summary.GrossRevenue;
+                _grossRevenue = (double)summary.GrossRevenue;
         }
         catch (Exception)
         {
             Snackbar.Add("Failed to load revenue context.", Severity.Warning);
         }
         finally { _loading = false; }
+
+        ApplyHandoffPrefill();
     }
 
-    private class AccountingSummaryDto
+    protected override void OnParametersSet()
     {
-        public double GrossRevenue  { get; set; }
-        public double TotalOpex     { get; set; }
-        public double NetRevenue    { get; set; }
-        public double OpenInvoices  { get; set; }
-        public double OutstandingUsd { get; set; }
+        ApplyHandoffPrefill();
     }
 
     private class AnalyzeRequest
@@ -426,5 +512,94 @@
         }
     }
 
+    private async Task ExportEvaluationAsync()
+    {
+        var payload = new
+        {
+            ExportType = "EconomicEvaluationPackage",
+            ExportedAtUtc = DateTime.UtcNow,
+            FieldName = _fieldName,
+            WorkflowContext = IsEorHandoff
+                ? new
+                {
+                    SourceProcess,
+                    ScenarioName,
+                    EorMethod,
+                    IncrementalOilBbl = PrefillIncrementalOilBbl,
+                    PilotNpvMm = PrefillPilotNpvMm,
+                    PilotIrrPct = PrefillPilotIrrPct,
+                    ProfitabilityIndex = PrefillProfitabilityIndex,
+                    PaybackYears = PrefillPaybackYears,
+                    ReturnTo
+                }
+                : null,
+            Assumptions = new
+            {
+                OilPriceUsdPerBbl = _oilPrice,
+                DiscountRatePct = _discountRate,
+                OpexUsdPerBbl = _opexBbl,
+                RoyaltyPct = _royaltyPct,
+                TaxRatePct = _taxRatePct,
+                RemainingCapexMm = _capexMm,
+                GrossRevenueUsd = _grossRevenue
+            },
+            Summary = new
+            {
+                Npv10Mm = _npv10,
+                IrrPct = _irr,
+                PaybackYears = _paybackYears,
+                ProfitabilityIndex = _piRatio
+            },
+            Scenarios = _scenarios.Select(scenario => new
+            {
+                scenario.Name,
+                scenario.OilPrice,
+                scenario.Npv10,
+                scenario.Irr,
+                GoNoGo = GetGoNoGoStatus(scenario.Npv10)
+            }).ToList(),
+            Sensitivities = _sensitivities.Select(item => new
+            {
+                item.Driver,
+                item.Low,
+                item.High,
+                item.Range
+            }).ToList()
+        };
+
+        await ExportService.DownloadJsonAsync($"economic-evaluation-{DateTime.UtcNow:yyyyMMdd-HHmmss}", payload);
+        Snackbar.Add("Economic evaluation package exported.", Severity.Success);
+    }
+
     private static string GetGoNoGoStatus(double npv10) => npv10 > 0 ? "APPROVED" : "REJECTED";
+
+    private void ApplyHandoffPrefill()
+    {
+        var key = string.Join("|",
+            SourceProcess ?? string.Empty,
+            ScenarioName ?? string.Empty,
+            EorMethod ?? string.Empty,
+            PrefillOilPrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
+            PrefillDiscountRate?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
+            PrefillOpexBbl?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
+            PrefillCapexMm?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
+            ReturnTo ?? string.Empty);
+
+        if (string.Equals(_handoffPrefillKey, key, StringComparison.Ordinal))
+            return;
+
+        if (PrefillOilPrice.HasValue)
+            _oilPrice = PrefillOilPrice.Value;
+        if (PrefillDiscountRate.HasValue)
+            _discountRate = PrefillDiscountRate.Value;
+        if (PrefillOpexBbl.HasValue)
+            _opexBbl = PrefillOpexBbl.Value;
+        if (PrefillCapexMm.HasValue)
+            _capexMm = PrefillCapexMm.Value;
+
+        _handoffPrefillKey = key;
+    }
+
+    private Color GetPilotNpvColor()
+        => (PrefillPilotNpvMm ?? 0d) > 0d ? Color.Success : Color.Error;
 }

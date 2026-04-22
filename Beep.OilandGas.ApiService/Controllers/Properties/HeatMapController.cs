@@ -32,7 +32,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
             try
             {
                 if (request.Configuration == null)
-                    return BadRequest(new { error = "Configuration is required" });
+                        return BadRequest(new { error = "Configuration is required." });
                 var result = await _service.GenerateHeatMapAsync(request.DataPoints, request.Configuration);
                 return Ok(result);
             }
@@ -66,7 +66,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
             {
                 var result = await _service.GetHeatMapConfigurationAsync(heatMapId);
                 if (result == null)
-                    return NotFound(new { error = $"Heat map configuration {heatMapId} not found" });
+                        return NotFound(new { error = $"Heat map configuration {heatMapId} not found." });
                 return Ok(result);
             }
             catch (Exception ex)

@@ -115,7 +115,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             {
                 var result = await _service.GetAnalysisResultAsync(analysisId);
                 if (result == null)
-                    return NotFound(new { error = $"Analysis {analysisId} not found" });
+                        return NotFound(new { error = $"Analysis {analysisId} not found." });
                 return Ok(result);
             }
             catch (Exception ex)

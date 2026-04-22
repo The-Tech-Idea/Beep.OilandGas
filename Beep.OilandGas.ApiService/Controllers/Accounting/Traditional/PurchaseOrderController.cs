@@ -46,7 +46,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             {
                 var po = _service.TraditionalAccounting.PurchaseOrder.GetPurchaseOrder(id);
                 if (po == null)
-                    return NotFound(new { error = $"Purchase order with ID {id} not found" });
+                        return NotFound(new { error = $"Purchase order with ID {id} not found." });
 
                 return Ok(new
                 {

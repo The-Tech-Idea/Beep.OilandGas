@@ -1,6 +1,8 @@
 ﻿@page "/ppdm39/development/pools"
+@using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
+@inject IDevelopmentServiceClient DevelopmentServiceClient
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 
@@ -39,21 +41,21 @@
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Label="Active"
-                     Value="@((_pools?.Count(p => GetPropertyValue(p, "POOL_STATUS") == "ACTIVE") ?? 0).ToString())"
+                     Value="@((_pools?.Count(p => string.Equals(p.POOL_STATUS, "ACTIVE", StringComparison.OrdinalIgnoreCase)) ?? 0).ToString())"
                      ValueColor="Color.Success" Icon="@Icons.Material.Filled.CheckCircle"
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Success"
                      TrendText="Producing" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Label="In Design"
-                     Value="@((_pools?.Count(p => GetPropertyValue(p, "POOL_STATUS") == "DESIGN") ?? 0).ToString())"
+                     Value="@((_pools?.Count(p => string.Equals(p.POOL_STATUS, "DESIGN", StringComparison.OrdinalIgnoreCase)) ?? 0).ToString())"
                      ValueColor="Color.Warning" Icon="@Icons.Material.Filled.Architecture"
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Warning"
                      TrendText="Planning phase" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Label="Inactive"
-                     Value="@((_pools?.Count(p => GetPropertyValue(p, "POOL_STATUS") == "INACTIVE" || GetPropertyValue(p, "POOL_STATUS") == "ABANDONED") ?? 0).ToString())"
+                     Value="@((_pools?.Count(p => string.Equals(p.POOL_STATUS, "INACTIVE", StringComparison.OrdinalIgnoreCase) || string.Equals(p.POOL_STATUS, "ABANDONED", StringComparison.OrdinalIgnoreCase)) ?? 0).ToString())"
                      ValueColor="Color.Default" Icon="@Icons.Material.Filled.DoNotDisturb"
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
                      TrendText="Not active" />
@@ -70,24 +72,24 @@
                     <Columns>
                         <TemplateColumn Title="Pool ID">
                             <CellTemplate>
-                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "POOL_ID")</MudText>
+                                <MudText Typo="Typo.body2">@context.Item.POOL_ID</MudText>
                             </CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="Pool Name">
                             <CellTemplate>
                                 <MudText Typo="Typo.body2" Color="Color.Primary">
-                                    @GetPropertyValue(context.Item, "POOL_NAME")
+                                    @(context.Item.POOL_NAME ?? context.Item.POOL_ID ?? string.Empty)
                                 </MudText>
                             </CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="Type">
                             <CellTemplate>
-                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "POOL_TYPE")</MudText>
+                                <MudText Typo="Typo.body2">@context.Item.POOL_TYPE</MudText>
                             </CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="Status">
                             <CellTemplate>
-                                <StatusBadge Status="@GetPropertyValue(context.Item, "POOL_STATUS")" />
+                                <StatusBadge Status="@(context.Item.POOL_STATUS ?? string.Empty)" />
                             </CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="Actions" Sortable="false">
@@ -153,7 +155,8 @@
         _isLoading = true;
         try
         {
-            _pools = await ApiClient.GetAsync<List<POOL>>("/api/field/current/development/pools") ?? new();        }
+            _pools = await DevelopmentServiceClient.GetPoolsAsync();
+        }
         catch (Exception)
         {
             Snackbar.Add("Error loading pools.", Severity.Error);
@@ -175,9 +178,7 @@
         {
             try
             {
-                var created = await ApiClient.PostAsync<object, Dictionary<string, object>>(
-                    "/api/field/current/development/pools",
-                    poolData);
+                await DevelopmentServiceClient.CreatePoolAsync(ToPoolRequest(poolData));
                 
                 Snackbar.Add("Pool created successfully", Severity.Success);
                 await LoadPools();
@@ -189,9 +190,9 @@
         }
     }
 
-    private async Task OpenEditDialog(object pool)
+    private async Task OpenEditDialog(POOL pool)
     {
-        var poolId = GetPropertyValue(pool, "POOL_ID");
+        var poolId = pool.POOL_ID;
         if (string.IsNullOrEmpty(poolId))
             return;
 
@@ -204,9 +205,7 @@
         {
             try
             {
-                var updated = await ApiClient.PutAsync<object, Dictionary<string, object>>(
-                    $"/api/field/current/development/pools/{poolId}",
-                    poolData);
+                await DevelopmentServiceClient.UpdatePoolAsync(poolId, ToPoolRequest(poolData, pool));
                 
                 Snackbar.Add("Pool updated successfully", Severity.Success);
                 await LoadPools();
@@ -218,12 +217,23 @@
         }
     }
 
-    private string GetPropertyValue(object obj, string propertyName)
+    private static PoolRequest ToPoolRequest(Dictionary<string, object> poolData, POOL? existingPool = null)
     {
-        if (obj is IDictionary<string, object> dict && dict.ContainsKey(propertyName))
+        return new PoolRequest
         {
-            return dict[propertyName]?.ToString() ?? "N/A";
-        }
-        return "N/A";
+            PoolId = existingPool?.POOL_ID,
+            FieldId = existingPool?.FIELD_ID,
+            PoolName = GetDialogValue(poolData, "POOL_NAME"),
+            PoolType = GetDialogValue(poolData, "POOL_TYPE"),
+            Status = GetDialogValue(poolData, "POOL_STATUS"),
+            Description = GetDialogValue(poolData, "DESCRIPTION")
+        };
+    }
+
+    private static string GetDialogValue(Dictionary<string, object> values, string key)
+    {
+        return values.TryGetValue(key, out var value)
+            ? value?.ToString() ?? string.Empty
+            : string.Empty;
     }
 }

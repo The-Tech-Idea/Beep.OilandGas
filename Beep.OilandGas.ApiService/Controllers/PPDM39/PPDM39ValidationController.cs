@@ -38,13 +38,13 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             string tableName,
             [FromBody] ValidationRequest request)
         {
-            try
-            {
                 if (string.IsNullOrWhiteSpace(tableName))
-                    return BadRequest(new ValidationResult { IsValid = false, Errors = new List<ValidationError> { new ValidationError { ErrorMessage = "Table name is required." } } });
+                    return BadRequest(new { error = "Table name is required." });
+                try
+                {
                 if (request == null || request.EntityData == null)
                 {
-                    return BadRequest(new ValidationResult { IsValid = false, Errors = new List<ValidationError> { new ValidationError { ErrorMessage = "Entity data is required" } } });
+                        return BadRequest(new { error = "Entity data is required." });
                 }
 
                 _logger.LogInformation("Validating entity in table {TableName}", tableName);
@@ -81,10 +81,10 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             string tableName,
             [FromBody] BatchValidationRequest request)
         {
-            try
-            {
                 if (string.IsNullOrWhiteSpace(tableName))
-                    return BadRequest(new List<ValidationResult>());
+                    return BadRequest(new { error = "Table name is required." });
+                try
+                {
                 if (request == null || request.Entities == null || !request.Entities.Any())
                 {
                     return BadRequest(new List<ValidationResult>());
@@ -135,6 +135,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("{tableName}/rules")]
         public async Task<ActionResult<List<ValidationRule>>> GetValidationRules(string tableName)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required." });
             try
             {
                 _logger.LogInformation("Getting validation rules for table {TableName}", tableName);

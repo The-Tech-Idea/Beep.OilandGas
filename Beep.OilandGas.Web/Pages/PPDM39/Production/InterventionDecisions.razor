@@ -1,7 +1,9 @@
 ﻿@page "/production/intervention"
+@using Beep.OilandGas.Models.Data.WorkOrder
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject IProductionServiceClient ProductionService
 
 <PageTitle>Decide Well Interventions</PageTitle>
 
@@ -18,11 +20,21 @@
                 <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.Build">Production</MudChip>
             </MudStack>
         </MudStack>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                   StartIcon="@Icons.Material.Filled.Add"
-                   OnClick="OpenNewIntervention">
-            New Intervention
-        </MudButton>
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            @if (!string.IsNullOrWhiteSpace(ReturnTo))
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                           StartIcon="@Icons.Material.Filled.ArrowBack"
+                           Href="@ReturnTo">
+                    Back to Optimizer
+                </MudButton>
+            }
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="OpenNewIntervention">
+                New Intervention
+            </MudButton>
+        </MudStack>
     </MudStack>
 
     @* ── View: candidate list vs detail ─────────────────────────────────── *@
@@ -223,6 +235,45 @@
                     </MudCard>
 
                     @* Decision panel *@
+                    @if (!string.IsNullOrWhiteSpace(_selectedIntervention.WorkOrderId) || !string.IsNullOrWhiteSpace(_selectedIntervention.AfeNumber))
+                    {
+                        <MudCard Elevation="2">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.subtitle1">Linked Downstream Records</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <MudStack Spacing="2">
+                                    @if (!string.IsNullOrWhiteSpace(_selectedIntervention.WorkOrderId))
+                                    {
+                                        <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                                   StartIcon="@Icons.Material.Filled.BuildCircle"
+                                                   Href="@GetLinkedWorkOrderHref(_selectedIntervention.WorkOrderId)">
+                                            Open Work Order @_selectedIntervention.WorkOrderId
+                                        </MudButton>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(_selectedIntervention.AfeNumber))
+                                    {
+                                        <MudButton Variant="Variant.Outlined" Color="Color.Success"
+                                                   StartIcon="@Icons.Material.Filled.RequestQuote"
+                                                   Href="@GetLinkedAfeHref(_selectedIntervention.AfeNumber)">
+                                            Open AFE @_selectedIntervention.AfeNumber
+                                        </MudButton>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(_selectedIntervention.AbandonmentId))
+                                    {
+                                        <MudButton Variant="Variant.Outlined" Color="Color.Error"
+                                                   StartIcon="@Icons.Material.Filled.ArrowForward"
+                                                   Href="@GetLinkedDecommissioningHref(_selectedIntervention.WellId, _selectedIntervention.AbandonmentId, _selectedIntervention.ProcessInstanceId)">
+                                            Open P&amp;A Programme @_selectedIntervention.AbandonmentId
+                                        </MudButton>
+                                    }
+                                </MudStack>
+                            </MudCardContent>
+                        </MudCard>
+                    }
+
                     <MudCard Elevation="3">
                         <MudCardHeader>
                             <CardHeaderContent>
@@ -246,6 +297,23 @@
                                            OnClick="DeferIntervention">
                                     Defer — Monitor
                                 </MudButton>
+                                @if (string.IsNullOrWhiteSpace(_selectedIntervention.AbandonmentId))
+                                {
+                                    <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Error"
+                                               StartIcon="@Icons.Material.Filled.ArrowForward"
+                                               Disabled="@string.IsNullOrWhiteSpace(_decisionNote)"
+                                               OnClick="TransitionToDecommissioning">
+                                        Transition to P&amp;A
+                                    </MudButton>
+                                }
+                                else
+                                {
+                                    <MudButton FullWidth="true" Variant="Variant.Text" Color="Color.Error"
+                                               StartIcon="@Icons.Material.Filled.OpenInNew"
+                                               Href="@GetLinkedDecommissioningHref(_selectedIntervention.WellId, _selectedIntervention.AbandonmentId, _selectedIntervention.ProcessInstanceId)">
+                                        Open Existing P&amp;A Programme
+                                    </MudButton>
+                                }
                                 <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Error"
                                            StartIcon="@Icons.Material.Filled.Cancel"
                                            OnClick="RejectIntervention">
@@ -266,6 +334,9 @@
 @code {
     [SupplyParameterFromQuery(Name = "wellId")]
     public string? WellId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "returnTo")]
+    public string? ReturnTo { get; set; }
 
     private string _fieldName = string.Empty;
     private string _decisionNote = "";
@@ -291,12 +362,12 @@
         _isLoading = true;
         try
         {
-            var dtos = await ApiClient.GetAsync<List<InterventionCandidateApiDto>>(
-                "api/field/current/production/intervention-candidates");
+            var dtos = await ProductionService.GetInterventionCandidatesAsync();
             _candidates = (dtos ?? new())
                 .Select(d => new InterventionCandidate(
                     d.WellId, d.WellName, d.InterventionType, d.Problem,
-                    d.DeferredBopd, d.EstDaysSinceOnset, d.Priority, d.Status, d.EstCostUsd))
+                    d.DeferredBopd, d.EstDaysSinceOnset, d.Priority, d.Status, d.EstCostUsd,
+                    d.WorkOrderId, d.AfeId, d.AfeNumber, d.AbandonmentId, d.ProcessInstanceId))
                 .ToList();
             if (!string.IsNullOrWhiteSpace(WellId))
             {
@@ -333,7 +404,12 @@
             RecommendedAction:  $"Proceed with {c.InterventionType}",
             Scope:              $"{c.InterventionType} scope to be defined by well engineer",
             EstDurationDays:    7,
-            PayoutMonths:       2
+            PayoutMonths:       2,
+            WorkOrderId:        c.WorkOrderId,
+            AfeId:              c.AfeId,
+            AfeNumber:          c.AfeNumber,
+            AbandonmentId:      c.AbandonmentId,
+            ProcessInstanceId:  c.ProcessInstanceId
         );
         _decisionNote = "";
         _diagnostics = new();
@@ -341,11 +417,12 @@
         _wellRateLabels = Array.Empty<string>();
         try
         {
-            var perf = await ApiClient.GetAsync<WellPerformanceSummaryApiDto>(
-                $"api/field/current/production/wells/{Uri.EscapeDataString(c.WellId)}/performance");
+            var perf = await ProductionService.GetWellPerformanceAsync(c.WellId);
             if (perf?.WellTests != null)
             {
-                var latest = perf.WellTests.OrderByDescending(t => t.TestDate).FirstOrDefault();
+                var latest = perf.WellTests
+                    .OrderByDescending(t => t.TestDate ?? t.TestStartDate ?? t.TestEndDate ?? DateTime.MinValue)
+                    .FirstOrDefault();
                 if (latest != null)
                 {
                     _diagnostics.Add(new("Test Date",  latest.TestDate?.ToString("yyyy-MM-dd") ?? "N/A", false));
@@ -366,22 +443,107 @@
         _wellRateSeries = new();
     }
 
-    private void OpenNewIntervention() =>
-        Snackbar.Add("Open an intervention request via the work order system.", Severity.Info);
+    private void OpenNewIntervention()
+    {
+        var wellId = _selectedIntervention?.WellId ?? WellId;
+        var title = _selectedIntervention?.RecommendedAction ?? "Intervention follow-up";
+        var description = _selectedIntervention?.ProblemDescription ?? "Create an intervention work order for the selected well.";
+        var query = new List<string> { "openCreate=true", $"subType={Uri.EscapeDataString(WorkOrderSubType.Corrective)}" };
+
+        if (!string.IsNullOrWhiteSpace(wellId))
+            query.Add($"wellId={Uri.EscapeDataString(wellId)}");
+
+        if (!string.IsNullOrWhiteSpace(title))
+            query.Add($"title={Uri.EscapeDataString(title)}");
+
+        if (!string.IsNullOrWhiteSpace(description))
+            query.Add($"description={Uri.EscapeDataString(description)}");
+
+        if (!string.IsNullOrWhiteSpace(ReturnTo))
+            query.Add($"returnTo={Uri.EscapeDataString(ReturnTo)}");
+
+        NavigationManager.NavigateTo($"/ppdm39/workorder?{string.Join("&", query)}");
+    }
 
     private async Task ApproveIntervention()
     {
         if (_selectedIntervention == null) return;
         try
         {
-            await ApiClient.PostAsync<InterventionDecisionPayload, object>(
-                $"api/field/current/production/intervention-candidates/{Uri.EscapeDataString(_selectedIntervention.WellId)}/decision",
-                new InterventionDecisionPayload("Approved", _decisionNote));
-            Snackbar.Add($"Intervention approved for {_selectedIntervention.WellName} — work order created", Severity.Success);
+            var result = await ProductionService.RecordInterventionDecisionAsync(
+                _selectedIntervention.WellId,
+                new ProductionInterventionDecisionRequest
+                {
+                    Decision = "Approved",
+                    Note = _decisionNote,
+                    InterventionType = _selectedIntervention.InterventionType,
+                    Problem = _selectedIntervention.ProblemDescription,
+                    EstimatedCostUsd = _selectedIntervention.EstCostUsd,
+                    CreateWorkOrder = true,
+                    LinkAfe = true,
+                    WorkOrderId = _selectedIntervention.WorkOrderId,
+                    AfeId = _selectedIntervention.AfeId
+                });
+            if (!result.Success)
+            {
+                Snackbar.Add("Approval failed.", Severity.Error);
+                return;
+            }
+
+            Snackbar.Add(result.Message ?? $"Intervention approved for {_selectedIntervention.WellName}.", Severity.Success);
+
+            if (!string.IsNullOrWhiteSpace(result.WorkOrderId))
+            {
+                NavigationManager.NavigateTo($"/ppdm39/workorder/{Uri.EscapeDataString(result.WorkOrderId)}?returnTo={Uri.EscapeDataString(BuildInterventionReturnTo())}");
+                return;
+            }
+
             _selectedIntervention = null;
             await OnInitializedAsync();
         }
         catch (Exception) { Snackbar.Add("Approval failed.", Severity.Error); }
+    }
+
+    private async Task TransitionToDecommissioning()
+    {
+        if (_selectedIntervention == null) return;
+
+        try
+        {
+            var result = await ProductionService.TransitionToDecommissioningAsync(
+                _selectedIntervention.WellId,
+                new ProductionDecommissioningTriggerRequest
+                {
+                    Note = _decisionNote,
+                    InterventionType = _selectedIntervention.InterventionType,
+                    Problem = _selectedIntervention.ProblemDescription,
+                    EstimatedCostUsd = _selectedIntervention.EstCostUsd,
+                    AbandonmentType = "PERMANENTLY_ABANDONED",
+                    AbandonmentMethod = "CEMENT_PLUG",
+                    StartWorkflow = true
+                });
+
+            if (!result.Success || string.IsNullOrWhiteSpace(result.AbandonmentId))
+            {
+                Snackbar.Add("Decommissioning handoff failed.", Severity.Error);
+                return;
+            }
+
+            Snackbar.Add(
+                result.Message ?? $"Decommissioning handoff created for {_selectedIntervention.WellName}.",
+                result.WorkflowStarted || result.AlreadyExists ? Severity.Success : Severity.Warning);
+
+            NavigationManager.NavigateTo(
+                GetLinkedDecommissioningHref(
+                    _selectedIntervention.WellId,
+                    result.AbandonmentId,
+                    result.ProcessInstanceId,
+                    _decisionNote));
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Decommissioning handoff failed.", Severity.Error);
+        }
     }
 
     private async Task DeferIntervention()
@@ -389,9 +551,15 @@
         if (_selectedIntervention == null) return;
         try
         {
-            await ApiClient.PostAsync<InterventionDecisionPayload, object>(
-                $"api/field/current/production/intervention-candidates/{Uri.EscapeDataString(_selectedIntervention.WellId)}/decision",
-                new InterventionDecisionPayload("Deferred", _decisionNote));
+            var result = await ProductionService.RecordInterventionDecisionAsync(
+                _selectedIntervention.WellId,
+                new ProductionInterventionDecisionRequest { Decision = "Deferred", Note = _decisionNote });
+            if (!result.Success)
+            {
+                Snackbar.Add("Deferral failed.", Severity.Error);
+                return;
+            }
+
             Snackbar.Add($"Intervention deferred — monitoring {_selectedIntervention.WellName}", Severity.Warning);
             _selectedIntervention = null;
             await OnInitializedAsync();
@@ -404,9 +572,15 @@
         if (_selectedIntervention == null) return;
         try
         {
-            await ApiClient.PostAsync<InterventionDecisionPayload, object>(
-                $"api/field/current/production/intervention-candidates/{Uri.EscapeDataString(_selectedIntervention.WellId)}/decision",
-                new InterventionDecisionPayload("Rejected", _decisionNote));
+            var result = await ProductionService.RecordInterventionDecisionAsync(
+                _selectedIntervention.WellId,
+                new ProductionInterventionDecisionRequest { Decision = "Rejected", Note = _decisionNote });
+            if (!result.Success)
+            {
+                Snackbar.Add("Rejection failed.", Severity.Error);
+                return;
+            }
+
             Snackbar.Add($"Intervention closed for {_selectedIntervention.WellName}", Severity.Info);
             _selectedIntervention = null;
             await OnInitializedAsync();
@@ -430,41 +604,60 @@
     };
 
     private record InterventionCandidate(string WellId, string WellName, string InterventionType, string Problem,
-        double DeferredBopd, int EstDaysSinceOnset, string Priority, string Status, double EstCostUsd);
+        double DeferredBopd, int EstDaysSinceOnset, string Priority, string Status, double EstCostUsd,
+        string? WorkOrderId, string? AfeId, string? AfeNumber, string? AbandonmentId, string? ProcessInstanceId);
 
     private record InterventionDetail(string WellId, string WellName, string InterventionType, string Problem,
         string ProblemDescription, double DeferredBopd, int DaysDeferred, double EstCostUsd, string OnsetDate,
-        string RootCause, string RecommendedAction, string Scope, int EstDurationDays, int PayoutMonths);
+        string RootCause, string RecommendedAction, string Scope, int EstDurationDays, int PayoutMonths,
+        string? WorkOrderId, string? AfeId, string? AfeNumber, string? AbandonmentId, string? ProcessInstanceId);
 
     private record DiagnosticItem(string Parameter, string Value, bool IsAbnormal);
     private record HistoricalCase(string Well, string InterventionType, string Date, int UpliftBopd, int CostUsdK, string Outcome);
 
-    // API response DTOs (local to this page)
-    private class InterventionCandidateApiDto
+    private string GetLinkedWorkOrderHref(string workOrderId) =>
+        $"/ppdm39/workorder/{Uri.EscapeDataString(workOrderId)}?returnTo={Uri.EscapeDataString(BuildInterventionReturnTo())}";
+
+    private string GetLinkedAfeHref(string afeNumber)
     {
-        public string WellId           { get; set; } = string.Empty;
-        public string WellName         { get; set; } = string.Empty;
-        public string InterventionType { get; set; } = string.Empty;
-        public string Problem          { get; set; } = string.Empty;
-        public double DeferredBopd     { get; set; }
-        public int    EstDaysSinceOnset{ get; set; }
-        public string Priority         { get; set; } = "MEDIUM";
-        public string Status           { get; set; } = "REVIEW";
-        public double EstCostUsd       { get; set; }
+        var href = $"/economics/afe?afeNumber={Uri.EscapeDataString(afeNumber)}";
+        return href + $"&returnTo={Uri.EscapeDataString(BuildInterventionReturnTo())}";
     }
 
-    private class WellTestApiDto
+    private string GetLinkedDecommissioningHref(string wellId, string? abandonmentId, string? processInstanceId, string? handoffReason = null)
     {
-        public DateTime? TestDate { get; set; }
-        public string?   TestType { get; set; }
+        var query = new List<string>
+        {
+            $"wellId={Uri.EscapeDataString(wellId)}",
+            "sourceProcess=production-intervention",
+            $"returnTo={Uri.EscapeDataString(BuildInterventionReturnTo())}"
+        };
+
+        if (!string.IsNullOrWhiteSpace(abandonmentId))
+            query.Add($"abandonmentId={Uri.EscapeDataString(abandonmentId)}");
+
+        if (!string.IsNullOrWhiteSpace(processInstanceId))
+            query.Add($"processInstanceId={Uri.EscapeDataString(processInstanceId)}");
+
+        if (!string.IsNullOrWhiteSpace(handoffReason))
+            query.Add($"handoffReason={Uri.EscapeDataString(handoffReason)}");
+
+        return "/decommissioning/well-pa?" + string.Join("&", query);
     }
 
-    private class WellPerformanceSummaryApiDto
+    private string BuildInterventionReturnTo()
     {
-        public string              WellId    { get; set; } = string.Empty;
-        public string              Status    { get; set; } = string.Empty;
-        public List<WellTestApiDto> WellTests { get; set; } = new();
-    }
+        var query = new List<string>();
+        var wellId = _selectedIntervention?.WellId ?? WellId;
 
-    private record InterventionDecisionPayload(string Decision, string? Note);
+        if (!string.IsNullOrWhiteSpace(wellId))
+            query.Add($"wellId={Uri.EscapeDataString(wellId)}");
+
+        if (!string.IsNullOrWhiteSpace(ReturnTo))
+            query.Add($"returnTo={Uri.EscapeDataString(ReturnTo)}");
+
+        return query.Count == 0
+            ? "/production/intervention"
+            : "/production/intervention?" + string.Join("&", query);
+    }
 }

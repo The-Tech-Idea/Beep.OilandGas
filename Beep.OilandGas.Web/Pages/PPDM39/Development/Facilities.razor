@@ -1,6 +1,8 @@
 ﻿@page "/ppdm39/development/facilities"
+@using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
+@inject IDevelopmentServiceClient DevelopmentServiceClient
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 
@@ -39,21 +41,21 @@
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Label="Operational"
-                     Value="@((_facilities?.Count(f => GetPropertyValue(f, "FACILITY_STATUS") == "ACTIVE") ?? 0).ToString())"
+                     Value="@((_facilities?.Count(IsOperationalFacility) ?? 0).ToString())"
                      ValueColor="Color.Success" Icon="@Icons.Material.Filled.CheckCircle"
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Success"
                      TrendText="In service" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Label="Under Construction"
-                     Value="@((_facilities?.Count(f => GetPropertyValue(f, "FACILITY_STATUS") == "CONSTRUCTION" || GetPropertyValue(f, "FACILITY_STATUS") == "DESIGN") ?? 0).ToString())"
+                     Value="@((_facilities?.Count(IsFacilityUnderConstruction) ?? 0).ToString())"
                      ValueColor="Color.Warning" Icon="@Icons.Material.Filled.Construction"
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Warning"
                      TrendText="Being built" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Label="Decommissioned"
-                     Value="@((_facilities?.Count(f => GetPropertyValue(f, "FACILITY_STATUS") == "INACTIVE" || GetPropertyValue(f, "FACILITY_STATUS") == "DECOMMISSIONED" || GetPropertyValue(f, "FACILITY_STATUS") == "ABANDONED") ?? 0).ToString())"
+                     Value="@((_facilities?.Count(IsDecommissionedFacility) ?? 0).ToString())"
                      ValueColor="Color.Default" Icon="@Icons.Material.Filled.Archive"
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
                      TrendText="No longer active" />
@@ -70,24 +72,24 @@
                     <Columns>
                         <TemplateColumn Title="Facility ID">
                             <CellTemplate>
-                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "FACILITY_ID")</MudText>
+                                <MudText Typo="Typo.body2">@context.Item.FACILITY_ID</MudText>
                             </CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="Facility Name">
                             <CellTemplate>
                                 <MudText Typo="Typo.body2" Color="Color.Primary">
-                                    @GetPropertyValue(context.Item, "FACILITY_NAME")
+                                    @GetFacilityName(context.Item)
                                 </MudText>
                             </CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="Type">
                             <CellTemplate>
-                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "FACILITY_TYPE")</MudText>
+                                <MudText Typo="Typo.body2">@context.Item.FACILITY_TYPE</MudText>
                             </CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="Status">
                             <CellTemplate>
-                                <StatusBadge Status="@GetPropertyValue(context.Item, "FACILITY_STATUS")" />
+                                <StatusBadge Status="@GetFacilityStatus(context.Item)" />
                             </CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="Actions" Sortable="false">
@@ -153,7 +155,8 @@
         _isLoading = true;
         try
         {
-            _facilities = await ApiClient.GetAsync<List<FACILITY>>("/api/field/current/development/facilities") ?? new();        }
+            _facilities = await DevelopmentServiceClient.GetFacilitiesAsync();
+        }
         catch (Exception)
         {
             Snackbar.Add("Error loading facilities.", Severity.Error);
@@ -175,9 +178,7 @@
         {
             try
             {
-                var created = await ApiClient.PostAsync<object, Dictionary<string, object>>(
-                    "/api/field/current/development/facilities",
-                    facilityData);
+                await DevelopmentServiceClient.CreateFacilityAsync(ToFacilityRequest(facilityData));
                 
                 Snackbar.Add("Facility created successfully", Severity.Success);
                 await LoadFacilities();
@@ -197,10 +198,10 @@
         {
             { d => d.Facility, new Dictionary<string, object>
                 {
-                    { "FACILITY_NAME",   f.FACILITY_LONG_NAME ?? f.FACILITY_SHORT_NAME ?? string.Empty },
+                    { "FACILITY_NAME",   GetFacilityName(f) },
                     { "FACILITY_TYPE",   f.FACILITY_TYPE ?? string.Empty },
-                    { "FACILITY_STATUS", f.ACTIVE_IND == "Y" ? "OPERATIONAL" : "PLANNED" },
-                    { "DESCRIPTION",     string.Empty }
+                    { "FACILITY_STATUS", GetFacilityStatus(f) },
+                    { "DESCRIPTION",     f.DESCRIPTION ?? string.Empty }
                 }
             }
         };
@@ -213,8 +214,7 @@
         {
             try
             {
-                await ApiClient.PutAsync<Dictionary<string, object>, object>(
-                    $"/api/datamanagement/FACILITY/{f.FACILITY_ID}", updated);
+                await DevelopmentServiceClient.UpdateFacilityAsync(f.FACILITY_ID ?? string.Empty, ToFacilityRequest(updated, f));
                 Snackbar.Add("Facility updated.", Severity.Success);
                 await LoadFacilities();
             }
@@ -225,12 +225,60 @@
         }
     }
 
-    private string GetPropertyValue(object obj, string propertyName)
+    private static FacilityRequest ToFacilityRequest(Dictionary<string, object> facilityData, FACILITY? existingFacility = null)
     {
-        if (obj is IDictionary<string, object> dict && dict.ContainsKey(propertyName))
+        return new FacilityRequest
         {
-            return dict[propertyName]?.ToString() ?? "N/A";
+            FacilityId = existingFacility?.FACILITY_ID,
+            FieldId = existingFacility?.PRIMARY_FIELD_ID,
+            FacilityName = GetDialogValue(facilityData, "FACILITY_NAME"),
+            FacilityType = GetDialogValue(facilityData, "FACILITY_TYPE"),
+            Status = GetDialogValue(facilityData, "FACILITY_STATUS"),
+            Description = GetDialogValue(facilityData, "DESCRIPTION")
+        };
+    }
+
+    private static string GetDialogValue(Dictionary<string, object> values, string key)
+    {
+        return values.TryGetValue(key, out var value)
+            ? value?.ToString() ?? string.Empty
+            : string.Empty;
+    }
+
+    private static string GetFacilityName(FACILITY facility)
+    {
+        return facility.FACILITY_LONG_NAME ?? facility.FACILITY_SHORT_NAME ?? facility.FACILITY_ID ?? string.Empty;
+    }
+
+    private static string GetFacilityStatus(FACILITY facility)
+    {
+        if (!string.IsNullOrWhiteSpace(facility.REMARK))
+        {
+            return facility.REMARK;
         }
-        return "N/A";
+
+        return string.Equals(facility.ACTIVE_IND, "Y", StringComparison.OrdinalIgnoreCase)
+            ? "OPERATIONAL"
+            : "PLANNED";
+    }
+
+    private static bool IsOperationalFacility(FACILITY facility)
+    {
+        return string.Equals(GetFacilityStatus(facility), "OPERATIONAL", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsFacilityUnderConstruction(FACILITY facility)
+    {
+        var status = GetFacilityStatus(facility);
+        return string.Equals(status, "CONSTRUCTION", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(status, "DESIGN", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsDecommissionedFacility(FACILITY facility)
+    {
+        var status = GetFacilityStatus(facility);
+        return string.Equals(status, "INACTIVE", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(status, "DECOMMISSIONED", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(status, "ABANDONED", StringComparison.OrdinalIgnoreCase);
     }
 }

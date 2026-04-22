@@ -37,13 +37,15 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             [FromBody] VersioningRequest request,
             [FromQuery] string userId = "SYSTEM")
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                    return BadRequest(new { error = "Table name is required." });
+            if (string.IsNullOrWhiteSpace(entityId))
+                    return BadRequest(new { error = "Entity ID is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName) || string.IsNullOrWhiteSpace(entityId))
-                    return BadRequest(new VersioningResult { Success = false, ErrorMessage = "Table name and entity ID are required." });
                 if (request == null)
                 {
-                    return BadRequest(new VersioningResult { Success = false, ErrorMessage = "Request is required" });
+                        return BadRequest(new { error = "Request body is required." });
                 }
 
                 _logger.LogInformation("Creating version for entity {EntityId} in table {TableName}", entityId, tableName);
@@ -81,10 +83,12 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("{tableName}/{entityId}/versions")]
         public async Task<ActionResult> GetVersionHistory(string tableName, string entityId, [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required." });
+            if (string.IsNullOrWhiteSpace(entityId))
+                return BadRequest(new { error = "Entity ID is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName) || string.IsNullOrWhiteSpace(entityId))
-                    return BadRequest(new { error = "Table name and entity ID are required." });
                 _logger.LogInformation("Getting version history for entity {EntityId} in table {TableName}", entityId, tableName);
                 var versions = await _versioningService.GetVersionsAsync(tableName, entityId);
                 
@@ -112,16 +116,18 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("{tableName}/{entityId}/versions/{versionNumber}")]
         public async Task<ActionResult<VersionInfo>> GetVersion(string tableName, string entityId, int versionNumber, [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required." });
+            if (string.IsNullOrWhiteSpace(entityId))
+                return BadRequest(new { error = "Entity ID is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName) || string.IsNullOrWhiteSpace(entityId))
-                    return BadRequest(new { error = "Table name and entity ID are required." });
                 _logger.LogInformation("Getting version {VersionNumber} for entity {EntityId} in table {TableName}", versionNumber, entityId, tableName);
                 var version = await _versioningService.GetVersionAsync(tableName, entityId, versionNumber);
                 
                 if (version == null)
                 {
-                    return NotFound(new { error = "Version not found" });
+                    return NotFound(new { error = "Version not found." });
                 }
 
                 var versionInfo = new VersionInfo
@@ -152,13 +158,19 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             [FromBody] RestoreVersionRequest request,
             [FromQuery] string userId = "SYSTEM")
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                    return BadRequest(new { error = "Table name is required." });
+            if (string.IsNullOrWhiteSpace(entityId))
+                    return BadRequest(new { error = "Entity ID is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName) || string.IsNullOrWhiteSpace(entityId))
-                    return BadRequest(new VersioningResult { Success = false, ErrorMessage = "Table name and entity ID are required." });
-                if (request == null || string.IsNullOrEmpty(request.VersionId))
+                    if (request == null)
                 {
-                    return BadRequest(new VersioningResult { Success = false, ErrorMessage = "Version ID is required" });
+                        return BadRequest(new { error = "Request body is required." });
+                    }
+                    if (string.IsNullOrWhiteSpace(request.VersionId))
+                    {
+                        return BadRequest(new { error = "Version ID is required." });
                 }
 
                 _logger.LogInformation("Restoring entity {EntityId} in table {TableName} to version {VersionId}", entityId, tableName, request.VersionId);
@@ -217,8 +229,10 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             [FromBody] TableSnapshotRequest request,
             [FromQuery] string userId = "SYSTEM")
         {
-            if (request == null || string.IsNullOrWhiteSpace(request.TableName))
-                return BadRequest(new VersioningResult { Success = false, ErrorMessage = "TableName is required" });
+                if (request == null)
+                    return BadRequest(new { error = "Request body is required." });
+                if (string.IsNullOrWhiteSpace(request.TableName))
+                    return BadRequest(new { error = "Table name is required." });
             try
             {
                 var label = string.IsNullOrWhiteSpace(request.Label)
@@ -253,7 +267,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<List<SnapshotSummary>>> GetTableSnapshots([FromQuery] string table)
         {
             if (string.IsNullOrWhiteSpace(table))
-                return BadRequest(new { error = "table query parameter is required" });
+                    return BadRequest(new { error = "Table query parameter is required." });
             try
             {
                 var versions = await _versioningService.GetVersionsAsync(table, table);

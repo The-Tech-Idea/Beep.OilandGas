@@ -12,6 +12,10 @@ namespace Beep.OilandGas.ProductionOperations.Services
     {
         public string? WellUWI { get; set; }
         public DateTime? OperationDate { get; set; }
+        public string? OperationType { get; set; }
+        public string? Status { get; set; }
+        public string? AssignedTo { get; set; }
+        public string? Remarks { get; set; }
     }
 
     /// <summary>

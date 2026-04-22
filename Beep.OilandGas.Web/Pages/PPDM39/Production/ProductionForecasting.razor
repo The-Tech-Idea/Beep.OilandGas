@@ -1,6 +1,14 @@
 ﻿@page "/production/forecasting"
+@using Beep.OilandGas.Models.Data.Calculations
+@using Beep.OilandGas.Web.Services
 @inject ISnackbar Snackbar
 @inject ApiClient ApiClient
+@inject IClientFileExportService ExportService
+@using Beep.OilandGas.Models.Data.ProductionForecasting
+@inject ICalculationServiceClient CalculationService
+@inject IDevelopmentServiceClient DevelopmentService
+@inject IProductionServiceClient ProductionService
+@inject ILifeCycleService LifeCycleService
 
 <PageTitle>Production Forecasting</PageTitle>
 
@@ -148,29 +156,20 @@
             <MudStack Spacing="3">
 
                 @* Scenario comparison *@
-                <MudCard Elevation="2">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.subtitle1">Scenario Comparison</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent Class="pa-0">
-                        <MudDataGrid T="ScenarioRow" Items="@_scenarios" Dense="true" Hover="true" Striped="true">
-                            <Columns>
-                                <PropertyColumn Property="s => s.Name" Title="Scenario" />
-                                <TemplateColumn Title="EUR (MBBL)">
-                                    <CellTemplate><MudText Typo="Typo.body2">@context.Item.EurMbbl.ToString("N0")</MudText></CellTemplate>
-                                </TemplateColumn>
-                                <TemplateColumn Title="2Y Rate">
-                                    <CellTemplate><MudText Typo="Typo.body2">@context.Item.TwoYrRate.ToString("N0")</MudText></CellTemplate>
-                                </TemplateColumn>
-                                <TemplateColumn Title="NPV">
-                                    <CellTemplate><MudText Typo="Typo.body2">$@context.Item.NpvMm.ToString("N0")MM</MudText></CellTemplate>
-                                </TemplateColumn>
-                            </Columns>
-                        </MudDataGrid>
-                    </MudCardContent>
-                </MudCard>
+                <ComparisonGridCard TItem="ScenarioRow" Items="@_scenarios" Title="Scenario Comparison">
+                    <ColumnContent>
+                        <PropertyColumn T="ScenarioRow" TProperty="string" Property="s => s.Name" Title="Scenario" />
+                        <TemplateColumn T="ScenarioRow" Title="EUR (MBBL)">
+                            <CellTemplate><MudText Typo="Typo.body2">@context.Item.EurMbbl.ToString("N0")</MudText></CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn T="ScenarioRow" Title="2Y Rate">
+                            <CellTemplate><MudText Typo="Typo.body2">@context.Item.TwoYrRate.ToString("N0")</MudText></CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn T="ScenarioRow" Title="NPV">
+                            <CellTemplate><MudText Typo="Typo.body2">$@context.Item.NpvMm.ToString("N0")MM</MudText></CellTemplate>
+                        </TemplateColumn>
+                    </ColumnContent>
+                </ComparisonGridCard>
 
                 @* Reserves reconciliation *@
                 <MudCard Elevation="2">
@@ -225,12 +224,14 @@
 
 @code {
     private string _fieldName = string.Empty;
+    private string? _currentFieldId;
     private string _activeScenario = "Base";
     private string _declineType = "Hyperbolic";
     private double _di = 18;
     private double _bFactor = 0.5;
     private bool _loading = true;
     private bool _running;
+    private ProductionForecastResult? _latestForecast;
 
     private double _kpi1PEUR;
     private double _kpi2PEUR;
@@ -260,18 +261,43 @@
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
-            if (summary != null)
-                _fieldName = summary.FieldName ?? _fieldName;
+            var fieldInfo = await LifeCycleService.GetCurrentFieldAsync();
+            if (fieldInfo != null)
+            {
+                _currentFieldId = fieldInfo.FieldId;
+                _fieldName = fieldInfo.FieldName ?? _fieldName;
+            }
         }
         catch { /* field name is non-critical */ }
 
         _loading = true;
         try
         {
-            var wells = await ApiClient.GetAsync<List<WellDto>>("api/field/current/development/wells") ?? new();            if (wells != null)
-                _wellForecasts = wells.Select(w => new WellForecastRow(
-                    w.WellId ?? "Unknown", 0, 0, 0, 0, "—", "Pending")).ToList();
+            var wells = await DevelopmentService.GetWellsAsync();
+            var productionWells = await ProductionService.GetDashboardWellsAsync();
+            var productionWellLookup = productionWells
+                .Where(w => !string.IsNullOrWhiteSpace(w.WellId))
+                .GroupBy(w => w.WellId)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            _wellForecasts = wells
+                .Where(w => !string.IsNullOrWhiteSpace(w.UWI))
+                .Select(w =>
+                {
+                    var wellId = w.UWI ?? string.Empty;
+                    productionWellLookup.TryGetValue(wellId, out var productionWell);
+
+                    return new WellForecastRow(
+                        wellId,
+                        w.WELL_NAME ?? wellId,
+                        productionWell?.OilRate ?? 0,
+                        0,
+                        0,
+                        0,
+                        "—",
+                        productionWell == null ? "Pending" : "Seeded");
+                })
+                .ToList();
         }
         catch (Exception)
         {
@@ -280,52 +306,51 @@
         finally { _loading = false; }
     }
 
-    private class WellDto
-    {
-        public string? WellId  { get; set; }
-        public string? Status  { get; set; }
-    }
-
-    private class ForecastResultDto
-    {
-        public decimal EstimatedReserves { get; set; }
-        public List<ForecastPointDto>? ForecastPoints { get; set; }
-    }
-
-    private class ForecastPointDto
-    {
-        public DateTime Date    { get; set; }
-        public decimal? OilRate { get; set; }
-    }
-
     private async Task RunForecastAsync()
     {
         _running = true;
         try
         {
-            var req = new
-            {
-                WellUWI        = (string?)null,
-                FieldId        = "current",
-                ForecastMethod = _declineType == "Exponential" ? 0 : _declineType == "Hyperbolic" ? 1 : 2,
-                ForecastPeriod = 24
-            };
-            var result = await ApiClient.PostAsync<object, ForecastResultDto>("api/ProductionForecasting/generate", req);
-            if (result?.ForecastPoints?.Count > 0)
+            var result = await CalculationService.GenerateForecastAsync(null, _currentFieldId, _declineType, 24);
+            _latestForecast = result;
+
+            if (result.ForecastPoints.Count > 0)
             {
                 var pts = result.ForecastPoints;
                 _forecastLabels = pts.Select(p => p.Date.ToString("MMM''yy")).ToArray();
+                var baseRates = pts.Select(p => (double)(p.OilRate ?? 0m)).ToArray();
+                var highRates = baseRates.Select(rate => rate * 1.15d).ToArray();
+                var lowRates = baseRates.Select(rate => rate * 0.80d).ToArray();
+                var baseCum = pts.Select(p => (double)(p.CumulativeOil ?? 0m)).ToArray();
+                var highCum = baseCum.Select(volume => volume * 1.15d).ToArray();
+                var lowCum = baseCum.Select(volume => volume * 0.80d).ToArray();
+
                 _rateForecastSeries = new List<ChartSeries<double>>
                 {
+                    new ChartSeries<double> { Name = "High Case", Data = highRates },
                     new ChartSeries<double>
                     {
-                        Name = $"{_activeScenario} Case",
-                        Data = pts.Select(p => (double)(p.OilRate ?? 0m)).ToArray()
-                    }
+                        Name = "Base Case",
+                        Data = baseRates
+                    },
+                    new ChartSeries<double> { Name = "Low Case", Data = lowRates }
                 };
-                _kpiForecastRate = _rateForecastSeries[0].Data.FirstOrDefault();
+
+                _cumProductionSeries = new List<ChartSeries<double>>
+                {
+                    new ChartSeries<double> { Name = "High Case", Data = highCum },
+                    new ChartSeries<double> { Name = "Base Case", Data = baseCum },
+                    new ChartSeries<double> { Name = "Low Case", Data = lowCum }
+                };
+
+                _kpiForecastRate = baseRates.Length > 0 ? baseRates[Math.Min(23, baseRates.Length - 1)] : 0;
                 _kpi2PEUR        = (double)result.EstimatedReserves;
                 _kpi1PEUR        = _kpi2PEUR * 0.80; // 1P ≈ 80% of 2P (SPE-PRMS conservative estimate)
+                _kpiEconLimit    = result.EconomicLimit.HasValue ? $"{result.EconomicLimit.Value:N0} BOPD" : "—";
+
+                UpdateScenarioRows(result, baseRates, highRates, lowRates);
+                UpdateReconciliation(result, baseCum);
+                UpdateWellForecastRows(result, baseRates);
             }
             Snackbar.Add($"Forecast updated — {_declineType} decline, Di={_di}%/yr, b={_bFactor}", Severity.Success);
         }
@@ -333,36 +358,177 @@
         finally { _running = false; }
     }
 
-    private void RunForecast()    => _ = RunForecastAsync();
-    private void SaveForecast()   => _ = SaveForecastAsync();
-    private void ExportForecast() => Snackbar.Add("Export initiated — check Downloads", Severity.Info);
+    private void RunForecast()  => _ = RunForecastAsync();
+    private void SaveForecast() => _ = SaveForecastAsync();
+
+    private async Task ExportForecast()
+    {
+        var payload = new
+        {
+            ExportType = "ProductionForecastPackage",
+            ExportedAtUtc = DateTime.UtcNow,
+            FieldName = _fieldName,
+            Scenario = _activeScenario,
+            DeclineType = _declineType,
+            Parameters = new
+            {
+                InitialDeclinePct = _di,
+                BFactor = _bFactor
+            },
+            Summary = new
+            {
+                OnePEurMbbl = _kpi1PEUR,
+                TwoPEurMbbl = _kpi2PEUR,
+                ForecastRateTwoYearBopd = _kpiForecastRate,
+                EconomicLimit = _kpiEconLimit
+            },
+            Scenarios = _scenarios.Select(scenario => new
+            {
+                scenario.Name,
+                scenario.EurMbbl,
+                scenario.TwoYrRate,
+                scenario.NpvMm
+            }).ToList(),
+            Reconciliation = _reconciliation.Select(item => new
+            {
+                item.Label,
+                item.Value
+            }).ToList(),
+            WellForecasts = _wellForecasts.Select(forecast => new
+            {
+                forecast.WellName,
+                forecast.CurrentRate,
+                forecast.Rate1Yr,
+                forecast.Rate2Yr,
+                forecast.RemainingEur,
+                forecast.EconLimitYr,
+                forecast.DcaQuality
+            }).ToList()
+        };
+
+        await ExportService.DownloadJsonAsync($"production-forecast-{DateTime.UtcNow:yyyyMMdd-HHmmss}", payload);
+        Snackbar.Add("Forecast package exported.", Severity.Success);
+    }
 
     private async Task SaveForecastAsync()
     {
+        if (_latestForecast == null)
+        {
+            Snackbar.Add("Run a forecast before saving a revision.", Severity.Warning);
+            return;
+        }
+
         try
         {
-            var fieldInfo = await ApiClient.GetAsync<FieldRefDto>("/api/field/current");
-            var payload = new
+            var payload = new ProductionForecastResult
             {
-                ForecastId      = Guid.NewGuid().ToString(),
-                FieldId         = fieldInfo?.FieldId ?? "current",
-                DeclineType     = _declineType,
-                InitialDecline  = _di,
-                BFactor         = _bFactor,
-                ForecastPeriod  = 24,
-                Scenario        = _activeScenario,
+                ForecastId = string.IsNullOrWhiteSpace(_latestForecast.ForecastId) ? Guid.NewGuid().ToString() : _latestForecast.ForecastId,
+                FieldId = _currentFieldId,
+                ForecastDate = DateTime.UtcNow,
+                ForecastMethod = ParseForecastType(_declineType),
+                ForecastPoints = _latestForecast.ForecastPoints,
                 EstimatedReserves = (decimal)_kpi2PEUR,
-                CreatedDate     = DateTime.UtcNow
+                EconomicLimit = _latestForecast.EconomicLimit,
+                Status = _activeScenario,
+                Notes = $"Scenario={_activeScenario}; Di={_di:N1}; b={_bFactor:N2}"
             };
-            await ApiClient.PostAsync<object>("api/ProductionForecasting/forecast", payload);
-            Snackbar.Add("Forecast revision saved.", Severity.Success);
+            var saved = await CalculationService.SaveForecastAsync(payload);
+            Snackbar.Add(saved ? "Forecast revision saved." : "Save failed.", saved ? Severity.Success : Severity.Error);
         }
         catch (Exception) { Snackbar.Add("Save failed.", Severity.Error); }
+    }
+
+    private void UpdateScenarioRows(ProductionForecastResult result, double[] baseRates, double[] highRates, double[] lowRates)
+    {
+        var baseTwoYearRate = baseRates.Length > 0 ? baseRates[Math.Min(23, baseRates.Length - 1)] : 0;
+        var highTwoYearRate = highRates.Length > 0 ? highRates[Math.Min(23, highRates.Length - 1)] : 0;
+        var lowTwoYearRate = lowRates.Length > 0 ? lowRates[Math.Min(23, lowRates.Length - 1)] : 0;
+        var baseEur = (double)result.EstimatedReserves;
+
+        _scenarios = new List<ScenarioRow>
+        {
+            new("High", baseEur * 1.15d, highTwoYearRate, 0),
+            new("Base", baseEur, baseTwoYearRate, 0),
+            new("Low", baseEur * 0.80d, lowTwoYearRate, 0),
+        };
+    }
+
+    private void UpdateReconciliation(ProductionForecastResult result, double[] cumulativeOil)
+    {
+        var closing2P = (double)result.EstimatedReserves;
+        var opening2P = closing2P;
+        var productionYtd = cumulativeOil.Length > 0 ? cumulativeOil[Math.Min(11, cumulativeOil.Length - 1)] / 1000d : 0;
+
+        _reconciliation = new List<ReconItem>
+        {
+            new("Opening 2P", opening2P),
+            new("Production YTD", -productionYtd),
+            new("Closing 2P", Math.Max(closing2P - productionYtd, 0)),
+        };
+    }
+
+    private void UpdateWellForecastRows(ProductionForecastResult result, double[] baseRates)
+    {
+        if (_wellForecasts.Count == 0)
+        {
+            return;
+        }
+
+        var totalCurrentRate = _wellForecasts.Sum(row => row.CurrentRate);
+        var rateAtOneYear = baseRates.Length > 0 ? baseRates[Math.Min(11, baseRates.Length - 1)] : 0;
+        var rateAtTwoYears = baseRates.Length > 0 ? baseRates[Math.Min(23, baseRates.Length - 1)] : 0;
+        var dcaQuality = GetDcaQuality(result.RSquared);
+
+        _wellForecasts = _wellForecasts
+            .Select(row =>
+            {
+                var share = totalCurrentRate > 0 ? row.CurrentRate / totalCurrentRate : 0;
+                var remainingEur = (double)result.EstimatedReserves * share;
+                var econLimitYear = result.EconomicLimit.HasValue && rateAtTwoYears > (double)result.EconomicLimit.Value
+                    ? ">2"
+                    : "2";
+
+                return row with
+                {
+                    Rate1Yr = rateAtOneYear * share,
+                    Rate2Yr = rateAtTwoYears * share,
+                    RemainingEur = remainingEur,
+                    EconLimitYr = econLimitYear,
+                    DcaQuality = dcaQuality
+                };
+            })
+            .ToList();
+    }
+
+    private static string GetDcaQuality(decimal? rSquared)
+    {
+        if (!rSquared.HasValue)
+        {
+            return "Pending";
+        }
+
+        return rSquared.Value switch
+        {
+            >= 0.85m => "Good",
+            >= 0.65m => "Fair",
+            _ => "Review"
+        };
+    }
+
+    private static ForecastType ParseForecastType(string declineType)
+    {
+        return declineType.Trim().ToUpperInvariant() switch
+        {
+            "EXPONENTIAL" => ForecastType.Exponential,
+            "HARMONIC" => ForecastType.Harmonic,
+            "HYPERBOLIC" => ForecastType.Hyperbolic,
+            _ => ForecastType.Decline
+        };
     }
 
     private record FieldRefDto(string FieldId, string FieldName);
 
     private record ScenarioRow(string Name, double EurMbbl, double TwoYrRate, double NpvMm);
     private record ReconItem(string Label, double Value);
-    private record WellForecastRow(string WellName, double CurrentRate, double Rate1Yr, double Rate2Yr, double RemainingEur, string EconLimitYr, string DcaQuality);
+    private record WellForecastRow(string WellId, string WellName, double CurrentRate, double Rate1Yr, double Rate2Yr, double RemainingEur, string EconLimitYr, string DcaQuality);
 }

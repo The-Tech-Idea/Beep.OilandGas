@@ -1,7 +1,8 @@
 ﻿@page "/ppdm39/production/well-tests"
-@using Beep.OilandGas.PPDM39.Models
+@using Beep.OilandGas.Models.Data
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
+@inject IProductionServiceClient ProductionService
 
 <PageTitle>Analyse Well Test Results</PageTitle>
 
@@ -64,21 +65,21 @@
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
                 <KpiCard Label="Avg Oil (bbl/d)"
-                         Value="@((_wellTests?.Average(t => (double)t.OIL_FLOW_AMOUNT)).GetValueOrDefault().ToString("F0"))"
+                         Value="@AverageOilRate.ToString("F0")"
                          ValueColor="Color.Success" Icon="@Icons.Material.Filled.OilBarrel"
                          TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
                          TrendText="Mean oil rate" />
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
                 <KpiCard Label="Avg Gas (Mscf/d)"
-                         Value="@((_wellTests?.Average(t => (double)t.GAS_FLOW_AMOUNT)).GetValueOrDefault().ToString("F0"))"
+                         Value="@AverageGasRate.ToString("F0")"
                          ValueColor="Color.Info" Icon="@Icons.Material.Filled.LocalGasStation"
                          TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
                          TrendText="Mean gas rate" />
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
                 <KpiCard Label="Avg Water Cut (%)"
-                         Value="@((_wellTests?.Average(t => (double)t.BSW_PERCENT)).GetValueOrDefault().ToString("F1"))"
+                         Value="@AverageWaterCut.ToString("F1")"
                          ValueColor="Color.Warning" Icon="@Icons.Material.Filled.Water"
                          TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
                          TrendText="Mean BSW" />
@@ -88,37 +89,41 @@
         @* ── Tests Grid ────────────────────────────────────────────────── *@
         <MudCard Elevation="2">
             <MudCardContent Class="pa-0">
-                <MudDataGrid T="WELL_TEST" Items="@_wellTests" Dense="true" Hover="true" Striped="true"
+                <MudDataGrid T="WellTestResponse" Items="@_wellTests" Dense="true" Hover="true" Striped="true"
                              SortMode="SortMode.Multiple" Filterable="true">
                     <Columns>
-                        <PropertyColumn Property="t => t.UWI" Title="Well UWI" />
-                        <PropertyColumn Property="t => t.TEST_TYPE" Title="Test Type" />
+                        <PropertyColumn Property="t => t.Uwi" Title="Well UWI" />
+                        <PropertyColumn Property="t => t.TestType" Title="Test Type" />
                         <TemplateColumn Title="Test Date">
                             <CellTemplate>
                                 <MudText Typo="Typo.body2">
-                                    @(context.Item.TEST_DATE?.ToString("dd MMM yyyy") ?? "—")
+                                    @((context.Item.TestDate ?? context.Item.TestStartDate ?? context.Item.TestEndDate)?.ToString("dd MMM yyyy") ?? "—")
                                 </MudText>
                             </CellTemplate>
                         </TemplateColumn>
-                        <PropertyColumn Property="t => t.RUN_NUM" Title="Run No." />
+                        <TemplateColumn Title="Run No.">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@(context.Item.RunNum?.ToString("F0") ?? "—")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
                         <TemplateColumn Title="Oil (bbl/d)">
                             <CellTemplate>
-                                <MudText Typo="Typo.body2">@context.Item.OIL_FLOW_AMOUNT.ToString("F1")</MudText>
+                                <MudText Typo="Typo.body2">@FormatDecimal(context.Item.OilFlowAmount)</MudText>
                             </CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="Gas (Mscf/d)">
                             <CellTemplate>
-                                <MudText Typo="Typo.body2">@context.Item.GAS_FLOW_AMOUNT.ToString("F1")</MudText>
+                                <MudText Typo="Typo.body2">@FormatDecimal(context.Item.GasFlowAmount)</MudText>
                             </CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="Water (bbl/d)">
                             <CellTemplate>
-                                <MudText Typo="Typo.body2">@context.Item.WATER_FLOW_AMOUNT.ToString("F1")</MudText>
+                                <MudText Typo="Typo.body2">@FormatDecimal(context.Item.WaterFlowAmount)</MudText>
                             </CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="BSW (%)">
                             <CellTemplate>
-                                <MudText Typo="Typo.body2">@context.Item.BSW_PERCENT.ToString("F1")</MudText>
+                                <MudText Typo="Typo.body2">@GetWaterCutPercent(context.Item).ToString("F1")</MudText>
                             </CellTemplate>
                         </TemplateColumn>
                     </Columns>
@@ -158,10 +163,13 @@
 
 @code {
     private string _fieldName = string.Empty;
-    private List<WELL_TEST>? _wellTests;
+    private List<WellTestResponse>? _wellTests;
     private bool _isLoading = false;
     private string? _wellIdFilter;
     private string? _selectedWellId;
+    private decimal AverageOilRate => _wellTests == null || _wellTests.Count == 0 ? 0 : _wellTests.Average(t => t.OilFlowAmount ?? 0m);
+    private decimal AverageGasRate => _wellTests == null || _wellTests.Count == 0 ? 0 : _wellTests.Average(t => t.GasFlowAmount ?? 0m);
+    private decimal AverageWaterCut => _wellTests == null || _wellTests.Count == 0 ? 0 : _wellTests.Average(GetWaterCutPercent);
 
     protected override async Task OnInitializedAsync()
     {
@@ -172,8 +180,6 @@
                 _fieldName = summary.FieldName ?? _fieldName;
         }
         catch { /* field name is non-critical */ }
-
-        await LoadWellTests();
     }
 
     private async Task LoadWellTests()
@@ -184,11 +190,12 @@
             return;
         }
 
-        _selectedWellId = _wellIdFilter;
+        _selectedWellId = _wellIdFilter.Trim();
         _isLoading = true;
         try
         {
-            _wellTests = await ApiClient.GetAsync<List<WELL_TEST>>($"/api/production/field/wells/{Uri.EscapeDataString(_selectedWellId!)}/tests") ?? new();            if (_wellTests == null || !_wellTests.Any())
+            _wellTests = await ProductionService.GetWellTestsAsync(_selectedWellId!);
+            if (_wellTests == null || !_wellTests.Any())
             {
                 Snackbar.Add($"No well tests found for well {_selectedWellId}", Severity.Info);
             }
@@ -196,7 +203,7 @@
         catch (Exception)
         {
             Snackbar.Add("Error loading well tests.", Severity.Error);
-            _wellTests = new List<WELL_TEST>();
+            _wellTests = new List<WellTestResponse>();
         }
         finally
         {
@@ -204,34 +211,13 @@
         }
     }
 
-    private string GetPropertyValue(object obj, string propertyName)
+    private static decimal GetWaterCutPercent(WellTestResponse test)
     {
-        if (obj is IDictionary<string, object> dict && dict.ContainsKey(propertyName))
-        {
-            return dict[propertyName]?.ToString() ?? "N/A";
-        }
-        return "N/A";
+        return test.BswPercent ?? test.WaterCutPercent ?? 0m;
     }
 
-    private string FormatDate(string? dateStr)
+    private static string FormatDecimal(decimal? value)
     {
-        if (string.IsNullOrEmpty(dateStr) || dateStr == "N/A")
-            return "N/A";
-
-        if (DateTime.TryParse(dateStr, out var date))
-            return date.ToString("yyyy-MM-dd");
-
-        return dateStr;
-    }
-
-    private string FormatDecimal(string? valueStr)
-    {
-        if (string.IsNullOrEmpty(valueStr) || valueStr == "N/A")
-            return "N/A";
-
-        if (decimal.TryParse(valueStr, out var value))
-            return value.ToString("F2");
-
-        return valueStr;
+        return value?.ToString("F1") ?? "—";
     }
 }

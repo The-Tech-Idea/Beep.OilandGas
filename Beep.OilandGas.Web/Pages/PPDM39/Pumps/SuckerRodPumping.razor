@@ -3,10 +3,14 @@
 @using Beep.OilandGas.Models.Data.Pumps
 @using Beep.OilandGas.Models.Core.Interfaces
 @using Beep.OilandGas.Client.App
+@using Beep.OilandGas.PPDM39.Models
 @inject ISnackbar Snackbar
 @inject IPumpServiceClient PumpService
 @inject ApiClient ApiClient
+@inject IDevelopmentServiceClient DevelopmentClient
+@inject ILifeCycleService LifeCycleService
 @inject AuthenticationStateProvider AuthStateProvider
+
 <PageTitle>Design Sucker Rod Pump System</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
@@ -73,15 +77,49 @@
                 <MudText Typo="Typo.h6" Class="mb-4">Performance Results</MudText>
                 <MudStack Spacing="2">
                     <MudText>Flow Rate: @_performance.FlowRate.ToString("F2") BBL/D</MudText>
-                    <MudText>Efficiency: @_performance.Efficiency.ToString("F2")%</MudText>
+                    <MudText>Efficiency: @FormatEfficiency(_performance.Efficiency)</MudText>
                     <MudText>Power Consumption: @_performance.PowerConsumption.ToString("F2") HP</MudText>
                 </MudStack>
             </MudPaper>
         }
     </MudPaper>
+
+    @if (_pumpDesign != null || _performance != null)
+    {
+        <LiftRecommendationCard Title="Lift Workflow Recommendation"
+                                Subtitle="SRP candidate review"
+                                Icon="@Icons.Material.Filled.SettingsInputComponent"
+                                IconColor="Color.Warning"
+                                Headline="@GetLiftRecommendationHeadline()"
+                                Summary="@GetLiftRecommendationSummary()"
+                                ImpactText="@GetLiftRecommendationImpactText()"
+                                Severity="@GetLiftRecommendationSeverity()"
+                                Facts="@GetLiftRecommendationFacts()"
+                                Class="mt-4">
+            <Actions>
+                <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.AutoGraph"
+                           Href="@GetWellPerformanceUrl()">
+                    Open Well Performance Optimizer
+                </MudButton>
+                @if (_performance == null && !string.IsNullOrWhiteSpace(_pumpId))
+                {
+                    <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Secondary"
+                               StartIcon="@Icons.Material.Filled.Tune"
+                               OnClick="AnalyzePerformance"
+                               Disabled="@_isAnalyzing">
+                        Run Performance Validation
+                    </MudButton>
+                }
+            </Actions>
+        </LiftRecommendationCard>
+    }
 </MudContainer>
 
 @code {
+    [SupplyParameterFromQuery(Name = "wellId")]
+    public string? WellId { get; set; }
+
     private string _fieldName = string.Empty;
     private string _wellUWI = string.Empty;
     private decimal _wellDepth = 5000;
@@ -112,7 +150,7 @@
         {
             try
             {
-                var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+                var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
                 if (summary != null)
                     _fieldName = summary.FieldName ?? _fieldName;
             }
@@ -123,11 +161,13 @@
                 var authState = await AuthStateProvider.GetAuthenticationStateAsync();
                 _currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
 
-                var wells = await ApiClient.GetAsync<List<WellDto>>("api/field/current/development/wells") ?? new();                if (wells != null && wells.Count > 0)
+                var wells = (await DevelopmentClient.GetWellsAsync()).Select(MapWell).ToList();
+                if (wells.Count > 0)
                 {
-                    _fieldName = wells[0].ASSIGNED_FIELD ?? _fieldName;
-                    _wellUWI = wells[0].UWI;
-                    _wellDepth = wells[0].FINAL_TD ?? _wellDepth;
+                    var selectedWell = wells.Find(well => string.Equals(well.UWI, WellId, StringComparison.OrdinalIgnoreCase)) ?? wells[0];
+                    _fieldName = selectedWell.ASSIGNED_FIELD ?? _fieldName;
+                    _wellUWI = selectedWell.UWI;
+                    _wellDepth = selectedWell.FINAL_TD ?? _wellDepth;
                 }
             }
             catch (Exception)
@@ -139,6 +179,17 @@
         {
             _isLoading = false;
         }
+    }
+
+    private static WellDto MapWell(WELL well)
+    {
+        return new WellDto
+        {
+            UWI = well.UWI,
+            WELL_NAME = well.WELL_NAME,
+            FINAL_TD = well.FINAL_TD,
+            ASSIGNED_FIELD = well.ASSIGNED_FIELD
+        };
     }
 
     private async Task DesignPump()
@@ -160,6 +211,7 @@
             };
 
             _pumpDesign = await PumpService.DesignSuckerRodPumpSystemAsync(_wellUWI, wellProperties);
+            _pumpId = _pumpDesign.DesignId;
             Snackbar.Add("Pump design completed", Severity.Success);
         }
         catch (Exception)
@@ -216,6 +268,92 @@
         {
             _isAnalyzing = false;
         }
+    }
+
+    private Severity GetLiftRecommendationSeverity()
+    {
+        if (_performance != null)
+        {
+            var efficiency = NormalizeEfficiency(_performance.Efficiency);
+            return efficiency >= 70m && _performance.FlowRate >= (_desiredFlowRate * 0.9m) ? Severity.Success : Severity.Warning;
+        }
+
+        return Severity.Info;
+    }
+
+    private string GetLiftRecommendationHeadline()
+    {
+        if (_performance != null)
+        {
+            var efficiency = NormalizeEfficiency(_performance.Efficiency);
+            return efficiency >= 70m && _performance.FlowRate >= (_desiredFlowRate * 0.9m)
+                ? "Advance sucker-rod candidate for production review"
+                : "Tune sucker-rod settings before intervention review";
+        }
+
+        return "Validate sucker-rod design against live well underperformance";
+    }
+
+    private string GetLiftRecommendationSummary()
+    {
+        if (_performance != null)
+        {
+            return $"Performance validation indicates {_performance.FlowRate.ToString("N1")} BBL/D at {FormatEfficiency(_performance.Efficiency)} with {_performance.PowerConsumption.ToString("N1")} HP draw and {_performance.RodLoadPercentage.ToString("N1")}% rod load.";
+        }
+
+        if (_pumpDesign != null)
+        {
+            return $"SRP design is sized for approximately {_pumpDesign.EstimatedCapacity.ToString("N1")} BBL/D using {_pumpDesign.StrokeLength.ToString("N1")} in stroke length at {_pumpDesign.StrokesPerMinute.ToString("N1")} SPM. Run performance validation before field action.";
+        }
+
+        return "Generate a sucker-rod design to start the lift recommendation flow.";
+    }
+
+    private string GetLiftRecommendationImpactText()
+    {
+        return "Workflow handoff: compare this SRP candidate against current production deviation before intervention or work-order planning.";
+    }
+
+    private IReadOnlyList<RecommendationFactItem> GetLiftRecommendationFacts()
+    {
+        if (_performance != null)
+        {
+            return new RecommendationFactItem[]
+            {
+                new() { Label = "Validated Flow", Value = $"{_performance.FlowRate.ToString("N1")} BBL/D", ValueColor = Color.Success },
+                new() { Label = "Efficiency", Value = FormatEfficiency(_performance.Efficiency), ValueColor = Color.Warning },
+                new() { Label = "Rod Load", Value = $"{_performance.RodLoadPercentage.ToString("N1")}%", ValueColor = Color.Info }
+            };
+        }
+
+        if (_pumpDesign != null)
+        {
+            return new RecommendationFactItem[]
+            {
+                new() { Label = "Estimated Capacity", Value = $"{_pumpDesign.EstimatedCapacity.ToString("N1")} BBL/D", ValueColor = Color.Success },
+                new() { Label = "Stroke Program", Value = $"{_pumpDesign.StrokeLength.ToString("N1")} in / {_pumpDesign.StrokesPerMinute.ToString("N1")} SPM", ValueColor = Color.Primary },
+                new() { Label = "Power Requirement", Value = $"{_pumpDesign.PowerRequirement.ToString("N1")} HP", ValueColor = Color.Warning }
+            };
+        }
+
+        return Array.Empty<RecommendationFactItem>();
+    }
+
+    private string GetWellPerformanceUrl()
+    {
+        return string.IsNullOrWhiteSpace(_wellUWI)
+            ? "/production/well-performance"
+            : $"/production/well-performance?wellId={Uri.EscapeDataString(_wellUWI)}";
+    }
+
+    private static decimal NormalizeEfficiency(decimal value)
+    {
+        return value <= 1.5m ? value * 100m : value;
+    }
+
+    private static string FormatEfficiency(decimal value)
+    {
+        return NormalizeEfficiency(value).ToString("N1") + "%";
     }
 }
 

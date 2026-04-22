@@ -1,0 +1,352 @@
+@page "/ppdm39/calculations/gas-properties"
+@page "/analysis/gas-properties"
+@using System.Security.Claims
+@using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.GasProperties
+@inject ApiClient ApiClient
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ICalculationServiceClient CalculationService
+@inject ILifeCycleService LifeCycleService
+@inject ISnackbar Snackbar
+
+<PageTitle>Analyze Gas Properties</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Analyze Gas Properties</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName - Dry and rich gas PVT checks from saved or ad hoc compositions</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.Air">Fluid Properties</MudChip>
+                <MudChip T="string" Size="Size.Small" Color="@GetFractionColor(_compositionTotal)">Total @FormatDecimal(_compositionTotal, 3)</MudChip>
+            </MudStack>
+        </MudStack>
+    </MudStack>
+
+    <MudGrid Spacing="3" Class="mb-4">
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="2" Class="h-100">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Gas State</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="_composition.CompositionName" Label="Composition Name" Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="_compositionLookupId" Label="Lookup Composition ID" Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudNumericField T="decimal" @bind-Value="_pressure" Label="Pressure (psia)" Variant="Variant.Outlined" Min="0" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudNumericField T="decimal" @bind-Value="_temperature" Label="Temperature (Rankine)" Variant="Variant.Outlined" Min="0" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudNumericField T="decimal" @bind-Value="_composition.SpecificGravity" Label="Specific Gravity" Variant="Variant.Outlined" Min="0" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudNumericField T="decimal" @bind-Value="_composition.MolecularWeight" Label="Molecular Weight" Variant="Variant.Outlined" Min="0" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Use mole fractions that sum to 1.000. Saved compositions now round-trip through component records correctly.</MudText>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.PlayArrow"
+                                   OnClick="AnalyzeAsync"
+                                   Disabled="@(_isRunning || _isSaving)">
+                            Analyze Properties
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Save"
+                                   OnClick="SaveCompositionAsync"
+                                   Disabled="@(_isRunning || _isSaving)">
+                            Save Composition
+                        </MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Default"
+                                   StartIcon="@Icons.Material.Filled.Download"
+                                   OnClick="LoadCompositionAsync"
+                                   Disabled="@(_isRunning || _isSaving || string.IsNullOrWhiteSpace(_compositionLookupId))">
+                            Load Composition
+                        </MudButton>
+                    </MudStack>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="8">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Gas Composition</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12" sm="6" md="3"><MudNumericField T="decimal" @bind-Value="_composition.MethaneFraction" Label="Methane" Variant="Variant.Outlined" Min="0" Max="1" /></MudItem>
+                        <MudItem xs="12" sm="6" md="3"><MudNumericField T="decimal" @bind-Value="_composition.EthaneFraction" Label="Ethane" Variant="Variant.Outlined" Min="0" Max="1" /></MudItem>
+                        <MudItem xs="12" sm="6" md="3"><MudNumericField T="decimal" @bind-Value="_composition.PropaneFraction" Label="Propane" Variant="Variant.Outlined" Min="0" Max="1" /></MudItem>
+                        <MudItem xs="12" sm="6" md="3"><MudNumericField T="decimal" @bind-Value="_composition.IButaneFraction" Label="i-Butane" Variant="Variant.Outlined" Min="0" Max="1" /></MudItem>
+
+                        <MudItem xs="12" sm="6" md="3"><MudNumericField T="decimal" @bind-Value="_composition.NButaneFraction" Label="n-Butane" Variant="Variant.Outlined" Min="0" Max="1" /></MudItem>
+                        <MudItem xs="12" sm="6" md="3"><MudNumericField T="decimal" @bind-Value="_composition.IPentaneFraction" Label="i-Pentane" Variant="Variant.Outlined" Min="0" Max="1" /></MudItem>
+                        <MudItem xs="12" sm="6" md="3"><MudNumericField T="decimal" @bind-Value="_composition.NPentaneFraction" Label="n-Pentane" Variant="Variant.Outlined" Min="0" Max="1" /></MudItem>
+                        <MudItem xs="12" sm="6" md="3"><MudNumericField T="decimal" @bind-Value="_composition.HexanePlusFraction" Label="C6+" Variant="Variant.Outlined" Min="0" Max="1" /></MudItem>
+
+                        <MudItem xs="12" sm="4" md="4"><MudNumericField T="decimal" @bind-Value="_composition.NitrogenFraction" Label="Nitrogen" Variant="Variant.Outlined" Min="0" Max="1" /></MudItem>
+                        <MudItem xs="12" sm="4" md="4"><MudNumericField T="decimal" @bind-Value="_composition.CarbonDioxideFraction" Label="CO2" Variant="Variant.Outlined" Min="0" Max="1" /></MudItem>
+                        <MudItem xs="12" sm="4" md="4"><MudNumericField T="decimal" @bind-Value="_composition.HydrogenSulfideFraction" Label="H2S" Variant="Variant.Outlined" Min="0" Max="1" /></MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    @if (_gasProperties != null)
+    {
+        <CalculationKpiSection Metrics="@GetResultKpis()" Class="mb-4" />
+
+        <MudCard Elevation="2">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.subtitle1">Calculated Gas State</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6" md="3"><MudText Typo="Typo.body2">Composition ID: @(_composition.CompositionId ?? "N/A")</MudText></MudItem>
+                    <MudItem xs="12" sm="6" md="3"><MudText Typo="Typo.body2">Pressure: @FormatDecimal(_pressure, 2) psia</MudText></MudItem>
+                    <MudItem xs="12" sm="6" md="3"><MudText Typo="Typo.body2">Temperature: @FormatDecimal(_temperature, 2) R</MudText></MudItem>
+                    <MudItem xs="12" sm="6" md="3"><MudText Typo="Typo.body2">Composition Date: @_composition.CompositionDate.ToString("dd MMM yyyy")</MudText></MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
+    }
+</MudContainer>
+
+@code {
+    private string _fieldName = string.Empty;
+    private string? _currentUserId;
+    private string _compositionLookupId = string.Empty;
+    private bool _isLoading = true;
+    private bool _isRunning;
+    private bool _isSaving;
+    private decimal _pressure = 1500m;
+    private decimal _temperature = 580m;
+    private GasComposition _composition = CreateComposition();
+    private GAS_PROPERTIES? _gasProperties;
+
+    private decimal _compositionTotal =>
+        _composition.MethaneFraction +
+        _composition.EthaneFraction +
+        _composition.PropaneFraction +
+        _composition.IButaneFraction +
+        _composition.NButaneFraction +
+        _composition.IPentaneFraction +
+        _composition.NPentaneFraction +
+        _composition.HexanePlusFraction +
+        _composition.NitrogenFraction +
+        _composition.CarbonDioxideFraction +
+        _composition.HydrogenSulfideFraction;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            await LoadFieldContextAsync();
+            await LoadUserAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadFieldContextAsync()
+    {
+        try
+        {
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
+            if (summary != null)
+            {
+                _fieldName = summary.FieldName ?? _fieldName;
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private async Task LoadUserAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+    }
+
+    private async Task AnalyzeAsync()
+    {
+        if (!PrepareComposition(requireName: false))
+        {
+            return;
+        }
+
+        _isRunning = true;
+        try
+        {
+            _gasProperties = await CalculationService.AnalyzeGasPropertiesAsync(_composition, _pressure, _temperature);
+            Snackbar.Add("Gas properties calculated.", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error calculating gas properties.", Severity.Error);
+        }
+        finally
+        {
+            _isRunning = false;
+        }
+    }
+
+    private async Task SaveCompositionAsync()
+    {
+        if (!PrepareComposition(requireName: true))
+        {
+            return;
+        }
+
+        _isSaving = true;
+        try
+        {
+            var response = await CalculationService.SaveGasCompositionAsync(_composition, _currentUserId);
+            if (!string.IsNullOrWhiteSpace(response?.CompositionId))
+            {
+                _composition.CompositionId = response.CompositionId;
+                _compositionLookupId = response.CompositionId;
+            }
+
+            Snackbar.Add(response?.Message ?? "Gas composition saved.", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error saving gas composition.", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task LoadCompositionAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_compositionLookupId))
+        {
+            Snackbar.Add("Enter a composition ID to load.", Severity.Warning);
+            return;
+        }
+
+        _isLoading = true;
+        try
+        {
+            var loadedComposition = await CalculationService.GetGasCompositionAsync(_compositionLookupId);
+            if (loadedComposition == null)
+            {
+                Snackbar.Add("Gas composition not found.", Severity.Warning);
+                return;
+            }
+
+            _composition = loadedComposition;
+            _compositionLookupId = loadedComposition.CompositionId ?? string.Empty;
+            Snackbar.Add("Gas composition loaded.", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error loading gas composition.", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private bool PrepareComposition(bool requireName)
+    {
+        if (requireName && string.IsNullOrWhiteSpace(_composition.CompositionName))
+        {
+            Snackbar.Add("Enter a composition name before saving.", Severity.Warning);
+            return false;
+        }
+
+        if (Math.Abs(_compositionTotal - 1m) > 0.01m)
+        {
+            Snackbar.Add("Gas component mole fractions must sum to 1.000 within tolerance.", Severity.Warning);
+            return false;
+        }
+
+        _composition.CompositionDate = _composition.CompositionDate == default ? DateTime.UtcNow : _composition.CompositionDate;
+        _composition.TotalMoleFraction = _compositionTotal;
+        _composition.Components = BuildGasComponents();
+        return true;
+    }
+
+    private List<GasComponent> BuildGasComponents() => new List<GasComponent>
+    {
+        CreateGasComponent("Methane", _composition.MethaneFraction),
+        CreateGasComponent("Ethane", _composition.EthaneFraction),
+        CreateGasComponent("Propane", _composition.PropaneFraction),
+        CreateGasComponent("i-Butane", _composition.IButaneFraction),
+        CreateGasComponent("n-Butane", _composition.NButaneFraction),
+        CreateGasComponent("i-Pentane", _composition.IPentaneFraction),
+        CreateGasComponent("n-Pentane", _composition.NPentaneFraction),
+        CreateGasComponent("C6+", _composition.HexanePlusFraction),
+        CreateGasComponent("Nitrogen", _composition.NitrogenFraction),
+        CreateGasComponent("Carbon Dioxide", _composition.CarbonDioxideFraction),
+        CreateGasComponent("Hydrogen Sulfide", _composition.HydrogenSulfideFraction)
+    }.Where(component => component.MoleFraction > 0).ToList();
+
+    private static GasComponent CreateGasComponent(string name, decimal moleFraction) => new GasComponent
+    {
+        Name = name,
+        ComponentName = name,
+        MoleFraction = moleFraction
+    };
+
+    private static GasComposition CreateComposition() => new GasComposition
+    {
+        CompositionId = string.Empty,
+        CompositionName = string.Empty,
+        CompositionDate = DateTime.UtcNow
+    };
+
+    private IReadOnlyList<CalculationKpiMetric> GetResultKpis()
+    {
+        if (_gasProperties == null)
+            return Array.Empty<CalculationKpiMetric>();
+
+        return new CalculationKpiMetric[]
+        {
+            new() { Label = "Z-Factor", Value = FormatNullableDecimal(_gasProperties.Z_FACTOR, 4), ValueColor = Color.Info, Icon = Icons.Material.Filled.BubbleChart, TrendIcon = Icons.Material.Filled.Analytics, TrendColor = Color.Info, TrendText = "Compressibility" },
+            new() { Label = "Density", Value = FormatNullableDecimal(_gasProperties.DENSITY, 4), Unit = "lb/ft3", ValueColor = Color.Primary, Icon = Icons.Material.Filled.Scale, TrendIcon = Icons.Material.Filled.Straighten, TrendColor = Color.Primary, TrendText = "In-situ density" },
+            new() { Label = "Gas FVF", Value = FormatNullableDecimal(_gasProperties.GAS_FVF, 5), Unit = "ft3/scf", ValueColor = Color.Success, Icon = Icons.Material.Filled.OpenInFull, TrendIcon = Icons.Material.Filled.TrendingUp, TrendColor = Color.Success, TrendText = "Expansion factor" },
+            new() { Label = "Specific Gravity", Value = FormatNullableDecimal(_gasProperties.SPECIFIC_GRAVITY, 3), ValueColor = Color.Warning, Icon = Icons.Material.Filled.Air, TrendIcon = Icons.Material.Filled.Speed, TrendColor = Color.Warning, TrendText = "Feed gas basis" }
+        };
+    }
+
+    private static string FormatDecimal(decimal value, int decimals = 2) => value.ToString($"N{decimals}");
+
+    private static string FormatNullableDecimal(decimal? value, int decimals = 2) => value.HasValue ? value.Value.ToString($"N{decimals}") : "N/A";
+
+    private static Color GetFractionColor(decimal total) => Math.Abs(total - 1m) <= 0.01m ? Color.Success : Color.Warning;
+}

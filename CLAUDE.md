@@ -65,6 +65,7 @@ builder.Services.AddScoped<WellServices>(sp =>
 Before making any code change:
 
 - [ ] Read `Beep.OilandGas.ApiService/Program.cs` lines 1-120 to confirm DI order (AddBeepServices must come before services that consume IDMEEditor).
+- [ ] If touching `Beep.OilandGas.Web` UI, read `Beep.OilandGas.Web/MudBlazor_Docs/README.md` and the relevant local MudBlazor component docs before editing `.razor`, layout, theme, navigation, dialogs, steppers, tabs, or data grids.
 - [ ] Confirm all new interfaces live in `Beep.OilandGas.Models.Core.Interfaces`.
 - [ ] Verify service registration uses factory pattern: `AddScoped<IFoo>(sp => new Foo(sp.GetRequiredService<...>(), ...))`.
 - [ ] If touching data access, use the PPDMGenericRepository pattern shown in `.cursor/commands/beep-dataaccess-generic-repository.md`.
@@ -161,6 +162,13 @@ Always use `typeof(X)` + `.OfType<X>()` for these — never use `GetType().GetPr
 - `.cursor/commands/best-practices.md` - FASB compliance, revenue recognition, accounting patterns
 
 ## Web Layer Patterns (Critical)
+
+### MudBlazor UI Prerequisite
+
+- Before changing Blazor UI structure or component markup, start with `Beep.OilandGas.Web/MudBlazor_Docs/README.md`.
+- For shell/layout work, read `Layouts.txt`, `Theme.txt`, `Services.txt`, `AppBar.txt`, `Drawer.txt`, and `PopOver.txt` first.
+- For shared widgets and workbenches, read the matching local docs such as `DataGrid.txt`, `Dialog.txt`, `Tabs.txt`, `Stepper.txt`, `Grid.txt`, `NavMenu.txt`, and `Button.txt` before editing.
+- Do not guess MudBlazor parameter names when a local doc exists.
 
 **ApiClient**:
 ```csharp

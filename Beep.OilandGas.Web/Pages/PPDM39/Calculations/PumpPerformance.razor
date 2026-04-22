@@ -1,0 +1,723 @@
+@page "/ppdm39/calculations/pump-performance"
+@page "/analysis/pump-performance"
+@using System.Linq
+@using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.PumpPerformance
+@using Beep.OilandGas.PPDM39.Models
+@inject ApiClient ApiClient
+@inject ICalculationServiceClient CalculationService
+@inject IDevelopmentServiceClient DevelopmentClient
+@inject ILifeCycleService LifeCycleService
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Run Pump Performance Analysis</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Run Pump Performance Analysis</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName - ESP design and artificial-lift sizing with live well context</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Icon="@Icons.Material.Filled.ElectricBolt">Artificial Lift</MudChip>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info">ESP Workbench</MudChip>
+                <MudChip T="string" Size="Size.Small" Color="Color.Default">@GetSelectedWellLabel()</MudChip>
+            </MudStack>
+        </MudStack>
+    </MudStack>
+
+    <MudPaper Class="pa-4 mb-4" Elevation="1">
+        <MudGrid Spacing="3">
+            <MudItem xs="12" md="4">
+                <MudSelect T="string" Label="Well" Variant="Variant.Outlined"
+                           Value="@_selectedWellId" ValueChanged="OnWellChanged">
+                    @foreach (var well in _wells)
+                    {
+                        <MudSelectItem Value="@well.UWI">@well.DisplayName</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="4">
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-4">
+                    Depth values are prefilled from the selected well record when available. Fluid assumptions remain editable for engineering review.
+                </MudText>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="4">
+                <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                               StartIcon="@Icons.Material.Filled.Sync"
+                               OnClick="LoadSelectedWellContextAsync"
+                               Disabled="@(_isRunning || string.IsNullOrWhiteSpace(_selectedWellId))">
+                        Refresh Well Context
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.PlayArrow"
+                               OnClick="RunDesignAsync"
+                               Disabled="@(_isRunning || string.IsNullOrWhiteSpace(_selectedWellId))">
+                        Run ESP Design
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                               StartIcon="@Icons.Material.Filled.AutoFixHigh"
+                               OnClick="OptimizeDesignAsync"
+                               Disabled="@(_isRunning || string.IsNullOrWhiteSpace(_selectedWellId))">
+                        Optimize
+                    </MudButton>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudGrid Spacing="3" Class="mb-4">
+        <MudItem xs="12" md="7">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">ESP Design Inputs</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_request.DESIRED_FLOW_RATE" Label="Desired Flow Rate (bbl/day)" Variant="Variant.Outlined" Min="1" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_request.WELL_DEPTH" Label="Well Depth (ft)" Variant="Variant.Outlined" Min="100" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_request.PUMP_SETTING_DEPTH" Label="Pump Setting Depth (ft)" Variant="Variant.Outlined" Min="100" /></MudItem>
+
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_request.CASING_DIAMETER" Label="Casing Diameter (in)" Variant="Variant.Outlined" Min="1" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_request.TUBING_DIAMETER" Label="Tubing Diameter (in)" Variant="Variant.Outlined" Min="1" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_request.TOTAL_DYNAMIC_HEAD" Label="Total Dynamic Head (ft)" Variant="Variant.Outlined" Min="100" /></MudItem>
+
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_request.OIL_GRAVITY" Label="Oil Gravity (API)" Variant="Variant.Outlined" Min="1" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_request.WATER_CUT" Label="Water Cut (0-1)" Variant="Variant.Outlined" Min="0" Max="1" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_request.GAS_OIL_RATIO" Label="Gas-Oil Ratio (scf/bbl)" Variant="Variant.Outlined" Min="0" /></MudItem>
+
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_request.WELLHEAD_PRESSURE" Label="Wellhead Pressure (psia)" Variant="Variant.Outlined" Min="1" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_request.BOTTOM_HOLE_TEMPERATURE" Label="Bottomhole Temperature (R)" Variant="Variant.Outlined" Min="400" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_request.GAS_SPECIFIC_GRAVITY" Label="Gas Specific Gravity" Variant="Variant.Outlined" Min="0.1m" Max="2.0m" /></MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="5">
+            <MudCard Elevation="2" Class="h-100">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Well Context</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (_selectedWell != null)
+                    {
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">UWI: @_selectedWell.UWI</MudText></MudItem>
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">Name: @(_selectedWell.WELL_NAME ?? "N/A")</MudText></MudItem>
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">Base Depth: @FormatNullableDecimal(_selectedWell.BASE_DEPTH, 0)</MudText></MudItem>
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">Final TD: @FormatNullableDecimal(_selectedWell.FINAL_TD, 0)</MudText></MudItem>
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">Drill TD: @FormatNullableDecimal(_selectedWell.DRILL_TD, 0)</MudText></MudItem>
+                            <MudItem xs="12" sm="6"><MudText Typo="Typo.body2">Field: @(_selectedWell.ASSIGNED_FIELD ?? _fieldName)</MudText></MudItem>
+                        </MudGrid>
+                    }
+                    else
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.ElectricBolt" Color="Color.Secondary" Class="og-icon-xl" />
+                            <MudText Typo="Typo.h6">No well selected</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Select a well to prefill the ESP design inputs with current field context.</MudText>
+                        </MudStack>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(_resultMode))
+                    {
+                        <OptimizationDeltaSummary ActionLabel="@_resultMode"
+                                                  SummaryText="@GetOptimizationSummaryText()"
+                                                  Items="@GetOptimizationDeltaItems()"
+                                                  EmptyText="Run Optimize after the baseline design to compare the ESP recommendation against an improved lift configuration."
+                                                  Severity="@GetOptimizationSummarySeverity()"
+                                                  Class="mt-3" />
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    @if (_currentResult != null)
+    {
+        <CalculationKpiSection Metrics="@GetResultKpis()" Class="mb-4" />
+
+        <LiftRecommendationCard Title="Lift Workflow Recommendation"
+                                Subtitle="Artificial lift decision support"
+                                Icon="@Icons.Material.Filled.ElectricBolt"
+                                IconColor="Color.Warning"
+                                Headline="@GetLiftRecommendationHeadline()"
+                                Summary="@GetLiftRecommendationSummary()"
+                                ImpactText="@GetLiftRecommendationImpactText()"
+                                Severity="@GetOptimizationSummarySeverity()"
+                                Facts="@GetLiftRecommendationFacts()"
+                                Class="mb-4">
+            <Actions>
+                <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.AutoGraph"
+                           Href="@GetWellPerformanceUrl()">
+                    Open Well Performance Optimizer
+                </MudButton>
+                @if (_optimizedResult == null)
+                {
+                    <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Secondary"
+                               StartIcon="@Icons.Material.Filled.AutoFixHigh"
+                               OnClick="OptimizeDesignAsync"
+                               Disabled="@_isRunning">
+                        Run Optimization Compare
+                    </MudButton>
+                }
+            </Actions>
+        </LiftRecommendationCard>
+
+        <CalculationResultTabs SummaryItems="@GetSummaryFacts()">
+            <AdditionalTabs>
+            <MudTabPanel Text="Performance Curve" Icon="@Icons.Material.Filled.MultilineChart">
+                <MudPaper Elevation="0" Class="pa-0">
+                    @if (_currentResult.PERFORMANCE_POINTS != null && _currentResult.PERFORMANCE_POINTS.Count > 0)
+                    {
+                        <MudDataGrid T="ESP_PUMP_POINT" Items="@_currentResult.PERFORMANCE_POINTS.OrderBy(point => point.POINT_ORDER)" Dense="true" Hover="true" ReadOnly="true">
+                            <Columns>
+                                <TemplateColumn Title="Point">
+                                    <CellTemplate>
+                                        <MudText Typo="Typo.body2">@(context.Item.POINT_ORDER?.ToString() ?? "-")</MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Flow Rate (bbl/day)">
+                                    <CellTemplate>
+                                        <MudText Typo="Typo.body2">@FormatDecimal(context.Item.FLOW_RATE, 1)</MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Head (ft)">
+                                    <CellTemplate>
+                                        <MudText Typo="Typo.body2">@FormatDecimal(context.Item.HEAD, 1)</MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Efficiency">
+                                    <CellTemplate>
+                                        <MudText Typo="Typo.body2">@FormatPercent(context.Item.EFFICIENCY)</MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Horsepower">
+                                    <CellTemplate>
+                                        <MudText Typo="Typo.body2">@FormatDecimal(context.Item.HORSEPOWER, 1)</MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                        </MudDataGrid>
+                    }
+                    else
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">No performance curve points were returned for this design.</MudText>
+                        </MudStack>
+                    }
+                </MudPaper>
+            </MudTabPanel>
+            </AdditionalTabs>
+        </CalculationResultTabs>
+    }
+</MudContainer>
+
+@code {
+    [SupplyParameterFromQuery(Name = "wellId")]
+    public string? WellId { get; set; }
+
+    private string _fieldName = string.Empty;
+    private string? _selectedWellId;
+    private bool _isLoading = true;
+    private bool _isRunning;
+    private string? _resultMode;
+
+    private ESP_DESIGN_PROPERTIES _request = CreateDefaultRequest();
+    private ESP_DESIGN_RESULT? _currentResult;
+    private ESP_DESIGN_RESULT? _baselineResult;
+    private ESP_DESIGN_RESULT? _optimizedResult;
+    private WellOptionDto? _selectedWell;
+    private List<WellOptionDto> _wells = new List<WellOptionDto>();
+
+    private sealed class WellOptionDto
+    {
+        public string UWI { get; set; } = string.Empty;
+        public string? WELL_NAME { get; set; }
+        public string? ASSIGNED_FIELD { get; set; }
+        public decimal? BASE_DEPTH { get; set; }
+        public decimal? FINAL_TD { get; set; }
+        public decimal? DRILL_TD { get; set; }
+        public string DisplayName => string.IsNullOrWhiteSpace(WELL_NAME) ? UWI : $"{UWI} - {WELL_NAME}";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _selectedWellId = WellId;
+            await LoadFieldContextAsync();
+            await LoadWellsAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadFieldContextAsync()
+    {
+        try
+        {
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
+            if (summary != null)
+            {
+                _fieldName = summary.FieldName ?? _fieldName;
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private async Task LoadWellsAsync()
+    {
+        try
+        {
+            var wells = await DevelopmentClient.GetWellsAsync();
+            _wells = wells.Select(MapWell).ToList();
+            if (_wells.Count > 0)
+            {
+                _selectedWellId = _wells.Any(well => string.Equals(well.UWI, _selectedWellId, StringComparison.OrdinalIgnoreCase))
+                    ? _selectedWellId
+                    : _wells[0].UWI;
+                await LoadSelectedWellContextAsync();
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load wells for Pump Performance.", Severity.Warning);
+        }
+    }
+
+    private async Task OnWellChanged(string? wellId)
+    {
+        _selectedWellId = wellId;
+        _currentResult = null;
+        _baselineResult = null;
+        _optimizedResult = null;
+        _resultMode = null;
+        await LoadSelectedWellContextAsync();
+    }
+
+    private async Task LoadSelectedWellContextAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedWellId))
+        {
+            _selectedWell = null;
+            return;
+        }
+
+        try
+        {
+            var well = await DevelopmentClient.GetWellAsync(_selectedWellId);
+            _selectedWell = MapWell(well);
+            ApplyWellDefaults(_selectedWell);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load the selected well context for Pump Performance.", Severity.Warning);
+        }
+    }
+
+    private void ApplyWellDefaults(WellOptionDto? well)
+    {
+        if (well == null)
+            return;
+
+        var depth = ResolveDepth(well);
+        if (depth.HasValue && depth.Value > 0)
+        {
+            _request.WELL_DEPTH = depth.Value;
+            _request.PUMP_SETTING_DEPTH = Math.Round(depth.Value * 0.8m, 0);
+            _request.TOTAL_DYNAMIC_HEAD = Math.Round((_request.PUMP_SETTING_DEPTH + _request.WELLHEAD_PRESSURE), 0);
+        }
+
+        _fieldName = well.ASSIGNED_FIELD ?? _fieldName;
+        _request.AREA_ID = well.UWI;
+        _request.AREA_TYPE = "WELL";
+    }
+
+    private static WellOptionDto MapWell(WELL well)
+    {
+        return new WellOptionDto
+        {
+            UWI = well.UWI,
+            WELL_NAME = well.WELL_NAME,
+            ASSIGNED_FIELD = well.ASSIGNED_FIELD,
+            BASE_DEPTH = well.BASE_DEPTH,
+            FINAL_TD = well.FINAL_TD,
+            DRILL_TD = well.DRILL_TD
+        };
+    }
+
+    private async Task RunDesignAsync()
+    {
+        if (!ValidateRequest())
+            return;
+
+        _isRunning = true;
+        try
+        {
+            _baselineResult = await CalculationService.PerformPumpPerformanceAnalysisAsync(_request);
+            _currentResult = _baselineResult;
+            _optimizedResult = null;
+            _resultMode = "Baseline ESP design";
+            Snackbar.Add("Pump performance design completed.", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error running pump performance design.", Severity.Error);
+        }
+        finally
+        {
+            _isRunning = false;
+        }
+    }
+
+    private async Task OptimizeDesignAsync()
+    {
+        if (!ValidateRequest())
+            return;
+
+        _isRunning = true;
+        try
+        {
+            _optimizedResult = await CalculationService.OptimizePumpPerformanceAsync(_request);
+            _currentResult = _optimizedResult;
+            _resultMode = "Optimized ESP design";
+            Snackbar.Add("Pump performance optimization completed.", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error optimizing pump performance.", Severity.Error);
+        }
+        finally
+        {
+            _isRunning = false;
+        }
+    }
+
+    private bool ValidateRequest()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedWellId))
+        {
+            Snackbar.Add("Select a well before running pump performance analysis.", Severity.Warning);
+            return false;
+        }
+
+        if (_request.DESIRED_FLOW_RATE <= 0 || _request.WELL_DEPTH <= 0 || _request.PUMP_SETTING_DEPTH <= 0)
+        {
+            Snackbar.Add("Desired flow rate, well depth, and pump setting depth must all be positive.", Severity.Warning);
+            return false;
+        }
+
+        if (_request.PUMP_SETTING_DEPTH > _request.WELL_DEPTH)
+        {
+            Snackbar.Add("Pump setting depth cannot exceed well depth.", Severity.Warning);
+            return false;
+        }
+
+        return true;
+    }
+
+    private string GetSelectedWellLabel()
+    {
+        return _selectedWell == null ? "No well selected" : _selectedWell.UWI;
+    }
+
+    private IReadOnlyList<CalculationKpiMetric> GetResultKpis()
+    {
+        if (_currentResult == null)
+            return Array.Empty<CalculationKpiMetric>();
+
+        return new CalculationKpiMetric[]
+        {
+            new() { Label = "Pump Stages", Value = _currentResult.PUMP_STAGES?.ToString() ?? "N/A", ValueColor = Color.Primary, Icon = Icons.Material.Filled.Layers, TrendIcon = Icons.Material.Filled.ElectricBolt, TrendColor = Color.Primary, TrendText = "Selected stage count" },
+            new() { Label = "Motor HP", Value = FormatNullableDecimal(_currentResult.MOTOR_HORSEPOWER, 1), Unit = "hp", ValueColor = Color.Warning, Icon = Icons.Material.Filled.Bolt, TrendIcon = Icons.Material.Filled.Power, TrendColor = Color.Warning, TrendText = "Installed motor size" },
+            new() { Label = "System Efficiency", Value = FormatPercent(_currentResult.SYSTEM_EFFICIENCY), ValueColor = Color.Success, Icon = Icons.Material.Filled.ShowChart, TrendIcon = Icons.Material.Filled.CheckCircle, TrendColor = Color.Success, TrendText = "Total lift efficiency" },
+            new() { Label = "Power Consumption", Value = FormatNullableDecimal(_currentResult.POWER_CONSUMPTION, 1), Unit = "hp", ValueColor = Color.Info, Icon = Icons.Material.Filled.BatteryChargingFull, TrendIcon = Icons.Material.Filled.Speed, TrendColor = Color.Info, TrendText = "Expected draw" }
+        };
+    }
+
+    private IReadOnlyList<CalculationFactItem> GetSummaryFacts()
+    {
+        if (_currentResult == null)
+            return Array.Empty<CalculationFactItem>();
+
+        return new CalculationFactItem[]
+        {
+            new() { Label = "Result ID", Value = _currentResult.ESP_DESIGN_RESULT_ID ?? "N/A" },
+            new() { Label = "Operating Flow", Value = FormatNullableDecimal(_currentResult.OPERATING_FLOW_RATE, 1) },
+            new() { Label = "Operating Head", Value = FormatNullableDecimal(_currentResult.OPERATING_HEAD, 1) },
+            new() { Label = "Required HP", Value = FormatNullableDecimal(_currentResult.REQUIRED_HORSEPOWER, 1) },
+            new() { Label = "Pump Efficiency", Value = FormatPercent(_currentResult.PUMP_EFFICIENCY) },
+            new() { Label = "Motor Efficiency", Value = FormatPercent(_currentResult.MOTOR_EFFICIENCY) },
+            new() { Label = "Motor Voltage", Value = FormatNullableDecimal(_currentResult.MOTOR_VOLTAGE, 0) },
+            new() { Label = "Motor Current", Value = FormatNullableDecimal(_currentResult.MOTOR_CURRENT, 1) },
+            new() { Label = "Cable Size", Value = _currentResult.CABLE_SIZE?.ToString() ?? "N/A" },
+            new() { Label = "Cable Length", Value = FormatNullableDecimal(_currentResult.CABLE_LENGTH, 0) },
+            new() { Label = "Design Context", Value = $"{_request.AREA_ID} / {_request.AREA_TYPE ?? "WELL"}" }
+        };
+    }
+
+    private IReadOnlyList<RecommendationFactItem> GetLiftRecommendationFacts()
+    {
+        if (_currentResult == null)
+            return Array.Empty<RecommendationFactItem>();
+
+        var facts = new List<RecommendationFactItem>
+        {
+            new() { Label = "Selected Lift Path", Value = _optimizedResult != null ? "Optimized ESP" : "Baseline ESP", ValueColor = Color.Info },
+            new() { Label = "System Efficiency", Value = FormatPercent(_currentResult.SYSTEM_EFFICIENCY), ValueColor = Color.Success },
+            new() { Label = "Power Draw", Value = $"{FormatNullableDecimal(_currentResult.POWER_CONSUMPTION, 1)} hp", ValueColor = Color.Warning }
+        };
+
+        if (_baselineResult != null && _optimizedResult != null)
+        {
+            facts.Add(new RecommendationFactItem
+            {
+                Label = "Efficiency Change",
+                Value = FormatSignedPercent(CalculatePercentDelta(_baselineResult.SYSTEM_EFFICIENCY, _optimizedResult.SYSTEM_EFFICIENCY)),
+                ValueColor = ResolveDeltaColor(CalculatePercentDelta(_baselineResult.SYSTEM_EFFICIENCY, _optimizedResult.SYSTEM_EFFICIENCY), higherIsBetter: true)
+            });
+        }
+
+        return facts;
+    }
+
+    private string GetLiftRecommendationHeadline()
+    {
+        if (_baselineResult != null && _optimizedResult != null)
+        {
+            return GetOptimizationSummarySeverity() == Severity.Success
+                ? "Advance optimized ESP design for operational review"
+                : "Review optimized ESP trade-offs before intervention";
+        }
+
+        return "Validate baseline ESP design against production diagnostics";
+    }
+
+    private string GetLiftRecommendationSummary()
+    {
+        if (_baselineResult != null && _optimizedResult != null)
+        {
+            return (GetOptimizationSummaryText() ?? "Optimization comparison is available for this ESP design.")
+                + " Use the production optimizer to compare this lift path against current well underperformance before acting.";
+        }
+
+        return "Baseline ESP sizing is ready. Run the optimization scenario or compare this design against the production optimizer to confirm the lift path.";
+    }
+
+    private string GetLiftRecommendationImpactText()
+    {
+        return _optimizedResult != null
+            ? "Workflow handoff: carry this well into Optimise Well Performance for intervention screening and work-order follow-up."
+            : "Workflow handoff: baseline ESP sizing can now be compared against broader production diagnostics.";
+    }
+
+    private string GetWellPerformanceUrl()
+    {
+        return string.IsNullOrWhiteSpace(_selectedWellId)
+            ? "/production/well-performance"
+            : $"/production/well-performance?wellId={Uri.EscapeDataString(_selectedWellId)}";
+    }
+
+    private IReadOnlyList<OptimizationDeltaItem> GetOptimizationDeltaItems()
+    {
+        if (_baselineResult == null || _optimizedResult == null)
+            return Array.Empty<OptimizationDeltaItem>();
+
+        return new OptimizationDeltaItem[]
+        {
+            CreateOptimizationDeltaItem("System Efficiency", _baselineResult.SYSTEM_EFFICIENCY, _optimizedResult.SYSTEM_EFFICIENCY, higherIsBetter: true, isPercent: true),
+            CreateOptimizationDeltaItem("Pump Efficiency", _baselineResult.PUMP_EFFICIENCY, _optimizedResult.PUMP_EFFICIENCY, higherIsBetter: true, isPercent: true),
+            CreateOptimizationDeltaItem("Power Consumption", _baselineResult.POWER_CONSUMPTION, _optimizedResult.POWER_CONSUMPTION, higherIsBetter: false, unit: "hp")
+        };
+    }
+
+    private string? GetOptimizationSummaryText()
+    {
+        if (_baselineResult == null || _optimizedResult == null)
+            return null;
+
+        var efficiencyChange = DescribePercentChange(
+            _baselineResult.SYSTEM_EFFICIENCY,
+            _optimizedResult.SYSTEM_EFFICIENCY,
+            positiveDescription: "improved system efficiency by",
+            negativeDescription: "reduced system efficiency by");
+
+        var powerChange = DescribePercentChange(
+            _baselineResult.POWER_CONSUMPTION,
+            _optimizedResult.POWER_CONSUMPTION,
+            positiveDescription: "increased power consumption by",
+            negativeDescription: "reduced power consumption by");
+
+        if (!string.IsNullOrWhiteSpace(efficiencyChange) && !string.IsNullOrWhiteSpace(powerChange))
+            return $"Optimization {efficiencyChange} and {powerChange}.";
+
+        if (!string.IsNullOrWhiteSpace(efficiencyChange))
+            return $"Optimization {efficiencyChange}.";
+
+        if (!string.IsNullOrWhiteSpace(powerChange))
+            return $"Optimization {powerChange}.";
+
+        return "Optimization comparison is available for this ESP design.";
+    }
+
+    private Severity GetOptimizationSummarySeverity()
+    {
+        if (_baselineResult == null || _optimizedResult == null)
+            return Severity.Info;
+
+        var score = 0;
+        score += ScorePercentChange(_baselineResult.SYSTEM_EFFICIENCY, _optimizedResult.SYSTEM_EFFICIENCY, higherIsBetter: true);
+        score += ScorePercentChange(_baselineResult.PUMP_EFFICIENCY, _optimizedResult.PUMP_EFFICIENCY, higherIsBetter: true);
+        score += ScorePercentChange(_baselineResult.POWER_CONSUMPTION, _optimizedResult.POWER_CONSUMPTION, higherIsBetter: false);
+
+        if (score > 0)
+            return Severity.Success;
+
+        if (score < 0)
+            return Severity.Warning;
+
+        return Severity.Info;
+    }
+
+    private static ESP_DESIGN_PROPERTIES CreateDefaultRequest()
+    {
+        return new ESP_DESIGN_PROPERTIES
+        {
+            DESIRED_FLOW_RATE = 800m,
+            TOTAL_DYNAMIC_HEAD = 6500m,
+            WELL_DEPTH = 8000m,
+            CASING_DIAMETER = 7m,
+            TUBING_DIAMETER = 2.875m,
+            OIL_GRAVITY = 35m,
+            WATER_CUT = 0.30m,
+            GAS_OIL_RATIO = 500m,
+            WELLHEAD_PRESSURE = 100m,
+            BOTTOM_HOLE_TEMPERATURE = 580m,
+            GAS_SPECIFIC_GRAVITY = 0.65m,
+            PUMP_SETTING_DEPTH = 6400m,
+            AREA_TYPE = "WELL"
+        };
+    }
+
+    private static decimal? ResolveDepth(WellOptionDto well)
+    {
+        if (well.BASE_DEPTH.HasValue && well.BASE_DEPTH.Value > 0)
+            return well.BASE_DEPTH.Value;
+
+        if (well.FINAL_TD.HasValue && well.FINAL_TD.Value > 0)
+            return well.FINAL_TD.Value;
+
+        if (well.DRILL_TD.HasValue && well.DRILL_TD.Value > 0)
+            return well.DRILL_TD.Value;
+
+        return null;
+    }
+
+    private static string FormatDecimal(decimal value, int decimals = 2)
+    {
+        return value.ToString($"N{decimals}");
+    }
+
+    private static string FormatNullableDecimal(decimal? value, int decimals = 2)
+    {
+        return value.HasValue ? value.Value.ToString($"N{decimals}") : "N/A";
+    }
+
+    private static string FormatPercent(decimal? value)
+    {
+        return value.HasValue ? (value.Value * 100m).ToString("N1") + "%" : "N/A";
+    }
+
+    private static OptimizationDeltaItem CreateOptimizationDeltaItem(string label, decimal? baseline, decimal? optimized, bool higherIsBetter, bool isPercent = false, string unit = "")
+    {
+        var delta = CalculatePercentDelta(baseline, optimized);
+
+        return new OptimizationDeltaItem
+        {
+            Label = label,
+            BaselineValue = FormatOptimizationValue(baseline, isPercent, unit),
+            OptimizedValue = FormatOptimizationValue(optimized, isPercent, unit),
+            DeltaValue = FormatSignedPercent(delta),
+            DeltaColor = ResolveDeltaColor(delta, higherIsBetter)
+        };
+    }
+
+    private static decimal? CalculatePercentDelta(decimal? baseline, decimal? optimized)
+    {
+        if (!baseline.HasValue || !optimized.HasValue || baseline.Value == 0)
+            return null;
+
+        return ((optimized.Value - baseline.Value) / baseline.Value) * 100m;
+    }
+
+    private static string FormatOptimizationValue(decimal? value, bool isPercent, string unit)
+    {
+        if (!value.HasValue)
+            return "N/A";
+
+        if (isPercent)
+            return FormatPercent(value);
+
+        var formatted = FormatNullableDecimal(value, 1);
+        return string.IsNullOrWhiteSpace(unit) ? formatted : $"{formatted} {unit}";
+    }
+
+    private static string FormatSignedPercent(decimal? delta)
+    {
+        if (!delta.HasValue)
+            return "N/A";
+
+        return (delta.Value > 0 ? "+" : string.Empty) + delta.Value.ToString("N1") + "%";
+    }
+
+    private static Color ResolveDeltaColor(decimal? delta, bool higherIsBetter)
+    {
+        if (!delta.HasValue)
+            return Color.Info;
+
+        if (delta.Value == 0)
+            return Color.Info;
+
+        var improved = higherIsBetter ? delta.Value > 0 : delta.Value < 0;
+        return improved ? Color.Success : Color.Warning;
+    }
+
+    private static string? DescribePercentChange(decimal? baseline, decimal? optimized, string positiveDescription, string negativeDescription)
+    {
+        var delta = CalculatePercentDelta(baseline, optimized);
+        if (!delta.HasValue || delta.Value == 0)
+            return null;
+
+        var description = delta.Value > 0 ? positiveDescription : negativeDescription;
+        return $"{description} {Math.Abs(delta.Value).ToString("N1")}%";
+    }
+
+    private static int ScorePercentChange(decimal? baseline, decimal? optimized, bool higherIsBetter)
+    {
+        var delta = CalculatePercentDelta(baseline, optimized);
+        if (!delta.HasValue || delta.Value == 0)
+            return 0;
+
+        var improved = higherIsBetter ? delta.Value > 0 : delta.Value < 0;
+        return improved ? 1 : -1;
+    }
+}

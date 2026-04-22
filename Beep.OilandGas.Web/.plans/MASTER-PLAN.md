@@ -1,5 +1,7 @@
 # Beep Oil & Gas — UX Business Process Implementation: MASTER PLAN
 
+> **2026-04-21 Update**: The follow-on web architecture, duplication cleanup, calculation-surface integration, and cross-project integration plan now lives in `WEB-UPDATE-MASTER-PLAN.md`. Use that document for staged modernization work after the original UX rollout.
+
 > **Created**: 2026-04-18  
 > **Scope**: First-run setup wizard + main app menu redesign + petroleum engineer business process pages  
 > **Reference**: `Plans/BusinessProcessesPlan/PetroleumEngineerBusinessProcesses.md`  

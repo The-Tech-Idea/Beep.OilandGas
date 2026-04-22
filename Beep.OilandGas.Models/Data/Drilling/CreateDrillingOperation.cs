@@ -16,6 +16,17 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref WellUWIValue, value); }
 
         }
+        private string? WellNameValue;
+
+        public string? WellName
+
+        {
+
+            get { return this.WellNameValue; }
+
+            set { SetProperty(ref WellNameValue, value); }
+
+        }
         private DateTime? PlannedSpudDateValue;
 
         public DateTime? PlannedSpudDate

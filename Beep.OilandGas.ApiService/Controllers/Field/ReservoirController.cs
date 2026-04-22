@@ -34,7 +34,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<ReservoirDashboardSummary>> GetDashboardSummaryAsync()
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
             try
             {
                 var summary = await _developmentService.GetReservoirDashboardSummaryAsync(fieldId);
@@ -52,7 +52,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<List<ReservoirPoolDto>>> GetDashboardPoolsAsync()
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
             try
             {
                 var pools = await _developmentService.GetReservoirPoolsAsync(fieldId);

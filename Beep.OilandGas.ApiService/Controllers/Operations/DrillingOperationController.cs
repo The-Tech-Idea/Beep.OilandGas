@@ -47,7 +47,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
             {
                 var result = await _service.GetDrillingOperationAsync(operationId);
                 if (result == null)
-                    return NotFound(new { error = $"Drilling operation {operationId} not found" });
+                        return NotFound(new { error = $"Drilling operation {operationId} not found." });
                 return Ok(result);
             }
             catch (Exception ex)
@@ -62,7 +62,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         {
             try
             {
-                var result = await _service.CreateDrillingOperationAsync(createDto);
+                var result = await _service.CreateDrillingOperationAsync(createDto, userId: GetUserId());
                 return Ok(result);
             }
             catch (Exception ex)
@@ -78,7 +78,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
             if (string.IsNullOrWhiteSpace(operationId)) return BadRequest(new { error = "Operation ID is required." });
             try
             {
-                var result = await _service.UpdateDrillingOperationAsync(operationId, updateDto);
+                var result = await _service.UpdateDrillingOperationAsync(operationId, updateDto, userId: GetUserId());
                 return Ok(result);
             }
             catch (Exception ex)
@@ -110,7 +110,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
             if (string.IsNullOrWhiteSpace(operationId)) return BadRequest(new { error = "Operation ID is required." });
             try
             {
-                var result = await _service.CreateDrillingReportAsync(operationId, createDto);
+                var result = await _service.CreateDrillingReportAsync(operationId, createDto, userId: GetUserId());
                 return Ok(result);
             }
             catch (Exception ex)

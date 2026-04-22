@@ -63,10 +63,10 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             [FromQuery] string? connectionName = null,
             [FromQuery] bool validateForeignKeys = true)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                    return BadRequest(new { error = "Table name is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName))
-                    return BadRequest(new OperationStartResponse { OperationId = "", Message = "Table name is required." });
                 if (file == null || file.Length == 0)
                 {
                     return BadRequest(new OperationStartResponse { OperationId = "", Message = "No file uploaded" });
@@ -181,10 +181,10 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             [FromQuery] string? connectionName = null,
             [FromQuery] string? operationId = null)
         {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(tableName))
-                    return BadRequest(new { error = "Table name is required." });
                 connectionName ??= request?.ConnectionName ?? _editor.ConfigEditor?.DataConnections?.FirstOrDefault()?.ConnectionName ?? "PPDM39";
                 operationId ??= _progressTracking?.StartOperation("ExportCsv", $"Exporting {tableName} to CSV");
 
@@ -254,14 +254,14 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("progress/{operationId}")]
         public ActionResult<ProgressUpdate> GetProgress(string operationId)
         {
+            if (string.IsNullOrWhiteSpace(operationId))
+                return BadRequest(new { error = "Operation ID is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(operationId))
-                    return BadRequest(new { error = "Operation ID is required." });
                 var progress = _progressTracking?.GetProgress(operationId);
                 if (progress == null)
                 {
-                    return NotFound(new { error = "Operation not found" });
+                        return NotFound(new { error = "Operation not found." });
                 }
                 return Ok(progress);
             }

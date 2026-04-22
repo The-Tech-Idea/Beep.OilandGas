@@ -43,7 +43,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPost("{tableName}")]
         public async Task<ActionResult<EntityListResult<object>>> GetEntities(string tableName, [FromBody] GetEntitiesRequest request)
         {
-            if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new EntityListResult<object> { Success = false, ErrorMessage = "Table name is required." });
+              if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
             try
             {
                 _logger.LogInformation("GET entities from table {TableName} on connection {ConnectionName}",
@@ -70,8 +70,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("{tableName}/{id}")]
         public async Task<ActionResult<EntityResult<object>>> GetEntity(string tableName, string id, [FromQuery] string? connectionName = null)
         {
-            if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new EntityResult<object> { Success = false, ErrorMessage = "Table name is required." });
-            if (string.IsNullOrWhiteSpace(id)) return BadRequest(new EntityResult<object> { Success = false, ErrorMessage = "Entity ID is required." });
+              if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
+              if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "Entity ID is required." });
             try
             {
                 _logger.LogInformation("GET entity by ID from table {TableName}, ID: {Id}", tableName, id);
@@ -99,7 +99,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPost("{tableName}/insert")]
         public async Task<ActionResult<EntityResult<object>>> InsertEntity(string tableName, [FromBody] JsonElement body, [FromQuery] string userId = "SYSTEM", [FromQuery] string? connectionName = null)
         {
-            if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new EntityResult<object> { Success = false, ErrorMessage = "Table name is required." });
+              if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
             try
             {
                 var entity = JsonSerializer.Deserialize<Dictionary<string, object>>(body.GetRawText());
@@ -138,8 +138,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPut("{tableName}/{id}")]
         public async Task<ActionResult<EntityResult<object>>> UpdateEntity(string tableName, string id, [FromBody] JsonElement body, [FromQuery] string userId = "SYSTEM", [FromQuery] string? connectionName = null)
         {
-            if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new EntityResult<object> { Success = false, ErrorMessage = "Table name is required." });
-            if (string.IsNullOrWhiteSpace(id)) return BadRequest(new EntityResult<object> { Success = false, ErrorMessage = "Entity ID is required." });
+              if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
+              if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "Entity ID is required." });
             try
             {
                 var entity = JsonSerializer.Deserialize<Dictionary<string, object>>(body.GetRawText());
@@ -178,8 +178,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpDelete("{tableName}/{id}")]
         public async Task<ActionResult<OperationResult>> DeleteEntity(string tableName, string id, [FromQuery] string userId = "SYSTEM", [FromQuery] string? connectionName = null)
         {
-            if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new OperationResult { Success = false, ErrorMessage = "Table name is required." });
-            if (string.IsNullOrWhiteSpace(id)) return BadRequest(new OperationResult { Success = false, ErrorMessage = "Entity ID is required." });
+              if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
+              if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "Entity ID is required." });
             try
             {
                 _logger.LogInformation("DELETE entity {Id} from table {TableName} on connection {ConnectionName}",
@@ -211,7 +211,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             string tableName,
             [FromQuery] string? connectionName = null)
         {
-            if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { success = false, message = "Table name is required." });
+                if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
             try
             {
                 _logger.LogInformation("EXPORT CSV from table {TableName}", tableName);
@@ -260,7 +260,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             [FromQuery] string userId = "SYSTEM",
             [FromQuery] string? connectionName = null)
         {
-            if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { success = false, message = "Table name is required." });
+                if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
             if (file == null || file.Length == 0)
                 return BadRequest(new { success = false, message = "No file provided." });
 

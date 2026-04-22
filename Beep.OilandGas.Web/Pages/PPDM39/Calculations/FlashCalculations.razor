@@ -1,0 +1,614 @@
+@page "/ppdm39/calculations/flash-calculations"
+@page "/analysis/flash-calculations"
+@using System.Linq
+@using System.Security.Claims
+@using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.FlashCalculations
+@inject ApiClient ApiClient
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ICalculationServiceClient CalculationService
+@inject ILifeCycleService LifeCycleService
+@inject ISnackbar Snackbar
+
+<PageTitle>Run Flash Calculations</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Run Flash Calculations</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName - User-entered PVT composition, separator-ready flash outputs, and saved result summaries</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.Science">Reservoir PVT</MudChip>
+                <MudChip T="string" Size="Size.Small" Color="@GetFractionColor(_moleFractionTotal)">Total @FormatDecimal(_moleFractionTotal, 3)</MudChip>
+            </MudStack>
+        </MudStack>
+        <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                   StartIcon="@Icons.Material.Filled.Refresh"
+                   OnClick="ReloadHistoryAsync"
+                   Disabled="@(_isRunning || _isSaving)">
+            Refresh Saved Results
+        </MudButton>
+    </MudStack>
+
+    <MudGrid Spacing="3" Class="mb-4">
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="2" Class="h-100">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Flash Conditions</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12">
+                            <MudNumericField T="decimal" @bind-Value="@_pressure" Label="Pressure (psia)" Variant="Variant.Outlined" Min="0" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudNumericField T="decimal" @bind-Value="@_temperature" Label="Temperature (Rankine)" Variant="Variant.Outlined" Min="0" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudNumericField T="int" @bind-Value="@_stageCount" Label="Number of stages" Variant="Variant.Outlined" Min="2" Max="12" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Multi-stage flash uses the previous stage liquid as the next stage feed.</MudText>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.PlayArrow"
+                                   OnClick="RunIsothermalAsync"
+                                   Disabled="@(_isRunning || _isSaving)">
+                            Isothermal Flash
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.AccountTree"
+                                   OnClick="RunMultiStageAsync"
+                                   Disabled="@(_isRunning || _isSaving)">
+                            Multi-Stage Flash
+                        </MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Success"
+                                   StartIcon="@Icons.Material.Filled.Save"
+                                   OnClick="SaveCurrentResultAsync"
+                                   Disabled="@(_isRunning || _isSaving || _currentResult == null)">
+                            Save Current Result
+                        </MudButton>
+                    </MudStack>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="8">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="w-100">
+                            <MudText Typo="Typo.subtitle1">Feed Composition</MudText>
+                            <MudStack Row="true" Spacing="1">
+                                <MudButton Variant="Variant.Text" Color="Color.Default"
+                                           StartIcon="@Icons.Material.Filled.Tune"
+                                           OnClick="NormalizeFractions"
+                                           Disabled="@(_isRunning || _isSaving || _moleFractionTotal <= 0)">
+                                    Normalize
+                                </MudButton>
+                                <MudButton Variant="Variant.Text" Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.Add"
+                                           OnClick="AddComponent">
+                                    Add Component
+                                </MudButton>
+                            </MudStack>
+                        </MudStack>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @foreach (var component in _components)
+                    {
+                        <MudGrid Spacing="2" Class="mb-2" @key="component">
+                            <MudItem xs="12" md="2">
+                                <MudTextField @bind-Value="component.NAME" Label="Component" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="6" md="2">
+                                <MudNumericField T="decimal" @bind-Value="component.MOLE_FRACTION" Label="Mole Fraction" Variant="Variant.Outlined" Min="0" Max="1" />
+                            </MudItem>
+                            <MudItem xs="6" md="2">
+                                <MudNumericField T="decimal" @bind-Value="component.CRITICAL_TEMPERATURE" Label="Critical T" Variant="Variant.Outlined" Min="0" />
+                            </MudItem>
+                            <MudItem xs="6" md="2">
+                                <MudNumericField T="decimal" @bind-Value="component.CRITICAL_PRESSURE" Label="Critical P" Variant="Variant.Outlined" Min="0" />
+                            </MudItem>
+                            <MudItem xs="6" md="2">
+                                <MudNumericField T="decimal" @bind-Value="component.ACENTRIC_FACTOR" Label="Acentric" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="8" md="1">
+                                <MudNumericField T="decimal" @bind-Value="component.MOLECULAR_WEIGHT" Label="MW" Variant="Variant.Outlined" Min="0" />
+                            </MudItem>
+                            <MudItem xs="4" md="1" Class="d-flex align-center justify-end">
+                                <MudButton Variant="Variant.Text" Color="Color.Error"
+                                           StartIcon="@Icons.Material.Filled.Delete"
+                                           OnClick="@(() => RemoveComponent(component))">
+                                    Remove
+                                </MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    @if (_currentResult != null)
+    {
+        <CalculationKpiSection Metrics="@GetResultKpis()" Class="mb-4" />
+
+        <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mb-4">
+            <MudTabPanel Text="Stage Summary" Icon="@Icons.Material.Filled.AccountTree">
+                <MudPaper Elevation="0" Class="pa-0">
+                    <MudDataGrid T="StageResultRow" Items="@StageRows" Dense="true" Hover="true" ReadOnly="true">
+                        <Columns>
+                            <TemplateColumn Title="Stage">
+                                <CellTemplate>
+                                    <MudText Typo="Typo.body2">Stage @context.Item.StageNumber</MudText>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Vapor Fraction">
+                                <CellTemplate>
+                                    <MudText Typo="Typo.body2">@FormatDecimal(context.Item.Result.VaporFraction, 4)</MudText>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Liquid Fraction">
+                                <CellTemplate>
+                                    <MudText Typo="Typo.body2">@FormatDecimal(context.Item.Result.LiquidFraction, 4)</MudText>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Iterations">
+                                <CellTemplate>
+                                    <MudText Typo="Typo.body2">@context.Item.Result.Iterations</MudText>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Converged">
+                                <CellTemplate>
+                                    <MudChip T="string" Size="Size.Small" Color="@(context.Item.Result.Converged ? Color.Success : Color.Error)">
+                                        @(context.Item.Result.Converged ? "YES" : "NO")
+                                    </MudChip>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Open">
+                                <CellTemplate>
+                                    <MudButton Variant="Variant.Text" Color="Color.Primary"
+                                               StartIcon="@Icons.Material.Filled.Visibility"
+                                               OnClick="@(() => SelectStage(context.Item.StageNumber))">
+                                        Open
+                                    </MudButton>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                </MudPaper>
+            </MudTabPanel>
+            <MudTabPanel Text="Vapor Composition" Icon="@Icons.Material.Filled.Cloud">
+                <MudPaper Elevation="0" Class="pa-0">
+                    @if (_currentResult.VaporComposition.Count > 0)
+                    {
+                        <MudDataGrid T="FlashComponentFraction" Items="@_currentResult.VaporComposition" Dense="true" Hover="true" ReadOnly="true">
+                            <Columns>
+                                <TemplateColumn Title="Component">
+                                    <CellTemplate>
+                                        <MudText Typo="Typo.body2">@context.Item.ComponentName</MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Fraction">
+                                    <CellTemplate>
+                                        <MudText Typo="Typo.body2">@FormatDecimal(context.Item.Fraction, 4)</MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                        </MudDataGrid>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-4">No vapor composition data is available for the selected result.</MudText>
+                    }
+                </MudPaper>
+            </MudTabPanel>
+            <MudTabPanel Text="Liquid Composition" Icon="@Icons.Material.Filled.WaterDrop">
+                <MudPaper Elevation="0" Class="pa-0">
+                    @if (_currentResult.LiquidComposition.Count > 0)
+                    {
+                        <MudDataGrid T="FlashComponentFraction" Items="@_currentResult.LiquidComposition" Dense="true" Hover="true" ReadOnly="true">
+                            <Columns>
+                                <TemplateColumn Title="Component">
+                                    <CellTemplate>
+                                        <MudText Typo="Typo.body2">@context.Item.ComponentName</MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Fraction">
+                                    <CellTemplate>
+                                        <MudText Typo="Typo.body2">@FormatDecimal(context.Item.Fraction, 4)</MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                        </MudDataGrid>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-4">No liquid composition data is available for the selected result.</MudText>
+                    }
+                </MudPaper>
+            </MudTabPanel>
+            <MudTabPanel Text="K-Values" Icon="@Icons.Material.Filled.TableChart">
+                <MudPaper Elevation="0" Class="pa-0">
+                    @if (_currentResult.KValues.Count > 0)
+                    {
+                        <MudDataGrid T="FlashComponentKValue" Items="@_currentResult.KValues" Dense="true" Hover="true" ReadOnly="true">
+                            <Columns>
+                                <TemplateColumn Title="Component">
+                                    <CellTemplate>
+                                        <MudText Typo="Typo.body2">@context.Item.ComponentName</MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn Title="K-Value">
+                                    <CellTemplate>
+                                        <MudText Typo="Typo.body2">@FormatDecimal(context.Item.KValue, 4)</MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                        </MudDataGrid>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-4">No K-value data is available for the selected result.</MudText>
+                    }
+                </MudPaper>
+            </MudTabPanel>
+        </MudTabs>
+    }
+
+    <MudCard Elevation="2">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.subtitle1">Saved Flash Results</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent Class="pa-0">
+            @if (HistoryRows.Count > 0)
+            {
+                <MudDataGrid T="HistoryResultRow" Items="@HistoryRows" Dense="true" Hover="true" ReadOnly="true">
+                    <Columns>
+                        <TemplateColumn Title="Run">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">Saved @context.Item.Sequence</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Vapor Fraction">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@FormatDecimal(context.Item.Result.VaporFraction, 4)</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Liquid Fraction">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@FormatDecimal(context.Item.Result.LiquidFraction, 4)</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Iterations">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@context.Item.Result.Iterations</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Converged">
+                            <CellTemplate>
+                                <MudChip T="string" Size="Size.Small" Color="@(context.Item.Result.Converged ? Color.Success : Color.Error)">
+                                    @(context.Item.Result.Converged ? "YES" : "NO")
+                                </MudChip>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Open">
+                            <CellTemplate>
+                                <MudButton Variant="Variant.Text" Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.Visibility"
+                                           OnClick="@(() => OpenSavedResult(context.Item.Sequence - 1))">
+                                    Open
+                                </MudButton>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            }
+            else if (!_isLoading)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.Calculate" Color="Color.Secondary" Class="og-icon-xl" />
+                    <MudText Typo="Typo.h6">No saved flash results yet</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Run and save a flash calculation to populate the history list.</MudText>
+                </MudStack>
+            }
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private string _fieldName = string.Empty;
+    private string? _currentUserId;
+    private bool _isLoading = true;
+    private bool _isRunning;
+    private bool _isSaving;
+    private decimal _pressure = 500m;
+    private decimal _temperature = 540m;
+    private int _stageCount = 3;
+    private FlashResult? _currentResult;
+    private List<FlashResult> _stageResults = new();
+    private List<FlashResult> _history = new();
+    private List<FLASH_COMPONENT> _components = new() { CreateBlankComponent() };
+
+    private decimal _moleFractionTotal => _components
+        .Where(component => !string.IsNullOrWhiteSpace(component.NAME))
+        .Sum(component => component.MOLE_FRACTION);
+
+    private IReadOnlyList<StageResultRow> StageRows => _stageResults
+        .Select((result, index) => new StageResultRow { StageNumber = index + 1, Result = result })
+        .ToList();
+
+    private IReadOnlyList<HistoryResultRow> HistoryRows => _history
+        .Select((result, index) => new HistoryResultRow { Sequence = index + 1, Result = result })
+        .ToList();
+
+    private sealed class StageResultRow
+    {
+        public int StageNumber { get; set; }
+        public FlashResult Result { get; set; } = new();
+    }
+
+    private sealed class HistoryResultRow
+    {
+        public int Sequence { get; set; }
+        public FlashResult Result { get; set; } = new();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            await LoadFieldContextAsync();
+            await LoadUserAsync();
+            await ReloadHistoryAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadFieldContextAsync()
+    {
+        try
+        {
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
+            if (summary != null)
+            {
+                _fieldName = summary.FieldName ?? _fieldName;
+            }
+        }
+        catch
+        {
+            // Field summary is non-critical for flash calculations.
+        }
+    }
+
+    private async Task LoadUserAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+    }
+
+    private void AddComponent()
+    {
+        _components.Add(CreateBlankComponent());
+    }
+
+    private void RemoveComponent(FLASH_COMPONENT component)
+    {
+        _components.Remove(component);
+        if (_components.Count == 0)
+        {
+            _components.Add(CreateBlankComponent());
+        }
+    }
+
+    private void NormalizeFractions()
+    {
+        var total = _moleFractionTotal;
+        if (total <= 0)
+        {
+            Snackbar.Add("Enter positive mole fractions before normalizing.", Severity.Warning);
+            return;
+        }
+
+        foreach (var component in _components.Where(component => !string.IsNullOrWhiteSpace(component.NAME) && component.MOLE_FRACTION > 0))
+        {
+            component.MOLE_FRACTION /= total;
+        }
+    }
+
+    private async Task RunIsothermalAsync()
+    {
+        var conditions = BuildConditions();
+        if (conditions == null)
+        {
+            return;
+        }
+
+        _isRunning = true;
+        try
+        {
+            var result = await CalculationService.PerformIsothermalFlashAsync(conditions);
+            _stageResults = new List<FlashResult> { result };
+            _currentResult = result;
+            Snackbar.Add("Isothermal flash calculation completed.", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error running isothermal flash calculation.", Severity.Error);
+        }
+        finally
+        {
+            _isRunning = false;
+        }
+    }
+
+    private async Task RunMultiStageAsync()
+    {
+        var conditions = BuildConditions();
+        if (conditions == null)
+        {
+            return;
+        }
+
+        _isRunning = true;
+        try
+        {
+            var results = await CalculationService.PerformMultiStageFlashAsync(new MultiStageFlashRequest
+            {
+                Conditions = conditions,
+                Stages = Math.Max(2, _stageCount)
+            });
+
+            _stageResults = results;
+            _currentResult = results.FirstOrDefault();
+            Snackbar.Add("Multi-stage flash calculation completed.", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error running multi-stage flash calculation.", Severity.Error);
+        }
+        finally
+        {
+            _isRunning = false;
+        }
+    }
+
+    private async Task SaveCurrentResultAsync()
+    {
+        if (_currentResult == null)
+        {
+            Snackbar.Add("Run a flash calculation before saving.", Severity.Warning);
+            return;
+        }
+
+        _isSaving = true;
+        try
+        {
+            var saved = await CalculationService.SaveFlashResultAsync(_currentResult, _currentUserId);
+            if (!saved)
+            {
+                Snackbar.Add("The flash result could not be saved.", Severity.Warning);
+                return;
+            }
+
+            await ReloadHistoryAsync();
+            Snackbar.Add("Flash result saved.", Severity.Success);
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task ReloadHistoryAsync()
+    {
+        _history = await CalculationService.GetFlashHistoryAsync();
+    }
+
+    private void SelectStage(int stageNumber)
+    {
+        if (stageNumber <= 0 || stageNumber > _stageResults.Count)
+        {
+            return;
+        }
+
+        _currentResult = _stageResults[stageNumber - 1];
+    }
+
+    private void OpenSavedResult(int index)
+    {
+        if (index < 0 || index >= _history.Count)
+        {
+            return;
+        }
+
+        _stageResults = new List<FlashResult> { _history[index] };
+        _currentResult = _history[index];
+    }
+
+    private FLASH_CONDITIONS? BuildConditions()
+    {
+        var validComponents = _components
+            .Where(component => !string.IsNullOrWhiteSpace(component.NAME) && component.MOLE_FRACTION > 0)
+            .Select(component => new FLASH_COMPONENT
+            {
+                NAME = component.NAME.Trim(),
+                COMPONENT_NAME = component.NAME.Trim(),
+                MOLE_FRACTION = component.MOLE_FRACTION,
+                CRITICAL_TEMPERATURE = component.CRITICAL_TEMPERATURE,
+                CRITICAL_PRESSURE = component.CRITICAL_PRESSURE,
+                ACENTRIC_FACTOR = component.ACENTRIC_FACTOR,
+                MOLECULAR_WEIGHT = component.MOLECULAR_WEIGHT
+            })
+            .ToList();
+
+        if (validComponents.Count < 2)
+        {
+            Snackbar.Add("Enter at least two components with positive mole fractions.", Severity.Warning);
+            return null;
+        }
+
+        var total = validComponents.Sum(component => component.MOLE_FRACTION);
+        if (Math.Abs(total - 1m) > 0.001m)
+        {
+            Snackbar.Add("Mole fractions must sum to 1.000 before running flash calculations.", Severity.Warning);
+            return null;
+        }
+
+        return new FLASH_CONDITIONS
+        {
+            PRESSURE = _pressure,
+            TEMPERATURE = _temperature,
+            FEED_COMPOSITION = validComponents
+        };
+    }
+
+    private static FLASH_COMPONENT CreateBlankComponent() => new()
+    {
+        NAME = string.Empty,
+        COMPONENT_NAME = string.Empty,
+        MOLE_FRACTION = 0m,
+        CRITICAL_TEMPERATURE = 0m,
+        CRITICAL_PRESSURE = 0m,
+        ACENTRIC_FACTOR = 0m,
+        MOLECULAR_WEIGHT = 0m
+    };
+
+    private IReadOnlyList<CalculationKpiMetric> GetResultKpis()
+    {
+        if (_currentResult == null)
+            return Array.Empty<CalculationKpiMetric>();
+
+        return new CalculationKpiMetric[]
+        {
+            new() { Label = "Vapor Fraction", Value = FormatDecimal(_currentResult.VaporFraction, 4), Unit = "fraction", ValueColor = Color.Info, Icon = Icons.Material.Filled.Cloud, TrendIcon = Icons.Material.Filled.TrendingUp, TrendColor = Color.Info, TrendText = "Gas phase split" },
+            new() { Label = "Liquid Fraction", Value = FormatDecimal(_currentResult.LiquidFraction, 4), Unit = "fraction", ValueColor = Color.Primary, Icon = Icons.Material.Filled.WaterDrop, TrendIcon = Icons.Material.Filled.TrendingDown, TrendColor = Color.Primary, TrendText = "Liquid phase split" },
+            new() { Label = "Iterations", Value = _currentResult.Iterations.ToString(), ValueColor = Color.Warning, Icon = Icons.Material.Filled.Loop, TrendIcon = Icons.Material.Filled.Speed, TrendColor = Color.Warning, TrendText = "Solver effort" },
+            new() { Label = "Convergence Error", Value = FormatDecimal(_currentResult.ConvergenceError, 6), ValueColor = _currentResult.Converged ? Color.Success : Color.Error, Icon = Icons.Material.Filled.TrackChanges, TrendIcon = _currentResult.Converged ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Error, TrendColor = _currentResult.Converged ? Color.Success : Color.Error, TrendText = _currentResult.Converged ? "Converged" : "Not converged" }
+        };
+    }
+
+    private static string FormatDecimal(decimal value, int decimals = 2) => value.ToString($"N{decimals}");
+
+    private static Color GetFractionColor(decimal total) => Math.Abs(total - 1m) <= 0.001m ? Color.Success : Color.Warning;
+}

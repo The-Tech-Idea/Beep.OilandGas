@@ -1,0 +1,540 @@
+@page "/ppdm39/calculations/dca"
+@page "/analysis/decline-curve"
+@using System.Linq
+@using System.Security.Claims
+@using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.Calculations
+@using Beep.OilandGas.PPDM39.Models
+@inject ApiClient ApiClient
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ICalculationServiceClient CalculationService
+@inject IDevelopmentServiceClient DevelopmentClient
+@inject ILifeCycleService LifeCycleService
+@inject ISnackbar Snackbar
+
+<PageTitle>Run Decline Curve Analysis</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Run Decline Curve Analysis</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName - Production decline diagnostics, forecast points, and reserves signal</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Icon="@Icons.Material.Filled.ShowChart">Production</MudChip>
+                @if (!string.IsNullOrWhiteSpace(_lastOperationId))
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Info">Op @_lastOperationId</MudChip>
+                }
+            </MudStack>
+        </MudStack>
+        <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                   StartIcon="@Icons.Material.Filled.Refresh"
+                   OnClick="ReloadHistoryAsync"
+                   Disabled="@(_isRunning || string.IsNullOrWhiteSpace(_selectedWellId))">
+            Refresh History
+        </MudButton>
+    </MudStack>
+
+    <MudPaper Class="pa-4 mb-4" Elevation="1">
+        <MudGrid Spacing="3">
+            <MudItem xs="12" md="4">
+                <MudSelect T="string" Label="Well" Variant="Variant.Outlined"
+                           Value="@_selectedWellId" ValueChanged="OnWellChanged">
+                    @foreach (var well in _wells)
+                    {
+                        <MudSelectItem Value="@well.UWI">@well.DisplayName</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudSelect T="string" Label="Fluid" Variant="Variant.Outlined" @bind-Value="@_productionFluidType">
+                    <MudSelectItem Value="@("OIL")">Oil</MudSelectItem>
+                    <MudSelectItem Value="@("GAS")">Gas</MudSelectItem>
+                    <MudSelectItem Value="@("WATER")">Water</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudSelect T="string" Label="Decline Family" Variant="Variant.Outlined" @bind-Value="@_calculationType">
+                    <MudSelectItem Value="@("DCA")">Classic DCA</MudSelectItem>
+                    <MudSelectItem Value="@("DCA_EXPONENTIAL")">Exponential</MudSelectItem>
+                    <MudSelectItem Value="@("DCA_HYPERBOLIC")">Hyperbolic</MudSelectItem>
+                    <MudSelectItem Value="@("DCA_HARMONIC")">Harmonic</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudNumericField T="double?" @bind-Value="@_initialQi" Label="Initial qi estimate" Variant="Variant.Outlined" Min="0" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudDatePicker @bind-Date="@_startDate" Label="Start date" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudDatePicker @bind-Date="@_endDate" Label="End date" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudNumericField T="double" @bind-Value="@_initialDiPercent" Label="Initial Di (%)" Variant="Variant.Outlined" Min="0.1" Max="100" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudNumericField T="double" @bind-Value="@_confidenceLevelPercent" Label="Confidence (%)" Variant="Variant.Outlined" Min="50" Max="99.9" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudNumericField T="int" @bind-Value="@_forecastMonths" Label="Forecast months" Variant="Variant.Outlined" Min="1" Max="240" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudCheckBox @bind-Value="@_generateForecast" Label="Generate forecast points" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudCheckBox @bind-Value="@_useAsync" Label="Use async solver" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                               StartIcon="@Icons.Material.Filled.History"
+                               OnClick="ReloadHistoryAsync"
+                               Disabled="@(_isRunning || string.IsNullOrWhiteSpace(_selectedWellId))">
+                        Load History
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.PlayArrow"
+                               OnClick="RunAnalysisAsync"
+                               Disabled="@(_isRunning || string.IsNullOrWhiteSpace(_selectedWellId))">
+                        @if (_isRunning)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                            <MudText Class="ms-2">Running</MudText>
+                        }
+                        else
+                        {
+                            <MudText>Run Analysis</MudText>
+                        }
+                    </MudButton>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    @if (_currentResult != null)
+    {
+        <CalculationKpiSection Metrics="@GetResultKpis()" Class="mb-4" />
+
+        <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mb-4">
+            <MudTabPanel Text="Forecast Rate" Icon="@Icons.Material.Filled.ShowChart">
+                <MudPaper Elevation="0" Class="pa-4">
+                    @if (_forecastRateSeries.Count > 0)
+                    {
+                        <MudChart T="double" ChartType="ChartType.Line"
+                                  ChartSeries="@_forecastRateSeries"
+                                  XAxisLabels="@_forecastLabels"
+                                  Width="100%"
+                                  Height="300px" />
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">No forecast points are available for the current result.</MudText>
+                    }
+                </MudPaper>
+            </MudTabPanel>
+            <MudTabPanel Text="Cumulative" Icon="@Icons.Material.Filled.Timeline">
+                <MudPaper Elevation="0" Class="pa-4">
+                    @if (_cumulativeSeries.Count > 0)
+                    {
+                        <MudChart T="double" ChartType="ChartType.Line"
+                                  ChartSeries="@_cumulativeSeries"
+                                  XAxisLabels="@_forecastLabels"
+                                  Width="100%"
+                                  Height="300px" />
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">No cumulative forecast points are available for the current result.</MudText>
+                    }
+                </MudPaper>
+            </MudTabPanel>
+            <MudTabPanel Text="Forecast Points" Icon="@Icons.Material.Filled.TableChart">
+                <MudPaper Elevation="0" Class="pa-0">
+                    <MudDataGrid T="DCAForecastPoint" Items="@_currentResult.ForecastPoints" Dense="true" Hover="true" ReadOnly="true">
+                        <Columns>
+                            <TemplateColumn Title="Date">
+                                <CellTemplate>
+                                    <MudText Typo="Typo.body2">@context.Item.Date.ToString("dd MMM yyyy")</MudText>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Rate">
+                                <CellTemplate>
+                                    <MudText Typo="Typo.body2">@FormatDecimal(context.Item.ProductionRate)</MudText>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Cumulative">
+                                <CellTemplate>
+                                    <MudText Typo="Typo.body2">@FormatDecimal(context.Item.CumulativeProduction)</MudText>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Decline %">
+                                <CellTemplate>
+                                    <MudText Typo="Typo.body2">@FormatDecimal(context.Item.DeclineRate)</MudText>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                </MudPaper>
+            </MudTabPanel>
+            <MudTabPanel Text="Diagnostics" Icon="@Icons.Material.Filled.Analytics">
+                <MudPaper Elevation="0" Class="pa-4">
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12" md="6">
+                            <MudCard Outlined="true">
+                                <MudCardContent>
+                                    <MudText Typo="Typo.subtitle1" Class="mb-2">Fit Summary</MudText>
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.body2">Calculation ID: @_currentResult.CalculationId</MudText>
+                                        <MudText Typo="Typo.body2">Status: @(_currentResult.Status ?? "Unknown")</MudText>
+                                        <MudText Typo="Typo.body2">Type: @FormatCalculationType(_currentResult.CalculationType)</MudText>
+                                        <MudText Typo="Typo.body2">Fluid: @(_currentResult.ProductionFluidType ?? "N/A")</MudText>
+                                        <MudText Typo="Typo.body2">Calculated: @_currentResult.CalculationDate.ToString("dd MMM yyyy HH:mm")</MudText>
+                                    </MudStack>
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudCard Outlined="true">
+                                <MudCardContent>
+                                    <MudText Typo="Typo.subtitle1" Class="mb-2">Statistical Diagnostics</MudText>
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.body2">RMSE: @FormatDecimal(_currentResult.RMSE, 3)</MudText>
+                                        <MudText Typo="Typo.body2">Correlation: @FormatDecimal(_currentResult.CorrelationCoefficient, 3)</MudText>
+                                        <MudText Typo="Typo.body2">MAE: @FormatNullableDouble(_currentResult.AdditionalResults?.Mae, 3)</MudText>
+                                        <MudText Typo="Typo.body2">Iterations: @(_currentResult.AdditionalResults?.Iterations?.ToString() ?? "N/A")</MudText>
+                                        <MudText Typo="Typo.body2">Converged: @(_currentResult.AdditionalResults?.Converged?.ToString() ?? "N/A")</MudText>
+                                    </MudStack>
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            </MudTabPanel>
+        </MudTabs>
+    }
+
+    <MudCard Elevation="2">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.subtitle1">Saved DCA Runs</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent Class="pa-0">
+            @if (_history.Count > 0)
+            {
+                <MudDataGrid T="DCAResult" Items="@_history" Dense="true" Hover="true" ReadOnly="true">
+                    <Columns>
+                        <TemplateColumn Title="Date">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@context.Item.CalculationDate.ToString("dd MMM yyyy")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Type">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@FormatCalculationType(context.Item.CalculationType)</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Status">
+                            <CellTemplate>
+                                <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.Item.Status)">@((context.Item.Status ?? "Unknown").ToUpperInvariant())</MudChip>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="EUR">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@FormatDecimal(context.Item.EstimatedEUR)</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="R-Squared">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@FormatDecimal(context.Item.R2, 3)</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Open">
+                            <CellTemplate>
+                                <MudButton Variant="Variant.Text" Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.Visibility"
+                                           OnClick="@(() => OpenHistoryResultAsync(context.Item.CalculationId))">
+                                    Open
+                                </MudButton>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            }
+            else if (!_isLoading)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.ShowChart" Color="Color.Secondary" Class="og-icon-xl" />
+                    <MudText Typo="Typo.h6">No saved DCA runs yet</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Run an analysis for the selected well to populate history.</MudText>
+                </MudStack>
+            }
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private string _fieldName = string.Empty;
+    private string? _currentUserId;
+    private string? _selectedWellId;
+    private string _productionFluidType = "OIL";
+    private string _calculationType = "DCA_HYPERBOLIC";
+    private DateTime? _startDate = DateTime.UtcNow.AddYears(-2);
+    private DateTime? _endDate = DateTime.UtcNow;
+    private double? _initialQi;
+    private double _initialDiPercent = 10;
+    private double _confidenceLevelPercent = 95;
+    private int _forecastMonths = 60;
+    private bool _generateForecast = true;
+    private bool _useAsync;
+    private bool _isLoading = true;
+    private bool _isRunning;
+    private string? _lastOperationId;
+    private DCAResult? _currentResult;
+    private List<DCAResult> _history = new();
+    private List<ChartSeries<double>> _forecastRateSeries = new();
+    private List<ChartSeries<double>> _cumulativeSeries = new();
+    private string[] _forecastLabels = Array.Empty<string>();
+    private List<WellOptionDto> _wells = new();
+
+    private sealed class WellOptionDto
+    {
+        public string UWI { get; set; } = string.Empty;
+        public string? WELL_NAME { get; set; }
+        public string? ASSIGNED_FIELD { get; set; }
+        public string DisplayName => string.IsNullOrWhiteSpace(WELL_NAME) ? UWI : $"{UWI} - {WELL_NAME}";
+    }
+
+    private static WellOptionDto MapWell(WELL well)
+    {
+        return new WellOptionDto
+        {
+            UWI = well.UWI,
+            WELL_NAME = well.WELL_NAME,
+            ASSIGNED_FIELD = well.ASSIGNED_FIELD
+        };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            await LoadFieldContextAsync();
+            await LoadUserAsync();
+            await LoadWellsAsync();
+            await ReloadHistoryAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadFieldContextAsync()
+    {
+        try
+        {
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
+            if (summary != null)
+            {
+                _fieldName = summary.FieldName ?? _fieldName;
+            }
+        }
+        catch
+        {
+            // Field name is non-critical.
+        }
+    }
+
+    private async Task LoadUserAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+    }
+
+    private async Task LoadWellsAsync()
+    {
+        try
+        {
+            _wells = (await DevelopmentClient.GetWellsAsync()).Select(MapWell).ToList();
+            if (_wells.Count > 0)
+            {
+                _selectedWellId ??= _wells[0].UWI;
+                _fieldName = _wells[0].ASSIGNED_FIELD ?? _fieldName;
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load wells for DCA.", Severity.Warning);
+        }
+    }
+
+    private async Task OnWellChanged(string? wellId)
+    {
+        _selectedWellId = wellId;
+        _currentResult = null;
+        BuildForecastCharts();
+        await ReloadHistoryAsync();
+    }
+
+    private async Task RunAnalysisAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedWellId))
+        {
+            Snackbar.Add("Select a well before running DCA.", Severity.Warning);
+            return;
+        }
+
+        _isRunning = true;
+        try
+        {
+            var request = new DCARequest
+            {
+                WellId = _selectedWellId,
+                CalculationType = _calculationType,
+                ProductionFluidType = _productionFluidType,
+                StartDate = _startDate,
+                EndDate = _endDate,
+                UserId = _currentUserId,
+                AdditionalParameters = new DcaAnalysisOptions
+                {
+                    InitialQi = _initialQi,
+                    InitialDi = _initialDiPercent / 100.0,
+                    ConfidenceLevel = _confidenceLevelPercent / 100.0,
+                    UseAsync = _useAsync,
+                    GenerateForecast = _generateForecast,
+                    ForecastMonths = _forecastMonths
+                }
+            };
+
+            var response = await CalculationService.PerformDcaAnalysisAsync(request);
+            _lastOperationId = response.OperationId;
+            _currentResult = response.Result;
+
+            if (_currentResult == null)
+            {
+                Snackbar.Add("DCA completed without a result payload.", Severity.Warning);
+                return;
+            }
+
+            BuildForecastCharts();
+            await ReloadHistoryAsync();
+            Snackbar.Add("Decline curve analysis completed.", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error running decline curve analysis.", Severity.Error);
+        }
+        finally
+        {
+            _isRunning = false;
+        }
+    }
+
+    private async Task ReloadHistoryAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedWellId))
+        {
+            _history = new();
+            return;
+        }
+
+        _history = await CalculationService.GetDcaResultsAsync(wellId: _selectedWellId);
+        _history = _history
+            .OrderByDescending(result => result.CalculationDate)
+            .ToList();
+    }
+
+    private async Task OpenHistoryResultAsync(string calculationId)
+    {
+        var result = await CalculationService.GetDcaResultAsync(calculationId);
+        if (result == null)
+        {
+            Snackbar.Add("Unable to load the selected DCA result.", Severity.Warning);
+            return;
+        }
+
+        _currentResult = result;
+        BuildForecastCharts();
+    }
+
+    private void BuildForecastCharts()
+    {
+        _forecastRateSeries = new();
+        _cumulativeSeries = new();
+        _forecastLabels = Array.Empty<string>();
+
+        var forecastPoints = _currentResult?.ForecastPoints ?? new List<DCAForecastPoint>();
+        if (forecastPoints.Count == 0)
+        {
+            return;
+        }
+
+        _forecastLabels = forecastPoints.Select(point => point.Date.ToString("MMM yy")).ToArray();
+        _forecastRateSeries = new List<ChartSeries<double>>
+        {
+            new ChartSeries<double>
+            {
+                Name = "Forecast Rate",
+                Data = forecastPoints.Select(point => Convert.ToDouble(point.ProductionRate ?? 0m)).ToArray()
+            }
+        };
+        _cumulativeSeries = new List<ChartSeries<double>>
+        {
+            new ChartSeries<double>
+            {
+                Name = "Cumulative Production",
+                Data = forecastPoints.Select(point => Convert.ToDouble(point.CumulativeProduction ?? 0m)).ToArray()
+            }
+        };
+    }
+
+    private static Color GetStatusColor(string? status) => (status ?? string.Empty).ToUpperInvariant() switch
+    {
+        "SUCCESS" => Color.Success,
+        "PARTIAL" => Color.Warning,
+        "FAILED" => Color.Error,
+        _ => Color.Default
+    };
+
+    private static string FormatCalculationType(string? calculationType) => calculationType switch
+    {
+        "DCA_EXPONENTIAL" => "Exponential",
+        "DCA_HYPERBOLIC" => "Hyperbolic",
+        "DCA_HARMONIC" => "Harmonic",
+        "DCA" => "Classic DCA",
+        _ => calculationType ?? "N/A"
+    };
+
+    private IReadOnlyList<CalculationKpiMetric> GetResultKpis()
+    {
+        if (_currentResult == null)
+            return Array.Empty<CalculationKpiMetric>();
+
+        return new CalculationKpiMetric[]
+        {
+            new() { Label = "Initial Rate", Value = FormatDecimal(_currentResult.InitialRate), Unit = "units/day", ValueColor = Color.Primary, Icon = Icons.Material.Filled.Speed, TrendIcon = Icons.Material.Filled.TrendingFlat, TrendColor = Color.Default, TrendText = "Fit-derived qi" },
+            new() { Label = "Decline Rate", Value = FormatDecimal(_currentResult.DeclineRate), Unit = "fraction", ValueColor = Color.Warning, Icon = Icons.Material.Filled.TrendingDown, TrendIcon = Icons.Material.Filled.Timeline, TrendColor = Color.Warning, TrendText = "Observed decline" },
+            new() { Label = "Estimated EUR", Value = FormatDecimal(_currentResult.EstimatedEUR), Unit = "units", ValueColor = Color.Success, Icon = Icons.Material.Filled.Storage, TrendIcon = Icons.Material.Filled.ShowChart, TrendColor = Color.Success, TrendText = "Recovered from fit" },
+            new() { Label = "R-Squared", Value = FormatDecimal(_currentResult.R2, 3), ValueColor = Color.Info, Icon = Icons.Material.Filled.Insights, TrendIcon = Icons.Material.Filled.Analytics, TrendColor = Color.Info, TrendText = "Goodness of fit" }
+        };
+    }
+
+    private static string FormatDecimal(decimal? value, int decimals = 2) => value.HasValue
+        ? value.Value.ToString($"N{decimals}")
+        : "N/A";
+
+    private static string FormatNullableDouble(double? value, int decimals = 2) => value.HasValue
+        ? value.Value.ToString($"N{decimals}")
+        : "N/A";
+}

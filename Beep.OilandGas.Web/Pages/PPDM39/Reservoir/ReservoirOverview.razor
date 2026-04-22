@@ -2,6 +2,7 @@
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject ApiClient ApiClient
+@using Beep.OilandGas.Models.Data.Production
 
 <PageTitle>Review Reservoir Performance</PageTitle>
 
@@ -166,12 +167,8 @@
     private string _fieldName = string.Empty;
     private bool _loading = true;
 
-    private ReservoirSummaryApiDto? _summary;
+    private ReservoirDashboardSummary? _summary;
     private List<ReservoirPoolDto> _pools = new();
-
-    private record ReservoirPoolDto(
-        string PoolId, string PoolName, string Status,
-        double AreaAcres, string Formation);
 
     protected override async Task OnInitializedAsync()
     {
@@ -186,7 +183,7 @@
         _loading = true;
         try
         {
-            _summary = await ApiClient.GetAsync<ReservoirSummaryApiDto>(
+            _summary = await ApiClient.GetAsync<ReservoirDashboardSummary>(
                 "api/field/current/reservoir/dashboard/summary");
 
             var pools = await ApiClient.GetAsync<List<ReservoirPoolDto>>(
@@ -200,12 +197,4 @@
         finally { _loading = false; }
     }
 
-    private class ReservoirSummaryApiDto
-    {
-        public string FieldId           { get; set; } = string.Empty;
-        public double OoipMmbbl         { get; set; }
-        public double RecoveryFactorPct { get; set; }
-        public double Reserves2PMmbbl   { get; set; }
-        public int    ActivePoolCount   { get; set; }
-    }
 }

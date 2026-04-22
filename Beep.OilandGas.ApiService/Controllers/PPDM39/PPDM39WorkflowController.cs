@@ -48,7 +48,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 if (request?.Workflow == null)
                 {
-                    return BadRequest(new OperationStartResponse { OperationId = "", Message = "Workflow definition is required" });
+                        return BadRequest(new { error = "Workflow definition is required." });
                 }
 
                 // Set field context if available and workflow doesn't already have field ID
@@ -223,7 +223,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 var progress = _progressTracking?.GetWorkflowProgress(workflowId);
                 if (progress == null)
                 {
-                    return NotFound(new { error = "Workflow not found" });
+                        return NotFound(new { error = "Workflow not found." });
                 }
                 return Ok(progress);
             }

@@ -48,7 +48,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                        return BadRequest(new { error = "No active field selected." });
                 }
 
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
@@ -78,7 +78,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                        return BadRequest(new { error = "No active field selected." });
                 }
 
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
@@ -86,7 +86,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 
                 if (abandonment == null)
                 {
-                    return NotFound(new { error = $"Well abandonment {id} not found or does not belong to current field" });
+                    return NotFound(new { error = $"Well abandonment {id} not found or does not belong to current field." });
                 }
 
                 return Ok(abandonment);
@@ -116,17 +116,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                        return BadRequest(new { error = "No active field selected." });
                 }
 
                 if (string.IsNullOrWhiteSpace(wellId))
                 {
-                    return BadRequest(new { error = "wellId is required" });
+                        return BadRequest(new { error = "Well ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(userId))
                 {
-                    return BadRequest(new { error = "userId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
@@ -155,7 +155,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                        return BadRequest(new { error = "No active field selected." });
                 }
 
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
@@ -185,7 +185,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                        return BadRequest(new { error = "No active field selected." });
                 }
 
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
@@ -193,7 +193,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 
                 if (decommissioning == null)
                 {
-                    return NotFound(new { error = $"Facility decommissioning {id} not found or does not belong to current field" });
+                    return NotFound(new { error = $"Facility decommissioning {id} not found or does not belong to current field." });
                 }
 
                 return Ok(decommissioning);
@@ -224,12 +224,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                        return BadRequest(new { error = "No active field selected." });
                 }
 
                 if (string.IsNullOrWhiteSpace(userId))
                 {
-                    return BadRequest(new { error = "userId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
@@ -258,7 +258,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                        return BadRequest(new { error = "No active field selected." });
                 }
 
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
@@ -289,12 +289,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                        return BadRequest(new { error = "No active field selected." });
                 }
 
                 if (string.IsNullOrWhiteSpace(userId))
                 {
-                    return BadRequest(new { error = "userId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
@@ -323,7 +323,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                        return BadRequest(new { error = "No active field selected." });
                 }
 
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
@@ -352,7 +352,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                        return BadRequest(new { error = "No active field selected." });
                 }
 
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
@@ -388,17 +388,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                        return BadRequest(new { error = "No active field selected." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.WellId))
                 {
-                    return BadRequest(new { error = "WellId is required" });
+                        return BadRequest(new { error = "Well ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var instance = await _decommissioningProcessService.StartWellAbandonmentProcessAsync(
@@ -425,12 +425,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                 {
-                    return BadRequest(new { error = "InstanceId is required" });
+                        return BadRequest(new { error = "Instance ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var result = await _decommissioningProcessService.PlanAbandonmentAsync(
@@ -457,12 +457,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                 {
-                    return BadRequest(new { error = "InstanceId is required" });
+                        return BadRequest(new { error = "Instance ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var result = await _decommissioningProcessService.ObtainRegulatoryApprovalAsync(request.InstanceId, request.UserId);
@@ -485,12 +485,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                 {
-                    return BadRequest(new { error = "InstanceId is required" });
+                        return BadRequest(new { error = "Instance ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var result = await _decommissioningProcessService.PlugWellAsync(
@@ -517,12 +517,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                 {
-                    return BadRequest(new { error = "InstanceId is required" });
+                        return BadRequest(new { error = "Instance ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var result = await _decommissioningProcessService.RestoreSiteAsync(
@@ -549,12 +549,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                 {
-                    return BadRequest(new { error = "InstanceId is required" });
+                        return BadRequest(new { error = "Instance ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var result = await _decommissioningProcessService.CompleteAbandonmentAsync(request.InstanceId, request.UserId);
@@ -583,17 +583,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
-                    return BadRequest(new { error = "No active field is set" });
+                        return BadRequest(new { error = "No active field selected." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.FacilityId))
                 {
-                    return BadRequest(new { error = "FacilityId is required" });
+                        return BadRequest(new { error = "Facility ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var instance = await _decommissioningProcessService.StartFacilityDecommissioningProcessAsync(
@@ -620,12 +620,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                 {
-                    return BadRequest(new { error = "InstanceId is required" });
+                        return BadRequest(new { error = "Instance ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var result = await _decommissioningProcessService.PlanDecommissioningAsync(
@@ -652,12 +652,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                 {
-                    return BadRequest(new { error = "InstanceId is required" });
+                        return BadRequest(new { error = "Instance ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var result = await _decommissioningProcessService.RemoveEquipmentAsync(
@@ -684,12 +684,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                 {
-                    return BadRequest(new { error = "InstanceId is required" });
+                        return BadRequest(new { error = "Instance ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var result = await _decommissioningProcessService.CleanupSiteAsync(
@@ -716,12 +716,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                 {
-                    return BadRequest(new { error = "InstanceId is required" });
+                        return BadRequest(new { error = "Instance ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var result = await _decommissioningProcessService.ObtainRegulatoryClosureAsync(request.InstanceId, request.UserId);
@@ -744,12 +744,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                 {
-                    return BadRequest(new { error = "InstanceId is required" });
+                        return BadRequest(new { error = "Instance ID is required." });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.UserId))
                 {
-                    return BadRequest(new { error = "UserId is required" });
+                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var result = await _decommissioningProcessService.CompleteDecommissioningAsync(request.InstanceId, request.UserId);
@@ -772,13 +772,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         {
             if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "ID is required." });
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
             var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
             try
             {
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
                 var abandonment = await decommissioningService.GetWellAbandonmentForFieldAsync(fieldId, id);
-                if (abandonment == null) return NotFound(new { error = $"P&A record {id} not found" });
+                    if (abandonment == null) return NotFound(new { error = $"P&A record {id} not found." });
 
                 _logger.LogInformation("P&A programme {Id} approved by {UserId}", id, userId);
                 return NoContent();

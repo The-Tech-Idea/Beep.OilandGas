@@ -104,13 +104,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         [HttpGet("composition/{compositionId}")]
         public async Task<ActionResult<OilComposition>> GetComposition(string compositionId)
         {
+            if (string.IsNullOrWhiteSpace(compositionId))
+                return BadRequest(new { error = "Composition ID is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(compositionId))
-                    return BadRequest(new { error = "Composition ID is required." });
                 var result = await _service.GetOilCompositionAsync(compositionId);
                 if (result == null)
-                    return NotFound(new { error = $"Composition {compositionId} not found" });
+                        return NotFound(new { error = $"Composition {compositionId} not found." });
                 return Ok(result);
             }
             catch (Exception ex)
@@ -123,10 +123,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         [HttpGet("composition/{compositionId}/history")]
         public async Task<ActionResult<List<OilPropertyResult>>> GetPropertyHistory(string compositionId)
         {
+            if (string.IsNullOrWhiteSpace(compositionId))
+                return BadRequest(new { error = "Composition ID is required." });
             try
             {
-                if (string.IsNullOrWhiteSpace(compositionId))
-                    return BadRequest(new { error = "Composition ID is required." });
                 var result = await _service.GetOilPropertyHistoryAsync(compositionId);
                 return Ok(result);
             }

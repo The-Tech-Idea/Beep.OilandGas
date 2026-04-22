@@ -3,9 +3,12 @@
 @using Beep.OilandGas.Models.Data.PlungerLift
 @using Beep.OilandGas.Models.Core.Interfaces
 @using Beep.OilandGas.Client.App
+@using Beep.OilandGas.PPDM39.Models
 @inject ISnackbar Snackbar
 @inject IPumpServiceClient PumpService
 @inject ApiClient ApiClient
+@inject IDevelopmentServiceClient DevelopmentClient
+@inject ILifeCycleService LifeCycleService
 @inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Design Plunger Lift System</PageTitle>
@@ -74,14 +77,48 @@
                 <MudStack Spacing="2">
                     <MudText>Production Rate: @_performance.ProductionRate.ToString("F2") BBL/D</MudText>
                     <MudText>Cycle Time: @_performance.CycleTime.ToString("F2") minutes</MudText>
-                    <MudText>Efficiency: @_performance.Efficiency.ToString("F2")%</MudText>
+                    <MudText>Efficiency: @FormatEfficiency(_performance.Efficiency)</MudText>
                 </MudStack>
             </MudPaper>
         }
     </MudPaper>
+
+    @if (_plungerDesign != null || _performance != null)
+    {
+        <LiftRecommendationCard Title="Lift Workflow Recommendation"
+                                Subtitle="Plunger lift candidate review"
+                                Icon="@Icons.Material.Filled.VerticalAlignTop"
+                                IconColor="Color.Warning"
+                                Headline="@GetLiftRecommendationHeadline()"
+                                Summary="@GetLiftRecommendationSummary()"
+                                ImpactText="@GetLiftRecommendationImpactText()"
+                                Severity="@GetLiftRecommendationSeverity()"
+                                Facts="@GetLiftRecommendationFacts()"
+                                Class="mt-4">
+            <Actions>
+                <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.AutoGraph"
+                           Href="@GetWellPerformanceUrl()">
+                    Open Well Performance Optimizer
+                </MudButton>
+                @if (_performance == null && !string.IsNullOrWhiteSpace(_performanceWellUWI))
+                {
+                    <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Secondary"
+                               StartIcon="@Icons.Material.Filled.Tune"
+                               OnClick="AnalyzePerformance"
+                               Disabled="@_isAnalyzing">
+                        Run Performance Validation
+                    </MudButton>
+                }
+            </Actions>
+        </LiftRecommendationCard>
+    }
 </MudContainer>
 
 @code {
+    [SupplyParameterFromQuery(Name = "wellId")]
+    public string? WellId { get; set; }
+
     private string _fieldName = string.Empty;
     private string _wellUWI = string.Empty;
     private decimal _wellDepth = 5000;
@@ -112,7 +149,7 @@
         {
             try
             {
-                var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+                var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
                 if (summary != null)
                     _fieldName = summary.FieldName ?? _fieldName;
             }
@@ -123,12 +160,14 @@
                 var authState = await AuthStateProvider.GetAuthenticationStateAsync();
                 _currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
 
-                var wells = await ApiClient.GetAsync<List<WellDto>>("api/field/current/development/wells") ?? new();                if (wells != null && wells.Count > 0)
+                var wells = (await DevelopmentClient.GetWellsAsync()).Select(MapWell).ToList();
+                if (wells.Count > 0)
                 {
-                    _fieldName = wells[0].ASSIGNED_FIELD ?? _fieldName;
-                    _wellUWI = wells[0].UWI;
-                    _performanceWellUWI = wells[0].UWI;
-                    _wellDepth = wells[0].FINAL_TD ?? _wellDepth;
+                    var selectedWell = wells.Find(well => string.Equals(well.UWI, WellId, StringComparison.OrdinalIgnoreCase)) ?? wells[0];
+                    _fieldName = selectedWell.ASSIGNED_FIELD ?? _fieldName;
+                    _wellUWI = selectedWell.UWI;
+                    _performanceWellUWI = selectedWell.UWI;
+                    _wellDepth = selectedWell.FINAL_TD ?? _wellDepth;
                 }
             }
             catch (Exception)
@@ -140,6 +179,17 @@
         {
             _isLoading = false;
         }
+    }
+
+    private static WellDto MapWell(WELL well)
+    {
+        return new WellDto
+        {
+            UWI = well.UWI,
+            WELL_NAME = well.WELL_NAME,
+            FINAL_TD = well.FINAL_TD,
+            ASSIGNED_FIELD = well.ASSIGNED_FIELD
+        };
     }
 
     private async Task DesignPlungerLift()
@@ -163,6 +213,7 @@
             };
 
             _plungerDesign = await PumpService.DesignPlungerLiftSystemAsync(_wellUWI, wellProperties);
+            _performanceWellUWI = _wellUWI;
             Snackbar.Add("Plunger lift design completed", Severity.Success);
         }
         catch (Exception)
@@ -219,6 +270,93 @@
         {
             _isAnalyzing = false;
         }
+    }
+
+    private Severity GetLiftRecommendationSeverity()
+    {
+        if (_performance != null)
+        {
+            var efficiency = NormalizeEfficiency(_performance.Efficiency);
+            return efficiency >= 70m && _performance.DowntimeHours <= 4 ? Severity.Success : Severity.Warning;
+        }
+
+        return Severity.Info;
+    }
+
+    private string GetLiftRecommendationHeadline()
+    {
+        if (_performance != null)
+        {
+            var efficiency = NormalizeEfficiency(_performance.Efficiency);
+            return efficiency >= 70m && _performance.DowntimeHours <= 4
+                ? "Advance plunger lift candidate for production review"
+                : "Reduce plunger downtime before intervention review";
+        }
+
+        return "Validate plunger lift design against live well underperformance";
+    }
+
+    private string GetLiftRecommendationSummary()
+    {
+        if (_performance != null)
+        {
+            return $"Performance validation indicates {_performance.ProductionRate.ToString("N1")} BBL/D at {FormatEfficiency(_performance.Efficiency)} with {_performance.CycleTime} minute cycles and {_performance.DowntimeHours} downtime hours.";
+        }
+
+        if (_plungerDesign != null)
+        {
+            return $"Plunger lift design targets {_plungerDesign.CycleTime} minute cycles at {_plungerDesign.OperatingPressure.ToString("N1")} PSI operating pressure. Run performance validation before field action.";
+        }
+
+        return "Generate a plunger lift design to start the lift recommendation flow.";
+    }
+
+    private string GetLiftRecommendationImpactText()
+    {
+        return "Workflow handoff: compare this plunger lift candidate against the current production gap before intervention or work-order planning.";
+    }
+
+    private IReadOnlyList<RecommendationFactItem> GetLiftRecommendationFacts()
+    {
+        if (_performance != null)
+        {
+            return new RecommendationFactItem[]
+            {
+                new() { Label = "Validated Rate", Value = $"{_performance.ProductionRate.ToString("N1")} BBL/D", ValueColor = Color.Success },
+                new() { Label = "Efficiency", Value = FormatEfficiency(_performance.Efficiency), ValueColor = Color.Warning },
+                new() { Label = "Downtime", Value = $"{_performance.DowntimeHours} hr", ValueColor = _performance.DowntimeHours <= 4 ? Color.Success : Color.Warning }
+            };
+        }
+
+        if (_plungerDesign != null)
+        {
+            return new RecommendationFactItem[]
+            {
+                new() { Label = "Cycle Time", Value = $"{_plungerDesign.CycleTime} min", ValueColor = Color.Primary },
+                new() { Label = "Operating Pressure", Value = $"{_plungerDesign.OperatingPressure.ToString("N1")} PSI", ValueColor = Color.Warning },
+                new() { Label = "Plunger Type", Value = _plungerDesign.PlungerType.ToString(), ValueColor = Color.Info }
+            };
+        }
+
+        return Array.Empty<RecommendationFactItem>();
+    }
+
+    private string GetWellPerformanceUrl()
+    {
+        var wellId = !string.IsNullOrWhiteSpace(_performanceWellUWI) ? _performanceWellUWI : _wellUWI;
+        return string.IsNullOrWhiteSpace(wellId)
+            ? "/production/well-performance"
+            : $"/production/well-performance?wellId={Uri.EscapeDataString(wellId)}";
+    }
+
+    private static decimal NormalizeEfficiency(decimal value)
+    {
+        return value <= 1.5m ? value * 100m : value;
+    }
+
+    private static string FormatEfficiency(decimal value)
+    {
+        return NormalizeEfficiency(value).ToString("N1") + "%";
     }
 }
 

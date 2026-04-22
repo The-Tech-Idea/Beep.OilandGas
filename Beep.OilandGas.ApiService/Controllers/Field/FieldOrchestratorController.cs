@@ -63,13 +63,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var fieldMetadata = await _metadata.GetTableMetadataAsync("FIELD");
                 if (fieldMetadata == null)
                 {
-                    return NotFound(new { error = "FIELD table metadata not found" });
+                        return NotFound(new { error = "FIELD table metadata not found." });
                 }
 
                 var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{fieldMetadata.EntityTypeName}");
                 if (entityType == null)
                 {
-                    return NotFound(new { error = $"Entity type not found: {fieldMetadata.EntityTypeName}" });
+                        return NotFound(new { error = $"Entity type not found: {fieldMetadata.EntityTypeName}." });
                 }
 
                 var repo = new PPDMGenericRepository(

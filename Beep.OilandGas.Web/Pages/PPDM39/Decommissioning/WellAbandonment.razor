@@ -1,9 +1,12 @@
 ﻿@page "/ppdm39/decommissioning/well-abandonment"
-@using Beep.OilandGas.PPDM39.Models
+@using Beep.OilandGas.Models.Data
 @using System.Security.Claims
 @inject ApiClient ApiClient
+@inject IDecommissioningServiceClient DecommissioningClient
+@inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject ILifeCycleService LifeCycleService
 @inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Record Well Abandonments</PageTitle>
@@ -20,10 +23,59 @@
                          Icon="@Icons.Material.Filled.RemoveCircle">Decommissioning</MudChip>
             </MudStack>
         </MudStack>
-        <MudButton Variant="Variant.Filled" Color="Color.Error"
-                   StartIcon="@Icons.Material.Filled.Add"
-                   OnClick="OpenAbandonDialog">Record Well Abandonment</MudButton>
+        <MudStack Row="true" Spacing="2">
+            @if (!string.IsNullOrWhiteSpace(ReturnTo))
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                           StartIcon="@Icons.Material.Filled.ArrowBack"
+                           Href="@ReturnTo">
+                    Back
+                </MudButton>
+            }
+            <MudButton Variant="Variant.Filled" Color="Color.Error"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="OpenAbandonDialog">Record Well Abandonment</MudButton>
+        </MudStack>
     </MudStack>
+
+    @if (HasHandoffContext)
+    {
+        <MudPaper Elevation="1" Class="pa-4 mb-4">
+            <MudStack Spacing="1">
+                <MudText Typo="Typo.subtitle2">P&amp;A Record Context</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Tracking decommissioning record for well @WellId.
+                </MudText>
+                @if (!string.IsNullOrWhiteSpace(HandoffReason))
+                {
+                    <MudText Typo="Typo.body2">Reason: @HandoffReason</MudText>
+                }
+                @if (!string.IsNullOrWhiteSpace(ProcessInstanceId))
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Lifecycle instance: @ProcessInstanceId</MudText>
+                }
+            </MudStack>
+        </MudPaper>
+    }
+
+    @if (_selectedAbandonment != null)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true" Variant="Variant.Outlined" Class="mb-4">
+            Showing abandonment @_selectedAbandonment.AbandonmentId for well @_selectedAbandonment.WellId with status @_selectedAbandonment.Status.
+        </MudAlert>
+        <MudStack Row="true" Spacing="2" Class="mb-4">
+            <MudButton Variant="Variant.Outlined" Color="Color.Info"
+                       StartIcon="@Icons.Material.Filled.Gavel"
+                       OnClick="LaunchComplianceForSelectedAbandonment">
+                Launch Closure Compliance
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.AccountBalance"
+                       OnClick="LaunchCloseoutAfeForSelectedAbandonment">
+                Open Closeout AFE
+            </MudButton>
+        </MudStack>
+    }
 
     @if (_isLoading)
     {
@@ -45,32 +97,20 @@
         <MudCardContent Class="pa-0">
             @if (_abandonedWells != null && _abandonedWells.Any())
             {
-                <MudDataGrid T="WELL" Items="@_abandonedWells" Dense="true" Hover="true" Striped="true"
+                <MudDataGrid T="WellAbandonmentResponse" Items="@_abandonedWells" Dense="true" Hover="true" Striped="true"
                              SortMode="SortMode.Multiple" Filterable="true">
                     <Columns>
-                        <TemplateColumn Title="Abandonment ID">
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "WELL_ABANDONMENT_ID")</MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
-                        <TemplateColumn Title="Well ID">
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2" Color="Color.Primary">@GetPropertyValue(context.Item, "WELL_ID")</MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
+                        <PropertyColumn Property="x => x.AbandonmentId" Title="Abandonment ID" />
+                        <PropertyColumn Property="x => x.WellId" Title="Well ID" />
                         <TemplateColumn Title="Abandonment Date">
                             <CellTemplate>
-                                <MudText Typo="Typo.body2">@FormatDate(GetPropertyValue(context.Item, "ABANDONMENT_DATE"))</MudText>
+                                <MudText Typo="Typo.body2">@FormatDate(context.Item.AbandonmentStartDate)</MudText>
                             </CellTemplate>
                         </TemplateColumn>
-                        <TemplateColumn Title="Type">
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "ABANDONMENT_TYPE")</MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
+                        <PropertyColumn Property="x => x.AbandonmentType" Title="Type" />
                         <TemplateColumn Title="Status">
                             <CellTemplate>
-                                <StatusBadge Status="@GetPropertyValue(context.Item, "ABANDONMENT_STATUS")" />
+                                <StatusBadge Status="@context.Item.Status" />
                             </CellTemplate>
                         </TemplateColumn>
                     </Columns>
@@ -99,16 +139,41 @@
 </MudContainer>
 
 @code {
+    [SupplyParameterFromQuery(Name = "wellId")]
+    public string? WellId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "abandonmentId")]
+    public string? AbandonmentId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "processInstanceId")]
+    public string? ProcessInstanceId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "sourceProcess")]
+    public string? SourceProcess { get; set; }
+
+    [SupplyParameterFromQuery(Name = "handoffReason")]
+    public string? HandoffReason { get; set; }
+
+    [SupplyParameterFromQuery(Name = "returnTo")]
+    public string? ReturnTo { get; set; }
+
     private string _fieldName = string.Empty;
-    private List<WELL>? _abandonedWells;
+    private List<WellAbandonmentResponse>? _abandonedWells;
+    private WellAbandonmentResponse? _selectedAbandonment;
     private bool _isLoading = false;
     private string? _currentUserId;
+
+    private bool HasHandoffContext =>
+        !string.IsNullOrWhiteSpace(WellId)
+        || !string.IsNullOrWhiteSpace(AbandonmentId)
+        || !string.IsNullOrWhiteSpace(ProcessInstanceId)
+        || !string.IsNullOrWhiteSpace(SourceProcess);
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
@@ -119,16 +184,23 @@
         await LoadAbandonedWells();
     }
 
+    protected override void OnParametersSet()
+    {
+        ApplySelectedAbandonment();
+    }
+
     private async Task LoadAbandonedWells()
     {
         _isLoading = true;
         try
         {
-            _abandonedWells = await ApiClient.GetAsync<List<WELL>>("/api/field/current/decommissioning/wells-abandoned") ?? new();        }
+            _abandonedWells = await DecommissioningClient.GetAbandonedWellsAsync();
+            ApplySelectedAbandonment();
+        }
         catch (Exception)
         {
             Snackbar.Add("Error loading abandoned wells.", Severity.Error);
-            _abandonedWells = new List<WELL>();
+            _abandonedWells = new List<WellAbandonmentResponse>();
         }
         finally
         {
@@ -139,7 +211,14 @@
     private async Task OpenAbandonDialog()
     {
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<WellAbandonmentDialog>("Record Well Abandonment", options);
+        var parameters = new DialogParameters<WellAbandonmentDialog>
+        {
+            { x => x.WellId, _selectedAbandonment?.WellId ?? WellId },
+            { x => x.AbandonmentType, _selectedAbandonment?.AbandonmentType ?? "PERMANENTLY_ABANDONED" },
+            { x => x.AbandonmentStatus, _selectedAbandonment?.Status ?? "IN_PROGRESS" },
+            { x => x.AbandonmentDate, _selectedAbandonment?.AbandonmentStartDate ?? DateTime.UtcNow }
+        };
+        var dialog = await DialogService.ShowAsync<WellAbandonmentDialog>("Record Well Abandonment", parameters, options);
         var result = await dialog.Result;
 
         if (result?.Canceled == false && result.Data is Dictionary<string, object> resultData)
@@ -147,9 +226,6 @@
             try
             {
                 var wellId = resultData.ContainsKey("wellId") ? resultData["wellId"]?.ToString() : null;
-                var abandonmentData = resultData.ContainsKey("abandonmentData") && resultData["abandonmentData"] is Dictionary<string, object> data 
-                    ? data 
-                    : new Dictionary<string, object>();
 
                 if (string.IsNullOrWhiteSpace(wellId))
                 {
@@ -157,11 +233,16 @@
                     return;
                 }
 
-                var created = await ApiClient.PostAsync<object, Dictionary<string, object>>(
-                    $"/api/field/current/decommissioning/abandon-well?wellId={Uri.EscapeDataString(wellId)}&userId={_currentUserId}",
-                    abandonmentData);
+                var created = await DecommissioningClient.AbandonWellAsync(
+                    wellId,
+                    BuildAbandonmentRequest(resultData, wellId),
+                    _currentUserId ?? "system");
                 
                 Snackbar.Add("Well abandonment recorded successfully", Severity.Success);
+                if (created != null)
+                {
+                    _selectedAbandonment = created;
+                }
                 await LoadAbandonedWells();
             }
             catch (Exception)
@@ -171,23 +252,167 @@
         }
     }
 
-    private string GetPropertyValue(object obj, string propertyName)
+    private void ApplySelectedAbandonment()
     {
-        if (obj is IDictionary<string, object> dict && dict.ContainsKey(propertyName))
+        if (_abandonedWells == null || _abandonedWells.Count == 0)
         {
-            return dict[propertyName]?.ToString() ?? "N/A";
+            _selectedAbandonment = null;
+            return;
         }
-        return "N/A";
+
+        WellAbandonmentResponse? selected = null;
+
+        if (!string.IsNullOrWhiteSpace(AbandonmentId))
+            selected = _abandonedWells.FirstOrDefault(x => string.Equals(x.AbandonmentId, AbandonmentId, StringComparison.OrdinalIgnoreCase));
+
+        if (selected == null && !string.IsNullOrWhiteSpace(WellId))
+            selected = _abandonedWells.FirstOrDefault(x => string.Equals(x.WellId, WellId, StringComparison.OrdinalIgnoreCase));
+
+        _selectedAbandonment = selected;
     }
 
-    private string FormatDate(string? dateStr)
+    private static WellAbandonmentRequest BuildAbandonmentRequest(Dictionary<string, object> resultData, string wellId)
     {
-        if (string.IsNullOrEmpty(dateStr) || dateStr == "N/A")
-            return "N/A";
+        resultData.TryGetValue("abandonmentType", out var abandonmentType);
+        resultData.TryGetValue("abandonmentDate", out var abandonmentDate);
+        resultData.TryGetValue("abandonmentStatus", out var abandonmentStatus);
 
-        if (DateTime.TryParse(dateStr, out var date))
-            return date.ToString("yyyy-MM-dd");
+        DateTime? parsedDate = abandonmentDate as DateTime?;
+        if (!parsedDate.HasValue && abandonmentDate is DateTime dateTime)
+            parsedDate = dateTime;
 
-        return dateStr;
+        return new WellAbandonmentRequest
+        {
+            WellId = wellId,
+            AbandonmentType = abandonmentType?.ToString(),
+            AbandonmentMethod = "CEMENT_PLUG",
+            Status = string.IsNullOrWhiteSpace(abandonmentStatus?.ToString()) ? "IN_PROGRESS" : abandonmentStatus?.ToString(),
+            AbandonmentStartDate = parsedDate,
+            PluggingDate = parsedDate,
+            ActiveInd = "Y"
+        };
     }
+
+    private void LaunchComplianceForSelectedAbandonment()
+    {
+        if (_selectedAbandonment == null)
+        {
+            Snackbar.Add("Select an abandonment record first.", Severity.Warning);
+            return;
+        }
+
+        NavigationManager.NavigateTo(BuildComplianceHref(_selectedAbandonment));
+    }
+
+    private void LaunchCloseoutAfeForSelectedAbandonment()
+    {
+        if (_selectedAbandonment == null)
+        {
+            Snackbar.Add("Select an abandonment record first.", Severity.Warning);
+            return;
+        }
+
+        NavigationManager.NavigateTo(BuildCloseoutAfeHref(_selectedAbandonment));
+    }
+
+    private string BuildAbandonmentReturnTo()
+    {
+        var query = new List<string>();
+
+        var selectedWellId = _selectedAbandonment?.WellId ?? WellId;
+        var selectedAbandonmentId = _selectedAbandonment?.AbandonmentId ?? AbandonmentId;
+
+        if (!string.IsNullOrWhiteSpace(selectedWellId))
+            query.Add($"wellId={Uri.EscapeDataString(selectedWellId)}");
+
+        if (!string.IsNullOrWhiteSpace(selectedAbandonmentId))
+            query.Add($"abandonmentId={Uri.EscapeDataString(selectedAbandonmentId)}");
+
+        if (!string.IsNullOrWhiteSpace(ProcessInstanceId))
+            query.Add($"processInstanceId={Uri.EscapeDataString(ProcessInstanceId)}");
+
+        if (!string.IsNullOrWhiteSpace(SourceProcess))
+            query.Add($"sourceProcess={Uri.EscapeDataString(SourceProcess)}");
+
+        if (!string.IsNullOrWhiteSpace(HandoffReason))
+            query.Add($"handoffReason={Uri.EscapeDataString(HandoffReason)}");
+
+        if (!string.IsNullOrWhiteSpace(ReturnTo))
+            query.Add($"returnTo={Uri.EscapeDataString(ReturnTo)}");
+
+        return query.Count == 0
+            ? "/ppdm39/decommissioning/well-abandonment"
+            : "/ppdm39/decommissioning/well-abandonment?" + string.Join("&", query);
+    }
+
+    private string BuildComplianceHref(WellAbandonmentResponse abandonment)
+    {
+        var query = new List<string>
+        {
+            "openCreate=true",
+            $"obligType={Uri.EscapeDataString("Permit")}",
+            $"jurisdiction={Uri.EscapeDataString("Oil & Gas Regulator")}",
+            $"description={Uri.EscapeDataString(BuildComplianceDescription(abandonment))}",
+            "sourceProcess=DECOMMISSIONING",
+            $"returnTo={Uri.EscapeDataString(BuildAbandonmentReturnTo())}"
+        };
+
+        if (!string.IsNullOrWhiteSpace(abandonment.WellId))
+            query.Add($"wellId={Uri.EscapeDataString(abandonment.WellId)}");
+
+        if (!string.IsNullOrWhiteSpace(abandonment.AbandonmentId))
+            query.Add($"abandonmentId={Uri.EscapeDataString(abandonment.AbandonmentId)}");
+
+        if (!string.IsNullOrWhiteSpace(ProcessInstanceId))
+            query.Add($"processInstanceId={Uri.EscapeDataString(ProcessInstanceId)}");
+
+        if (!string.IsNullOrWhiteSpace(HandoffReason))
+            query.Add($"handoffReason={Uri.EscapeDataString(HandoffReason)}");
+
+        return "/hse/compliance?" + string.Join("&", query);
+    }
+
+    private string BuildCloseoutAfeHref(WellAbandonmentResponse abandonment)
+    {
+        var query = new List<string>
+        {
+            "openCreate=true",
+            $"wellId={Uri.EscapeDataString(abandonment.WellId ?? string.Empty)}",
+            $"description={Uri.EscapeDataString(BuildCloseoutAfeDescription(abandonment))}",
+            $"returnTo={Uri.EscapeDataString(BuildAbandonmentReturnTo())}"
+        };
+
+        var budget = abandonment.AbandonmentCost ?? abandonment.PluggingCost;
+        if (budget.HasValue && budget.Value > 0)
+        {
+            query.Add($"budgetUsd={Uri.EscapeDataString(budget.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))}");
+        }
+
+        return "/economics/afe?" + string.Join("&", query);
+    }
+
+    private string BuildComplianceDescription(WellAbandonmentResponse abandonment)
+    {
+        var description = $"Plug and abandonment compliance closeout for well {abandonment.WellId}";
+
+        if (!string.IsNullOrWhiteSpace(abandonment.AbandonmentId))
+            description += $" ({abandonment.AbandonmentId})";
+
+        if (!string.IsNullOrWhiteSpace(HandoffReason))
+            description += $". Trigger: {HandoffReason}";
+
+        return description;
+    }
+
+    private static string BuildCloseoutAfeDescription(WellAbandonmentResponse abandonment)
+    {
+        var description = $"P&A closeout AFE for well {abandonment.WellId}";
+
+        if (!string.IsNullOrWhiteSpace(abandonment.AbandonmentId))
+            description += $" ({abandonment.AbandonmentId})";
+
+        return description;
+    }
+
+    private static string FormatDate(DateTime? date) => date?.ToString("yyyy-MM-dd") ?? "N/A";
 }

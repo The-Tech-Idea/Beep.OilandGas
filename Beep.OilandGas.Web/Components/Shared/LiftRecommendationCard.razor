@@ -1,0 +1,89 @@
+@using System.Linq
+
+<MudCard Elevation="@Elevation" Class="@Class">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudIcon Icon="@Icon" Color="@IconColor" Size="Size.Small" />
+                <MudStack Spacing="0">
+                    <MudText Typo="@TitleTypo">@Title</MudText>
+                    @if (!string.IsNullOrWhiteSpace(Subtitle))
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@Subtitle</MudText>
+                    }
+                </MudStack>
+            </MudStack>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        @if (!string.IsNullOrWhiteSpace(Headline) || !string.IsNullOrWhiteSpace(Summary))
+        {
+            <MudAlert Severity="@Severity" Variant="@AlertVariant" Dense="@DenseAlert" Class="mb-3">
+                @if (!string.IsNullOrWhiteSpace(Headline))
+                {
+                    <strong>@Headline</strong>
+                    @if (!string.IsNullOrWhiteSpace(Summary))
+                    {
+                        <br />
+                    }
+                }
+                @Summary
+            </MudAlert>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(ImpactText))
+        {
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">@ImpactText</MudText>
+        }
+
+        @if (HasFacts)
+        {
+            <MudGrid Spacing="@FactSpacing" Class="@FactsClass">
+                @foreach (var fact in SafeFacts)
+                {
+                    <MudItem xs="@FactXs" sm="@FactSm" md="@FactMd">
+                        <MudPaper Elevation="0" Class="@FactPaperClass">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@fact.Label</MudText>
+                            <MudText Typo="Typo.body2" Color="@fact.ValueColor">@fact.Value</MudText>
+                        </MudPaper>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+
+        @if (Actions != null)
+        {
+            <MudDivider Class="my-3" />
+            <MudStack Spacing="2">
+                @Actions
+            </MudStack>
+        }
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Recommended Action";
+    [Parameter] public string Subtitle { get; set; } = string.Empty;
+    [Parameter] public string Headline { get; set; } = string.Empty;
+    [Parameter] public string Summary { get; set; } = string.Empty;
+    [Parameter] public string ImpactText { get; set; } = string.Empty;
+    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.AutoGraph;
+    [Parameter] public Color IconColor { get; set; } = Color.Info;
+    [Parameter] public Severity Severity { get; set; } = Severity.Info;
+    [Parameter] public Variant AlertVariant { get; set; } = Variant.Outlined;
+    [Parameter] public bool DenseAlert { get; set; } = true;
+    [Parameter] public IEnumerable<RecommendationFactItem>? Facts { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public string Class { get; set; } = string.Empty;
+    [Parameter] public string FactsClass { get; set; } = string.Empty;
+    [Parameter] public string FactPaperClass { get; set; } = "pa-3 h-100";
+    [Parameter] public Typo TitleTypo { get; set; } = Typo.subtitle1;
+    [Parameter] public int Elevation { get; set; } = 2;
+    [Parameter] public int FactSpacing { get; set; } = 2;
+    [Parameter] public int FactXs { get; set; } = 12;
+    [Parameter] public int FactSm { get; set; } = 6;
+    [Parameter] public int FactMd { get; set; } = 4;
+
+    private bool HasFacts => Facts?.Any() == true;
+    private IEnumerable<RecommendationFactItem> SafeFacts => Facts ?? Array.Empty<RecommendationFactItem>();
+}

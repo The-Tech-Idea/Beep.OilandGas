@@ -1,8 +1,11 @@
 ﻿@page "/exploration/prospect-board"
+@using System.Security.Claims
 @inject ApiClient ApiClient
+@inject IExplorationServiceClient ExplorationService
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Advance Prospect Maturation</PageTitle>
 
@@ -125,6 +128,7 @@
     private string? _filterPlay;
     private string? _filterBasin;
     private bool _showArchived;
+    private string? _currentUserId;
 
     private List<string> _basins = new();
 
@@ -150,10 +154,17 @@
         }
         catch { /* field name is non-critical */ }
 
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+
+        await LoadProspectsAsync();
+    }
+
+    private async Task LoadProspectsAsync()
+    {
         try
         {
-            var prospects = await ApiClient.GetAsync<List<PROSPECT>>(
-                "/api/field/current/exploration/prospects") ?? new();
+            var prospects = await ExplorationService.GetProspectsAsync();
             if (prospects.Count > 0)
             {
                 _allProspects = prospects.Select(p => new ProspectItem(
@@ -175,6 +186,11 @@
                     .OrderBy(b => b)
                     .ToList();
             }
+            else
+            {
+                _allProspects = new List<ProspectItem>();
+                _basins = new List<string>();
+            }
         }
         catch (Exception)
         {
@@ -183,13 +199,14 @@
     }
 
     private static string MapStage(string? prospectType, string? status) =>
-        (prospectType?.ToUpperInvariant(), status?.ToUpperInvariant()) switch
+        (status?.ToUpperInvariant(), prospectType?.ToUpperInvariant()) switch
         {
             ("LEAD", _)             => "lead",
-            (_, "SCREENING")        => "screening",
-            (_, "REVIEW")           => "ranking",
-            (_, "APPROVED")         => "candidate",
-            (_, "DRILLED" or "COMPLETE" or "COMPLETED") => "drilled",
+            ("SCREENING", _)        => "screening",
+            ("REVIEW", _)           => "ranking",
+            ("APPROVED", _)         => "candidate",
+            ("DRILLED" or "COMPLETE" or "COMPLETED", _) => "drilled",
+            (_, "LEAD")             => "lead",
             _                       => "prospect",
         };
 
@@ -218,7 +235,8 @@
         var currentIdx = stageKeys.IndexOf(prospect.Stage);
         if (currentIdx < 0 || currentIdx >= stageKeys.Count - 1) return;
 
-        var nextStage = _stages[stageKeys[currentIdx + 1]];
+        var nextStageKey = stageKeys[currentIdx + 1];
+        var nextStage = _stages[nextStageKey];
 
         var parameters = new DialogParameters<StageAdvanceDialog>
         {
@@ -230,14 +248,59 @@
 
         if (result is { Canceled: false })
         {
-            prospect.Stage = stageKeys[currentIdx + 1];
-            prospect.DaysInStage = 0;
-            Snackbar.Add($"{prospect.Name} advanced to {nextStage.Name}", Severity.Success);
-            StateHasChanged();
+            var transition = GetTransition(nextStageKey);
+            if (transition == null)
+                return;
+
+            try
+            {
+                var currentProspect = await ExplorationService.GetProspectAsync(prospect.Id);
+                if (currentProspect == null)
+                {
+                    Snackbar.Add("Prospect could not be reloaded before advancing.", Severity.Warning);
+                    return;
+                }
+
+                var request = BuildProspectUpdateRequest(currentProspect, transition);
+                await ExplorationService.UpdateProspectAsync(prospect.Id, request, _currentUserId);
+                Snackbar.Add($"{prospect.Name} advanced to {nextStage.Name}", Severity.Success);
+                await LoadProspectsAsync();
+                StateHasChanged();
+            }
+            catch (Exception)
+            {
+                Snackbar.Add($"Failed to advance {prospect.Name}.", Severity.Error);
+            }
         }
     }
 
+    private static ProspectStageTransition? GetTransition(string stageKey) => stageKey switch
+    {
+        "screening" => new ProspectStageTransition("SCREENING", "LEAD"),
+        "prospect" => new ProspectStageTransition("ACTIVE", "PROSPECT"),
+        "ranking" => new ProspectStageTransition("REVIEW", null),
+        "candidate" => new ProspectStageTransition("APPROVED", null),
+        "drilled" => new ProspectStageTransition("DRILLED", null),
+        _ => null,
+    };
+
+    private static ProspectRequest BuildProspectUpdateRequest(Beep.OilandGas.PPDM39.Models.PROSPECT currentProspect, ProspectStageTransition transition)
+    {
+        return new ProspectRequest
+        {
+            ProspectId = currentProspect.PROSPECT_ID,
+            ProspectName = currentProspect.PROSPECT_NAME ?? string.Empty,
+            Description = currentProspect.REMARK,
+            Status = transition.Status,
+            ProspectType = transition.ProspectType ?? currentProspect.PROSPECT_TYPE,
+            DiscoveryDate = currentProspect.DISCOVERY_DATE,
+            EstimatedOilVolume = currentProspect.AREA_SIZE,
+            EstimatedVolumeOuom = currentProspect.AREA_SIZE_OUOM
+        };
+    }
+
     private record StageInfo(string Name, string Icon, Color Color);
+    private sealed record ProspectStageTransition(string Status, string? ProspectType);
     private class ProspectItem
     {
         public string Id { get; set; }

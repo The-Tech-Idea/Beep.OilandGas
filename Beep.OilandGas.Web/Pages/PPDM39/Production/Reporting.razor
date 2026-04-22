@@ -2,6 +2,7 @@
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
+@inject IProductionServiceClient ProductionService
 
 <PageTitle>Compile Production Volume Reports</PageTitle>
 
@@ -44,16 +45,14 @@
                 <MudDataGrid T="PDEN_VOL_SUMMARY" Items="@_reporting" Dense="true" Hover="true" Striped="true"
                              SortMode="SortMode.Multiple" Filterable="true">
                     <Columns>
-                        <TemplateColumn Title="Report ID">
+                        <PropertyColumn Property="r => r.PDEN_ID" Title="PDEN ID" />
+                        <PropertyColumn Property="r => r.PERIOD_ID" Title="Period" />
+                        <TemplateColumn Title="Effective Date">
                             <CellTemplate>
-                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "REPORT_ID")</MudText>
+                                <MudText Typo="Typo.body2">@(context.Item.EFFECTIVE_DATE?.ToString("dd MMM yyyy") ?? "—")</MudText>
                             </CellTemplate>
                         </TemplateColumn>
-                        <TemplateColumn Title="Report Date">
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "REPORT_DATE")</MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
+                        <PropertyColumn Property="r => r.BOE_VOLUME" Title="BOE Volume" Format="N0" />
                     </Columns>
                     <NoRecordsContent>
                         <MudStack AlignItems="AlignItems.Center" Class="pa-6">
@@ -99,7 +98,8 @@
         _isLoading = true;
         try
         {
-            _reporting = await ApiClient.GetAsync<List<PDEN_VOL_SUMMARY>>("/api/production/reporting") ?? new();        }
+            _reporting = await ProductionService.GetReportingAsync();
+        }
         catch (Exception)
         {
             Snackbar.Add("Error loading production reporting.", Severity.Error);
@@ -110,26 +110,6 @@
         }
     }
 
-    private string GetPropertyValue(object obj, string propertyName)
-    {
-        if (obj is IDictionary<string, object> dict && dict.ContainsKey(propertyName))
-        {
-            return dict[propertyName]?.ToString() ?? "N/A";
-        }
-        var prop = obj.GetType().GetProperty(propertyName);
-        return prop?.GetValue(obj)?.ToString() ?? "N/A";
-    }
-
-    private string FormatDate(string? dateStr)
-    {
-        if (string.IsNullOrEmpty(dateStr) || dateStr == "N/A")
-            return "N/A";
-
-        if (DateTime.TryParse(dateStr, out var date))
-            return date.ToString("yyyy-MM-dd");
-
-        return dateStr;
-    }
 }
 
 

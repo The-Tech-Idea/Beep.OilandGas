@@ -1,5 +1,6 @@
 ﻿@page "/exploration"
 @inject ApiClient ApiClient
+@inject IExplorationServiceClient ExplorationService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -178,8 +179,7 @@
 
         try
         {
-            var summary = await ApiClient.GetAsync<ExplorationDashboardSummaryDto>(
-                "/api/field/current/exploration/dashboard-summary");
+            var summary = await ExplorationService.GetDashboardSummaryAsync();
             if (summary != null)
             {
                 _leads              = summary.LeadCount;
@@ -203,17 +203,4 @@
 
     private record PendingDecision(string Name, string Description, string Status);
     private record WellProgramSummary(string Name, string TargetDate, string Status = "PLANNED");
-
-    private class ExplorationDashboardSummaryDto
-    {
-        public int LeadCount       { get; set; }
-        public int ProspectCount   { get; set; }
-        public int WellCount       { get; set; }
-        public int SurveyCount     { get; set; }
-        public double SuccessRatePct { get; set; }
-        public List<PendingDecisionDto> PendingDecisions  { get; set; } = new();
-        public List<WellProgramDto>     UpcomingPrograms  { get; set; } = new();
-    }
-    private record PendingDecisionDto(string Name, string Description, string Status);
-    private record WellProgramDto(string Name, string TargetDate, string Status);
 }

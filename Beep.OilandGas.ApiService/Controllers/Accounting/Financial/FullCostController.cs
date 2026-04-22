@@ -64,7 +64,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for exploration costs");
-                return StatusCode(500, new { error = "Transaction created but GL posting failed"});
+                    return StatusCode(500, new { error = "Transaction created but GL posting failed." });
             }
             catch (Exception ex)
             {
@@ -104,7 +104,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for development costs");
-                return StatusCode(500, new { error = "Transaction created but GL posting failed"});
+                    return StatusCode(500, new { error = "Transaction created but GL posting failed." });
             }
             catch (Exception ex)
             {
@@ -152,7 +152,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for acquisition costs");
-                return StatusCode(500, new { error = "Transaction created but GL posting failed"});
+                    return StatusCode(500, new { error = "Transaction created but GL posting failed." });
             }
             catch (Exception ex)
             {

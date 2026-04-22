@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.Allocation;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -33,7 +34,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
         /// Reconcile production volumes between different sources.
         /// </summary>
         [HttpPost("reconcile")]
-        public async Task<ActionResult<object>> ReconcileVolumes(
+        public async Task<ActionResult<VolumeReconciliationResult>> ReconcileVolumes(
             [FromBody] VolumeReconciliationRequest request,
             [FromQuery] string? connectionName = null)
         {
@@ -43,7 +44,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
                     return BadRequest(ModelState);
 
                 if (string.IsNullOrEmpty(request.FieldId))
-                    return BadRequest(new { error = "FieldId is required" });
+                        return BadRequest(new { error = "Field ID is required." });
 
                 var result = await _accountingService.ReconcileVolumesAsync(
                     request.FieldId,
@@ -51,32 +52,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
                     request.EndDate,
                     null);
 
-                return Ok(new
-                {
-                    Status = result.Status.ToString(),
-                    FieldProductionVolume = result.FieldProductionVolume,
-                    AllocatedVolume = result.ALLOCATED_VOLUME,
-                    Discrepancy = result.Discrepancy,
-                    DiscrepancyPercentage = result.DiscrepancyPercentage,
-                    OilVolume = result.OilVolume != null ? new
-                    {
-                        FieldVolume = result.OilVolume.FieldVolume,
-                        AllocatedVolume = result.OilVolume.ALLOCATED_VOLUME,
-                        Discrepancy = result.OilVolume.Discrepancy
-                    } : null,
-                    GasVolume = result.GasVolume != null ? new
-                    {
-                        FieldVolume = result.GasVolume.FieldVolume,
-                        AllocatedVolume = result.GasVolume.ALLOCATED_VOLUME,
-                        Discrepancy = result.GasVolume.Discrepancy
-                    } : null,
-                    Issues = result.Issues?.Select(i => new
-                    {
-                        IssueType = i.IssueType,
-                        Description = i.Description,
-                        Severity = i.Severity
-                    }).Cast<object>().ToList() ?? new List<object>()
-                });
+                result.Issues ??= new List<VolumeReconciliationIssue>();
+
+                return Ok(result);
             }
             catch (Exception ex)
             {

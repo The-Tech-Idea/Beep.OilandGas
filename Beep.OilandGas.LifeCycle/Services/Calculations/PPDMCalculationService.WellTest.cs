@@ -101,14 +101,26 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 }
 
                 // Step 3: Calculate derivative for diagnostic plots
-                var pressureTimePoints = WELL_TEST_DATA.Time.Zip(WELL_TEST_DATA.Pressure, (t, p) => new { Time = t, Pressure = p }).ToList();
-                // var derivativePoints = WellTestAnalyzer.CalculateDerivative(pressureTimePoints);
+                var pressureTimePoints = CreatePressureTimePoints(WELL_TEST_DATA);
+                List<PRESSURE_TIME_POINT>? derivativePoints = null;
+                ReservoirModel? identifiedModel = null;
 
-                // Step 4: Identify reservoir model
-                // var identifiedModel = WellTestAnalyzer.IdentifyReservoirModel(derivativePoints);
+                try
+                {
+                    derivativePoints = WellTestAnalyzer.CalculateDerivative(pressureTimePoints);
+                    if (derivativePoints.Count > 0)
+                    {
+                        identifiedModel = WellTestAnalyzer.IdentifyReservoirModel(derivativePoints);
+                    }
+                }
+                catch (Exception diagnosticEx)
+                {
+                    _logger?.LogWarning(diagnosticEx, "Well Test diagnostics could not be derived for WellId: {WellId}, TestId: {TestId}",
+                        request.WellId, request.TestId);
+                }
 
                 // Step 5: Map to DTO
-                var result = MapWellTestResultToDTO(analysisResult, request, null, null);
+                var result = MapWellTestResultToDTO(analysisResult, request, identifiedModel, pressureTimePoints, derivativePoints);
 
                 // Step 6: Store result in PPDM database
                 try
@@ -255,8 +267,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         private WELL_TEST_ANALYSIS_RESULT MapWellTestResultToDTO(
             WELL_TEST_ANALYSIS_RESULT analysisResult,
             WellTestAnalysisCalculationRequest request,
-            object? identifiedModel,
-            object? derivativePoints)
+            ReservoirModel? identifiedModel,
+            List<PRESSURE_TIME_POINT>? pressureTimePoints,
+            List<PRESSURE_TIME_POINT>? derivativePoints)
         {
             var result = new WELL_TEST_ANALYSIS_RESULT
             {
@@ -275,10 +288,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 FLOW_EFFICIENCY = analysisResult.FLOW_EFFICIENCY,
                 DAMAGE_RATIO = analysisResult.DAMAGE_RATIO,
                 RADIUS_OF_INVESTIGATION = analysisResult.RADIUS_OF_INVESTIGATION,
-                // IdentifiedModel = identifiedModel,
+                IDENTIFIED_MODEL = identifiedModel?.ToString() ?? analysisResult.IDENTIFIED_MODEL,
+                IDENTIFIED_MODEL_STRING = identifiedModel?.ToString() ?? analysisResult.IDENTIFIED_MODEL_STRING,
                 R_SQUARED = analysisResult.R_SQUARED,
-                DiagnosticPoints = request.PressureTimeData,
-                // DerivativePoints = derivativePoints...
+                DiagnosticPoints = ConvertPressureTimePointsToDataPoints(pressureTimePoints, useDerivative: false),
+                DerivativePoints = ConvertPressureTimePointsToDataPoints(derivativePoints, useDerivative: true),
+                IS_SUCCESSFUL = true,
                 AdditionalResults = new WellTestAnalysisAdditionalResults()
             };
 
@@ -288,6 +303,37 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             result.AdditionalResults.FormationThickness = request.FormationThickness ?? 50.0m;
 
             return result;
+        }
+
+        private static List<PRESSURE_TIME_POINT> CreatePressureTimePoints(WELL_TEST_DATA data)
+        {
+            return data.Time
+                .Zip(data.Pressure, (time, pressure) => new { time, pressure })
+                .Select((point, index) => new PRESSURE_TIME_POINT
+                {
+                    PRESSURE_TIME_POINT_ID = Guid.NewGuid().ToString(),
+                    WELL_TEST_DATA_ID = data.WELL_TEST_DATA_ID,
+                    TIME = point.time,
+                    PRESSURE = point.pressure,
+                    POINT_ORDER = index + 1
+                })
+                .ToList();
+        }
+
+        private static List<WellTestDataPoint> ConvertPressureTimePointsToDataPoints(List<PRESSURE_TIME_POINT>? points, bool useDerivative)
+        {
+            if (points == null || points.Count == 0)
+                return new List<WellTestDataPoint>();
+
+            return points
+                .Select(point => new WellTestDataPoint
+                {
+                    Time = point.TIME.HasValue ? (decimal?)point.TIME.Value : null,
+                    Pressure = useDerivative
+                        ? (point.PRESSURE_DERIVATIVE.HasValue ? (decimal?)point.PRESSURE_DERIVATIVE.Value : null)
+                        : (point.PRESSURE.HasValue ? (decimal?)point.PRESSURE.Value : null)
+                })
+                .ToList();
         }
 
         #endregion

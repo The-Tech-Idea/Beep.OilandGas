@@ -2,10 +2,13 @@
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.HydraulicPumps
 @using Beep.OilandGas.Client.App
+@using Beep.OilandGas.PPDM39.Models
 @using System.Security.Claims
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
+@inject IDevelopmentServiceClient DevelopmentClient
 @inject IPumpServiceClient PumpService
+@inject ILifeCycleService LifeCycleService
 @inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Design Hydraulic Pump System</PageTitle>
@@ -53,7 +56,7 @@
                     <MudText>Pump Size: @_pumpDesign.PumpSize.ToString("F2")</MudText>
                     <MudText>Operating Pressure: @_pumpDesign.OperatingPressure.ToString("F2") PSI</MudText>
                     <MudText>Flow Rate: @_pumpDesign.FlowRate.ToString("F2") BBL/D</MudText>
-                    <MudText>Efficiency: @_pumpDesign.Efficiency.ToString("F2")%</MudText>
+                    <MudText>Efficiency: @FormatEfficiency(_pumpDesign.Efficiency)</MudText>
                 </MudStack>
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" OnClick="SaveDesign">
                     Save Design
@@ -77,14 +80,48 @@
                 <MudText Typo="Typo.h6" Class="mb-4">Performance Analysis Results</MudText>
                 <MudStack Spacing="2">
                     <MudText>Current Flow Rate: @($"{_performanceAnalysis.CurrentFlowRate:F2}") BBL/D</MudText>
-                    <MudText>Current Efficiency: @($"{_performanceAnalysis.CurrentEfficiency:F2}")%</MudText>
+                    <MudText>Current Efficiency: @FormatEfficiency(_performanceAnalysis.CurrentEfficiency)</MudText>
                 </MudStack>
             </MudPaper>
         }
     </MudPaper>
+
+    @if (_pumpDesign != null || _performanceAnalysis != null)
+    {
+        <LiftRecommendationCard Title="Lift Workflow Recommendation"
+                                Subtitle="Hydraulic pump candidate review"
+                                Icon="@Icons.Material.Filled.SettingsInputHdmi"
+                                IconColor="Color.Warning"
+                                Headline="@GetLiftRecommendationHeadline()"
+                                Summary="@GetLiftRecommendationSummary()"
+                                ImpactText="@GetLiftRecommendationImpactText()"
+                                Severity="@GetLiftRecommendationSeverity()"
+                                Facts="@GetLiftRecommendationFacts()"
+                                Class="mt-4">
+            <Actions>
+                <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.AutoGraph"
+                           Href="@GetWellPerformanceUrl()">
+                    Open Well Performance Optimizer
+                </MudButton>
+                @if (_performanceAnalysis == null && !string.IsNullOrWhiteSpace(_pumpId))
+                {
+                    <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Secondary"
+                               StartIcon="@Icons.Material.Filled.Tune"
+                               OnClick="AnalyzePerformance"
+                               Disabled="@_isAnalyzing">
+                        Run Performance Validation
+                    </MudButton>
+                }
+            </Actions>
+        </LiftRecommendationCard>
+    }
 </MudContainer>
 
 @code {
+    [SupplyParameterFromQuery(Name = "wellId")]
+    public string? WellId { get; set; }
+
     private string _fieldName = string.Empty;
     private string _wellUWI = string.Empty;
     private string _pumpType = "JetPump";
@@ -98,6 +135,14 @@
     private PumpPerformanceAnalysis? _performanceAnalysis;
     private string? _currentUserId;
 
+    private sealed class WellDto
+    {
+        public string UWI { get; set; } = string.Empty;
+        public string? WELL_NAME { get; set; }
+        public decimal? FINAL_TD { get; set; }
+        public string? ASSIGNED_FIELD { get; set; }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         _isLoading = true;
@@ -105,7 +150,7 @@
         {
             try
             {
-                var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+                var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
                 if (summary != null)
                     _fieldName = summary.FieldName ?? _fieldName;
             }
@@ -113,11 +158,38 @@
 
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
             _currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
+
+            try
+            {
+                var wells = (await DevelopmentClient.GetWellsAsync()).Select(MapWell).ToList();
+                if (wells.Count > 0)
+                {
+                    var selectedWell = wells.Find(well => string.Equals(well.UWI, WellId, StringComparison.OrdinalIgnoreCase)) ?? wells[0];
+                    _fieldName = selectedWell.ASSIGNED_FIELD ?? _fieldName;
+                    _wellUWI = selectedWell.UWI;
+                    _wellDepth = selectedWell.FINAL_TD ?? _wellDepth;
+                }
+            }
+            catch (Exception)
+            {
+                Snackbar.Add("Error loading wells.", Severity.Warning);
+            }
         }
         finally
         {
             _isLoading = false;
         }
+    }
+
+    private static WellDto MapWell(WELL well)
+    {
+        return new WellDto
+        {
+            UWI = well.UWI,
+            WELL_NAME = well.WELL_NAME,
+            FINAL_TD = well.FINAL_TD,
+            ASSIGNED_FIELD = well.ASSIGNED_FIELD
+        };
     }
 
     private async Task DesignPump()
@@ -132,6 +204,7 @@
         try
         {
             _pumpDesign = await PumpService.DesignHydraulicPumpSystemAsync(_wellUWI, _pumpType, _wellDepth, _desiredFlowRate);
+            _pumpId = _pumpDesign.DesignId;
             Snackbar.Add("Pump design completed", Severity.Success);
         }
         catch (Exception)
@@ -188,6 +261,105 @@
         {
             _isAnalyzing = false;
         }
+    }
+
+    private Severity GetLiftRecommendationSeverity()
+    {
+        if (_performanceAnalysis != null)
+        {
+            var efficiency = NormalizeEfficiency(_performanceAnalysis.CurrentEfficiency);
+            var hasRecommendations = _performanceAnalysis.Recommendations?.Count > 0;
+            return efficiency >= 70m && !hasRecommendations ? Severity.Success : Severity.Warning;
+        }
+
+        return Severity.Info;
+    }
+
+    private string GetLiftRecommendationHeadline()
+    {
+        if (_performanceAnalysis != null)
+        {
+            var efficiency = NormalizeEfficiency(_performanceAnalysis.CurrentEfficiency);
+            return efficiency >= 70m && (_performanceAnalysis.Recommendations?.Count ?? 0) == 0
+                ? "Advance hydraulic pump candidate for production review"
+                : "Review hydraulic pump tuning before intervention";
+        }
+
+        return "Validate hydraulic pump design against live well underperformance";
+    }
+
+    private string GetLiftRecommendationSummary()
+    {
+        if (_performanceAnalysis != null)
+        {
+            var recommendationText = BuildRecommendationSummary();
+            var baseSummary = $"Performance validation indicates {_performanceAnalysis.CurrentFlowRate.ToString("N1")} BBL/D at {FormatEfficiency(_performanceAnalysis.CurrentEfficiency)}.";
+            return string.IsNullOrWhiteSpace(recommendationText) ? baseSummary : baseSummary + " " + recommendationText;
+        }
+
+        if (_pumpDesign != null)
+        {
+            return $"{_pumpDesign.PumpType} design targets {_pumpDesign.FlowRate.ToString("N1")} BBL/D at {FormatEfficiency(_pumpDesign.Efficiency)} with {_pumpDesign.OperatingPressure.ToString("N1")} PSI operating pressure. Run performance validation before field action.";
+        }
+
+        return "Generate a hydraulic pump design to start the lift recommendation flow.";
+    }
+
+    private string GetLiftRecommendationImpactText()
+    {
+        return "Workflow handoff: compare this hydraulic pump candidate against the broader production gap before intervention or work-order planning.";
+    }
+
+    private IReadOnlyList<RecommendationFactItem> GetLiftRecommendationFacts()
+    {
+        if (_performanceAnalysis != null)
+        {
+            return new RecommendationFactItem[]
+            {
+                new() { Label = "Validated Flow", Value = $"{_performanceAnalysis.CurrentFlowRate.ToString("N1")} BBL/D", ValueColor = Color.Success },
+                new() { Label = "Efficiency", Value = FormatEfficiency(_performanceAnalysis.CurrentEfficiency), ValueColor = Color.Warning },
+                new() { Label = "Recommendations", Value = (_performanceAnalysis.Recommendations?.Count ?? 0).ToString(), ValueColor = Color.Info }
+            };
+        }
+
+        if (_pumpDesign != null)
+        {
+            return new RecommendationFactItem[]
+            {
+                new() { Label = "Pump Type", Value = _pumpDesign.PumpType, ValueColor = Color.Primary },
+                new() { Label = "Design Flow", Value = $"{_pumpDesign.FlowRate.ToString("N1")} BBL/D", ValueColor = Color.Success },
+                new() { Label = "Design Efficiency", Value = FormatEfficiency(_pumpDesign.Efficiency), ValueColor = Color.Warning }
+            };
+        }
+
+        return Array.Empty<RecommendationFactItem>();
+    }
+
+    private string GetWellPerformanceUrl()
+    {
+        return string.IsNullOrWhiteSpace(_wellUWI)
+            ? "/production/well-performance"
+            : $"/production/well-performance?wellId={Uri.EscapeDataString(_wellUWI)}";
+    }
+
+    private string BuildRecommendationSummary()
+    {
+        if (_performanceAnalysis?.Recommendations == null || _performanceAnalysis.Recommendations.Count == 0)
+            return string.Empty;
+
+        return _performanceAnalysis.Recommendations.Count == 1
+            ? _performanceAnalysis.Recommendations[0]
+            : _performanceAnalysis.Recommendations[0] + " " + _performanceAnalysis.Recommendations[1];
+    }
+
+    private static decimal NormalizeEfficiency(decimal value)
+    {
+        return value <= 1.5m ? value * 100m : value;
+    }
+
+    private static string FormatEfficiency(decimal value)
+    {
+        return NormalizeEfficiency(value).ToString("N1") + "%";
     }
 }
 

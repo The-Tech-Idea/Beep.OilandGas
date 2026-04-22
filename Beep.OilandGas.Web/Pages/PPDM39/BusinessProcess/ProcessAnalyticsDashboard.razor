@@ -2,6 +2,8 @@
 @using Beep.OilandGas.Models.Data.Analytics
 @using Beep.OilandGas.Web.Services
 @inject ApiClient ApiClient
+@inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
+@inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
 
 <PageTitle>Analytics Dashboard</PageTitle>
@@ -232,11 +234,9 @@
         StateHasChanged();
         try
         {
-            var summaryTask = ApiClient.GetAsync<AnalyticsDashboardSummary>(
-                $"/api/field/current/process/analytics/dashboard?days={_range}&exposureHours={_exposureHours}");
-            var trendTask = ApiClient.GetAsync<List<KPITrendPoint>>(
-                $"/api/field/current/process/analytics/production/trend?days={_range}");
-            var fieldTask = ApiClient.GetAsync<Beep.OilandGas.Models.Data.FieldResponse>("/api/field/current");
+            var summaryTask = BusinessProcessClient.GetAnalyticsDashboardAsync(_range, _exposureHours);
+            var trendTask = BusinessProcessClient.GetProductionTrendAsync(_range);
+            var fieldTask = LifeCycleService.GetCurrentFieldAsync();
 
             await Task.WhenAll(summaryTask, trendTask, fieldTask);
 

@@ -45,7 +45,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
-                return BadRequest("No active field selected.");
+                    return BadRequest(new { error = "No active field selected." });
 
             try
             {
@@ -66,7 +66,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving process definitions for field {FieldId}", fieldId);
-                return StatusCode(500, "Error retrieving process definitions.");
+                return StatusCode(500, new { error = "Error retrieving process definitions." });
             }
         }
 
@@ -77,19 +77,19 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         public async Task<ActionResult<ProcessDefinition>> GetDefinitionAsync(string processId)
         {
             if (string.IsNullOrWhiteSpace(processId))
-                return BadRequest("processId is required.");
+                    return BadRequest(new { error = "Process ID is required." });
 
             try
             {
                 var def = await _processService.GetProcessDefinitionAsync(processId);
                 if (def == null)
-                    return NotFound($"Process definition '{processId}' not found.");
+                    return NotFound(new { error = $"Process definition '{processId}' not found." });
                 return Ok(def);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving process definition {ProcessId}", processId);
-                return StatusCode(500, "Error retrieving process definition.");
+                return StatusCode(500, new { error = "Error retrieving process definition." });
             }
         }
 
@@ -99,7 +99,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         public async Task<ActionResult<List<ProcessDefinition>>> GetDefinitionsByCategoryAsync(string categoryId)
         {
             if (string.IsNullOrWhiteSpace(categoryId))
-                return BadRequest("categoryId is required.");
+                    return BadRequest(new { error = "Category ID is required." });
 
             try
             {
@@ -109,7 +109,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving definitions for category {Category}", categoryId);
-                return StatusCode(500, "Error retrieving process definitions.");
+                return StatusCode(500, new { error = "Error retrieving process definitions." });
             }
         }
 
@@ -119,7 +119,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         public async Task<ActionResult<List<ProcessDefinition>>> GetDefinitionsByJurisdictionAsync(string tag)
         {
             if (string.IsNullOrWhiteSpace(tag))
-                return BadRequest("Jurisdiction tag is required.");
+                    return BadRequest(new { error = "Jurisdiction tag is required." });
 
             try
             {
@@ -144,7 +144,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving definitions for jurisdiction {Tag}", tag);
-                return StatusCode(500, "Error retrieving process definitions.");
+                return StatusCode(500, new { error = "Error retrieving process definitions." });
             }
         }
 
@@ -158,15 +158,15 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             [FromBody] ProcessInstanceRequest request)
         {
             if (request == null)
-                return BadRequest("Request body is required.");
+                 return BadRequest(new { error = "Request body is required." });
             if (string.IsNullOrWhiteSpace(request.ProcessId))
-                return BadRequest("ProcessId is required.");
+                 return BadRequest(new { error = "ProcessId is required." });
             if (string.IsNullOrWhiteSpace(request.EntityId))
-                return BadRequest("EntityId is required.");
+                 return BadRequest(new { error = "EntityId is required." });
 
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
-                return BadRequest("No active field selected.");
+                 return BadRequest(new { error = "No active field selected." });
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
 
@@ -183,7 +183,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error starting process {ProcessId} for entity {EntityId}", request.ProcessId, request.EntityId);
-                return StatusCode(500, "Error starting process instance.");
+                return StatusCode(500, new { error = "Error starting process instance." });
             }
         }
 
@@ -194,7 +194,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
-                return BadRequest("No active field selected.");
+                    return BadRequest(new { error = "No active field selected." });
 
             try
             {
@@ -222,7 +222,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error listing instances for field {FieldId}", fieldId);
-                return StatusCode(500, "Error retrieving process instances.");
+                return StatusCode(500, new { error = "Error retrieving process instances." });
             }
         }
 
@@ -233,19 +233,19 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         public async Task<ActionResult<ProcessInstance>> GetInstanceAsync(string instanceId)
         {
             if (string.IsNullOrWhiteSpace(instanceId))
-                return BadRequest("instanceId is required.");
+                    return BadRequest(new { error = "Instance ID is required." });
 
             try
             {
                 var instance = await _processService.GetProcessInstanceAsync(instanceId);
                 if (instance == null)
-                    return NotFound($"Process instance '{instanceId}' not found.");
+                    return NotFound(new { error = $"Process instance '{instanceId}' not found." });
                 return Ok(instance);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving process instance {InstanceId}", instanceId);
-                return StatusCode(500, "Error retrieving process instance.");
+                return StatusCode(500, new { error = "Error retrieving process instance." });
             }
         }
 
@@ -259,9 +259,11 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             [FromBody] ProcessTransitionRequest request)
         {
             if (string.IsNullOrWhiteSpace(instanceId))
-                return BadRequest("instanceId is required.");
-            if (request == null || string.IsNullOrWhiteSpace(request.Trigger))
-                return BadRequest("Transition trigger is required.");
+                    return BadRequest(new { error = "Instance ID is required." });
+                if (request == null)
+                    return BadRequest(new { error = "Request body is required." });
+                if (string.IsNullOrWhiteSpace(request.Trigger))
+                    return BadRequest(new { error = "Transition trigger is required." });
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
 
@@ -269,7 +271,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             {
                 var canTransition = await _processService.CanTransitionAsync(instanceId, request.ToStateId);
                 if (!canTransition)
-                    return UnprocessableEntity($"Transition to '{request.ToStateId}' is not allowed from current state.");
+                    return UnprocessableEntity(new { error = $"Transition to '{request.ToStateId}' is not allowed from current state." });
 
                 var success = await _processService.TransitionStateAsync(instanceId, request.ToStateId, userId);
                 var result = new ProcessTransitionResult
@@ -287,7 +289,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error executing transition on instance {InstanceId}", instanceId);
-                return StatusCode(500, "Error executing state transition.");
+                return StatusCode(500, new { error = "Error executing state transition." });
             }
         }
 
@@ -298,19 +300,19 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         public async Task<ActionResult<List<ProcessHistoryEntry>>> GetHistoryAsync(string instanceId)
         {
             if (string.IsNullOrWhiteSpace(instanceId))
-                return BadRequest("instanceId is required.");
+                    return BadRequest(new { error = "Instance ID is required." });
 
             try
             {
                 var history = await _processService.GetProcessHistoryAsync(instanceId);
                 if (history == null)
-                    return NotFound($"Process instance '{instanceId}' not found.");
+                    return NotFound(new { error = $"Process instance '{instanceId}' not found." });
                 return Ok(history);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving history for instance {InstanceId}", instanceId);
-                return StatusCode(500, "Error retrieving process history.");
+                return StatusCode(500, new { error = "Error retrieving process history." });
             }
         }
 
@@ -323,8 +325,10 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             string stepId,
             [FromBody] Beep.OilandGas.Models.Data.Process.PROCESS_STEP_DATA stepData)
         {
-            if (string.IsNullOrWhiteSpace(instanceId) || string.IsNullOrWhiteSpace(stepId))
-                return BadRequest("instanceId and stepId are required.");
+                if (string.IsNullOrWhiteSpace(instanceId))
+                    return BadRequest(new { error = "Instance ID is required." });
+                if (string.IsNullOrWhiteSpace(stepId))
+                    return BadRequest(new { error = "Step ID is required." });
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
 
@@ -332,13 +336,13 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             {
                 var success = await _processService.ExecuteStepAsync(instanceId, stepId, stepData, userId);
                 if (!success)
-                    return BadRequest("Step update failed. Verify the instance and step are in a valid state.");
+                    return BadRequest(new { error = "Step update failed. Verify the instance and step are in a valid state." });
                 return NoContent();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating step {StepId} on instance {InstanceId}", stepId, instanceId);
-                return StatusCode(500, "Error updating step.");
+                return StatusCode(500, new { error = "Error updating step." });
             }
         }
 
@@ -351,7 +355,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             [FromBody] ProcessCloseRequest request)
         {
             if (string.IsNullOrWhiteSpace(instanceId))
-                return BadRequest("instanceId is required.");
+                    return BadRequest(new { error = "Instance ID is required." });
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
             var reason = request?.Reason ?? "Closed by user.";
@@ -360,13 +364,13 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             {
                 var success = await _processService.CancelProcessAsync(instanceId, reason, userId);
                 if (!success)
-                    return BadRequest("Unable to close instance. It may already be closed or completed.");
+                    return BadRequest(new { error = "Unable to close instance. It may already be closed or completed." });
                 return NoContent();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error closing process instance {InstanceId}", instanceId);
-                return StatusCode(500, "Error closing process instance.");
+                return StatusCode(500, new { error = "Error closing process instance." });
             }
         }
 
@@ -383,7 +387,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving process templates");
-                return StatusCode(500, "Error retrieving templates.");
+                return StatusCode(500, new { error = "Error retrieving templates." });
             }
         }
     }

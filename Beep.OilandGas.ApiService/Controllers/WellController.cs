@@ -2,7 +2,10 @@ using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.WellComparison;
+using Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL;
 using TheTechIdea.Beep.Report;
+using WELL = Beep.OilandGas.PPDM39.Models.WELL;
+using WELL_STATUS = Beep.OilandGas.PPDM39.Models.WELL_STATUS;
 
 namespace Beep.OilandGas.ApiService.Controllers
 {
@@ -23,14 +26,63 @@ namespace Beep.OilandGas.ApiService.Controllers
     public class WellController : ControllerBase
     {
         private readonly IWellComparisonService _wellComparisonService;
+        private readonly WellServices _wellServices;
         private readonly ILogger<WellController> _logger;
 
         public WellController(
             IWellComparisonService wellComparisonService,
+            WellServices wellServices,
             ILogger<WellController> logger)
         {
             _wellComparisonService = wellComparisonService ?? throw new ArgumentNullException(nameof(wellComparisonService));
+            _wellServices = wellServices ?? throw new ArgumentNullException(nameof(wellServices));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        // ============================================
+        // LEGACY WELL LOOKUP COMPATIBILITY ENDPOINTS
+        // ============================================
+
+        /// <summary>
+        /// Legacy compatibility route used by well lookup pages.
+        /// Returns the active well entity for the given UWI or null when none exists.
+        /// </summary>
+        [HttpGet("uwi/{uwi}")]
+        public async Task<ActionResult<WELL?>> GetByUwi(string uwi)
+        {
+            if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
+
+            try
+            {
+                var result = await _wellServices.GetByUwiAsync(uwi);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting well by UWI {UWI}", uwi);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>
+        /// Legacy compatibility route used by the well status lookup page.
+        /// Returns current STATUS_TYPE -> WELL_STATUS values for the given UWI.
+        /// </summary>
+        [HttpGet("uwi/{uwi}/status")]
+        public async Task<ActionResult<Dictionary<string, WELL_STATUS>>> GetCurrentStatusByUwi(string uwi)
+        {
+            if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
+
+            try
+            {
+                var result = await _wellServices.GetCurrentWellStatusByUwiAsync(uwi);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting current well status for UWI {UWI}", uwi);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
         }
 
         // ============================================

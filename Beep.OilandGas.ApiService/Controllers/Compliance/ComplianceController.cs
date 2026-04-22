@@ -60,7 +60,8 @@ public class ComplianceController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(obligationId)) return BadRequest(new { error = "Obligation ID is required." });
         var result = await _compliance.GetByIdAsync(obligationId);
-        return result is null ? NotFound() : Ok(result);
+        if (result is null) return NotFound(new { error = $"Obligation {obligationId} not found." });
+        return Ok(result);
     }
 
     [HttpPost("obligations")]

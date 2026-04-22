@@ -43,7 +43,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 
                 if (metrics == null)
                 {
-                    return NotFound(new { error = "Metrics not found" });
+                    return NotFound(new { error = "Metrics not found." });
                 }
 
                 var result = new DataQualityResult
@@ -80,7 +80,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 
                 if (dashboard == null)
                 {
-                    return NotFound(new { error = "Dashboard data not found" });
+                    return NotFound(new { error = "Dashboard data not found." });
                 }
 
                 var dashboardTableName = dashboard.TABLE_NAME ?? dashboard.TableName ?? "Unknown";

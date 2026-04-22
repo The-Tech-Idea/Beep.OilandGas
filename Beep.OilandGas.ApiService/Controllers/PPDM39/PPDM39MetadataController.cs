@@ -282,7 +282,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 var meta = await _metadata.GetTableMetadataAsync(tableName);
                 if (meta == null)
-                    return NotFound(new { error = $"Table '{tableName}' not found in metadata" });
+                        return NotFound(new { error = $"Table '{tableName}' not found in metadata." });
 
                 var fks = (await _metadata.GetForeignKeysAsync(tableName))
                     .Select(fk => new ForeignKeyInfo

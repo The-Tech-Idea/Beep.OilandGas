@@ -1,0 +1,37 @@
+@using System.Linq
+
+@if (HasTabs)
+{
+    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="@Class">
+        @if (HasSummary)
+        {
+            <MudTabPanel Text="@SummaryTitle" Icon="@SummaryIcon">
+                <CalculationFactGrid Items="@SafeSummaryItems" />
+            </MudTabPanel>
+        }
+        @if (HasInputSnapshot)
+        {
+            <MudTabPanel Text="@InputSnapshotTitle" Icon="@InputSnapshotIcon">
+                <CalculationFactGrid Items="@SafeInputSnapshotItems" />
+            </MudTabPanel>
+        }
+        @AdditionalTabs
+    </MudTabs>
+}
+
+@code {
+    [Parameter] public IEnumerable<CalculationFactItem>? SummaryItems { get; set; }
+    [Parameter] public IEnumerable<CalculationFactItem>? InputSnapshotItems { get; set; }
+    [Parameter] public RenderFragment? AdditionalTabs { get; set; }
+    [Parameter] public string Class { get; set; } = string.Empty;
+    [Parameter] public string SummaryTitle { get; set; } = "Summary";
+    [Parameter] public string SummaryIcon { get; set; } = Icons.Material.Filled.Summarize;
+    [Parameter] public string InputSnapshotTitle { get; set; } = "Input Snapshot";
+    [Parameter] public string InputSnapshotIcon { get; set; } = Icons.Material.Filled.Settings;
+
+    private bool HasSummary => SummaryItems?.Any() == true;
+    private bool HasInputSnapshot => InputSnapshotItems?.Any() == true;
+    private bool HasTabs => HasSummary || HasInputSnapshot || AdditionalTabs != null;
+    private IEnumerable<CalculationFactItem> SafeSummaryItems => SummaryItems ?? Array.Empty<CalculationFactItem>();
+    private IEnumerable<CalculationFactItem> SafeInputSnapshotItems => InputSnapshotItems ?? Array.Empty<CalculationFactItem>();
+}

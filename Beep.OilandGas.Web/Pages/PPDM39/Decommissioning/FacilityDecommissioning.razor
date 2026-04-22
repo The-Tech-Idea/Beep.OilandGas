@@ -1,7 +1,8 @@
 ﻿@page "/decommissioning/facility"
-@inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject ApiClient ApiClient
+@inject IDecommissioningServiceClient DecommissioningService
+@inject ILifeCycleService LifeCycleService
 
 <PageTitle>Facility Decommissioning</PageTitle>
 
@@ -29,7 +30,7 @@
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="In programme" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="In Execution" Value="@_facilities.Count(f => f.Phase == "EXECUTION").ToString()" Unit="units"
+            <KpiCard Label="In Execution" Value="@_facilities.Count(f => IsExecutionPhase(f.Phase)).ToString()" Unit="units"
                      ValueColor="Color.Warning" Icon="@Icons.Material.Filled.BuildCircle"
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Active" />
         </MudItem>
@@ -39,7 +40,7 @@
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Committed + est." />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Regulatory Submissions" Value="@_facilities.Count(f => f.Phase is "APPROVAL" or "PLANNING").ToString()" Unit="pending"
+            <KpiCard Label="Regulatory Submissions" Value="@_facilities.Count(f => IsRegulatoryPhase(f.Phase)).ToString()" Unit="pending"
                      ValueColor="Color.Error" Icon="@Icons.Material.Filled.Policy"
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Awaiting approval" />
         </MudItem>
@@ -161,7 +162,7 @@
     private double _totalCostMm;
     private bool _loading = true;
 
-    private record FacilityItem(string FacilityId, string FacilityType, string DecomStart,
+    private record FacilityItem(string DecommissioningId, string FacilityId, string FacilityType, string DecomStart,
         string DecomEnd, double CostMm, string Phase, double PctComplete);
 
     private List<FacilityItem> _facilities = new();
@@ -190,7 +191,7 @@
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
@@ -199,37 +200,41 @@
         _loading = true;
         try
         {
-            var raw = await ApiClient.GetAsync<List<FacilityDecomDto>>("api/field/current/decommissioning/facilities") ?? new();            if (raw != null)
-            {
-                _facilities = raw.Select(r => new FacilityItem(
-                    r.FacilityId ?? r.DecommissioningId,
-                    r.DecommissioningType ?? "Facility",
-                    r.DecommissioningStartDate?.ToLocalTime().ToString("MMM yyyy") ?? "—",
-                    r.DecommissioningEndDate?.ToLocalTime().ToString("MMM yyyy") ?? "TBD",
-                    (double)(r.DecommissioningCost ?? 0m) / 1_000_000,
-                    r.Status ?? "PLANNED",
-                    0)).ToList();
+            var raw = await DecommissioningService.GetDecommissionedFacilitiesAsync();
+            var estimate = await DecommissioningService.EstimateCostsAsync();
 
-                _totalCostMm = _facilities.Sum(f => f.CostMm);
+            _facilities = raw.Select(r => new FacilityItem(
+                r.DecommissioningId,
+                r.FacilityId ?? r.DecommissioningId,
+                r.DecommissioningType ?? "Facility",
+                FormatMonth(r.DecommissioningStartDate, "—"),
+                FormatMonth(r.DecommissioningEndDate, "TBD"),
+                (double)(r.TotalCost ?? r.DecommissioningCost ?? 0m) / 1_000_000d,
+                r.Status ?? "PLANNED",
+                EstimateCompletionPct(r.Status))).ToList();
+
+            var actualCostMm = _facilities.Sum(f => f.CostMm);
+            var estimatedCostMm = (double)(estimate?.EstimatedFacilityDecommissioningCost ?? 0m) / 1_000_000d;
+            _totalCostMm = actualCostMm > 0 ? actualCostMm : estimatedCostMm;
+
+            if (_selectedFacility is not null)
+            {
+                _selectedFacility = _facilities.FirstOrDefault(f => f.DecommissioningId == _selectedFacility.DecommissioningId);
+                if (_selectedFacility is not null)
+                {
+                    _decomActivities = BuildDecomActivities(_selectedFacility.Phase);
+                }
             }
         }
         catch (Exception) { Snackbar.Add("Failed to load facilities.", Severity.Warning); }
         finally { _loading = false; }
     }
 
-    private class FacilityDecomDto
+    private void OnFacilitySelected(DataGridRowClickEventArgs<FacilityItem> args)
     {
-        public string    DecommissioningId       { get; set; } = string.Empty;
-        public string?   FacilityId              { get; set; }
-        public string?   DecommissioningType     { get; set; }
-        public string?   Status                  { get; set; }
-        public DateTime? DecommissioningStartDate{ get; set; }
-        public DateTime? DecommissioningEndDate  { get; set; }
-        public decimal?  DecommissioningCost     { get; set; }
-    }
-
-    private void OnFacilitySelected(DataGridRowClickEventArgs<FacilityItem> args) =>
         _selectedFacility = args.Item;
+        _decomActivities = BuildDecomActivities(args.Item.Phase);
+    }
 
     private Color ActivityColor(string status) => status switch
     {
@@ -237,4 +242,77 @@
         "IN PROGRESS" => Color.Primary,
         _             => Color.Default,
     };
+
+    private static string FormatMonth(DateTime? value, string fallback) =>
+        value?.ToLocalTime().ToString("MMM yyyy") ?? fallback;
+
+    private static bool IsExecutionPhase(string? phase)
+    {
+        var normalized = NormalizePhase(phase);
+        return normalized is "EXECUTION" or "INPROGRESS" or "ACTIVE";
+    }
+
+    private static bool IsRegulatoryPhase(string? phase)
+    {
+        var normalized = NormalizePhase(phase);
+        return normalized is "APPROVAL" or "PLANNING" or "PLANNED" or "PENDINGAPPROVAL";
+    }
+
+    private static int EstimateCompletionPct(string? phase)
+    {
+        return NormalizePhase(phase) switch
+        {
+            "COMPLETE" or "COMPLETED" or "CLOSED" => 100,
+            "EXECUTION" or "INPROGRESS" or "ACTIVE" => 60,
+            "APPROVAL" or "PENDINGAPPROVAL" => 35,
+            "PLANNING" or "PLANNED" => 10,
+            _ => 0,
+        };
+    }
+
+    private static string NormalizePhase(string? phase) =>
+        string.IsNullOrWhiteSpace(phase)
+            ? string.Empty
+            : phase.Trim().Replace(" ", string.Empty).Replace("_", string.Empty).ToUpperInvariant();
+
+    private static List<DecomActivity> BuildDecomActivities(string? phase)
+    {
+        var activityDefinitions = new[]
+        {
+            "Isolate & Depressure",
+            "Clean & Flush Lines",
+            "Remove Equipment",
+            "Structural Demolition",
+            "Site Remediation",
+            "Final Survey",
+        };
+
+        var normalized = NormalizePhase(phase);
+        var currentIndex = normalized switch
+        {
+            "COMPLETE" or "COMPLETED" or "CLOSED" => activityDefinitions.Length,
+            "EXECUTION" or "INPROGRESS" or "ACTIVE" => 3,
+            "APPROVAL" or "PENDINGAPPROVAL" => 1,
+            _ => 0,
+        };
+
+        return activityDefinitions
+            .Select((name, index) =>
+            {
+                var status = index < currentIndex
+                    ? "COMPLETE"
+                    : index == currentIndex && currentIndex < activityDefinitions.Length
+                        ? "IN PROGRESS"
+                        : "PLANNED";
+                var pct = status switch
+                {
+                    "COMPLETE" => 100d,
+                    "IN PROGRESS" => 55d,
+                    _ => 0d,
+                };
+
+                return new DecomActivity(name, status, pct);
+            })
+            .ToList();
+    }
 }

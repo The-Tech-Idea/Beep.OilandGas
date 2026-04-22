@@ -44,15 +44,15 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             [FromBody] HSEIncidentReportRequest request)
         {
             if (request == null)
-                return BadRequest("Request body is required.");
+                 return BadRequest(new { error = "Request body is required." });
             if (string.IsNullOrWhiteSpace(request.IncidentType))
-                return BadRequest("IncidentType is required.");
+                 return BadRequest(new { error = "IncidentType is required." });
             if (string.IsNullOrWhiteSpace(request.Severity))
-                return BadRequest("Severity (API RP 754 tier) is required.");
+                 return BadRequest(new { error = "Severity (API RP 754 tier) is required." });
 
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
-                return BadRequest("No active field selected.");
+                 return BadRequest(new { error = "No active field selected." });
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
 
@@ -92,7 +92,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error reporting HSE incident for field {FieldId}", fieldId);
-                return StatusCode(500, "Error reporting incident.");
+                return StatusCode(500, new { error = "Error reporting incident." });
             }
         }
 
@@ -105,7 +105,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
-                return BadRequest("No active field selected.");
+                    return BadRequest(new { error = "No active field selected." });
 
             try
             {
@@ -142,7 +142,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error listing HSE incidents for field {FieldId}", fieldId);
-                return StatusCode(500, "Error retrieving incidents.");
+                return StatusCode(500, new { error = "Error retrieving incidents." });
             }
         }
 
@@ -153,19 +153,19 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         public async Task<ActionResult<ProcessInstance>> GetIncidentAsync(string incidentId)
         {
             if (string.IsNullOrWhiteSpace(incidentId))
-                return BadRequest("incidentId is required.");
+                    return BadRequest(new { error = "Incident ID is required." });
 
             try
             {
                 var instance = await _processService.GetProcessInstanceAsync(incidentId);
                 if (instance == null)
-                    return NotFound($"Incident '{incidentId}' not found.");
+                    return NotFound(new { error = $"Incident '{incidentId}' not found." });
                 return Ok(instance);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving incident {IncidentId}", incidentId);
-                return StatusCode(500, "Error retrieving incident.");
+                return StatusCode(500, new { error = "Error retrieving incident." });
             }
         }
 
@@ -181,9 +181,11 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             [FromBody] HSEIncidentUpdateRequest request)
         {
             if (string.IsNullOrWhiteSpace(incidentId))
-                return BadRequest("incidentId is required.");
-            if (request == null || string.IsNullOrWhiteSpace(request.RcaSummary))
-                return BadRequest("RcaSummary is required.");
+                    return BadRequest(new { error = "Incident ID is required." });
+                if (request == null)
+                    return BadRequest(new { error = "Request body is required." });
+                if (string.IsNullOrWhiteSpace(request.RcaSummary))
+                    return BadRequest(new { error = "RcaSummary is required." });
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
 
@@ -191,7 +193,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             {
                 var instance = await _processService.GetProcessInstanceAsync(incidentId);
                 if (instance == null)
-                    return NotFound($"Incident '{incidentId}' not found.");
+                    return NotFound(new { error = $"Incident '{incidentId}' not found." });
 
                 // Transition to RCA_IN_PROGRESS state
                 await _processService.TransitionStateAsync(incidentId, "RCA_IN_PROGRESS", userId);
@@ -212,7 +214,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error submitting RCA for incident {IncidentId}", incidentId);
-                return StatusCode(500, "Error submitting RCA.");
+                return StatusCode(500, new { error = "Error submitting RCA." });
             }
         }
 
@@ -226,9 +228,11 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             [FromBody] HSEIncidentUpdateRequest request)
         {
             if (string.IsNullOrWhiteSpace(incidentId))
-                return BadRequest("incidentId is required.");
-            if (request == null || request.CorrectiveActions == null || request.CorrectiveActions.Count == 0)
-                return BadRequest("At least one corrective action is required.");
+                    return BadRequest(new { error = "Incident ID is required." });
+                if (request == null)
+                    return BadRequest(new { error = "Request body is required." });
+                if (request.CorrectiveActions == null || request.CorrectiveActions.Count == 0)
+                    return BadRequest(new { error = "At least one corrective action is required." });
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
 
@@ -236,7 +240,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             {
                 var instance = await _processService.GetProcessInstanceAsync(incidentId);
                 if (instance == null)
-                    return NotFound($"Incident '{incidentId}' not found.");
+                    return NotFound(new { error = $"Incident '{incidentId}' not found." });
 
                 foreach (var action in request.CorrectiveActions)
                 {
@@ -260,7 +264,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error raising corrective actions for incident {IncidentId}", incidentId);
-                return StatusCode(500, "Error raising corrective actions.");
+                return StatusCode(500, new { error = "Error raising corrective actions." });
             }
         }
 
@@ -274,8 +278,10 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             string actionId,
             [FromBody] CorrectiveActionCloseRequest request)
         {
-            if (string.IsNullOrWhiteSpace(incidentId) || string.IsNullOrWhiteSpace(actionId))
-                return BadRequest("incidentId and actionId are required.");
+                if (string.IsNullOrWhiteSpace(incidentId))
+                    return BadRequest(new { error = "Incident ID is required." });
+                if (string.IsNullOrWhiteSpace(actionId))
+                    return BadRequest(new { error = "Action ID is required." });
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
             var notes = request?.Notes ?? "Closed.";
@@ -284,7 +290,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             {
                 var instance = await _processService.GetProcessInstanceAsync(incidentId);
                 if (instance == null)
-                    return NotFound($"Incident '{incidentId}' not found.");
+                    return NotFound(new { error = $"Incident '{incidentId}' not found." });
 
                 await _processService.AddHistoryEntryAsync(incidentId, new ProcessHistoryEntry
                 {
@@ -302,7 +308,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error closing corrective action {ActionId} for incident {IncidentId}", actionId, incidentId);
-                return StatusCode(500, "Error closing corrective action.");
+                return StatusCode(500, new { error = "Error closing corrective action." });
             }
         }
 
@@ -318,7 +324,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             [FromBody] IncidentCloseRequest request)
         {
             if (string.IsNullOrWhiteSpace(incidentId))
-                return BadRequest("incidentId is required.");
+                    return BadRequest(new { error = "Incident ID is required." });
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
             var reason = request?.Reason ?? "Closed.";
@@ -327,24 +333,14 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             {
                 var success = await _processService.CancelProcessAsync(incidentId, reason, userId);
                 if (!success)
-                    return NotFound($"Incident '{incidentId}' not found or already closed.");
+                    return NotFound(new { error = $"Incident '{incidentId}' not found or already closed." });
                 return NoContent();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error closing incident {IncidentId}", incidentId);
-                return StatusCode(500, "Error closing incident.");
+                return StatusCode(500, new { error = "Error closing incident." });
             }
         }
-    }
-
-    public class CorrectiveActionCloseRequest
-    {
-        public string Notes { get; set; } = string.Empty;
-    }
-
-    public class IncidentCloseRequest
-    {
-        public string Reason { get; set; } = string.Empty;
     }
 }

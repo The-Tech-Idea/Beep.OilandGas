@@ -2,6 +2,9 @@
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject ApiClient ApiClient
+@inject IHSEServiceClient HSEClient
+@inject ILifeCycleService LifeCycleService
+@using Beep.OilandGas.Models.Data.HSE
 
 <PageTitle>Incident Management</PageTitle>
 
@@ -216,7 +219,7 @@
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
@@ -225,7 +228,8 @@
         _loading = true;
         try
         {
-            var raw = await ApiClient.GetAsync<List<IncidentApiDto>>("api/field/current/hse/incidents") ?? new();            if (raw != null)
+            var raw = await HSEClient.GetIncidentsAsync();
+            if (raw != null)
             {
                 _incidents = raw.Select(r => new IncidentItem(
                     r.IncidentId,
@@ -246,25 +250,12 @@
                     : (int)(DateTime.UtcNow - lastLti.IncidentDate).TotalDays;
             }
 
-            var kpi = await ApiClient.GetAsync<HSEKPIDto>("api/field/current/hse/kpi");
+            var kpi = await HSEClient.GetKpisAsync();
             if (kpi != null) _trir = kpi.TRIR;
         }
         catch (Exception) { Snackbar.Add("Failed to load incidents.", Severity.Warning); }
         finally { _loading = false; }
     }
-
-    private class IncidentApiDto
-    {
-        public string   IncidentId    { get; set; } = string.Empty;
-        public string   IncidentType  { get; set; } = string.Empty;
-        public DateTime IncidentDate  { get; set; } = DateTime.UtcNow;
-        public string   Location      { get; set; } = string.Empty;
-        public string   Description   { get; set; } = string.Empty;
-        public string   CurrentState  { get; set; } = string.Empty;
-        public string?  InvestigatorId{ get; set; }
-    }
-
-    private class HSEKPIDto { public double TRIR { get; set; } }
 
     private void OnIncidentSelected(DataGridRowClickEventArgs<IncidentItem> args) =>
         _selectedIncident = args.Item;
@@ -273,17 +264,15 @@
     {
         try
         {
-            var req = new
-            {
-                FieldId      = "current",
-                IncidentType = _newSeverity,
-                Tier         = 4,
-                IncidentDate = DateTime.UtcNow,
-                Location     = _newLocation,
-                Description  = _newDescription,
-                Jurisdiction = "USA"
-            };
-            await ApiClient.PostAsync<object, object>("api/field/current/hse/incidents", req);
+            var req = new ReportIncidentRequest(
+                "current",
+                _newSeverity,
+                4,
+                DateTime.UtcNow,
+                _newLocation,
+                _newDescription,
+                "USA");
+            await HSEClient.ReportIncidentAsync(req);
             Snackbar.Add("Incident reported. Investigation opened.", Severity.Success);
             _showNewForm = false;
             await OnInitializedAsync();

@@ -1,5 +1,6 @@
 @page "/ppdm39/process/definitions"
 @inject ApiClient ApiClient
+@inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @using Beep.OilandGas.LifeCycle.Models.Processes
@@ -108,7 +109,8 @@
 
         try
         {
-            var data = await ApiClient.GetAsync<List<ProcessDefinition>>("/api/field/current/process/definitions") ?? new();            if (data != null)
+            var data = await BusinessProcessClient.GetDefinitionsAsync();
+            if (data.Count > 0)
             {
                 _definitions = data.Select(d => new DefinitionRow(
                     d.ProcessId,
@@ -119,6 +121,10 @@
                     d.Configuration != null && d.Configuration.TryGetValue("JurisdictionTag", out var j) ? j?.ToString() ?? "ALL" : "ALL",
                     d.IsActive
                 )).ToList();
+            }
+            else
+            {
+                _definitions = new();
             }
         }
         catch

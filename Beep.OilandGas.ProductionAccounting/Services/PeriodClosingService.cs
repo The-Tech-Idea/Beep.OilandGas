@@ -859,7 +859,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var referenceNumber = $"CLOSE-{periodEnd:yyyyMM}";
                 var existing = await repo.GetAsync(new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "REFERENCE_NUMBER", Operator = "=", FilterValue = referenceNumber },
+                    new AppFilter { FieldName = "ENTRY_NUMBER", Operator = "=", FilterValue = entryNumber },
+                    new AppFilter { FieldName = "ENTRY_TYPE", Operator = "=", FilterValue = "PERIOD_CLOSE" },
                     new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
                 });
 

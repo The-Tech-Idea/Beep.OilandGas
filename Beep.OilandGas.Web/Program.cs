@@ -334,23 +334,40 @@ builder.Services.AddHostedService<Beep.OilandGas.Web.Services.BrandingRegistrati
 // Register the Beep.OilandGas client app (auto-detect local/remote)
 builder.Services.AddBeepOilandGasAppAuto(builder.Configuration);
 
-        // All services are accessed via IBeepOilandGasApp (registered above).
-        // Components should inject IBeepOilandGasApp and use its properties for calculations, data management, etc.
+    // Keep the Beep.OilandGas app facade registered for legacy flows.
+    // Prefer focused typed clients or scoped services in pages and components where an HTTP/API seam already exists.
         
-        // Legacy service clients kept for backward compatibility (deprecated)
+    // Focused web clients and scoped services
+        builder.Services.AddScoped<IAccountingServiceClient, AccountingServiceClient>();
+        builder.Services.AddScoped<IAfeServiceClient, AfeServiceClient>();
         builder.Services.AddScoped<IDataManagementService, DataManagementService>();
         builder.Services.AddScoped<Beep.OilandGas.Web.Services.IConnectionService, Beep.OilandGas.Web.Services.ConnectionService>();
-        builder.Services.AddScoped<IAccountingServiceClient, AccountingServiceClient>();
+        builder.Services.AddScoped<IBusinessProcessServiceClient, BusinessProcessServiceClient>();
         builder.Services.AddScoped<ICalculationServiceClient, CalculationServiceClient>();
+        builder.Services.AddScoped<IComplianceServiceClient, ComplianceServiceClient>();
+        builder.Services.AddScoped<IDecommissioningServiceClient, DecommissioningServiceClient>();
+        builder.Services.AddScoped<IDevelopmentServiceClient, DevelopmentServiceClient>();
+        builder.Services.AddScoped<IDrillingServiceClient, DrillingServiceClient>();
+        builder.Services.AddScoped<IEnhancedRecoveryServiceClient, EnhancedRecoveryServiceClient>();
+        builder.Services.AddScoped<IExplorationServiceClient, ExplorationServiceClient>();
+        builder.Services.AddScoped<IHSEServiceClient, HSEServiceClient>();
+        builder.Services.AddScoped<ILeaseServiceClient, LeaseServiceClient>();
         builder.Services.AddScoped<IOperationsServiceClient, OperationsServiceClient>();
+        builder.Services.AddScoped<IProductionServiceClient, ProductionServiceClient>();
         builder.Services.AddScoped<IPumpServiceClient, PumpServiceClient>();
         builder.Services.AddScoped<IPropertiesServiceClient, PropertiesServiceClient>();
+        builder.Services.AddScoped<IWellLookupServiceClient, WellLookupServiceClient>();
+        builder.Services.AddScoped<IWellStatusServiceClient, WellStatusServiceClient>();
+        builder.Services.AddScoped<IWorkOrderServiceClient, WorkOrderServiceClient>();
 
         // Progress Tracking Client - SignalR client for real-time progress updates
         builder.Services.AddScoped<IProgressTrackingClient, ProgressTrackingClient>();
 
         // LifeCycle Service - Client service for lifecycle management operations
         builder.Services.AddScoped<ILifeCycleService, LifeCycleService>();
+
+        // Client-side file export service for JSON/text downloads from workbenches
+        builder.Services.AddScoped<IClientFileExportService, ClientFileExportService>();
 
         // Demo Database Service - Client service for demo database operations
         builder.Services.AddScoped<Beep.OilandGas.Web.Services.IDemoDatabaseService, Beep.OilandGas.Web.Services.DemoDatabaseService>();

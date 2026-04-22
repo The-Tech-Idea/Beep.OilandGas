@@ -1,10 +1,10 @@
 ﻿@page "/ppdm39/hse/incidents"
+@using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.HSE
-@using System.Security.Claims
 @inject ApiClient ApiClient
+@inject Beep.OilandGas.Web.Services.IHSEServiceClient HSEClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
-@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Manage HSE Incidents</PageTitle>
 
@@ -165,30 +165,42 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
         try
         {
-            var data = await ApiClient.GetAsync<List<HSEIncidentRecord>>("/api/field/current/hse/incidents") ?? new();            if (data != null)
-            {
-                _incidents = data.Select(i => new IncidentRow(
-                    i.IncidentId,
-                    i.IncidentDate,
-                    i.IncidentType,
-                    i.Description,
-                    i.Location,
-                    i.Tier.ToString(),
-                    i.CurrentState,
-                    i.InvestigatorId ?? string.Empty
-                )).ToList();
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch
+        {
+            // Field name is helpful for the header but non-blocking for incident operations.
+        }
 
-                _tier1Count = _incidents.Count(i => i.Tier == "1");
-                _tier2Count = _incidents.Count(i => i.Tier == "2");
-                _tier3Count = _incidents.Count(i => i.Tier == "3");
-                _tier4Count = _incidents.Count(i => i.Tier == "4");
-                _openCount   = _incidents.Count(i => !string.Equals(i.Status, "CLOSED", StringComparison.OrdinalIgnoreCase));
-                _closedCount = _incidents.Count(i => string.Equals(i.Status, "CLOSED", StringComparison.OrdinalIgnoreCase));
-            }
+        await LoadIncidentsAsync();
+    }
+
+    private async Task LoadIncidentsAsync()
+    {
+        try
+        {
+            var data = await HSEClient.GetIncidentsAsync();
+            _incidents = data.Select(i => new IncidentRow(
+                i.IncidentId,
+                i.IncidentDate,
+                i.IncidentType,
+                i.Description,
+                i.Location,
+                i.Tier.ToString(),
+                i.CurrentState,
+                i.InvestigatorId ?? string.Empty
+            )).ToList();
+
+            _tier1Count = _incidents.Count(i => i.Tier == "1");
+            _tier2Count = _incidents.Count(i => i.Tier == "2");
+            _tier3Count = _incidents.Count(i => i.Tier == "3");
+            _tier4Count = _incidents.Count(i => i.Tier == "4");
+            _openCount   = _incidents.Count(i => !string.Equals(i.Status, "CLOSED", StringComparison.OrdinalIgnoreCase));
+            _closedCount = _incidents.Count(i => string.Equals(i.Status, "CLOSED", StringComparison.OrdinalIgnoreCase));
         }
         catch
         {
@@ -199,7 +211,6 @@
     // ── Report-incident dialog state ─────────────────────────────────────
     private bool     _showReportDialog  = false;
     private bool     _reporting         = false;
-    private string   _currentUserId     = string.Empty;
     private string   _rIncidentType     = "SPILL";
     private int      _rTier             = 4;
     private DateTime _rIncidentDate     = DateTime.Today;
@@ -236,17 +247,15 @@
         _reporting = true;
         try
         {
-            var fieldInfo = await ApiClient.GetAsync<FieldInfoDto>("api/field/current");
             var request = new ReportIncidentRequest(
-                FieldId:      fieldInfo?.FieldId ?? string.Empty,
+                FieldId:      string.Empty,
                 IncidentType: _rIncidentType,
                 Tier:         _rTier,
                 IncidentDate: _rIncidentDate,
                 Location:     _rLocation,
                 Description:  _rDescription,
                 Jurisdiction: _rJurisdiction);
-            var result = await ApiClient.PostAsync<ReportIncidentRequest, HSEIncidentRecord>(
-                "/api/field/current/hse/incidents", request);
+            var result = await HSEClient.ReportIncidentAsync(request);
             _showReportDialog = false;
             Snackbar.Add("Incident reported.", Severity.Success);
             if (result != null)
@@ -258,8 +267,6 @@
         }
         finally { _reporting = false; }
     }
-
-    private class FieldInfoDto { public string? FieldId { get; set; } }
 
     private record IncidentRow(
         string IncidentId, DateTime IncidentDate, string IncidentType,

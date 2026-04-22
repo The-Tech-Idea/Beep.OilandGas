@@ -46,4 +46,26 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref CorrectiveActionsValue, value); }
         }
     }
+
+    public class CorrectiveActionCloseRequest : ModelEntityBase
+    {
+        private string NotesValue = string.Empty;
+
+        public string Notes
+        {
+            get { return this.NotesValue; }
+            set { SetProperty(ref NotesValue, value); }
+        }
+    }
+
+    public class IncidentCloseRequest : ModelEntityBase
+    {
+        private string ReasonValue = string.Empty;
+
+        public string Reason
+        {
+            get { return this.ReasonValue; }
+            set { SetProperty(ref ReasonValue, value); }
+        }
+    }
 }

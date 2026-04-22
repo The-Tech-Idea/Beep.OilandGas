@@ -38,11 +38,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
             try
             {
                 if (string.IsNullOrEmpty(contractId))
-                    return BadRequest(new { error = "contractId parameter is required" });
+                        return BadRequest(new { error = "Contract ID parameter is required." });
 
                 var contract = await _service.TradingService.GetContractAsync(contractId, connectionName);
                 if (contract == null)
-                    return NotFound(new { error = $"Exchange contract {contractId} not found" });
+                    return NotFound(new { error = $"Exchange contract {contractId} not found." });
                 
                 return Ok(new List<EXCHANGE_CONTRACT> { MapToExchangeContractDto(contract) });
             }

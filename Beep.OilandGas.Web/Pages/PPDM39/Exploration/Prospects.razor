@@ -1,13 +1,11 @@
 ﻿@page "/ppdm39/exploration/prospects"
-@using Beep.OilandGas.Models.Data.ProspectIdentification
-@using Beep.OilandGas.Models.Core.Interfaces
-@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Models.Data
 @using System.Security.Claims
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
-@inject IOperationsServiceClient OperationsService
+@inject IExplorationServiceClient ExplorationService
 @inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Evaluate Exploration Prospects</PageTitle>
@@ -45,7 +43,7 @@
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Label="Pending Evaluation"
-                     Value="@((_prospects?.Count(p => p.Status == null || p.Status == "PENDING" || p.Status == "NEW") ?? 0).ToString())"
+                     Value="@((_prospects?.Count(p => string.IsNullOrWhiteSpace(p.Status) || p.Status == "PENDING" || p.Status == "NEW") ?? 0).ToString())"
                      ValueColor="Color.Warning" Icon="@Icons.Material.Filled.HourglassEmpty"
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Warning"
                      TrendText="Awaiting review" />
@@ -59,7 +57,7 @@
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Label="Abandoned"
-                     Value="@((_prospects?.Count(p => p.Status == "ABANDONED") ?? 0).ToString())"
+                     Value="@((_prospects?.Count(p => p.Status == "ABANDONED" || p.Status == "REJECTED") ?? 0).ToString())"
                      ValueColor="Color.Error" Icon="@Icons.Material.Filled.Cancel"
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
                      TrendText="Not pursued" />
@@ -71,10 +69,10 @@
         <MudCardContent Class="pa-0">
             @if (_prospects != null && _prospects.Any())
             {
-                <MudDataGrid T="Prospect" Items="@_prospects" Dense="true" Hover="true" Striped="true"
+                <MudDataGrid T="ProspectListItem" Items="@_prospects" Dense="true" Hover="true" Striped="true"
                              SortMode="SortMode.Multiple" Filterable="true">
                     <Columns>
-                        <PropertyColumn Property="p => p.ProspectName" Title="Prospect Name" Sortable="true" />
+                        <PropertyColumn Property="p => p.Name" Title="Prospect Name" Sortable="true" />
                         <TemplateColumn Title="Status">
                             <CellTemplate>
                                 <StatusBadge Status="@(context.Item.Status ?? "PENDING")" />
@@ -137,7 +135,7 @@
 
 @code {
     private string _fieldName = string.Empty;
-    private List<Prospect>? _prospects;
+    private List<ProspectListItem>? _prospects;
     private bool _isLoading = false;
     private string? _currentUserId;
 
@@ -161,12 +159,21 @@
         _isLoading = true;
         try
         {
-            _prospects = await OperationsService.GetProspectsAsync();
+            var prospects = await ExplorationService.GetProspectsAsync();
+            _prospects = prospects
+                .Select(prospect => new ProspectListItem(
+                    prospect.PROSPECT_ID ?? string.Empty,
+                    prospect.PROSPECT_NAME ?? prospect.PROSPECT_ID ?? "Unknown",
+                    prospect.PROSPECT_STATUS,
+                    prospect.DISCOVERY_DATE,
+                    prospect.REMARK))
+                .OrderBy(prospect => prospect.Name)
+                .ToList();
         }
         catch (Exception)
         {
             Snackbar.Add("Error loading prospects.", Severity.Error);
-            _prospects = new List<Prospect>();
+            _prospects = new List<ProspectListItem>();
         }
         finally
         {
@@ -184,17 +191,17 @@
         {
             try
             {
-                // Convert dictionary to Prospect
-                var prospect = new Prospect
+                var prospect = new ProspectRequest
                 {
                     ProspectName = prospectData.ContainsKey("PROSPECT_NAME") ? prospectData["PROSPECT_NAME"]?.ToString() ?? string.Empty : string.Empty,
                     FieldId = prospectData.ContainsKey("FIELD_ID") ? prospectData["FIELD_ID"]?.ToString() ?? string.Empty : string.Empty,
                     Description = prospectData.ContainsKey("DESCRIPTION") ? prospectData["DESCRIPTION"]?.ToString() : null,
                     Status = prospectData.ContainsKey("PROSPECT_STATUS") ? prospectData["PROSPECT_STATUS"]?.ToString() ?? string.Empty : string.Empty,
-                    EvaluationDate = prospectData.ContainsKey("EVALUATION_DATE") && DateTime.TryParse(prospectData["EVALUATION_DATE"]?.ToString(), out var evalDate) ? evalDate : DateTime.UtcNow
+                    DiscoveryDate = prospectData.ContainsKey("DISCOVERY_DATE") && DateTime.TryParse(prospectData["DISCOVERY_DATE"]?.ToString(), out var discoveryDate) ? discoveryDate : DateTime.UtcNow,
+                    RiskLevel = prospectData.ContainsKey("RISK_LEVEL") ? prospectData["RISK_LEVEL"]?.ToString() : null
                 };
 
-                var prospectId = await OperationsService.CreateProspectAsync(prospect, _currentUserId);
+                await ExplorationService.CreateProspectAsync(prospect, _currentUserId);
                 Snackbar.Add("Prospect created successfully", Severity.Success);
                 await LoadProspects();
             }
@@ -205,10 +212,37 @@
         }
     }
 
-    private async Task OpenEditDialog(Prospect prospect)
+    private async Task OpenEditDialog(ProspectListItem prospect)
     {
+        Beep.OilandGas.PPDM39.Models.PROSPECT? currentProspect;
+        try
+        {
+            currentProspect = await ExplorationService.GetProspectAsync(prospect.Id);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error loading prospect details.", Severity.Error);
+            return;
+        }
+
+        if (currentProspect == null)
+        {
+            Snackbar.Add("Prospect not found.", Severity.Warning);
+            return;
+        }
+
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var parameters = new DialogParameters { ["Prospect"] = prospect };
+        var parameters = new DialogParameters
+        {
+            ["Prospect"] = new Dictionary<string, object>
+            {
+                ["PROSPECT_NAME"] = currentProspect.PROSPECT_NAME ?? prospect.Name,
+                ["PROSPECT_STATUS"] = currentProspect.PROSPECT_STATUS ?? prospect.Status ?? string.Empty,
+                ["DESCRIPTION"] = currentProspect.REMARK ?? prospect.Description ?? string.Empty,
+                ["DISCOVERY_DATE"] = currentProspect.DISCOVERY_DATE?.ToString("O") ?? prospect.EvaluationDate?.ToString("O") ?? string.Empty,
+                ["ESTIMATED_RESERVES"] = currentProspect.AREA_SIZE?.ToString() ?? string.Empty
+            }
+        };
         var dialog = await DialogService.ShowAsync<ProspectEditDialog>("Edit Prospect", parameters, options);
         var result = await dialog.Result;
 
@@ -216,9 +250,9 @@
         {
             try
             {
-                // Evaluate prospect to get updated evaluation
-                var evaluation = await OperationsService.EvaluateProspectAsync(prospect.ProspectId);
-                Snackbar.Add("Prospect evaluation updated successfully", Severity.Success);
+                var request = BuildProspectRequest(prospectData, currentProspect);
+                await ExplorationService.UpdateProspectAsync(prospect.Id, request, _currentUserId);
+                Snackbar.Add("Prospect updated successfully", Severity.Success);
                 await LoadProspects();
             }
             catch (Exception)
@@ -228,19 +262,18 @@
         }
     }
 
-    private async Task DeleteProspect(Prospect prospect)
+    private async Task DeleteProspect(ProspectListItem prospect)
     {
         var result = await DialogService.ShowMessageBoxAsync(
             "Delete Prospect",
-            $"Are you sure you want to delete prospect {prospect.ProspectName}?",
+            $"Are you sure you want to delete prospect {prospect.Name}?",
             yesText: "Delete", cancelText: "Cancel");
 
         if (result == true)
         {
             try
             {
-                // Delete via API server
-                await ApiClient.DeleteAsync($"/api/prospectidentification/{Uri.EscapeDataString(prospect.ProspectId)}?userId={_currentUserId}");
+                await ExplorationService.DeleteProspectAsync(prospect.Id, _currentUserId);
                 Snackbar.Add("Prospect deleted successfully", Severity.Success);
                 await LoadProspects();
             }
@@ -251,15 +284,34 @@
         }
     }
 
-    private string GetPropertyValue(Prospect prospect, string propertyName)
+    private static ProspectRequest BuildProspectRequest(Dictionary<string, object> prospectData, Beep.OilandGas.PPDM39.Models.PROSPECT? existingProspect = null)
     {
-        return propertyName switch
+        var request = new ProspectRequest
         {
-            "PROSPECT_ID" => prospect.ProspectId,
-            "PROSPECT_NAME" => prospect.ProspectName,
-            "PROSPECT_STATUS" => prospect.Status ?? "Unknown",
-            _ => "N/A"
+            ProspectId = existingProspect?.PROSPECT_ID,
+            ProspectName = prospectData.ContainsKey("PROSPECT_NAME")
+                ? prospectData["PROSPECT_NAME"]?.ToString() ?? existingProspect?.PROSPECT_NAME ?? string.Empty
+                : existingProspect?.PROSPECT_NAME ?? string.Empty,
+            Description = prospectData.ContainsKey("DESCRIPTION")
+                ? prospectData["DESCRIPTION"]?.ToString()
+                : existingProspect?.REMARK,
+            Status = prospectData.ContainsKey("PROSPECT_STATUS")
+                ? prospectData["PROSPECT_STATUS"]?.ToString() ?? existingProspect?.PROSPECT_STATUS
+                : existingProspect?.PROSPECT_STATUS,
+            DiscoveryDate = prospectData.ContainsKey("DISCOVERY_DATE") && DateTime.TryParse(prospectData["DISCOVERY_DATE"]?.ToString(), out var discoveryDate)
+                ? discoveryDate
+                : existingProspect?.DISCOVERY_DATE,
+            RiskLevel = prospectData.ContainsKey("RISK_LEVEL") ? prospectData["RISK_LEVEL"]?.ToString() : null,
+            ProspectType = existingProspect?.PROSPECT_TYPE,
+            EstimatedOilVolume = prospectData.ContainsKey("ESTIMATED_RESERVES") && decimal.TryParse(prospectData["ESTIMATED_RESERVES"]?.ToString(), out var reserves)
+                ? reserves
+                : existingProspect?.AREA_SIZE,
+            EstimatedVolumeOuom = existingProspect?.AREA_SIZE_OUOM
         };
+
+        return request;
     }
+
+    private sealed record ProspectListItem(string Id, string Name, string? Status, DateTime? EvaluationDate, string? Description);
 }
 

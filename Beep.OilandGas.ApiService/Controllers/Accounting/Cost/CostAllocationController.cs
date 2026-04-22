@@ -38,7 +38,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         /// Allocate costs to entities.
         /// </summary>
         [HttpPost("allocate")]
-        public async Task<ActionResult<object>> AllocateCosts(
+        public async Task<ActionResult<CostAllocationComputationResult>> AllocateCosts(
             [FromBody] CostAllocationRequest request, 
             [FromQuery] string? connectionName = null,
             [FromQuery] string? userId = null)
@@ -49,7 +49,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
                     return BadRequest(ModelState);
 
                 if (string.IsNullOrEmpty(request.FieldId))
-                    return BadRequest(new { error = "FieldId is required" });
+                        return BadRequest(new { error = "Field ID is required." });
 
                 if (!Enum.TryParse<CostAllocationMethod>(request.AllocationMethod, true, out var allocationMethod))
                     return BadRequest(new { error = $"Invalid allocation method: {request.AllocationMethod}" });
@@ -84,22 +84,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
                 var repository = _service.GetRepository(typeof(COST_ALLOCATION), connName, "COST_ALLOCATION");
                 await repository.InsertAsync(costAllocation, userId ?? "system");
 
-                return Ok(new
-                {
-                    AllocationMethod = request.AllocationMethod,
-                    TotalOperatingCosts = totalOperatingCosts,
-                    TotalCapitalCosts = totalCapitalCosts,
-                    TotalCosts = totalCosts,
-                    AllocationDetails = result.AllocationDetails?.Select(d => new
-                    {
-                        EntityType = d.EntityType,
-                        EntityName = d.EntityName,
-                        AllocatedOperatingCost = d.AllocatedOperatingCost,
-                        AllocatedCapitalCost = d.AllocatedCapitalCost,
-                        TotalAllocatedCost = d.TotalAllocatedCost,
-                        AllocationPercentage = d.AllocationPercentage
-                    }).Cast<object>().ToList() ?? new List<object>()
-                });
+                result.TotalOperatingCosts = totalOperatingCosts;
+                result.TotalCapitalCosts = totalCapitalCosts;
+                result.AllocationDetails ??= new List<CostAllocationBreakdown>();
+
+                return Ok(result);
             }
             catch (Exception ex)
             {

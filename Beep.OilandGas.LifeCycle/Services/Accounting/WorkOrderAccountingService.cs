@@ -12,6 +12,7 @@ using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.LifeCycle.Services.Accounting
 {
@@ -50,6 +51,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
                 throw new ArgumentNullException(nameof(workOrder));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
+            if (string.IsNullOrWhiteSpace(workOrder.WorkOrderId))
+                throw new ArgumentNullException(nameof(workOrder.WorkOrderId), "Work order ID is required.");
 
             var cn = connectionName ?? DefaultConnectionName;
 
@@ -60,6 +63,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
                 {
                     return existing;
                 }
+            }
+
+            var linkedAfe = await GetAFEForWorkOrderAsync(workOrder.WorkOrderId, cn);
+            if (linkedAfe != null)
+            {
+                return linkedAfe;
             }
 
             var afe = new AFE
@@ -86,9 +95,53 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
 
             var repo = await CreateRepositoryAsync("AFE", typeof(AFE), cn);
             await repo.InsertAsync(afe, userId);
+            await PersistAfeLinkAsync(workOrder.WorkOrderId, afe.AFE_ID, userId, cn);
 
             _logger?.LogInformation("Created AFE {AfeId} for work order {WorkOrderId}", afe.AFE_ID, workOrder.WorkOrderId);
             return afe;
+        }
+
+        public async Task<AFE> CreateOrLinkAFEAsync(
+            string workOrderId,
+            string userId,
+            string? connectionName = null)
+        {
+            if (string.IsNullOrWhiteSpace(workOrderId))
+                throw new ArgumentNullException(nameof(workOrderId));
+
+            var cn = connectionName ?? DefaultConnectionName;
+            var projectWorkOrder = await GetProjectWorkOrderAsync(workOrderId, cn);
+            if (projectWorkOrder != null)
+            {
+                return await CreateOrLinkAFEAsync(MapProjectWorkOrderToResponse(projectWorkOrder), userId, cn);
+            }
+
+            var workOrder = await GetLegacyWorkOrderAsync(workOrderId, cn);
+            if (workOrder == null)
+                throw new InvalidOperationException($"Work order {workOrderId} was not found.");
+
+            var workOrderResponse = MapLegacyWorkOrderToResponse(workOrder);
+            return await CreateOrLinkAFEAsync(workOrderResponse, userId, cn);
+        }
+
+        public async Task<AFE?> GetAFEForWorkOrderAsync(string workOrderId, string? connectionName = null)
+        {
+            if (string.IsNullOrWhiteSpace(workOrderId))
+                return null;
+
+            var cn = connectionName ?? DefaultConnectionName;
+            var projectWorkOrder = await GetProjectWorkOrderAsync(workOrderId, cn);
+            var afeId = ExtractAfeId(GetStringValue(projectWorkOrder, "REMARK"));
+            if (string.IsNullOrWhiteSpace(afeId))
+            {
+                var workOrder = await GetLegacyWorkOrderAsync(workOrderId, cn);
+                afeId = ExtractAfeId(workOrder?.REMARK);
+            }
+
+            if (string.IsNullOrWhiteSpace(afeId))
+                return null;
+
+            return await GetAfeAsync(afeId, cn);
         }
 
         public async Task<string> RecordWorkOrderCostAsync(
@@ -109,12 +162,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
 
             var cn = connectionName ?? DefaultConnectionName;
 
-            var workOrder = await GetWorkOrderAsync(request.WorkOrderId, cn);
-            var afeId = ExtractAfeId(workOrder?.REMARK);
+            var linkedAfe = await GetAFEForWorkOrderAsync(request.WorkOrderId, cn);
+            var afeId = linkedAfe?.AFE_ID;
             if (string.IsNullOrWhiteSpace(afeId))
             {
-                var workOrderResponse = MapWorkOrderToResponse(workOrder);
-                var afe = await CreateOrLinkAFEAsync(workOrderResponse, userId, cn);
+                var afe = await CreateOrLinkAFEAsync(request.WorkOrderId, userId, cn);
                 afeId = afe.AFE_ID;
             }
 
@@ -177,7 +229,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             return entity as AFE;
         }
 
-        private async Task<WORK_ORDER?> GetWorkOrderAsync(string workOrderId, string connectionName)
+        private async Task<WORK_ORDER?> GetLegacyWorkOrderAsync(string workOrderId, string connectionName)
         {
             if (string.IsNullOrWhiteSpace(workOrderId))
                 return null;
@@ -185,6 +237,66 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             var repo = await CreateRepositoryAsync("WORK_ORDER", typeof(WORK_ORDER), connectionName);
             var entity = await repo.GetByIdAsync(workOrderId);
             return entity as WORK_ORDER;
+        }
+
+        private async Task<object?> GetProjectWorkOrderAsync(string workOrderId, string connectionName)
+        {
+            if (string.IsNullOrWhiteSpace(workOrderId))
+                return null;
+
+            var repo = await CreateRepositoryAsync("PROJECT", typeof(PROJECT), connectionName);
+            var rows = await repo.GetAsync(new List<AppFilter>
+            {
+                new AppFilter { FieldName = "PROJECT_ID", Operator = "=", FilterValue = workOrderId },
+                new AppFilter { FieldName = "PROJECT_TYPE", Operator = "=", FilterValue = "WORK_ORDER" },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            });
+
+            return rows.FirstOrDefault();
+        }
+
+        private async Task PersistAfeLinkAsync(string workOrderId, string? afeId, string userId, string connectionName)
+        {
+            if (string.IsNullOrWhiteSpace(workOrderId) || string.IsNullOrWhiteSpace(afeId))
+                return;
+
+            var projectWorkOrder = await GetProjectWorkOrderAsync(workOrderId, connectionName);
+            if (projectWorkOrder != null)
+            {
+                var currentRemark = GetStringValue(projectWorkOrder, "REMARK");
+                var updatedRemark = UpsertAfeRemark(currentRemark, afeId);
+                if (!string.Equals(updatedRemark, currentRemark, StringComparison.Ordinal))
+                {
+                    SetStringValue(projectWorkOrder, "REMARK", updatedRemark);
+                    if (projectWorkOrder is IPPDMEntity projectEntity)
+                    {
+                        _commonColumnHandler.PrepareForUpdate(projectEntity, userId);
+                    }
+
+                    var projectRepo = await CreateRepositoryAsync("PROJECT", typeof(PROJECT), connectionName);
+                    await projectRepo.UpdateAsync(projectWorkOrder, userId);
+                }
+
+                return;
+            }
+
+            var workOrder = await GetLegacyWorkOrderAsync(workOrderId, connectionName);
+            if (workOrder == null)
+                return;
+
+            var legacyRemark = workOrder.REMARK;
+            var updatedLegacyRemark = UpsertAfeRemark(legacyRemark, afeId);
+            if (string.Equals(updatedLegacyRemark, legacyRemark, StringComparison.Ordinal))
+                return;
+
+            workOrder.REMARK = updatedLegacyRemark;
+            if (workOrder is IPPDMEntity workOrderEntity)
+            {
+                _commonColumnHandler.PrepareForUpdate(workOrderEntity, userId);
+            }
+
+            var repo = await CreateRepositoryAsync("WORK_ORDER", typeof(WORK_ORDER), connectionName);
+            await repo.UpdateAsync(workOrder, userId);
         }
 
         private static string? ExtractAfeId(string? remark)
@@ -196,7 +308,48 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             return match.Success ? match.Groups[1].Value : null;
         }
 
-        private static WorkOrderResponse MapWorkOrderToResponse(WORK_ORDER? workOrder)
+        private static string UpsertAfeRemark(string? remark, string afeId)
+        {
+            var marker = $"AFE_ID:{afeId}";
+            if (string.IsNullOrWhiteSpace(remark))
+                return marker;
+
+            if (Regex.IsMatch(remark, @"AFE_ID:[^\s]+"))
+                return Regex.Replace(remark, @"AFE_ID:[^\s]+", marker);
+
+            return string.Concat(remark.TrimEnd(), " ", marker);
+        }
+
+        private static WorkOrderResponse MapProjectWorkOrderToResponse(object projectWorkOrder)
+        {
+            var projectId = GetStringValue(projectWorkOrder, "PROJECT_ID");
+            var workOrderNumber = GetStringValue(projectWorkOrder, "PROJECT_NUM");
+            if (string.IsNullOrWhiteSpace(workOrderNumber))
+            {
+                workOrderNumber = projectId;
+            }
+
+            var equipmentId = GetStringValue(projectWorkOrder, "EQUIPMENT_ID");
+
+            return new WorkOrderResponse
+            {
+                WorkOrderId = projectId,
+                WorkOrderNumber = workOrderNumber,
+                WorkOrderType = GetStringValue(projectWorkOrder, "WO_SUBTYPE"),
+                EntityType = "PROJECT",
+                EntityId = equipmentId,
+                FieldId = NullIfEmpty(GetStringValue(projectWorkOrder, "FIELD_ID")),
+                PropertyId = NullIfEmpty(equipmentId),
+                Status = NullIfEmpty(GetStringValue(projectWorkOrder, "PROJECT_STATUS")),
+                RequestDate = GetDateValue(projectWorkOrder, "START_DATE"),
+                DueDate = GetDateValue(projectWorkOrder, "PLAN_END_DATE"),
+                CompleteDate = GetDateValue(projectWorkOrder, "ACTUAL_END_DATE"),
+                EstimatedCost = null,
+                ActualCost = null
+            };
+        }
+
+        private static WorkOrderResponse MapLegacyWorkOrderToResponse(WORK_ORDER? workOrder)
         {
             if (workOrder == null)
             {
@@ -219,6 +372,40 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
                 EstimatedCost = null,
                 ActualCost = null
             };
+        }
+
+        private static string GetStringValue(object? entity, string propertyName)
+        {
+            if (entity == null)
+                return string.Empty;
+
+            var value = entity.GetType().GetProperty(propertyName)?.GetValue(entity);
+            return value?.ToString() ?? string.Empty;
+        }
+
+        private static DateTime? GetDateValue(object? entity, string propertyName)
+        {
+            if (entity == null)
+                return null;
+
+            var value = entity.GetType().GetProperty(propertyName)?.GetValue(entity);
+            if (value is DateTime dateTime)
+                return dateTime;
+
+            if (value is string text && DateTime.TryParse(text, out var parsed))
+                return parsed;
+
+            return null;
+        }
+
+        private static void SetStringValue(object entity, string propertyName, string value)
+        {
+            entity.GetType().GetProperty(propertyName)?.SetValue(entity, value);
+        }
+
+        private static string? NullIfEmpty(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? null : value;
         }
     }
 }

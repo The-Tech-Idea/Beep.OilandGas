@@ -281,6 +281,72 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             }
         }
 
+        public async Task<WellPerformanceAnalysisResponse> GetWellPerformanceAnalysisAsync(string fieldId, string wellId)
+        {
+            if (string.IsNullOrWhiteSpace(fieldId))
+                throw new ArgumentException("Field ID is required", nameof(fieldId));
+            if (string.IsNullOrWhiteSpace(wellId))
+                throw new ArgumentException("Well ID is required", nameof(wellId));
+
+            var tests = await GetWellTestsForWellAsync(fieldId, wellId);
+            var orderedTests = (tests ?? new List<WellTestResponse>())
+                .OrderByDescending(ResolveTestDate)
+                .ToList();
+            var latest = orderedTests.FirstOrDefault();
+            var maxOilRate = orderedTests.Count == 0 ? 0 : orderedTests.Max(t => ToDouble(t.OilFlowAmount));
+
+            var oilRate = latest != null ? ToDouble(latest.OilFlowAmount) : 0;
+            var gasRate = latest != null ? ToDouble(latest.GasFlowAmount) : 0;
+            var waterRate = latest != null ? ToDouble(latest.WaterFlowAmount) : 0;
+            var potentialRate = maxOilRate > 0 ? maxOilRate : oilRate;
+
+            var findings = BuildPerformanceFindings(oilRate, gasRate, waterRate, potentialRate, orderedTests.Count == 0);
+            var recommendation = BuildPerformanceRecommendation(findings, oilRate, potentialRate);
+            var history = await BuildPerformanceHistoryAsync(fieldId, wellId, orderedTests);
+
+            return new WellPerformanceAnalysisResponse
+            {
+                WellId = wellId,
+                Status = latest != null ? "ACTIVE" : "UNKNOWN",
+                OilRate = oilRate,
+                GasRate = gasRate,
+                WaterRate = waterRate,
+                PotentialRate = potentialRate,
+                CumOil = 0,
+                LastTestDate = ResolveTestDate(latest),
+                Findings = findings,
+                Recommendation = recommendation,
+                History = history
+            };
+        }
+
+        public async Task<PerformanceDeviationResult> LogWellPerformanceDeviationAsync(string fieldId, string wellId, PerformanceDeviationRequest request, string userId)
+        {
+            if (string.IsNullOrWhiteSpace(fieldId))
+                throw new ArgumentException("Field ID is required", nameof(fieldId));
+            if (string.IsNullOrWhiteSpace(wellId))
+                throw new ArgumentException("Well ID is required", nameof(wellId));
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("User ID is required", nameof(userId));
+
+            await EnsureWellBelongsToFieldAsync(fieldId, wellId);
+
+            var message = BuildDeviationRemark(request);
+            const string activityType = "PERFORMANCE_DEVIATION";
+            await RecordInterventionDecisionAsync(wellId, activityType, message, userId);
+
+            return new PerformanceDeviationResult
+            {
+                Success = true,
+                WellId = wellId,
+                ActivityType = activityType,
+                LoggedAtUtc = DateTime.UtcNow,
+                Message = $"Performance deviation logged for {wellId}."
+            };
+        }
+
         /// <summary>
         /// Records a decision (Approved / Deferred / Rejected) for a well intervention
         /// by inserting a new WELL_ACTIVITY record with the decision as REMARK.
@@ -308,6 +374,259 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             {
                 throw new InvalidOperationException($"Error recording intervention decision for well {uwi}", ex);
             }
+        }
+
+        private async Task EnsureWellBelongsToFieldAsync(string fieldId, string wellId)
+        {
+            var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(WELL), _connectionName, "WELL");
+
+            var wellResults = await wellRepo.GetAsync(new List<AppFilter>
+            {
+                new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellId },
+                new AppFilter { FieldName = "ASSIGNED_FIELD", Operator = "=", FilterValue = fieldId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            });
+
+            if (!wellResults.OfType<WELL>().Any())
+                throw new InvalidOperationException($"Well {wellId} is not part of the active field {fieldId}.");
+        }
+
+        private async Task<List<WELL_ACTIVITY>> GetWellActivitiesForWellAsync(string fieldId, string wellId)
+        {
+            await EnsureWellBelongsToFieldAsync(fieldId, wellId);
+
+            var actRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY");
+
+            var actResults = await actRepo.GetAsync(new List<AppFilter>
+            {
+                new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            });
+
+            return actResults.OfType<WELL_ACTIVITY>()
+                .OrderByDescending(GetActivityDate)
+                .ToList();
+        }
+
+        private async Task<List<WellPerformanceHistoryItem>> BuildPerformanceHistoryAsync(string fieldId, string wellId, List<WellTestResponse> orderedTests)
+        {
+            var history = new List<WellPerformanceHistoryItem>();
+
+            history.AddRange(orderedTests.Select(test => new WellPerformanceHistoryItem
+            {
+                Event = string.IsNullOrWhiteSpace(test.TestName)
+                    ? $"Well test - {test.TestType ?? "routine"}"
+                    : test.TestName,
+                EventDate = ResolveTestDate(test),
+                User = test.CreateUser ?? "SYSTEM",
+                EventType = "WELL_TEST"
+            }));
+
+            var activities = await GetWellActivitiesForWellAsync(fieldId, wellId);
+            history.AddRange(activities.Select(activity => new WellPerformanceHistoryItem
+            {
+                Event = DescribeWellActivity(activity),
+                EventDate = GetActivityDate(activity),
+                User = activity.SOURCE ?? "SYSTEM",
+                EventType = activity.ACTIVITY_TYPE_ID ?? "WELL_ACTIVITY"
+            }));
+
+            return history
+                .Where(item => !string.IsNullOrWhiteSpace(item.Event))
+                .OrderByDescending(item => item.EventDate ?? DateTime.MinValue)
+                .Take(12)
+                .ToList();
+        }
+
+        private static List<WellPerformanceFinding> BuildPerformanceFindings(double oilRate, double gasRate, double waterRate, double potentialRate, bool noRecentTests)
+        {
+            var findings = new List<WellPerformanceFinding>();
+
+            if (noRecentTests)
+            {
+                findings.Add(new WellPerformanceFinding
+                {
+                    Title = "No recent well tests",
+                    Detail = "No recent well-test history is available for this well. Validate the test programme before approving optimization work.",
+                    Severity = "HIGH"
+                });
+                return findings;
+            }
+
+            if (potentialRate > 0 && oilRate < potentialRate * 0.9)
+            {
+                var gap = potentialRate - oilRate;
+                var pct = 100 - (oilRate / potentialRate * 100);
+                findings.Add(new WellPerformanceFinding
+                {
+                    Title = $"Rate {pct:N0}% below potential",
+                    Detail = $"Current rate {oilRate:N0} BOPD vs {potentialRate:N0} BOPD potential. Gap of {gap:N0} BOPD.",
+                    Severity = pct >= 40 ? "HIGH" : "MEDIUM"
+                });
+            }
+
+            if (waterRate > 0 && oilRate > 0)
+            {
+                var waterCut = waterRate / (oilRate + waterRate) * 100;
+                if (waterCut > 60)
+                {
+                    findings.Add(new WellPerformanceFinding
+                    {
+                        Title = $"High water cut ({waterCut:N0}%)",
+                        Detail = $"Water rate {waterRate:N0} BWPD against oil rate {oilRate:N0} BOPD.",
+                        Severity = waterCut > 80 ? "HIGH" : "MEDIUM"
+                    });
+                }
+            }
+
+            if (gasRate > 0 && oilRate > 0)
+            {
+                var gor = gasRate * 1000 / oilRate;
+                if (gor > 1000)
+                {
+                    findings.Add(new WellPerformanceFinding
+                    {
+                        Title = $"Elevated GOR ({gor:N0} scf/bbl)",
+                        Detail = "Gas-oil ratio suggests possible gas breakthrough or lift-gas optimisation potential.",
+                        Severity = gor > 1800 ? "HIGH" : "MEDIUM"
+                    });
+                }
+            }
+
+            if (findings.Count == 0)
+            {
+                findings.Add(new WellPerformanceFinding
+                {
+                    Title = "Well performing within expected range",
+                    Detail = "No significant deviations detected. Continue routine monitoring.",
+                    Severity = "LOW"
+                });
+            }
+
+            return findings;
+        }
+
+        private static WellPerformanceRecommendation BuildPerformanceRecommendation(List<WellPerformanceFinding> findings, double oilRate, double potentialRate)
+        {
+            var highFindings = findings.Where(finding => string.Equals(finding.Severity, "HIGH", StringComparison.OrdinalIgnoreCase)).ToList();
+            var gap = Math.Max(potentialRate - oilRate, 0);
+            var suggestsGasLift = findings.Any(finding => finding.Title.Contains("GOR", StringComparison.OrdinalIgnoreCase));
+            var hasFollowUp = highFindings.Count > 0 || gap >= 100;
+
+            if (!hasFollowUp)
+            {
+                return new WellPerformanceRecommendation
+                {
+                    Action = "Continue Production Monitoring",
+                    Rationale = "Well is operating within expected parameters. Maintain current settings and review at the next scheduled test.",
+                    UpliftBopd = 0,
+                    RecommendedLiftStudy = suggestsGasLift ? "Run Gas Lift Study" : "Run ESP Analysis",
+                    HasOperationalFollowUp = false,
+                    SuggestedWorkOrderSubType = "Preventive"
+                };
+            }
+
+            var action = suggestsGasLift
+                ? "Review Gas Lift Optimisation and Well Intervention"
+                : "Investigate Artificial Lift and Well Intervention";
+
+            return new WellPerformanceRecommendation
+            {
+                Action = action,
+                Rationale = string.Join(" ", highFindings.Select(finding => finding.Detail).DefaultIfEmpty("Performance deviation requires engineering review.")),
+                UpliftBopd = (int)Math.Round(gap, MidpointRounding.AwayFromZero),
+                RecommendedLiftStudy = suggestsGasLift ? "Run Gas Lift Study" : "Run ESP Analysis",
+                HasOperationalFollowUp = true,
+                SuggestedWorkOrderSubType = "Corrective",
+                SuggestedAfeBudgetUsd = gap > 0 ? Math.Round((decimal)gap * 1000m, 0, MidpointRounding.AwayFromZero) : null
+            };
+        }
+
+        private static DateTime ResolveTestDate(WellTestResponse? test)
+        {
+            if (test == null)
+                return DateTime.MinValue;
+
+            return test.TestDate
+                ?? test.TestStartDate
+                ?? test.TestEndDate
+                ?? DateTime.MinValue;
+        }
+
+        private static double ToDouble(decimal? value)
+        {
+            return value.HasValue ? (double)value.Value : 0;
+        }
+
+        private static DateTime GetActivityDate(WELL_ACTIVITY activity)
+        {
+            if (activity.EVENT_DATE.HasValue)
+                return activity.EVENT_DATE.Value;
+            if (activity.EFFECTIVE_DATE.HasValue)
+                return activity.EFFECTIVE_DATE.Value;
+            if (activity.START_DATE.HasValue)
+                return activity.START_DATE.Value;
+
+            try
+            {
+                var seconds = decimal.ToInt64(activity.ACTIVITY_OBS_NO);
+                return DateTimeOffset.FromUnixTimeSeconds(seconds).UtcDateTime;
+            }
+            catch
+            {
+                return DateTime.MinValue;
+            }
+        }
+
+        private static string DescribeWellActivity(WELL_ACTIVITY activity)
+        {
+            var activityType = activity.ACTIVITY_TYPE_ID?.ToUpperInvariant();
+            return activityType switch
+            {
+                "PERFORMANCE_DEVIATION" => $"Deviation logged - {StripWorkflowMarkers(activity.REMARK)}",
+                "WORKOVER_APPROVED" => $"Intervention approved - {StripWorkflowMarkers(activity.REMARK)}",
+                "WORKOVER_DEFERRED" => $"Intervention deferred - {StripWorkflowMarkers(activity.REMARK)}",
+                "WORKOVER_REJECTED" => $"Intervention rejected - {StripWorkflowMarkers(activity.REMARK)}",
+                "WORKOVER_REVIEWED" => $"Intervention reviewed - {StripWorkflowMarkers(activity.REMARK)}",
+                "DECOMMISSIONING_TRIGGERED" => $"Transferred to decommissioning - {StripWorkflowMarkers(activity.REMARK)}",
+                _ => string.IsNullOrWhiteSpace(activity.REMARK)
+                    ? (activity.ACTIVITY_TYPE_ID ?? "Well activity")
+                    : StripWorkflowMarkers(activity.REMARK)
+            };
+        }
+
+        private static string BuildDeviationRemark(PerformanceDeviationRequest request)
+        {
+            var parts = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(request.Note))
+                parts.Add(request.Note.Trim());
+            if (!string.IsNullOrWhiteSpace(request.RecommendationAction))
+                parts.Add($"Action: {request.RecommendationAction.Trim()}.");
+            if (!string.IsNullOrWhiteSpace(request.RecommendationRationale))
+                parts.Add(request.RecommendationRationale.Trim());
+            if (request.EstimatedUpliftBopd > 0)
+                parts.Add($"Estimated uplift {request.EstimatedUpliftBopd:N0} BOPD.");
+            if (request.Findings.Count > 0)
+                parts.Add($"Findings: {string.Join("; ", request.Findings.Where(finding => !string.IsNullOrWhiteSpace(finding)))}.");
+            if (!string.IsNullOrWhiteSpace(request.Severity))
+                parts.Add($"Severity: {request.Severity.Trim().ToUpperInvariant()}.");
+
+            parts.Add("SOURCE_PROCESS:WELL_PERFORMANCE");
+
+            return string.Join(" ", parts.Where(part => !string.IsNullOrWhiteSpace(part))).Trim();
+        }
+
+        private static string StripWorkflowMarkers(string? remark)
+        {
+            if (string.IsNullOrWhiteSpace(remark))
+                return string.Empty;
+
+            return System.Text.RegularExpressions.Regex
+                .Replace(remark, @"\s*(WORK_ORDER_ID|AFE_ID|AFE_NUMBER|ABANDONMENT_ID|PROCESS_INSTANCE_ID|SOURCE_PROCESS):[^\s]+", string.Empty)
+                .Trim();
         }
 
         /// <summary>

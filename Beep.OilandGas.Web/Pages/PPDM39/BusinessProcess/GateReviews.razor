@@ -1,6 +1,7 @@
 @page "/ppdm39/process/gates"
 @attribute [Authorize(Roles = "GateApprover,Manager,Admin")]
 @inject ApiClient ApiClient
+@inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -112,7 +113,8 @@
 
         try
         {
-            var data = await ApiClient.GetAsync<List<ProcessInstanceSummary>>("/api/field/current/gates") ?? new();            if (data != null)
+            var data = await BusinessProcessClient.GetGatesAsync();
+            if (data.Count > 0)
             {
                 var today = DateTime.Today;
                 _gates = data.Select(g => new GateRow(
@@ -125,6 +127,10 @@
                     g.Status,
                     (int)(today - g.StartedAt).TotalDays
                 )).ToList();
+            }
+            else
+            {
+                _gates = new();
             }
         }
         catch
