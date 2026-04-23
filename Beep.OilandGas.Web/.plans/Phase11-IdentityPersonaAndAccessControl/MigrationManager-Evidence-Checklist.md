@@ -142,6 +142,10 @@ Execute a MigrationManager-backed runtime evidence pass against setup schema end
 | w11-runtime-attempt-2026-04-23-usermgmt-scope | GET /api/ppdm39/setup/schema/artifacts/3357ada292554f35ae0a8d1fe8fce999 | Retrieve UserManagement-scoped Step 6 artifacts payload | completed | Returned `success=true`; `planJson` reports `EntityTypeCount=24`, `PendingOperationCount=24`, and `ReadinessIssues` contains `primary-key-missing` for all 24 UserManagement entities; captured in `logs/w11-runtime-schema-artifacts-usermgmt.json`. |
 | w11-runtime-attempt-2026-04-23-usermgmt-fixed | POST /api/ppdm39/setup/schema/plan | Execute Step 6 runtime plan payload with `targetAssemblyName=Beep.OilandGas.UserManagement`, `targetModelNamespace=Beep.OilandGas.UserManagement.Models`, `remark=''`, `source=''` | completed (blocked by preflight) | Returned `success=true` with `planId=248a8ad9bfdd4c61a4a9b896162bcb39`, `planHash=17A3BB135E7623399013157303E2973DF0FAF149DC08A0D3364EFFDBCCA1212F`, `totalEntities=24`, `tablesToCreate=24`, `columnsToAdd=0`; preflight still includes `preflight-connectivity=Block`; captured in `logs/w11-runtime-schema-plan-usermgmt-fixed.json`. |
 | w11-runtime-attempt-2026-04-23-usermgmt-fixed | GET /api/ppdm39/setup/schema/artifacts/248a8ad9bfdd4c61a4a9b896162bcb39 | Retrieve fixed UserManagement-scoped Step 6 artifacts payload | completed | Returned `success=true`; `planJson` reports `EntityTypeCount=24`, `PendingOperationCount=24`, and `ReadinessIssues` now contains only `provider-portability-warning` with `primary-key-missing=0`; captured in `logs/w11-runtime-schema-artifacts-usermgmt-fixed.json`. |
+| w11-runtime-attempt-2026-04-23-usermgmt-fixed2 | POST /api/ppdm39/setup/schema/plan | Re-execute Step 6 runtime plan payload after setup-service preflight connectivity normalization (`targetAssemblyName=Beep.OilandGas.UserManagement`, `targetModelNamespace=Beep.OilandGas.UserManagement.Models`, `remark=''`, `source=''`) | completed | Returned `success=true` with `planId=8c5049fc00f84d98986a33ebe97e4c4c`, `planHash=17A3BB135E7623399013157303E2973DF0FAF149DC08A0D3364EFFDBCCA1212F`, `totalEntities=24`, `tablesToCreate=24`, `columnsToAdd=0`, `canApply=true`; `preflight-connectivity=Pass`; captured in `logs/w11-runtime-schema-plan-usermgmt-fixed2.json`. |
+| w11-runtime-attempt-2026-04-23-usermgmt-fixed2 | GET /api/ppdm39/setup/schema/artifacts/8c5049fc00f84d98986a33ebe97e4c4c | Retrieve post-connectivity-fix UserManagement-scoped Step 6 artifacts payload | completed | Returned `success=true`; `planJson` reports `EntityTypeCount=24`, `PendingOperationCount=24`; `preflightJson.CanApply=true` and `Checks[preflight-connectivity].Decision=Pass`; `ReadinessIssues` remains `provider-portability-warning` only; captured in `logs/w11-runtime-schema-artifacts-usermgmt-fixed2.json`. |
+| w11-runtime-attempt-2026-04-23-usermgmt-fixed5 | POST /api/ppdm39/setup/schema/plan | Re-execute Step 6 runtime plan payload after runtime metadata type-resolution fix (`targetAssemblyName=Beep.OilandGas.UserManagement`, `targetModelNamespace=Beep.OilandGas.UserManagement.Models`, `remark=''`, `source=''`) | completed | Returned `success=true` with `planId=0a8638d823da4b7181570196a3401815`, `planHash=17A3BB135E7623399013157303E2973DF0FAF149DC08A0D3364EFFDBCCA1212F`, `totalEntities=24`, `tablesToCreate=24`, `columnsToAdd=0`, `canApply=true`; `preflight-connectivity=Pass`; captured in `logs/w11-runtime-schema-plan-usermgmt-fixed5.json`. |
+| w11-runtime-attempt-2026-04-23-usermgmt-fixed5 | GET /api/ppdm39/setup/schema/artifacts/0a8638d823da4b7181570196a3401815 | Retrieve post-type-resolution UserManagement-scoped Step 6 artifacts payload with runtime metadata | completed | Returned `success=true`; artifact now includes `runtimeEntityMetadataJson` with populated table/column evidence for all 24 entities: `EntitiesWithColumns=24`, `EntitiesWithPk=24`, `EntitiesWithJson=9`, `EntitiesWithIndicator=24`, `MinColumns=16`, `MaxColumns=25`; captured in `logs/w11-runtime-schema-artifacts-usermgmt-fixed5.json`. |
 
 ---
 
@@ -161,14 +165,14 @@ Execute a MigrationManager-backed runtime evidence pass against setup schema end
 
 | Evidence Item | Value |
 |---|---|
-| Last validation run ID | w11-runtime-attempt-2026-04-23-usermgmt-fixed |
+| Last validation run ID | w11-runtime-attempt-2026-04-23-usermgmt-fixed5 |
 | Build status | success |
-| Build timestamp (UTC) | 2026-04-23T05:17:00Z |
+| Build timestamp (UTC) | 2026-04-23T10:41:00Z |
 | Total entities checked | 24 |
 | Total mismatches found | 2 |
 | Total mismatches open | 0 |
-| Runtime gate status | executed; blocked at schema-plan preflight-connectivity |
-| Runtime plan ID | 248a8ad9bfdd4c61a4a9b896162bcb39 |
+| Runtime gate status | executed; schema-plan preflight is non-blocking (`canApply=true`) and runtime table/column evidence is present |
+| Runtime plan ID | 0a8638d823da4b7181570196a3401815 |
 | Runtime plan hash | 17A3BB135E7623399013157303E2973DF0FAF149DC08A0D3364EFFDBCCA1212F |
 | Runtime total entities | 24 |
 | Runtime tables to create | 24 |
@@ -186,18 +190,16 @@ Execute a MigrationManager-backed runtime evidence pass against setup schema end
    - `*_IND` flags confirmed as string columns
 2. One schema-contract mismatch was found and corrected in this run (`CheckRowAccessRequest` JSON column registration).
 3. Runtime Step 6 calls were executed end-to-end (status -> create-sqlite -> schema/plan -> schema/artifacts) with concrete plan and artifact outputs captured under `logs/w11-runtime-*.json`.
-4. Runtime gate no longer blocks on authentication for evidence endpoints in this run; current blocking condition is schema-plan preflight `preflight-connectivity` with recommendation to verify datasource configuration and runtime availability.
-5. Runtime policy findings are `Warn` (provider portability warning), while `canApply=false` due to preflight block.
+4. Runtime gate no longer blocks on authentication for evidence endpoints. After setup-service connectivity normalization, schema-plan preflight is non-blocking (`preflight-connectivity=Pass`, `canApply=true`) in the final run.
+5. Runtime policy findings remain `Warn` (`provider-portability-warning`) and no longer force a `canApply=false` outcome.
 6. Runtime artifact-to-contract comparison result for the fixed scoped rerun: `planJson` reports `EntityTypeCount=24` and `dryRunJson.Operations.EntityName` contains the full UserManagement contract entity set (`24/24` present by entity/class name), so the previous PPDM39 scope mismatch remains closed on the final request shape.
 7. Runtime primary-key comparison is now aligned for all 24 entities. Adding explicit `[Key]` metadata to the canonical `_ID` properties removed `primary-key-missing` from the scoped runtime plan; the final artifact `ReadinessIssues` contains only `provider-portability-warning`.
-8. Runtime artifacts still do not emit generated table-name mappings or per-column metadata for the scoped entities: `Operations` expose entity/class names, `DdlPreview` is empty, and no runtime column list is present in the artifact payload. JSON-column conformance therefore remains validated from source-to-contract preflight (`*_JSON` fields present as scalar strings), not from runtime artifact column enumeration.
+8. Runtime artifacts now emit runtime table/column metadata in `runtimeEntityMetadataJson`, including per-entity `ResolvedTableName`, `ConventionTableName`, `Columns`, `PrimaryKeyColumns`, `JsonColumns`, and `IndicatorColumns`. Final runtime coverage summary for the scoped run: `Entities=24`, `EntitiesWithColumns=24`, `EntitiesWithPk=24`, `EntitiesWithJson=9`, `EntitiesWithIndicator=24`.
 
 ### Remaining Gate Item
 
-1. Resolve datasource connectivity preflight blocker for the runtime migration path (`preflight-connectivity=Block`).
-2. Re-run Step 6 schema plan/artifacts after connectivity remediation and verify `canApply=true`.
-3. If table-name and column-shape evidence must be runtime-derived, extend artifact generation to expose resolved table names and generated column metadata for each scoped entity.
-4. W11-03 remains in progress until runtime preflight is non-blocking and runtime-visible table/column evidence is available or explicitly waived.
+1. Runtime table-name and column-shape evidence gate is closed in `logs/w11-runtime-schema-artifacts-usermgmt-fixed5.json`.
+2. Reviewer sign-off completed in `Beep.OilandGas.Web/.plans/WEB-UPDATE-TODO.md` with W11-03 status set to `Done`.
 
 ---
 

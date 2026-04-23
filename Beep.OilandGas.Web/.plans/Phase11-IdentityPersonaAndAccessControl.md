@@ -1,6 +1,6 @@
 # Phase 11 — Identity, Persona, and Access Governance
 
-> Status: Planned  
+> Status: Done  
 > Depends On: Phases 8 through 10  
 > Goal: Deliver a production-ready user management system with persona-based views, least-privilege authorization, scoped access to field and asset data, and full auditability.
 > Detailed subplans: `Phase11-IdentityPersonaAndAccessControl/README.md`
@@ -79,16 +79,16 @@ Extended personas for oil and gas enterprise coverage:
 
 | ID | Task | Status |
 |----|------|--------|
-| 11.1 | Define expanded persona catalog (primary and extended personas) with ownership matrix | Planned |
-| 11.2 | Publish canonical identity/access data model and migration blueprint as implementation baseline | Planned |
-| 11.3 | Migrate user management security models from `Beep.OilandGas.Models` to `Beep.OilandGas.UserManagement` and define compatibility strategy | Planned |
-| 11.4 | Enhance migrated models for persona profile, scope context, lifecycle state, and audit metadata | Planned |
-| 11.5 | Implement profile and access-control API seams with auditing | Planned |
-| 11.6 | Add typed web clients for persona/profile/access operations | Planned |
-| 11.7 | Implement role-aware navigation and persona landing routes | Planned |
-| 11.8 | Implement persona-specific page gating and field/asset scope checks | Planned |
-| 11.9 | Add automated authorization, denial, and escalation regression tests | Planned |
-| 11.10 | Complete hardening and finalize exception register | Planned |
+| 11.1 | Define expanded persona catalog (primary and extended personas) with ownership matrix | Done |
+| 11.2 | Publish canonical identity/access data model and migration blueprint as implementation baseline | Done |
+| 11.3 | Migrate user management security models from `Beep.OilandGas.Models` to `Beep.OilandGas.UserManagement` and define compatibility strategy | Done |
+| 11.4 | Enhance migrated models for persona profile, scope context, lifecycle state, and audit metadata | Done |
+| 11.5 | Implement profile and access-control API seams with auditing | Done |
+| 11.6 | Add typed web clients for persona/profile/access operations | Done |
+| 11.7 | Implement role-aware navigation and persona landing routes | Done |
+| 11.8 | Implement persona-specific page gating and field/asset scope checks | Done |
+| 11.9 | Add automated authorization, denial, and escalation regression tests | Done |
+| 11.10 | Complete hardening and finalize exception register | Done |
 
 ---
 

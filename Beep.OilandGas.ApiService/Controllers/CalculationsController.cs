@@ -12,6 +12,7 @@ using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.ApiService.Controllers
 {
+
     /// <summary>
     /// API controller for calculation operations (DCA, Economic Analysis, Nodal Analysis)
     /// Integrates calculation services with PPDM39 data via PPDMGenericRepository
@@ -73,7 +74,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                         _progressTracking?.UpdateProgress(operationId!, 90, "Saving calculation results...");
                         return dcaResult;
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         _progressTracking?.CompleteOperation(operationId!, false, errorMessage: "An internal error occurred.");
                         throw;

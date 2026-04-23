@@ -9,6 +9,7 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.LifeCycle.Services.Processes;
 using Beep.OilandGas.LifeCycle.Models.Processes;
+using Beep.OilandGas.ApiService.Attributes;
 
 namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 {
@@ -19,6 +20,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
     [ApiController]
     [Route("api/field/current/process")]
     [Authorize]
+    [RequireCurrentFieldAccess]
     public class BusinessProcessController : ControllerBase
     {
         private readonly IFieldOrchestrator _fieldOrchestrator;

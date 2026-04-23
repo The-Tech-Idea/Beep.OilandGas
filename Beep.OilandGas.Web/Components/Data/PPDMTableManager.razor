@@ -312,7 +312,7 @@
     private bool _editingNewRecord;
     private object? _editingRecord;
     private Dictionary<string,object>? _defaultValues;
-    private Dictionary<string, Dictionary<string,string>>? _fkOptions;
+    private Dictionary<string, Dictionary<string,string>> _fkOptions = new();
 
     // Selected row PK
     private Dictionary<string,object?>? _selectedRow;

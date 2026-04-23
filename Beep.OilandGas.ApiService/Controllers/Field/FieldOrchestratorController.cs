@@ -188,7 +188,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var summary = await _fieldOrchestrator.GetFieldLifecycleSummaryAsync();
                 return Ok(summary);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }
@@ -210,7 +210,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var wells = await _fieldOrchestrator.GetFieldWellsAsync();
                 return Ok(wells.Cast<WELL>().ToList());
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }
@@ -232,7 +232,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var statistics = await _fieldOrchestrator.GetFieldStatisticsAsync();
                 return Ok(statistics);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }
@@ -254,7 +254,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var timeline = await _fieldOrchestrator.GetFieldTimelineAsync();
                 return Ok(timeline);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }
@@ -276,7 +276,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var dashboard = await _fieldOrchestrator.GetFieldDashboardAsync();
                 return Ok(dashboard);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }

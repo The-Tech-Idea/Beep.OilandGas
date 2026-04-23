@@ -48,8 +48,8 @@ Use the per-project docs as the baseline for deciding whether a page, controller
 - solution-wide validation checklist
 - duplicate page/component retirement list
 - reduced direct dependencies and clearer boundaries
-- final route, client, and workflow matrices
-- documented exceptions and follow-up backlog
+- final route, client, and workflow matrices in `FinalRouteAndIntegrationMatrix.md`
+- documented exceptions and follow-up backlog in `DeferredExceptionsAndBacklog.md`
 
 ---
 

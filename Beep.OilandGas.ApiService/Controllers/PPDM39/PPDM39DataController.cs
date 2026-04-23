@@ -15,6 +15,7 @@ using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.ApiService.Controllers.PPDM39
 {
+
     /// <summary>
     /// API controller for PPDM39 data operations.
     /// Uses typed entity classes only - no Dictionary or untyped object.
@@ -304,7 +305,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                         if (result.Success) inserted++;
                         else { failed++; errors.Add($"Row {rowNum}: {result.ErrorMessage}"); }
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         failed++;
                         errors.Add($"Row {rowNum}: Insert failed.");

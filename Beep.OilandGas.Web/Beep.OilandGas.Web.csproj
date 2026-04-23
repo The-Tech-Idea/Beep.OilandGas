@@ -15,8 +15,8 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.6" />
     <PackageReference Include="TheTechIdea.Beep.AssemblyLoader" Version="2.0.24" />
     <PackageReference Include="TheTechIdea.Beep.Container" Version="1.0.1" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.88" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.142" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.94" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.1443" />
     <PackageReference Include="TheTechIdea.Beep.DMLogger" Version="2.0.3" />
     <PackageReference Include="TheTechIdea.Beep.SqliteDatasourceCore" Version="1.0.56" />
     <PackageReference Include="TheTechIdea.Beep.TreeNodes" Version="1.0.16" />
@@ -25,40 +25,15 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\fahadTheTechIdea\MyWebSite\TheTechIdeaWeb\Beep.Foundation.IdentityServer.Shared\Beep.Foundation.IdentityServer.Shared.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.ChokeAnalysis\Beep.OilandGas.ChokeAnalysis.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.CompressorAnalysis\Beep.OilandGas.CompressorAnalysis.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.DCA\Beep.OilandGas.DCA.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.Decommissioning\Beep.OilandGas.Decommissioning.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.DevelopmentPlanning\Beep.OilandGas.DevelopmentPlanning.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.Drawing\Beep.OilandGas.Drawing.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.DrillingAndConstruction\Beep.OilandGas.DrillingAndConstruction.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.EconomicAnalysis\Beep.OilandGas.EconomicAnalysis.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.EnhancedRecovery\Beep.OilandGas.EnhancedRecovery.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.FlashCalculations\Beep.OilandGas.FlashCalculations.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.GasLift\Beep.OilandGas.GasLift.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.GasProperties\Beep.OilandGas.GasProperties.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.HeatMap\Beep.OilandGas.HeatMap.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.HydraulicPumps\Beep.OilandGas.HydraulicPumps.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.LeaseAcquisition\Beep.OilandGas.LeaseAcquisition.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.LifeCycle\Beep.OilandGas.LifeCycle.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.NodalAnalysis\Beep.OilandGas.NodalAnalysis.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.OilProperties\Beep.OilandGas.OilProperties.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.PermitsAndApplications\Beep.OilandGas.PermitsAndApplications.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.PipelineAnalysis\Beep.OilandGas.PipelineAnalysis.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.PlungerLift\Beep.OilandGas.PlungerLift.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.UserManagement\Beep.OilandGas.UserManagement.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.PPDM39.DataManagement\Beep.OilandGas.PPDM39.DataManagement.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.ApiService\Beep.OilandGas.ApiService.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.Client\Beep.OilandGas.Client.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.PPDM39\Beep.OilandGas.PPDM39.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.ProductionAccounting\Beep.OilandGas.ProductionAccounting.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.ProductionForecasting\Beep.OilandGas.ProductionForecasting.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.ProductionOperations\Beep.OilandGas.ProductionOperations.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.ProspectIdentification\Beep.OilandGas.ProspectIdentification.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.PumpPerformance\Beep.OilandGas.PumpPerformance.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.SuckerRodPumping\Beep.OilandGas.SuckerRodPumping.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.Branchs\Beep.OilandGas.Branchs.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.WellTestAnalysis\Beep.OilandGas.WellTestAnalysis.csproj" />
   </ItemGroup>
 
 </Project>

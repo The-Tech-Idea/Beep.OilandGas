@@ -67,7 +67,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
                 var forecasts = await productionService.GetProductionForecastsForFieldAsync(currentFieldId, filters);
                 return Ok(forecasts);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }
@@ -109,7 +109,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
                 var forecast = await productionService.CreateProductionForecastForFieldAsync(currentFieldId, forecastData, userId);
                 return Ok(forecast);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }
@@ -144,7 +144,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
                 var production = await productionService.GetProductionForFieldAsync(currentFieldId, filters);
                 return Ok(production);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }
@@ -179,7 +179,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
                 var production = await productionService.GetProductionByPoolForFieldAsync(currentFieldId, poolId);
                 return Ok(production);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }
@@ -215,7 +215,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
                 var wellTests = await productionService.GetWellTestsForWellAsync(currentFieldId, wellId, filters);
                 return Ok(wellTests);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }
@@ -250,7 +250,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
                 var facilityProduction = await productionService.GetFacilityProductionForFieldAsync(currentFieldId, filters);
                 return Ok(facilityProduction);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }

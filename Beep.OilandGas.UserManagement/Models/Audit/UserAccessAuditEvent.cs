@@ -13,4 +13,8 @@ public class UserAccessAuditEvent : ModelEntityBase
     public string? RESULT { get; set; }
     public DateTime EVENT_UTC { get; set; } = DateTime.UtcNow;
     public string? DETAILS_JSON { get; set; }
+    public string? CORRELATION_ID { get; set; }
+    public string? CLIENT_IP { get; set; }
+    public string? SESSION_ID { get; set; }
+    public string? SCOPE_CONTEXT { get; set; }
 }

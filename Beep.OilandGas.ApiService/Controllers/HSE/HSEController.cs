@@ -1,5 +1,6 @@
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.HSE;
+using Beep.OilandGas.ApiService.Attributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -9,6 +10,7 @@ namespace Beep.OilandGas.ApiService.Controllers.HSE;
 [ApiController]
 [Route("api/field/current/hse")]
 [Authorize]
+[RequireCurrentFieldAccess]
 public class HSEController : ControllerBase
 {
     private readonly IHSEService               _hse;

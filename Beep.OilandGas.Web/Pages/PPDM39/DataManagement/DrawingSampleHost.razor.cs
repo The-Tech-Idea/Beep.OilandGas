@@ -47,7 +47,10 @@ namespace Beep.OilandGas.Web.Pages.PPDM39.DataManagement
         private bool CanExport => _engine != null && !_isExporting;
         private bool IsCanvasPanning => _isPanning;
         private SceneSelectionAnnotation? CurrentSelection => _engine?.ActiveScene?.InteractionState.Selections.LastOrDefault();
-        private IReadOnlyList<SceneMeasurementAnnotation> RecordedMeasurements => _engine?.ActiveScene?.InteractionState.Measurements ?? Array.Empty<SceneMeasurementAnnotation>();
+        private IReadOnlyList<SceneMeasurementAnnotation> RecordedMeasurements =>
+            _engine?.ActiveScene?.InteractionState.Measurements is { } measurements
+                ? measurements
+                : Array.Empty<SceneMeasurementAnnotation>();
 
         private string CurrentSceneKindLabel => _engine?.ActiveScene?.Kind.ToString() ?? "Render Only";
         private string CurrentSceneReferenceLabel => _engine?.ActiveScene?.CoordinateReferenceSystem?.Identifier ?? "No scene CRS";

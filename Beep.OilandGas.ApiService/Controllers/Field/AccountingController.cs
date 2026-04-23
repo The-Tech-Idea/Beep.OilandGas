@@ -7,12 +7,14 @@ using System.Security.Claims;
 using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.ProductionAccounting.Services;
+using Beep.OilandGas.ApiService.Attributes;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
 {
     [ApiController]
     [Route("api/field/current/accounting")]
+    [RequireCurrentFieldAccess]
     public class AccountingController : ControllerBase
     {
         private readonly IFieldOrchestrator _fieldOrchestrator;

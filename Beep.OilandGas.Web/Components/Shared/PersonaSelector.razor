@@ -1,0 +1,197 @@
+@using Beep.OilandGas.UserManagement.Models.Profile
+@using Beep.OilandGas.Web.Services
+@using System.Security.Claims
+@implements IAsyncDisposable
+@inject IIdentityServiceClient IdentityClient
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager Nav
+
+<div class="persona-selector-wrapper">
+    @if (_isLoading)
+    {
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="pa-2">
+            <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+            <MudText Typo="Typo.body2">Loading persona...</MudText>
+        </MudStack>
+    }
+    else if (_currentProfile != null)
+    {
+        <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+            <ActivatorContent>
+                <MudButton Variant="Variant.Text" Color="Color.Inherit" Class="persona-selector-btn">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" />
+                        <MudText Typo="Typo.body2" Class="persona-name">
+                            @(_currentPersona?.PERSONA_CODE ?? "N/A")
+                        </MudText>
+                        <MudIcon Icon="@Icons.Material.Filled.ArrowDropDown" Size="Size.Small" />
+                    </MudStack>
+                </MudButton>
+            </ActivatorContent>
+            <ChildContent>
+                <MudText Class="px-4 py-2" Typo="Typo.caption">Available Personas</MudText>
+                <MudDivider />
+                @foreach (var persona in _availablePersonas)
+                {
+                    var isActive = persona.PERSONA_CODE == _currentProfile.PRIMARY_PERSONA;
+                    <MudMenuItem OnClick="@(() => SwitchPersonaAsync(persona.PERSONA_CODE))" 
+                                 Disabled="@isActive"
+                                 Class="@(isActive ? "active-persona" : "")">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            @if (isActive)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Color="Color.Success" />
+                            }
+                            else
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Circle" Size="Size.Small" />
+                            }
+                            <MudText>@persona.PERSONA_CODE</MudText>
+                            <MudText Typo="Typo.caption" Class="ml-2">@persona.DESCRIPTION</MudText>
+                        </MudStack>
+                    </MudMenuItem>
+                }
+            </ChildContent>
+        </MudMenu>
+    }
+    else
+    {
+        <MudText Typo="Typo.body2" Color="Color.Error">No persona assigned</MudText>
+    }
+</div>
+
+@code {
+    private UserPersonaProfile? _currentProfile;
+    private PersonaDefinition? _currentPersona;
+    private List<PersonaDefinition> _availablePersonas = [];
+    private bool _isLoading = true;
+    private string? _userId;
+    private bool _disposed = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Get current user ID from authentication state
+            var authState = await AuthProvider.GetAuthenticationStateAsync();
+            _userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(_userId))
+            {
+                _isLoading = false;
+                return;
+            }
+
+            // Load user's current profile and available personas
+            await Task.WhenAll(
+                LoadUserProfileAsync(),
+                LoadAvailablePersonasAsync()
+            );
+
+            if (_currentProfile?.PRIMARY_PERSONA != null && _availablePersonas.Any())
+            {
+                _currentPersona = _availablePersonas.FirstOrDefault(p =>
+                    p.PERSONA_CODE == _currentProfile.PRIMARY_PERSONA);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading persona selector: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadUserProfileAsync()
+    {
+        try
+        {
+            _currentProfile = await IdentityClient.GetProfileAsync(_userId!);
+            
+                // If we already have the persona catalog loaded, resolve the active persona definition.
+                if (_currentProfile?.PRIMARY_PERSONA != null && _availablePersonas.Any())
+            {
+                _currentPersona = _availablePersonas.FirstOrDefault(p => 
+                    p.PERSONA_CODE == _currentProfile.PRIMARY_PERSONA);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading user profile: {ex.Message}");
+        }
+    }
+
+    private async Task LoadAvailablePersonasAsync()
+    {
+        try
+        {
+            _availablePersonas = await IdentityClient.GetPersonaCatalogAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading persona catalog: {ex.Message}");
+        }
+    }
+
+    private async Task SwitchPersonaAsync(string personaCode)
+    {
+        try
+        {
+            _isLoading = true;
+            var actorUserId = _userId!; // User switches their own persona
+            
+            _currentProfile = await IdentityClient.SwitchPersonaAsync(_userId!, personaCode, actorUserId);
+            _currentPersona = _availablePersonas.FirstOrDefault(p => p.PERSONA_CODE == personaCode);
+            
+            // Navigate to default landing route for the new persona if defined
+            if (!string.IsNullOrEmpty(_currentPersona?.DEFAULT_LANDING_ROUTE))
+            {
+                Nav.NavigateTo(_currentPersona.DEFAULT_LANDING_ROUTE);
+            }
+            else
+            {
+                // Default to dashboard if no specific landing route
+                Nav.NavigateTo("/dashboard");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error switching persona: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+        await Task.CompletedTask;
+    }
+}
+
+<style>
+    .persona-selector-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .persona-selector-btn {
+        min-width: 150px;
+    }
+
+    .persona-name {
+        font-weight: 500;
+    }
+
+    .active-persona {
+        background-color: var(--mud-palette-action-default);
+    }
+</style>

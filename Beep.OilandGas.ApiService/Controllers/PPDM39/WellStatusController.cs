@@ -11,6 +11,7 @@ using Serilog;
 
 namespace Beep.OilandGas.ApiService.Controllers.PPDM39
 {
+
     /// <summary>
     /// API for PPDM 3.9 Well Status faceted taxonomy (WSC v3, R-3 June 2020).
     ///
@@ -276,7 +277,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 Log.Information("Facet {StatusType} set for UWI {UWI}", request.StatusType, uwi);
                 return Ok(result);
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }

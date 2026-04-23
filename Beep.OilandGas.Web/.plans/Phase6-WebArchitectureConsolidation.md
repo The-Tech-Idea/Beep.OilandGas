@@ -1,6 +1,6 @@
 # Phase 6 — Web Architecture Consolidation
 
-> Status: Planned  
+> Status: Done  
 > Depends On: Existing web project state  
 > Goal: Remove structural ambiguity in the web project before broader domain integration work starts.
 > Detailed subplans: `Phase6-WebArchitectureConsolidation/README.md`
@@ -73,13 +73,13 @@ Before making UI changes in this phase, read `../MudBlazor_Docs/README.md` and t
 
 | ID | Task | Status |
 |----|------|--------|
-| 6.1 | Create a route ownership manifest for `Pages/` and routed files under `Components/` | Planned |
-| 6.2 | Designate the single canonical app shell (`App.razor` + `Routes.razor`) | Planned |
-| 6.3 | Consolidate `KpiCard` into one shared implementation | Planned |
-| 6.4 | Classify `Pages/Data/*` vs `Pages/PPDM39/Data/*` as canonical vs legacy | Planned |
-| 6.5 | Move or retire custom routed files under `Components/Pages/*` | Planned |
-| 6.6 | Remove page-level `IBeepOilandGasApp` usage in favor of typed clients | Planned |
-| 6.7 | Define the allowed long-term project references for the web project | Planned |
+| 6.1 | Create a route ownership manifest for `Pages/` and routed files under `Components/` | Done |
+| 6.2 | Designate the single canonical app shell (`App.razor` + `Routes.razor`) | Done |
+| 6.3 | Consolidate `KpiCard` into one shared implementation | Done |
+| 6.4 | Classify `Pages/Data/*` vs `Pages/PPDM39/Data/*` as canonical vs legacy | Done |
+| 6.5 | Move or retire custom routed files under `Components/Pages/*` | Done |
+| 6.6 | Remove page-level `IBeepOilandGasApp` usage in favor of typed clients | Done |
+| 6.7 | Define the allowed long-term project references for the web project | Done |
 
 ---
 

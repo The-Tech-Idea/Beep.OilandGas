@@ -30,6 +30,7 @@ using Beep.OilandGas.PlungerLift.Services;
 using Beep.OilandGas.HydraulicPumps.Services;
 using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ApiService.Services;
+using Beep.OilandGas.UserManagement.Services;
 using System.Reflection;
 
 // Configure Serilog
@@ -77,8 +78,14 @@ builder.Services.AddAuthentication(options =>
     
     options.Authority = identityServerUrl;
     options.Audience = builder.Configuration["IdentityServer:Audience"] ?? "beep-api";
+    options.SaveToken = false;
+    options.IncludeErrorDetails = builder.Environment.IsDevelopment();
     options.TokenValidationParameters.ValidateAudience = true;
     options.TokenValidationParameters.ValidAudience = builder.Configuration["IdentityServer:Audience"] ?? "beep-api";
+    options.TokenValidationParameters.ValidateIssuer = true;
+    options.TokenValidationParameters.ValidateLifetime = true;
+    options.TokenValidationParameters.RequireExpirationTime = true;
+    options.TokenValidationParameters.ClockSkew = TimeSpan.FromMinutes(2);
     
     // In development, we might need to disable HTTPS requirement if running on HTTP
     options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
@@ -101,12 +108,10 @@ builder.Services.AddAuthentication(options =>
                 .CreateLogger("JwtBearer");
             
             var hasAuthHeader = context.Request.Headers.ContainsKey("Authorization");
-            var authHeader = context.Request.Headers["Authorization"].ToString();
             
-            Log.Information("JWT: OnMessageReceived - Path: {Path}, HasAuthHeader: {HasAuth}, HeaderValue: {Header}", 
+            Log.Information("JWT: OnMessageReceived - Path: {Path}, HasAuthHeader: {HasAuth}", 
                 context.Request.Path, 
-                hasAuthHeader,
-                hasAuthHeader ? (authHeader.Length > 50 ? authHeader.Substring(0, 50) + "..." : authHeader) : "(none)");
+                hasAuthHeader);
             
             return Task.CompletedTask;
         },
@@ -124,11 +129,12 @@ builder.Services.AddAuthentication(options =>
             var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
                 .CreateLogger("JwtBearer");
             
-            var userId = context.Principal?.FindFirst("sub")?.Value;
-            var claims = context.Principal?.Claims.Select(c => $"{c.Type}={c.Value}").ToList();
+            var userId = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? context.Principal?.FindFirst("sub")?.Value;
+            var claimCount = context.Principal?.Claims.Count() ?? 0;
             
-            Log.Information("JWT: Token validated successfully - UserId: {UserId}, Claims: {Claims}", 
-                userId, string.Join(", ", claims ?? new List<string>()));
+            Log.Information("JWT: Token validated successfully - UserId: {UserId}, ClaimCount: {ClaimCount}", 
+                userId, claimCount);
             
             return Task.CompletedTask;
         },
@@ -872,6 +878,24 @@ builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.Accounting.WorkOrde
 // ============================================
 // REGISTER ACCESS CONTROL SERVICES
 // ============================================
+builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.IAuthorizationObservabilityService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var logger = sp.GetRequiredService<ILoggerFactory>()
+        .CreateLogger<Beep.OilandGas.ApiService.Services.AuthorizationObservabilityService>();
+
+    return new Beep.OilandGas.ApiService.Services.AuthorizationObservabilityService(
+        editor,
+        commonColumnHandler,
+        defaults,
+        metadata,
+        logger,
+        connectionName);
+});
+
 builder.Services.AddScoped<IAccessControlService>(sp =>
 {
     var editor = sp.GetRequiredService<IDMEEditor>();
@@ -907,6 +931,80 @@ builder.Services.AddScoped<IUserProfileService>(sp =>
         editor, commonColumnHandler, defaults, metadata, mappingService, accessControlService, connectionName);
 });
 
+// ============================================
+// REGISTER IDENTITY/PERSONA SERVICES (W11-05)
+// ============================================
+builder.Services.AddScoped<Beep.OilandGas.UserManagement.Contracts.Services.IPersonaProfileService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var logger = sp.GetRequiredService<ILoggerFactory>()
+        .CreateLogger<Beep.OilandGas.UserManagement.Services.PersonaProfileService>();
+    return new Beep.OilandGas.UserManagement.Services.PersonaProfileService(
+        editor, commonColumnHandler, defaults, metadata, connectionName, logger);
+});
+
+builder.Services.AddScoped<Beep.OilandGas.UserManagement.Contracts.Services.IRoleAssignmentService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var logger = sp.GetRequiredService<ILoggerFactory>()
+        .CreateLogger<Beep.OilandGas.UserManagement.Services.RoleAssignmentService>();
+    return new Beep.OilandGas.UserManagement.Services.RoleAssignmentService(
+        editor, commonColumnHandler, defaults, metadata, connectionName, logger);
+});
+
+builder.Services.AddScoped<Beep.OilandGas.UserManagement.Contracts.Services.IDefaultSecuritySeedService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var logger = sp.GetRequiredService<ILoggerFactory>()
+        .CreateLogger<Beep.OilandGas.UserManagement.Services.DefaultSecuritySeedService>();
+    return new Beep.OilandGas.UserManagement.Services.DefaultSecuritySeedService(
+        editor, commonColumnHandler, defaults, metadata, connectionName, logger);
+});
+
+// Module Setup Context and Modules (schema + seed standardization)
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.ModuleSetupContext>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger("ModuleSetup");
+
+    return new Beep.OilandGas.PPDM39.Core.Interfaces.ModuleSetupContext
+    {
+        Editor = editor,
+        CommonColumnHandler = commonColumnHandler,
+        Defaults = defaults,
+        Metadata = metadata,
+        ConnectionName = connectionName,
+        Logger = logger
+    };
+});
+
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.CorePpdmModule>();
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.SharedReferenceModule>();
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.WellStatusFacetModule>();
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.WellReferenceModule>();
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.UserManagement.Modules.SecurityModule>();
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.ExplorationModule>();
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.DevelopmentModule>();
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.ProductionModule>();
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.HseModule>();
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.EconomicsModule>();
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.DemoDataModule>();
+
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup.ModuleSetupOrchestrator>();
+
 // PPDM39 Setup Service
 builder.Services.AddScoped<PPDM39SetupService>(sp =>
 {
@@ -918,7 +1016,8 @@ builder.Services.AddScoped<PPDM39SetupService>(sp =>
     var logger = loggerFactory.CreateLogger<PPDM39SetupService>();
     // LOVManagementService is registered below; resolve via TryGet to avoid circular dependencies.
     var lovService = sp.GetService<Beep.OilandGas.PPDM39.DataManagement.Services.LOVManagementService>();
-    return new PPDM39SetupService(editor, logger, commonColumnHandler, defaults, metadata, lovService);
+    var moduleSetupOrchestrator = sp.GetService<Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup.ModuleSetupOrchestrator>();
+    return new PPDM39SetupService(editor, logger, commonColumnHandler, defaults, metadata, lovService, moduleSetupOrchestrator);
 });
 
 // WSC v3 Well-Status Facet Seeder

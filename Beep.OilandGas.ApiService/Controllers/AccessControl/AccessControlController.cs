@@ -35,7 +35,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                     request.RequiredPermission);
                 return Ok(response);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -59,7 +59,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                     userId, assetType, organizationId, includeInherited);
                 return Ok(assets);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -80,7 +80,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 var roles = await _accessControlService.GetUserRolesAsync(userId, organizationId);
                 return Ok(roles);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -104,7 +104,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 var hasPermission = await _accessControlService.HasPermissionAsync(userId, permissionId, organizationId);
                 return Ok(hasPermission);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -127,7 +127,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                     request.OrganizationId);
                 return Ok(result);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -147,7 +147,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                     request.AssetType);
                 return Ok(result);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -168,7 +168,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 var permissions = await _accessControlService.GetRolePermissionsAsync(roleId, organizationId);
                 return Ok(permissions);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -192,7 +192,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 var result = await _accessControlService.AssignPermissionToRoleAsync(roleId, permissionId, organizationId);
                 return Ok(result);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -216,7 +216,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 var result = await _accessControlService.RemovePermissionFromRoleAsync(roleId, permissionId, organizationId);
                 return Ok(result);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }

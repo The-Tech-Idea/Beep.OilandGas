@@ -13,4 +13,7 @@ public class UserAssetAccess : ModelEntityBase
     public string ACCESS_LEVEL { get; set; } = "read";
     public string? SCOPE_SOURCE { get; set; }
     public DateTime? ACCESS_EXPIRES_UTC { get; set; }
+    public string DENY_OVERRIDE_IND { get; set; } = "N";
+    public string? GRANT_SOURCE_TYPE { get; set; }
+    public string? GRANT_REFERENCE { get; set; }
 }

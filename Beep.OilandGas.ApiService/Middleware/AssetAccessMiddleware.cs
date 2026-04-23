@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using TheTechIdea.Beep.Report;
@@ -22,7 +23,8 @@ namespace Beep.OilandGas.ApiService.Middleware
         public async Task InvokeAsync(HttpContext context)
         {
             // Get user ID from claims
-            var userId = context.User?.Identity?.Name;
+            var userId = context.User?.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? context.User?.Identity?.Name;
 
             if (!string.IsNullOrEmpty(userId))
             {

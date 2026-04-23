@@ -9,6 +9,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.ApiService.Attributes;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
 {
@@ -26,6 +27,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
     /// </summary>
     [ApiController]
     [Route("api/field/current/exploration")]
+    [RequireCurrentFieldAccess]
     public class ExplorationController : ControllerBase
     {
         private readonly IFieldOrchestrator _fieldOrchestrator;

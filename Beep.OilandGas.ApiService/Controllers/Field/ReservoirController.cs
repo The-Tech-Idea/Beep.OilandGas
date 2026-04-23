@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Production;
+using Beep.OilandGas.ApiService.Attributes;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
@@ -13,6 +14,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
     /// </summary>
     [ApiController]
     [Route("api/field/current/reservoir")]
+    [RequireCurrentFieldAccess]
     public class ReservoirController : ControllerBase
     {
         private readonly IFieldOrchestrator _fieldOrchestrator;

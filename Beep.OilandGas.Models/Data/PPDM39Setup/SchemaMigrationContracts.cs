@@ -114,7 +114,31 @@ namespace Beep.OilandGas.Models.Data
         public string PolicyJson { get; set; } = string.Empty;
         public string RollbackReadinessJson { get; set; } = string.Empty;
         public string CompensationJson { get; set; } = string.Empty;
+        public string RuntimeEntityMetadataJson { get; set; } = string.Empty;
         public string ApprovalSummaryMarkdown { get; set; } = string.Empty;
+    }
+
+    public class SchemaMigrationEntityMetadata : ModelEntityBase
+    {
+        public string EntityName { get; set; } = string.Empty;
+        public string EntityTypeName { get; set; } = string.Empty;
+        public string ResolvedTableName { get; set; } = string.Empty;
+        public string ConventionTableName { get; set; } = string.Empty;
+        public List<string> PrimaryKeyColumns { get; set; } = new();
+        public List<string> JsonColumns { get; set; } = new();
+        public List<string> IndicatorColumns { get; set; } = new();
+        public List<SchemaMigrationEntityColumnMetadata> Columns { get; set; } = new();
+    }
+
+    public class SchemaMigrationEntityColumnMetadata : ModelEntityBase
+    {
+        public string PropertyName { get; set; } = string.Empty;
+        public string ColumnName { get; set; } = string.Empty;
+        public string ClrType { get; set; } = string.Empty;
+        public bool IsNullable { get; set; }
+        public bool IsPrimaryKeyCandidate { get; set; }
+        public bool IsJsonPayload { get; set; }
+        public bool IsIndicatorFlag { get; set; }
     }
 
     public class SchemaMigrationStepResult : ModelEntityBase

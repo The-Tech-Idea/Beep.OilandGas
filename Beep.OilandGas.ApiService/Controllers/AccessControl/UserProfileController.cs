@@ -36,7 +36,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 
                 return Ok(profile);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -57,7 +57,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 var roles = await _userProfileService.GetUserRolesAsync(userId, organizationId);
                 return Ok(roles);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -76,7 +76,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 var layout = await _userProfileService.GetUserDefaultLayoutAsync(userId);
                 return Ok(layout ?? "DefaultLayout");
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -97,7 +97,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 var result = await _userProfileService.UpdateUserPreferencesAsync(userId, request.PreferencesJson);
                 return Ok(result);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -118,7 +118,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 var result = await _userProfileService.UpdateUserPrimaryRoleAsync(userId, request.PrimaryRole);
                 return Ok(result);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -139,7 +139,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 var result = await _userProfileService.UpdateUserPreferredLayoutAsync(userId, request.PreferredLayout);
                 return Ok(result);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -158,7 +158,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 await _userProfileService.RecordUserLoginAsync(userId);
                 return Ok(new { message = "Login recorded" });
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }

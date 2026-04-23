@@ -1,0 +1,87 @@
+@page "/landing"
+@page "/"
+@using Beep.OilandGas.UserManagement.Models.Profile
+@using Beep.OilandGas.Web.Services
+@using System.Security.Claims
+@inject IIdentityServiceClient IdentityClient
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager Nav
+
+@if (_isLoading)
+{
+    <MudContainer MaxWidth="MaxWidth.Small" Class="d-flex justify-center align-center" Style="height: 100vh;">
+        <MudStack AlignItems="AlignItems.Center" Spacing="3">
+            <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+            <MudText Typo="Typo.h6">Loading personalized dashboard...</MudText>
+        </MudStack>
+    </MudContainer>
+}
+else if (_errorMessage != null)
+{
+    <MudContainer MaxWidth="MaxWidth.Small" Class="d-flex justify-center align-center" Style="height: 100vh;">
+        <MudStack AlignItems="AlignItems.Center" Spacing="3">
+            <MudIcon Icon="@Icons.Material.Filled.Error" Size="Size.Large" Color="Color.Error" />
+            <MudText Typo="Typo.h6" Color="Color.Error">@_errorMessage</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => Nav.NavigateTo("/dashboard"))">
+                Go to Dashboard
+            </MudButton>
+        </MudStack>
+    </MudContainer>
+}
+
+@code {
+    private bool _isLoading = true;
+    private string? _errorMessage;
+    private string? _userId;
+    private UserPersonaProfile? _currentProfile;
+    private PersonaDefinition? _currentPersona;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Get current user
+            var authState = await AuthProvider.GetAuthenticationStateAsync();
+            _userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            // If user is not authenticated, redirect to login
+            if (string.IsNullOrEmpty(_userId))
+            {
+                Nav.NavigateTo("/authentication/login");
+                return;
+            }
+
+            // Load user's profile and available personas
+            _currentProfile = await IdentityClient.GetProfileAsync(_userId);
+            
+            if (_currentProfile == null)
+            {
+                _errorMessage = "No persona profile found. Please contact your administrator.";
+                return;
+            }
+
+            // Get the list of available personas to find the current one's definition
+            var allPersonas = await IdentityClient.GetPersonaCatalogAsync();
+            _currentPersona = allPersonas?.FirstOrDefault(p => p.PERSONA_CODE == _currentProfile.PRIMARY_PERSONA);
+
+            // Redirect to the persona's default landing route if defined
+            if (!string.IsNullOrEmpty(_currentPersona?.DEFAULT_LANDING_ROUTE))
+            {
+                Nav.NavigateTo(_currentPersona.DEFAULT_LANDING_ROUTE);
+            }
+            else
+            {
+                // Fallback to dashboard if no default landing route is set
+                Nav.NavigateTo("/dashboard");
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error loading persona information: {ex.Message}";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

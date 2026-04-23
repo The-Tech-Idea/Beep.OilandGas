@@ -13,4 +13,6 @@ public class UserScopeAssignment : ModelEntityBase
     public string? GRANTED_BY { get; set; }
     public DateTime EFFECTIVE_FROM_UTC { get; set; } = DateTime.UtcNow;
     public DateTime? EFFECTIVE_TO_UTC { get; set; }
+    public string INHERITED_IND { get; set; } = "N";
+    public string? SCOPE_LEVEL { get; set; }
 }

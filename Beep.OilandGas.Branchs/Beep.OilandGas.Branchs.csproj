@@ -85,11 +85,11 @@
 
   <ItemGroup>
     <PackageReference Include="TheTechIdea.Beep.TreeNodes" Version="1.0.16" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.88">
+    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.96">
       <ExcludeAssets>contentFiles</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.142" />
-    <PackageReference Include="TheTechIdea.Beep.Vis.Modules" Version="2.0.39" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.1444" />
+    <PackageReference Include="TheTechIdea.Beep.Vis.Modules" Version="2.0.41" />
   </ItemGroup>
 
 </Project>

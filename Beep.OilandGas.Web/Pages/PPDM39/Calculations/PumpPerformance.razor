@@ -325,6 +325,13 @@
         try
         {
             var well = await DevelopmentClient.GetWellAsync(_selectedWellId);
+            if (well == null)
+            {
+                _selectedWell = null;
+                Snackbar.Add("Selected well could not be found for Pump Performance.", Severity.Warning);
+                return;
+            }
+
             _selectedWell = MapWell(well);
             ApplyWellDefaults(_selectedWell);
         }

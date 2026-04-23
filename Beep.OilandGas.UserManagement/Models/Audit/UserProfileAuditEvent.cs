@@ -12,4 +12,6 @@ public class UserProfileAuditEvent : ModelEntityBase
     public DateTime EVENT_UTC { get; set; } = DateTime.UtcNow;
     public string? BEFORE_JSON { get; set; }
     public string? AFTER_JSON { get; set; }
+    public string? CHANGE_TYPE { get; set; }
+    public string? CORRELATION_ID { get; set; }
 }

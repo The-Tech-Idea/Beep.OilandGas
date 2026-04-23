@@ -1,5 +1,6 @@
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Compliance;
+using Beep.OilandGas.ApiService.Attributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -9,6 +10,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Compliance;
 [ApiController]
 [Route("api/field/current/compliance")]
 [Authorize]
+[RequireCurrentFieldAccess]
 public class ComplianceController : ControllerBase
 {
     private readonly IComplianceService         _compliance;

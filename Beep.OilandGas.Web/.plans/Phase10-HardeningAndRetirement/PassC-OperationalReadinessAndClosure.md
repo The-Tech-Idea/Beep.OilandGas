@@ -19,9 +19,9 @@ Close the stream with accurate documentation, regression checklists, and a final
 
 ## Required Outputs
 
-1. Final route matrix.
-2. Final client and workflow integration matrix.
-3. Deferred exception and backlog note.
+1. Final route matrix in `FinalRouteAndIntegrationMatrix.md`.
+2. Final client and workflow integration matrix in `FinalRouteAndIntegrationMatrix.md`.
+3. Deferred exception and backlog note in `DeferredExceptionsAndBacklog.md`.
 4. Tracker closed against real execution state.
 
 ---

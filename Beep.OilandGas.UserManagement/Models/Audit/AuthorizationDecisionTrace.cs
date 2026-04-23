@@ -14,4 +14,7 @@ public class AuthorizationDecisionTrace : ModelEntityBase
     public string DECISION { get; set; } = string.Empty;
     public DateTime EVALUATED_UTC { get; set; } = DateTime.UtcNow;
     public string? CONTEXT_JSON { get; set; }
+    public string? SCOPE_CONTEXT { get; set; }
+    public string? DENIAL_REASON_CODE { get; set; }
+    public string? EVALUATED_POLICIES_JSON { get; set; }
 }

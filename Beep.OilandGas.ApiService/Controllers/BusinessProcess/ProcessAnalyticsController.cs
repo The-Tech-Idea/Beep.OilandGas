@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Analytics;
+using Beep.OilandGas.ApiService.Attributes;
 
 namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 {
@@ -15,6 +16,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
     [ApiController]
     [Route("api/field/current/process/analytics")]
     [Authorize]
+    [RequireCurrentFieldAccess]
     public class ProcessAnalyticsController : ControllerBase
     {
         private readonly IFieldOrchestrator      _fieldOrchestrator;

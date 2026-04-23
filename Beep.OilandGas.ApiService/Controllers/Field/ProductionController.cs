@@ -12,12 +12,14 @@ using Beep.OilandGas.Models.Data.LifeCycle;
 using Beep.OilandGas.Models.Data.Production;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.ApiService.Attributes;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
 {
     [ApiController]
     [Route("api/field/current/production")]
+    [RequireCurrentFieldAccess]
     public class ProductionController : ControllerBase
     {
         private readonly IFieldOrchestrator _fieldOrchestrator;

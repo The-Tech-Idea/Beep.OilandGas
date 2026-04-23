@@ -172,5 +172,17 @@ namespace Beep.OilandGas.Models.Data.DataManagement
             set { SetProperty(ref ExecutionIdValue, value); }
 
         }
+
+        private bool SeedDefaultSecurityDataValue = true;
+
+        public bool SeedDefaultSecurityData
+
+        {
+
+            get { return this.SeedDefaultSecurityDataValue; }
+
+            set { SetProperty(ref SeedDefaultSecurityDataValue, value); }
+
+        }
     }
 }

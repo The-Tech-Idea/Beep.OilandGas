@@ -28,6 +28,13 @@ namespace Beep.OilandGas.Models.Data.Security
             get => ROLE_IDValue;
             set => SetProperty(ref ROLE_IDValue, value);
         }
+
+        private string? BUSINESS_ASSOCIATE_IDValue;
+        public string? BUSINESS_ASSOCIATE_ID
+        {
+            get => BUSINESS_ASSOCIATE_IDValue;
+            set => SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value);
+        }
         
         private DateTime? EFFECTIVE_DATEValue;
         public new DateTime? EFFECTIVE_DATE

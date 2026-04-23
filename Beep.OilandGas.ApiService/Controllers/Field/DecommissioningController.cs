@@ -8,6 +8,7 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.LifeCycle;
 using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.ApiService.Attributes;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
@@ -21,6 +22,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
     /// </summary>
     [ApiController]
     [Route("api/field/current/decommissioning")]
+    [RequireCurrentFieldAccess]
     public class DecommissioningController : ControllerBase
     {
         private readonly IFieldOrchestrator _fieldOrchestrator;
@@ -55,7 +57,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var abandonedWells = await decommissioningService.GetAbandonedWellsForFieldAsync(currentFieldId, filters);
                 return Ok(abandonedWells);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }
@@ -91,7 +93,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
                 return Ok(abandonment);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }
@@ -133,7 +135,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var abandonment = await decommissioningService.AbandonWellForFieldAsync(currentFieldId, wellId, abandonmentData, userId);
                 return Ok(abandonment);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }
@@ -162,7 +164,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var facilities = await decommissioningService.GetDecommissionedFacilitiesForFieldAsync(currentFieldId, filters);
                 return Ok(facilities);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }
@@ -198,7 +200,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
                 return Ok(decommissioning);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }
@@ -236,7 +238,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var decommissioning = await decommissioningService.DecommissionFacilityForFieldAsync(currentFieldId, facilityId, decommissionData, userId);
                 return Ok(decommissioning);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }
@@ -265,7 +267,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var restorations = await decommissioningService.GetEnvironmentalRestorationsForFieldAsync(currentFieldId, filters);
                 return Ok(restorations);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }
@@ -301,7 +303,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var restoration = await decommissioningService.CreateEnvironmentalRestorationForFieldAsync(currentFieldId, restorationData, userId);
                 return Ok(restoration);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }
@@ -330,7 +332,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var costs = await decommissioningService.GetDecommissioningCostsForFieldAsync(currentFieldId, filters);
                 return Ok(costs);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }
@@ -359,7 +361,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var estimate = await decommissioningService.EstimateCostsForFieldAsync(currentFieldId);
                 return Ok(estimate);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return BadRequest(new { error = "An internal error occurred." });
             }

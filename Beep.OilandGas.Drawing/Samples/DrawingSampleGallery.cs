@@ -34,13 +34,6 @@ namespace Beep.OilandGas.Drawing.Samples
                 CreateFieldMapAssetNetworkScene,
                 CreateFieldMapAssetNetworkExports()),
             new DrawingSampleScene(
-                "WellLog_Petrophysical",
-                "Standard petrophysical panel with gamma ray, resistivity, density, neutron, lithology, and zonation.",
-                1500,
-                1800,
-                CreateWellLogPetrophysicalScene,
-                CreateWellLogPetrophysicalExports()),
-            new DrawingSampleScene(
                 "ReservoirContour_StructureMap",
                 "Interpolated reservoir structure map with contour labels and deterministic sampling.",
                 1600,
@@ -150,26 +143,17 @@ namespace Beep.OilandGas.Drawing.Samples
                 Directory.CreateDirectory(workingDirectory);
                 GeoReferencedImageExporter.ExportToPng(engine, imagePath);
 
-                using var stream = new MemoryStream();
-                using (var archive = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
-                {
-                    archive.CreateEntryFromFile(imagePath, Path.GetFileName(imagePath));
+                var archivePath = Path.Combine(workingDirectory, $"{artifactStem}.zip");
+                if (File.Exists(archivePath))
+                    File.Delete(archivePath);
 
-                    var worldFilePath = GeoReferencedImageExporter.GetWorldFilePath(imagePath);
-                    archive.CreateEntryFromFile(worldFilePath, Path.GetFileName(worldFilePath));
-
-                    var crsMetadataPath = GeoReferencedImageExporter.GetCoordinateReferenceMetadataPath(imagePath);
-                    archive.CreateEntryFromFile(crsMetadataPath, Path.GetFileName(crsMetadataPath));
-                }
-
-                return stream.ToArray();
+                ZipFile.CreateFromDirectory(workingDirectory, archivePath);
+                return File.ReadAllBytes(archivePath);
             }
             finally
             {
                 if (Directory.Exists(workingDirectory))
-                {
                     Directory.Delete(workingDirectory, recursive: true);
-                }
             }
         }
 
@@ -177,230 +161,129 @@ namespace Beep.OilandGas.Drawing.Samples
         {
             return new FieldMapData
             {
-                MapName = "North Dome Asset Network",
-                CoordinateReferenceSystem = CoordinateReferenceSystem.CreateProjected("EPSG:26915", "NAD83 / UTM zone 15N", "m"),
+                MapName = "Canonical Field Map",
+                CoordinateReferenceSystem = CoordinateReferenceSystem.CreateProjected(
+                    "EPSG:26913",
+                    "UTM Zone 13N",
+                    "metre"),
                 BoundingBox = new BoundingBox
                 {
                     MinX = 0,
                     MaxX = 3200,
                     MinY = 0,
-                    MaxY = 2200,
+                    MaxY = 2000,
                     MinZ = 0,
                     MaxZ = 0
+                },
+                Metadata =
+                {
+                    ["FieldId"] = "FIELD-REGRESSION",
+                    ["Purpose"] = "Sample host regression scene"
+                },
+                AreaAssets =
+                {
+                    new FieldMapAreaAsset
+                    {
+                        AssetId = "FIELD-01",
+                        AssetName = "Regression Field",
+                        AssetKind = FieldMapAssetKind.Field,
+                        BoundaryPoints =
+                        {
+                            new Point3D { X = 200, Y = 200, Z = 0 },
+                            new Point3D { X = 3000, Y = 200, Z = 0 },
+                            new Point3D { X = 3000, Y = 1800, Z = 0 },
+                            new Point3D { X = 200, Y = 1800, Z = 0 }
+                        }
+                    },
+                    new FieldMapAreaAsset
+                    {
+                        AssetId = "LEASE-07",
+                        AssetName = "Wetland Preserve",
+                        AssetKind = FieldMapAssetKind.ProtectedArea,
+                        BoundaryPoints =
+                        {
+                            new Point3D { X = 2200, Y = 200, Z = 0 },
+                            new Point3D { X = 3000, Y = 200, Z = 0 },
+                            new Point3D { X = 3000, Y = 900, Z = 0 },
+                            new Point3D { X = 2200, Y = 900, Z = 0 }
+                        }
+                    },
+                    new FieldMapAreaAsset
+                    {
+                        AssetId = "HZ-12",
+                        AssetName = "Sour Gas Buffer",
+                        AssetKind = FieldMapAssetKind.HazardZone,
+                        BoundaryPoints =
+                        {
+                            new Point3D { X = 2100, Y = 1200, Z = 0 },
+                            new Point3D { X = 2600, Y = 1200, Z = 0 },
+                            new Point3D { X = 2600, Y = 1700, Z = 0 },
+                            new Point3D { X = 2100, Y = 1700, Z = 0 }
+                        }
+                    }
+                },
+                PointAssets =
+                {
+                    new FieldMapPointAsset
+                    {
+                        AssetId = "CPF-1",
+                        AssetName = "Central Facility",
+                        AssetKind = FieldMapAssetKind.Facility,
+                        Location = new Point3D { X = 2050, Y = 980, Z = 0 }
+                    },
+                    new FieldMapPointAsset
+                    {
+                        AssetId = "WELL-A12",
+                        AssetName = "A-12H",
+                        AssetKind = FieldMapAssetKind.Well,
+                        Location = new Point3D { X = 840, Y = 860, Z = 0 }
+                    },
+                    new FieldMapPointAsset
+                    {
+                        AssetId = "MAN-03",
+                        AssetName = "Test Manifold",
+                        AssetKind = FieldMapAssetKind.SurfaceSystem,
+                        Location = new Point3D { X = 1380, Y = 930, Z = 0 }
+                    }
+                },
+                ConnectionAssets =
+                {
+                    new FieldMapConnectionAsset
+                    {
+                        ConnectionId = "FL-001",
+                        ConnectionName = "A Pad Flowline",
+                        ConnectionKind = FieldMapConnectionKind.Flowline,
+                        FromAssetId = "WELL-A12",
+                        ToAssetId = "MAN-03",
+                        Vertices =
+                        {
+                            new Point3D { X = 840, Y = 860, Z = 0 },
+                            new Point3D { X = 1120, Y = 900, Z = 0 },
+                            new Point3D { X = 1380, Y = 930, Z = 0 }
+                        }
+                    },
+                    new FieldMapConnectionAsset
+                    {
+                        ConnectionId = "GL-010",
+                        ConnectionName = "Gathering Spur",
+                        ConnectionKind = FieldMapConnectionKind.GatheringLine,
+                        FromAssetId = "MAN-03",
+                        ToAssetId = "CPF-1",
+                        Vertices =
+                        {
+                            new Point3D { X = 1380, Y = 930, Z = 0 },
+                            new Point3D { X = 1710, Y = 955, Z = 0 },
+                            new Point3D { X = 2050, Y = 980, Z = 0 }
+                        }
+                    }
                 }
-            }
-            .With(fieldMap =>
-            {
-                fieldMap.AreaAssets.Add(new FieldMapAreaAsset
-                {
-                    AssetId = "FIELD-01",
-                    AssetName = "North Dome",
-                    BoundaryPoints =
-                    {
-                        new Point3D { X = 0, Y = 0 },
-                        new Point3D { X = 3200, Y = 0 },
-                        new Point3D { X = 3200, Y = 2200 },
-                        new Point3D { X = 0, Y = 2200 }
-                    }
-                });
-                fieldMap.AreaAssets.Add(new FieldMapAreaAsset
-                {
-                    AssetId = "LEASE-A",
-                    AssetName = "Lease A",
-                    BoundaryPoints =
-                    {
-                        new Point3D { X = 250, Y = 250 },
-                        new Point3D { X = 1600, Y = 250 },
-                        new Point3D { X = 1600, Y = 1450 },
-                        new Point3D { X = 250, Y = 1450 }
-                    }
-                });
-                fieldMap.AreaAssets.Add(new FieldMapAreaAsset
-                {
-                    AssetId = "SEIS-3D-01",
-                    AssetName = "Phase A 3D",
-                    BoundaryPoints =
-                    {
-                        new Point3D { X = 900, Y = 700 },
-                        new Point3D { X = 2900, Y = 700 },
-                        new Point3D { X = 2900, Y = 1900 },
-                        new Point3D { X = 900, Y = 1900 }
-                    }
-                });
-                fieldMap.AreaAssets.Add(new FieldMapAreaAsset
-                {
-                    AssetId = "ROW-07",
-                    AssetName = "Pipeline ROW",
-                    BoundaryPoints =
-                    {
-                        new Point3D { X = 1700, Y = 300 },
-                        new Point3D { X = 1850, Y = 300 },
-                        new Point3D { X = 1850, Y = 2100 },
-                        new Point3D { X = 1700, Y = 2100 }
-                    }
-                });
-                fieldMap.AreaAssets.Add(new FieldMapAreaAsset
-                {
-                    AssetId = "PA-02",
-                    AssetName = "Wetland Preserve",
-                    BoundaryPoints =
-                    {
-                        new Point3D { X = 2200, Y = 200 },
-                        new Point3D { X = 3000, Y = 200 },
-                        new Point3D { X = 3000, Y = 900 },
-                        new Point3D { X = 2200, Y = 900 }
-                    }
-                });
-                fieldMap.AreaAssets.Add(new FieldMapAreaAsset
-                {
-                    AssetId = "HZ-12",
-                    AssetName = "Sour Gas Buffer",
-                    BoundaryPoints =
-                    {
-                        new Point3D { X = 2100, Y = 1200 },
-                        new Point3D { X = 2600, Y = 1200 },
-                        new Point3D { X = 2600, Y = 1700 },
-                        new Point3D { X = 2100, Y = 1700 }
-                    }
-                });
-                fieldMap.PointAssets.Add(new FieldMapPointAsset
-                {
-                    AssetId = "CPF-1",
-                    AssetName = "Central Facility",
-                    Location = new Point3D { X = 2050, Y = 980, Z = 0 }
-                });
-                fieldMap.PointAssets.Add(new FieldMapPointAsset
-                {
-                    AssetId = "WELL-A12",
-                    AssetName = "A-12H",
-                    Location = new Point3D { X = 840, Y = 860, Z = 0 }
-                });
-                fieldMap.PointAssets.Add(new FieldMapPointAsset
-                {
-                    AssetId = "MAN-03",
-                    AssetName = "Test Manifold",
-                    Location = new Point3D { X = 1380, Y = 930, Z = 0 }
-                });
-                fieldMap.ConnectionAssets.Add(new FieldMapConnectionAsset
-                {
-                    ConnectionId = "FL-001",
-                    ConnectionName = "A Pad Flowline",
-                    FromAssetId = "WELL-A12",
-                    ToAssetId = "MAN-03",
-                    Vertices =
-                    {
-                        new Point3D { X = 840, Y = 860, Z = 0 },
-                        new Point3D { X = 1120, Y = 900, Z = 0 },
-                        new Point3D { X = 1380, Y = 930, Z = 0 }
-                    }
-                });
-                fieldMap.ConnectionAssets.Add(new FieldMapConnectionAsset
-                {
-                    ConnectionId = "GL-010",
-                    ConnectionName = "Gathering Spur",
-                    FromAssetId = "MAN-03",
-                    ToAssetId = "CPF-1",
-                    Vertices =
-                    {
-                        new Point3D { X = 1380, Y = 930, Z = 0 },
-                        new Point3D { X = 1710, Y = 955, Z = 0 },
-                        new Point3D { X = 2050, Y = 980, Z = 0 }
-                    }
-                });
-            });
+            };
         }
 
         private static T With<T>(this T value, Action<T> configure)
         {
             configure(value);
             return value;
-        }
-
-        /// <summary>
-        /// Builds the standard petrophysical well-log sample scene.
-        /// </summary>
-        public static DrawingEngine CreateWellLogPetrophysicalScene()
-        {
-            var logData = CreateWellLogPetrophysicalData();
-
-            return WellLogBuilder.Create()
-                .WithLogData(logData)
-                .WithConfiguration(CreateWellLogPetrophysicalConfiguration())
-                .WithSize(1500, 1800)
-                .Build();
-        }
-
-        private static IReadOnlyList<DrawingSampleExportAction> CreateWellLogPetrophysicalExports()
-        {
-            return new[]
-            {
-                new DrawingSampleExportAction(
-                    id: "well-log-json",
-                    label: "Well Log JSON",
-                    fileNameSuffix: "well-log.json",
-                    contentType: "application/json",
-                    export: _ => JsonSerializer.SerializeToUtf8Bytes(CreateWellLogPetrophysicalData()),
-                    description: "Typed petrophysical payload for the canonical well log sample.",
-                    presentationKind: DrawingSampleExportPresentationKind.EngineeringData)
-            };
-        }
-
-        private static LogData CreateWellLogPetrophysicalData()
-        {
-            List<double> depths = Enumerable.Range(0, 25)
-                .Select(index => 9800.0 + (index * 25.0))
-                .ToList();
-
-            return new LogData
-            {
-                WellIdentifier = "A-12H",
-                LogName = "Regression Petrophysical",
-                LogType = "Wireline",
-                StartDepth = depths.First(),
-                EndDepth = depths.Last(),
-                DepthStep = 25.0,
-                Depths = depths,
-                Curves =
-                {
-                    ["GR"] = depths.Select((_, index) => 55.0 + (18.0 * Math.Sin(index / 3.0)) + (index * 0.9)).ToList(),
-                    ["RESD"] = depths.Select((_, index) => Math.Exp(0.65 + (index * 0.085))).ToList(),
-                    ["RHOB"] = depths.Select((_, index) => 2.35 + (0.12 * Math.Cos(index / 4.0))).ToList(),
-                    ["NPHI"] = depths.Select((_, index) => 0.28 - (0.09 * Math.Sin(index / 5.0))).ToList()
-                },
-                CurveMetadata =
-                {
-                    ["GR"] = new LogCurveMetadata { Mnemonic = "GR", DisplayName = "GammaRay", Unit = "gAPI", MinValue = 0, MaxValue = 150 },
-                    ["RESD"] = new LogCurveMetadata { Mnemonic = "RESD", DisplayName = "DeepResistivity", Unit = "ohm.m", MinValue = 0.2, MaxValue = 2000 },
-                    ["RHOB"] = new LogCurveMetadata { Mnemonic = "RHOB", DisplayName = "BulkDensity", Unit = "g/cc", MinValue = 1.95, MaxValue = 2.95 },
-                    ["NPHI"] = new LogCurveMetadata { Mnemonic = "NPHI", DisplayName = "NeutronPorosity", Unit = "v/v", MinValue = -0.15, MaxValue = 0.45 }
-                },
-                LithologyIntervals =
-                {
-                    new LogIntervalData { IntervalId = "L1", Label = "Upper Sand", TopDepth = 9800, BottomDepth = 9925, Lithology = "Sandstone", PatternType = "sandstone" },
-                    new LogIntervalData { IntervalId = "L2", Label = "Middle Shale", TopDepth = 9925, BottomDepth = 10075, Lithology = "Shale", PatternType = "shale" },
-                    new LogIntervalData { IntervalId = "L3", Label = "Lower Carbonate", TopDepth = 10075, BottomDepth = 10400, Lithology = "Limestone", PatternType = "limestone" }
-                },
-                ZoneIntervals =
-                {
-                    new LogIntervalData { IntervalId = "Z1", Label = "A Sand", TopDepth = 9800, BottomDepth = 9950, Facies = "Channel" },
-                    new LogIntervalData { IntervalId = "Z2", Label = "B Shale", TopDepth = 9950, BottomDepth = 10125, Facies = "Seal" },
-                    new LogIntervalData { IntervalId = "Z3", Label = "C Carbonate", TopDepth = 10125, BottomDepth = 10400, Facies = "Platform" }
-                }
-            };
-        }
-
-        private static LogRendererConfiguration CreateWellLogPetrophysicalConfiguration()
-        {
-            return new LogRendererConfiguration
-            {
-                UseStandardTrackTemplates = true,
-                RenderDepthScaleAsTrack = true,
-                ShowDensityNeutronCrossoverShading = true,
-                ShowLogDecadeGridLines = true,
-                ShowTrackScaleAnnotations = true,
-                ShowTrackHeaders = true,
-                ShowCurveNames = true
-            };
         }
 
         /// <summary>

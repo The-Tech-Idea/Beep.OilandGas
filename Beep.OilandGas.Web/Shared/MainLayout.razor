@@ -4,8 +4,10 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject Beep.OilandGas.Web.Theme.IThemeProvider ThemeProvider
 @inject Beep.OilandGas.Web.Services.IFirstRunService FirstRunService
+@inject Beep.OilandGas.Web.Services.IPersonaContextService PersonaContext
 @using Microsoft.AspNetCore.Components.Authorization
 @using Beep.OilandGas.Web.Theme
+@implements IDisposable
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="@_isDarkMode" />
 <MudPopoverProvider />
@@ -27,6 +29,12 @@
             <!-- Horizontal Navigation Menu -->
             <div class="og-nav-wrapper">
                 <NavMenu />
+            </div>
+            <MudSpacer />
+            
+            <!-- Persona Selector (W11-07) -->
+            <div class="persona-selector-container">
+                <PersonaSelector />
             </div>
             <MudSpacer />
             
@@ -110,17 +118,8 @@
     protected override async Task OnInitializedAsync()
     {
         var currentPath = new Uri(NavigationManager.Uri).AbsolutePath;
-        var isSetupPage = currentPath.StartsWith("/ppdm39/setup", StringComparison.OrdinalIgnoreCase);
-
-        if (!isSetupPage)
-        {
-            var setupRequired = await FirstRunService.IsSetupRequiredAsync();
-            if (setupRequired)
-            {
-                NavigationManager.NavigateTo("/ppdm39/setup", forceLoad: false);
-                return;
-            }
-        }
+        if (!await EnsureFirstRunSetupGateAsync(currentPath))
+            return;
 
         // Load theme from ThemeProvider
         _theme = ThemeProvider.GetMudTheme();
@@ -131,7 +130,10 @@
         
         await LoadThemePreference(defaultDarkMode);
         await CheckAuthenticationStatus();
+        await PersonaContext.EnsureLoadedAsync();
+        await EnforceCurrentRouteAccessAsync();
         CheckIfLandingPage();
+        NavigationManager.LocationChanged += OnLocationChanged;
     }
     
     protected override void OnAfterRender(bool firstRender)
@@ -235,6 +237,65 @@
         {
             // Ignore errors
         }
+    }
+
+    private async void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        var currentPath = new Uri(e.Location).AbsolutePath;
+        if (!await EnsureFirstRunSetupGateAsync(currentPath))
+        {
+            return;
+        }
+
+        await PersonaContext.EnsureLoadedAsync();
+        await EnforceCurrentRouteAccessAsync();
+        CheckIfLandingPage();
+    }
+
+    private Task EnforceCurrentRouteAccessAsync()
+    {
+        var path = new Uri(NavigationManager.Uri).AbsolutePath;
+
+        if (IsSetupExemptPath(path))
+        {
+            return Task.CompletedTask;
+        }
+
+        if (!PersonaContext.CanAccessRoute(path))
+        {
+            NavigationManager.NavigateTo("/dashboard", forceLoad: false);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+
+    private async Task<bool> EnsureFirstRunSetupGateAsync(string currentPath)
+    {
+        if (IsSetupExemptPath(currentPath))
+            return true;
+
+        var setupRequired = await FirstRunService.IsSetupRequiredAsync();
+        if (!setupRequired)
+            return true;
+
+        NavigationManager.NavigateTo("/ppdm39/setup", forceLoad: false);
+        return false;
+    }
+
+    private static bool IsSetupExemptPath(string currentPath)
+    {
+        if (string.IsNullOrWhiteSpace(currentPath))
+            return false;
+
+        return currentPath.StartsWith("/ppdm39/setup", StringComparison.OrdinalIgnoreCase)
+            || currentPath.StartsWith("/authentication", StringComparison.OrdinalIgnoreCase)
+            || currentPath.StartsWith("/signin-oidc", StringComparison.OrdinalIgnoreCase)
+            || currentPath.StartsWith("/signout", StringComparison.OrdinalIgnoreCase);
     }
 
 }

@@ -1,6 +1,6 @@
 # Phase 8 — Operations and Lifecycle Integration
 
-> Status: In Progress  
+> Status: Done  
 > Depends On: Phases 6 and 7  
 > Goal: Integrate the operational domain projects into coherent field-scoped workflows across exploration, development, production, lease, EOR, and decommissioning.
 > Detailed subplans: `Phase8-OperationsAndLifecycleIntegration/README.md`
@@ -69,7 +69,7 @@ Add the business hand-offs that make the platform coherent:
 | 8.4 | Refactor production pages to use production-operations APIs consistently | Done |
 | 8.5 | Wire lease acquisition and enhanced recovery pages to dedicated clients | Done |
 | 8.6 | Wire decommissioning pages to field-scoped decommissioning client | Done |
-| 8.7 | Connect cross-domain actions to AFEs, work orders, and business-process state transitions | In Progress |
+| 8.7 | Connect cross-domain actions to AFEs, work orders, and business-process state transitions | Done |
 
 ### Current Checkpoint
 

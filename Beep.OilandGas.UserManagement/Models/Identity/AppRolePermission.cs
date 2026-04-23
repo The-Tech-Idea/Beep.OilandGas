@@ -12,4 +12,6 @@ public class AppRolePermission : ModelEntityBase
     public DateTime EFFECTIVE_FROM_UTC { get; set; } = DateTime.UtcNow;
     public DateTime? EFFECTIVE_TO_UTC { get; set; }
     public string? SOURCE_SYSTEM { get; set; }
+    public string? APPROVED_BY_USER_ID { get; set; }
+    public DateTime? APPROVED_AT_UTC { get; set; }
 }

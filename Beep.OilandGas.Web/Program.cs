@@ -120,7 +120,6 @@ var oidcClientId = builder.Configuration["Authentication:Schemes:OpenIdConnect:C
     ?? "beep_oilgas_web";
 
 var oidcClientSecret = builder.Configuration["Authentication:Schemes:OpenIdConnect:ClientSecret"]
-    ?? builder.Configuration["IdentityServer:ClientSecret"]
     ?? Environment.GetEnvironmentVariable("BEEP_OILGAS_OIDC_CLIENT_SECRET")
     ?? string.Empty;
 
@@ -348,6 +347,9 @@ builder.Services.AddBeepOilandGasAppAuto(builder.Configuration);
         
     // Focused web clients and scoped services
         builder.Services.AddScoped<IAccountingServiceClient, AccountingServiceClient>();
+        builder.Services.AddScoped<IIdentityServiceClient, IdentityServiceClient>();
+            builder.Services.AddScoped<INavigationPolicyService, NavigationPolicyService>();
+        builder.Services.AddScoped<IPersonaContextService, PersonaContextService>();
         builder.Services.AddScoped<IAfeServiceClient, AfeServiceClient>();
         builder.Services.AddScoped<IDataManagementService, DataManagementService>();
         builder.Services.AddScoped<Beep.OilandGas.Web.Services.IConnectionService, Beep.OilandGas.Web.Services.ConnectionService>();

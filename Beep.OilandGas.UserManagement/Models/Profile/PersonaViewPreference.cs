@@ -11,4 +11,5 @@ public class PersonaViewPreference : ModelEntityBase
     public string PERSONA_CODE { get; set; } = string.Empty;
     public string VIEW_KEY { get; set; } = string.Empty;
     public string? VIEW_VALUE { get; set; }
+    public DateTime UPDATED_UTC { get; set; } = DateTime.UtcNow;
 }

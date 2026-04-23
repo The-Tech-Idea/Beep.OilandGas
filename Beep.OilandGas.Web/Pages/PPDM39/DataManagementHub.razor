@@ -23,7 +23,7 @@
                  Color="Color.Tertiary"
                  Variant="Variant.Outlined"
                  Icon="@Icons.Material.Filled.LibraryBooks"
-                 OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/database-setup"))"
+                 OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/setup"))"
                  Size="Size.Small">
             DB Setup
         </MudChip>
@@ -85,13 +85,7 @@
 
     // kept for legacy @code that remains below
     private List<CategorySummary> _categories = new();
-    private bool _categoriesLoading;
-    private string? _activeCategoryId;
     private PPDMTreeNode? _selectedTable;
-    private int _selectedCategoryId;
-    private string? _selectedCategoryName;
-    private List<string>? _selectedCategoryTables;
-    private string _crudPageKey = "default";
 
     protected override async Task OnInitializedAsync()
     {

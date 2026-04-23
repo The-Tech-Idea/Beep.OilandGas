@@ -6,7 +6,6 @@ using Beep.OilandGas.Drawing.DataLoaders.Models;
 using Beep.OilandGas.Drawing.Layers;
 using Beep.OilandGas.Drawing.Rendering;
 using Beep.OilandGas.Drawing.Scenes;
-using Beep.OilandGas.Drawing.Visualizations.Logs;
 
 namespace Beep.OilandGas.Drawing.Builders
 {

@@ -40,7 +40,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 
                 return Ok(hierarchy);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -68,7 +68,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 
                 return Ok(hierarchy);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -92,7 +92,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 var children = await _assetHierarchyService.GetAssetChildrenAsync(assetId, assetType, organizationId);
                 return Ok(children);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -116,7 +116,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 var path = await _assetHierarchyService.GetAssetPathAsync(assetId, assetType, organizationId);
                 return Ok(path);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -133,7 +133,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 var result = await _assetHierarchyService.ValidateAccessAsync(request.UserId, request.AssetPath);
                 return Ok(result);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -152,7 +152,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 var config = await _assetHierarchyService.GetHierarchyConfigAsync(organizationId);
                 return Ok(config);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
@@ -173,7 +173,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 var result = await _assetHierarchyService.UpdateHierarchyConfigAsync(organizationId, config);
                 return Ok(result);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return StatusCode(500, new { error = "An internal error occurred." });
             }

@@ -50,6 +50,13 @@ namespace Beep.OilandGas.Models.Data.Security
             set => SetProperty(ref TENANT_IDValue, value);
         }
 
+        private string? BUSINESS_ASSOCIATE_IDValue;
+        public string? BUSINESS_ASSOCIATE_ID
+        {
+            get => BUSINESS_ASSOCIATE_IDValue;
+            set => SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value);
+        }
+
         // Standard PPDM columns
 
     }

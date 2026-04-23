@@ -38,6 +38,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Remove="Builders\WellLogBuilder.cs" />
+		<Compile Remove="Builders\WellCorrelationBuilder.cs" />
+
 		<EmbeddedResource Include="LithologySymbols\USGS-FGDC-master\SED\*.svg" />
 		<EmbeddedResource Include="LithologySymbols\USGS-FGDC-master\IGM\*.svg" />
 		<EmbeddedResource Include="Assets\WellSchematic\svg\*.svg" />

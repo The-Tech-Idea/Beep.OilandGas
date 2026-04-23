@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Beep.OilandGas.LifeCycle.Services.Accounting;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.ApiService.Attributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,6 +11,7 @@ namespace Beep.OilandGas.ApiService.Controllers.WorkOrder;
 [ApiController]
 [Route("api/field/current/workorder")]
 [Authorize]
+[RequireCurrentFieldAccess]
 public class WorkOrderController : ControllerBase
 {
     private readonly IWorkOrderService            _workOrders;
@@ -96,7 +98,7 @@ public class WorkOrderController : ControllerBase
                 fieldId, instanceId, request.ToState, userId, request.Notes);
             return Ok(result);
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException)
         {
             return UnprocessableEntity(new { error = "An internal error occurred." });
         }

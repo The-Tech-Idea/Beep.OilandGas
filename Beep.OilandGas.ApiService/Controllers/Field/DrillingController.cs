@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Drilling;
+using Beep.OilandGas.ApiService.Attributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -14,6 +15,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
     [ApiController]
     [Route("api/field/current/drilling")]
     [Authorize]
+    [RequireCurrentFieldAccess]
     public class DrillingController : ControllerBase
     {
         private readonly IFieldOrchestrator _fieldOrchestrator;

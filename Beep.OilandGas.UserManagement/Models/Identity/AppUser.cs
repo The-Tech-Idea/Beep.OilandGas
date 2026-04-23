@@ -16,4 +16,14 @@ public class AppUser : ModelEntityBase
     public DateTime? LAST_PASSWORD_CHANGE_UTC { get; set; }
     public DateTime CREATED_UTC { get; set; } = DateTime.UtcNow;
     public DateTime UPDATED_UTC { get; set; } = DateTime.UtcNow;
+    // Lockout tracking
+    public int FAILED_LOGIN_COUNT { get; set; } = 0;
+    public DateTime? LOCKOUT_UNTIL_UTC { get; set; }
+    // Password policy metadata
+    public string? PASSWORD_POLICY_KEY { get; set; }
+    public int? MAX_PASSWORD_AGE_DAYS { get; set; }
+    public string MUST_CHANGE_PASSWORD_IND { get; set; } = "N";
+    // Lifecycle state transition audit
+    public DateTime? STATE_CHANGED_UTC { get; set; }
+    public string? STATE_CHANGED_BY_USER_ID { get; set; }
 }

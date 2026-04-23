@@ -1,3 +1,5 @@
+@inject Beep.OilandGas.Web.Services.IPersonaContextService PersonaContext
+
 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="og-h-full">
 
     <!-- ─── Dashboard ──────────────────────────────────────────── -->
@@ -10,7 +12,7 @@
     </MudButton>
 
     <!-- ─── Exploration ───────────────────────────────────────── -->
-    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="@GetWorkflowMenuClass("exploration")">
         <ActivatorContent>
             <MudButton Variant="Variant.Text" Class="nav-menu-btn">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -42,7 +44,7 @@
     </MudMenu>
 
     <!-- ─── Development ───────────────────────────────────────── -->
-    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="@GetWorkflowMenuClass("development")">
         <ActivatorContent>
             <MudButton Variant="Variant.Text" Class="nav-menu-btn">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -74,7 +76,7 @@
     </MudMenu>
 
     <!-- ─── Production ────────────────────────────────────────── -->
-    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="@GetWorkflowMenuClass("production")">
         <ActivatorContent>
             <MudButton Variant="Variant.Text" Class="nav-menu-btn">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -130,7 +132,7 @@
     </MudMenu>
 
     <!-- ─── Reservoir ─────────────────────────────────────────── -->
-    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="@GetWorkflowMenuClass("reservoir")">
         <ActivatorContent>
             <MudButton Variant="Variant.Text" Class="nav-menu-btn">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -174,7 +176,7 @@
     </MudMenu>
 
     <!-- ─── Economics ─────────────────────────────────────────── -->
-    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="@GetWorkflowMenuClass("economics")">
         <ActivatorContent>
             <MudButton Variant="Variant.Text" Class="nav-menu-btn">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -202,7 +204,7 @@
     </MudMenu>
 
     <!-- ─── Business Processes ───────────────────────────────── -->
-    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="@GetWorkflowMenuClass("processes")">
         <ActivatorContent>
             <MudButton Variant="Variant.Text" Class="nav-menu-btn">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -270,7 +272,7 @@
     </MudMenu>
 
     <!-- ─── HSE & Compliance ──────────────────────────────────── -->
-    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="@GetWorkflowMenuClass("hse")">
         <ActivatorContent>
             <MudButton Variant="Variant.Text" Class="nav-menu-btn">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -311,7 +313,7 @@
     </MudMenu>
 
     <!-- ─── Data Management (PPDM TreeView — admin/data managers) -->
-    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="@GetWorkflowMenuClass("data")">
         <ActivatorContent>
             <MudButton Variant="Variant.Text" Class="nav-menu-btn">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -342,312 +344,24 @@
         </ChildContent>
     </MudMenu>
 
-    <!-- ─── LEGACY SECTION (kept for backward compat — hidden on ≥md) ── -->
-    <!-- Field Management Menu -->
-    <MudMenu Icon="@Icons.Material.Filled.Map" Color="Color.Inherit" Class="d-none">
-        <ActivatorContent>
-            <MudButton Variant="Variant.Text" Class="og-nav-btn-legacy">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
-                    <MudIcon Icon="@Icons.Material.Filled.Map" Size="Size.Small" />
-                    <MudText Class="og-nav-label-legacy">Field Management</MudText>
-                </MudStack>
-            </MudButton>
-        </ActivatorContent>
-        <ChildContent>
-            <MudMenuItem Href="/field-management/overview">
-                <MudIcon Icon="@Icons.Material.Filled.Dashboard" Size="Size.Small" Class="mr-2" />
-                Overview
-            </MudMenuItem>
-            <MudMenuItem Href="/field-management/fields">
-                <MudIcon Icon="@Icons.Material.Filled.Map" Size="Size.Small" Class="mr-2" />
-                Fields
-            </MudMenuItem>
-            <MudMenuItem Href="/field-management/pools">
-                <MudIcon Icon="@Icons.Material.Filled.WaterDrop" Size="Size.Small" Class="mr-2" />
-                Pools
-            </MudMenuItem>
-            <MudMenuItem Href="/field-management/reservoirs">
-                <MudIcon Icon="@Icons.Material.Filled.Storage" Size="Size.Small" Class="mr-2" />
-                Reservoirs
-            </MudMenuItem>
-        </ChildContent>
-    </MudMenu>
-    
-    <!-- Facility Management Menu -->
-    <MudMenu Icon="@Icons.Material.Filled.Business" Color="Color.Inherit" Class="d-none">
-        <ActivatorContent>
-            <MudButton Variant="Variant.Text" Class="og-nav-btn-legacy">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
-                    <MudIcon Icon="@Icons.Material.Filled.Business" Size="Size.Small" />
-                    <MudText Class="og-nav-label-legacy">Facility Management</MudText>
-                </MudStack>
-            </MudButton>
-        </ActivatorContent>
-        <ChildContent>
-            <MudMenuItem Href="/facilities/overview">
-                <MudIcon Icon="@Icons.Material.Filled.Dashboard" Size="Size.Small" Class="mr-2" />
-                Overview
-            </MudMenuItem>
-            <MudMenuItem Href="/facilities/production">
-                <MudIcon Icon="@Icons.Material.Filled.Factory" Size="Size.Small" Class="mr-2" />
-                Production Facilities
-            </MudMenuItem>
-            <MudMenuItem Href="/facilities/processing">
-                <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Small" Class="mr-2" />
-                Processing Facilities
-            </MudMenuItem>
-            <MudMenuItem Href="/facilities/infrastructure">
-                <MudIcon Icon="@Icons.Material.Filled.Construction" Size="Size.Small" Class="mr-2" />
-                Infrastructure
-            </MudMenuItem>
-        </ChildContent>
-    </MudMenu>
-    
-    <!-- Reservoir Management Menu -->
-    <MudMenu Icon="@Icons.Material.Filled.Storage" Color="Color.Inherit" Class="d-none">
-        <ActivatorContent>
-            <MudButton Variant="Variant.Text" Class="og-nav-btn-legacy">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
-                    <MudIcon Icon="@Icons.Material.Filled.Storage" Size="Size.Small" />
-                    <MudText Class="og-nav-label-legacy">Reservoir Management</MudText>
-                </MudStack>
-            </MudButton>
-        </ActivatorContent>
-        <ChildContent>
-            <MudMenuItem Href="/reservoir/characterization">
-                <MudIcon Icon="@Icons.Material.Filled.Science" Size="Size.Small" Class="mr-2" />
-                Characterization
-            </MudMenuItem>
-            <MudMenuItem Href="/reservoir/simulation">
-                <MudIcon Icon="@Icons.Material.Filled.Calculate" Size="Size.Small" Class="mr-2" />
-                Simulation
-            </MudMenuItem>
-            <MudMenuItem Href="/reservoir/monitoring">
-                <MudIcon Icon="@Icons.Material.Filled.Monitor" Size="Size.Small" Class="mr-2" />
-                Monitoring
-            </MudMenuItem>
-            <MudMenuItem Href="/reservoir/enhanced-recovery">
-                <MudIcon Icon="@Icons.Material.Filled.WaterDrop" Size="Size.Small" Class="mr-2" />
-                Enhanced Recovery
-            </MudMenuItem>
-        </ChildContent>
-    </MudMenu>
-    
-    <!-- Process & Analysis Menu -->
-    <MudMenu Icon="@Icons.Material.Filled.Analytics" Color="Color.Inherit" Class="d-none">
-        <ActivatorContent>
-            <MudButton Variant="Variant.Text" Class="og-nav-btn-legacy">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
-                    <MudIcon Icon="@Icons.Material.Filled.Analytics" Size="Size.Small" />
-                    <MudText Class="og-nav-label-legacy">Process &amp; Analysis</MudText>
-                </MudStack>
-            </MudButton>
-        </ActivatorContent>
-        <ChildContent>
-            <!-- Production Analysis -->
-            <MudMenu Label="Production Analysis" StartIcon="@Icons.Material.Filled.TrendingUp">
-                <MudMenuItem Href="/analysis/decline-curve">
-                    <MudIcon Icon="@Icons.Material.Filled.ShowChart" Size="Size.Small" Class="mr-2" />
-                    Decline Curve Analysis
-                </MudMenuItem>
-                <MudMenuItem Href="/analysis/production-forecasting">
-                    <MudIcon Icon="@Icons.Material.Filled.Timeline" Size="Size.Small" Class="mr-2" />
-                    Production Forecasting
-                </MudMenuItem>
-                <MudMenuItem Href="/analysis/well-test">
-                    <MudIcon Icon="@Icons.Material.Filled.Assessment" Size="Size.Small" Class="mr-2" />
-                    Well Test Analysis
-                </MudMenuItem>
-            </MudMenu>
-            
-            <!-- Well Performance -->
-            <MudMenu Label="Well Performance" StartIcon="@Icons.Material.Filled.OilBarrel">
-                <MudMenuItem Href="/analysis/nodal">
-                    <MudIcon Icon="@Icons.Material.Filled.Polyline" Size="Size.Small" Class="mr-2" />
-                    Nodal Analysis
-                </MudMenuItem>
-                <MudMenuItem Href="/analysis/choke">
-                    <MudIcon Icon="@Icons.Material.Filled.Tune" Size="Size.Small" Class="mr-2" />
-                    Choke Analysis
-                </MudMenuItem>
-            </MudMenu>
-            
-            <!-- Artificial Lift -->
-            <MudMenu Label="Artificial Lift" StartIcon="@Icons.Material.Filled.TrendingUp">
-                <MudMenuItem Href="/analysis/gas-lift">
-                    <MudIcon Icon="@Icons.Material.Filled.Air" Size="Size.Small" Class="mr-2" />
-                    Gas Lift
-                </MudMenuItem>
-                <MudMenuItem Href="/analysis/sucker-rod">
-                    <MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Size="Size.Small" Class="mr-2" />
-                    Sucker Rod Pumping
-                </MudMenuItem>
-                <MudMenuItem Href="/analysis/plunger-lift">
-                    <MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Size="Size.Small" Class="mr-2" />
-                    Plunger Lift
-                </MudMenuItem>
-                <MudMenuItem Href="/analysis/hydraulic-pump">
-                    <MudIcon Icon="@Icons.Material.Filled.WaterDrop" Size="Size.Small" Class="mr-2" />
-                    Hydraulic Pumps
-                </MudMenuItem>
-            </MudMenu>
-            
-            <!-- Equipment Analysis -->
-            <MudMenu Label="Equipment Analysis" StartIcon="@Icons.Material.Filled.PrecisionManufacturing">
-                <MudMenuItem Href="/analysis/compressor">
-                    <MudIcon Icon="@Icons.Material.Filled.Air" Size="Size.Small" Class="mr-2" />
-                    Compressor Analysis
-                </MudMenuItem>
-                <MudMenuItem Href="/analysis/pump-performance">
-                    <MudIcon Icon="@Icons.Material.Filled.WaterDrop" Size="Size.Small" Class="mr-2" />
-                    Pump Performance
-                </MudMenuItem>
-                <MudMenuItem Href="/analysis/pipeline">
-                    <MudIcon Icon="@Icons.Material.Filled.Polyline" Size="Size.Small" Class="mr-2" />
-                    Pipeline Analysis
-                </MudMenuItem>
-            </MudMenu>
-            
-            <MudDivider />
-            
-            <!-- Fluid Properties -->
-            <MudMenu Label="Fluid Properties" StartIcon="@Icons.Material.Filled.Science">
-                <MudMenuItem Href="/analysis/gas-properties">
-                    <MudIcon Icon="@Icons.Material.Filled.Air" Size="Size.Small" Class="mr-2" />
-                    Gas Properties
-                </MudMenuItem>
-                <MudMenuItem Href="/analysis/oil-properties">
-                    <MudIcon Icon="@Icons.Material.Filled.WaterDrop" Size="Size.Small" Class="mr-2" />
-                    Oil Properties
-                </MudMenuItem>
-                <MudMenuItem Href="/analysis/flash-calculations">
-                    <MudIcon Icon="@Icons.Material.Filled.Calculate" Size="Size.Small" Class="mr-2" />
-                    Flash Calculations
-                </MudMenuItem>
-            </MudMenu>
-            
-            <!-- Economic Analysis -->
-            <MudMenuItem Href="/analysis/economic">
-                <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Size="Size.Small" Class="mr-2" />
-                Economic Analysis
-            </MudMenuItem>
-            
-            <!-- Visualization -->
-            <MudMenuItem Href="/analysis/heatmap">
-                <MudIcon Icon="@Icons.Material.Filled.HeatPump" Size="Size.Small" Class="mr-2" />
-                Heat Map
-            </MudMenuItem>
-        </ChildContent>
-    </MudMenu>
-    
-    <!-- Accounting Menu -->
-    <MudMenu Icon="@Icons.Material.Filled.AccountBalance" Color="Color.Inherit" Class="d-none">
-        <ActivatorContent>
-            <MudButton Variant="Variant.Text" Class="og-nav-btn-legacy">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
-                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Small" />
-                    <MudText Class="og-nav-label-legacy">Accounting</MudText>
-                </MudStack>
-            </MudButton>
-        </ActivatorContent>
-        <ChildContent>
-            <MudMenuItem Href="/accounting/production">
-                <MudIcon Icon="@Icons.Material.Filled.Assessment" Size="Size.Small" Class="mr-2" />
-                Production Accounting
-            </MudMenuItem>
-            <MudMenuItem Href="/accounting/full-cost">
-                <MudIcon Icon="@Icons.Material.Filled.Calculate" Size="Size.Small" Class="mr-2" />
-                Full Cost Method
-            </MudMenuItem>
-            <MudMenuItem Href="/accounting/successful-efforts">
-                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Class="mr-2" />
-                Successful Efforts
-            </MudMenuItem>
-            <MudMenuItem Href="/accounting/reports">
-                <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" Class="mr-2" />
-                Financial Reports
-            </MudMenuItem>
-        </ChildContent>
-    </MudMenu>
-    
-    <!-- Field Lifecycle Menu -->
-    <MudMenu Icon="@Icons.Material.Filled.Timeline" Color="Color.Inherit" Class="d-none">
-        <ActivatorContent>
-            <MudButton Variant="Variant.Text" Class="og-nav-btn-legacy">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
-                    <MudIcon Icon="@Icons.Material.Filled.Timeline" Size="Size.Small" />
-                    <MudText Class="og-nav-label-legacy">Field Lifecycle</MudText>
-                </MudStack>
-            </MudButton>
-        </ActivatorContent>
-        <ChildContent>
-            <MudMenuItem Href="/lifecycle/prospect-identification">
-                <MudIcon Icon="@Icons.Material.Filled.Explore" Size="Size.Small" Class="mr-2" />
-                Prospect Identification
-            </MudMenuItem>
-            <MudMenuItem Href="/lifecycle/lease-acquisition">
-                <MudIcon Icon="@Icons.Material.Filled.Gavel" Size="Size.Small" Class="mr-2" />
-                Lease Acquisition
-            </MudMenuItem>
-            <MudMenuItem Href="/lifecycle/development-planning">
-                <MudIcon Icon="@Icons.Material.Filled.Build" Size="Size.Small" Class="mr-2" />
-                Development Planning
-            </MudMenuItem>
-            <MudMenuItem Href="/lifecycle/drilling-construction">
-                <MudIcon Icon="@Icons.Material.Filled.Construction" Size="Size.Small" Class="mr-2" />
-                Drilling & Construction
-            </MudMenuItem>
-            <MudMenuItem Href="/lifecycle/production-operations">
-                <MudIcon Icon="@Icons.Material.Filled.OilBarrel" Size="Size.Small" Class="mr-2" />
-                Production Operations
-            </MudMenuItem>
-            <MudMenuItem Href="/lifecycle/enhanced-recovery">
-                <MudIcon Icon="@Icons.Material.Filled.WaterDrop" Size="Size.Small" Class="mr-2" />
-                Enhanced Recovery
-            </MudMenuItem>
-            <MudMenuItem Href="/lifecycle/decommissioning">
-                <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Class="mr-2" />
-                Decommissioning
-            </MudMenuItem>
-        </ChildContent>
-    </MudMenu>
-    
-    <!-- Data Management Menu -->
-    <MudMenu Icon="@Icons.Material.Filled.Storage" Color="Color.Inherit" Class="d-none">
-        <ActivatorContent>
-            <MudButton Variant="Variant.Text" Class="og-nav-btn-legacy">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
-                    <MudIcon Icon="@Icons.Material.Filled.Storage" Size="Size.Small" />
-                    <MudText Class="og-nav-label-legacy">Data Management</MudText>
-                </MudStack>
-            </MudButton>
-        </ActivatorContent>
-        <ChildContent>
-            <MudMenuItem Href="/ppdm39/data-management">
-                <MudIcon Icon="@Icons.Material.Filled.TableChart" Size="Size.Small" Class="mr-2" />
-                PPDM39 Tables
-            </MudMenuItem>
-            <MudMenuItem Href="/data/database-setup">
-                <MudIcon Icon="@Icons.Material.Filled.Build" Size="Size.Small" Class="mr-2" />
-                Database Setup
-            </MudMenuItem>
-            <MudDivider />
-            <MudMenuItem Href="/data/quality-dashboard">
-                <MudIcon Icon="@Icons.Material.Filled.Dashboard" Size="Size.Small" Class="mr-2" />
-                Quality Dashboard
-            </MudMenuItem>
-            <MudMenuItem Href="/data/versioning">
-                <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Small" Class="mr-2" />
-                Versioning
-            </MudMenuItem>
-            <MudMenuItem Href="/data/audit">
-                <MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Small" Class="mr-2" />
-                Access Audit
-            </MudMenuItem>
-            <MudMenuItem Href="/data/validation">
-                <MudIcon Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Class="mr-2" />
-                Validation
-            </MudMenuItem>
-        </ChildContent>
-    </MudMenu>
 </MudStack>
+
+@code {
+    private bool _personaLoaded;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await PersonaContext.EnsureLoadedAsync();
+        _personaLoaded = true;
+    }
+
+    private string GetWorkflowMenuClass(string workflow)
+    {
+        if (!_personaLoaded)
+        {
+            return string.Empty;
+        }
+
+        return PersonaContext.CanAccessWorkflow(workflow) ? string.Empty : "d-none";
+    }
+}

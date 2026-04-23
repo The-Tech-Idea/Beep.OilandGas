@@ -1,6 +1,6 @@
 # Phase 9 — Data, Admin, and Workflow Integration
 
-> Status: Planned  
+> Status: Done  
 > Depends On: Phase 8  
 > Goal: Rationalize PPDM39 data surfaces, admin tools, compliance/permits, accounting, and workflow pages into a coherent support layer around the engineer-facing workflows.
 > Detailed subplans: `Phase9-DataAdminAndWorkflowIntegration/README.md`
@@ -58,12 +58,12 @@ This phase focuses on the non-calculation, non-core-operations support systems:
 
 | ID | Task | Status |
 |----|------|--------|
-| 9.1 | Choose the canonical admin/data route tree | Planned |
-| 9.2 | Consolidate PPDM39 setup, seeding, and schema pages under one flow | Planned |
-| 9.3 | Add or refine typed clients for data admin, workflow, permits/compliance, and accounting | Planned |
-| 9.4 | Refactor accounting pages to a single finance integration style | Planned |
-| 9.5 | Refactor workflow and compliance pages to use dedicated process/compliance clients | Planned |
-| 9.6 | Align role-based layouts and navigation to canonical routes | Planned |
+| 9.1 | Choose the canonical admin/data route tree | Done |
+| 9.2 | Consolidate PPDM39 setup, seeding, and schema pages under one flow | Done |
+| 9.3 | Add or refine typed clients for data admin, workflow, permits/compliance, and accounting | Done |
+| 9.4 | Refactor accounting pages to a single finance integration style | Done |
+| 9.5 | Refactor workflow and compliance pages to use dedicated process/compliance clients | Done |
+| 9.6 | Align role-based layouts and navigation to canonical routes | Done |
 
 ---
 

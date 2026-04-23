@@ -13,4 +13,6 @@ public class AppUserRole : ModelEntityBase
     public string? ASSIGNMENT_REASON { get; set; }
     public DateTime EFFECTIVE_FROM_UTC { get; set; } = DateTime.UtcNow;
     public DateTime? EFFECTIVE_TO_UTC { get; set; }
+    public string? APPROVAL_STATUS { get; set; }
+    public string? APPROVAL_REFERENCE { get; set; }
 }
