@@ -1,263 +1,72 @@
 # Beep.OilandGas.Drawing - Enhancement Plan
 
-## Project Overview
-Beep.OilandGas.Drawing is a unified, industry-standard drawing framework for oil and gas visualizations. It provides a single, extensible platform for creating professional visualizations including well schematics, log displays, reservoir maps, production charts, and more.
+## Purpose
 
-## Vision
-Create a comprehensive drawing framework that follows industry best practices from leading oil and gas software platforms (Petrel, Kingdom, Techlog, etc.), providing:
-- Unified rendering engine for all visualization types
-- Industry-standard color schemes and symbols
-- Support for multiple coordinate systems
-- High performance for large datasets
-- Extensible architecture for custom visualizations
+This plan restructures the drawing library roadmap into a multi-document planning set so implementation can proceed in phases instead of through one broad backlog. The goal is to turn `Beep.OilandGas.Drawing` into a standards-aware visualization platform for petroleum engineering, subsurface interpretation, production surveillance, and field-level map workflows.
 
-## Current State
+## Current Baseline In Code
 
-### Foundation ✅
-- Core drawing engine with layer system
-- Viewport and coordinate transformations
-- Basic well schematic rendering
-- Color palettes and themes
-- Image export capabilities
+The library already has a useful technical starting point and should be extended from that foundation rather than redesigned from scratch.
 
-### To Be Implemented
-- Log display renderers
-- Reservoir visualization
-- Production charts
-- Advanced coordinate systems
-- Performance optimizations
-- Interactive features
+### Implemented surfaces
 
-## Enhancement Roadmap
+- `Core/DrawingEngine.cs` and `Core/Viewport.cs` provide the render loop and viewport abstraction.
+- `Layers/ILayer.cs` and `Layers/LayerBase.cs` provide the existing layer contract.
+- `Visualizations/WellSchematic/WellSchematicLayer.cs` renders basic well schematics.
+- `Visualizations/Reservoir/ReservoirLayer.cs` already renders layered reservoir intervals with lithology colors, patterns, and fluid contacts.
+- `CoordinateSystems/CoordinateSystem.cs` and `CoordinateSystems/DepthCoordinateSystem.cs` provide depth and generic coordinate handling.
+- `DataLoaders` already includes LAS, DLIS, WITSML, PRODML, RESQML, PPDM38, file-based, and SeaBed loaders.
+- `Styling` already contains lithology palettes, SVG lithology patterns, and FGDC-oriented assets.
+- `Export/ImageExporter.cs` already covers PNG, JPEG, and WebP.
 
-### Phase 1: Core Framework Foundation (Priority: High)
-**Timeline: 4-5 weeks**
+### Confirmed gaps
 
-1. **Core Engine** ✅
-   - DrawingEngine with layer management
-   - Viewport and camera control
-   - Coordinate system support
-   - Event system
+- No contouring or gridding engine exists yet.
+- No production-ready multi-track log renderer exists yet.
+- No map scene model exists for CRS-aware plan view or basemap overlays.
+- No seismic overlay renderer exists yet.
+- Facility, production network, and HSE overlay views are not yet formalized.
+- Export coverage is still image-first and not yet presentation, vector, or GIS aware.
 
-2. **Layer System** ✅
-   - ILayer interface
-   - LayerBase implementation
-   - Z-ordering and visibility
-   - Opacity support
+## Planning Set
 
-3. **Styling System** ✅
-   - ColorPalette with industry standards
-   - Theme support (Standard, Dark, HighContrast)
-   - Custom color mappings
-   - Gradient support
+Use this file as the index. The detailed plan is split into focused documents:
 
-4. **Export System** ✅
-   - PNG/JPEG/WebP export
-   - Quality control
-   - Error handling
+- [Standards And Feature Matrix](.plans/STANDARDS_AND_FEATURE_MATRIX.md)
+- [PPDM Drawing Domain Map](.plans/PPDM_DRAWING_DOMAIN_MAP.md)
+- [Phase 01 - Core Platform And CRS](.plans/PHASE_01_CORE_PLATFORM_AND_CRS.md)
+- [Phase 02 - Well Schematics And Survey](.plans/PHASE_02_WELL_SCHEMATICS_AND_SURVEY.md)
+- [Phase 03 - Logs, Lithology And Correlation](.plans/PHASE_03_LOGS_LITHOLOGY_AND_CORRELATION.md)
+- [Phase 04 - Reservoir Maps And Contours](.plans/PHASE_04_RESERVOIR_MAPS_AND_CONTOURS.md)
+- [Phase 05 - Spatial, Seismic And Surface Systems](.plans/PHASE_05_SPATIAL_SEISMIC_AND_SURFACE_SYSTEMS.md)
+- [Phase 06 - Export, Performance And Adoption](.plans/PHASE_06_EXPORT_PERFORMANCE_AND_ADOPTION.md)
+- [Todo Tracker](.plans/TODO_TRACKER.md)
 
-### Phase 2: Well Schematic Visualization (Priority: High)
-**Timeline: 3-4 weeks**
+## Phase Summary
 
-1. **Enhanced Well Schematic Renderer**
-   - Vertical and deviated wellbores
-   - Casing, tubing, equipment rendering
-   - Perforation visualization
-   - Equipment symbols (SVG support)
-   - Depth scale and annotations
+| Phase | Theme | Main Outcome |
+| --- | --- | --- |
+| 01 | Platform, geometry, CRS, scene contracts | A stable technical base for map, section, and depth-domain rendering |
+| 02 | Well schematics, deviation, completion views | Engineer-grade wellbore and completion visualization |
+| 03 | Logs, lithology, zonation, correlation | Multi-track log display and interpretation workflows |
+| 04 | Reservoir maps, contouring, cross-sections | Property maps, contours, sections, and reservoir interpretation views |
+| 05 | Spatial layers, seismic, facilities, production systems | Integrated field map and surface-system visualization |
+| 06 | Export, validation, performance, adoption | Production readiness, regression confidence, and integration support |
 
-2. **Well Schematic Builder** ✅
-   - Fluent API for configuration
-   - Preset configurations
-   - Customization options
+## Planning Principles
 
-3. **Performance Optimization**
-   - Viewport culling
-   - Level-of-detail rendering
-   - Caching strategies
+- Standards first: implement around accepted interchange standards before inventing custom formats.
+- PPDM aligned: use PPDM subject areas and table families as planning anchors for data coverage.
+- Rendering separation: normalize incoming data before rendering so the same scene can be fed by PPDM, Energistics, or flat files.
+- Petroleum engineer focus: prioritize workflows such as contour maps, well correlations, trajectory review, completion views, reservoir sections, facility context, and production system visibility.
+- Iterative delivery: every phase should leave behind shippable assets, not only architectural preparation.
 
-### Phase 3: Log Display Visualization (Priority: High)
-**Timeline: 4-5 weeks**
+## Delivery Guidance
 
-1. **Log Display Renderer**
-   - Wireline log rendering
-   - Multiple log tracks
-   - Track headers and labels
-   - Depth correlation
-   - Log curve styling
-
-2. **Log Types Support**
-   - Gamma Ray logs
-   - Resistivity logs
-   - Porosity logs (Density, Neutron, Sonic)
-   - Caliper logs
-   - Production logs
-   - Mud logs
-
-3. **Log Format Support**
-   - LAS (Log ASCII Standard) import
-   - WITSML log data
-   - Custom log formats
-
-4. **Log Features**
-   - Curve scaling and normalization
-   - Multiple scales per track
-   - Shading and fill patterns
-   - Cross-plot support
-
-### Phase 4: Reservoir Visualization (Priority: Medium)
-**Timeline: 5-6 weeks**
-
-1. **Reservoir Map Renderer**
-   - Structure maps
-   - Contour maps
-   - Property maps
-   - Well location display
-   - Grid display
-
-2. **Cross-Section Renderer**
-   - 2D cross-sections
-   - Multiple well correlation
-   - Formation display
-   - Fault visualization
-   - Property overlays
-
-3. **3D Visualization** (Future)
-   - 3D reservoir models
-   - Interactive 3D view
-   - Volume rendering
-
-### Phase 5: Production Charts (Priority: Medium)
-**Timeline: 3-4 weeks**
-
-1. **Production Chart Renderer**
-   - Production curves
-   - Decline curves
-   - Water cut charts
-   - Gas-oil ratio charts
-   - Cumulative production
-
-2. **Chart Types**
-   - Time series charts
-   - Scatter plots
-   - Bar charts
-   - Pie charts
-
-3. **Chart Features**
-   - Multiple series
-   - Legends
-   - Axis labels and formatting
-   - Grid and annotations
-
-### Phase 6: Advanced Features (Priority: Medium)
-**Timeline: 4-5 weeks**
-
-1. **Interactive Features**
-   - Mouse wheel zoom
-   - Pan and drag
-   - Click selection
-   - Tooltips
-   - Context menus
-
-2. **Measurement Tools**
-   - Distance measurement
-   - Depth measurement
-   - Area calculation
-   - Volume calculation
-
-3. **Annotation System**
-   - Text labels
-   - Callouts
-   - Measurement lines
-   - Custom annotations
-
-### Phase 7: Performance & Optimization (Priority: High)
-**Timeline: 3-4 weeks**
-
-1. **Rendering Optimization**
-   - Viewport culling
-   - Level-of-detail (LOD)
-   - Caching strategies
-   - Parallel rendering
-
-2. **Memory Management**
-   - IDisposable pattern
-   - Resource pooling
-   - Efficient data structures
-
-3. **Large Dataset Support**
-   - Virtual scrolling
-   - Progressive rendering
-   - Background rendering
-
-### Phase 8: Export & Integration (Priority: Medium)
-**Timeline: 3-4 weeks**
-
-1. **Export Formats**
-   - PNG/JPEG/WebP ✅
-   - PDF export
-   - SVG export
-   - DXF/DWG (CAD formats)
-
-2. **Print Support**
-   - Print preview
-   - Page layout
-   - Multi-page support
-
-3. **Data Integration**
-   - WITSML import/export
-   - LAS format support
-   - Excel/CSV import
-   - Database integration
-
-## Industry Standards Compliance
-
-### API Standards
-- API RP 11L: Recommended Practice for Electric Submersible Pump Installations
-- API RP 11S: Recommended Practice for Operation, Maintenance, and Troubleshooting of Electric Submersible Pump Installations
-- API RP 14B: Recommended Practice for Design, Installation, Repair, and Operation of Subsurface Safety Valve Systems
-
-### Color Standards
-- Industry-standard color schemes for logs
-- Standard equipment colors
-- Reservoir fluid colors (oil=black, gas=red, water=blue)
-
-### Symbol Standards
-- Standard equipment symbols
-- API symbol library
-- Custom symbol support
-
-## Architecture Principles
-
-1. **Separation of Concerns**: Each visualization type is a separate layer
-2. **Extensibility**: Easy to add new visualization types
-3. **Performance**: Optimized for large datasets
-4. **Standards Compliance**: Follows industry best practices
-5. **Maintainability**: Clean code with comprehensive documentation
-
-## Design Patterns
-
-- **Strategy Pattern**: Different rendering strategies for different visualization types
-- **Factory Pattern**: Creation of visualization components
-- **Builder Pattern**: Fluent API for building visualizations
-- **Observer Pattern**: Event-driven architecture
-- **Template Method**: Consistent rendering pipeline
-
-## Performance Targets
-
-- Simple visualization: < 100ms
-- Complex visualization (1000+ elements): < 500ms
-- Large dataset (10,000+ points): < 2s
-- Export to image: < 1s
-- Memory usage: < 500MB for typical visualizations
-
-## Success Metrics
-
-- ✅ Support for 5+ visualization types
-- ✅ Industry-standard color schemes
-- ✅ 90%+ code coverage
-- ✅ Performance targets met
-- ✅ Comprehensive documentation
+- Finish Phase 01 before building broad map features or contouring.
+- Build log and survey capability before pushing harder into reservoir interpretation.
+- Treat contouring, CRS correctness, and uncertainty handling as engineering requirements, not polish.
+- Use the tracker file as the live execution document and keep the phase docs stable as planning references.
 - ✅ Extensible architecture
 
 ## Future Considerations

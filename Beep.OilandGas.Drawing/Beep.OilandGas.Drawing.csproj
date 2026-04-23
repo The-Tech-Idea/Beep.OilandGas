@@ -40,6 +40,7 @@
 	<ItemGroup>
 		<EmbeddedResource Include="LithologySymbols\USGS-FGDC-master\SED\*.svg" />
 		<EmbeddedResource Include="LithologySymbols\USGS-FGDC-master\IGM\*.svg" />
+		<EmbeddedResource Include="Assets\WellSchematic\svg\*.svg" />
 	</ItemGroup>
 
 </Project>

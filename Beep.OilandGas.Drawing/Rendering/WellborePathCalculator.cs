@@ -16,12 +16,12 @@ namespace Beep.OilandGas.Drawing.Rendering
         /// Calculates a wellbore path from a deviation survey.
         /// </summary>
         /// <param name="survey">The deviation survey.</param>
-        /// <param name="depthSystem">The depth coordinate system.</param>
+        /// <param name="depthSystem">The depth transform.</param>
         /// <param name="horizontalStretchFactor">Stretch factor for horizontal sections.</param>
         /// <returns>List of points representing the wellbore path in screen coordinates.</returns>
         public static List<SKPoint> CalculatePath(
             DeviationSurvey survey,
-            DepthCoordinateSystem depthSystem,
+            DepthTransform depthSystem,
             float horizontalStretchFactor = 1f)
         {
             if (survey == null || survey.SurveyPoints == null || survey.SurveyPoints.Count == 0)
@@ -69,13 +69,13 @@ namespace Beep.OilandGas.Drawing.Rendering
         /// </summary>
         /// <param name="topDepth">Top depth.</param>
         /// <param name="bottomDepth">Bottom depth.</param>
-        /// <param name="depthSystem">The depth coordinate system.</param>
+        /// <param name="depthSystem">The depth transform.</param>
         /// <param name="xPosition">X position for the wellbore.</param>
         /// <returns>List of points representing the vertical wellbore path.</returns>
         public static List<SKPoint> CalculateVerticalPath(
             double topDepth,
             double bottomDepth,
-            DepthCoordinateSystem depthSystem,
+            DepthTransform depthSystem,
             float xPosition = 0)
         {
             var path = new List<SKPoint>();
@@ -94,7 +94,7 @@ namespace Beep.OilandGas.Drawing.Rendering
         /// <param name="verticalTopDepth">Top of vertical section.</param>
         /// <param name="verticalBottomDepth">Bottom of vertical section (kickoff point).</param>
         /// <param name="horizontalLength">Length of horizontal section.</param>
-        /// <param name="depthSystem">The depth coordinate system.</param>
+        /// <param name="depthSystem">The depth transform.</param>
         /// <param name="xPosition">X position for the vertical section.</param>
         /// <param name="horizontalStretchFactor">Stretch factor for horizontal section.</param>
         /// <param name="horizontalAlignment">How to align horizontal section.</param>
@@ -103,7 +103,7 @@ namespace Beep.OilandGas.Drawing.Rendering
             double verticalTopDepth,
             double verticalBottomDepth,
             double horizontalLength,
-            DepthCoordinateSystem depthSystem,
+            DepthTransform depthSystem,
             float xPosition = 0,
             float horizontalStretchFactor = 10f,
             HorizontalSectionAlignment horizontalAlignment = HorizontalSectionAlignment.LaterallyCompressed)
@@ -140,13 +140,13 @@ namespace Beep.OilandGas.Drawing.Rendering
         /// </summary>
         /// <param name="path">The wellbore path.</param>
         /// <param name="pointIndex">The point index.</param>
-        /// <param name="depthSystem">The depth coordinate system.</param>
+        /// <param name="depthSystem">The depth transform.</param>
         /// <param name="survey">The deviation survey (for directional wells).</param>
         /// <returns>The depth at the point, or null if not found.</returns>
         public static double? GetDepthAtPoint(
             List<SKPoint> path,
             int pointIndex,
-            DepthCoordinateSystem depthSystem,
+            DepthTransform depthSystem,
             DeviationSurvey survey = null)
         {
             if (path == null || pointIndex < 0 || pointIndex >= path.Count)

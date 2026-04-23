@@ -189,11 +189,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
                 // Extract log data from logical file
                 ExtractLogData(logicalFile, result.Data, configuration, stats);
 
-                // Apply PWLS mapping if enabled
-                if (configuration.UsePwlsMapping)
-                {
-                    ApplyPwlsMapping(result.Data, configuration);
-                }
+                LogDataIngestionNormalizer.Normalize(result.Data, configuration);
 
                 result.Success = true;
             }
@@ -434,10 +430,6 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
                 {
                     FilterByDepth(logData, curveValues, configuration);
                 }
-
-                // Apply curve filter
-                if (configuration.CurvesToLoad != null && !configuration.CurvesToLoad.Contains(curveName))
-                    continue;
 
                 logData.Curves[curveName] = curveValues;
                 logData.CurveMetadata[curveName] = new LogCurveMetadata

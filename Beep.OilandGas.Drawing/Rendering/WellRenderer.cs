@@ -16,7 +16,7 @@ namespace Beep.OilandGas.Drawing.Rendering
         private readonly List<WellData> wells;
         private readonly Dictionary<string, DeviationSurvey> deviationSurveys; // Well UWI + Borehole ID -> Survey
         private readonly WellRendererConfiguration configuration;
-        private readonly Dictionary<string, DepthCoordinateSystem> depthSystems;
+        private readonly Dictionary<string, DepthTransform> depthSystems;
         private readonly Dictionary<string, List<SKPoint>> wellborePaths;
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace Beep.OilandGas.Drawing.Rendering
             this.deviationSurveys = deviationSurveys ?? new Dictionary<string, DeviationSurvey>();
             this.configuration = configuration ?? new WellRendererConfiguration();
 
-            depthSystems = new Dictionary<string, DepthCoordinateSystem>();
+            depthSystems = new Dictionary<string, DepthTransform>();
             wellborePaths = new Dictionary<string, List<SKPoint>>();
 
             Initialize();
@@ -78,7 +78,7 @@ namespace Beep.OilandGas.Drawing.Rendering
                     string key = GetWellBoreholeKey(well.UWI, borehole.UBHI ?? borehole.GuidID);
                     
                     // Create depth system for this borehole
-                    var depthSystem = new DepthCoordinateSystem(
+                    var depthSystem = new DepthTransform(
                         Math.Min(borehole.TopDepth, minDepth),
                         Math.Max(borehole.BottomDepth, maxDepth),
                         1000f); // Default, will be updated on render
@@ -149,6 +149,7 @@ namespace Beep.OilandGas.Drawing.Rendering
             // Draw grid if enabled
             if (configuration.ShowGrid)
             {
+                UpdateDepthTransforms(height);
                 DrawGrid(canvas, width, height);
             }
 
@@ -207,10 +208,8 @@ namespace Beep.OilandGas.Drawing.Rendering
             var depthSystem = depthSystems[key];
 
             // Update depth system with actual canvas height
-            depthSystem = new DepthCoordinateSystem(
-                depthSystem.MinValue,
-                depthSystem.MaxValue,
-                canvasHeight);
+            depthSystem = depthSystem.WithCanvasHeight(canvasHeight);
+            depthSystems[key] = depthSystem;
 
             // Recalculate path if needed
             string surveyKey = $"{well.UWI}_{borehole.UBHI ?? borehole.GuidID}";
@@ -304,7 +303,7 @@ namespace Beep.OilandGas.Drawing.Rendering
             WellData_Borehole borehole,
             List<SKPoint> wellborePath,
             float xOffset,
-            DepthCoordinateSystem depthSystem)
+            DepthTransform depthSystem)
         {
             if (borehole.Casing == null)
                 return;
@@ -354,7 +353,7 @@ namespace Beep.OilandGas.Drawing.Rendering
             WellData_Casing casing,
             float xOffset,
             float halfWidth,
-            DepthCoordinateSystem depthSystem)
+            DepthTransform depthSystem)
         {
             // Find path segment for casing depth range
             float topY = depthSystem.ToScreenY(casing.TopDepth, null);
@@ -399,7 +398,7 @@ namespace Beep.OilandGas.Drawing.Rendering
             WellData_Borehole borehole,
             List<SKPoint> wellborePath,
             float xOffset,
-            DepthCoordinateSystem depthSystem)
+            DepthTransform depthSystem)
         {
             if (borehole.Tubing == null)
                 return;
@@ -438,7 +437,7 @@ namespace Beep.OilandGas.Drawing.Rendering
             List<SKPoint> path,
             WellData_Tubing tubing,
             float xOffset,
-            DepthCoordinateSystem depthSystem)
+            DepthTransform depthSystem)
         {
             float topY = depthSystem.ToScreenY(tubing.TopDepth, null);
             float bottomY = depthSystem.ToScreenY(tubing.BottomDepth, null);
@@ -475,7 +474,7 @@ namespace Beep.OilandGas.Drawing.Rendering
             WellData_Borehole borehole,
             List<SKPoint> wellborePath,
             float xOffset,
-            DepthCoordinateSystem depthSystem)
+            DepthTransform depthSystem)
         {
             if (borehole.Perforation == null)
                 return;
@@ -509,7 +508,7 @@ namespace Beep.OilandGas.Drawing.Rendering
             WellData_Borehole borehole,
             List<SKPoint> wellborePath,
             float xOffset,
-            DepthCoordinateSystem depthSystem)
+            DepthTransform depthSystem)
         {
             if (borehole.Equip == null)
                 return;
@@ -545,7 +544,7 @@ namespace Beep.OilandGas.Drawing.Rendering
         /// <summary>
         /// Gets a point on the wellbore path at a specific depth.
         /// </summary>
-        private SKPoint GetPointAtDepth(List<SKPoint> path, double depth, DepthCoordinateSystem depthSystem)
+        private SKPoint GetPointAtDepth(List<SKPoint> path, double depth, DepthTransform depthSystem)
         {
             if (path == null || path.Count == 0)
                 return SKPoint.Empty;
@@ -594,7 +593,7 @@ namespace Beep.OilandGas.Drawing.Rendering
             SKCanvas canvas,
             WellData_Borehole borehole,
             float x,
-            DepthCoordinateSystem depthSystem,
+            DepthTransform depthSystem,
             float height)
         {
             using (var paint = new SKPaint
@@ -608,6 +607,18 @@ namespace Beep.OilandGas.Drawing.Rendering
                 string label = !string.IsNullOrEmpty(borehole.UBHI) ? borehole.UBHI : $"BH{borehole.BoreHoleIndex}";
                 float labelY = depthSystem.ToScreenY(borehole.TopDepth, null);
                 canvas.DrawText(label, x, labelY - 5, paint);
+            }
+        }
+
+        private void UpdateDepthTransforms(float canvasHeight)
+        {
+            if (canvasHeight <= 0 || depthSystems.Count == 0)
+                return;
+
+            var keys = depthSystems.Keys.ToList();
+            foreach (var key in keys)
+            {
+                depthSystems[key] = depthSystems[key].WithCanvasHeight(canvasHeight);
             }
         }
 
@@ -634,12 +645,12 @@ namespace Beep.OilandGas.Drawing.Rendering
                 if (depthSystems.Count > 0)
                 {
                     var firstSystem = depthSystems.Values.First();
-                    double depthRange = firstSystem.MaxValue - firstSystem.MinValue;
+                    double depthRange = firstSystem.MaximumDepth - firstSystem.MinimumDepth;
                     int gridLines = (int)(depthRange / configuration.DepthInterval);
 
                     for (int i = 0; i <= gridLines; i++)
                     {
-                        double depth = firstSystem.MinValue + (depthRange * i / gridLines);
+                        double depth = firstSystem.MinimumDepth + (depthRange * i / gridLines);
                         float y = firstSystem.ToScreenY((float)depth, null);
                         canvas.DrawLine(0, y, width, y, paint);
                     }
@@ -656,7 +667,7 @@ namespace Beep.OilandGas.Drawing.Rendering
                 return;
 
             var firstSystem = depthSystems.Values.First();
-            double depthRange = firstSystem.MaxValue - firstSystem.MinValue;
+            double depthRange = firstSystem.MaximumDepth - firstSystem.MinimumDepth;
             int scaleCount = (int)(depthRange / configuration.DepthInterval);
 
             using (var paint = new SKPaint
@@ -669,7 +680,7 @@ namespace Beep.OilandGas.Drawing.Rendering
             {
                 for (int i = 0; i <= scaleCount; i++)
                 {
-                    double depth = firstSystem.MinValue + (depthRange * i / scaleCount);
+                    double depth = firstSystem.MinimumDepth + (depthRange * i / scaleCount);
                     float y = firstSystem.ToScreenY((float)depth, null);
                     canvas.DrawText(depth.ToString("F0"), configuration.LeftMargin - 5, y + 5, paint);
                 }

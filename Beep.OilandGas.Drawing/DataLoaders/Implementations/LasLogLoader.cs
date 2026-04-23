@@ -140,11 +140,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
                     FilterByDepth(logData, configuration.MinDepth, configuration.MaxDepth);
                 }
 
-                // Apply curve filtering if configured
-                if (configuration.CurvesToLoad != null && configuration.CurvesToLoad.Count > 0)
-                {
-                    FilterCurves(logData, configuration.CurvesToLoad);
-                }
+                LogDataIngestionNormalizer.Normalize(logData, configuration);
 
                 // Interpolate missing values if configured
                 if (configuration.InterpolateMissingValues)
@@ -373,7 +369,6 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
             var currentSection = "";
             var curveNames = new List<string>();
             var curveMetadata = new Dictionary<string, LogCurveMetadata>();
-            var mnemonicToDisplayName = new Dictionary<string, string>(); // For PWLS mapping
 
             foreach (var line in lines)
             {
@@ -396,14 +391,6 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
                 else if (currentSection == "~CURVE INFORMATION")
                 {
                     ParseCurveInformation(trimmedLine, curveNames, curveMetadata, logData, configuration);
-                    
-                    // Build mnemonic to display name mapping for PWLS
-                    if (configuration?.UsePwlsMapping == true)
-                    {
-                        var mnemonic = curveNames.Last();
-                        var displayName = PwlsMnemonicMapper.MapToPwlsProperty(mnemonic);
-                        mnemonicToDisplayName[mnemonic] = displayName;
-                    }
                 }
                 else if (currentSection == "~ASCII")
                 {
@@ -411,45 +398,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
                 }
             }
 
-            // Apply PWLS mapping to curve dictionary keys if enabled
-            if (configuration?.UsePwlsMapping == true && mnemonicToDisplayName.Any())
-            {
-                var remappedCurves = new Dictionary<string, List<double>>();
-                var remappedMetadata = new Dictionary<string, LogCurveMetadata>();
-
-                foreach (var kvp in logData.Curves)
-                {
-                    var originalMnemonic = kvp.Key;
-                    var displayName = mnemonicToDisplayName.ContainsKey(originalMnemonic) 
-                        ? mnemonicToDisplayName[originalMnemonic] 
-                        : originalMnemonic;
-
-                    // Add with PWLS name
-                    remappedCurves[displayName] = kvp.Value;
-                    if (curveMetadata.ContainsKey(originalMnemonic))
-                    {
-                        remappedMetadata[displayName] = curveMetadata[originalMnemonic];
-                    }
-
-                    // Keep original if configured
-                    if (configuration.KeepOriginalMnemonics && displayName != originalMnemonic)
-                    {
-                        remappedCurves[originalMnemonic] = kvp.Value;
-                        if (curveMetadata.ContainsKey(originalMnemonic))
-                        {
-                            remappedMetadata[originalMnemonic] = curveMetadata[originalMnemonic];
-                        }
-                    }
-                }
-
-                logData.Curves = remappedCurves;
-                logData.CurveMetadata = remappedMetadata;
-            }
-            else
-            {
-                // Set curve metadata as-is
-                logData.CurveMetadata = curveMetadata;
-            }
+            logData.CurveMetadata = curveMetadata;
 
             return logData;
         }

@@ -7,7 +7,6 @@ using Beep.OilandGas.Drawing.DataLoaders.Models;
 using Beep.OilandGas.Drawing.Layers;
 using Beep.OilandGas.Drawing.Styling;
 using Beep.OilandGas.Drawing.CoordinateSystems;
-using DepthCoordinateSystem = Beep.OilandGas.Drawing.CoordinateSystems.DepthCoordinateSystem;
 
 namespace Beep.OilandGas.Drawing.Visualizations.Reservoir
 {
@@ -45,12 +44,11 @@ namespace Beep.OilandGas.Drawing.Visualizations.Reservoir
             if (layers == null || layers.Count == 0)
                 return;
 
-            // Create depth coordinate system
+            // Create depth transform
             double minDepth = layers.Min(l => l.TopDepth);
             double maxDepth = layers.Max(l => l.BottomDepth);
             
-            // Use viewport's coordinate system or create a simple depth-based one
-            var depthSystem = new DepthCoordinateSystem(minDepth, maxDepth, canvas.DeviceClipBounds.Height);
+            var depthSystem = new DepthTransform(minDepth, maxDepth, canvas.DeviceClipBounds.Height);
 
             // Render layers from bottom to top
             foreach (var layer in layers.OrderBy(l => l.TopDepth))
@@ -68,7 +66,7 @@ namespace Beep.OilandGas.Drawing.Visualizations.Reservoir
         /// <summary>
         /// Renders a single layer.
         /// </summary>
-        private void RenderLayer(SKCanvas canvas, LayerData layer, CoordinateSystem depthSystem, Viewport viewport)
+        private void RenderLayer(SKCanvas canvas, LayerData layer, DepthTransform depthSystem, Viewport viewport)
         {
             float topY = depthSystem.ToScreenY(layer.TopDepth, canvas.DeviceClipBounds.Height);
             float bottomY = depthSystem.ToScreenY(layer.BottomDepth, canvas.DeviceClipBounds.Height);
@@ -172,7 +170,7 @@ namespace Beep.OilandGas.Drawing.Visualizations.Reservoir
         /// <summary>
         /// Renders fluid contacts (FWL, OWC, GOC, GWC).
         /// </summary>
-        private void RenderFluidContacts(SKCanvas canvas, FluidContacts contacts, CoordinateSystem depthSystem, Viewport viewport)
+        private void RenderFluidContacts(SKCanvas canvas, FluidContacts contacts, DepthTransform depthSystem, Viewport viewport)
         {
             float leftX = configuration.LeftMargin;
             float rightX = canvas.DeviceClipBounds.Width - configuration.RightMargin;

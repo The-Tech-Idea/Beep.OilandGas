@@ -1,0 +1,160 @@
+<?xml version="1.0"?>
+<svg x="-50%" y="0%" width="100%" height="100%" viewBox="-100 0 200 250" xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="none">
+  <desc>Expandable Sand Screen</desc>
+<!-- Copyright (c) 2006 Interactive Network Technologies, Inc. -->
+
+    <defs>
+      <linearGradient x1="0%" x2="50%" id="GoldGradient" spreadMethod="reflect" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(204, 140, 22)"/>
+        <stop offset="95%" stop-color="rgb(255, 255, 221)"/>
+      </linearGradient>
+      <linearGradient x1="0%" x2="50%" id="DarkGoldGradient" spreadMethod="reflect" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(204, 140, 22)"/>
+        <stop offset="95%" stop-color="rgb(138, 112, 63)"/>
+      </linearGradient>
+      <linearGradient id="Gradient1" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(232, 242, 250)"/>
+        <stop offset="95%" stop-color="rgb(93, 151, 201)"/>
+      </linearGradient>
+      <linearGradient id="Gradient1R" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(93, 151, 201)"/>
+        <stop offset="95%" stop-color="rgb(232, 242, 250)"/>
+      </linearGradient>
+      <linearGradient id="Gradient2" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(232, 242, 250)"/>
+        <stop offset="95%" stop-color="rgb(18, 30, 40)"/>
+      </linearGradient>
+      <linearGradient id="Gradient2R" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(18, 30, 40)"/>
+        <stop offset="95%" stop-color="rgb(232, 242, 250)"/>
+      </linearGradient>
+      <linearGradient id="Gradient3" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(222, 222, 188)"/>
+        <stop offset="95%" stop-color="rgb(112, 150, 153)"/>
+      </linearGradient>
+      <linearGradient id="Gradient3R" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(112, 150, 153)"/>
+        <stop offset="95%" stop-color="rgb(222, 222, 188)"/>
+      </linearGradient>
+      <linearGradient id="Gradient4" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(227, 219, 197)"/>
+        <stop offset="95%" stop-color="rgb(97, 78, 30)"/>
+      </linearGradient>
+      <linearGradient id="Gradient4R" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(97, 78, 30)"/>
+        <stop offset="95%" stop-color="rgb(227, 219, 197)"/>
+      </linearGradient>
+      <linearGradient id="Gradient5" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(244, 232, 181)"/>
+        <stop offset="95%" stop-color="rgb(196, 173, 79)"/>
+      </linearGradient>
+      <linearGradient id="Gradient5R" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(196, 173, 79)"/>
+        <stop offset="95%" stop-color="rgb(244, 232, 181)"/>
+      </linearGradient>
+      <linearGradient id="Gradient6" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(196, 173, 79)"/>
+        <stop offset="95%" stop-color="rgb(223, 187, 98)"/>
+      </linearGradient>
+      <linearGradient id="Gradient6R" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(223, 187, 98)"/>
+        <stop offset="95%" stop-color="rgb(196, 173, 79)"/>
+      </linearGradient>
+      <linearGradient id="Gradient7" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(196, 173, 79)"/>
+        <stop offset="95%" stop-color="rgb(168, 139, 69)"/>
+      </linearGradient>
+      <linearGradient id="Gradient7R" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(168, 139, 69)"/>
+        <stop offset="95%" stop-color="rgb(196, 173, 79)"/>
+      </linearGradient>
+    </defs>
+
+
+
+  <polygon fill="url(#DarkGoldGradient)" stroke-width="1" stroke="black"
+    points="-95, 0, 95, 0, 100, 4, -100, 4" />
+  <rect x="-100" y="4" width="200" height="242" fill="url(#GoldGradient)" stroke-width="1" stroke="black"/>
+  <polygon fill="url(#DarkGoldGradient)" stroke-width="1" stroke="black"
+    points="-95, 250, 95, 250, 100, 246, -100, 246" />
+
+  <rect x="-5" y="55" width="10" height="140" fill="rgb(232, 242, 250)" stroke-width="1" stroke="black"/>
+  <rect x="-5" y="69" width="10" height="7" fill="rgb(230, 230, 230)" stroke-width="1" stroke="black"/>
+  <rect x="-5" y="104" width="10" height="7" fill="rgb(230, 230, 230)" stroke-width="1" stroke="black"/>
+  <rect x="-5" y="139" width="10" height="7" fill="rgb(230, 230, 230)" stroke-width="1" stroke="black"/>
+  <rect x="-5" y="174" width="10" height="7" fill="rgb(230, 230, 230)" stroke-width="1" stroke="black"/>
+
+  <rect x="-26" y="55" width="10" height="140" fill="url(#Gradient1R)" stroke-width="1" stroke="black"/>
+  <rect x="-26" y="55" width="8" height="14" fill="url(#Gradient2)" stroke-width="1" stroke="black"/>
+  <rect x="-26" y="76" width="8" height="28" fill="url(#Gradient2)" stroke-width="1" stroke="black"/>
+  <rect x="-26" y="111" width="8" height="28" fill="url(#Gradient2)" stroke-width="1" stroke="black"/>
+  <rect x="-26" y="146" width="8" height="28" fill="url(#Gradient2)" stroke-width="1" stroke="black"/>
+  <rect x="-26" y="181" width="8" height="14" fill="url(#Gradient2)" stroke-width="1" stroke="black"/>
+
+  <rect x="-46" y="55" width="8" height="140" fill="url(#Gradient3R)" stroke-width="1" stroke="black"/>
+  <rect x="-46" y="55" width="6" height="14" fill="url(#Gradient4R)" stroke-width="1" stroke="black"/>
+  <rect x="-46" y="76" width="6" height="28" fill="url(#Gradient4R)" stroke-width="1" stroke="black"/>
+  <rect x="-46" y="111" width="6" height="28" fill="url(#Gradient4R)" stroke-width="1" stroke="black"/>
+  <rect x="-46" y="146" width="6" height="28" fill="url(#Gradient4R)" stroke-width="1" stroke="black"/>
+  <rect x="-46" y="181" width="6" height="14" fill="url(#Gradient4R)" stroke-width="1" stroke="black"/>
+
+  <rect x="-65" y="55" width="7" height="140" fill="url(#Gradient3R)" stroke-width="1" stroke="black"/>
+  <rect x="-65" y="55" width="5" height="14" fill="url(#Gradient5R)" stroke-width="1" stroke="black"/>
+  <rect x="-65" y="76" width="5" height="28" fill="url(#Gradient5R)" stroke-width="1" stroke="black"/>
+  <rect x="-65" y="111" width="5" height="28" fill="url(#Gradient5R)" stroke-width="1" stroke="black"/>
+  <rect x="-65" y="146" width="5" height="28" fill="url(#Gradient5R)" stroke-width="1" stroke="black"/>
+  <rect x="-65" y="181" width="5" height="14" fill="url(#Gradient5R)" stroke-width="1" stroke="black"/>
+
+  <rect x="-82" y="55" width="6" height="140" fill="url(#Gradient3R)" stroke-width="1" stroke="black"/>
+  <rect x="-82" y="55" width="4" height="14" fill="url(#Gradient6R)" stroke-width="1" stroke="black"/>
+  <rect x="-82" y="76" width="4" height="28" fill="url(#Gradient6R)" stroke-width="1" stroke="black"/>
+  <rect x="-82" y="111" width="4" height="28" fill="url(#Gradient6R)" stroke-width="1" stroke="black"/>
+  <rect x="-82" y="146" width="4" height="28" fill="url(#Gradient6R)" stroke-width="1" stroke="black"/>
+  <rect x="-82" y="181" width="4" height="14" fill="url(#Gradient6R)" stroke-width="1" stroke="black"/>
+
+  <rect x="-98" y="55" width="4" height="140" fill="url(#Gradient3R)" stroke-width="1" stroke="black"/>
+  <rect x="-98" y="55" width="4" height="14" fill="url(#Gradient7R)" stroke-width="1" stroke="black"/>
+  <rect x="-98" y="76" width="4" height="28" fill="url(#Gradient7R)" stroke-width="1" stroke="black"/>
+  <rect x="-98" y="111" width="4" height="28" fill="url(#Gradient7R)" stroke-width="1" stroke="black"/>
+  <rect x="-98" y="146" width="4" height="28" fill="url(#Gradient7R)" stroke-width="1" stroke="black"/>
+  <rect x="-98" y="181" width="4" height="14" fill="url(#Gradient7R)" stroke-width="1" stroke="black"/>
+
+  <rect x="17" y="55" width="10" height="140" fill="url(#Gradient1)" stroke-width="1" stroke="black"/>
+  <rect x="19" y="55" width="8" height="14" fill="url(#Gradient2)" stroke-width="1" stroke="black"/>
+  <rect x="19" y="76" width="8" height="28" fill="url(#Gradient2)" stroke-width="1" stroke="black"/>
+  <rect x="19" y="111" width="8" height="28" fill="url(#Gradient2)" stroke-width="1" stroke="black"/>
+  <rect x="19" y="146" width="8" height="28" fill="url(#Gradient2)" stroke-width="1" stroke="black"/>
+  <rect x="19" y="181" width="8" height="14" fill="url(#Gradient2)" stroke-width="1" stroke="black"/>
+
+  <rect x="39" y="55" width="8" height="140" fill="url(#Gradient3)" stroke-width="1" stroke="black"/>
+  <rect x="41" y="55" width="6" height="14" fill="url(#Gradient4)" stroke-width="1" stroke="black"/>
+  <rect x="41" y="76" width="6" height="28" fill="url(#Gradient4)" stroke-width="1" stroke="black"/>
+  <rect x="41" y="111" width="6" height="28" fill="url(#Gradient4)" stroke-width="1" stroke="black"/>
+  <rect x="41" y="146" width="6" height="28" fill="url(#Gradient4)" stroke-width="1" stroke="black"/>
+  <rect x="41" y="181" width="6" height="14" fill="url(#Gradient4)" stroke-width="1" stroke="black"/>
+
+  <rect x="59" y="55" width="7" height="140" fill="url(#Gradient3)" stroke-width="1" stroke="black"/>
+  <rect x="61" y="55" width="5" height="14" fill="url(#Gradient5)" stroke-width="1" stroke="black"/>
+  <rect x="61" y="76" width="5" height="28" fill="url(#Gradient5)" stroke-width="1" stroke="black"/>
+  <rect x="61" y="111" width="5" height="28" fill="url(#Gradient5)" stroke-width="1" stroke="black"/>
+  <rect x="61" y="146" width="5" height="28" fill="url(#Gradient5)" stroke-width="1" stroke="black"/>
+  <rect x="61" y="181" width="5" height="14" fill="url(#Gradient5)" stroke-width="1" stroke="black"/>
+
+  <rect x="77" y="55" width="6" height="140" fill="url(#Gradient3)" stroke-width="1" stroke="black"/>
+  <rect x="79" y="55" width="4" height="14" fill="url(#Gradient6)" stroke-width="1" stroke="black"/>
+  <rect x="79" y="76" width="4" height="28" fill="url(#Gradient6)" stroke-width="1" stroke="black"/>
+  <rect x="79" y="111" width="4" height="28" fill="url(#Gradient6)" stroke-width="1" stroke="black"/>
+  <rect x="79" y="146" width="4" height="28" fill="url(#Gradient6)" stroke-width="1" stroke="black"/>
+  <rect x="79" y="181" width="4" height="14" fill="url(#Gradient6)" stroke-width="1" stroke="black"/>
+
+  <rect x="94" y="55" width="4" height="140" fill="url(#Gradient3)" stroke-width="1" stroke="black"/>
+  <rect x="94" y="55" width="4" height="14" fill="url(#Gradient7)" stroke-width="1" stroke="black"/>
+  <rect x="94" y="76" width="4" height="28" fill="url(#Gradient7)" stroke-width="1" stroke="black"/>
+  <rect x="94" y="111" width="4" height="28" fill="url(#Gradient7)" stroke-width="1" stroke="black"/>
+  <rect x="94" y="146" width="4" height="28" fill="url(#Gradient7)" stroke-width="1" stroke="black"/>
+  <rect x="94" y="181" width="4" height="14" fill="url(#Gradient7)" stroke-width="1" stroke="black"/>
+
+
+
+  
+</svg>

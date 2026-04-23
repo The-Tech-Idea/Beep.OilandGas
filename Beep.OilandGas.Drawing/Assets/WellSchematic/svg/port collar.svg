@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<svg x="-50%" y="0%" width="100%" height="100%" viewBox="-100 0 200 300" xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="none">
+  <desc>Port Collar</desc>
+<!-- Copyright (c) 2006 Interactive Network Technologies, Inc. -->
+
+    <defs>
+      <linearGradient x1="0%" x2="50%" id="SilverGradient" spreadMethod="reflect" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(160, 160, 160)"/>
+        <stop offset="85%" stop-color="rgb(250, 250, 250)"/>
+      </linearGradient>
+      <linearGradient x1="0%" x2="50%" id="DarkSilverGradient" spreadMethod="reflect" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(150, 150, 150)"/>
+        <stop offset="95%" stop-color="rgb(220, 220, 220)"/>
+      </linearGradient>
+      <linearGradient x1="0%" x2="50%" id="DarkGreyGradient" spreadMethod="reflect" gradientUnits="objectBoundingBox">
+        <stop offset="25%" stop-color="rgb(0, 0, 0)"/>
+        <stop offset="95%" stop-color="rgb(200, 200, 200)"/>
+      </linearGradient>
+      <linearGradient x1="0%" x2="50%" id="GreyDarkGradient" spreadMethod="reflect" gradientUnits="objectBoundingBox">
+        <stop offset="95%" stop-color="rgb(200, 200, 200)"/>
+        <stop offset="25%" stop-color="rgb(0, 0, 0)"/>
+      </linearGradient>
+     <clipPath id="ClipPath1">
+       <ellipse cx="-65" cy="150" rx="22" ry="30" />
+     </clipPath>
+     <clipPath id="ClipPath2">
+       <ellipse cx="65" cy="150" rx="22" ry="30" />
+     </clipPath>
+    </defs>
+
+  <polygon fill="url(#DarkSilverGradient)" stroke="black" stroke-width="1"
+      points="-95 0 95 0 100 5 -100 5" />
+  <rect x="-100" y="5" width="200" height="290" fill="url(#SilverGradient)" stroke-width="1" stroke="black"/>
+  <polygon fill="url(#DarkSilverGradient)" stroke="black" stroke-width="1"
+      points="-100, 295 100 295 95 300 -95 300"/>
+
+  <ellipse cx="0" cy="150" rx="26" ry="30" fill="rgb(180, 180, 180)" stroke="black" stroke-width="1"/>
+  <ellipse cx="0" cy="150" rx="20"  ry="30" fill="white" stroke="black" stroke-width="1" />
+
+  <ellipse cx="-65" cy="150" rx="20" ry="30" fill="url(#SilverGradient)" stroke="black" stroke-width="1"/>
+  <ellipse cx="-51" cy="150" rx="20"  ry="30" fill="white" stroke="black" stroke-width="1" clip-path="url(#ClipPath1)"/>
+
+  <ellipse cx="65" cy="150" rx="20" ry="30" fill="url(#SilverGradient)" stroke="black" stroke-width="1"/>
+  <ellipse cx="51" cy="150" rx="20"  ry="30" fill="white" stroke="black" stroke-width="1" clip-path="url(#ClipPath2)"/>
+
+  <ellipse cx="-102" cy="150" rx="5"  ry="30" fill="white" stroke="black" stroke-width="1"/>
+
+  <ellipse cx="102" cy="150" rx="5"  ry="30" fill="white" stroke="black" stroke-width="1"/>
+
+</svg>

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Beep.OilandGas.Drawing.CoordinateSystems;
 using Beep.OilandGas.Models;
 
 namespace Beep.OilandGas.Drawing.DataLoaders.Models
@@ -30,6 +31,16 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Models
         public List<LayerData> Layers { get; set; } = new List<LayerData>();
 
         /// <summary>
+        /// Gets or sets typed grid models available for contouring and map extraction.
+        /// </summary>
+        public List<ReservoirGridData> Grids { get; set; } = new List<ReservoirGridData>();
+
+        /// <summary>
+        /// Gets or sets typed map surfaces available for contouring and map overlays.
+        /// </summary>
+        public List<ReservoirSurfaceData> Surfaces { get; set; } = new List<ReservoirSurfaceData>();
+
+        /// <summary>
         /// Gets or sets the fluid contacts.
         /// </summary>
         public FluidContacts FluidContacts { get; set; }
@@ -40,9 +51,9 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Models
         public ReservoirProperties Properties { get; set; }
 
         /// <summary>
-        /// Gets or sets the coordinate system (e.g., UTM zone, WGS84).
+        /// Gets or sets the typed coordinate reference system for the reservoir model.
         /// </summary>
-        public string CoordinateSystem { get; set; }
+        public CoordinateReferenceSystem CoordinateReferenceSystem { get; set; }
 
         /// <summary>
         /// Gets or sets the bounding box (min/max X, Y, Z).

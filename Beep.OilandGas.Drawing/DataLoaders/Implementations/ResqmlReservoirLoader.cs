@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using Beep.OilandGas.Drawing.CoordinateSystems;
 using Beep.OilandGas.Drawing.DataLoaders;
 using Beep.OilandGas.Drawing.DataLoaders.Models;
 
@@ -210,7 +211,16 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
                 {
                     var layers = LoadLayersFromResqml(reservoirElement, configuration);
                     result.Data.Layers = layers;
-                    stats.RecordsLoaded = layers.Count;
+                }
+
+                if (configuration.LoadGrids)
+                {
+                    result.Data.Grids = LoadGridsFromResqml(reservoirElement, configuration);
+                }
+
+                if (configuration.LoadSurfaces)
+                {
+                    result.Data.Surfaces = LoadSurfacesFromResqml(reservoirElement, configuration);
                 }
 
                 // Load fluid contacts if requested
@@ -227,12 +237,26 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
 
                 // Extract bounding box from geometry
                 result.Data.BoundingBox = ExtractBoundingBox(reservoirElement);
+                stats.RecordsLoaded = (result.Data.Layers?.Count ?? 0)
+                    + (result.Data.Grids?.Count ?? 0)
+                    + (result.Data.Surfaces?.Count ?? 0);
 
                 // Extract coordinate system
                 var crs = reservoirElement.Element(resqml + "LocalCrs");
                 if (crs != null)
                 {
-                    result.Data.CoordinateSystem = crs.Attribute("uuid")?.Value ?? "Local";
+                    var crsIdentifier = crs.Attribute("uuid")?.Value ?? "Local";
+                    result.Data.CoordinateReferenceSystem = new CoordinateReferenceSystem(
+                        crsIdentifier,
+                        $"RESQML Local CRS {crsIdentifier}",
+                        CoordinateAuthority.Energistics,
+                        CoordinateReferenceSystemKind.Custom,
+                        new[]
+                        {
+                            new CoordinateAxisDefinition(CoordinateAxisKind.Easting, "Local X", MeasurementUnit.Unknown),
+                            new CoordinateAxisDefinition(CoordinateAxisKind.Northing, "Local Y", MeasurementUnit.Unknown),
+                            new CoordinateAxisDefinition(CoordinateAxisKind.Depth, "Depth", MeasurementUnit.Unknown, isInverted: true)
+                        });
                 }
 
                 result.Success = true;
@@ -347,12 +371,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
 
             try
             {
-                // Find grid representations (layers in RESQML)
-                var gridElements = reservoirElement.Descendants()
-                    .Where(e => e.Name.Namespace == resqml &&
-                                (e.Name.LocalName.Contains("Grid2dRepresentation") ||
-                                 e.Name.LocalName.Contains("Grid3dRepresentation") ||
-                                 e.Name.LocalName.Contains("IjkGridRepresentation")));
+                var gridElements = GetGridRepresentationElements(reservoirElement);
 
                 foreach (var grid in gridElements)
                 {
@@ -362,12 +381,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
                         LayerName = grid.Element(resqml + "Citation")?.Element(eml + "Title")?.Value ?? "Unnamed Layer"
                     };
 
-                    // Extract depth information from geometry
-                    var geometry = grid.Element(resqml + "Geometry");
-                    if (geometry != null)
-                    {
-                        ExtractLayerDepths(geometry, layer, configuration);
-                    }
+                    ExtractLayerDepths(grid, layer, configuration);
 
                     // Extract properties if requested
                     if (configuration.LoadProperties)
@@ -390,21 +404,99 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
             return layers;
         }
 
-        private void ExtractLayerDepths(XElement geometry, LayerData layer, ReservoirLoadConfiguration configuration)
+        private List<ReservoirGridData> LoadGridsFromResqml(XElement reservoirElement, ReservoirLoadConfiguration configuration)
         {
-            // Extract Z values from geometry points
-            var points = geometry.Descendants(gml + "pos")
-                .Select(p => p.Value.Split(' '))
-                .Where(parts => parts.Length >= 3)
-                .Select(parts => double.TryParse(parts[2], out var z) ? z : (double?)null)
-                .Where(z => z.HasValue)
-                .Select(z => z.Value)
-                .ToList();
+            var grids = new List<ReservoirGridData>();
+
+            try
+            {
+                foreach (var gridElement in GetGridRepresentationElements(reservoirElement))
+                {
+                    var points = ExtractGeometryPoints(gridElement);
+                    var grid = new ReservoirGridData
+                    {
+                        GridId = gridElement.Attribute("uuid")?.Value ?? Guid.NewGuid().ToString(),
+                        GridName = gridElement.Element(resqml + "Citation")?.Element(eml + "Title")?.Value ?? "Unnamed Grid",
+                        GridKind = ResolveGridKind(gridElement.Name.LocalName),
+                        BoundingBox = CreateBoundingBox(points)
+                    };
+
+                    ExtractGridDimensions(gridElement, grid);
+
+                    if (configuration.LoadGeometry && points.Count > 0)
+                    {
+                        grid.Nodes = CreateGridNodes(points, grid.ColumnCount, grid.RowCount, grid.LayerCount);
+                    }
+
+                    grid.Metadata["RepresentationType"] = gridElement.Name.LocalName;
+
+                    if (!PassesDepthFilter(grid.BoundingBox, configuration))
+                        continue;
+
+                    grids.Add(grid);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading grid models from RESQML: {ex.Message}");
+            }
+
+            return grids;
+        }
+
+        private List<ReservoirSurfaceData> LoadSurfacesFromResqml(XElement reservoirElement, ReservoirLoadConfiguration configuration)
+        {
+            var surfaces = new List<ReservoirSurfaceData>();
+
+            try
+            {
+                foreach (var surfaceElement in GetSurfaceRepresentationElements(reservoirElement))
+                {
+                    var points = ExtractGeometryPoints(surfaceElement);
+                    if (points.Count == 0)
+                        continue;
+
+                    string title = surfaceElement.Element(resqml + "Citation")?.Element(eml + "Title")?.Value;
+                    var surface = new ReservoirSurfaceData
+                    {
+                        SurfaceId = surfaceElement.Attribute("uuid")?.Value ?? Guid.NewGuid().ToString(),
+                        SurfaceName = title ?? surfaceElement.Name.LocalName,
+                        SurfaceKind = ResolveSurfaceKind(surfaceElement.Name.LocalName, title),
+                        SourceRepresentationType = surfaceElement.Name.LocalName,
+                        SourceGridId = surfaceElement.Name.LocalName.Contains("Grid2dRepresentation") ? surfaceElement.Attribute("uuid")?.Value : null,
+                        Points = configuration.LoadGeometry ? points : new List<Point3D>(),
+                        BoundingBox = CreateBoundingBox(points)
+                    };
+
+                    surface.Metadata["RepresentationType"] = surfaceElement.Name.LocalName;
+
+                    if (!PassesDepthFilter(surface.BoundingBox, configuration))
+                        continue;
+
+                    surfaces.Add(surface);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading surfaces from RESQML: {ex.Message}");
+            }
+
+            return surfaces;
+        }
+
+        private void ExtractLayerDepths(XElement geometryOwner, LayerData layer, ReservoirLoadConfiguration configuration)
+        {
+            var points = ExtractGeometryPoints(geometryOwner);
 
             if (points.Any())
             {
-                layer.TopDepth = points.Min();
-                layer.BottomDepth = points.Max();
+                if (configuration.LoadGeometry)
+                {
+                    layer.Geometry = points;
+                }
+
+                layer.TopDepth = points.Min(point => point.Z);
+                layer.BottomDepth = points.Max(point => point.Z);
             }
         }
 
@@ -570,37 +662,214 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
 
         private BoundingBox ExtractBoundingBox(XElement reservoirElement)
         {
-            var bbox = new BoundingBox();
-
             try
             {
-                var points = reservoirElement.Descendants(gml + "pos")
-                    .Select(p => p.Value.Split(' '))
-                    .Where(parts => parts.Length >= 3)
-                    .Select(parts => new
-                    {
-                        X = double.TryParse(parts[0], out var x) ? x : 0,
-                        Y = double.TryParse(parts[1], out var y) ? y : 0,
-                        Z = double.TryParse(parts[2], out var z) ? z : 0
-                    })
-                    .ToList();
-
-                if (points.Any())
-                {
-                    bbox.MinX = points.Min(p => p.X);
-                    bbox.MaxX = points.Max(p => p.X);
-                    bbox.MinY = points.Min(p => p.Y);
-                    bbox.MaxY = points.Max(p => p.Y);
-                    bbox.MinZ = points.Min(p => p.Z);
-                    bbox.MaxZ = points.Max(p => p.Z);
-                }
+                return CreateBoundingBox(ExtractGeometryPoints(reservoirElement)) ?? new BoundingBox();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error extracting bounding box: {ex.Message}");
             }
 
-            return bbox;
+            return new BoundingBox();
+        }
+
+        private List<XElement> GetGridRepresentationElements(XElement reservoirElement)
+        {
+            return reservoirElement.Descendants()
+                .Where(e => e.Name.Namespace == resqml &&
+                            (e.Name.LocalName.Contains("Grid2dRepresentation") ||
+                             e.Name.LocalName.Contains("Grid3dRepresentation") ||
+                             e.Name.LocalName.Contains("IjkGridRepresentation")))
+                .ToList();
+        }
+
+        private List<XElement> GetSurfaceRepresentationElements(XElement reservoirElement)
+        {
+            return reservoirElement.Descendants()
+                .Where(e => e.Name.Namespace == resqml &&
+                            (e.Name.LocalName.Contains("Grid2dRepresentation") ||
+                             e.Name.LocalName.Contains("TriangulatedSetRepresentation") ||
+                             e.Name.LocalName.Contains("PointSetRepresentation") ||
+                             e.Name.LocalName.Contains("Surface") ||
+                             e.Name.LocalName.Contains("HorizonInterpretation") ||
+                             e.Name.LocalName.Contains("FaultInterpretation")))
+                .GroupBy(e => e.Attribute("uuid")?.Value
+                    ?? e.Element(resqml + "Citation")?.Element(eml + "Title")?.Value
+                    ?? e.GetHashCode().ToString())
+                .Select(group => group.First())
+                .ToList();
+        }
+
+        private List<Point3D> ExtractGeometryPoints(XElement element)
+        {
+            var points = new List<Point3D>();
+            if (element == null)
+                return points;
+
+            foreach (var pos in element.Descendants(gml + "pos"))
+            {
+                points.AddRange(ParsePointTriples(pos.Value));
+            }
+
+            foreach (var posList in element.Descendants(gml + "posList"))
+            {
+                points.AddRange(ParsePointTriples(posList.Value));
+            }
+
+            return points;
+        }
+
+        private List<Point3D> ParsePointTriples(string coordinateText)
+        {
+            var points = new List<Point3D>();
+            if (string.IsNullOrWhiteSpace(coordinateText))
+                return points;
+
+            var parts = coordinateText
+                .Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+
+            for (int index = 0; index + 2 < parts.Length; index += 3)
+            {
+                if (double.TryParse(parts[index], out var x) &&
+                    double.TryParse(parts[index + 1], out var y) &&
+                    double.TryParse(parts[index + 2], out var z))
+                {
+                    points.Add(new Point3D { X = x, Y = y, Z = z });
+                }
+            }
+
+            return points;
+        }
+
+        private BoundingBox CreateBoundingBox(List<Point3D> points)
+        {
+            if (points == null || points.Count == 0)
+                return null;
+
+            return new BoundingBox
+            {
+                MinX = points.Min(point => point.X),
+                MaxX = points.Max(point => point.X),
+                MinY = points.Min(point => point.Y),
+                MaxY = points.Max(point => point.Y),
+                MinZ = points.Min(point => point.Z),
+                MaxZ = points.Max(point => point.Z)
+            };
+        }
+
+        private void ExtractGridDimensions(XElement gridElement, ReservoirGridData grid)
+        {
+            grid.ColumnCount = TryParseIntegerDescendant(gridElement, "Ni", "ColumnCount", "Columns", "ICount");
+            grid.RowCount = TryParseIntegerDescendant(gridElement, "Nj", "RowCount", "Rows", "JCount");
+            grid.LayerCount = TryParseIntegerDescendant(gridElement, "Nk", "LayerCount", "Layers", "KCount");
+        }
+
+        private int? TryParseIntegerDescendant(XElement element, params string[] localNames)
+        {
+            foreach (var name in localNames)
+            {
+                var value = element.Descendants()
+                    .FirstOrDefault(descendant => descendant.Name.LocalName.Equals(name, StringComparison.OrdinalIgnoreCase))
+                    ?.Value;
+
+                if (int.TryParse(value, out var parsed) && parsed > 0)
+                    return parsed;
+            }
+
+            return null;
+        }
+
+        private List<ReservoirGridNode> CreateGridNodes(List<Point3D> points, int? columnCount, int? rowCount, int? layerCount)
+        {
+            var nodes = new List<ReservoirGridNode>(points.Count);
+            int? effectiveColumns = columnCount > 0 ? columnCount : null;
+            int? effectiveRows = rowCount > 0 ? rowCount : null;
+            int nodesPerLayer = effectiveColumns.HasValue && effectiveRows.HasValue
+                ? effectiveColumns.Value * effectiveRows.Value
+                : 0;
+
+            for (int index = 0; index < points.Count; index++)
+            {
+                int? i = null;
+                int? j = null;
+                int? k = null;
+
+                if (effectiveColumns.HasValue)
+                {
+                    i = index % effectiveColumns.Value;
+
+                    if (effectiveRows.HasValue)
+                    {
+                        j = (index / effectiveColumns.Value) % effectiveRows.Value;
+
+                        if (nodesPerLayer > 0)
+                        {
+                            k = index / nodesPerLayer;
+                        }
+                    }
+                }
+
+                nodes.Add(new ReservoirGridNode
+                {
+                    Index = index,
+                    I = i,
+                    J = j,
+                    K = k,
+                    Position = points[index]
+                });
+            }
+
+            return nodes;
+        }
+
+        private ReservoirGridKind ResolveGridKind(string localName)
+        {
+            if (localName.Contains("IjkGridRepresentation", StringComparison.OrdinalIgnoreCase))
+                return ReservoirGridKind.CornerPoint3D;
+            if (localName.Contains("Grid3dRepresentation", StringComparison.OrdinalIgnoreCase))
+                return ReservoirGridKind.Structured3D;
+            if (localName.Contains("Grid2dRepresentation", StringComparison.OrdinalIgnoreCase))
+                return ReservoirGridKind.Structured2D;
+
+            return ReservoirGridKind.Unknown;
+        }
+
+        private ReservoirSurfaceKind ResolveSurfaceKind(string localName, string title)
+        {
+            string candidate = (title ?? string.Empty) + " " + localName;
+
+            if (candidate.Contains("fault", StringComparison.OrdinalIgnoreCase))
+                return ReservoirSurfaceKind.Fault;
+            if (candidate.Contains("isochore", StringComparison.OrdinalIgnoreCase) || candidate.Contains("thickness", StringComparison.OrdinalIgnoreCase))
+                return ReservoirSurfaceKind.Isochore;
+            if (candidate.Contains("porosity", StringComparison.OrdinalIgnoreCase) ||
+                candidate.Contains("permeability", StringComparison.OrdinalIgnoreCase) ||
+                candidate.Contains("saturation", StringComparison.OrdinalIgnoreCase))
+                return ReservoirSurfaceKind.Property;
+            if (candidate.Contains("horizon", StringComparison.OrdinalIgnoreCase) ||
+                candidate.Contains("top", StringComparison.OrdinalIgnoreCase) ||
+                candidate.Contains("base", StringComparison.OrdinalIgnoreCase))
+                return ReservoirSurfaceKind.Horizon;
+            if (localName.Contains("Grid2dRepresentation", StringComparison.OrdinalIgnoreCase))
+                return ReservoirSurfaceKind.GridDerived;
+            if (candidate.Contains("structure", StringComparison.OrdinalIgnoreCase) || candidate.Contains("surface", StringComparison.OrdinalIgnoreCase))
+                return ReservoirSurfaceKind.Structure;
+
+            return ReservoirSurfaceKind.Unknown;
+        }
+
+        private bool PassesDepthFilter(BoundingBox boundingBox, ReservoirLoadConfiguration configuration)
+        {
+            if (boundingBox == null)
+                return true;
+
+            if (configuration.MinDepth > 0 && boundingBox.MaxZ < configuration.MinDepth)
+                return false;
+            if (configuration.MaxDepth > 0 && boundingBox.MinZ > configuration.MaxDepth)
+                return false;
+
+            return true;
         }
 
         #endregion

@@ -57,7 +57,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Models
         /// Gets or sets whether to map curve mnemonics to PWLS (Practical Well Log Standard) property names.
         /// When enabled, vendor-specific mnemonics (e.g., "GR", "RT", "NPHI") are mapped to standard PWLS names.
         /// </summary>
-        public bool UsePwlsMapping { get; set; } = false;
+        public bool UsePwlsMapping { get; set; } = true;
 
         /// <summary>
         /// Gets or sets whether to keep original mnemonics in addition to PWLS names (creates aliases).

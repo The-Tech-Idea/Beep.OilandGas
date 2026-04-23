@@ -2,9 +2,11 @@ using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Beep.OilandGas.Drawing.DataLoaders.Models;
 using Beep.OilandGas.Models;
 using Beep.OilandGas.Drawing.CoordinateSystems;
 using Beep.OilandGas.Drawing.Visualizations.WellSchematic.Configuration;
+using SurveyPathCalculator = Beep.OilandGas.Drawing.Rendering.WellborePathCalculator;
 
 namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Rendering
 {
@@ -13,15 +15,15 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Rendering
     /// </summary>
     public class WellborePathCalculator
     {
-        private readonly CoordinateSystem depthSystem;
+        private readonly DepthTransform depthSystem;
         private readonly WellSchematicConfiguration configuration;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WellborePathCalculator"/> class.
         /// </summary>
-        /// <param name="depthSystem">The depth coordinate system.</param>
+        /// <param name="depthSystem">The depth transform.</param>
         /// <param name="configuration">The rendering configuration.</param>
-        public WellborePathCalculator(CoordinateSystem depthSystem, WellSchematicConfiguration configuration)
+        public WellborePathCalculator(DepthTransform depthSystem, WellSchematicConfiguration configuration)
         {
             this.depthSystem = depthSystem ?? throw new ArgumentNullException(nameof(depthSystem));
             this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
@@ -31,16 +33,28 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Rendering
         /// Calculates the wellbore path for a borehole.
         /// </summary>
         /// <param name="borehole">The borehole data.</param>
+        /// <param name="deviationSurvey">Optional deviation survey for the borehole.</param>
         /// <param name="index">The borehole index.</param>
         /// <param name="centerX">The center X coordinate.</param>
         /// <param name="canvasHeight">The canvas height.</param>
         /// <returns>The wellbore path result.</returns>
-        public WellborePathResult CalculateWellborePath(WellData_Borehole borehole, int index, float centerX, float canvasHeight)
+        public WellborePathResult CalculateWellborePath(WellData_Borehole borehole, DeviationSurvey deviationSurvey, int index, float centerX, float canvasHeight)
         {
             if (borehole.IsVertical)
             {
                 return CalculateVerticalWellborePath(borehole, centerX, canvasHeight);
             }
+
+            if (deviationSurvey?.SurveyPoints != null && deviationSurvey.SurveyPoints.Count > 1)
+            {
+                return CalculateSurveyWellborePath(borehole, deviationSurvey, centerX, canvasHeight);
+            }
+
+            if (!configuration.UseBezierCurves)
+            {
+                return CalculateVerticalWellborePath(borehole, centerX, canvasHeight);
+            }
+
             else
             {
                 return CalculateCurvedWellborePath(borehole, index, centerX, canvasHeight);
@@ -55,9 +69,15 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Rendering
             float topY = depthSystem.ToScreenY(borehole.TopDepth, canvasHeight);
             float bottomY = depthSystem.ToScreenY(borehole.BottomDepth, canvasHeight);
             float outerRadius = (borehole.Diameter * configuration.DiameterScale) / 2.0f;
-            float innerRadius = ((borehole.Diameter - 2) * configuration.DiameterScale) / 2.0f;
+            float innerRadius = Math.Max(0.5f, ((borehole.Diameter - 2) * configuration.DiameterScale) / 2.0f);
 
             borehole.OuterDiameterOffset = outerRadius;
+
+            var centerLine = new List<SKPoint>
+            {
+                new SKPoint(centerX, topY),
+                new SKPoint(centerX, bottomY)
+            };
 
             var outerPath = new List<SKPoint>
             {
@@ -77,11 +97,29 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Rendering
                 new SKPoint(centerX + innerRadius, topY)
             };
 
-            return new WellborePathResult(outerPath, innerPath);
+            return new WellborePathResult(outerPath, innerPath, centerLine);
         }
 
         /// <summary>
-        /// Calculates the path for a curved/deviated wellbore using Bezier curves.
+        /// Calculates the path for a deviated wellbore from survey points.
+        /// </summary>
+        private WellborePathResult CalculateSurveyWellborePath(WellData_Borehole borehole, DeviationSurvey deviationSurvey, float centerX, float canvasHeight)
+        {
+            var centerLine = SurveyPathCalculator
+                .CalculatePath(deviationSurvey, depthSystem.WithCanvasHeight(canvasHeight), configuration.HorizontalStretchFactor)
+                .Select(point => new SKPoint(point.X + centerX, point.Y))
+                .ToList();
+
+            if (centerLine.Count < 2)
+                return CalculateCurvedWellborePath(borehole, 0, centerX, canvasHeight);
+
+            float outerRadius = (borehole.Diameter * configuration.DiameterScale) / 2.0f;
+            float innerRadius = Math.Max(0.5f, ((borehole.Diameter - 2) * configuration.DiameterScale) / 2.0f);
+            return CreateOffsetPathResult(centerLine, borehole, outerRadius, innerRadius);
+        }
+
+        /// <summary>
+        /// Calculates the path for a curved/deviated wellbore using a fallback Bezier approximation.
         /// </summary>
         private WellborePathResult CalculateCurvedWellborePath(WellData_Borehole borehole, int index, float centerX, float canvasHeight)
         {
@@ -105,39 +143,55 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Rendering
             // Calculate Bezier curve points
             var bezierPoints = CalculateBezierCurve(controlPoints, configuration.BezierCurvePoints);
 
-            // Calculate outer and inner paths
             float outerRadius = (borehole.Diameter * configuration.DiameterScale) / 2.0f;
-            float innerRadius = ((borehole.Diameter - 2) * configuration.DiameterScale) / 2.0f;
+            float innerRadius = Math.Max(0.5f, ((borehole.Diameter - 2) * configuration.DiameterScale) / 2.0f);
+            return CreateOffsetPathResult(bezierPoints, borehole, outerRadius, innerRadius);
+        }
 
+        private WellborePathResult CreateOffsetPathResult(List<SKPoint> centerLine, WellData_Borehole borehole, float outerRadius, float innerRadius)
+        {
             borehole.OuterDiameterOffset = outerRadius;
 
-            var outerPath = new List<SKPoint>();
-            var innerPath = new List<SKPoint>();
+            var outerPath = CreateEnvelope(centerLine, outerRadius);
+            var innerPath = CreateEnvelope(centerLine, innerRadius);
+            return new WellborePathResult(outerPath, innerPath, centerLine);
+        }
 
-            foreach (var point in bezierPoints)
+        private static List<SKPoint> CreateEnvelope(IReadOnlyList<SKPoint> centerLine, float radius)
+        {
+            var leftPoints = new List<SKPoint>();
+            var rightPoints = new List<SKPoint>();
+
+            for (int index = 0; index < centerLine.Count; index++)
             {
-                // Calculate perpendicular direction for offset
-                int nextIndex = bezierPoints.IndexOf(point) + 1;
-                if (nextIndex < bezierPoints.Count)
-                {
-                    var nextPoint = bezierPoints[nextIndex];
-                    float dx = nextPoint.X - point.X;
-                    float dy = nextPoint.Y - point.Y;
-                    float length = (float)Math.Sqrt(dx * dx + dy * dy);
-                    
-                    if (length > 0)
-                    {
-                        // Perpendicular vector
-                        float perpX = -dy / length;
-                        float perpY = dx / length;
+                var current = centerLine[index];
+                var tangent = GetTangent(centerLine, index);
+                var length = (float)Math.Sqrt(tangent.X * tangent.X + tangent.Y * tangent.Y);
+                if (length <= 0)
+                    continue;
 
-                        outerPath.Add(new SKPoint(point.X - perpX * outerRadius, point.Y - perpY * outerRadius));
-                        innerPath.Add(new SKPoint(point.X - perpX * innerRadius, point.Y - perpY * innerRadius));
-                    }
-                }
+                var perpX = -tangent.Y / length;
+                var perpY = tangent.X / length;
+
+                leftPoints.Add(new SKPoint(current.X + perpX * radius, current.Y + perpY * radius));
+                rightPoints.Add(new SKPoint(current.X - perpX * radius, current.Y - perpY * radius));
             }
 
-            return new WellborePathResult(outerPath, innerPath);
+            if (leftPoints.Count == 0)
+                return centerLine.ToList();
+
+            var envelope = new List<SKPoint>(leftPoints.Count + rightPoints.Count);
+            envelope.AddRange(leftPoints);
+            rightPoints.Reverse();
+            envelope.AddRange(rightPoints);
+            return envelope;
+        }
+
+        private static SKPoint GetTangent(IReadOnlyList<SKPoint> points, int index)
+        {
+            var previous = index == 0 ? points[index] : points[index - 1];
+            var next = index == points.Count - 1 ? points[index] : points[index + 1];
+            return new SKPoint(next.X - previous.X, next.Y - previous.Y);
         }
 
         /// <summary>
@@ -196,32 +250,24 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Rendering
         /// Calculates the tubing path.
         /// </summary>
         /// <param name="borehole">The borehole data.</param>
-        /// <param name="boreholeIndex">The borehole index.</param>
         /// <param name="tubeIndex">The tube index.</param>
-        /// <param name="tubeSpace">The tube spacing.</param>
-        /// <param name="centerX">The center X coordinate.</param>
+        /// <param name="tubeCenterOffset">The tubing center offset from the borehole centerline.</param>
+        /// <param name="boreholeCenterLine">The borehole centerline.</param>
         /// <param name="canvasHeight">The canvas height.</param>
         /// <returns>The tubing path points.</returns>
-        public List<SKPoint> CalculateTubingPath(WellData_Borehole borehole, int boreholeIndex, int tubeIndex, float tubeSpace, float centerX, float canvasHeight)
+        public List<SKPoint> CalculateTubingPath(
+            WellData_Borehole borehole,
+            int tubeIndex,
+            float tubeCenterOffset,
+            List<SKPoint> boreholeCenterLine,
+            float canvasHeight)
         {
             var tube = borehole.Tubing[tubeIndex];
             float topY = depthSystem.ToScreenY(tube.TopDepth, canvasHeight);
             float bottomY = depthSystem.ToScreenY(tube.BottomDepth, canvasHeight);
-            float scaledTubeDiameter = tube.Diameter * configuration.DiameterScale;
 
-            float leftPadding = configuration.PaddingToSide;
-            float tubeXLeft = centerX - borehole.OuterDiameterOffset + leftPadding + tubeSpace * tubeIndex;
-            float tubeXRight = tubeXLeft + scaledTubeDiameter;
-
-            var path = new List<SKPoint>
-            {
-                new SKPoint(tubeXLeft, topY),
-                new SKPoint(tubeXRight, topY),
-                new SKPoint(tubeXRight, bottomY),
-                new SKPoint(tubeXLeft, bottomY)
-            };
-
-            return path;
+            var centerSegment = PathHelper.GetPathSegment(boreholeCenterLine, topY, bottomY);
+            return PathHelper.CreateParallelPath(centerSegment, tubeCenterOffset);
         }
     }
 
@@ -245,11 +291,17 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Rendering
         /// </summary>
         /// <param name="outerPath">The outer path.</param>
         /// <param name="innerPath">The inner path.</param>
-        public WellborePathResult(List<SKPoint> outerPath, List<SKPoint> innerPath)
+        public WellborePathResult(List<SKPoint> outerPath, List<SKPoint> innerPath, List<SKPoint> centerLine)
         {
             OuterPath = outerPath ?? throw new ArgumentNullException(nameof(outerPath));
             InnerPath = innerPath ?? throw new ArgumentNullException(nameof(innerPath));
+            CenterLine = centerLine ?? throw new ArgumentNullException(nameof(centerLine));
         }
+
+        /// <summary>
+        /// Gets the centerline path used for equipment and marker placement.
+        /// </summary>
+        public List<SKPoint> CenterLine { get; }
     }
 }
 

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Drawing.DataLoaders.Models;
+using Beep.OilandGas.Drawing.DataLoaders.PWLS;
 using System.Diagnostics;
 
 namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
@@ -136,11 +137,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
                     FilterByDepth(logData, configuration.MinDepth, configuration.MaxDepth);
                 }
 
-                // Apply curve filtering if configured
-                if (configuration.CurvesToLoad != null && configuration.CurvesToLoad.Count > 0)
-                {
-                    FilterCurves(logData, configuration.CurvesToLoad);
-                }
+                LogDataIngestionNormalizer.Normalize(logData, configuration);
 
                 stats.RecordsLoaded = logData.DataPointCount;
                 stats.Complete();

@@ -16,7 +16,7 @@ namespace Beep.OilandGas.Drawing.Rendering
         private readonly List<LayerData> layers;
         private readonly FluidContacts fluidContacts;
         private readonly LayersRendererConfiguration configuration;
-        private DepthCoordinateSystem depthSystem;
+        private DepthTransform depthSystem;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LayersRenderer"/> class.
@@ -37,7 +37,7 @@ namespace Beep.OilandGas.Drawing.Rendering
         }
 
         /// <summary>
-        /// Initializes the renderer with depth system.
+            /// Initializes the renderer with depth transform.
         /// </summary>
         private void Initialize()
         {
@@ -47,7 +47,7 @@ namespace Beep.OilandGas.Drawing.Rendering
             double minDepth = layers.Min(l => Math.Min(l.TopDepth, l.BottomDepth));
             double maxDepth = layers.Max(l => Math.Max(l.TopDepth, l.BottomDepth));
 
-            depthSystem = new DepthCoordinateSystem(minDepth, maxDepth, 1000f); // Default, updated on render
+            depthSystem = new DepthTransform(minDepth, maxDepth, 1000f); // Default, updated on render
         }
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace Beep.OilandGas.Drawing.Rendering
             {
                 double minDepth = layers.Min(l => Math.Min(l.TopDepth, l.BottomDepth));
                 double maxDepth = layers.Max(l => Math.Max(l.TopDepth, l.BottomDepth));
-                depthSystem = new DepthCoordinateSystem(minDepth, maxDepth, height);
+                depthSystem = new DepthTransform(minDepth, maxDepth, height);
             }
 
             // Clear background
@@ -459,12 +459,12 @@ namespace Beep.OilandGas.Drawing.Rendering
                 // Horizontal grid lines (depth-based)
                 if (depthSystem != null)
                 {
-                    double depthRange = depthSystem.MaxValue - depthSystem.MinValue;
+                    double depthRange = depthSystem.MaximumDepth - depthSystem.MinimumDepth;
                     int gridLines = (int)(depthRange / configuration.DepthInterval);
 
                     for (int i = 0; i <= gridLines; i++)
                     {
-                        double depth = depthSystem.MinValue + (depthRange * i / gridLines);
+                        double depth = depthSystem.MinimumDepth + (depthRange * i / gridLines);
                         float y = depthSystem.ToScreenY((float)depth, null) + yOffset;
                         canvas.DrawLine(xOffset, y, xOffset + width, y, paint);
                     }
@@ -480,7 +480,7 @@ namespace Beep.OilandGas.Drawing.Rendering
             if (depthSystem == null)
                 return;
 
-            double depthRange = depthSystem.MaxValue - depthSystem.MinValue;
+            double depthRange = depthSystem.MaximumDepth - depthSystem.MinimumDepth;
             int scaleCount = (int)(depthRange / configuration.DepthInterval);
 
             using (var paint = new SKPaint
@@ -493,7 +493,7 @@ namespace Beep.OilandGas.Drawing.Rendering
             {
                 for (int i = 0; i <= scaleCount; i++)
                 {
-                    double depth = depthSystem.MinValue + (depthRange * i / scaleCount);
+                    double depth = depthSystem.MinimumDepth + (depthRange * i / scaleCount);
                     float y = depthSystem.ToScreenY((float)depth, null) + yOffset;
                     canvas.DrawText(depth.ToString("F0"), xOffset - 5, y + 5, paint);
                 }

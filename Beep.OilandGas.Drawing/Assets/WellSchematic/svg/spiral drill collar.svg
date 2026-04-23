@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<!-- Copyright (c) 2005 by Interactive Network Technologies, Inc. -->
+<svg  x="-50%" y ="0%" width="100%" height="100%" viewBox="-100 10 200 90" preserveAspectRatio="none"
+    xmlns="http://www.w3.org/2000/svg" version="1.1">
+  <desc>Spiral Drill Collar</desc>
+    <defs>
+      <linearGradient x1="0%" x2="50%" id="MyGradient" spreadMethod = "reflect" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(46, 70, 112)" />
+        <stop offset="95%" stop-color="white" />
+      </linearGradient>
+      <linearGradient x1="0%" x2="50%"  id="MyGradient2" spreadMethod = "reflect" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(46, 70, 112)" />
+        <stop offset="45%" stop-color="white" />
+      </linearGradient>
+      <linearGradient x1="0%" x2="50%"  id="MyGradient3" spreadMethod = "reflect" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(46, 70, 112)" />
+        <stop offset="45%" stop-color="rgb(71, 98, 143)" />
+      </linearGradient>
+    </defs>
+  <rect x="-100" y="10" width="200" height="90"
+        fill="url(#MyGradient)"  stroke="rgb(46, 70, 112)"  />
+
+ <polygon fill="url(#MyGradient2)" stroke-width="0" 
+            points="-100  15 100 30 100 35 -100 20" />
+ <polygon fill="url(#MyGradient3)" stroke-width="0" 
+            points="-100  15 100 30 100 31 -100 16" />
+ <polygon fill="url(#MyGradient3)" stroke-width="0" 
+            points="-100  20 100 35 100 36 -100 21" />
+
+ <polygon fill="url(#MyGradient2)" stroke-width="0" 
+            points="-100  30 100 45 100 50 -100 35" />
+ <polygon fill="url(#MyGradient3)" stroke-width="0" 
+            points="-100  30 100 45 100 46 -100 31" />
+ <polygon fill="url(#MyGradient3)" stroke-width="0" 
+            points="-100  35 100 50 100 51 -100 36" />
+
+ <polygon fill="url(#MyGradient2)" stroke-width="0" 
+            points="-100  45 100 60 100 65 -100 50" />
+ <polygon fill="url(#MyGradient3)" stroke-width="0" 
+            points="-100  45 100 60 100 61 -100 46" />
+ <polygon fill="url(#MyGradient3)" stroke-width="0" 
+            points="-100  50 100 65 100 66 -100 51" />
+
+ <polygon fill="url(#MyGradient2)" stroke-width="0" 
+            points="-100  60 100 75 100 80 -100 65" />
+ <polygon fill="url(#MyGradient3)" stroke-width="0" 
+            points="-100  60 100 75 100 76 -100 61" />
+ <polygon fill="url(#MyGradient3)" stroke-width="0" 
+            points="-100  65 100 80 100 81 -100 66" />
+
+ <polygon fill="url(#MyGradient2)" stroke-width="0" 
+            points="-100  75 100 90 100 95 -100 80" />
+ <polygon fill="url(#MyGradient3)" stroke-width="0" 
+            points="-100  75 100 90 100 91 -100 76" />
+ <polygon fill="url(#MyGradient3)" stroke-width="0" 
+            points="-100  80 100 95 100 96 -100 81" />
+
+
+
+</svg>

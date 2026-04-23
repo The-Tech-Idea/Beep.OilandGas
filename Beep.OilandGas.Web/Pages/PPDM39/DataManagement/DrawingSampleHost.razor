@@ -1,0 +1,367 @@
+@page "/ppdm39/data-management/drawing-samples"
+@inject NavigationManager NavigationManager
+
+<PageTitle>Inspect Drawing Scenes</PageTitle>
+
+<MudPaper Elevation="1" Class="ma-2 mb-0 pa-3">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
+        <MudIcon Icon="@Icons.Material.Filled.Brush" Color="Color.Primary" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Inspect Drawing Scenes</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                Interactive workbench for the canonical drawing gallery, with scene-aware hit testing, measurement, and persisted annotations.
+            </MudText>
+        </MudStack>
+        <MudSpacer />
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Default"
+                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                   OnClick="NavigateBackToHub">
+            Data Management
+        </MudButton>
+    </MudStack>
+</MudPaper>
+
+<MudContainer MaxWidth="MaxWidth.False" Class="pa-4 drawing-sample-host-page">
+    <MudGrid Spacing="4">
+        <MudItem xs="12" lg="4">
+            <MudPaper Elevation="1" Class="pa-4 drawing-sample-host-panel">
+                <MudStack Spacing="3">
+                    <div>
+                        <MudChip T="string" Variant="Variant.Outlined" Color="Color.Info" Size="Size.Small" Icon="@Icons.Material.Filled.AutoAwesomeMotion">
+                            Drawing Library
+                        </MudChip>
+                        <MudText Typo="Typo.h6" Class="mt-2">@CurrentSample?.Name</MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">@CurrentSample?.Description</MudText>
+                    </div>
+
+                    <MudDivider />
+
+                    <div>
+                        <MudText Typo="Typo.subtitle2">Samples</MudText>
+                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-2">
+                            @foreach (var scene in _sampleScenes)
+                            {
+                                <MudChip T="string"
+                                         Variant="@GetSampleVariant(scene.Name)"
+                                         Color="@GetSampleColor(scene.Name)"
+                                         OnClick="@(() => SelectSample(scene.Name))">
+                                    @FormatSceneName(scene.Name)
+                                </MudChip>
+                            }
+                        </MudStack>
+                    </div>
+
+                    <div>
+                        <MudText Typo="Typo.subtitle2">Interaction Mode</MudText>
+                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-2">
+                            @foreach (var mode in _interactionModes)
+                            {
+                                <MudChip T="string"
+                                         Variant="@GetModeVariant(mode)"
+                                         Color="@GetModeColor(mode)"
+                                         Disabled="@(!CanInteract)"
+                                         OnClick="@(() => SetMode(mode))">
+                                    @GetModeLabel(mode)
+                                </MudChip>
+                            }
+                        </MudStack>
+                        @if (!CanInteract)
+                        {
+                            <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="mt-2">
+                                This sample renders correctly, but it does not yet attach typed scene metadata for hit testing or measurement.
+                            </MudAlert>
+                        }
+                    </div>
+
+                    <div>
+                        <MudText Typo="Typo.subtitle2">View Controls</MudText>
+                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-2">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.ZoomIn" OnClick="ZoomIn" Disabled="@(_engine is null)">
+                                Zoom In
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.ZoomOut" OnClick="ZoomOut" Disabled="@(_engine is null)">
+                                Zoom Out
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.CenterFocusStrong" OnClick="ResetView" Disabled="@(_engine is null)">
+                                Reset View
+                            </MudButton>
+                        </MudStack>
+                    </div>
+
+                    <div>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <MudText Typo="Typo.subtitle2">Export Scene</MudText>
+                            @if (_isExporting)
+                            {
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info">
+                                    Exporting
+                                </MudChip>
+                            }
+                        </MudStack>
+                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-2">
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Success"
+                                       StartIcon="@Icons.Material.Filled.Image"
+                                       OnClick="ExportPngAsync"
+                                       Disabled="@(!CanExport)">
+                                PNG
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Info"
+                                       StartIcon="@Icons.Material.Filled.Code"
+                                       OnClick="ExportSvgAsync"
+                                       Disabled="@(!CanExport)">
+                                SVG
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Warning"
+                                       StartIcon="@Icons.Material.Filled.PictureAsPdf"
+                                       OnClick="ExportPdfAsync"
+                                       Disabled="@(!CanExport)">
+                                PDF
+                            </MudButton>
+                            @foreach (var exportAction in CurrentSampleSupplementalExports)
+                            {
+                                <MudButton Variant="Variant.Outlined"
+                                           Color="@GetSupplementalExportColor(exportAction)"
+                                           StartIcon="@GetSupplementalExportIcon(exportAction)"
+                                           OnClick="@(() => ExportSupplementalArtifactAsync(exportAction))"
+                                           Disabled="@(!CanExport)">
+                                    @exportAction.Label
+                                </MudButton>
+                            }
+                        </MudStack>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary mt-2">
+                            Exports use the current engine state, including viewport, persisted selections, and persisted measurements.
+                        </MudText>
+                        @if (CurrentSampleSupplementalExports.Count > 0)
+                        {
+                            <MudStack Spacing="1" Class="mt-1">
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                    Scene-specific exports are declared by the active sample and may include exchange files or multi-file bundles.
+                                </MudText>
+                                @foreach (var exportAction in CurrentSampleSupplementalExports)
+                                {
+                                    @if (!string.IsNullOrWhiteSpace(exportAction.Description))
+                                    {
+                                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                            @exportAction.Label: @exportAction.Description
+                                        </MudText>
+                                    }
+                                }
+                            </MudStack>
+                        }
+                    </div>
+
+                    <div>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <MudText Typo="Typo.subtitle2">Annotation Style</MudText>
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@GetAnnotationStylePresetColor(ResolvedAnnotationStylePreset)">
+                                @GetAnnotationStylePresetLabel(ResolvedAnnotationStylePreset)
+                            </MudChip>
+                        </MudStack>
+                        <MudChipSet T="AnnotationStylePreset"
+                                    Class="mt-2"
+                                    SelectedValue="@_annotationStylePreset"
+                                    SelectedValueChanged="SetAnnotationStylePreset"
+                                    SelectionMode="SelectionMode.SingleSelection"
+                                    CheckMark="true">
+                            @foreach (var preset in _annotationStylePresets)
+                            {
+                                <MudChip Value="@preset"
+                                         Variant="Variant.Outlined"
+                                         Color="@GetAnnotationStylePresetColor(preset)">
+                                    @GetAnnotationStylePresetLabel(preset)
+                                </MudChip>
+                            }
+                        </MudChipSet>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary mt-2">
+                            @CurrentAnnotationStyleSummary
+                        </MudText>
+                    </div>
+
+                    <div>
+                        <MudText Typo="Typo.subtitle2">Annotation Actions</MudText>
+                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-2">
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Warning"
+                                       StartIcon="@Icons.Material.Filled.Polyline"
+                                       OnClick="CompleteAreaMeasurement"
+                                       Disabled="@(!CanCompleteAreaMeasurement)">
+                                Complete Area
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Default"
+                                       StartIcon="@Icons.Material.Filled.Clear"
+                                       OnClick="ClearDraft"
+                                       Disabled="@(_draftScreenPoints.Count == 0)">
+                                Clear Draft
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Secondary"
+                                       StartIcon="@Icons.Material.Filled.RemoveCircleOutline"
+                                       OnClick="RemoveCurrentSelection"
+                                       Disabled="@(CurrentSelection is null)">
+                                Remove Selection
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Error"
+                                       StartIcon="@Icons.Material.Filled.DeleteSweep"
+                                       OnClick="ClearMeasurements"
+                                       Disabled="@(RecordedMeasurements.Count == 0)">
+                                Clear All Measurements
+                            </MudButton>
+                        </MudStack>
+                    </div>
+
+                    <MudAlert Severity="@_statusSeverity" Variant="Variant.Outlined" Dense="true">
+                        @_statusMessage
+                    </MudAlert>
+
+                    <MudDivider />
+
+                    <div>
+                        <MudText Typo="Typo.subtitle2">Current Selection</MudText>
+                        @if (CurrentSelection is null)
+                        {
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary mt-2">
+                                No feature selected. Switch to Inspect and click the canvas to resolve a typed feature.
+                            </MudText>
+                        }
+                        else
+                        {
+                            <MudPaper Outlined="true" Class="pa-3 mt-2 drawing-sample-host-note">
+                                <MudStack Spacing="1">
+                                    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1">
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">@CurrentSelection.FeatureKind</MudChip>
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Secondary">@CurrentSelection.LayerName</MudChip>
+                                    </MudStack>
+                                    <MudText Typo="Typo.subtitle2">@CurrentSelection.FeatureLabel</MudText>
+                                    <MudText Typo="Typo.body2" Class="mud-text-secondary">ID: @CurrentSelection.FeatureId</MudText>
+                                    @if (CurrentSelection.Metadata.Count > 0)
+                                    {
+                                        <div class="drawing-sample-host-metadata-list">
+                                            @foreach (var metadata in CurrentSelection.Metadata)
+                                            {
+                                                <MudText Typo="Typo.caption">@metadata.Key: @metadata.Value</MudText>
+                                            }
+                                        </div>
+                                    }
+                                </MudStack>
+                            </MudPaper>
+                        }
+                    </div>
+
+                    <div>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <MudText Typo="Typo.subtitle2">Measurements</MudText>
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info">@RecordedMeasurements.Count</MudChip>
+                        </MudStack>
+                        @if (RecordedMeasurements.Count == 0)
+                        {
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary mt-2">
+                                No persisted measurements yet. Use Distance or Area mode and click the canvas.
+                            </MudText>
+                        }
+                        else
+                        {
+                            <MudStack Spacing="2" Class="mt-2">
+                                @foreach (var measurement in RecordedMeasurements)
+                                {
+                                    <MudPaper Outlined="true" Class="pa-3 drawing-sample-host-note">
+                                        <MudStack Spacing="1">
+                                            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1">
+                                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning">@measurement.Kind</MudChip>
+                                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info">@measurement.GeometryKind</MudChip>
+                                            </MudStack>
+                                            <MudText Typo="Typo.subtitle2">@measurement.Label</MudText>
+                                            <MudText Typo="Typo.body2">@measurement.DisplayText</MudText>
+                                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                                Method: @measurement.Method@if (measurement.IsApproximate){<text> · approximate</text>}
+                                            </MudText>
+                                            <MudButton Variant="Variant.Text"
+                                                       Color="Color.Error"
+                                                       Size="Size.Small"
+                                                       StartIcon="@Icons.Material.Filled.DeleteOutline"
+                                                       OnClick="@(() => RemoveMeasurement(measurement.AnnotationId))">
+                                                Remove Measurement
+                                            </MudButton>
+                                        </MudStack>
+                                    </MudPaper>
+                                }
+                            </MudStack>
+                        }
+                    </div>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" lg="8">
+            <MudPaper Elevation="1" Class="pa-4 drawing-sample-host-canvas-panel">
+                <MudStack Spacing="2">
+                    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" AlignItems="AlignItems.Center">
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">@CurrentSceneKindLabel</MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Secondary">@CurrentSceneReferenceLabel</MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info">@CurrentCanvasSizeLabel</MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Default">@CurrentViewportPanLabel</MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@GetAnnotationStylePresetColor(ResolvedAnnotationStylePreset)">
+                            @CurrentAnnotationStylePresetLabel
+                        </MudChip>
+                        @if (_draftScreenPoints.Count > 0)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning">Draft points: @_draftScreenPoints.Count</MudChip>
+                        }
+                    </MudStack>
+
+                    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+                        @CanvasInstruction
+                    </MudAlert>
+
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                        Drag the canvas to pan the current viewport. Click without dragging to inspect or add measurements.
+                    </MudText>
+
+                    <div class="drawing-sample-host-canvas-shell">
+                        @if (!string.IsNullOrWhiteSpace(_renderedImageDataUrl) && _engine is not null)
+                        {
+                            <div class="@GetCanvasStageClass()"
+                                 @onclick="HandleCanvasClick"
+                                 @onmousedown="HandleCanvasPointerDown"
+                                 @onmousemove="HandleCanvasPointerMove"
+                                 @onmouseup="HandleCanvasPointerUp"
+                                 @onmouseleave="HandleCanvasPointerLeave">
+                                <img class="drawing-sample-host-image"
+                                     src="@_renderedImageDataUrl"
+                                     alt="@CurrentSample?.Name"
+                                     width="@_engine.Width"
+                                     height="@_engine.Height" />
+                                <svg class="drawing-sample-host-overlay"
+                                     viewBox="@($"0 0 {_engine.Width} {_engine.Height}")"
+                                     width="@_engine.Width"
+                                     height="@_engine.Height"
+                                     aria-hidden="true">
+                                    @if (DraftOverlay is not null)
+                                    {
+                                        @if (DraftOverlay.IsPolygon)
+                                        {
+                                            <polygon points="@DraftOverlay.PointsAttribute" class="drawing-sample-host-draft-area" />
+                                        }
+                                        else
+                                        {
+                                            <polyline points="@DraftOverlay.PointsAttribute" class="drawing-sample-host-draft-line" />
+                                        }
+                                        @foreach (var point in DraftOverlay.Points)
+                                        {
+                                            <circle cx="@point.X" cy="@point.Y" r="5" class="drawing-sample-host-draft-point" />
+                                        }
+                                    }
+                                </svg>
+                            </div>
+                        }
+                    </div>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>

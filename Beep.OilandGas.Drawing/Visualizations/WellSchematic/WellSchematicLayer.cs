@@ -18,7 +18,7 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic
     {
         private readonly WellData wellData;
         private readonly Theme theme;
-        private readonly CoordinateSystem depthSystem;
+        private readonly DepthTransform depthSystem;
 
         /// <summary>
         /// Gets or sets the wellbore stroke width.
@@ -52,12 +52,12 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic
             // Validate well data
             WellDataValidator.ValidateWellData(wellData);
 
-            // Create depth coordinate system
+            // Create depth transform
             if (wellData.BoreHoles != null && wellData.BoreHoles.Count > 0)
             {
                 float minDepth = wellData.BoreHoles.Min(b => b.TopDepth);
                 float maxDepth = wellData.BoreHoles.Max(b => b.BottomDepth);
-                depthSystem = CoordinateSystem.CreateDepthSystem(minDepth, maxDepth, "feet");
+                depthSystem = new DepthTransform(minDepth, maxDepth, unitCode: "ft");
             }
         }
 

@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Drawing.DataLoaders.Models;
+using Beep.OilandGas.Drawing.DataLoaders.PWLS;
 using System.Diagnostics;
 
 namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
@@ -198,6 +199,8 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
                     }
                 }
 
+                LogDataIngestionNormalizer.Normalize(logData, configuration);
+
                 stats.RecordsLoaded = logData.DataPointCount;
                 stats.Complete();
 
@@ -265,7 +268,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
             // Generic query structure - should be customized per database schema
             var query = "SELECT Depth";
             
-            if (configuration.CurvesToLoad != null && configuration.CurvesToLoad.Count > 0)
+            if (configuration.CurvesToLoad != null && configuration.CurvesToLoad.Count > 0 && !configuration.UsePwlsMapping)
             {
                 query += ", " + string.Join(", ", configuration.CurvesToLoad);
             }
