@@ -28,7 +28,8 @@
 | 7 | Calculation Surface Integration | Done | Existing calculation pages now use the typed client path; DCA, Flash Calculations, Gas/Oil Properties, Well Test Analysis, Pump Performance, Choke Analysis, and Compressor Analysis are live vertical slices, reusable result-display components now back the shared KPI/summary surface, reusable comparison-grid shells now back the scenario comparison pages plus Compare Wells, reusable optimization-summary components now back Pump Performance baseline-vs-optimized deltas, and shared lift-recommendation cards now connect Pump Performance, Gas Lift, Well Performance Optimizer, Sucker Rod Pumping, Hydraulic Pump, and Plunger Lift through query-based well handoff. The optimizer opens prefilled intervention, work-order, and AFE intake surfaces, recommendation-driven work-order creation can link AFEs through the lifecycle API with linkage visible on work-order detail, those operational pages can return to the originating optimizer context, and shared JSON export packages now cover the optimizer, production forecasting, economic evaluation, and compare-wells comparison surfaces |
 | 8 | Operations and Lifecycle Integration | In Progress | Exploration, development, drilling, production, lease, enhanced recovery, decommissioning, and work-order pages now have explicit web client boundaries. `IExplorationServiceClient`, `IDevelopmentServiceClient`, `IDrillingServiceClient`, `IProductionServiceClient`, `ILeaseServiceClient`, `IEnhancedRecoveryServiceClient`, `IDecommissioningServiceClient`, and `IWorkOrderServiceClient` now own their routed pages, while `ProductionForecasting.razor` remains calculations-owned through `ICalculationServiceClient` with development and production clients feeding field and well context. `Controllers/Field/ExplorationController.cs`, `Controllers/Field/DevelopmentController.cs`, `Controllers/Field/DrillingController.cs`, `Controllers/Field/ProductionController.cs`, `Controllers/Field/DecommissioningController.cs`, and `Controllers/WorkOrder/WorkOrderController.cs` now back the active workflow pages, the work-order controller now owns field-scoped AFE link actions instead of forcing the work-order UI through the lifecycle API for that seam, approved production interventions now create planned corrective work orders plus linked AFEs through the field production and accounting workflow seam, lease acquisition now hands off into prefilled compliance-obligation intake plus FDP regulatory planning instead of stopping at a dead permits route, enhanced recovery now exposes a real pilot-economics workflow seam that deep-links into prefilled economic evaluation with return navigation, late-life production decisions can now launch decommissioning records plus lifecycle workflow context directly into the P&A execution surface with return navigation, the decommissioning P&A / abandonment pages can now launch prefilled closure-compliance intake plus closeout AFE creation with preserved return navigation back into the decommissioning workflow, and development well design now launches prefilled construction-progress and drilling-operation workflows with nested return navigation while drilling actions stay on the dedicated drilling client and field-scoped drilling controller instead of the shared operations client; the drilling slice now also round-trips real well status/depth/completion plus rig/contractor metadata and no longer collects unsupported create-time daily cost input. Remaining Phase 8 work is now limited to optional polish in thinner operational domains. |
 | 9 | Data, Admin, and Workflow Integration | Planned | Rationalize PPDM39 admin pages, accounting, workflow, compliance, and permits using the support/core project docs as the ownership baseline |
-| 10 | Hardening and Retirement | Planned | Validate, retire legacy pages, and trim dependencies using the per-project maturity map to separate regressions from deferred scope |
+| 10 | Hardening and Retirement | In Progress | Architecture and oil-and-gas fit assessment completed with concrete security, layout-governance, and UI-rule findings documented under `Documentation/WebApp-Architecture-And-OilGas-Fit-Assessment-2026-04-23.md`; retirement and dependency trimming remain |
+| 11 | Identity, Persona, and Access Governance | Planned | Build role-and-persona based profile system with least-privilege authorization and auditable access for Reservoir Engineer, Petroleum Engineer, Accountant, and Geologist views across Web, ApiService, LifeCycle, and UserManagement seams |
 
 ---
 
@@ -96,13 +97,33 @@
 
 | ID | Task | Status |
 |----|------|--------|
-| W10-01 | Validate route ownership and navigation | Planned |
+| W10-01 | Validate route ownership and navigation | In Progress |
 | W10-02 | Remove or redirect deprecated pages | Planned |
 | W10-03 | Remove duplicate components that are no longer used | Planned |
 | W10-04 | Reduce direct project references in web csproj | Planned |
 | W10-05 | Publish final integration matrix | Planned |
-| W10-06 | Close tracker with completed statuses and exceptions | Planned |
-| W10-07 | Track deferred gaps separately from validated regressions | Planned |
+| W10-06 | Close tracker with completed statuses and exceptions | Done |
+| W10-07 | Track deferred gaps separately from validated regressions | In Progress |
+| W10-08 | Remove hardcoded OIDC client secret from web startup and rotate secret | In Progress |
+| W10-09 | Consolidate canonical runtime layout and first-run gating path | In Progress |
+| W10-10 | Remove inline style drift from Razor pages/components and enforce MudBlazor utility pattern | Done |
+
+### Phase 11
+
+| ID | Task | Status |
+|----|------|--------|
+| W11-01 | Define expanded persona catalog and ownership matrix for oil and gas operations, subsurface, finance, HSE, and administration roles | Planned |
+| W11-02 | Publish canonical identity/access data model and migration baseline document before implementation | Planned |
+| W11-03 | Migrate security/user models from `Beep.OilandGas.Models` to `Beep.OilandGas.UserManagement` with compatibility strategy (`Schema-Contract-UserManagement.md` + `MigrationManager-Evidence-Checklist.md`); source preflight evidence complete; final runtime Step 6 rerun now targets `Beep.OilandGas.UserManagement` with `targetModelNamespace=Beep.OilandGas.UserManagement.Models` successfully and saves plan `248a8ad9bfdd4c61a4a9b896162bcb39` plus artifacts under `logs/w11-runtime-*-usermgmt-fixed.json`; scope mismatch is closed (`EntityTypeCount=24`, contract entity coverage `24/24`) and runtime key inference is resolved (`primary-key-missing=0` after explicit `[Key]` annotations on canonical `_ID` fields), but remaining blockers are schema-plan preflight `preflight-connectivity=Block` (`canApply=false`) and missing runtime-emitted table/column metadata for final table/JSON closure | In Progress |
+| W11-04 | Enhance migrated models for persona profile, lifecycle state, scope context, and audit metadata | In Progress |
+| W11-05 | Add API endpoints for profile retrieval/update and role/permission assignment with audit events | Planned |
+| W11-06 | Add typed web client seams for access-control and profile management (no direct domain calls from pages) | Planned |
+| W11-07 | Build role-aware navigation and default landing views per persona | Planned |
+| W11-08 | Build persona-specific dashboards and page-access gating for core workflows | Planned |
+| W11-09 | Add ABAC-style field/asset scoping checks in critical workflow endpoints | Planned |
+| W11-10 | Add end-to-end authorization tests, negative-access tests, and impersonation-safe validation | Planned |
+| W11-11 | Add identity and authorization observability (audit trail, denied-access telemetry, policy evaluation traces) | Planned |
+| W11-12 | Run hardening pass for password/hash/token/session controls and privilege escalation regression checks | Planned |
 
 ---
 

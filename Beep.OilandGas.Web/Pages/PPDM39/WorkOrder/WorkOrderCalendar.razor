@@ -2,6 +2,7 @@
 @using Beep.OilandGas.Models.Data.WorkOrder
 @using Beep.OilandGas.Web.Services
 @inject ApiClient ApiClient
+@inject ILifeCycleService LifeCycleService
 @inject IWorkOrderServiceClient WorkOrderService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
@@ -45,7 +46,7 @@
     else
     {
         @* ── 4-week grid ─────────────────────────────────────────────────── *@
-        <MudPaper Elevation="1" Class="pa-0" Style="overflow-x:auto">
+        <MudPaper Elevation="1" Class="pa-0 overflow-auto">
             <MudGrid Spacing="0">
 
                 @* Day-header row *@
@@ -53,9 +54,8 @@
                 {
                     var day = _weekStart.AddDays(d);
                     var isToday = day.Date == DateTime.Today;
-                    <MudItem xs="0" Style="@($"width:{100.0/28:F2}%;min-width:60px")">
-                        <MudPaper Elevation="0" Class="pa-1 text-center"
-                                  Style="@(isToday ? "background:var(--mud-palette-primary-lighten)" : string.Empty)">
+                    <MudItem xs="0" Class="og-calendar-day-col">
+                        <MudPaper Elevation="0" Class="@GetDayHeaderClass(isToday)">
                             <MudText Typo="Typo.caption" Color="@(isToday ? Color.Primary : Color.Default)">
                                 @day.ToString("ddd")
                             </MudText>
@@ -75,13 +75,13 @@
                     var left  = startOffset / 28.0 * 100;
                     var width = (endOffset - startOffset) / 28.0 * 100;
 
-                    <MudItem xs="12" Style="position:relative;height:36px;overflow:visible">
+                    <MudItem xs="12" Class="og-calendar-row">
                         <MudTooltip Text="@($"{slot.InstanceId}: {slot.InstanceName} ({slot.State})")">
                             <MudPaper Elevation="2"
-                                      Style="@($"position:absolute;left:{left:F1}%;width:{width:F1}%;top:4px;height:28px;background:{SlotColor(slot.State)};cursor:pointer;border-radius:4px")"
+                                      Class="@GetSlotClass(slot.State)"
+                                      @attributes="GetSlotGeometryAttributes(left, width)"
                                       @onclick="() => NavigateToDetail(slot.InstanceId)">
-                                <MudText Typo="Typo.caption" Class="px-1"
-                                         Style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:28px">
+                                <MudText Typo="Typo.caption" Class="px-1 text-truncate d-block og-calendar-slot-text">
                                     @slot.InstanceName
                                 </MudText>
                             </MudPaper>
@@ -94,10 +94,10 @@
 
         @* ── Legend ──────────────────────────────────────────────────────── *@
         <MudStack Row="true" Spacing="2" Class="mt-1" Wrap="Wrap.Wrap">
-            @foreach (var (label, color) in _legend)
+            @foreach (var label in _legend)
             {
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                    <div style="@($"width:14px;height:14px;background:{color};border-radius:3px")"></div>
+                    <MudPaper Class="@GetLegendSwatchClass(label)" Elevation="0" />
                     <MudText Typo="Typo.caption">@label</MudText>
                 </MudStack>
             }
@@ -119,21 +119,51 @@
     private bool               _loading;
     private string?            _error;
 
-    private static readonly List<(string Label, string Color)> _legend = new()
+    private static readonly List<string> _legend = new()
     {
-        ("Draft",       "#9e9e9e"),
-        ("Planned",     "#2196f3"),
-        ("In Progress", "#ff9800"),
-        ("Under Review","#9c27b0"),
-        ("Completed",   "#4caf50"),
-        ("Cancelled",   "#f44336"),
+        "Draft",
+        "Planned",
+        "In Progress",
+        "Under Review",
+        "Completed",
+        "Cancelled",
+    };
+
+    private static string GetDayHeaderClass(bool isToday) => isToday ? "pa-1 text-center og-calendar-day-today" : "pa-1 text-center";
+
+    private static IReadOnlyDictionary<string, object> GetSlotGeometryAttributes(double left, double width) =>
+        new Dictionary<string, object>
+        {
+            ["style"] = $"left:{left:F1}%;width:{width:F1}%;"
+        };
+
+    private static string GetSlotClass(string state) => state switch
+    {
+        WorkOrderState.Draft       => "og-calendar-slot og-calendar-slot-draft",
+        WorkOrderState.Planned     => "og-calendar-slot og-calendar-slot-planned",
+        WorkOrderState.InProgress  => "og-calendar-slot og-calendar-slot-inprogress",
+        WorkOrderState.UnderReview => "og-calendar-slot og-calendar-slot-underreview",
+        WorkOrderState.Completed   => "og-calendar-slot og-calendar-slot-completed",
+        WorkOrderState.Cancelled   => "og-calendar-slot og-calendar-slot-cancelled",
+        _                          => "og-calendar-slot og-calendar-slot-draft"
+    };
+
+    private static string GetLegendSwatchClass(string label) => label switch
+    {
+        "Draft"       => "og-calendar-legend-swatch og-calendar-slot-draft",
+        "Planned"     => "og-calendar-legend-swatch og-calendar-slot-planned",
+        "In Progress" => "og-calendar-legend-swatch og-calendar-slot-inprogress",
+        "Under Review"=> "og-calendar-legend-swatch og-calendar-slot-underreview",
+        "Completed"   => "og-calendar-legend-swatch og-calendar-slot-completed",
+        "Cancelled"   => "og-calendar-legend-swatch og-calendar-slot-cancelled",
+        _              => "og-calendar-legend-swatch og-calendar-slot-draft"
     };
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldNameDto>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             _fieldName = summary?.FieldName;
         }
         catch { }
@@ -173,20 +203,4 @@
     private void NavigateToDetail(string instanceId) =>
         NavigationManager.NavigateTo($"/ppdm39/workorder/{Uri.EscapeDataString(instanceId)}");
 
-    private static string SlotColor(string state) => state switch
-    {
-        WorkOrderState.Draft       => "#9e9e9e",
-        WorkOrderState.Planned     => "#2196f3",
-        WorkOrderState.InProgress  => "#ff9800",
-        WorkOrderState.UnderReview => "#9c27b0",
-        WorkOrderState.Completed   => "#4caf50",
-        WorkOrderState.Cancelled   => "#f44336",
-        _                          => "#9e9e9e"
-    };
-
-    private sealed class FieldNameDto
-    {
-        public string? FieldId   { get; set; }
-        public string? FieldName { get; set; }
-    }
 }

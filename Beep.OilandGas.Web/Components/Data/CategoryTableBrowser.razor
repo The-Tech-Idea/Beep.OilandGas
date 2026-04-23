@@ -49,22 +49,19 @@
                 <MudItem xs="12" sm="6" md="4" lg="3">
                     <MudCard Elevation="1"
                              Class="cursor-pointer"
-                             Style="transition: box-shadow 0.2s;"
                              @onclick="@(() => OpenTable(table.TableName))">
                         <MudCardContent Class="pa-3">
                             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                                 <MudIcon Icon="@GetTableIcon(table)"
                                          Color="@GetTableColor(table)"
                                          Size="Size.Small" />
-                                <MudStack Spacing="0" Style="min-width:0;">
-                                    <MudText Typo="Typo.body2"
-                                             Style="font-family:monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                <MudStack Spacing="0" Class="flex-grow-1">
+                                    <MudText Typo="Typo.body2" Class="font-monospace text-truncate d-block">
                                         @table.TableName
                                     </MudText>
                                     @if (!string.IsNullOrWhiteSpace(table.Description))
                                     {
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary"
-                                                 Style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="text-truncate d-block">
                                             @table.Description
                                         </MudText>
                                     }

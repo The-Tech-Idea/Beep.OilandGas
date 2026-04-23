@@ -7,7 +7,7 @@
         Reserves by Category
         @if (!string.IsNullOrWhiteSpace(FieldName))
         {
-            <MudText Typo="Typo.caption" Class="ml-2" Style="opacity: 0.7;">@FieldName</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">@FieldName</MudText>
         }
     </MudText>
 
@@ -31,10 +31,10 @@
             <thead>
                 <tr>
                     <th>Category</th>
-                    <th style="text-align:right">1P Proved</th>
-                    <th style="text-align:right">2P Probable</th>
-                    <th style="text-align:right">3P Possible</th>
-                    <th style="text-align:right">Unit</th>
+                    <th><MudText Align="Align.Right">1P Proved</MudText></th>
+                    <th><MudText Align="Align.Right">2P Probable</MudText></th>
+                    <th><MudText Align="Align.Right">3P Possible</MudText></th>
+                    <th><MudText Align="Align.Right">Unit</MudText></th>
                 </tr>
             </thead>
             <tbody>
@@ -42,10 +42,10 @@
                 {
                     <tr>
                         <td><strong>@row.Category</strong></td>
-                        <td style="text-align:right">@row.Proved.ToString("N1")</td>
-                        <td style="text-align:right">@row.Probable.ToString("N1")</td>
-                        <td style="text-align:right">@row.Possible.ToString("N1")</td>
-                        <td style="text-align:right; opacity:0.7">@row.Unit</td>
+                        <td><MudText Align="Align.Right">@row.Proved.ToString("N1")</MudText></td>
+                        <td><MudText Align="Align.Right">@row.Probable.ToString("N1")</MudText></td>
+                        <td><MudText Align="Align.Right">@row.Possible.ToString("N1")</MudText></td>
+                        <td><MudText Align="Align.Right" Color="Color.Secondary">@row.Unit</MudText></td>
                     </tr>
                 }
             </tbody>

@@ -233,12 +233,6 @@
     private bool _isCreateFormValid;
     private string? _currentUserId;
 
-    private sealed class FieldResponse
-    {
-        public string? FieldId { get; set; }
-        public string? FieldName { get; set; }
-    }
-
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();

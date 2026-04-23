@@ -153,6 +153,11 @@ The web project should expose calculation projects as workbenches or embedded en
 | [Phase 8](Phase8-OperationsAndLifecycleIntegration/README.md) | Operations and Lifecycle Integration | Exploration, development, production, lease, EOR, and decommissioning flows align to domain services through whole-solution passes |
 | [Phase 9](Phase9-DataAdminAndWorkflowIntegration/README.md) | Data, Admin, and Workflow Integration | PPDM39 data tools, compliance, permits, access control, accounting, and business-process pages are rationalized through whole-solution passes |
 | [Phase 10](Phase10-HardeningAndRetirement/README.md) | Hardening and Retirement | Validation, route cleanup, dependency reduction, and removal of legacy pages/components across the full solution |
+| [Phase 11](Phase11-IdentityPersonaAndAccessControl/README.md) | Identity, Persona, and Access Governance | Role-and-persona driven user experience, least-privilege access controls, profile lifecycle governance, and auditable authorization boundaries across web/API/data seams |
+
+Phase 11 implementation starts with a required data model and migration baseline:
+
+- `Phase11-IdentityPersonaAndAccessControl/DataModel-And-Migration.md`
 
 Each phase is executed in multiple passes:
 
@@ -173,6 +178,7 @@ Each phase now has its own subfolder with a phase README and one pass document p
 | 8 | `Phase8-OperationsAndLifecycleIntegration.md` | `Phase8-OperationsAndLifecycleIntegration/` |
 | 9 | `Phase9-DataAdminAndWorkflowIntegration.md` | `Phase9-DataAdminAndWorkflowIntegration/` |
 | 10 | `Phase10-HardeningAndRetirement.md` | `Phase10-HardeningAndRetirement/` |
+| 11 | `Phase11-IdentityPersonaAndAccessControl.md` | `Phase11-IdentityPersonaAndAccessControl/` |
 
 ## Document Index
 
@@ -189,6 +195,9 @@ Each phase now has its own subfolder with a phase README and one pass document p
 - `Phase9-DataAdminAndWorkflowIntegration/README.md`
 - `Phase10-HardeningAndRetirement.md`
 - `Phase10-HardeningAndRetirement/README.md`
+- `Phase11-IdentityPersonaAndAccessControl.md`
+- `Phase11-IdentityPersonaAndAccessControl/README.md`
+- `Phase11-IdentityPersonaAndAccessControl/DataModel-And-Migration.md`
 
 ---
 

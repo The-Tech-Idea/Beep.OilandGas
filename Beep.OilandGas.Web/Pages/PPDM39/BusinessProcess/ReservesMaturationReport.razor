@@ -85,14 +85,14 @@
                     <HeaderContent>
                         <MudTh>SPE PRMS Category</MudTh>
                         <MudTh>NI 51-101 Designation</MudTh>
-                        <MudTh Style="text-align:right">Volume (MMBOE)</MudTh>
-                        <MudTh Style="text-align:right">% of Total</MudTh>
+                        <MudTh><MudText Align="Align.Right">Volume (MMBOE)</MudText></MudTh>
+                        <MudTh><MudText Align="Align.Right">% of Total</MudText></MudTh>
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd>@context.Category</MudTd>
                         <MudTd>@context.Ni51101</MudTd>
-                        <MudTd Style="text-align:right">@($"{context.Volume:F2}")</MudTd>
-                        <MudTd Style="text-align:right">@($"{context.SharePct:F1}%")</MudTd>
+                        <MudTd><MudText Align="Align.Right">@($"{context.Volume:F2}")</MudText></MudTd>
+                        <MudTd><MudText Align="Align.Right">@($"{context.SharePct:F1}%")</MudText></MudTd>
                     </RowTemplate>
                 </MudTable>
             </MudCardContent>

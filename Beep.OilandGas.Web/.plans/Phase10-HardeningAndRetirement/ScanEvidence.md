@@ -21,6 +21,33 @@
 
 ---
 
+## 2026-04-23 Hardening Evidence Addendum
+
+### Security hardening evidence
+
+- Historical finding (resolved in code on 2026-04-23): `Beep.OilandGas.Web/Program.cs` previously had a hardcoded OIDC client secret.
+- Current state: OIDC secret is read from configuration/environment; development settings no longer carry `web_secret` literals.
+
+### Layout and setup-governance evidence
+
+- `Beep.OilandGas.Web/Components/Routes.razor` defaults routing to `MainLayout`.
+- `Beep.OilandGas.Web/Components/Layout/DefaultLayout.razor` contains first-run setup gating logic using `IFirstRunService`.
+- `Beep.OilandGas.Web/Shared/MainLayout.razor` is actively used at runtime and has no equivalent first-run redirect gate.
+
+### UI guardrail drift evidence (inline styles)
+
+- `Beep.OilandGas.Web/Components/Shared/PPDMMapView.razor`
+- `Beep.OilandGas.Web/Components/Reservoir/ReservesChart.razor`
+- `Beep.OilandGas.Web/Components/Exploration/ProspectCard.razor`
+- `Beep.OilandGas.Web/Pages/PPDM39/Compliance/GHGReport.razor`
+- `Beep.OilandGas.Web/Pages/PPDM39/WorkOrder/WorkOrderDetail.razor`
+
+### Assessment artifact
+
+- `Beep.OilandGas.Web/Documentation/WebApp-Architecture-And-OilGas-Fit-Assessment-2026-04-23.md`
+
+---
+
 ## API Duplication and Ownership Evidence
 
 - `Beep.OilandGas.ApiService/Controllers/WorkOrder/WorkOrderController.cs`

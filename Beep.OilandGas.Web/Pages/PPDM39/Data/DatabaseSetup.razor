@@ -1,7 +1,9 @@
 ﻿@page "/ppdm39/database-setup"
 @inject ISnackbar Snackbar
-@inject ApiClient ApiClient
+@inject IDataManagementService DataManagementService
 @inject NavigationManager NavigationManager
+@using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.DataManagement
 @using Beep.OilandGas.Web.Components.Data
 
 <PageTitle>Database Setup Wizard</PageTitle>
@@ -294,7 +296,7 @@
     private string _password = "";
     private string _connectionString = "";
 
-    private List<ConnectionSummaryItem> _existingConnections = new();
+    private List<DatabaseConnectionListItem> _existingConnections = new();
 
     private record StatusItem(string Label, string Value, Color Color);
     private List<StatusItem> _statusItems = new()
@@ -309,20 +311,20 @@
     {
         try
         {
-            var conns = await ApiClient.GetAsync<List<ConnectionSummaryItem>>("api/ppdm39/schema/connections") ?? new();            _existingConnections = conns ?? new();
+            _existingConnections = await DataManagementService.GetAllConnectionsAsync();
         }
         catch { /* non-critical */ }
     }
 
-    private ConnectionPropertiesDto BuildConnectionProps() => new()
+    private ConnectionConfig BuildConnectionConfig() => new()
     {
         ConnectionName   = $"{_database}_{_dbType}",
         DatabaseType     = _dbType,
-        Server           = _host,
-        Port             = _port,
+        Host             = _host,
+        Port             = int.TryParse(_port, out var port) ? port : 0,
         Database         = _database,
-        SchemaName       = _schema,
-        UserID           = _username,
+        Schema           = _schema,
+        Username         = _username,
         Password         = _password,
         ConnectionString = string.IsNullOrWhiteSpace(_connectionString) ? null : _connectionString,
     };
@@ -333,9 +335,8 @@
         Snackbar.Add("Testing connection…", Severity.Info);
         try
         {
-            var result = await ApiClient.PostAsync<ConnectionPropertiesDto, ConnectionTestResultDto>(
-                "api/ppdm39/setup/test-connection", BuildConnectionProps());
-            if (result?.Success == true)
+            var result = await DataManagementService.TestConnectionAsync(BuildConnectionConfig());
+            if (result.Success)
             {
                 _isConnected = true;
                 _statusItems = new()
@@ -350,7 +351,7 @@
             else
             {
                 _isConnected = false;
-                Snackbar.Add($"Connection failed: {result?.Message ?? result?.ErrorDetails ?? "Unknown error"}", Severity.Error);
+                Snackbar.Add($"Connection failed: {result.Message ?? result.ErrorDetails ?? "Unknown error"}", Severity.Error);
             }
         }
         catch (Exception)
@@ -365,12 +366,17 @@
         _isSaving = true;
         try
         {
-            var payload = new { Connection = BuildConnectionProps(), TestAfterSave = true, OpenAfterSave = false };
-            var result = await ApiClient.PostAsync<object, SaveConnectionResultDto>(
-                "api/ppdm39/setup/save-connection", payload);
-            if (result?.Success == true)
+            var config = BuildConnectionConfig();
+            var payload = new SaveConnectionRequest
             {
-                _savedConnectionName = result.ConnectionName ?? BuildConnectionProps().ConnectionName;
+                Connection = config.ToConnectionProperties(),
+                TestAfterSave = true,
+                OpenAfterSave = false
+            };
+            var result = await DataManagementService.SaveConnectionAsync(payload);
+            if (result.Success)
+            {
+                _savedConnectionName = result.ConnectionName ?? config.ConnectionName;
                 _isConnected = true;
                 _statusItems = new()
                 {
@@ -380,12 +386,12 @@
                     new("Type",         _dbType,               Color.Default),
                 };
                 Snackbar.Add("Connection saved", Severity.Success);
-                var conns = await ApiClient.GetAsync<List<ConnectionSummaryItem>>("api/ppdm39/schema/connections") ?? new();                _existingConnections = conns ?? new();
+                _existingConnections = await DataManagementService.GetAllConnectionsAsync();
                 _step = 1;
             }
             else
             {
-                Snackbar.Add($"Save failed: {result?.Message ?? "Unknown error"}", Severity.Error);
+                Snackbar.Add($"Save failed: {result.Message ?? "Unknown error"}", Severity.Error);
             }
         }
         catch (Exception)
@@ -395,7 +401,7 @@
         finally { _isSaving = false; }
     }
 
-    private void SelectExistingConnection(ConnectionSummaryItem conn)
+    private void SelectExistingConnection(DatabaseConnectionListItem conn)
     {
         _savedConnectionName = conn.ConnectionName;
         _dbType = conn.DatabaseType ?? _dbType;
@@ -420,40 +426,6 @@
 
     // ── DTOs ──────────────────────────────────────────────────────────────────
 
-    private sealed class ConnectionPropertiesDto
-    {
-        public string? ConnectionName   { get; set; }
-        public string? ConnectionString { get; set; }
-        public string? DatabaseType     { get; set; }
-        public string? Server           { get; set; }
-        public string? Port             { get; set; }
-        public string? Database         { get; set; }
-        public string? SchemaName       { get; set; }
-        public string? UserID           { get; set; }
-        public string? Password         { get; set; }
-    }
 
-    private sealed class ConnectionTestResultDto
-    {
-        public bool    Success      { get; set; }
-        public string? Message      { get; set; }
-        public string? ErrorDetails { get; set; }
-    }
-
-    private sealed class SaveConnectionResultDto
-    {
-        public bool    Success        { get; set; }
-        public string? Message        { get; set; }
-        public string? ErrorDetails   { get; set; }
-        public string? ConnectionName { get; set; }
-    }
-
-    private sealed class ConnectionSummaryItem
-    {
-        public string? ConnectionName { get; set; }
-        public string? DatabaseType   { get; set; }
-        public string? Host           { get; set; }
-        public string? Database       { get; set; }
-    }
 }
 

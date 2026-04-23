@@ -12,6 +12,8 @@ public interface IProductionServiceClient
 {
     Task<ProductionDashboardSummary?> GetDashboardSummaryAsync(CancellationToken cancellationToken = default);
     Task<List<ProductionWellStatusDto>> GetDashboardWellsAsync(CancellationToken cancellationToken = default);
+    Task<ReservoirDashboardSummary?> GetReservoirDashboardSummaryAsync(CancellationToken cancellationToken = default);
+    Task<List<ReservoirPoolDto>> GetReservoirPoolsAsync(CancellationToken cancellationToken = default);
     Task<ProductionWellPerformanceDto?> GetWellPerformanceAsync(string wellId, CancellationToken cancellationToken = default);
     Task<WellPerformanceAnalysisResponse?> GetWellPerformanceAnalysisAsync(string wellId, CancellationToken cancellationToken = default);
     Task<PerformanceDeviationResult> LogPerformanceDeviationAsync(string wellId, PerformanceDeviationRequest request, CancellationToken cancellationToken = default);

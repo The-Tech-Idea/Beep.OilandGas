@@ -3,6 +3,7 @@
 @page "/development/well-design/new"
 @inject ApiClient ApiClient
 @inject IDevelopmentServiceClient DevelopmentServiceClient
+@inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -369,7 +370,7 @@
         _loadedId = Id ?? string.Empty;
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }

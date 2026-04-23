@@ -2,6 +2,7 @@
 @using System.Security.Claims
 @inject ApiClient ApiClient
 @inject IExplorationServiceClient ExplorationService
+@inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -148,7 +149,7 @@
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }

@@ -362,6 +362,46 @@ html, body {
 /* ── Monospace text larger (1.1rem) ─────────────────────────────────── */
 .og-terminal-text-lg { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; }
 
+/* ── Work order calendar computed style classes ───────────────────────── */
+.og-calendar-day-today { background: var(--mud-palette-primary-lighten); }
+.og-calendar-day-col {
+    width: 3.57%;
+    min-width: 60px;
+}
+.og-calendar-row {
+    position: relative;
+    height: 36px;
+    overflow: visible;
+}
+.og-calendar-slot {
+    position: absolute;
+    top: 4px;
+    height: 28px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+.og-calendar-slot-text { line-height: 28px; }
+.og-calendar-legend-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+}
+.og-calendar-slot-draft { background: #9e9e9e; }
+.og-calendar-slot-planned { background: #2196f3; }
+.og-calendar-slot-inprogress { background: #ff9800; }
+.og-calendar-slot-underreview { background: #9c27b0; }
+.og-calendar-slot-completed { background: #4caf50; }
+.og-calendar-slot-cancelled { background: #f44336; }
+
+/* ── Map container and legend classes ─────────────────────────────────── */
+.og-map-height-400 { height: 400px; }
+.og-map-height-500 { height: 500px; }
+.og-map-height-600 { height: 600px; }
+.og-map-legend-swatch {
+    width: 20px;
+    height: 20px;
+}
+
 /* ── External provider button ──────────────────────────────────────── */
 .og-ext-provider-btn {
     justify-content: flex-start;

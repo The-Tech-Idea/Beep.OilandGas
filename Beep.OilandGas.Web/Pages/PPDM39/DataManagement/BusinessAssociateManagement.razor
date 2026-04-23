@@ -12,7 +12,7 @@
 
     @* ── Page header ─────────────────────────────────────────────────────── *@
     <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4" Spacing="2">
-        <MudIcon Icon="@Icons.Material.Filled.Business" Color="Color.Secondary" Style="font-size:2rem;" />
+        <MudIcon Icon="@Icons.Material.Filled.Business" Color="Color.Secondary" Size="Size.Large" />
         <MudStack Spacing="0">
             <MudText Typo="Typo.h5">Business Associate Management</MudText>
             <MudText Typo="Typo.body2" Color="Color.Secondary">
@@ -59,7 +59,7 @@
 
         @* ── Left: table browser ─────────────────────────────────────────── *@
         <MudItem xs="12" md="4" lg="3">
-            <MudPaper Elevation="2" Class="pa-3" Style="height: calc(100vh - 270px); overflow-y: auto;">
+            <MudPaper Elevation="2" Class="pa-3">
                 <CategoryTableBrowser CategoryId="BA"
                                       CategoryName="Business Associates"
                                       CategoryIcon="@Icons.Material.Filled.Business"
@@ -69,14 +69,14 @@
 
         @* ── Right: data grid / CRUD ──────────────────────────────────────── *@
         <MudItem xs="12" md="8" lg="9">
-            <MudPaper Elevation="2" Style="height: calc(100vh - 270px); overflow-y: auto;">
+            <MudPaper Elevation="2">
 
                 @if (_activeNode == null)
                 {
                     <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center"
-                              Style="height:100%;" Class="pa-8" Spacing="3">
+                              Class="pa-8" Spacing="3">
                         <MudIcon Icon="@Icons.Material.Filled.Business"
-                                 Style="font-size:5rem;" Color="Color.Secondary" />
+                                 Size="Size.Large" Color="Color.Secondary" />
                         <MudText Typo="Typo.h5">Business Associates</MudText>
                         <MudText Typo="Typo.body1" Color="Color.Secondary" Align="Align.Center">
                             Select a BA type chip above, or pick a table from the left panel.
@@ -93,7 +93,7 @@
                                             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                                                 <MudIcon Icon="@qt.Icon" Color="Color.Secondary" Size="Size.Small" />
                                                 <MudStack Spacing="0">
-                                                    <MudText Typo="Typo.body2" Style="font-family:monospace;">
+                                                    <MudText Typo="Typo.body2" Class="font-monospace">
                                                         @qt.TableName
                                                     </MudText>
                                                     <MudText Typo="Typo.caption" Color="Color.Secondary">

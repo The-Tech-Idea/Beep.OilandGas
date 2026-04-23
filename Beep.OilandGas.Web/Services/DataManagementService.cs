@@ -1,5 +1,7 @@
 using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.PPDM39.DataManagement.SeedData;
 using Beep.OilandGas.Web.Services;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -23,6 +25,131 @@ namespace Beep.OilandGas.Web.Services
         /// Set the current active data source connection
         /// </summary>
         Task<SetCurrentDatabaseResult> SetCurrentConnectionAsync(string connectionName);
+
+        /// <summary>
+        /// Test a PPDM setup connection configuration.
+        /// </summary>
+        Task<ConnectionTestResult> TestConnectionAsync(ConnectionConfig connectionConfig);
+
+        /// <summary>
+        /// Save a PPDM setup connection.
+        /// </summary>
+        Task<SaveConnectionResult> SaveConnectionAsync(SaveConnectionRequest request);
+
+        /// <summary>
+        /// Get available PPDM setup database types.
+        /// </summary>
+        Task<List<string>> GetAvailableDatabaseTypesAsync();
+
+        /// <summary>
+        /// Discover available PPDM setup scripts for a database type.
+        /// </summary>
+        Task<List<ScriptInfo>> DiscoverScriptsAsync(string databaseType);
+
+        /// <summary>
+        /// Start PPDM database creation.
+        /// </summary>
+        Task<DatabaseCreationResult> CreateDatabaseAsync(CreateDatabaseRequest request);
+
+        /// <summary>
+        /// Get PPDM database creation progress.
+        /// </summary>
+        Task<ScriptExecutionProgressInfo?> GetCreationProgressAsync(string executionId);
+
+        /// <summary>
+        /// Delete a saved PPDM setup connection.
+        /// </summary>
+        Task<DeleteConnectionResult> DeleteConnectionAsync(string connectionName);
+
+        /// <summary>
+        /// Drop a PPDM database or schema.
+        /// </summary>
+        Task<DropDatabaseResult> DropDatabaseAsync(DropDatabaseRequest request);
+
+        /// <summary>
+        /// Recreate a PPDM database or schema.
+        /// </summary>
+        Task<RecreateDatabaseResult> RecreateDatabaseAsync(RecreateDatabaseRequest request);
+
+        /// <summary>
+        /// Start a PPDM database copy operation.
+        /// </summary>
+        Task<OperationStartResponse> CopyDatabaseAsync(CopyDatabaseRequest request);
+
+        /// <summary>
+        /// Get the current well-status facet seed status.
+        /// </summary>
+        Task<FacetSeedStatus?> GetWellStatusFacetSeedStatusAsync();
+
+        /// <summary>
+        /// Seed well-status facet reference data.
+        /// </summary>
+        Task<SeedingOperationResult> SeedWellStatusFacetsAsync();
+
+        /// <summary>
+        /// Seed enum-backed reference data.
+        /// </summary>
+        Task<SeedingOperationResult> SeedEnumReferenceDataAsync();
+
+        /// <summary>
+        /// Seed all reference data.
+        /// </summary>
+        Task<SeedingOperationResult> SeedAllReferenceDataAsync();
+
+        /// <summary>
+        /// Generate PPDM setup dummy data.
+        /// </summary>
+        Task<GenerateDummyDataResponse> GenerateDummyDataAsync(GenerateDummyDataRequest request);
+
+        /// <summary>
+        /// Get PPDM audit statistics.
+        /// </summary>
+        Task<AccessStatistics?> GetAuditStatisticsAsync(DateTime? from = null, DateTime? to = null, string? tableName = null);
+
+        /// <summary>
+        /// Get recent PPDM audit events.
+        /// </summary>
+        Task<List<DataAccessEvent>> GetRecentAuditEventsAsync(DateTime? from = null, DateTime? to = null);
+
+        /// <summary>
+        /// Create a SQLite PPDM setup database.
+        /// </summary>
+        Task<CreateSqliteResult> CreateSqliteAsync(CreateSqliteRequest request);
+
+        /// <summary>
+        /// Create schema from the migration-based setup path.
+        /// </summary>
+        Task<CreateSchemaResult> CreateSchemaFromMigrationAsync(CreateSchemaRequest request);
+
+        /// <summary>
+        /// Build a schema migration plan and review artifacts.
+        /// </summary>
+        Task<SchemaMigrationPlanResult> PlanSchemaMigrationAsync(SchemaMigrationPlanRequest request);
+
+        /// <summary>
+        /// Record approval for a schema migration plan.
+        /// </summary>
+        Task<SchemaMigrationApprovalResult> ApproveSchemaMigrationAsync(SchemaMigrationApprovalRequest request);
+
+        /// <summary>
+        /// Execute an approved schema migration plan.
+        /// </summary>
+        Task<SchemaMigrationExecuteResult> ExecuteSchemaMigrationAsync(SchemaMigrationExecuteRequest request);
+
+        /// <summary>
+        /// Start an approved schema migration plan in the background and return an execution token.
+        /// </summary>
+        Task<OperationStartResponse> StartSchemaMigrationExecutionAsync(SchemaMigrationExecuteRequest request);
+
+        /// <summary>
+        /// Get checkpointed progress for a schema migration execution.
+        /// </summary>
+        Task<SchemaMigrationProgressResult> GetSchemaMigrationProgressAsync(string executionToken);
+
+        /// <summary>
+        /// Get stored evidence artifacts for a schema migration plan.
+        /// </summary>
+        Task<SchemaMigrationArtifactsResult> GetSchemaMigrationArtifactsAsync(string planId);
 
         /// <summary>
         /// Get all available database connections
@@ -281,6 +408,703 @@ namespace Beep.OilandGas.Web.Services
                     Success = false,
                     Message = "Error setting current connection",
                     ErrorDetails = ex.Message
+                };
+            }
+        }
+
+        public async Task<ConnectionTestResult> TestConnectionAsync(ConnectionConfig connectionConfig)
+        {
+            ArgumentNullException.ThrowIfNull(connectionConfig);
+
+            try
+            {
+                var result = await _apiClient.PostAsync<ConnectionConfig, ConnectionTestResult>(
+                    "/api/ppdm39/setup/test-connection",
+                    connectionConfig);
+
+                return result ?? new ConnectionTestResult
+                {
+                    Success = false,
+                    Message = "Connection test failed"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error testing setup connection {ConnectionName}", connectionConfig.ConnectionName);
+                return new ConnectionTestResult
+                {
+                    Success = false,
+                    Message = "Connection test failed",
+                    ErrorDetails = ex.Message
+                };
+            }
+        }
+
+        public async Task<SaveConnectionResult> SaveConnectionAsync(SaveConnectionRequest request)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            try
+            {
+                var result = await _apiClient.PostAsync<SaveConnectionRequest, SaveConnectionResult>(
+                    "/api/ppdm39/setup/save-connection",
+                    request);
+
+                if (result?.Success == true)
+                {
+                    await RefreshConnectionsAsync();
+                }
+
+                return result ?? new SaveConnectionResult
+                {
+                    Success = false,
+                    Message = "Failed to save connection"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving setup connection {ConnectionName}", request.Connection?.ConnectionName);
+                return new SaveConnectionResult
+                {
+                    Success = false,
+                    Message = "Failed to save connection",
+                    ErrorDetails = ex.Message
+                };
+            }
+        }
+
+        public async Task<List<string>> GetAvailableDatabaseTypesAsync()
+        {
+            try
+            {
+                return await _apiClient.GetAsync<List<string>>("/api/ppdm39/setup/database-types")
+                    ?? new List<string>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting available database types");
+                return new List<string>();
+            }
+        }
+
+        public async Task<List<ScriptInfo>> DiscoverScriptsAsync(string databaseType)
+        {
+            if (string.IsNullOrWhiteSpace(databaseType))
+            {
+                return new List<ScriptInfo>();
+            }
+
+            try
+            {
+                return await _apiClient.GetAsync<List<ScriptInfo>>(
+                    $"/api/ppdm39/setup/discover-scripts/{Uri.EscapeDataString(databaseType)}")
+                    ?? new List<ScriptInfo>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error discovering setup scripts for database type {DatabaseType}", databaseType);
+                return new List<ScriptInfo>();
+            }
+        }
+
+        public async Task<DatabaseCreationResult> CreateDatabaseAsync(CreateDatabaseRequest request)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            try
+            {
+                var result = await _apiClient.PostAsync<CreateDatabaseRequest, DatabaseCreationResult>(
+                    "/api/ppdm39/setup/create-database",
+                    request);
+
+                return result ?? new DatabaseCreationResult
+                {
+                    Success = false,
+                    ErrorMessage = "Database creation failed"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating PPDM database for connection {ConnectionName}", request.Connection?.ConnectionName);
+                return new DatabaseCreationResult
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message
+                };
+            }
+        }
+
+        public async Task<ScriptExecutionProgressInfo?> GetCreationProgressAsync(string executionId)
+        {
+            if (string.IsNullOrWhiteSpace(executionId))
+            {
+                return null;
+            }
+
+            try
+            {
+                return await _apiClient.GetAsync<ScriptExecutionProgressInfo>(
+                    $"/api/ppdm39/setup/creation-progress/{Uri.EscapeDataString(executionId)}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Error getting database creation progress for execution {ExecutionId}", executionId);
+                return null;
+            }
+        }
+
+        public async Task<DeleteConnectionResult> DeleteConnectionAsync(string connectionName)
+        {
+            if (string.IsNullOrWhiteSpace(connectionName))
+            {
+                return new DeleteConnectionResult
+                {
+                    Success = false,
+                    Message = "Connection name is required"
+                };
+            }
+
+            try
+            {
+                var result = await _apiClient.DeleteAsync<DeleteConnectionResult>(
+                    $"/api/ppdm39/setup/connection/{Uri.EscapeDataString(connectionName)}");
+
+                if (result?.Success == true)
+                {
+                    await RefreshConnectionsAsync();
+                }
+
+                return result ?? new DeleteConnectionResult
+                {
+                    Success = false,
+                    Message = "Failed to delete connection"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting setup connection {ConnectionName}", connectionName);
+                return new DeleteConnectionResult
+                {
+                    Success = false,
+                    Message = "Failed to delete connection",
+                    ErrorDetails = ex.Message
+                };
+            }
+        }
+
+        public async Task<DropDatabaseResult> DropDatabaseAsync(DropDatabaseRequest request)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            try
+            {
+                var result = await _apiClient.PostAsync<DropDatabaseRequest, DropDatabaseResult>(
+                    "/api/ppdm39/setup/drop-database",
+                    request);
+
+                return result ?? new DropDatabaseResult
+                {
+                    Success = false,
+                    Message = "Failed to drop database"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error dropping setup database for connection {ConnectionName}", request.ConnectionName);
+                return new DropDatabaseResult
+                {
+                    Success = false,
+                    Message = "Failed to drop database",
+                    ErrorDetails = ex.Message
+                };
+            }
+        }
+
+        public async Task<RecreateDatabaseResult> RecreateDatabaseAsync(RecreateDatabaseRequest request)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            try
+            {
+                var result = await _apiClient.PostAsync<RecreateDatabaseRequest, RecreateDatabaseResult>(
+                    "/api/ppdm39/setup/recreate-database",
+                    request);
+
+                return result ?? new RecreateDatabaseResult
+                {
+                    Success = false,
+                    Message = "Failed to recreate database"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error recreating setup database for connection {ConnectionName}", request.ConnectionName);
+                return new RecreateDatabaseResult
+                {
+                    Success = false,
+                    Message = "Failed to recreate database",
+                    ErrorDetails = ex.Message
+                };
+            }
+        }
+
+        public async Task<OperationStartResponse> CopyDatabaseAsync(CopyDatabaseRequest request)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            try
+            {
+                var result = await _apiClient.PostAsync<CopyDatabaseRequest, OperationStartResponse>(
+                    "/api/ppdm39/setup/copy-database",
+                    request);
+
+                return result ?? new OperationStartResponse
+                {
+                    Success = false,
+                    OperationId = string.Empty,
+                    Message = "Failed to start database copy"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error copying setup database from {SourceConnection} to {TargetConnection}", request.SourceConnectionName, request.TargetConnectionName);
+                return new OperationStartResponse
+                {
+                    Success = false,
+                    OperationId = string.Empty,
+                    Message = ex.Message
+                };
+            }
+        }
+
+        public async Task<FacetSeedStatus?> GetWellStatusFacetSeedStatusAsync()
+        {
+            try
+            {
+                return await _apiClient.GetAsync<FacetSeedStatus>(
+                    "/api/ppdm39/setup/seed/well-status-facets/status");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Error getting well-status facet seed status");
+                return null;
+            }
+        }
+
+        public async Task<SeedingOperationResult> SeedWellStatusFacetsAsync()
+        {
+            try
+            {
+                var rawResult = await _apiClient.PostAsync<object, FacetSeedResult>(
+                    "/api/ppdm39/setup/seed/well-status-facets",
+                    new { });
+
+                return rawResult == null
+                    ? new SeedingOperationResult
+                    {
+                        Success = false,
+                        Message = "Facet seeding failed."
+                    }
+                    : new SeedingOperationResult
+                    {
+                        Success = rawResult.Success,
+                        Message = rawResult.Message,
+                        TotalInserted = rawResult.TotalInserted,
+                        Details = new List<string>
+                        {
+                            $"R_WELL_STATUS_TYPE:       {rawResult.FacetTypeRows} rows",
+                            $"R_WELL_STATUS:            {rawResult.FacetValueRows} rows",
+                            $"R_WELL_STATUS_QUAL:       {rawResult.FacetQualifierRows} rows",
+                            $"R_WELL_STATUS_QUAL_VALUE: {rawResult.FacetQualValueRows} rows"
+                        },
+                        Errors = rawResult.Errors ?? new List<string>()
+                    };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error seeding well-status facets");
+                return new SeedingOperationResult
+                {
+                    Success = false,
+                    Message = "Facet seeding failed.",
+                    Errors = new List<string> { ex.Message }
+                };
+            }
+        }
+
+        public async Task<SeedingOperationResult> SeedEnumReferenceDataAsync()
+        {
+            try
+            {
+                return await _apiClient.PostAsync<object, SeedingOperationResult>(
+                           "/api/ppdm39/setup/seed/enum-reference-data",
+                           new { })
+                       ?? new SeedingOperationResult
+                       {
+                           Success = false,
+                           Message = "Enum reference data seeding failed."
+                       };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error seeding enum reference data");
+                return new SeedingOperationResult
+                {
+                    Success = false,
+                    Message = "Enum reference data seeding failed.",
+                    Errors = new List<string> { ex.Message }
+                };
+            }
+        }
+
+        public async Task<SeedingOperationResult> SeedAllReferenceDataAsync()
+        {
+            try
+            {
+                return await _apiClient.PostAsync<object, SeedingOperationResult>(
+                           "/api/ppdm39/setup/seed/all-reference-data",
+                           new { })
+                       ?? new SeedingOperationResult
+                       {
+                           Success = false,
+                           Message = "Reference data seeding failed."
+                       };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error seeding all reference data");
+                return new SeedingOperationResult
+                {
+                    Success = false,
+                    Message = "Reference data seeding failed.",
+                    Errors = new List<string> { ex.Message }
+                };
+            }
+        }
+
+        public async Task<GenerateDummyDataResponse> GenerateDummyDataAsync(GenerateDummyDataRequest request)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            try
+            {
+                return await _apiClient.PostAsync<GenerateDummyDataRequest, GenerateDummyDataResponse>(
+                           "/api/ppdm39/setup/generate-dummy-data",
+                           request)
+                       ?? new GenerateDummyDataResponse
+                       {
+                           Success = false,
+                           Message = "Generation failed."
+                       };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating dummy setup data for seed option {SeedOption}", request.SeedOption);
+                return new GenerateDummyDataResponse
+                {
+                    Success = false,
+                    Message = "An error occurred generating demo data.",
+                    ErrorDetails = ex.Message,
+                    SeedOption = request.SeedOption
+                };
+            }
+        }
+
+        public async Task<AccessStatistics?> GetAuditStatisticsAsync(DateTime? from = null, DateTime? to = null, string? tableName = null)
+        {
+            try
+            {
+                var queryParts = new List<string>();
+                if (from.HasValue)
+                {
+                    queryParts.Add($"from={Uri.EscapeDataString(from.Value.ToString("o"))}");
+                }
+
+                if (to.HasValue)
+                {
+                    queryParts.Add($"to={Uri.EscapeDataString(to.Value.ToString("o"))}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(tableName))
+                {
+                    queryParts.Add($"tableName={Uri.EscapeDataString(tableName)}");
+                }
+
+                var url = "/api/ppdm39/audit/statistics";
+                if (queryParts.Count > 0)
+                {
+                    url += "?" + string.Join("&", queryParts);
+                }
+
+                return await _apiClient.GetAsync<AccessStatistics>(url);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting PPDM audit statistics");
+                return null;
+            }
+        }
+
+        public async Task<List<DataAccessEvent>> GetRecentAuditEventsAsync(DateTime? from = null, DateTime? to = null)
+        {
+            try
+            {
+                var queryParts = new List<string>();
+                if (from.HasValue)
+                {
+                    queryParts.Add($"from={Uri.EscapeDataString(from.Value.ToString("o"))}");
+                }
+
+                if (to.HasValue)
+                {
+                    queryParts.Add($"to={Uri.EscapeDataString(to.Value.ToString("o"))}");
+                }
+
+                var url = "/api/ppdm39/audit/recent";
+                if (queryParts.Count > 0)
+                {
+                    url += "?" + string.Join("&", queryParts);
+                }
+
+                return await _apiClient.GetAsync<List<DataAccessEvent>>(url)
+                    ?? new List<DataAccessEvent>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting recent PPDM audit events");
+                return new List<DataAccessEvent>();
+            }
+        }
+
+        public async Task<CreateSqliteResult> CreateSqliteAsync(CreateSqliteRequest request)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            try
+            {
+                return await _apiClient.PostAsync<CreateSqliteRequest, CreateSqliteResult>(
+                           "/api/ppdm39/setup/create-sqlite",
+                           request)
+                       ?? new CreateSqliteResult
+                       {
+                           Success = false,
+                           Message = "Failed to create database."
+                       };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating SQLite setup database for connection {ConnectionName}", request.ConnectionName);
+                return new CreateSqliteResult
+                {
+                    Success = false,
+                    Message = "An error occurred.",
+                    ErrorDetails = ex.Message,
+                    ConnectionName = request.ConnectionName
+                };
+            }
+        }
+
+        public async Task<CreateSchemaResult> CreateSchemaFromMigrationAsync(CreateSchemaRequest request)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            try
+            {
+                return await _apiClient.PostAsync<CreateSchemaRequest, CreateSchemaResult>(
+                           "/api/ppdm39/setup/create-schema-from-migration",
+                           request)
+                       ?? new CreateSchemaResult
+                       {
+                           Success = false,
+                           Message = "Schema migration failed."
+                       };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating schema from migration for connection {ConnectionName}", request.ConnectionName);
+                return new CreateSchemaResult
+                {
+                    Success = false,
+                    Message = "Schema migration failed.",
+                    ErrorDetails = ex.Message
+                };
+            }
+        }
+
+        public async Task<SchemaMigrationPlanResult> PlanSchemaMigrationAsync(SchemaMigrationPlanRequest request)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            try
+            {
+                return await _apiClient.PostAsync<SchemaMigrationPlanRequest, SchemaMigrationPlanResult>(
+                           "/api/ppdm39/setup/schema/plan",
+                           request)
+                       ?? new SchemaMigrationPlanResult
+                       {
+                           Success = false,
+                           Message = "Schema migration planning failed."
+                       };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error planning schema migration for connection {ConnectionName}", request.ConnectionName);
+                return new SchemaMigrationPlanResult
+                {
+                    Success = false,
+                    ConnectionName = request.ConnectionName,
+                    Message = "Schema migration planning failed.",
+                    DryRunDiagnostics = new List<string> { ex.Message }
+                };
+            }
+        }
+
+        public async Task<SchemaMigrationApprovalResult> ApproveSchemaMigrationAsync(SchemaMigrationApprovalRequest request)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            try
+            {
+                return await _apiClient.PostAsync<SchemaMigrationApprovalRequest, SchemaMigrationApprovalResult>(
+                           "/api/ppdm39/setup/schema/approve",
+                           request)
+                       ?? new SchemaMigrationApprovalResult
+                       {
+                           Success = false,
+                           Message = "Schema migration approval failed."
+                       };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving schema migration plan {PlanId}", request.PlanId);
+                return new SchemaMigrationApprovalResult
+                {
+                    Success = false,
+                    PlanId = request.PlanId,
+                    Message = "Schema migration approval failed."
+                };
+            }
+        }
+
+        public async Task<SchemaMigrationExecuteResult> ExecuteSchemaMigrationAsync(SchemaMigrationExecuteRequest request)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            try
+            {
+                return await _apiClient.PostAsync<SchemaMigrationExecuteRequest, SchemaMigrationExecuteResult>(
+                           "/api/ppdm39/setup/schema/execute",
+                           request)
+                       ?? new SchemaMigrationExecuteResult
+                       {
+                           Success = false,
+                           Message = "Schema migration execution failed."
+                       };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error executing schema migration plan {PlanId}", request.PlanId);
+                return new SchemaMigrationExecuteResult
+                {
+                    Success = false,
+                    PlanId = request.PlanId,
+                    Message = "Schema migration execution failed.",
+                    CompensationOutcome = ex.Message
+                };
+            }
+        }
+
+        public async Task<OperationStartResponse> StartSchemaMigrationExecutionAsync(SchemaMigrationExecuteRequest request)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            try
+            {
+                return await _apiClient.PostAsync<SchemaMigrationExecuteRequest, OperationStartResponse>(
+                           "/api/ppdm39/setup/schema/start",
+                           request)
+                       ?? new OperationStartResponse
+                       {
+                           Success = false,
+                           Message = "Schema migration could not be started."
+                       };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error starting schema migration plan {PlanId}", request.PlanId);
+                return new OperationStartResponse
+                {
+                    Success = false,
+                    Message = "Schema migration could not be started."
+                };
+            }
+        }
+
+        public async Task<SchemaMigrationProgressResult> GetSchemaMigrationProgressAsync(string executionToken)
+        {
+            if (string.IsNullOrWhiteSpace(executionToken))
+            {
+                return new SchemaMigrationProgressResult
+                {
+                    Success = false,
+                    Message = "Execution token is required."
+                };
+            }
+
+            try
+            {
+                return await _apiClient.GetAsync<SchemaMigrationProgressResult>(
+                           $"/api/ppdm39/setup/schema/progress/{Uri.EscapeDataString(executionToken)}")
+                       ?? new SchemaMigrationProgressResult
+                       {
+                           Success = false,
+                           ExecutionToken = executionToken,
+                           Message = "Schema migration progress was not found."
+                       };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting schema migration progress for {ExecutionToken}", executionToken);
+                return new SchemaMigrationProgressResult
+                {
+                    Success = false,
+                    ExecutionToken = executionToken,
+                    Message = "Could not read schema migration progress.",
+                    FailureReason = ex.Message
+                };
+            }
+        }
+
+        public async Task<SchemaMigrationArtifactsResult> GetSchemaMigrationArtifactsAsync(string planId)
+        {
+            if (string.IsNullOrWhiteSpace(planId))
+            {
+                return new SchemaMigrationArtifactsResult
+                {
+                    Success = false,
+                    Message = "Plan ID is required."
+                };
+            }
+
+            try
+            {
+                return await _apiClient.GetAsync<SchemaMigrationArtifactsResult>(
+                           $"/api/ppdm39/setup/schema/artifacts/{Uri.EscapeDataString(planId)}")
+                       ?? new SchemaMigrationArtifactsResult
+                       {
+                           Success = false,
+                           PlanId = planId,
+                           Message = "Schema migration artifacts were not found."
+                       };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting schema migration artifacts for {PlanId}", planId);
+                return new SchemaMigrationArtifactsResult
+                {
+                    Success = false,
+                    PlanId = planId,
+                    Message = "Could not load schema migration artifacts."
                 };
             }
         }

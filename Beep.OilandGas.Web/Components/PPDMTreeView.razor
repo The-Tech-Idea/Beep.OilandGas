@@ -44,7 +44,7 @@
                     var isPage = nodeKind == NodeKind.Page;
                     var isBrowseOnly = context.Value != null && _browseOnlyCategories.Contains(context.Value);
                 }
-                <MudStack Row="true" AlignItems="AlignItems.Center" Style="width:100%; min-width:0;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="w-100">
                     <MudTreeViewItem @bind-Expanded="@context.Expanded"
                                      Items="@context.Children"
                                      Value="@context.Value"
@@ -52,13 +52,13 @@
                                      IconExpanded="@GetExpandedIcon(context)"
                                      Text="@context.Text"
                                      Visible="@context.Visible"
-                                     Style="@(isPage ? "flex:1; min-width:0; color:var(--mud-palette-primary);" : "flex:1; min-width:0;")" />
+                                     Class="@(isPage ? "flex-grow-1 text-primary" : "flex-grow-1")" />
                     @if (isPage)
                     {
                         <MudIcon Icon="@Icons.Material.Filled.OpenInNew"
                                  Size="Size.Small"
                                  Color="Color.Primary"
-                                 Style="flex-shrink:0; opacity:0.6;" />
+                                 Class="opacity-50" />
                     }
                     else if (isCategory)
                     {
@@ -67,7 +67,7 @@
                                            Size="Size.Small"
                                            Color="@(isBrowseOnly ? Color.Warning : Color.Default)"
                                            OnClick="@(() => BrowseCategory(context.Value))"
-                                           Style="flex-shrink:0;" />
+                                           />
                         </MudTooltip>
                     }
                 </MudStack>

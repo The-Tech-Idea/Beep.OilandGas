@@ -1,12 +1,12 @@
 ﻿@page "/ppdm39/setup/dummy-data"
 @using Beep.OilandGas.Web.Services
-@inject ApiClient ApiClient
+@using Beep.OilandGas.Models.Data
+@inject IDataManagementService DataManagementService
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
-@using System.Text.Json
 
 <PageTitle>Generate Demo Data — Beep Oil &amp; Gas</PageTitle>
 
@@ -131,14 +131,17 @@
             _statusText = "Generating assets — this may take a moment…";
             StateHasChanged();
 
-            var request = new { SeedOption = _seedOption, UserId = userId };
-            _result = await ApiClient.PostAsync<object, GenerateDummyDataResponse>(
-                "/api/ppdm39/setup/generate-dummy-data", request);
+            var request = new GenerateDummyDataRequest
+            {
+                SeedOption = _seedOption,
+                UserId = userId
+            };
+            _result = await DataManagementService.GenerateDummyDataAsync(request);
 
-            if (_result?.Success == true)
+            if (_result.Success)
                 Snackbar.Add("Demo data generated successfully.", Severity.Success);
             else
-                Snackbar.Add(_result?.Message ?? "Generation failed.", Severity.Error);
+                Snackbar.Add(_result.Message ?? "Generation failed.", Severity.Error);
         }
         catch (Exception)
         {
@@ -155,18 +158,5 @@
             _statusText = "";
             StateHasChanged();
         }
-    }
-
-    private class GenerateDummyDataResponse
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = string.Empty;
-        public string SeedOption { get; set; } = string.Empty;
-        public int FieldsCreated { get; set; }
-        public int WellsCreated { get; set; }
-        public int ProductionRecords { get; set; }
-        public int FacilitiesCreated { get; set; }
-        public int WellTestsCreated { get; set; }
-        public int ActivitiesCreated { get; set; }
     }
 }

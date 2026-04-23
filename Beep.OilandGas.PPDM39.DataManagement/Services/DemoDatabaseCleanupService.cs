@@ -7,6 +7,7 @@ using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Services
 {
@@ -17,17 +18,17 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
     public class DemoDatabaseCleanupService : BackgroundService
     {
         private readonly DemoDatabaseConfig _config;
-        private readonly DemoDatabaseService _demoDatabaseService;
+        private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<DemoDatabaseCleanupService> _logger;
         private readonly TimeSpan _cleanupInterval = TimeSpan.FromHours(24); // Run daily
 
         public DemoDatabaseCleanupService(
             IOptions<DemoDatabaseConfig> config,
-            DemoDatabaseService demoDatabaseService,
+            IServiceScopeFactory scopeFactory,
             ILogger<DemoDatabaseCleanupService> logger)
         {
             _config = config?.Value ?? throw new ArgumentNullException(nameof(config));
-            _demoDatabaseService = demoDatabaseService ?? throw new ArgumentNullException(nameof(demoDatabaseService));
+            _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -49,7 +50,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 try
                 {
                     _logger.LogInformation("Starting scheduled cleanup of expired demo databases");
-                    var result = await _demoDatabaseService.CleanupExpiredDatabasesAsync();
+                    using var scope = _scopeFactory.CreateScope();
+                    var demoDatabaseService = scope.ServiceProvider.GetRequiredService<DemoDatabaseService>();
+                    var result = await demoDatabaseService.CleanupExpiredDatabasesAsync();
 
                     if (result.Success)
                     {

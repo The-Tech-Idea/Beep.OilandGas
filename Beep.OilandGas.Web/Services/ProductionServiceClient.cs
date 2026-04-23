@@ -52,6 +52,38 @@ public sealed class ProductionServiceClient : IProductionServiceClient
         }
     }
 
+    public async Task<ReservoirDashboardSummary?> GetReservoirDashboardSummaryAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await _apiClient.GetAsync<ReservoirDashboardSummary>(
+                "/api/field/current/reservoir/dashboard/summary",
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting reservoir dashboard summary.");
+            throw;
+        }
+    }
+
+    public async Task<List<ReservoirPoolDto>> GetReservoirPoolsAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var result = await _apiClient.GetAsync<List<ReservoirPoolDto>>(
+                "/api/field/current/reservoir/dashboard/pools",
+                cancellationToken);
+
+            return result ?? new List<ReservoirPoolDto>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting reservoir dashboard pools.");
+            throw;
+        }
+    }
+
     public async Task<ProductionWellPerformanceDto?> GetWellPerformanceAsync(string wellId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(wellId))

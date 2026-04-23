@@ -3,7 +3,7 @@
 @using Beep.OilandGas.Client.App
 @using Beep.OilandGas.Models.Core.Interfaces
 @using Beep.OilandGas.PPDM39.DataManagement.SeedData
-@inject ApiClient ApiClient
+@inject IDataManagementService DataManagementService
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
 
@@ -258,8 +258,7 @@
     {
         try
         {
-            _status = await ApiClient.GetAsync<FacetSeedStatus>(
-                "/api/ppdm39/setup/seed/well-status-facets/status");
+            _status = await DataManagementService.GetWellStatusFacetSeedStatusAsync();
         }
         catch
         {
@@ -274,28 +273,12 @@
         StateHasChanged();
         try
         {
-            var raw = await ApiClient.PostAsync<object, FacetSeedResult>(
-                "/api/ppdm39/setup/seed/well-status-facets", new { });
+            _lastResult = await DataManagementService.SeedWellStatusFacetsAsync();
 
-            _lastResult = raw == null ? null : new SeedingOperationResult
-            {
-                Success       = raw.Success,
-                Message       = raw.Message,
-                TotalInserted = raw.TotalInserted,
-                Details       = new List<string>
-                {
-                    $"R_WELL_STATUS_TYPE:       {raw.FacetTypeRows} rows",
-                    $"R_WELL_STATUS:            {raw.FacetValueRows} rows",
-                    $"R_WELL_STATUS_QUAL:       {raw.FacetQualifierRows} rows",
-                    $"R_WELL_STATUS_QUAL_VALUE: {raw.FacetQualValueRows} rows"
-                },
-                Errors = raw.Errors ?? new()
-            };
-
-            if (raw?.Success == true)
-                Snackbar.Add($"WSC v3 facets seeded — {raw.TotalInserted} rows inserted.", Severity.Success);
+            if (_lastResult.Success)
+                Snackbar.Add($"WSC v3 facets seeded — {_lastResult.TotalInserted} rows inserted.", Severity.Success);
             else
-                Snackbar.Add(raw?.Message ?? "Seeding failed.", Severity.Error);
+                Snackbar.Add(_lastResult.Message ?? "Seeding failed.", Severity.Error);
         }
         catch (Exception)
         {
@@ -315,13 +298,12 @@
         StateHasChanged();
         try
         {
-            _lastResult = await ApiClient.PostAsync<object, SeedingOperationResult>(
-                "/api/ppdm39/setup/seed/enum-reference-data", new { });
+            _lastResult = await DataManagementService.SeedEnumReferenceDataAsync();
 
-            if (_lastResult?.Success == true)
+            if (_lastResult.Success)
                 Snackbar.Add($"Enum reference data seeded — {_lastResult.TotalInserted} rows inserted.", Severity.Success);
             else
-                Snackbar.Add(_lastResult?.Message ?? "Seeding failed.", Severity.Error);
+                Snackbar.Add(_lastResult.Message ?? "Seeding failed.", Severity.Error);
         }
         catch (Exception)
         {
@@ -340,13 +322,12 @@
         StateHasChanged();
         try
         {
-            _lastResult = await ApiClient.PostAsync<object, SeedingOperationResult>(
-                "/api/ppdm39/setup/seed/all-reference-data", new { });
+            _lastResult = await DataManagementService.SeedAllReferenceDataAsync();
 
-            if (_lastResult?.Success == true)
+            if (_lastResult.Success)
                 Snackbar.Add($"All reference data seeded — {_lastResult.TotalInserted} rows inserted.", Severity.Success);
             else
-                Snackbar.Add(_lastResult?.Message ?? "Seeding partially failed — check details.", Severity.Warning);
+                Snackbar.Add(_lastResult.Message ?? "Seeding partially failed — check details.", Severity.Warning);
         }
         catch (Exception)
         {

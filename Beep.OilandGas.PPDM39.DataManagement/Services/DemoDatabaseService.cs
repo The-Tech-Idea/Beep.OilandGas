@@ -113,16 +113,15 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     };
                 }
 
-                // Get all available scripts for SQLite
-                var availableScripts = _setupService.GetAvailableScripts("SQLite");
-                var names = availableScripts
-                    .OrderBy(s => s.ExecutionOrder)
-                    .Select(s => s.Name?.ToString() ?? string.Empty)
-                    .ToList();
-                
-                // Create database schema using setup service
-                var scriptsResult = await _setupService.ExecuteAllScriptsAsync(connectionConfig, names);
-                if (!scriptsResult.AllSucceeded)
+                var planResult = await _setupService.PlanSchemaMigrationAsync(new SchemaMigrationPlanRequest
+                {
+                    ConnectionName = connectionName,
+                    BackupConfirmed = true,
+                    RestoreTestEvidenceProvided = true,
+                    RestoreTestEvidence = $"Demo database bootstrap for user {request.UserId}"
+                });
+
+                if (!planResult.Success)
                 {
                     // Clean up on failure
                     if (File.Exists(databasePath))
@@ -133,8 +132,114 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     {
                         Success = false,
                         Message = "Failed to create database schema",
-                        ErrorDetails = $"Only {scriptsResult.SuccessfulScripts} of {scriptsResult.TotalScripts} scripts succeeded"
+                        ErrorDetails = planResult.Message,
+                        SchemaPlanId = planResult.PlanId
                     };
+                }
+
+                var approvalResult = await _setupService.ApproveSchemaMigrationPlanAsync(new SchemaMigrationApprovalRequest
+                {
+                    PlanId = planResult.PlanId,
+                    ApprovedBy = $"demo-service:{request.UserId}",
+                    Notes = "Auto-approved for demo database bootstrap."
+                });
+
+                if (!approvalResult.Success)
+                {
+                    if (File.Exists(databasePath))
+                    {
+                        File.Delete(databasePath);
+                    }
+
+                    return new CreateDemoDatabaseResponse
+                    {
+                        Success = false,
+                        Message = "Failed to approve database schema plan",
+                        ErrorDetails = approvalResult.Message,
+                        SchemaPlanId = planResult.PlanId
+                    };
+                }
+
+                var startResult = await _setupService.StartSchemaMigrationExecutionAsync(new SchemaMigrationExecuteRequest
+                {
+                    PlanId = planResult.PlanId,
+                    ExecutedBy = $"demo-service:{request.UserId}"
+                });
+
+                if (!startResult.Success || string.IsNullOrWhiteSpace(startResult.OperationId))
+                {
+                    if (File.Exists(databasePath))
+                    {
+                        File.Delete(databasePath);
+                    }
+
+                    return new CreateDemoDatabaseResponse
+                    {
+                        Success = false,
+                        Message = "Failed to start database schema creation",
+                        ErrorDetails = startResult.Message,
+                        SchemaPlanId = planResult.PlanId,
+                        SchemaExecutionToken = startResult.OperationId
+                    };
+                }
+
+                SchemaMigrationProgressResult? schemaProgress = null;
+                const int maxSchemaPollAttempts = 900;
+
+                for (var attempt = 0; attempt < maxSchemaPollAttempts; attempt++)
+                {
+                    await Task.Delay(1000);
+                    schemaProgress = await _setupService.GetSchemaMigrationProgressAsync(startResult.OperationId);
+
+                    if (!schemaProgress.Success)
+                    {
+                        continue;
+                    }
+
+                    if (schemaProgress.IsCompleted || schemaProgress.HasFailed)
+                    {
+                        break;
+                    }
+                }
+
+                if (schemaProgress == null || !schemaProgress.Success)
+                {
+                    if (File.Exists(databasePath))
+                    {
+                        File.Delete(databasePath);
+                    }
+
+                    return new CreateDemoDatabaseResponse
+                    {
+                        Success = false,
+                        Message = "Database schema creation did not report completion",
+                        ErrorDetails = "Schema migration progress could not be confirmed.",
+                        SchemaPlanId = planResult.PlanId,
+                        SchemaExecutionToken = startResult.OperationId
+                    };
+                }
+
+                if (schemaProgress.HasFailed)
+                {
+                    if (File.Exists(databasePath))
+                    {
+                        File.Delete(databasePath);
+                    }
+
+                    return new CreateDemoDatabaseResponse
+                    {
+                        Success = false,
+                        Message = "Failed to create database schema",
+                        ErrorDetails = schemaProgress.FailureReason,
+                        SchemaPlanId = planResult.PlanId,
+                        SchemaExecutionToken = startResult.OperationId
+                    };
+                }
+
+                var artifactsResult = await _setupService.GetSchemaMigrationArtifactsAsync(planResult.PlanId);
+                if (!artifactsResult.Success)
+                {
+                    _logger.LogWarning("Schema artifacts were not available for demo database {ConnectionName}: {Message}", connectionName, artifactsResult.Message);
                 }
 
                 // Seed data if requested
@@ -169,7 +274,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     DatabasePath = databasePath,
                     Message = "Demo database created successfully",
                     CreatedDate = createdDate,
-                    ExpiryDate = expiryDate
+                    ExpiryDate = expiryDate,
+                    SchemaPlanId = planResult.PlanId,
+                    SchemaExecutionToken = startResult.OperationId
                 };
             }
             catch (Exception ex)

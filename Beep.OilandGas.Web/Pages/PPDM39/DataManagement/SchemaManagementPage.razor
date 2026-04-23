@@ -1,7 +1,8 @@
 ﻿@page "/ppdm39/data-management/schema"
-@inject ApiClient ApiClient
+@inject IDataManagementService DataManagementService
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
+@using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Web.Components.Data
 
 <PageTitle>Schema Management</PageTitle>
@@ -32,7 +33,7 @@
     <MudCard Elevation="1" Class="mb-4">
         <MudCardContent>
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Wrap="Wrap.Wrap">
-                <MudText Typo="Typo.subtitle2" Style="white-space:nowrap">Active Connection:</MudText>
+                <MudText Typo="Typo.subtitle2">Active Connection:</MudText>
                 @if (_loadingConnections)
                 {
                     <MudProgressCircular Size="Size.Small" Indeterminate="true" />
@@ -41,7 +42,6 @@
                 {
                     <MudSelect T="string" @bind-Value="_selectedConnection"
                                Variant="Variant.Outlined" Dense="true"
-                               Style="min-width:260px"
                                Label="Select Connection"
                                AnchorOrigin="Origin.BottomLeft">
                         @foreach (var c in _connections)
@@ -97,7 +97,7 @@
 @code {
     private string? _selectedConnection;
     private bool _loadingConnections;
-    private List<ConnectionSummaryItem> _connections = new();
+    private List<DatabaseConnectionListItem> _connections = new();
 
     private readonly List<BreadcrumbItem> _breadcrumbs = new()
     {
@@ -110,7 +110,7 @@
         _loadingConnections = true;
         try
         {
-            var result = await ApiClient.GetAsync<List<ConnectionSummaryItem>>("api/ppdm39/schema/connections") ?? new();            _connections = result ?? new();
+            _connections = await DataManagementService.GetAllConnectionsAsync();
             if (_connections.Count == 1)
                 _selectedConnection = _connections[0].ConnectionName;
         }
@@ -127,13 +127,5 @@
     private void HandleInstallComplete()
     {
         Snackbar.Add("Schema updated successfully", Severity.Success);
-    }
-
-    private sealed class ConnectionSummaryItem
-    {
-        public string? ConnectionName { get; set; }
-        public string? DatabaseType   { get; set; }
-        public string? Host           { get; set; }
-        public string? Database       { get; set; }
     }
 }

@@ -1,7 +1,7 @@
 ﻿@page "/data/audit"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
-@inject ApiClient ApiClient
+@inject IDataManagementService DataManagementService
 
 <PageTitle>Review Data Access History</PageTitle>
 
@@ -137,28 +137,6 @@
     private sealed record AuditEntry(string Timestamp, string UserId, string TableName, string EntityId,
         string Operation, int RecordsAffected, string IpAddress, string Result);
 
-    private sealed class AuditStatisticsDto
-    {
-        public int TotalAccessEvents { get; set; }
-        public int UniqueUsers { get; set; }
-        public int ReadOperations { get; set; }
-        public int WriteOperations { get; set; }
-        public int DeleteOperations { get; set; }
-        public Dictionary<string, int> AccessByUser { get; set; } = new();
-        public Dictionary<string, int> AccessByType { get; set; } = new();
-    }
-
-    private sealed class AuditEventDto
-    {
-        public string? EventId { get; set; }
-        public string? TableName { get; set; }
-        public object? EntityId { get; set; }
-        public string? UserId { get; set; }
-        public string? AccessType { get; set; }
-        public DateTime AccessDate { get; set; }
-        public string? IpAddress { get; set; }
-    }
-
     private List<AuditEntry> _entries = new();
 
     protected override async Task OnInitializedAsync()
@@ -171,8 +149,9 @@
         _isLoading = true;
         try
         {
-            var statsTask  = ApiClient.GetAsync<AuditStatisticsDto>("api/ppdm39/audit/statistics?from=" + Uri.EscapeDataString(DateTime.UtcNow.AddDays(-1).ToString("o")));
-            var eventsTask = ApiClient.GetAsync<List<AuditEventDto>>("api/ppdm39/audit/recent");
+            var fromDate = DateTime.UtcNow.AddDays(-1);
+            var statsTask = DataManagementService.GetAuditStatisticsAsync(fromDate);
+            var eventsTask = DataManagementService.GetRecentAuditEventsAsync();
 
             await Task.WhenAll(statsTask, eventsTask);
 

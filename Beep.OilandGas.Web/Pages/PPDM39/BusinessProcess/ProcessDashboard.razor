@@ -2,6 +2,7 @@
 @inject ApiClient ApiClient
 @inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
 @inject Beep.OilandGas.Web.Services.IComplianceServiceClient ComplianceClient
+@inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @using Beep.OilandGas.Models.Data
@@ -211,7 +212,7 @@
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }

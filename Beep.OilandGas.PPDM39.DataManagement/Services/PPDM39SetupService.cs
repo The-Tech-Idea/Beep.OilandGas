@@ -1,23 +1,45 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Reflection;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.SeedData;
+using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.Editor;
+using TheTechIdea.Beep.Report;
 using BeepDataSourceType = TheTechIdea.Beep.Utilities.DataSourceType;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Services
 {
     public class PPDM39SetupService : IPPDM39SetupService
     {
+        private sealed class SchemaMigrationPlanSession
+        {
+            public required string ConnectionName { get; init; }
+            public string SchemaName { get; init; } = string.Empty;
+            public string? TargetAssemblyName { get; init; }
+            public string? TargetModelNamespace { get; init; }
+            public required TheTechIdea.Beep.Editor.Migration.MigrationPlanArtifact Plan { get; init; }
+            public bool IsApproved { get; set; }
+            public string ApprovedBy { get; set; } = string.Empty;
+            public string ApprovalNotes { get; set; } = string.Empty;
+            public DateTime? ApprovedOnUtc { get; set; }
+            public string LastExecutionToken { get; set; } = string.Empty;
+        }
+
+        private static readonly ConcurrentDictionary<string, SchemaMigrationPlanSession> _schemaMigrationPlans =
+            new(StringComparer.OrdinalIgnoreCase);
+
         private readonly IDMEEditor _editor;
         private readonly ILogger<PPDM39SetupService> _logger;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -62,6 +84,612 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
         public void SetProgressTracking(IProgressTrackingService progressTracking)
             => _progressTracking = progressTracking;
+
+        public async Task<SetupStatusResult> GetSetupStatusAsync()
+        {
+            var connection = (_editor.ConfigEditor?.DataConnections ?? Enumerable.Empty<ConnectionProperties>())
+                .FirstOrDefault(c => string.Equals(c.ConnectionName, _currentConnectionName, StringComparison.OrdinalIgnoreCase))
+                ?? (_editor.ConfigEditor?.DataConnections ?? Enumerable.Empty<ConnectionProperties>()).FirstOrDefault();
+
+            if (connection == null)
+            {
+                return new SetupStatusResult
+                {
+                    HasConnection = false,
+                    IsSchemaReady = false
+                };
+            }
+
+            return new SetupStatusResult
+            {
+                HasConnection = true,
+                ConnectionName = connection.ConnectionName,
+                DbType = connection.DatabaseType.ToString(),
+                IsSchemaReady = await ProbeSchemaReadyAsync(connection.ConnectionName)
+            };
+        }
+
+        public async Task<CreateSqliteResult> CreateSqliteAsync(CreateSqliteRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.ConnectionName))
+            {
+                return new CreateSqliteResult
+                {
+                    Success = false,
+                    Message = "Connection name is required."
+                };
+            }
+
+            try
+            {
+                var fileName = string.IsNullOrWhiteSpace(request.FileName)
+                    ? $"{request.ConnectionName}.db"
+                    : request.FileName.Trim();
+
+                if (!fileName.EndsWith(".db", StringComparison.OrdinalIgnoreCase))
+                    fileName += ".db";
+
+                var savePath = string.IsNullOrWhiteSpace(request.SavePath)
+                    ? Path.Combine(AppContext.BaseDirectory, "Databases")
+                    : request.SavePath.Trim();
+
+                Directory.CreateDirectory(savePath);
+                var fullPath = Path.Combine(savePath, fileName);
+
+                var props = new ConnectionProperties
+                {
+                    ConnectionName = request.ConnectionName,
+                    DatabaseType = BeepDataSourceType.SqlLite,
+                    Category = TheTechIdea.Beep.Utilities.DatasourceCategory.RDBMS,
+                    IsLocal = true,
+                    IsFile = true,
+                    IsDatabase = true,
+                    FilePath = savePath,
+                    FileName = fileName,
+                    GuidID = Guid.NewGuid().ToString()
+                };
+
+                PopulateBestDriver(props);
+
+                if (_editor.ConfigEditor.DataConnectionExist(props.ConnectionName))
+                    RemoveConnection(props.ConnectionName);
+
+                _editor.ConfigEditor.AddDataConnection(props);
+                _editor.ConfigEditor.SaveDataconnectionsValues();
+
+                var dataSource = _editor.GetDataSource(props.ConnectionName);
+                if (dataSource == null)
+                {
+                    return new CreateSqliteResult
+                    {
+                        Success = false,
+                        ConnectionName = props.ConnectionName,
+                        FilePath = fullPath,
+                        DbType = "SQLite",
+                        Message = "Failed to create SQLite data source."
+                    };
+                }
+
+                CreateLocalDatabaseFile(dataSource, fullPath);
+                _currentConnectionName = props.ConnectionName;
+
+                return new CreateSqliteResult
+                {
+                    Success = true,
+                    ConnectionName = props.ConnectionName,
+                    FilePath = fullPath,
+                    DbType = "SQLite",
+                    Message = "SQLite database created successfully"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create SQLite database for {ConnectionName}", request.ConnectionName);
+                return new CreateSqliteResult
+                {
+                    Success = false,
+                    ConnectionName = request.ConnectionName,
+                    Message = "Failed to create SQLite database",
+                    ErrorDetails = ex.Message
+                };
+            }
+        }
+
+        public async Task<SchemaMigrationPlanResult> PlanSchemaMigrationAsync(SchemaMigrationPlanRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.ConnectionName))
+            {
+                return new SchemaMigrationPlanResult
+                {
+                    Success = false,
+                    Message = "Connection name is required."
+                };
+            }
+
+            try
+            {
+                var migration = CreateMigrationManager(request.ConnectionName, out var dataSource);
+                if (migration == null || dataSource == null)
+                {
+                    return new SchemaMigrationPlanResult
+                    {
+                        Success = false,
+                        ConnectionName = request.ConnectionName,
+                        Message = $"Connection '{request.ConnectionName}' not found or could not be opened."
+                    };
+                }
+
+                var entityTypes = GetMigrationEntityTypes(request.TargetAssemblyName, request.TargetModelNamespace);
+                if (entityTypes.Count == 0)
+                {
+                    return new SchemaMigrationPlanResult
+                    {
+                        Success = false,
+                        ConnectionName = request.ConnectionName,
+                        Message = "No migration entity types were resolved for the requested scope."
+                    };
+                }
+
+                foreach (var assembly in entityTypes.Select(type => type.Assembly).Distinct())
+                    migration.RegisterAssembly(assembly);
+
+                var plan = migration.BuildMigrationPlanForTypes(entityTypes, detectRelationships: true);
+                if (plan == null)
+                {
+                    return new SchemaMigrationPlanResult
+                    {
+                        Success = false,
+                        ConnectionName = request.ConnectionName,
+                        Message = "Migration plan could not be built."
+                    };
+                }
+
+                var policyOptions = new TheTechIdea.Beep.Editor.Migration.MigrationPolicyOptions
+                {
+                    EnvironmentTier = ParseEnvironmentTier(request.EnvironmentTier)
+                };
+
+                var policy = migration.EvaluateMigrationPlanPolicy(plan, policyOptions);
+                var dryRun = migration.GenerateDryRunReport(plan);
+                var preflight = migration.RunPreflightChecks(plan, policyOptions);
+                var compensation = migration.BuildCompensationPlan(plan);
+                var rollback = migration.CheckRollbackReadiness(
+                    plan,
+                    request.BackupConfirmed,
+                    request.RestoreTestEvidenceProvided,
+                    request.RestoreTestEvidence);
+                var ciValidation = migration.ValidatePlanForCi(plan);
+
+                plan.PolicyEvaluation = policy;
+                plan.DryRunReport = dryRun;
+                plan.PreflightReport = preflight;
+                plan.CompensationPlan = compensation;
+                plan.RollbackReadinessReport = rollback;
+                plan.CiValidationReport = ciValidation;
+
+                var session = _schemaMigrationPlans.AddOrUpdate(
+                    plan.PlanId,
+                    _ => new SchemaMigrationPlanSession
+                    {
+                        ConnectionName = request.ConnectionName,
+                        SchemaName = request.SchemaName ?? string.Empty,
+                        TargetAssemblyName = request.TargetAssemblyName,
+                        TargetModelNamespace = request.TargetModelNamespace,
+                        Plan = plan
+                    },
+                    (_, existing) => new SchemaMigrationPlanSession
+                    {
+                        ConnectionName = request.ConnectionName,
+                        SchemaName = request.SchemaName ?? string.Empty,
+                        TargetAssemblyName = request.TargetAssemblyName,
+                        TargetModelNamespace = request.TargetModelNamespace,
+                        Plan = plan,
+                        IsApproved = existing.IsApproved,
+                        ApprovedBy = existing.ApprovedBy,
+                        ApprovalNotes = existing.ApprovalNotes,
+                        ApprovedOnUtc = existing.ApprovedOnUtc,
+                        LastExecutionToken = existing.LastExecutionToken
+                    });
+
+                return MapPlanResult(session);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to plan schema migration for {ConnectionName}", request.ConnectionName);
+                return new SchemaMigrationPlanResult
+                {
+                    Success = false,
+                    ConnectionName = request.ConnectionName,
+                    Message = "Schema migration plan failed.",
+                    DryRunDiagnostics = new List<string> { ex.Message }
+                };
+            }
+        }
+
+        public async Task<SchemaMigrationApprovalResult> ApproveSchemaMigrationPlanAsync(SchemaMigrationApprovalRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.PlanId))
+            {
+                return new SchemaMigrationApprovalResult
+                {
+                    Success = false,
+                    Message = "Plan ID is required."
+                };
+            }
+
+            if (!_schemaMigrationPlans.TryGetValue(request.PlanId, out var session))
+            {
+                return new SchemaMigrationApprovalResult
+                {
+                    Success = false,
+                    PlanId = request.PlanId,
+                    Message = "Migration plan was not found. Generate a new plan first."
+                };
+            }
+
+            session.IsApproved = true;
+            session.ApprovedBy = string.IsNullOrWhiteSpace(request.ApprovedBy) ? "SYSTEM" : request.ApprovedBy.Trim();
+            session.ApprovalNotes = request.Notes?.Trim() ?? string.Empty;
+            session.ApprovedOnUtc = DateTime.UtcNow;
+
+            return await Task.FromResult(new SchemaMigrationApprovalResult
+            {
+                Success = true,
+                Message = "Migration plan approved.",
+                PlanId = session.Plan.PlanId,
+                PlanHash = session.Plan.PlanHash,
+                ApprovedBy = session.ApprovedBy,
+                ApprovedOnUtc = session.ApprovedOnUtc
+            });
+        }
+
+        public async Task<SchemaMigrationExecuteResult> ExecuteSchemaMigrationPlanAsync(SchemaMigrationExecuteRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.PlanId))
+            {
+                return new SchemaMigrationExecuteResult
+                {
+                    Success = false,
+                    Message = "Plan ID is required."
+                };
+            }
+
+            if (!_schemaMigrationPlans.TryGetValue(request.PlanId, out var session))
+            {
+                return new SchemaMigrationExecuteResult
+                {
+                    Success = false,
+                    PlanId = request.PlanId,
+                    Message = "Migration plan was not found. Generate a new plan first."
+                };
+            }
+
+            if (!session.IsApproved)
+            {
+                return new SchemaMigrationExecuteResult
+                {
+                    Success = false,
+                    PlanId = session.Plan.PlanId,
+                    PlanHash = session.Plan.PlanHash,
+                    Message = "Migration plan must be approved before execution."
+                };
+            }
+
+            try
+            {
+                var migration = CreateMigrationManager(session.ConnectionName, out var dataSource);
+                if (migration == null || dataSource == null)
+                {
+                    return new SchemaMigrationExecuteResult
+                    {
+                        Success = false,
+                        PlanId = session.Plan.PlanId,
+                        PlanHash = session.Plan.PlanHash,
+                        Message = $"Connection '{session.ConnectionName}' not found or could not be opened."
+                    };
+                }
+
+                RegisterScopeAssemblies(migration, session.TargetAssemblyName, session.TargetModelNamespace);
+                string? resumeToken = null;
+                if (request.ResumeIfCheckpointExists && !string.IsNullOrWhiteSpace(session.LastExecutionToken))
+                {
+                    var existingCheckpoint = migration.GetExecutionCheckpoint(session.LastExecutionToken);
+                    if (existingCheckpoint != null && !existingCheckpoint.IsCompleted)
+                        resumeToken = existingCheckpoint.ExecutionToken;
+                }
+
+                var executionResult = string.IsNullOrWhiteSpace(resumeToken)
+                    ? migration.ExecuteMigrationPlan(session.Plan)
+                    : migration.ResumeMigrationPlan(resumeToken);
+
+                session.LastExecutionToken = executionResult.ExecutionToken;
+
+                return await Task.FromResult(new SchemaMigrationExecuteResult
+                {
+                    Success = executionResult.Success,
+                    Message = executionResult.Message,
+                    PlanId = session.Plan.PlanId,
+                    PlanHash = session.Plan.PlanHash,
+                    ExecutionToken = executionResult.ExecutionToken,
+                    ResumedFromCheckpoint = executionResult.ResumedFromCheckpoint,
+                    RequiresOperatorIntervention = executionResult.RequiresOperatorIntervention,
+                    RollbackOutcome = executionResult.RollbackOutcome,
+                    CompensationOutcome = executionResult.CompensationOutcome,
+                    TotalSteps = executionResult.Checkpoint?.Steps?.Count ?? 0,
+                    CompletedSteps = executionResult.Checkpoint?.Steps?.Count(step =>
+                        step.Status == TheTechIdea.Beep.Editor.Migration.MigrationExecutionStepStatus.Completed) ?? 0
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to execute schema migration plan {PlanId}", request.PlanId);
+                return new SchemaMigrationExecuteResult
+                {
+                    Success = false,
+                    PlanId = session.Plan.PlanId,
+                    PlanHash = session.Plan.PlanHash,
+                    Message = "Schema migration execution failed.",
+                    CompensationOutcome = ex.Message
+                };
+            }
+        }
+
+        public async Task<OperationStartResponse> StartSchemaMigrationExecutionAsync(SchemaMigrationExecuteRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.PlanId))
+            {
+                return new OperationStartResponse
+                {
+                    Success = false,
+                    Message = "Plan ID is required."
+                };
+            }
+
+            if (!_schemaMigrationPlans.TryGetValue(request.PlanId, out var session))
+            {
+                return new OperationStartResponse
+                {
+                    Success = false,
+                    Message = "Migration plan was not found. Generate a new plan first."
+                };
+            }
+
+            if (!session.IsApproved)
+            {
+                return new OperationStartResponse
+                {
+                    Success = false,
+                    Message = "Migration plan must be approved before execution."
+                };
+            }
+
+            try
+            {
+                var migration = CreateMigrationManager(session.ConnectionName, out var dataSource);
+                if (migration == null || dataSource == null)
+                {
+                    return new OperationStartResponse
+                    {
+                        Success = false,
+                        Message = $"Connection '{session.ConnectionName}' not found or could not be opened."
+                    };
+                }
+
+                RegisterScopeAssemblies(migration, session.TargetAssemblyName, session.TargetModelNamespace);
+
+                var checkpoint = !string.IsNullOrWhiteSpace(session.LastExecutionToken) && request.ResumeIfCheckpointExists
+                    ? migration.GetExecutionCheckpoint(session.LastExecutionToken)
+                    : null;
+
+                var executionToken = checkpoint != null && !checkpoint.IsCompleted
+                    ? checkpoint.ExecutionToken
+                    : migration.CreateExecutionCheckpoint(session.Plan).ExecutionToken;
+
+                session.LastExecutionToken = executionToken;
+
+                _ = Task.Run(() =>
+                {
+                    try
+                    {
+                        var backgroundMigration = CreateMigrationManager(session.ConnectionName, out var backgroundDataSource);
+                        if (backgroundMigration == null || backgroundDataSource == null)
+                        {
+                            _logger.LogError("Background schema migration start failed for plan {PlanId}: datasource unavailable", request.PlanId);
+                            return;
+                        }
+
+                        RegisterScopeAssemblies(backgroundMigration, session.TargetAssemblyName, session.TargetModelNamespace);
+
+                        if (request.ResumeIfCheckpointExists && checkpoint != null && !checkpoint.IsCompleted)
+                            backgroundMigration.ResumeMigrationPlan(executionToken);
+                        else
+                            backgroundMigration.ExecuteMigrationPlan(session.Plan, executionToken: executionToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Background schema migration execution failed for plan {PlanId}", request.PlanId);
+                    }
+                });
+
+                return await Task.FromResult(new OperationStartResponse
+                {
+                    Success = true,
+                    OperationId = executionToken,
+                    Message = "Schema migration started."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to start schema migration plan {PlanId}", request.PlanId);
+                return new OperationStartResponse
+                {
+                    Success = false,
+                    Message = "Schema migration could not be started."
+                };
+            }
+        }
+
+        public async Task<SchemaMigrationProgressResult> GetSchemaMigrationProgressAsync(string executionToken)
+        {
+            if (string.IsNullOrWhiteSpace(executionToken))
+            {
+                return new SchemaMigrationProgressResult
+                {
+                    Success = false,
+                    Message = "Execution token is required."
+                };
+            }
+
+            var session = _schemaMigrationPlans.Values
+                .FirstOrDefault(item => string.Equals(item.LastExecutionToken, executionToken, StringComparison.OrdinalIgnoreCase));
+
+            if (session == null)
+            {
+                return new SchemaMigrationProgressResult
+                {
+                    Success = false,
+                    ExecutionToken = executionToken,
+                    Message = "Execution token was not found."
+                };
+            }
+
+            try
+            {
+                var migration = CreateMigrationManager(session.ConnectionName, out var dataSource);
+                if (migration == null || dataSource == null)
+                {
+                    return new SchemaMigrationProgressResult
+                    {
+                        Success = false,
+                        ExecutionToken = executionToken,
+                        PlanId = session.Plan.PlanId,
+                        PlanHash = session.Plan.PlanHash,
+                        Message = $"Connection '{session.ConnectionName}' not found or could not be opened."
+                    };
+                }
+
+                var checkpoint = migration.GetExecutionCheckpoint(executionToken);
+                if (checkpoint == null)
+                {
+                    return new SchemaMigrationProgressResult
+                    {
+                        Success = false,
+                        ExecutionToken = executionToken,
+                        PlanId = session.Plan.PlanId,
+                        PlanHash = session.Plan.PlanHash,
+                        Message = "Execution checkpoint was not found."
+                    };
+                }
+
+                return await Task.FromResult(new SchemaMigrationProgressResult
+                {
+                    Success = true,
+                    Message = checkpoint.IsCompleted
+                        ? "Execution completed."
+                        : checkpoint.HasFailed
+                            ? "Execution failed."
+                            : "Execution in progress.",
+                    PlanId = checkpoint.PlanId,
+                    PlanHash = checkpoint.PlanHash,
+                    ExecutionToken = checkpoint.ExecutionToken,
+                    IsCompleted = checkpoint.IsCompleted,
+                    HasFailed = checkpoint.HasFailed,
+                    FailureCategory = checkpoint.FailureCategory,
+                    FailureReason = checkpoint.FailureReason,
+                    LastCompletedStep = checkpoint.LastCompletedStep,
+                    TotalSteps = checkpoint.Steps.Count,
+                    CompletedSteps = checkpoint.Steps.Count(step =>
+                        step.Status == TheTechIdea.Beep.Editor.Migration.MigrationExecutionStepStatus.Completed),
+                    Steps = checkpoint.Steps
+                        .OrderBy(step => step.Sequence)
+                        .Select(step => new SchemaMigrationStepResult
+                        {
+                            Sequence = step.Sequence,
+                            EntityName = step.EntityName,
+                            OperationKind = step.OperationKind.ToString(),
+                            Status = step.Status.ToString(),
+                            Message = step.Message,
+                            AttemptCount = step.AttemptCount
+                        })
+                        .ToList()
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to read schema migration progress for {ExecutionToken}", executionToken);
+                return new SchemaMigrationProgressResult
+                {
+                    Success = false,
+                    ExecutionToken = executionToken,
+                    PlanId = session.Plan.PlanId,
+                    PlanHash = session.Plan.PlanHash,
+                    Message = "Could not read schema migration progress.",
+                    FailureReason = ex.Message
+                };
+            }
+        }
+
+        public async Task<SchemaMigrationArtifactsResult> GetSchemaMigrationArtifactsAsync(string planId)
+        {
+            if (string.IsNullOrWhiteSpace(planId))
+            {
+                return new SchemaMigrationArtifactsResult
+                {
+                    Success = false,
+                    Message = "Plan ID is required."
+                };
+            }
+
+            if (!_schemaMigrationPlans.TryGetValue(planId, out var session))
+            {
+                return new SchemaMigrationArtifactsResult
+                {
+                    Success = false,
+                    PlanId = planId,
+                    Message = "Migration plan was not found. Generate a new plan first."
+                };
+            }
+
+            try
+            {
+                var plan = session.Plan;
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                };
+
+                return await Task.FromResult(new SchemaMigrationArtifactsResult
+                {
+                    Success = true,
+                    Message = "Schema migration artifacts loaded successfully.",
+                    PlanId = plan.PlanId,
+                    PlanHash = plan.PlanHash,
+                    ConnectionName = session.ConnectionName,
+                    IsApproved = session.IsApproved,
+                    ApprovedBy = session.ApprovedBy,
+                    ApprovedOnUtc = session.ApprovedOnUtc,
+                    ApprovalNotes = session.ApprovalNotes,
+                    PlanJson = JsonSerializer.Serialize(plan, jsonOptions),
+                    DryRunJson = JsonSerializer.Serialize(plan.DryRunReport, jsonOptions),
+                    PreflightJson = JsonSerializer.Serialize(plan.PreflightReport, jsonOptions),
+                    CiValidationJson = JsonSerializer.Serialize(plan.CiValidationReport, jsonOptions),
+                    PolicyJson = JsonSerializer.Serialize(plan.PolicyEvaluation, jsonOptions),
+                    RollbackReadinessJson = JsonSerializer.Serialize(plan.RollbackReadinessReport, jsonOptions),
+                    CompensationJson = JsonSerializer.Serialize(plan.CompensationPlan, jsonOptions),
+                    ApprovalSummaryMarkdown = BuildApprovalSummaryMarkdown(session)
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load schema migration artifacts for {PlanId}", planId);
+                return new SchemaMigrationArtifactsResult
+                {
+                    Success = false,
+                    PlanId = planId,
+                    Message = "Could not load schema migration artifacts."
+                };
+            }
+        }
 
         // ── DRIVER INFO ───────────────────────────────────────────────────────
 
@@ -311,48 +939,60 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             if (string.IsNullOrWhiteSpace(connectionName))
                 return new CreateSchemaResult { Success = false, Message = "Connection name is required. Save the connection first." };
 
-            _logger.LogInformation("Creating PPDM39 schema in {ConnectionName}", connectionName);
-            try
+            var planResult = await PlanSchemaMigrationAsync(new SchemaMigrationPlanRequest
             {
-                var ds = _editor.GetDataSource(connectionName);
-                if (ds == null)
-                    return new CreateSchemaResult { Success = false, Message = $"Connection '{connectionName}' not found. Save the connection first." };
+                ConnectionName = connectionName,
+                SchemaName = schemaName,
+                BackupConfirmed = true,
+                RestoreTestEvidenceProvided = true,
+                RestoreTestEvidence = "Compatibility route"
+            });
 
-                var state = ds.Openconnection();
-                if (state != ConnectionState.Open)
-                    return new CreateSchemaResult { Success = false, Message = $"Could not open connection to '{connectionName}'" };
-
-                var migration = new TheTechIdea.Beep.Editor.Migration.MigrationManager(_editor, ds);
-                migration.RegisterAssembly(typeof(Beep.OilandGas.PPDM39.Models.WELL).Assembly);
-
-                var plan = migration.BuildMigrationPlan(
-                    namespaceName: "Beep.OilandGas.PPDM39.Models",
-                    assembly: typeof(Beep.OilandGas.PPDM39.Models.WELL).Assembly,
-                    detectRelationships: true);
-
-                if (plan == null)
-                    return new CreateSchemaResult { Success = false, Message = "Migration plan could not be built." };
-
-                var execResult = migration.ExecuteMigrationPlan(plan);
-
-                _logger.LogInformation(
-                    "Schema migration for '{Connection}': success={Success}",
-                    connectionName, execResult.Success);
-
+            if (!planResult.Success)
+            {
                 return new CreateSchemaResult
                 {
-                    Success      = execResult.Success,
-                    Message      = execResult.Success
-                        ? $"Schema created successfully in '{connectionName}'"
-                        : "Schema creation partially failed: " + execResult.Message,
-                    ErrorDetails = execResult.Success ? null : execResult.Message
+                    Success = false,
+                    Message = planResult.Message,
+                    TotalEntities = planResult.TotalEntities,
+                    TablesCreated = 0
                 };
             }
-            catch (Exception ex)
+
+            var approvalResult = await ApproveSchemaMigrationPlanAsync(new SchemaMigrationApprovalRequest
             {
-                _logger.LogError(ex, "Schema creation failed for {ConnectionName}", connectionName);
-                return new CreateSchemaResult { Success = false, Message = "Schema creation error", ErrorDetails = ex.Message };
+                PlanId = planResult.PlanId,
+                ApprovedBy = "compatibility-route",
+                Notes = "Auto-approved by create-schema compatibility path."
+            });
+
+            if (!approvalResult.Success)
+            {
+                return new CreateSchemaResult
+                {
+                    Success = false,
+                    Message = approvalResult.Message,
+                    TotalEntities = planResult.TotalEntities,
+                    TablesCreated = 0
+                };
             }
+
+            var executionResult = await ExecuteSchemaMigrationPlanAsync(new SchemaMigrationExecuteRequest
+            {
+                PlanId = planResult.PlanId,
+                ExecutedBy = "compatibility-route"
+            });
+
+            return new CreateSchemaResult
+            {
+                Success = executionResult.Success,
+                Message = executionResult.Success
+                    ? $"Schema created successfully in '{connectionName}'"
+                    : executionResult.Message,
+                ErrorDetails = executionResult.Success ? null : executionResult.CompensationOutcome,
+                TablesCreated = planResult.TablesToCreate,
+                TotalEntities = planResult.TotalEntities
+            };
         }
 
         public async Task<SchemaPrivilegeCheckResult> CheckSchemaPrivilegesAsync(ConnectionConfig config, string? schemaName = null)
@@ -505,6 +1145,299 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 ConnectionString = config.ConnectionString ?? string.Empty,
                 GuidID           = Guid.NewGuid().ToString()
             };
+        }
+
+        private void PopulateBestDriver(ConnectionProperties props)
+        {
+            try
+            {
+                var helperType = AppDomain.CurrentDomain.GetAssemblies()
+                    .SelectMany(assembly =>
+                    {
+                        try { return assembly.GetTypes(); }
+                        catch { return Array.Empty<Type>(); }
+                    })
+                    .FirstOrDefault(type => type.FullName == "TheTechIdea.Beep.Helpers.ConnectionHelper");
+
+                var method = helperType?.GetMethod("GetBestMatchingDriver", new[] { typeof(ConnectionProperties), _editor.ConfigEditor.GetType() });
+                var driver = method?.Invoke(null, new object[] { props, _editor.ConfigEditor });
+                if (driver == null)
+                    return;
+
+                var packageName = driver.GetType().GetProperty("PackageName")?.GetValue(driver)?.ToString();
+                var version = driver.GetType().GetProperty("version")?.GetValue(driver)?.ToString()
+                    ?? driver.GetType().GetProperty("Version")?.GetValue(driver)?.ToString();
+
+                if (!string.IsNullOrWhiteSpace(packageName))
+                    props.DriverName = packageName;
+                if (!string.IsNullOrWhiteSpace(version))
+                    props.DriverVersion = version;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Could not resolve best matching driver for {ConnectionName}; falling back to loaded driver classes", props.ConnectionName);
+                var driverClass = _editor.ConfigEditor?.DataDriversClasses?
+                    .FirstOrDefault(d => d.DatasourceType == props.DatabaseType);
+                if (driverClass != null)
+                {
+                    props.DriverName = driverClass.PackageName;
+                    props.DriverVersion = driverClass.version;
+                }
+            }
+        }
+
+        private static void CreateLocalDatabaseFile(dynamic dataSource, string fullPath)
+        {
+            var type = ((object)dataSource).GetType();
+            var createWithPath = type.GetMethod("CreateDB", new[] { typeof(string) });
+            if (createWithPath != null)
+            {
+                createWithPath.Invoke(dataSource, new object[] { fullPath });
+                return;
+            }
+
+            var createDefault = type.GetMethod("CreateDB", Type.EmptyTypes);
+            if (createDefault != null)
+            {
+                createDefault.Invoke(dataSource, null);
+                return;
+            }
+
+            if (!File.Exists(fullPath))
+            {
+                using var _ = File.Create(fullPath);
+            }
+        }
+
+        private async Task<bool> ProbeSchemaReadyAsync(string connectionName)
+        {
+            try
+            {
+                var repo = new PPDMGenericRepository(
+                    _editor,
+                    _commonColumnHandler,
+                    _defaults,
+                    _metadata,
+                    typeof(Beep.OilandGas.PPDM39.Models.WELL),
+                    connectionName,
+                    "WELL");
+
+                await repo.GetAsync(new List<AppFilter>
+                {
+                    new AppFilter
+                    {
+                        FieldName = "UWI",
+                        Operator = "=",
+                        FilterValue = "__schema_probe__"
+                    }
+                });
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Schema probe failed for connection {ConnectionName}", connectionName);
+                return false;
+            }
+        }
+
+        private static List<Type> GetPpdm39EntityTypes()
+        {
+            return typeof(Beep.OilandGas.PPDM39.Models.WELL).Assembly
+                .GetTypes()
+                .Where(type =>
+                    type.IsClass &&
+                    !type.IsAbstract &&
+                    string.Equals(type.Namespace, "Beep.OilandGas.PPDM39.Models", StringComparison.Ordinal) &&
+                    typeof(Entity).IsAssignableFrom(type))
+                .OrderBy(type => type.FullName, StringComparer.Ordinal)
+                .ToList();
+        }
+
+        private static List<Type> GetMigrationEntityTypes(string? targetAssemblyName, string? targetModelNamespace)
+        {
+            var hasScope = !string.IsNullOrWhiteSpace(targetAssemblyName) || !string.IsNullOrWhiteSpace(targetModelNamespace);
+            if (!hasScope)
+                return GetPpdm39EntityTypes();
+
+            Assembly? assembly = ResolveAssembly(targetAssemblyName);
+            if (assembly == null)
+                return new List<Type>();
+
+            var targetNamespace = string.IsNullOrWhiteSpace(targetModelNamespace)
+                ? null
+                : targetModelNamespace.Trim();
+
+            return assembly
+                .GetTypes()
+                .Where(type =>
+                    type.IsClass &&
+                    !type.IsAbstract &&
+                    typeof(Entity).IsAssignableFrom(type) &&
+                    (targetNamespace == null ||
+                     string.Equals(type.Namespace, targetNamespace, StringComparison.Ordinal) ||
+                     (type.Namespace != null && type.Namespace.StartsWith(targetNamespace + ".", StringComparison.Ordinal))))
+                .OrderBy(type => type.FullName, StringComparer.Ordinal)
+                .ToList();
+        }
+
+        private static Assembly? ResolveAssembly(string? requestedAssemblyName)
+        {
+            if (string.IsNullOrWhiteSpace(requestedAssemblyName))
+                return null;
+
+            var trimmed = requestedAssemblyName.Trim();
+            var loaded = AppDomain.CurrentDomain
+                .GetAssemblies()
+                .FirstOrDefault(assembly =>
+                    string.Equals(assembly.GetName().Name, trimmed, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(assembly.FullName, trimmed, StringComparison.OrdinalIgnoreCase));
+            if (loaded != null)
+                return loaded;
+
+            try
+            {
+                return Assembly.Load(new AssemblyName(trimmed));
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static void RegisterScopeAssemblies(
+            TheTechIdea.Beep.Editor.Migration.MigrationManager migration,
+            string? targetAssemblyName,
+            string? targetModelNamespace)
+        {
+            var entityTypes = GetMigrationEntityTypes(targetAssemblyName, targetModelNamespace);
+            if (entityTypes.Count == 0)
+            {
+                migration.RegisterAssembly(typeof(Beep.OilandGas.PPDM39.Models.WELL).Assembly);
+                return;
+            }
+
+            foreach (var assembly in entityTypes.Select(type => type.Assembly).Distinct())
+                migration.RegisterAssembly(assembly);
+        }
+
+        private TheTechIdea.Beep.Editor.Migration.MigrationManager? CreateMigrationManager(string connectionName, out dynamic? dataSource)
+        {
+            dataSource = _editor.GetDataSource(connectionName);
+            if (dataSource == null)
+                return null;
+
+            var state = dataSource.Openconnection();
+            if (state != ConnectionState.Open)
+                return null;
+
+            return new TheTechIdea.Beep.Editor.Migration.MigrationManager(_editor, dataSource);
+        }
+
+        private static TheTechIdea.Beep.Editor.Migration.MigrationEnvironmentTier ParseEnvironmentTier(string? environmentTier)
+        {
+            if (Enum.TryParse(environmentTier, true, out TheTechIdea.Beep.Editor.Migration.MigrationEnvironmentTier tier))
+                return tier;
+
+            return TheTechIdea.Beep.Editor.Migration.MigrationEnvironmentTier.Development;
+        }
+
+        private static SchemaMigrationPlanResult MapPlanResult(SchemaMigrationPlanSession session)
+        {
+            var plan = session.Plan;
+            var ciValidation = plan.CiValidationReport;
+            var preflight = plan.PreflightReport;
+            var policy = plan.PolicyEvaluation;
+            var rollback = plan.RollbackReadinessReport;
+            var dryRun = plan.DryRunReport;
+
+            return new SchemaMigrationPlanResult
+            {
+                Success = ciValidation?.CanMerge != false,
+                Message = ciValidation?.CanMerge == false
+                    ? "Migration plan contains blocking CI gates."
+                    : preflight?.CanApply == false
+                        ? "Migration plan contains blocking preflight checks."
+                        : "Migration plan generated successfully.",
+                ConnectionName = session.ConnectionName,
+                PlanId = plan.PlanId,
+                PlanHash = plan.PlanHash,
+                PolicyDecision = policy?.Decision.ToString() ?? string.Empty,
+                RequiresManualApproval = policy?.RequiresManualApproval ?? false,
+                CanApply = (ciValidation?.CanMerge ?? true) && (preflight?.CanApply ?? true),
+                IsApproved = session.IsApproved,
+                TotalEntities = plan.EntityTypeCount,
+                PendingOperationCount = plan.PendingOperationCount,
+                TablesToCreate = plan.Operations?.Count(operation => operation.Kind == TheTechIdea.Beep.Editor.Migration.MigrationPlanOperationKind.CreateEntity) ?? 0,
+                ColumnsToAdd = plan.Operations?.Count(operation => operation.Kind == TheTechIdea.Beep.Editor.Migration.MigrationPlanOperationKind.AddMissingColumns) ?? 0,
+                HighRiskOperationCount = plan.Operations?.Count(operation =>
+                    operation.RiskLevel == TheTechIdea.Beep.Editor.Migration.MigrationPlanRiskLevel.High ||
+                    operation.RiskLevel == TheTechIdea.Beep.Editor.Migration.MigrationPlanRiskLevel.Critical) ?? 0,
+                CiGates = ciValidation?.Gates.Select(gate => new SchemaMigrationCiGateResult
+                {
+                    Gate = gate.Gate,
+                    Decision = gate.Decision.ToString(),
+                    Message = gate.Message
+                }).ToList() ?? new List<SchemaMigrationCiGateResult>(),
+                PreflightChecks = preflight?.Checks.Select(check => new SchemaMigrationPreflightCheckResult
+                {
+                    Code = check.Code,
+                    Decision = check.Decision.ToString(),
+                    Message = check.Message,
+                    Recommendation = check.Recommendation
+                }).ToList() ?? new List<SchemaMigrationPreflightCheckResult>(),
+                PolicyFindings = policy?.Findings.Select(finding => new SchemaMigrationPolicyFindingResult
+                {
+                    RuleId = finding.RuleId,
+                    Decision = finding.Decision.ToString(),
+                    Message = finding.Message,
+                    Recommendation = finding.Recommendation,
+                    EntityName = finding.EntityName,
+                    OperationKind = finding.OperationKind.ToString(),
+                    RiskLevel = finding.RiskLevel.ToString()
+                }).ToList() ?? new List<SchemaMigrationPolicyFindingResult>(),
+                DryRunOperations = dryRun?.Operations.Select(operation => new SchemaMigrationDryRunOperationResult
+                {
+                    EntityName = operation.EntityName,
+                    Kind = operation.Kind.ToString(),
+                    RiskLevel = operation.RiskLevel.ToString(),
+                    DdlPreview = operation.DdlPreview,
+                    RiskTags = operation.RiskTags,
+                    Diagnostics = operation.Diagnostics
+                }).ToList() ?? new List<SchemaMigrationDryRunOperationResult>(),
+                DryRunDiagnostics = dryRun?.Diagnostics ?? new List<string>(),
+                CompensationActions = plan.CompensationPlan?.Actions.Select(action =>
+                    $"{action.ActionId}: {action.EntityName} [{action.OperationKind}] {action.RollbackMode}").ToList() ?? new List<string>(),
+                RollbackChecks = rollback?.Checks.Select(check =>
+                    $"{check.Decision}: {check.Code} - {check.Message}").ToList() ?? new List<string>()
+            };
+        }
+
+        private static string BuildApprovalSummaryMarkdown(SchemaMigrationPlanSession session)
+        {
+            var plan = session.Plan;
+            var lines = new List<string>
+            {
+                $"# Schema Migration Approval Summary",
+                string.Empty,
+                $"- Plan ID: {plan.PlanId}",
+                $"- Plan Hash: {plan.PlanHash}",
+                $"- Connection: {session.ConnectionName}",
+                $"- Approved: {(session.IsApproved ? "Yes" : "No")}",
+                $"- Approved By: {session.ApprovedBy}",
+                $"- Approved On UTC: {session.ApprovedOnUtc:O}",
+                $"- Notes: {session.ApprovalNotes}",
+                string.Empty,
+                "## Summary",
+                string.Empty,
+                $"- Pending operations: {plan.PendingOperationCount}",
+                $"- Entity types: {plan.EntityTypeCount}",
+                $"- CI merge allowed: {plan.CiValidationReport?.CanMerge}",
+                $"- Preflight can apply: {plan.PreflightReport?.CanApply}",
+                $"- Policy decision: {plan.PolicyEvaluation?.Decision}"
+            };
+
+            return string.Join(Environment.NewLine, lines);
         }
 
         private void RemoveConnection(string connectionName)

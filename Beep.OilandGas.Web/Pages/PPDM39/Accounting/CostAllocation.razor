@@ -2,7 +2,7 @@
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.Accounting
 @using CostAllocationRequestDto = Beep.OilandGas.Models.Data.Accounting.Cost.CostAllocationRequest
-@inject ApiClient ApiClient
+@inject IAccountingServiceClient AccountingServiceClient
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
 
@@ -183,9 +183,7 @@
             if (_totalCapitalCosts.HasValue)
                 request.TotalCapitalCosts = _totalCapitalCosts.Value;
 
-            _allocationResult = await ApiClient.PostAsync<CostAllocationRequestDto, CostAllocationComputationResult>(
-                "/api/accounting/cost/allocations/allocate",
-                request);
+            _allocationResult = await AccountingServiceClient.AllocateCostsAsync(request);
 
             Snackbar.Add("Cost allocation completed", Severity.Success);
         }

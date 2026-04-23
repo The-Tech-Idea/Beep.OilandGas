@@ -30,11 +30,17 @@
                     <MudPaper Class="pa-4" Elevation="1">
                         @if (_isCreatingDatabase)
                         {
-                            <MudStack Spacing="3" AlignItems="AlignItems.Center">
-                                <MudProgressCircular Indeterminate="true" Size="Size.Large" />
-                                <MudText Typo="Typo.body1">Creating demo database...</MudText>
-                                <MudText Typo="Typo.body2" Color="Color.Secondary">
-                                    This may take a few minutes. Please wait.
+                            <MudStack Spacing="3">
+                                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+                                    Preparing demo environment and applying PPDM39 schema using the migration pipeline.
+                                </MudAlert>
+                                <MudProgressLinear Color="Color.Primary" Indeterminate="true" Striped="true" />
+                                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Justify="Justify.Center">
+                                    <MudProgressCircular Indeterminate="true" Size="Size.Medium" Color="Color.Primary" />
+                                    <MudText Typo="Typo.body1">Creating demo database...</MudText>
+                                </MudStack>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">
+                                    This may take a few minutes while schema planning, approval, and execution complete.
                                 </MudText>
                             </MudStack>
                         }
@@ -42,19 +48,46 @@
                         {
                             @if (_createResult.Success)
                             {
-                                <MudAlert Severity="Severity.Success" Class="mb-4">
-                                    <MudText Typo="Typo.h6">Demo Database Created Successfully!</MudText>
-                                    <MudText Typo="Typo.body1" Class="mt-2">
-                                        Connection: <strong>@_createResult.ConnectionName</strong>
-                                    </MudText>
-                                    <MudText Typo="Typo.body2" Class="mt-2">
-                                        Expires: @_createResult.ExpiryDate.ToString("g")
-                                    </MudText>
-                                </MudAlert>
+                                <MudStack Spacing="3">
+                                    <MudAlert Severity="Severity.Success" Variant="Variant.Filled" Class="mb-1">
+                                        <MudText Typo="Typo.h6">Demo Database Created Successfully</MudText>
+                                        <MudText Typo="Typo.body2" Class="mt-1">
+                                            Your environment is ready and set for immediate use.
+                                        </MudText>
+                                    </MudAlert>
+
+                                    <MudCard Outlined="true">
+                                        <MudCardContent>
+                                            <MudGrid>
+                                                <MudItem xs="12" sm="6">
+                                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Connection</MudText>
+                                                    <MudText Typo="Typo.body1">@_createResult.ConnectionName</MudText>
+                                                </MudItem>
+                                                <MudItem xs="12" sm="6">
+                                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Expires</MudText>
+                                                    <MudText Typo="Typo.body1">@_createResult.ExpiryDate.ToString("g")</MudText>
+                                                </MudItem>
+                                                <MudItem xs="12">
+                                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Database Path</MudText>
+                                                    <MudText Typo="Typo.body2">@_createResult.DatabasePath</MudText>
+                                                </MudItem>
+                                            </MudGrid>
+                                        </MudCardContent>
+                                    </MudCard>
+
+                                    <MudExpansionPanels Elevation="0" Variant="Variant.Outlined" MultiExpansion="true">
+                                        <MudExpansionPanel Text="Schema Migration Evidence" Icon="@Icons.Material.Filled.FactCheck">
+                                            <MudStack Spacing="2">
+                                                <MudText Typo="Typo.body2">Plan ID: @DisplayValue(_createResult.SchemaPlanId)</MudText>
+                                                <MudText Typo="Typo.body2">Execution Token: @DisplayValue(_createResult.SchemaExecutionToken)</MudText>
+                                            </MudStack>
+                                        </MudExpansionPanel>
+                                    </MudExpansionPanels>
+                                </MudStack>
                             }
                             else
                             {
-                                <MudAlert Severity="Severity.Error" Class="mb-4">
+                                <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">
                                     <MudText Typo="Typo.h6">Failed to Create Demo Database</MudText>
                                     <MudText Typo="Typo.body1" Class="mt-2">@_createResult.Message</MudText>
                                     @if (!string.IsNullOrEmpty(_createResult.ErrorDetails))
@@ -213,6 +246,11 @@
     private void Complete()
     {
         MudDialog?.Close(DialogResult.Ok(true));
+    }
+
+    private static string DisplayValue(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "Not available" : value;
     }
 }
 

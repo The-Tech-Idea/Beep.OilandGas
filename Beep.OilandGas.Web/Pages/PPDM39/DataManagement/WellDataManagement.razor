@@ -12,7 +12,7 @@
 
     @* ── Page header ─────────────────────────────────────────────────────── *@
     <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4" Spacing="2">
-        <MudIcon Icon="@Icons.Material.Filled.OilBarrel" Color="Color.Primary" Style="font-size:2rem;" />
+        <MudIcon Icon="@Icons.Material.Filled.OilBarrel" Color="Color.Primary" Size="Size.Large" />
         <MudStack Spacing="0">
             <MudText Typo="Typo.h5">Well Data Management</MudText>
             <MudText Typo="Typo.body2" Color="Color.Secondary">
@@ -36,7 +36,7 @@
 
         @* ── Left: table browser ─────────────────────────────────────────── *@
         <MudItem xs="12" md="4" lg="3">
-            <MudPaper Elevation="2" Class="pa-3" Style="height: calc(100vh - 200px); overflow-y: auto;">
+            <MudPaper Elevation="2" Class="pa-3">
                 <CategoryTableBrowser CategoryId="WELL"
                                       CategoryName="Wells"
                                       CategoryIcon="@Icons.Material.Filled.OilBarrel"
@@ -46,15 +46,15 @@
 
         @* ── Right: data grid / CRUD ──────────────────────────────────────── *@
         <MudItem xs="12" md="8" lg="9">
-            <MudPaper Elevation="2" Style="height: calc(100vh - 200px); overflow-y: auto;">
+            <MudPaper Elevation="2">
 
                 @if (string.IsNullOrWhiteSpace(_activeTable))
                 {
                     @* ── Welcome panel ────────────────────────────────────── *@
                     <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center"
-                              Style="height:100%;" Class="pa-8" Spacing="3">
+                            Class="pa-8" Spacing="3">
                         <MudIcon Icon="@Icons.Material.Filled.OilBarrel"
-                                 Style="font-size:5rem;" Color="Color.Primary" />
+                               Size="Size.Large" Color="Color.Primary" />
                         <MudText Typo="Typo.h5">Well Life Cycle Data</MudText>
                         <MudText Typo="Typo.body1" Color="Color.Secondary" Align="Align.Center">
                             Select a table from the left panel to view, search and edit records.
@@ -71,7 +71,7 @@
                                             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                                                 <MudIcon Icon="@qt.Icon" Color="Color.Primary" Size="Size.Small" />
                                                 <MudStack Spacing="0">
-                                                    <MudText Typo="Typo.body2" Style="font-family:monospace;">
+                                                    <MudText Typo="Typo.body2" Class="font-monospace">
                                                         @qt.TableName
                                                     </MudText>
                                                     <MudText Typo="Typo.caption" Color="Color.Secondary">

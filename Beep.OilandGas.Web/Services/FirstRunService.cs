@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data;
 using Blazored.LocalStorage;
 using Microsoft.Extensions.Logging;
 
@@ -41,8 +42,8 @@ namespace Beep.OilandGas.Web.Services
                     return false;
 
                 // Double-check with the API — connection might have been set up outside the wizard
-                var status = await _apiClient.GetAsync<SetupStatusResponse>("api/ppdm39/setup/status");
-                if (status?.HasConnection == true)
+                var status = await _apiClient.GetAsync<SetupStatusResult>("api/ppdm39/setup/status");
+                if (status?.HasConnection == true && status.IsSchemaReady)
                 {
                     // Auto-mark as complete so we don't prompt again
                     await MarkSetupCompleteAsync(status.ConnectionName ?? string.Empty);
@@ -75,14 +76,5 @@ namespace Beep.OilandGas.Web.Services
         {
             return await _localStorage.GetItemAsync<string>(ConnectionNameKey);
         }
-    }
-
-    /// <summary>Mirrors the API response from GET api/ppdm39/setup/status</summary>
-    public class SetupStatusResponse
-    {
-        public bool HasConnection { get; set; }
-        public string? ConnectionName { get; set; }
-        public string? DbType { get; set; }
-        public bool IsSchemaReady { get; set; }
     }
 }

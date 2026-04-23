@@ -1,6 +1,6 @@
 ﻿@page "/ppdm39/field/dashboard"
 @using Beep.OilandGas.Models.Data
-@inject ApiClient ApiClient
+@inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
 
@@ -357,7 +357,7 @@
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
@@ -371,7 +371,7 @@
         _isLoading = true;
         try
         {
-            _dashboard = await ApiClient.GetAsync<Beep.OilandGas.Models.Data.FieldDashboard>("/api/field/current/dashboard");
+            _dashboard = await LifeCycleService.GetFieldDashboardAsync();
         }
         catch (Exception)
         {

@@ -2,6 +2,7 @@
 @using Beep.OilandGas.Models.Data.WorkOrder
 @using Beep.OilandGas.Web.Services
 @inject ApiClient ApiClient
+@inject ILifeCycleService LifeCycleService
 @inject IWorkOrderServiceClient WorkOrderService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
@@ -39,10 +40,10 @@
     </MudStack>
 
     @* ── Filter row ───────────────────────────────────────────────────────── *@
-    <MudPaper Elevation="0" Class="pa-3" Style="background:transparent">
+    <MudStack Class="pa-3">
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Wrap="Wrap.Wrap">
             <MudSelect T="string?" Label="Sub-type" @bind-Value="_filterSubType"
-                       Clearable="true" Style="min-width:200px" Dense="true" Margin="Margin.Dense">
+                       Clearable="true" Dense="true" Margin="Margin.Dense">
                 <MudSelectItem Value="@((string?)null)">All types</MudSelectItem>
                 <MudSelectItem Value="@WorkOrderSubType.Preventive">Preventive</MudSelectItem>
                 <MudSelectItem Value="@WorkOrderSubType.Corrective">Corrective</MudSelectItem>
@@ -55,7 +56,7 @@
                        StartIcon="@Icons.Material.Outlined.FilterList"
                        OnClick="LoadWorkOrders">Apply</MudButton>
         </MudStack>
-    </MudPaper>
+    </MudStack>
 
     @* ── Kanban board ─────────────────────────────────────────────────────── *@
     @if (_loading)
@@ -68,7 +69,7 @@
             @foreach (var col in _columns)
             {
                 <MudItem xs="12" sm="6" md="4" lg="2">
-                    <MudPaper Elevation="1" Class="pa-2" Style="min-height:400px">
+                    <MudPaper Elevation="1" Class="pa-2">
                         <MudStack Spacing="1">
                             <MudStack Row="true" AlignItems="AlignItems.Center"
                                       Justify="Justify.SpaceBetween" Class="mb-1">
@@ -80,7 +81,7 @@
                             </MudStack>
                             @foreach (var wo in CardsFor(col.State))
                             {
-                                <MudCard Elevation="2" Class="mb-1" Style="cursor:pointer"
+                                <MudCard Elevation="2" Class="mb-1 cursor-pointer"
                                          @onclick="() => OpenDetail(wo.InstanceId)">
                                     <MudCardHeader Class="pa-2">
                                         <CardHeaderContent>
@@ -205,7 +206,7 @@
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldNameDto>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             _fieldName = summary?.FieldName;
         }
         catch { }
@@ -309,9 +310,4 @@
         _                                  => subType
     };
 
-    private sealed class FieldNameDto
-    {
-        public string? FieldId   { get; set; }
-        public string? FieldName { get; set; }
-    }
 }

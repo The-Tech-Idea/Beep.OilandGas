@@ -43,7 +43,7 @@
 
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
-    [Inject] ApiClient ApiClient { get; set; } = default!;
+    [Inject] IAccountingServiceClient AccountingServiceClient { get; set; } = default!;
     [Inject] ISnackbar Snackbar { get; set; } = default!;
     [Parameter] public string FieldId { get; set; } = string.Empty;
 
@@ -86,9 +86,7 @@
                 GasPrice = _gasPrice
             };
 
-            var succeeded = await ApiClient.PostAsync(
-                "/api/accounting/royalty/calculate",
-                request);
+            var succeeded = await AccountingServiceClient.CalculateRoyaltiesAsync(request);
 
             if (!succeeded)
             {

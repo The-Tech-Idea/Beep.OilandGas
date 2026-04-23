@@ -1,5 +1,6 @@
 ﻿@page "/production/allocation"
 @inject ApiClient ApiClient
+@inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
 @inject IDevelopmentServiceClient DevelopmentService
 @inject IProductionServiceClient ProductionService
@@ -277,7 +278,7 @@
         {
             try
             {
-                var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+                var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
                 if (summary != null)
                     _fieldName = summary.FieldName ?? _fieldName;
             }

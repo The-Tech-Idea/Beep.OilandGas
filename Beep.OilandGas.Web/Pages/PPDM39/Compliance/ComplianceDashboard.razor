@@ -52,7 +52,7 @@ else
         <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-3">
             <MudText Typo="Typo.h6">Obligations</MudText>
             <MudSpacer />
-            <MudSelect T="int" Value="@_selectedYear" Label="Year" Style="width:120px"
+            <MudSelect T="int" Value="@_selectedYear" Label="Year"
                        ValueChanged="@(async (int y) => { _selectedYear = y; await LoadAsync(); })">
                 @foreach (var y in _years)
                 {

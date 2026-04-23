@@ -65,19 +65,19 @@
                             <MudText Typo="Typo.subtitle2" Class="mb-2">Details</MudText>
                             <MudStack Spacing="1">
                                 <MudStack Row="true">
-                                    <MudText Typo="Typo.caption" Style="width:140px;font-weight:600">Equipment</MudText>
+                                    <MudText Typo="Typo.subtitle2" Class="mr-2">Equipment</MudText>
                                     <MudText Typo="Typo.caption">@_detail.EquipmentId</MudText>
                                 </MudStack>
                                 <MudStack Row="true">
-                                    <MudText Typo="Typo.caption" Style="width:140px;font-weight:600">Planned Start</MudText>
+                                    <MudText Typo="Typo.subtitle2" Class="mr-2">Planned Start</MudText>
                                     <MudText Typo="Typo.caption">@_detail.PlannedStart?.ToString("dd-MMM-yyyy")</MudText>
                                 </MudStack>
                                 <MudStack Row="true">
-                                    <MudText Typo="Typo.caption" Style="width:140px;font-weight:600">Actual Start</MudText>
+                                    <MudText Typo="Typo.subtitle2" Class="mr-2">Actual Start</MudText>
                                     <MudText Typo="Typo.caption">@_detail.ActualStart?.ToString("dd-MMM-yyyy")</MudText>
                                 </MudStack>
                                 <MudStack Row="true">
-                                    <MudText Typo="Typo.caption" Style="width:140px;font-weight:600">Completed</MudText>
+                                    <MudText Typo="Typo.subtitle2" Class="mr-2">Completed</MudText>
                                     <MudText Typo="Typo.caption">@_detail.ActualEnd?.ToString("dd-MMM-yyyy")</MudText>
                                 </MudStack>
                             </MudStack>
@@ -88,19 +88,19 @@
                             <MudText Typo="Typo.subtitle2" Class="mb-2">Budget vs Actual</MudText>
                             <MudStack Spacing="1">
                                 <MudStack Row="true">
-                                    <MudText Typo="Typo.caption" Style="width:140px;font-weight:600">Budget</MudText>
+                                    <MudText Typo="Typo.subtitle2" Class="mr-2">Budget</MudText>
                                     <MudText Typo="Typo.caption">@_detail.BudgetAmt.ToString("N0")</MudText>
                                 </MudStack>
                                 <MudStack Row="true">
-                                    <MudText Typo="Typo.caption" Style="width:140px;font-weight:600">Actual</MudText>
+                                    <MudText Typo="Typo.subtitle2" Class="mr-2">Actual</MudText>
                                     <MudText Typo="Typo.caption">@_detail.ActualAmt.ToString("N0")</MudText>
                                 </MudStack>
                                 <MudStack Row="true">
-                                    <MudText Typo="Typo.caption" Style="width:140px;font-weight:600">Steps</MudText>
+                                    <MudText Typo="Typo.subtitle2" Class="mr-2">Steps</MudText>
                                     <MudText Typo="Typo.caption">@_detail.StepCount</MudText>
                                 </MudStack>
                                 <MudStack Row="true">
-                                    <MudText Typo="Typo.caption" Style="width:140px;font-weight:600">Checklist</MudText>
+                                    <MudText Typo="Typo.subtitle2" Class="mr-2">Checklist</MudText>
                                     <MudText Typo="Typo.caption">@_detail.PassedConditions / @_detail.ConditionCount passed</MudText>
                                 </MudStack>
                             </MudStack>
@@ -240,25 +240,25 @@
                             <HeaderContent>
                                 <MudTh>Code</MudTh>
                                 <MudTh>Description</MudTh>
-                                <MudTh Style="text-align:right">Budget</MudTh>
-                                <MudTh Style="text-align:right">Actual</MudTh>
-                                <MudTh Style="text-align:right">Variance %</MudTh>
+                                <MudTh><MudText Align="Align.Right">Budget</MudText></MudTh>
+                                <MudTh><MudText Align="Align.Right">Actual</MudText></MudTh>
+                                <MudTh><MudText Align="Align.Right">Variance %</MudText></MudTh>
                             </HeaderContent>
                             <RowTemplate>
                                 <MudTd>@context.CompCode</MudTd>
                                 <MudTd>@context.Description</MudTd>
-                                <MudTd Style="text-align:right">@context.BudgetAmt.ToString("N0")</MudTd>
-                                <MudTd Style="text-align:right">@context.ActualAmt.ToString("N0")</MudTd>
-                                <MudTd Style="text-align:right">
+                                <MudTd><MudText Align="Align.Right">@context.BudgetAmt.ToString("N0")</MudText></MudTd>
+                                <MudTd><MudText Align="Align.Right">@context.ActualAmt.ToString("N0")</MudText></MudTd>
+                                <MudTd><MudText Align="Align.Right">
                                     <MudText Color="@(context.VariancePct > 10 ? Color.Error : Color.Default)">
                                         @context.VariancePct.ToString("F1")%
                                     </MudText>
-                                </MudTd>
+                                </MudText></MudTd>
                             </RowTemplate>
                             <FooterContent>
                                 <MudTd colspan="2"><strong>Total</strong></MudTd>
-                                <MudTd Style="text-align:right"><strong>@_costs.Sum(c => c.BudgetAmt).ToString("N0")</strong></MudTd>
-                                <MudTd Style="text-align:right"><strong>@_costs.Sum(c => c.ActualAmt).ToString("N0")</strong></MudTd>
+                                <MudTd><MudText Align="Align.Right"><strong>@_costs.Sum(c => c.BudgetAmt).ToString("N0")</strong></MudText></MudTd>
+                                <MudTd><MudText Align="Align.Right"><strong>@_costs.Sum(c => c.ActualAmt).ToString("N0")</strong></MudText></MudTd>
                                 <MudTd></MudTd>
                             </FooterContent>
                         </MudTable>

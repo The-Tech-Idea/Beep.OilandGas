@@ -115,6 +115,15 @@ var identityServerUrl = builder.Configuration["services:identityserver:https:0"]
     ?? builder.Configuration["IdentityServer:BaseUrl"] 
     ?? "https://localhost:7062/";
 
+var oidcClientId = builder.Configuration["Authentication:Schemes:OpenIdConnect:ClientId"]
+    ?? builder.Configuration["IdentityServer:ClientId"]
+    ?? "beep_oilgas_web";
+
+var oidcClientSecret = builder.Configuration["Authentication:Schemes:OpenIdConnect:ClientSecret"]
+    ?? builder.Configuration["IdentityServer:ClientSecret"]
+    ?? Environment.GetEnvironmentVariable("BEEP_OILGAS_OIDC_CLIENT_SECRET")
+    ?? string.Empty;
+
 // Configure Authentication: Cookie as DEFAULT scheme, OIDC for CHALLENGE
 builder.Services.AddAuthentication(options =>
 {
@@ -145,8 +154,8 @@ builder.Services.AddAuthentication(options =>
     options.SignOutScheme = CookieAuthenticationDefaults.AuthenticationScheme;
     
     options.Authority = identityServerUrl;
-    options.ClientId = "beep_oilgas_web";
-    options.ClientSecret = "web_secret";
+    options.ClientId = oidcClientId;
+    options.ClientSecret = oidcClientSecret;
     options.ResponseType = OpenIdConnectResponseType.Code;
     options.UsePkce = true;
     
@@ -187,7 +196,7 @@ builder.Services.AddAuthentication(options =>
             // Add client_id as a query parameter to the authorization request
             // This allows IdentityServer to detect which client is requesting authentication
             // and apply the appropriate branding (BeepOilGasTheme)
-            context.ProtocolMessage.SetParameter("client_id", "beep_oilgas_web");
+            context.ProtocolMessage.SetParameter("client_id", oidcClientId);
             return Task.CompletedTask;
         },
         

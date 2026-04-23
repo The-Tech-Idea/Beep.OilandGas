@@ -1,6 +1,6 @@
 ﻿@page "/ppdm39/accounting/royalties"
 @using Beep.OilandGas.Models.Data.ProductionAccounting
-@inject ApiClient ApiClient
+@inject IAccountingServiceClient AccountingServiceClient
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
@@ -154,16 +154,7 @@
         _isLoading = true;
         try
         {
-            var queryParams = new List<string>();
-            if (!string.IsNullOrWhiteSpace(_fieldId))
-                queryParams.Add($"fieldId={Uri.EscapeDataString(_fieldId)}");
-            if (_filterStartDate.HasValue)
-                queryParams.Add($"startDate={_filterStartDate.Value:yyyy-MM-dd}");
-            if (_filterEndDate.HasValue)
-                queryParams.Add($"endDate={_filterEndDate.Value:yyyy-MM-dd}");
-
-            var query = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
-            _royalties = await ApiClient.GetAsync<List<ROYALTY_CALCULATION>>($"/api/accounting/royalty/calculations{query}") ?? new();
+            _royalties = await AccountingServiceClient.GetRoyaltyCalculationsAsync(_fieldId, _filterStartDate, _filterEndDate);
         }
         catch (Exception)
         {

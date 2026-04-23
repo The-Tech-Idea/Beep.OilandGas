@@ -1,12 +1,11 @@
 ﻿@page "/ppdm39/create-database"
 @implements IDisposable
-@inject ApiClient ApiClient
+@inject IDataManagementService DataManagementService
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
 @using Beep.OilandGas.Web.Components
 @using Beep.OilandGas.Models.Data.DataManagement
 @using Beep.OilandGas.Models.Data
-@using System.Net.Http.Json
 
 <PageTitle>Create PPDM Database</PageTitle>
 
@@ -447,7 +446,7 @@
     {
         try
         {
-            _availableDatabaseTypes = await ApiClient.GetAsync<List<string>>("/api/ppdm39/setup/database-types") 
+            _availableDatabaseTypes = await DataManagementService.GetAvailableDatabaseTypesAsync()
                 ?? _availableDatabaseTypes;
         }
         catch (Exception)
@@ -503,8 +502,7 @@
         try
         {
             var config = BuildConnectionConfig();
-            _connectionTestResult = await ApiClient.PostAsync<ConnectionConfig, ConnectionTestResult>(
-                "/api/ppdm39/setup/test-connection", config);
+            _connectionTestResult = await DataManagementService.TestConnectionAsync(config);
 
             if (_connectionTestResult?.Success == true)
             {
@@ -540,8 +538,7 @@
         _isLoadingScripts = true;
         try
         {
-            _discoveredScripts = await ApiClient.GetAsync<List<ScriptInfo>>(
-                $"/api/ppdm39/setup/discover-scripts/{_selectedDatabaseType}") ?? new();
+            _discoveredScripts = await DataManagementService.DiscoverScriptsAsync(_selectedDatabaseType) ?? new();
 
             if (_discoveredScripts.Any())
             {
@@ -638,8 +635,7 @@
             _progressTimer = new System.Threading.Timer(async _ => await PollProgress(), null, 1000, 2000);
 
             // Start creation (this will run asynchronously)
-            _creationResult = await ApiClient.PostAsync<CreateDatabaseRequest, DatabaseCreationResult>(
-                "/api/ppdm39/setup/create-database", request);
+            _creationResult = await DataManagementService.CreateDatabaseAsync(request);
 
             _progressTimer?.Dispose();
             _progressTimer = null;
@@ -678,8 +674,7 @@
 
         try
         {
-            var progress = await ApiClient.GetAsync<ScriptExecutionProgressInfo>(
-                $"/api/ppdm39/setup/creation-progress/{Uri.EscapeDataString(_executionId)}");
+            var progress = await DataManagementService.GetCreationProgressAsync(_executionId);
 
             if (progress != null)
             {
@@ -720,8 +715,7 @@
                 OpenAfterSave = _setAsCurrent
             };
 
-            _saveResult = await ApiClient.PostAsync<SaveConnectionRequest, SaveConnectionResult>(
-                "/api/ppdm39/setup/save-connection", saveRequest);
+            _saveResult = await DataManagementService.SaveConnectionAsync(saveRequest);
 
             if (_saveResult?.Success == true)
             {
@@ -729,13 +723,7 @@
                 
                 if (_setAsCurrent)
                 {
-                    // Set as current connection
-                    var setCurrentRequest = new SetCurrentDatabaseRequest
-                    {
-                        ConnectionName = _connectionName
-                    };
-                    await ApiClient.PostAsync<SetCurrentDatabaseRequest, SetCurrentDatabaseResult>(
-                        "/api/ppdm39/setup/set-current-connection", setCurrentRequest);
+                    await DataManagementService.SetCurrentConnectionAsync(_connectionName);
                 }
             }
             else

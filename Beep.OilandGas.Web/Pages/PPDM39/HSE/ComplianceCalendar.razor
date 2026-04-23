@@ -359,8 +359,6 @@
         finally { _addingObligation = false; }
     }
 
-    private record FieldInfoDto(string FieldId, string FieldName);
-
     private void ExportCalendar()  => Snackbar.Add("Calendar export queued", Severity.Success);
 
     private void ApplyQueryPrefill()

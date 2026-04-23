@@ -13,6 +13,14 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     public interface IPPDM39SetupService
     {
         void SetProgressTracking(IProgressTrackingService progressTracking);
+        Task<SetupStatusResult> GetSetupStatusAsync();
+        Task<CreateSqliteResult> CreateSqliteAsync(CreateSqliteRequest request);
+        Task<SchemaMigrationPlanResult> PlanSchemaMigrationAsync(SchemaMigrationPlanRequest request);
+        Task<SchemaMigrationApprovalResult> ApproveSchemaMigrationPlanAsync(SchemaMigrationApprovalRequest request);
+        Task<SchemaMigrationExecuteResult> ExecuteSchemaMigrationPlanAsync(SchemaMigrationExecuteRequest request);
+        Task<OperationStartResponse> StartSchemaMigrationExecutionAsync(SchemaMigrationExecuteRequest request);
+        Task<SchemaMigrationProgressResult> GetSchemaMigrationProgressAsync(string executionToken);
+        Task<SchemaMigrationArtifactsResult> GetSchemaMigrationArtifactsAsync(string planId);
         DatabaseDriverInfo? GetDriverInfo(string databaseType);
         List<string> GetAvailableDatabaseTypes();
         DriverInfo CheckDriver(string databaseType);

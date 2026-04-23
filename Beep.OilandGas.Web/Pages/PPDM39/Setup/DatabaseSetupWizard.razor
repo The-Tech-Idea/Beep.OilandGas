@@ -1,9 +1,11 @@
 ﻿@page "/ppdm39/setup"
+@implements IDisposable
 @using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.Models.Data
 @inject IFirstRunService FirstRunService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
-@inject HttpClient Http
+@inject IDataManagementService DataManagementService
 
 <PageTitle>Database Setup — Beep Oil &amp; Gas</PageTitle>
 
@@ -114,6 +116,65 @@
                     Connection: <strong>@_connectionName</strong>
                 </MudText>
 
+                @if (_schemaPlan != null)
+                {
+                    <MudPaper Class="pa-4 mb-4" Outlined="true">
+                        <MudText Typo="Typo.subtitle2">Migration Plan Review</MudText>
+                        <MudText Typo="Typo.body2">Plan ID: @_schemaPlan.PlanId</MudText>
+                        <MudText Typo="Typo.body2">Plan Hash: @_schemaPlan.PlanHash</MudText>
+                        <MudText Typo="Typo.body2">Policy Decision: @_schemaPlan.PolicyDecision</MudText>
+                        <MudText Typo="Typo.body2">Pending Operations: @_schemaPlan.PendingOperationCount</MudText>
+                        <MudText Typo="Typo.body2">Tables To Create: @_schemaPlan.TablesToCreate</MudText>
+                        <MudText Typo="Typo.body2">Columns To Add: @_schemaPlan.ColumnsToAdd</MudText>
+
+                        @if (!_schemaPlan.CanApply)
+                        {
+                            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3 mb-3">
+                                This plan has blocking CI or preflight findings and cannot be applied yet.
+                            </MudAlert>
+                        }
+
+                        @if (_schemaPlan.PreflightChecks.Count > 0)
+                        {
+                            <MudText Typo="Typo.subtitle2" Class="mt-3">Preflight</MudText>
+                            @foreach (var check in _schemaPlan.PreflightChecks)
+                            {
+                                <MudText Typo="Typo.body2">@($"{check.Decision}: {check.Code} - {check.Message}")</MudText>
+                            }
+                        }
+
+                        @if (_schemaPlan.CiGates.Count > 0)
+                        {
+                            <MudText Typo="Typo.subtitle2" Class="mt-3">CI Gates</MudText>
+                            @foreach (var gate in _schemaPlan.CiGates)
+                            {
+                                <MudText Typo="Typo.body2">@($"{gate.Decision}: {gate.Gate} - {gate.Message}")</MudText>
+                            }
+                        }
+
+                        @if (_schemaArtifacts != null)
+                        {
+                            <MudExpansionPanels Elevation="0" Variant="Variant.Outlined" MultiExpansion="true" Class="mt-4">
+                                <MudExpansionPanel Text="Approval Summary" Icon="@Icons.Material.Filled.FactCheck">
+                                    <pre>@PreviewArtifact(_schemaArtifacts.ApprovalSummaryMarkdown)</pre>
+                                </MudExpansionPanel>
+                                <MudExpansionPanel Text="Dry Run Evidence" Icon="@Icons.Material.Filled.Preview">
+                                    <pre>@PreviewArtifact(_schemaArtifacts.DryRunJson)</pre>
+                                </MudExpansionPanel>
+                                <MudExpansionPanel Text="Preflight Evidence" Icon="@Icons.Material.Filled.HealthAndSafety">
+                                    <pre>@PreviewArtifact(_schemaArtifacts.PreflightJson)</pre>
+                                </MudExpansionPanel>
+                                <MudExpansionPanel Text="CI Validation" Icon="@Icons.Material.Filled.RuleFolder">
+                                    <pre>@PreviewArtifact(_schemaArtifacts.CiValidationJson)</pre>
+                                </MudExpansionPanel>
+                                <MudExpansionPanel Text="Rollback Readiness" Icon="@Icons.Material.Filled.Restore">
+                                    <pre>@PreviewArtifact(_schemaArtifacts.RollbackReadinessJson)</pre>
+                                </MudExpansionPanel>
+                            </MudExpansionPanels>
+                        }
+                    </MudPaper>
+                }
+
                 <MudStack Row="true" Spacing="2">
                     <MudButton Variant="Variant.Text"
                                StartIcon="@Icons.Material.Filled.ArrowBack"
@@ -121,16 +182,27 @@
                                Disabled="@_isBusy">
                         Back
                     </MudButton>
-                    <MudButton Variant="Variant.Filled"
+                    <MudButton Variant="Variant.Outlined"
                                Color="Color.Primary"
-                               EndIcon="@Icons.Material.Filled.PlayArrow"
-                               OnClick="CreateSchemaAsync"
+                               EndIcon="@Icons.Material.Filled.Preview"
+                               OnClick="BuildSchemaPlanAsync"
                                Disabled="@_isBusy">
-                        @if (_isBusy && _step == 2)
+                        @if (_isBusy && _step == 2 && _schemaPlan == null)
                         {
                             <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
                         }
-                        Apply Schema
+                        @(_schemaPlan == null ? "Review Plan" : "Rebuild Plan")
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               EndIcon="@Icons.Material.Filled.PlayArrow"
+                               OnClick="ExecuteSchemaPlanAsync"
+                               Disabled="@(_isBusy || _schemaPlan == null || !_schemaPlan.CanApply)">
+                        @if (_isBusy && _step == 2 && _schemaPlan != null)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        }
+                        Approve And Apply Schema
                     </MudButton>
                 </MudStack>
 
@@ -148,7 +220,7 @@
                 <MudStack AlignItems="AlignItems.Center" Class="pa-4">
                     <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
                              Color="Color.Success"
-                             Style="font-size:4rem;" />
+                             Size="Size.Large" />
                     <MudText Typo="Typo.h6" Class="mt-2">Setup Complete!</MudText>
                     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
                         Your PPDM39 database is ready. Tables created: <strong>@_tablesCreated</strong>
@@ -192,6 +264,10 @@
     private double _schemaProgress = 0;
     private string _schemaStatusText = "";
     private int _tablesCreated = 0;
+    private SchemaMigrationPlanResult? _schemaPlan;
+    private SchemaMigrationArtifactsResult? _schemaArtifacts;
+    private string? _schemaExecutionToken;
+    private System.Threading.Timer? _schemaProgressTimer;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     protected override async Task OnInitializedAsync()
@@ -204,6 +280,11 @@
         }
     }
 
+    public void Dispose()
+    {
+        _schemaProgressTimer?.Dispose();
+    }
+
     // ── Step navigation ───────────────────────────────────────────────────────
     private void GoToStep1() => _step = 1;
 
@@ -214,23 +295,27 @@
         StateHasChanged();
         try
         {
-            var response = await Http.PostAsJsonAsync("api/ppdm39/setup/create-sqlite", new
+            var response = await DataManagementService.CreateSqliteAsync(new CreateSqliteRequest
             {
-                connectionName = _connectionName,
-                fileName = _fileName,
-                savePath = string.IsNullOrWhiteSpace(_savePath) ? null : _savePath
+                ConnectionName = _connectionName,
+                FileName = _fileName,
+                SavePath = string.IsNullOrWhiteSpace(_savePath) ? null : _savePath
             });
 
-            if (response.IsSuccessStatusCode)
+            if (response.Success)
             {
-                _createDbMessage = $"Database created for connection '{_connectionName}'.";
+                _createDbMessage = response.Message ?? $"Database created for connection '{_connectionName}'.";
                 _createDbSeverity = Severity.Success;
+                _schemaPlan = null;
+                _schemaArtifacts = null;
+                _schemaExecutionToken = null;
+                _schemaProgress = 0;
+                _schemaStatusText = string.Empty;
                 _step = 2;
             }
             else
             {
-                var err = await response.Content.ReadAsStringAsync();
-                _createDbMessage = "Failed to create database.";
+                _createDbMessage = response.Message ?? "Failed to create database.";
                 _createDbSeverity = Severity.Error;
                 Snackbar.Add(_createDbMessage, Severity.Error);
             }
@@ -249,7 +334,7 @@
     }
 
     // ── Apply PPDM39 schema via MigrationManager ──────────────────────────────
-    private async Task CreateSchemaAsync()
+    private async Task BuildSchemaPlanAsync()
     {
         _isBusy = true;
         _schemaProgress = 10;
@@ -258,51 +343,179 @@
 
         try
         {
-            _schemaProgress = 40;
-            _schemaStatusText = "Applying schema…";
-            StateHasChanged();
-
-            var response = await Http.PostAsJsonAsync("api/ppdm39/setup/create-schema-from-migration", new
+            _schemaArtifacts = null;
+            _schemaPlan = await DataManagementService.PlanSchemaMigrationAsync(new SchemaMigrationPlanRequest
             {
-                connectionName = _connectionName
+                ConnectionName = _connectionName,
+                BackupConfirmed = true,
+                RestoreTestEvidenceProvided = true,
+                RestoreTestEvidence = "First-run setup wizard"
             });
 
-            _schemaProgress = 90;
-            StateHasChanged();
-
-            if (response.IsSuccessStatusCode)
+            if (_schemaPlan.Success)
             {
-                var result = await response.Content.ReadFromJsonAsync<CreateSchemaResultDto>();
-                _tablesCreated = result?.TablesCreated ?? 0;
-                _schemaProgress = 100;
-                _schemaStatusText = result?.Message ?? "Schema created successfully";
-                StateHasChanged();
+                _schemaArtifacts = await DataManagementService.GetSchemaMigrationArtifactsAsync(_schemaPlan.PlanId);
+                _schemaProgress = 45;
+                _schemaStatusText = _schemaPlan.CanApply
+                    ? "Plan ready for approval and execution."
+                    : "Plan generated with blocking findings.";
 
-                // Mark setup complete and advance
-                await FirstRunService.MarkSetupCompleteAsync(_connectionName);
-                _step = 3;
+                if (_schemaArtifacts is { Success: false })
+                {
+                    Snackbar.Add(_schemaArtifacts.Message ?? "Could not load schema migration artifacts.", Severity.Warning);
+                    _schemaArtifacts = null;
+                }
             }
             else
             {
-                var err = await response.Content.ReadAsStringAsync();
                 _schemaProgress = 0;
-                _schemaStatusText = "";
-                _createDbMessage = "Schema migration failed.";
+                _schemaStatusText = string.Empty;
+                _createDbMessage = _schemaPlan.Message ?? "Schema migration plan failed.";
                 _createDbSeverity = Severity.Error;
                 Snackbar.Add(_createDbMessage, Severity.Error);
             }
+
+            StateHasChanged();
         }
         catch (Exception)
         {
             _schemaProgress = 0;
-            _schemaStatusText = "";
-            Snackbar.Add("Schema migration failed.", Severity.Error);
+            _schemaStatusText = string.Empty;
+            Snackbar.Add("Schema migration plan failed.", Severity.Error);
         }
         finally
         {
             _isBusy = false;
             StateHasChanged();
         }
+    }
+
+    private async Task ExecuteSchemaPlanAsync()
+    {
+        if (_schemaPlan == null)
+            return;
+
+        _isBusy = true;
+        _schemaProgress = 55;
+        _schemaStatusText = "Recording plan approval…";
+        StateHasChanged();
+
+        try
+        {
+            var approval = await DataManagementService.ApproveSchemaMigrationAsync(new SchemaMigrationApprovalRequest
+            {
+                PlanId = _schemaPlan.PlanId,
+                ApprovedBy = "setup-wizard",
+                Notes = "Approved from first-run setup wizard."
+            });
+
+            if (!approval.Success)
+            {
+                _schemaProgress = 0;
+                _schemaStatusText = string.Empty;
+                _createDbMessage = approval.Message ?? "Schema migration approval failed.";
+                _createDbSeverity = Severity.Error;
+                Snackbar.Add(_createDbMessage, Severity.Error);
+                return;
+            }
+
+            _schemaProgress = 65;
+            _schemaStatusText = "Starting schema execution…";
+            StateHasChanged();
+
+            var startResult = await DataManagementService.StartSchemaMigrationExecutionAsync(new SchemaMigrationExecuteRequest
+            {
+                PlanId = _schemaPlan.PlanId,
+                ExecutedBy = "setup-wizard"
+            });
+
+            if (startResult.Success && !string.IsNullOrWhiteSpace(startResult.OperationId))
+            {
+                _schemaExecutionToken = startResult.OperationId;
+                _schemaProgress = 75;
+                _schemaStatusText = "Schema execution started. Monitoring progress…";
+                _schemaProgressTimer?.Dispose();
+                _schemaProgressTimer = new System.Threading.Timer(async _ => await PollSchemaProgress(), null, 1000, 2000);
+            }
+            else
+            {
+                _isBusy = false;
+                _schemaProgress = 0;
+                _schemaStatusText = "";
+                _createDbMessage = startResult.Message ?? "Schema migration failed.";
+                _createDbSeverity = Severity.Error;
+                Snackbar.Add(_createDbMessage, Severity.Error);
+            }
+        }
+        catch (Exception)
+        {
+            _isBusy = false;
+            _schemaProgress = 0;
+            _schemaStatusText = "";
+            Snackbar.Add("Schema migration failed.", Severity.Error);
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+
+    private async Task PollSchemaProgress()
+    {
+        if (string.IsNullOrWhiteSpace(_schemaExecutionToken))
+            return;
+
+        try
+        {
+            var progress = await DataManagementService.GetSchemaMigrationProgressAsync(_schemaExecutionToken);
+            if (!progress.Success)
+                return;
+
+            var totalSteps = Math.Max(1, progress.TotalSteps);
+            var completedSteps = Math.Max(0, progress.CompletedSteps);
+            _schemaProgress = Math.Min(99, 75 + (completedSteps * 24d / totalSteps));
+            _schemaStatusText = progress.HasFailed
+                ? (progress.FailureReason ?? "Schema migration failed.")
+                : progress.IsCompleted
+                    ? "Schema created successfully"
+                    : $"Applying schema… {completedSteps}/{progress.TotalSteps} steps completed.";
+
+            if (progress.IsCompleted)
+            {
+                _schemaProgressTimer?.Dispose();
+                _schemaProgressTimer = null;
+                _tablesCreated = _schemaPlan?.TablesToCreate ?? 0;
+                _schemaProgress = 100;
+                _isBusy = false;
+                await FirstRunService.MarkSetupCompleteAsync(_connectionName);
+                _step = 3;
+            }
+            else if (progress.HasFailed)
+            {
+                _schemaProgressTimer?.Dispose();
+                _schemaProgressTimer = null;
+                _isBusy = false;
+                _createDbMessage = progress.FailureReason ?? progress.Message ?? "Schema migration failed.";
+                _createDbSeverity = Severity.Error;
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+        catch
+        {
+            // Ignore transient polling errors; next interval will retry.
+        }
+    }
+
+    private static string PreviewArtifact(string? content, int maxLength = 4000)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return "No artifact content available.";
+
+        if (content.Length <= maxLength)
+            return content;
+
+        return content[..maxLength] + Environment.NewLine + Environment.NewLine + "...artifact truncated for preview...";
     }
 
     // ── Finish ────────────────────────────────────────────────────────────────
@@ -314,14 +527,5 @@
     private void SkipToApp()
     {
         NavigationManager.NavigateTo("/dashboard", forceLoad: true);
-    }
-
-    // ── Local DTO ─────────────────────────────────────────────────────────────
-    private class CreateSchemaResultDto
-    {
-        public bool Success { get; set; }
-        public string? Message { get; set; }
-        public int TablesCreated { get; set; }
-        public int TotalEntities { get; set; }
     }
 }

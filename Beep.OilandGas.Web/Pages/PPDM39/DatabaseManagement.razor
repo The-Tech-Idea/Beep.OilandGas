@@ -2,14 +2,11 @@
 @implements IAsyncDisposable
 @using Beep.OilandGas.Client.App
 @using Beep.OilandGas.Models.Data.DataManagement
-@inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
 @inject IProgressTrackingClient ProgressClient
 @inject IDataManagementService DataManagementService
-@using System.Net.Http.Json
-@using System.Text.Json
 @using Beep.OilandGas.Web.Components
 
 <PageTitle>Manage Database Connections</PageTitle>
@@ -432,17 +429,16 @@
         {
             try
             {
-                // Make DELETE request using ApiClient
-                var deleteResult = await ApiClient.DeleteAsync<DeleteConnectionResult>($"/api/ppdm39/setup/connection/{Uri.EscapeDataString(connectionName)}");
+                var deleteResult = await DataManagementService.DeleteConnectionAsync(connectionName);
 
-                if (deleteResult?.Success == true)
+                if (deleteResult.Success)
                 {
                     Snackbar.Add(deleteResult.Message, Severity.Success);
                     await LoadConnections();
                 }
                 else
                 {
-                    Snackbar.Add($"Failed to delete connection: {deleteResult?.Message}", Severity.Error);
+                    Snackbar.Add($"Failed to delete connection: {deleteResult.Message}", Severity.Error);
                 }
             }
             catch (Exception)
@@ -477,10 +473,9 @@
                     DropIfExists = true
                 };
 
-                var dropResult = await ApiClient.PostAsync<DropDatabaseRequest, DropDatabaseResult>(
-                    "/api/ppdm39/setup/drop-database", request);
+                var dropResult = await DataManagementService.DropDatabaseAsync(request);
 
-                if (dropResult?.Success == true)
+                if (dropResult.Success)
                 {
                     Snackbar.Add(dropResult.Message, Severity.Success);
                     _dropConnectionName = null;
@@ -488,7 +483,7 @@
                 }
                 else
                 {
-                    Snackbar.Add($"Failed to drop database: {dropResult?.Message}", Severity.Error);
+                    Snackbar.Add($"Failed to drop database: {dropResult.Message}", Severity.Error);
                 }
             }
             catch (Exception)
@@ -527,10 +522,9 @@
                     BackupFirst = false
                 };
 
-                var recreateResult = await ApiClient.PostAsync<RecreateDatabaseRequest, RecreateDatabaseResult>(
-                    "/api/ppdm39/setup/recreate-database", request);
+                var recreateResult = await DataManagementService.RecreateDatabaseAsync(request);
 
-                if (recreateResult?.Success == true)
+                if (recreateResult.Success)
                 {
                     Snackbar.Add(recreateResult.Message, Severity.Success);
                     _recreateConnectionName = null;
@@ -538,7 +532,7 @@
                 }
                 else
                 {
-                    Snackbar.Add($"Failed to recreate database: {recreateResult?.Message}", Severity.Error);
+                    Snackbar.Add($"Failed to recreate database: {recreateResult.Message}", Severity.Error);
                 }
             }
             catch (Exception)
@@ -584,10 +578,9 @@
             };
 
             // Start operation and get operation ID for progress tracking
-            var response = await ApiClient.PostAsync<CopyDatabaseRequest, OperationStartResponse>(
-                "/api/ppdm39/setup/copy-database", request);
+            var response = await DataManagementService.CopyDatabaseAsync(request);
 
-            if (response != null && !string.IsNullOrEmpty(response.OperationId))
+            if (response.Success && !string.IsNullOrEmpty(response.OperationId))
             {
                 _currentOperationId = response.OperationId;
                 if (!string.IsNullOrEmpty(_currentOperationId))
@@ -602,7 +595,7 @@
             {
                 // Fallback: if no operation ID, wait for completion (sync response)
                 // This handles the case where the endpoint returns the result directly
-                Snackbar.Add("Operation started", Severity.Info);
+                Snackbar.Add(response.Message ?? "Operation started", response.Success ? Severity.Info : Severity.Error);
             }
         }
         catch (Exception)

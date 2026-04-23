@@ -3,6 +3,7 @@
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
 @inject Beep.OilandGas.Web.Theme.IThemeProvider ThemeProvider
+@inject Beep.OilandGas.Web.Services.IFirstRunService FirstRunService
 @using Microsoft.AspNetCore.Components.Authorization
 @using Beep.OilandGas.Web.Theme
 
@@ -108,6 +109,19 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var currentPath = new Uri(NavigationManager.Uri).AbsolutePath;
+        var isSetupPage = currentPath.StartsWith("/ppdm39/setup", StringComparison.OrdinalIgnoreCase);
+
+        if (!isSetupPage)
+        {
+            var setupRequired = await FirstRunService.IsSetupRequiredAsync();
+            if (setupRequired)
+            {
+                NavigationManager.NavigateTo("/ppdm39/setup", forceLoad: false);
+                return;
+            }
+        }
+
         // Load theme from ThemeProvider
         _theme = ThemeProvider.GetMudTheme();
         _branding = ThemeProvider.GetBranding();

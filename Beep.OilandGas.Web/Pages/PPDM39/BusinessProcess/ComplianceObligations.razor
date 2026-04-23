@@ -1,6 +1,7 @@
 @page "/ppdm39/compliance/obligations"
 @inject ApiClient ApiClient
 @inject Beep.OilandGas.Web.Services.IComplianceServiceClient ComplianceClient
+@inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -119,7 +120,7 @@
     {
         try
         {
-            var summaryTask = ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summaryTask = LifeCycleService.GetFieldLifecycleSummaryAsync();
             var obligationsTask = ComplianceClient.GetAllObligationsAsync(DateTime.Today.Year);
             var upcomingTask = ComplianceClient.GetUpcomingObligationsAsync(30);
 

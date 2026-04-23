@@ -48,5 +48,27 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref SchemaNameValue, value); }
 
         }
+        private int TablesCreatedValue;
+
+        public int TablesCreated
+
+        {
+
+            get { return this.TablesCreatedValue; }
+
+            set { SetProperty(ref TablesCreatedValue, value); }
+
+        }
+        private int TotalEntitiesValue;
+
+        public int TotalEntities
+
+        {
+
+            get { return this.TotalEntitiesValue; }
+
+            set { SetProperty(ref TotalEntitiesValue, value); }
+
+        }
     }
 }

@@ -69,8 +69,8 @@
                         <MudCard Elevation="1">
                             <MudCardContent Class="pa-3">
                                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                    <MudStack Spacing="0" Style="flex:1;min-width:0">
-                                        <MudText Typo="Typo.body2" Style="font-family:monospace;overflow:hidden;text-overflow:ellipsis;">
+                                    <MudStack Spacing="0" Class="flex-grow-1">
+                                        <MudText Typo="Typo.body2" Class="font-monospace text-truncate d-block">
                                             @tbl.TableName
                                         </MudText>
                                         @if (!string.IsNullOrWhiteSpace(tbl.Description))

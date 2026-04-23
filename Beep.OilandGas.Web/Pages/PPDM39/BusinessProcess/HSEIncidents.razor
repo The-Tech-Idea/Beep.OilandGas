@@ -3,6 +3,7 @@
 @using Beep.OilandGas.Models.Data.HSE
 @inject ApiClient ApiClient
 @inject Beep.OilandGas.Web.Services.IHSEServiceClient HSEClient
+@inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -41,15 +42,15 @@
             <MudTextField @bind-Value="_search" Placeholder="Search incidents…"
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
-                          Immediate="true" Style="min-width:220px" />
-            <MudSelect T="string" @bind-Value="_tierFilter" Label="API RP 754 Tier" Style="min-width:140px">
+                          Immediate="true" />
+            <MudSelect T="string" @bind-Value="_tierFilter" Label="API RP 754 Tier">
                 <MudSelectItem Value='""'>All Tiers</MudSelectItem>
                 <MudSelectItem Value='"1"'>Tier 1 — Fatal/PTD</MudSelectItem>
                 <MudSelectItem Value='"2"'>Tier 2 — LTI</MudSelectItem>
                 <MudSelectItem Value='"3"'>Tier 3 — MTC/RWC</MudSelectItem>
                 <MudSelectItem Value='"4"'>Tier 4 — First Aid</MudSelectItem>
             </MudSelect>
-            <MudSelect T="string" @bind-Value="_statusFilter" Label="Status" Style="min-width:140px">
+            <MudSelect T="string" @bind-Value="_statusFilter" Label="Status">
                 <MudSelectItem Value='""'>All</MudSelectItem>
                 <MudSelectItem Value='"OPEN"'>Open</MudSelectItem>
                 <MudSelectItem Value='"UNDER INVESTIGATION"'>Under Investigation</MudSelectItem>
@@ -167,7 +168,7 @@
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }

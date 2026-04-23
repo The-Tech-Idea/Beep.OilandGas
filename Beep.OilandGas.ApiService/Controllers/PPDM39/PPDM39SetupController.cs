@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data;
@@ -2521,21 +2522,13 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// GET /api/ppdm39/setup/status
         /// Returns whether a PPDM39 connection already exists.
         /// </summary>
+        [AllowAnonymous]
         [HttpGet("status")]
-        public ActionResult<SetupStatusDto> GetSetupStatus()
+        public async Task<ActionResult<SetupStatusResult>> GetSetupStatus()
         {
             try
             {
-                var connections = _editor.ConfigEditor?.DataConnections;
-                var conn = connections?.FirstOrDefault();
-                var hasConnection = conn != null;
-                return Ok(new SetupStatusDto
-                {
-                    HasConnection = hasConnection,
-                    ConnectionName = conn?.ConnectionName,
-                    DbType = conn?.DatabaseType.ToString(),
-                    IsSchemaReady = false
-                });
+                return Ok(await _setupService.GetSetupStatusAsync());
             }
             catch (Exception ex)
             {
@@ -2548,74 +2541,14 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// POST /api/ppdm39/setup/create-sqlite
         /// Creates a new SQLite database file and registers the connection.
         /// </summary>
+        [AllowAnonymous]
         [HttpPost("create-sqlite")]
-        public ActionResult<CreateSqliteResult> CreateSqliteDatabase([FromBody] CreateSqliteRequest request)
+        public async Task<ActionResult<CreateSqliteResult>> CreateSqliteDatabase([FromBody] CreateSqliteRequest request)
         {
             try
             {
-                if (request == null || string.IsNullOrWhiteSpace(request.ConnectionName))
-                        return BadRequest(new { error = "Connection name is required." });
-
-                var fileName = string.IsNullOrWhiteSpace(request.FileName)
-                    ? $"{request.ConnectionName}.db"
-                    : request.FileName;
-
-                if (!fileName.EndsWith(".db", StringComparison.OrdinalIgnoreCase))
-                    fileName += ".db";
-
-                var savePath = string.IsNullOrWhiteSpace(request.SavePath)
-                    ? Path.Combine(AppContext.BaseDirectory, "Databases")
-                    : request.SavePath;
-
-                Directory.CreateDirectory(savePath);
-                var fullPath = Path.Combine(savePath, fileName);
-
-                // Build connection properties (no hardcoded DriverName)
-                var props = new ConnectionProperties
-                {
-                    ConnectionName = request.ConnectionName,
-                    DatabaseType = TheTechIdea.Beep.Utilities.DataSourceType.SqlLite,
-                    Category = TheTechIdea.Beep.Utilities.DatasourceCategory.RDBMS,
-                    IsLocal = true,
-                    IsFile = true,
-                    IsDatabase = true,
-                    FilePath = savePath,
-                    FileName = fileName,
-                    GuidID = Guid.NewGuid().ToString()
-                };
-
-                // Resolve driver
-                var driver = TheTechIdea.Beep.Helpers.ConnectionHelper.GetBestMatchingDriver(props, _editor.ConfigEditor);
-                if (driver != null)
-                {
-                    props.DriverName = driver.PackageName;
-                    props.DriverVersion = driver.version;
-                }
-
-                // Register connection
-                if (!_editor.ConfigEditor.DataConnectionExist(props.ConnectionName))
-                {
-                    _editor.ConfigEditor.AddDataConnection(props);
-                    _editor.ConfigEditor.SaveDataconnectionsValues();
-                }
-
-                // Create the physical database file
-                var ds = _editor.GetDataSource(props.ConnectionName);
-                if (ds is TheTechIdea.Beep.DataBase.ILocalDB localDb)
-                {
-                    localDb.CreateDB(fullPath);
-                }
-
-                _logger.LogInformation("Created SQLite database at {Path} for connection {Name}", fullPath, props.ConnectionName);
-
-                return Ok(new CreateSqliteResult
-                {
-                    Success = true,
-                    ConnectionName = props.ConnectionName,
-                    FilePath = fullPath,
-                    DbType = "SQLite",
-                    Message = "SQLite database created successfully"
-                });
+                var result = await _setupService.CreateSqliteAsync(request);
+                return result.Success ? Ok(result) : BadRequest(result);
             }
             catch (Exception ex)
             {
@@ -2630,57 +2563,172 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         }
 
         /// <summary>
+        /// POST /api/ppdm39/setup/schema/plan
+        /// Builds a MigrationManager plan and returns review artifacts without executing it.
+        /// </summary>
+        [AllowAnonymous]
+        [HttpPost("schema/plan")]
+        public async Task<ActionResult<SchemaMigrationPlanResult>> PlanSchemaMigration([FromBody] SchemaMigrationPlanRequest request)
+        {
+            try
+            {
+                var result = await _setupService.PlanSchemaMigrationAsync(request);
+                return result.Success ? Ok(result) : BadRequest(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error planning schema migration");
+                return StatusCode(500, new SchemaMigrationPlanResult
+                {
+                    Success = false,
+                    Message = "Schema migration planning failed."
+                });
+            }
+        }
+
+        /// <summary>
+        /// POST /api/ppdm39/setup/schema/approve
+        /// Records approval metadata for a previously generated schema migration plan.
+        /// </summary>
+        [HttpPost("schema/approve")]
+        public async Task<ActionResult<SchemaMigrationApprovalResult>> ApproveSchemaMigration([FromBody] SchemaMigrationApprovalRequest request)
+        {
+            try
+            {
+                var result = await _setupService.ApproveSchemaMigrationPlanAsync(request);
+                return result.Success ? Ok(result) : BadRequest(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving schema migration plan");
+                return StatusCode(500, new SchemaMigrationApprovalResult
+                {
+                    Success = false,
+                    Message = "Schema migration approval failed."
+                });
+            }
+        }
+
+        /// <summary>
+        /// POST /api/ppdm39/setup/schema/execute
+        /// Executes an approved schema migration plan.
+        /// </summary>
+        [HttpPost("schema/execute")]
+        public async Task<ActionResult<SchemaMigrationExecuteResult>> ExecuteSchemaMigration([FromBody] SchemaMigrationExecuteRequest request)
+        {
+            try
+            {
+                var result = await _setupService.ExecuteSchemaMigrationPlanAsync(request);
+                return result.Success ? Ok(result) : BadRequest(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error executing schema migration plan");
+                return StatusCode(500, new SchemaMigrationExecuteResult
+                {
+                    Success = false,
+                    Message = "Schema migration execution failed."
+                });
+            }
+        }
+
+        /// <summary>
+        /// POST /api/ppdm39/setup/schema/start
+        /// Starts an approved schema migration plan in the background and returns an execution token.
+        /// </summary>
+        [HttpPost("schema/start")]
+        public async Task<ActionResult<OperationStartResponse>> StartSchemaMigration([FromBody] SchemaMigrationExecuteRequest request)
+        {
+            try
+            {
+                var result = await _setupService.StartSchemaMigrationExecutionAsync(request);
+                return result.Success ? Ok(result) : BadRequest(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error starting schema migration plan");
+                return StatusCode(500, new OperationStartResponse
+                {
+                    Success = false,
+                    Message = "Schema migration could not be started."
+                });
+            }
+        }
+
+        /// <summary>
+        /// GET /api/ppdm39/setup/schema/progress/{executionToken}
+        /// Returns checkpointed execution status for a schema migration run.
+        /// </summary>
+        [HttpGet("schema/progress/{executionToken}")]
+        public async Task<ActionResult<SchemaMigrationProgressResult>> GetSchemaMigrationProgress(string executionToken)
+        {
+            try
+            {
+                var result = await _setupService.GetSchemaMigrationProgressAsync(executionToken);
+                return result.Success ? Ok(result) : NotFound(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting schema migration progress for {ExecutionToken}", executionToken);
+                return StatusCode(500, new SchemaMigrationProgressResult
+                {
+                    Success = false,
+                    ExecutionToken = executionToken,
+                    Message = "Could not read schema migration progress."
+                });
+            }
+        }
+
+        /// <summary>
+        /// GET /api/ppdm39/setup/schema/artifacts/{planId}
+        /// Returns stored plan and evidence artifacts for a schema migration plan.
+        /// </summary>
+        [AllowAnonymous]
+        [HttpGet("schema/artifacts/{planId}")]
+        public async Task<ActionResult<SchemaMigrationArtifactsResult>> GetSchemaMigrationArtifacts(string planId)
+        {
+            try
+            {
+                var result = await _setupService.GetSchemaMigrationArtifactsAsync(planId);
+                return result.Success ? Ok(result) : NotFound(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting schema migration artifacts for {PlanId}", planId);
+                return StatusCode(500, new SchemaMigrationArtifactsResult
+                {
+                    Success = false,
+                    PlanId = planId,
+                    Message = "Could not load schema migration artifacts."
+                });
+            }
+        }
+
+        /// <summary>
         /// POST /api/ppdm39/setup/create-schema-from-migration
         /// Uses BeepDM MigrationManager to create the PPDM39 schema tables in the target database.
         /// </summary>
         [HttpPost("create-schema-from-migration")]
-        public ActionResult<CreateSchemaResult> CreateSchemaFromMigration([FromBody] CreateSchemaRequest request)
+        public async Task<ActionResult<CreateSchemaResult>> CreateSchemaFromMigration([FromBody] CreateSchemaRequest request)
         {
             try
             {
-                var connectionName = request?.ConnectionName ?? "PPDM39";
-
-                var ds = _editor.GetDataSource(connectionName);
-                if (ds == null)
+                var connectionName = request?.ConnectionName ?? request?.Connection?.ConnectionName;
+                if (string.IsNullOrWhiteSpace(connectionName))
+                {
                     return BadRequest(new CreateSchemaResult
                     {
                         Success = false,
-                        Message = $"Connection '{connectionName}' not found. Create the database first."
+                        Message = "Connection name is required."
                     });
+                }
 
-                var state = ds.Openconnection();
-                if (state != System.Data.ConnectionState.Open)
-                    return StatusCode(503, new CreateSchemaResult
-                    {
-                        Success = false,
-                        Message = $"Could not open connection to '{connectionName}'"
-                    });
-
-                var migration = new TheTechIdea.Beep.Editor.Migration.MigrationManager(_editor, ds);
-                migration.RegisterAssembly(typeof(Beep.OilandGas.PPDM39.Models.WELL).Assembly);
-
-                // Build plan using discovery — covers all ~1000 PPDM39 entity types
-                var plan = migration.BuildMigrationPlan(
-                    namespaceName: "Beep.OilandGas.PPDM39.Models",
-                    assembly: typeof(Beep.OilandGas.PPDM39.Models.WELL).Assembly,
-                    detectRelationships: true);
-
-                if (plan == null)
-                    return StatusCode(500, new CreateSchemaResult { Success = false, Message = "Migration plan could not be built." });
-
-                var execResult = migration.ExecuteMigrationPlan(plan);
-
-                _logger.LogInformation(
-                    "Schema migration for '{Connection}': success={Success}, entities={Count}",
-                    connectionName, execResult.Success, plan.EntityTypeCount);
-
-                return Ok(new CreateSchemaResult
+                var result = await _setupService.CreateSchemaAsync(new ConnectionConfig
                 {
-                    Success = execResult.Success,
-                    Message = execResult.Message ?? (execResult.Success ? "Schema created successfully" : "Schema creation completed with errors"),
-                    TablesCreated = plan.Operations?.Count(o => o.Kind == TheTechIdea.Beep.Editor.Migration.MigrationPlanOperationKind.CreateEntity) ?? 0,
-                    TotalEntities = plan.EntityTypeCount
-                });
+                    ConnectionName = connectionName
+                }, request?.SchemaName ?? string.Empty);
+
+                return result.Success ? Ok(result) : BadRequest(result);
             }
             catch (Exception ex)
             {
@@ -2882,49 +2930,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
 // ── DTOs for first-run wizard endpoints ──────────────────────────────────────
 namespace Beep.OilandGas.ApiService.Controllers.PPDM39
 {
-    public class SetupStatusDto
-    {
-        public bool HasConnection { get; set; }
-        public string? ConnectionName { get; set; }
-        public string? DbType { get; set; }
-        public bool IsSchemaReady { get; set; }
-    }
-
-    public class CreateSqliteRequest
-    {
-        public string ConnectionName { get; set; } = "PPDM39";
-        public string? FileName { get; set; }
-        public string? SavePath { get; set; }
-    }
-
-    public class CreateSqliteResult
-    {
-        public bool Success { get; set; }
-        public string? ConnectionName { get; set; }
-        public string? FilePath { get; set; }
-        public string? DbType { get; set; }
-        public string? Message { get; set; }
-        public string? ErrorDetails { get; set; }
-    }
-
-    public class CreateSchemaRequest
-    {
-        // Used by POST /create-schema-from-migration
-        public string? ConnectionName { get; set; }
-        // Used by POST /create-schema (legacy endpoint)
-        public ConnectionProperties? Connection { get; set; }
-        public string? SchemaName { get; set; }
-    }
-
-    public class CreateSchemaResult
-    {
-        public bool Success { get; set; }
-        public string? Message { get; set; }
-        public int TablesCreated { get; set; }
-        public int TotalEntities { get; set; }
-        public string? ErrorDetails { get; set; }
-    }
-
     public class GenerateDummyDataRequest
     {
         /// <summary>minimal | standard | full</summary>

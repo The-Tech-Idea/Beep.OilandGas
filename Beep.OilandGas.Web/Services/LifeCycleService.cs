@@ -36,19 +36,6 @@ namespace Beep.OilandGas.Web.Services
     }
 
     /// <summary>
-    /// Field dashboard model
-    /// </summary>
-    public class FieldDashboard
-    {
-        public Dictionary<string, object>? KPIs { get; set; }
-        public object? ExplorationSummary { get; set; }
-        public object? DevelopmentSummary { get; set; }
-        public object? ProductionSummary { get; set; }
-        public object? DecommissioningSummary { get; set; }
-        public List<object>? RecentActivities { get; set; }
-    }
-
-    /// <summary>
     /// Work order cost request
     /// </summary>
     public class WorkOrderCostRequest

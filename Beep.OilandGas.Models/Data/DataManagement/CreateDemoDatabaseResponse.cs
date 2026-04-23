@@ -84,5 +84,29 @@ namespace Beep.OilandGas.Models.Data.DataManagement
             set { SetProperty(ref ExpiryDateValue, value); }
 
         }
+
+        private string? SchemaPlanIdValue;
+
+        public string? SchemaPlanId
+
+        {
+
+            get { return this.SchemaPlanIdValue; }
+
+            set { SetProperty(ref SchemaPlanIdValue, value); }
+
+        }
+
+        private string? SchemaExecutionTokenValue;
+
+        public string? SchemaExecutionToken
+
+        {
+
+            get { return this.SchemaExecutionTokenValue; }
+
+            set { SetProperty(ref SchemaExecutionTokenValue, value); }
+
+        }
     }
 }

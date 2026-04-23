@@ -27,9 +27,8 @@
                           Placeholder="Search by process name or entity…"
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
-                          Immediate="true"
-                          Style="min-width:260px" />
-            <MudSelect T="string" @bind-Value="_statusFilter" Label="Status" Style="min-width:160px">
+                          Immediate="true" />
+            <MudSelect T="string" @bind-Value="_statusFilter" Label="Status">
                 <MudSelectItem Value='""'>All Statuses</MudSelectItem>
                 <MudSelectItem Value='"NOT_STARTED"'>Not Started</MudSelectItem>
                 <MudSelectItem Value='"IN_PROGRESS"'>In Progress</MudSelectItem>
@@ -38,7 +37,7 @@
                 <MudSelectItem Value='"FAILED"'>Failed</MudSelectItem>
                 <MudSelectItem Value='"CANCELLED"'>Cancelled</MudSelectItem>
             </MudSelect>
-            <MudSelect T="string" @bind-Value="_typeFilter" Label="Type" Style="min-width:160px">
+            <MudSelect T="string" @bind-Value="_typeFilter" Label="Type">
                 <MudSelectItem Value='""'>All Types</MudSelectItem>
                 <MudSelectItem Value='"EXPLORATION"'>Exploration</MudSelectItem>
                 <MudSelectItem Value='"DEVELOPMENT"'>Development</MudSelectItem>

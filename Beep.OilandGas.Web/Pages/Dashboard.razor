@@ -1,5 +1,6 @@
 @page "/dashboard"
-@inject ApiClient ApiClient
+@inject ILifeCycleService LifeCycleService
+@inject IDataManagementService DataManagementService
 @inject NavigationManager NavigationManager
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject ISnackbar Snackbar
@@ -166,7 +167,7 @@
         // Primary: single dashboard endpoint gives all KPIs
         try
         {
-            var dash = await ApiClient.GetAsync<Beep.OilandGas.Models.Data.FieldDashboard>("/api/field/current/dashboard");
+            var dash = await LifeCycleService.GetFieldDashboardAsync();
             if (dash != null)
             {
                 // Total wells = development + production well counts
@@ -204,7 +205,7 @@
         // Fallback: individual endpoints when dashboard summary is unavailable
         try
         {
-            var events = await ApiClient.GetAsync<List<DataAccessEvent>>("api/ppdm39/audit/recent");
+            var events = await DataManagementService.GetRecentAuditEventsAsync();
             _recentActivities = events?
                 .Select(e => new ActivityItem
                 {

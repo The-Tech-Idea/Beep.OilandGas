@@ -25,17 +25,17 @@
     </MudStack>
 
     @* ── Filter row ───────────────────────────────────────────────────────── *@
-    <MudPaper Elevation="0" Class="pa-3 mb-1" Style="background:transparent">
+    <MudStack Class="pa-3 mb-1">
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Wrap="Wrap.Wrap">
             <MudSelect T="int" Label="Date range" Value="_range" ValueChanged="OnRangeChanged"
-                       Style="min-width:160px" Dense="true" Margin="Margin.Dense">
+                       Dense="true" Margin="Margin.Dense">
                 <MudSelectItem Value="30">Last 30 days</MudSelectItem>
                 <MudSelectItem Value="90">Last 90 days</MudSelectItem>
                 <MudSelectItem Value="365">Last 365 days</MudSelectItem>
             </MudSelect>
             <MudNumericField T="double" Label="Exposure hours (for HSE rates)"
                              Value="_exposureHours" ValueChanged="OnExposureChanged"
-                             Min="1" Step="100000" Style="min-width:240px"
+                             Min="1" Step="100000"
                              Dense="true" Margin="Margin.Dense" />
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.Refresh"
@@ -44,7 +44,7 @@
                 else { <MudText>Refresh</MudText> }
             </MudButton>
         </MudStack>
-    </MudPaper>
+    </MudStack>
 
     @if (_loading)
     {

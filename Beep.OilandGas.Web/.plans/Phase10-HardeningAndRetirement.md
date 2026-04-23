@@ -41,12 +41,15 @@ Finish the modernization stream by retiring legacy overlap and proving the new s
 
 | ID | Task | Status |
 |----|------|--------|
-| 10.1 | Validate route ownership and navigation after consolidation | Planned |
+| 10.1 | Validate route ownership and navigation after consolidation | In Progress |
 | 10.2 | Remove or redirect deprecated pages and routes | Planned |
 | 10.3 | Remove duplicate shared components no longer used | Planned |
 | 10.4 | Reduce direct project references in the web project | Planned |
 | 10.5 | Publish a final route and integration matrix | Planned |
-| 10.6 | Mark completed work in the tracker and close the stream | Planned |
+| 10.6 | Mark completed work in the tracker and close the stream | Done |
+| 10.7 | Remove hardcoded OIDC client secret from startup and rotate credentials | In Progress |
+| 10.8 | Consolidate canonical runtime layout with first-run setup gating | In Progress |
+| 10.9 | Remove inline style drift and enforce MudBlazor utility pattern | Done |
 
 ---
 

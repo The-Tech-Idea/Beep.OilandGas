@@ -3,6 +3,7 @@
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject IExplorationServiceClient ExplorationService
+@inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
@@ -158,7 +159,7 @@
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }

@@ -2,7 +2,7 @@
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Data
 @using VolumeReconciliationRequestDto = Beep.OilandGas.Models.Data.ProductionAccounting.VolumeReconciliationRequest
-@inject ApiClient ApiClient
+@inject IAccountingServiceClient AccountingServiceClient
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
 
@@ -178,9 +178,7 @@
                 EndDate = _endDate.Value
             };
 
-            _reconciliationResult = await ApiClient.PostAsync<VolumeReconciliationRequestDto, VolumeReconciliationResult>(
-                "/api/accounting/allocation/reconcile",
-                request);
+            _reconciliationResult = await AccountingServiceClient.ReconcileVolumesAsync(request);
 
             Snackbar.Add("Volume reconciliation completed", Severity.Success);
         }

@@ -1,7 +1,8 @@
 ﻿@page "/reservoir"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
-@inject ApiClient ApiClient
+@inject ILifeCycleService LifeCycleService
+@inject IProductionServiceClient ProductionServiceClient
 @using Beep.OilandGas.Models.Data.Production
 
 <PageTitle>Review Reservoir Performance</PageTitle>
@@ -174,7 +175,7 @@
     {
         try
         {
-            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
@@ -183,12 +184,8 @@
         _loading = true;
         try
         {
-            _summary = await ApiClient.GetAsync<ReservoirDashboardSummary>(
-                "api/field/current/reservoir/dashboard/summary");
-
-            var pools = await ApiClient.GetAsync<List<ReservoirPoolDto>>(
-                "api/field/current/reservoir/dashboard/pools") ?? new();
-            _pools = pools;
+            _summary = await ProductionServiceClient.GetReservoirDashboardSummaryAsync();
+            _pools = await ProductionServiceClient.GetReservoirPoolsAsync();
         }
         catch (Exception)
         {
