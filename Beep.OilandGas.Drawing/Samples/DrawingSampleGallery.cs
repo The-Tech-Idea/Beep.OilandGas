@@ -38,7 +38,8 @@ namespace Beep.OilandGas.Drawing.Samples
                 "Standard petrophysical panel with gamma ray, resistivity, density, neutron, lithology, and zonation.",
                 1500,
                 1800,
-                CreateWellLogPetrophysicalScene),
+                CreateWellLogPetrophysicalScene,
+                CreateWellLogPetrophysicalExports()),
             new DrawingSampleScene(
                 "ReservoirContour_StructureMap",
                 "Interpolated reservoir structure map with contour labels and deterministic sampling.",
@@ -123,14 +124,16 @@ namespace Beep.OilandGas.Drawing.Samples
                     fileNameSuffix: "field-map.geojson",
                     contentType: "application/geo+json",
                     export: _ => Encoding.UTF8.GetBytes(GeoJsonExporter.ExportFieldMapToString(CreateFieldMapAssetNetworkData())),
-                    description: "Feature collection export for the canonical field map assets and network."),
+                    description: "Feature collection export for the canonical field map assets and network.",
+                    presentationKind: DrawingSampleExportPresentationKind.MapExchange),
                 new DrawingSampleExportAction(
                     id: "field-map-georeferenced-png-bundle",
                     label: "Geo-Referenced PNG",
                     fileNameSuffix: "georeferenced.zip",
                     contentType: "application/zip",
                     export: engine => CreateGeoReferencedPngBundle(engine, "field-map"),
-                    description: "Zip bundle containing the PNG, world file, and CRS sidecar for the canonical field map.")
+                    description: "Zip bundle containing the PNG, world file, and CRS sidecar for the canonical field map.",
+                    presentationKind: DrawingSampleExportPresentationKind.RasterBundle)
             };
         }
 
@@ -318,11 +321,37 @@ namespace Beep.OilandGas.Drawing.Samples
         /// </summary>
         public static DrawingEngine CreateWellLogPetrophysicalScene()
         {
+            var logData = CreateWellLogPetrophysicalData();
+
+            return WellLogBuilder.Create()
+                .WithLogData(logData)
+                .WithConfiguration(CreateWellLogPetrophysicalConfiguration())
+                .WithSize(1500, 1800)
+                .Build();
+        }
+
+        private static IReadOnlyList<DrawingSampleExportAction> CreateWellLogPetrophysicalExports()
+        {
+            return new[]
+            {
+                new DrawingSampleExportAction(
+                    id: "well-log-json",
+                    label: "Well Log JSON",
+                    fileNameSuffix: "well-log.json",
+                    contentType: "application/json",
+                    export: _ => JsonSerializer.SerializeToUtf8Bytes(CreateWellLogPetrophysicalData()),
+                    description: "Typed petrophysical payload for the canonical well log sample.",
+                    presentationKind: DrawingSampleExportPresentationKind.EngineeringData)
+            };
+        }
+
+        private static LogData CreateWellLogPetrophysicalData()
+        {
             List<double> depths = Enumerable.Range(0, 25)
                 .Select(index => 9800.0 + (index * 25.0))
                 .ToList();
 
-            var logData = new LogData
+            return new LogData
             {
                 WellIdentifier = "A-12H",
                 LogName = "Regression Petrophysical",
@@ -358,21 +387,20 @@ namespace Beep.OilandGas.Drawing.Samples
                     new LogIntervalData { IntervalId = "Z3", Label = "C Carbonate", TopDepth = 10125, BottomDepth = 10400, Facies = "Platform" }
                 }
             };
+        }
 
-            return WellLogBuilder.Create()
-                .WithLogData(logData)
-                .WithConfiguration(new LogRendererConfiguration
-                {
-                    UseStandardTrackTemplates = true,
-                    RenderDepthScaleAsTrack = true,
-                    ShowDensityNeutronCrossoverShading = true,
-                    ShowLogDecadeGridLines = true,
-                    ShowTrackScaleAnnotations = true,
-                    ShowTrackHeaders = true,
-                    ShowCurveNames = true
-                })
-                .WithSize(1500, 1800)
-                .Build();
+        private static LogRendererConfiguration CreateWellLogPetrophysicalConfiguration()
+        {
+            return new LogRendererConfiguration
+            {
+                UseStandardTrackTemplates = true,
+                RenderDepthScaleAsTrack = true,
+                ShowDensityNeutronCrossoverShading = true,
+                ShowLogDecadeGridLines = true,
+                ShowTrackScaleAnnotations = true,
+                ShowTrackHeaders = true,
+                ShowCurveNames = true
+            };
         }
 
         /// <summary>
@@ -409,14 +437,16 @@ namespace Beep.OilandGas.Drawing.Samples
                             contourConfiguration: CreateReservoirContourStructureMapConfiguration());
                         return Encoding.UTF8.GetBytes(geoJson);
                     },
-                    description: "Contour-segment GeoJSON export for the canonical regression structure map."),
+                    description: "Contour-segment GeoJSON export for the canonical regression structure map.",
+                    presentationKind: DrawingSampleExportPresentationKind.MapExchange),
                 new DrawingSampleExportAction(
                     id: "reservoir-contour-georeferenced-png-bundle",
                     label: "Geo-Referenced PNG",
                     fileNameSuffix: "georeferenced.zip",
                     contentType: "application/zip",
                     export: engine => CreateGeoReferencedPngBundle(engine, "reservoir-contour"),
-                    description: "Zip bundle containing the PNG, world file, and CRS sidecar for the canonical regression structure map.")
+                    description: "Zip bundle containing the PNG, world file, and CRS sidecar for the canonical regression structure map.",
+                    presentationKind: DrawingSampleExportPresentationKind.RasterBundle)
             };
         }
 
@@ -458,7 +488,8 @@ namespace Beep.OilandGas.Drawing.Samples
                     fileNameSuffix: "reservoir-cross-section.json",
                     contentType: "application/json",
                     export: _ => JsonSerializer.SerializeToUtf8Bytes(CreateReservoirCrossSectionMidlineData()),
-                    description: "Typed section profile export for the canonical midline reservoir cross-section.")
+                    description: "Typed section profile export for the canonical midline reservoir cross-section.",
+                    presentationKind: DrawingSampleExportPresentationKind.EngineeringData)
             };
         }
 
@@ -536,7 +567,8 @@ namespace Beep.OilandGas.Drawing.Samples
                     fileNameSuffix: "well-schematic.json",
                     contentType: "application/json",
                     export: _ => JsonSerializer.SerializeToUtf8Bytes(CreateWellSchematicEnhancedVerticalData()),
-                    description: "Typed well schematic payload for the canonical enhanced vertical completion sample.")
+                    description: "Typed well schematic payload for the canonical enhanced vertical completion sample.",
+                    presentationKind: DrawingSampleExportPresentationKind.EngineeringData)
             };
         }
 

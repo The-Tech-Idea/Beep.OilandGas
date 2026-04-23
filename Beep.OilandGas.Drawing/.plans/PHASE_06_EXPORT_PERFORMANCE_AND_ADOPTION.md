@@ -92,6 +92,7 @@ Finish the platform so it is reliable for product use: interactive behavior, ric
 - Reservoir cross-section JSON supplemental export added through the same sample-scene contract. Completed.
 - Well schematic JSON supplemental export added through the same sample-scene contract. Completed.
 - Well log JSON supplemental export added through the same sample-scene contract. Completed.
+- Explicit presentation metadata added to the sample-scene supplemental export contract. Completed.
 - Regression dataset suite. Completed.
 - Performance benchmark suite. Completed.
 - Sample gallery covering wells, logs, maps, sections, facilities, and overlays. Completed.
@@ -131,8 +132,9 @@ Finish the platform so it is reliable for product use: interactive behavior, ric
 - The same supplemental export contract now also carries Reservoir Cross Section JSON, which confirms the host path is not limited to map-oriented exchange files and can surface typed engineering section data from the canonical gallery without adding scene-name heuristics.
 - The same supplemental export contract now also carries Well Schematic JSON, which confirms the host path can surface typed schematic engineering payloads without adding a separate export model for depth-view samples.
 - The same supplemental export contract now also carries Well Log JSON, which confirms the host path can surface typed petrophysical payloads for depth-view scenes and that all five canonical gallery scenes now expose explicit engineering-data artifacts through one contract.
+- `DrawingSampleExportAction` now also carries explicit presentation metadata, which keeps the host's export button icon and color selection on the same typed contract instead of inferring UI treatment from MIME type.
 - The integrated sample host now consumes scene-declared supplemental exports uniformly, while the Field Map sample uses `GeoReferencedImageExporter` behind that contract to produce a zip bundle with the PNG, world file, and CRS sidecar.
-- The integrated sample host currently derives supplemental export button styling from content type and uses the export descriptions already declared in `DrawingSampleExportAction`, which keeps the UI readable without widening the core sample contract again.
+- The integrated sample host now derives supplemental export button styling from the explicit presentation metadata and uses the export descriptions already declared in `DrawingSampleExportAction`, which keeps the UI readable without reintroducing MIME-type heuristics.
 - Repeated `dotnet test` execution is currently blocked in this workspace by Windows Application Control policy, so runnable verification is limited to build validation plus one-shot hash probes.
 - Full `Beep.OilandGas.Web` build validation is currently blocked by pre-existing restore failures for `TheTechIdea.Beep.DataManagementEngine` 2.0.88 and `TheTechIdea.Beep.DataManagementModels` 2.0.142, plus an unrelated `Serilog` downgrade in the API dependency chain.
 

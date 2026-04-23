@@ -18,6 +18,7 @@ namespace Beep.OilandGas.Drawing.Tests
             var export = Assert.Single(scene.SupplementalExports, candidate => candidate.Id == "field-map-geojson");
             Assert.Equal("field-map-geojson", export.Id);
             Assert.Equal("application/geo+json", export.ContentType);
+            Assert.Equal(DrawingSampleExportPresentationKind.MapExchange, export.PresentationKind);
         }
 
         [Fact]
@@ -41,6 +42,7 @@ namespace Beep.OilandGas.Drawing.Tests
             var export = Assert.Single(scene.SupplementalExports, candidate => candidate.Id == "field-map-georeferenced-png-bundle");
             Assert.Equal("application/zip", export.ContentType);
             Assert.Equal("georeferenced.zip", export.FileNameSuffix);
+            Assert.Equal(DrawingSampleExportPresentationKind.RasterBundle, export.PresentationKind);
         }
 
         [Fact]
@@ -114,6 +116,7 @@ namespace Beep.OilandGas.Drawing.Tests
             var export = Assert.Single(scene.SupplementalExports, candidate => candidate.Id == "reservoir-cross-section-json");
             Assert.Equal("application/json", export.ContentType);
             Assert.Equal("reservoir-cross-section.json", export.FileNameSuffix);
+            Assert.Equal(DrawingSampleExportPresentationKind.EngineeringData, export.PresentationKind);
         }
 
         [Fact]
@@ -140,6 +143,7 @@ namespace Beep.OilandGas.Drawing.Tests
             var export = Assert.Single(scene.SupplementalExports, candidate => candidate.Id == "well-schematic-json");
             Assert.Equal("application/json", export.ContentType);
             Assert.Equal("well-schematic.json", export.FileNameSuffix);
+            Assert.Equal(DrawingSampleExportPresentationKind.EngineeringData, export.PresentationKind);
         }
 
         [Fact]
@@ -156,6 +160,33 @@ namespace Beep.OilandGas.Drawing.Tests
             Assert.Equal("100012345678W500", root.GetProperty("UWI").GetString());
             Assert.Equal("A-12H", root.GetProperty("UBHI").GetString());
             Assert.Equal("Production Packer", root.GetProperty("BoreHoles")[0].GetProperty("Equip")[0].GetProperty("EquipmentName").GetString());
+        }
+
+        [Fact]
+        public void WellLogSampleScene_DeclaresJsonSupplementalExport()
+        {
+            var scene = DrawingSampleGallery.GetStandardScene("WellLog_Petrophysical");
+
+            var export = Assert.Single(scene.SupplementalExports, candidate => candidate.Id == "well-log-json");
+            Assert.Equal("application/json", export.ContentType);
+            Assert.Equal("well-log.json", export.FileNameSuffix);
+            Assert.Equal(DrawingSampleExportPresentationKind.EngineeringData, export.PresentationKind);
+        }
+
+        [Fact]
+        public void WellLogSampleScene_JsonSupplementalExport_ReturnsLogData()
+        {
+            var scene = DrawingSampleGallery.GetStandardScene("WellLog_Petrophysical");
+            using var engine = scene.CreateEngine();
+
+            var export = Assert.Single(scene.SupplementalExports, candidate => candidate.Id == "well-log-json");
+            var bytes = export.Export(engine);
+
+            using var document = JsonDocument.Parse(bytes);
+            var root = document.RootElement;
+            Assert.Equal("A-12H", root.GetProperty("WellIdentifier").GetString());
+            Assert.Equal("Regression Petrophysical", root.GetProperty("LogName").GetString());
+            Assert.True(root.GetProperty("Curves").GetProperty("GR").GetArrayLength() > 0);
         }
     }
 }

@@ -67,12 +67,12 @@ This is the execution tracker for the enhancement plan. Update this file as work
 | P6-31 | 06 | done | medium | Add reservoir cross-section JSON supplemental export | `DrawingSampleGallery` now declares a Reservoir Cross Section JSON artifact through `SupplementalExports`, focused `DrawingSampleGalleryTests` validate both the contract declaration and the typed section payload, and the host surfaces the new engineering-data export without any host-specific cross-section logic |
 | P6-32 | 06 | done | medium | Add well schematic JSON supplemental export | `DrawingSampleGallery` now declares a Well Schematic JSON artifact through `SupplementalExports`, focused `DrawingSampleGalleryTests` validate both the contract declaration and the typed well payload, and the host can now surface schematic engineering data through the same scene-declared workflow used by maps and sections |
 | P6-33 | 06 | done | medium | Add well log JSON supplemental export | `DrawingSampleGallery` now declares a Well Log JSON artifact through `SupplementalExports`, focused `DrawingSampleGalleryTests` validate both the contract declaration and the typed petrophysical payload, and the host can now surface engineering-data exports for all five canonical gallery scenes without any scene-specific host logic |
+| P6-34 | 06 | done | medium | Add explicit presentation metadata to supplemental export contract | `DrawingSampleExportAction` now carries explicit presentation metadata, `DrawingSampleHost` chooses export button icon and color from that contract instead of MIME-type heuristics, and focused `DrawingSampleGalleryTests` validate the declared presentation kind for representative map, bundle, and engineering-data exports |
 
 ## Immediate Sequence
 
 1. Decide whether future correlation, composite, or multi-scene workflows should declare their own supplemental exports through the new `DrawingSampleScene.SupplementalExports` contract.
 2. Decide whether touch-friendly pan and pinch-zoom input belongs in the same host or in a broader reusable drawing-workbench surface.
-3. Decide whether `DrawingSampleExportAction` should grow first-class display metadata instead of relying on host-side content-type heuristics for button styling.
 
 ## Deferred Until Core Is Stable
 

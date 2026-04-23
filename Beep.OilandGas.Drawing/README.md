@@ -235,6 +235,8 @@ An integrated web-host workbench now lives in the main application at `/ppdm39/d
 
 The same workbench now also exports the current engine state to PNG, SVG, and PDF, and can surface explicit scene-declared exports such as Field Map GeoJSON, Field Map georeferenced PNG bundles, Reservoir Contour GeoJSON, Reservoir Contour georeferenced PNG bundles, Reservoir Cross Section JSON, Well Schematic JSON, and Well Log JSON directly from the live workflow surface.
 
+Scene-declared export actions now also carry explicit presentation metadata, so hosts can style supplemental export buttons without inferring icon or color from MIME type alone.
+
 ## Well Log Quick Start
 
 Use the fluent builder directly when you already have a loader or `LogData` instance:

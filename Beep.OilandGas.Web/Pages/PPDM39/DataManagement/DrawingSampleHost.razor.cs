@@ -509,13 +509,13 @@ namespace Beep.OilandGas.Web.Pages.PPDM39.DataManagement
             if (exportAction == null)
                 return Icons.Material.Filled.Attachment;
 
-            if (string.Equals(exportAction.ContentType, "application/zip", StringComparison.OrdinalIgnoreCase))
-                return Icons.Material.Filled.Public;
-
-            if (string.Equals(exportAction.ContentType, "application/geo+json", StringComparison.OrdinalIgnoreCase))
-                return Icons.Material.Filled.Map;
-
-            return Icons.Material.Filled.Attachment;
+            return exportAction.PresentationKind switch
+            {
+                DrawingSampleExportPresentationKind.MapExchange => Icons.Material.Filled.Map,
+                DrawingSampleExportPresentationKind.RasterBundle => Icons.Material.Filled.Public,
+                DrawingSampleExportPresentationKind.EngineeringData => Icons.Material.Filled.Code,
+                _ => Icons.Material.Filled.Attachment
+            };
         }
 
         private Color GetSupplementalExportColor(DrawingSampleExportAction exportAction)
@@ -523,13 +523,13 @@ namespace Beep.OilandGas.Web.Pages.PPDM39.DataManagement
             if (exportAction == null)
                 return Color.Secondary;
 
-            if (string.Equals(exportAction.ContentType, "application/zip", StringComparison.OrdinalIgnoreCase))
-                return Color.Primary;
-
-            if (string.Equals(exportAction.ContentType, "application/geo+json", StringComparison.OrdinalIgnoreCase))
-                return Color.Secondary;
-
-            return Color.Default;
+            return exportAction.PresentationKind switch
+            {
+                DrawingSampleExportPresentationKind.MapExchange => Color.Secondary,
+                DrawingSampleExportPresentationKind.RasterBundle => Color.Primary,
+                DrawingSampleExportPresentationKind.EngineeringData => Color.Default,
+                _ => Color.Secondary
+            };
         }
 
         private void SetStatus(string message, Severity severity)
