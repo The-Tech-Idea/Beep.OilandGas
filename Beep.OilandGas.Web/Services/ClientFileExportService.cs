@@ -10,6 +10,7 @@ public interface IClientFileExportService
 {
     Task DownloadJsonAsync<T>(string fileName, T payload);
     Task DownloadTextAsync(string fileName, string content, string contentType);
+    Task DownloadBytesAsync(string fileName, byte[] content, string contentType);
 }
 
 public sealed class ClientFileExportService : IClientFileExportService
@@ -41,6 +42,14 @@ public sealed class ClientFileExportService : IClientFileExportService
         var bytes = Encoding.UTF8.GetBytes(content);
         var base64 = Convert.ToBase64String(bytes);
         var dataUrl = $"data:{contentType};charset=utf-8;base64,{base64}";
+
+        await _jsRuntime.InvokeVoidAsync("downloadFile", fileName, dataUrl);
+    }
+
+    public async Task DownloadBytesAsync(string fileName, byte[] content, string contentType)
+    {
+        var base64 = Convert.ToBase64String(content);
+        var dataUrl = $"data:{contentType};base64,{base64}";
 
         await _jsRuntime.InvokeVoidAsync("downloadFile", fileName, dataUrl);
     }

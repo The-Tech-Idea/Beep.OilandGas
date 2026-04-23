@@ -1,0 +1,95 @@
+<?xml version="1.0"?>
+<svg x="-50%" y="0%" width="100%" height="100%" viewBox="-100 0 200 415" xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="none">
+  <desc>Hydraulic Packer</desc>
+<!-- Copyright (c) 2006 Interactive Network Technologies, Inc. -->
+
+    <defs>
+      <linearGradient x1="0%" x2="50%" id="RedGradient" spreadMethod="reflect" gradientUnits="objectBoundingBox">
+        <stop offset="25%" stop-color="rgb(201, 4, 4)"/>
+        <stop offset="95%" stop-color="rgb(247, 100, 100)"/>
+      </linearGradient>
+      <linearGradient x1="0%" x2="50%" id="GradientDark" spreadMethod="reflect" gradientUnits="objectBoundingBox">
+        <stop offset="25%" stop-color="rgb(0, 0, 0)"/>
+        <stop offset="95%" stop-color="rgb(100, 100, 100)"/>
+      </linearGradient>
+    </defs>
+
+  <polygon fill="url(#RedGradient)" stroke="black" stroke-width="2"
+     points="-80, 0, 80, 0, 85, 5, -85, 5" />
+  <rect x="-85" y="5" width="170" height="35" fill="url(#RedGradient)" stroke-width="2" stroke="black"/>
+  <rect x="-90" y="40" width="180" height="35" fill="url(#RedGradient)" stroke-width="2" stroke="black"/>
+
+<polygon fill="url(#RedGradient)" stroke="black" stroke-width="2"
+      points="-90, 75, -100, 85, -90, 95, -100, 105, -90, 115, -100, 125, -90, 135, 
+               90, 135, 100, 125, 90, 115, 100, 105, 90, 95, 100, 85, 90, 75"/>
+
+<polygon fill="url(#RedGradient)" stroke="black" stroke-width="2"
+      points="-85, 75, -88, 88, 88, 88, 85, 75" />
+  <rect x="-80" y="88" width="160" height="7" fill="url(#RedGradient)" stroke-width="2" stroke="black"/>
+  <polygon fill="url(#RedGradient)" stroke="black" stroke-width="2"
+      points="-85, 95, -88, 108, 88, 108, 85, 95" />
+  <rect x="-80" y="108" width="160" height="7" fill="url(#RedGradient)" stroke-width="2" stroke="black"/>
+  <polygon fill="url(#RedGradient)" stroke="black" stroke-width="2"
+      points="-85, 115, -88, 128, 88, 128, 85, 115" />
+  <rect x="-80" y="128" width="160" height="7" fill="url(#RedGradient)" stroke-width="2" stroke="black"/>
+
+
+  <polygon fill="rgb(240, 35, 35)" stroke="black" stroke-width="2"
+      points="-45, 75, -25, 75, -25, 120, -38, 120" />
+  <polygon fill="rgb(240, 35, 35)" stroke="black" stroke-width="2"
+      points="-25, 120, -25, 135, -45, 135, -38, 120" />
+  <polygon fill="rgb(160, 0, 0)" stroke="black" stroke-width="2"
+      points="-45, 75, -45, 135, -38, 120" />
+
+  <polygon fill="rgb(240, 35, 35)" stroke="black" stroke-width="2"
+      points="25, 75, 45, 75, 38, 120, 25, 120" />
+  <polygon fill="rgb(240, 35, 35)" stroke="black" stroke-width="2"
+      points="25, 120, 25, 135, 45, 135, 38, 120" />
+  <polygon fill="rgb(160, 0, 0)" stroke="black" stroke-width="2"
+      points="45, 75, 45, 135, 38, 120" />
+
+
+  <rect x="-92" y="135" width="184" height="20" fill="url(#RedGradient)" stroke-width="2" stroke="black"/>
+
+  <rect x="-94" y="155" width="188" height="5" fill="url(#GradientDark)" stroke-width="2" stroke="black"/>
+  <rect x="-97" y="160" width="194" height="5" fill="url(#GradientDark)" stroke-width="2" stroke="black"/>
+  <rect x="-100" y="165" width="200" height="85" fill="url(#GradientDark)" stroke-width="2" stroke="black"/>
+  <rect x="-97" y="250" width="194" height="5" fill="url(#GradientDark)" stroke-width="2" stroke="black"/>
+  <rect x="-94" y="255" width="188" height="5" fill="url(#GradientDark)" stroke-width="2" stroke="black"/>
+   
+  <rect x="-92" y="260" width="184" height="20" fill="url(#RedGradient)" stroke-width="2" stroke="black"/>
+
+  <polygon fill="url(#RedGradient)" stroke="black" stroke-width="2"
+      points="-90, 280, -100, 290, -90, 300, -100, 310, -90, 320, -100, 330, -90, 340, 
+               90, 340, 100, 330, 90, 320, 100, 310, 90, 300, 100, 290, 90, 280"/>
+
+  <polygon fill="url(#RedGradient)" stroke="black" stroke-width="2"
+      points="-85, 280, -88, 293, 88, 293, 85, 280" />
+  <rect x="-80" y="293" width="160" height="7" fill="url(#RedGradient)" stroke-width="2" stroke="black"/>
+  <polygon fill="url(#RedGradient)" stroke="black" stroke-width="2"
+      points="-85, 300, -88, 313, 88, 313, 85, 300" />
+  <rect x="-80" y="313" width="160" height="7" fill="url(#RedGradient)" stroke-width="2" stroke="black"/>
+  <polygon fill="url(#RedGradient)" stroke="black" stroke-width="2"
+      points="-85, 320, -88, 333, 88, 333, 85, 320" />
+  <rect x="-80" y="333" width="160" height="7" fill="url(#RedGradient)" stroke-width="2" stroke="black"/>
+
+  <polygon fill="rgb(240, 35, 35)" stroke="black" stroke-width="2"
+      points="-45, 280, -38, 295, -25, 295, -25, 280" />
+  <polygon fill="rgb(240, 35, 35)" stroke="black" stroke-width="2"
+      points="-25, 295, -25, 340, -45, 340, -38, 295" />
+  <polygon fill="rgb(160, 0, 0)" stroke="black" stroke-width="2"
+      points="-45, 280, -45, 340, -38, 295" />
+
+  <polygon fill="rgb(240, 35, 35)" stroke="black" stroke-width="2"
+      points="25, 280, 25, 295, 38, 295, 45, 280" />
+  <polygon fill="rgb(240, 35, 35)" stroke="black" stroke-width="2"
+      points="25, 295, 25, 340, 45, 340, 38, 295" />
+  <polygon fill="rgb(160, 0, 0)" stroke="black" stroke-width="2"
+      points="45, 280, 45, 340, 38, 295" />
+
+  <rect x="-90" y="340" width="180" height="35" fill="url(#RedGradient)" stroke-width="2" stroke="black"/>
+  <rect x="-85" y="375" width="170" height="35" fill="url(#RedGradient)" stroke-width="2" stroke="black"/>
+
+  <polygon fill="url(#RedGradient)" stroke="black" stroke-width="2"
+     points="-80, 415, 80, 415, 85, 410, -85, 410" />
+</svg>

@@ -1,0 +1,39 @@
+<?xml version="1.0" standalone="no"?>
+<svg  x="-50%" y ="0%" width="100%" height="100%" viewBox="-100 0 200 600"
+    xmlns="http://www.w3.org/2000/svg" version="1.1"  preserveAspectRatio="none">
+  <desc>Rod Pump</desc>
+<!-- Copyright (c) 2006 Interactive Network Technologies, Inc. -->
+
+    <defs>
+      <linearGradient x1="0%" x2="50%" id="Gradient" spreadMethod = "reflect" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(201, 4, 4)" />
+        <stop offset="95%" stop-color="rgb(247, 100, 100)" />
+      </linearGradient>
+    </defs>
+
+  <rect x="-100" y="0" width="200" height="800"
+   fill="url(#Gradient)"  stroke-width="2" stroke="black" />
+
+  <polyline fill="rgb(221, 221, 221)" stroke-width="2" stroke="black"
+    points="-30, 0, -30, 100, -50, 150, -50, 500, -25, 500, -25, 600, 
+            25, 600, 25, 500, 50, 500, 50, 150, 30, 100, 30, 0" />
+
+  <circle fill="rgb(95, 95, 95)" stroke-width="2" stroke="black" cx="0" cy = "280" r="30" />
+  <circle fill="rgb(95, 95, 95)" stroke-width="2" stroke="black" cx="0" cy = "480" r="30" />
+
+  <polyline fill="rgb(0, 0, 0)" stroke-width="0"
+    points="-50, 235, -10, 235, -10, 244, -50, 244" />
+  <polyline fill="rgb(0, 0, 0)" stroke-width="0"
+    points="-50, 315, -10, 315, -10, 324, -50, 324" />
+  <polyline fill="rgb(0, 0, 0)" stroke-width="0"
+    points="-50, 420, -10, 420, -10, 429, -50, 429" />
+
+  <polyline fill="rgb(0, 0, 0)" stroke-width="0"
+    points="10, 235, 50, 235, 50, 244, 10, 244" />
+  <polyline fill="rgb(0, 0, 0)" stroke-width="0"
+    points="10, 315, 50, 315, 50, 324, 10, 324" />
+  <polyline fill="rgb(0, 0, 0)" stroke-width="0"
+    points="10, 420, 50, 420, 50, 429, 10, 429" />
+
+</svg>
+

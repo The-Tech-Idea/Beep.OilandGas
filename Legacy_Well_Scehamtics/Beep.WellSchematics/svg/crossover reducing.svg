@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<svg x="-50%" y="0%" width="100%" height="100%" viewBox="-100 0 200 360" xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="none">
+  <desc>Crossover reducing</desc>
+<!-- Copyright (c) Interactive Network Technologies, Inc. -->
+    <defs>
+      <linearGradient x1="0%" x2="50%" id="BlueGradient" spreadMethod="reflect" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(29, 97, 139)"/>
+        <stop offset="95%" stop-color="white"/>
+      </linearGradient>
+    </defs>
+
+  <polygon fill="url(#BlueGradient)" stroke="black" stroke-width="1" points="-70, 360, 70, 360, 70, 240, 100, 120, 100, 0 -100 0 -100 120 -70 240 -70 360"/>
+
+</svg>

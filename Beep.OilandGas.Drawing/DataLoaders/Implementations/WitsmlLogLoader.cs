@@ -208,11 +208,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
                 // Extract log data
                 ExtractLogData(ns, logElement, result.Data, configuration, stats);
 
-                // Apply PWLS mapping if enabled
-                if (configuration.UsePwlsMapping)
-                {
-                    ApplyPwlsMapping(result.Data, configuration);
-                }
+                LogDataIngestionNormalizer.Normalize(result.Data, configuration);
 
                 result.Success = true;
             }
@@ -458,9 +454,6 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
                         var curveName = curveNames[i];
 
                         // Apply curve filter
-                        if (configuration.CurvesToLoad != null && !configuration.CurvesToLoad.Contains(curveName))
-                            continue;
-
                         if (!logData.Curves.ContainsKey(curveName))
                         {
                             logData.Curves[curveName] = new List<double>();

@@ -23,11 +23,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders.PWLS
             { "GR_1", "GammaRay" },
             
             // Baker Hughes
-            { "GR", "GammaRay" },
             { "GR_CORR", "GammaRay" },
-            
-            // Weatherford
-            { "GR", "GammaRay" },
             
             // Generic
             { "GAMMA", "GammaRay" },

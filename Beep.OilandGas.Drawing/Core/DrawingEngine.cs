@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Drawing.Layers;
 using Beep.OilandGas.Drawing.Exceptions;
+using Beep.OilandGas.Drawing.Interaction;
+using Beep.OilandGas.Drawing.Measurements;
+using Beep.OilandGas.Drawing.Scenes;
 
 namespace Beep.OilandGas.Drawing.Core
 {
@@ -41,6 +44,11 @@ namespace Beep.OilandGas.Drawing.Core
         /// Gets the list of layers.
         /// </summary>
         public IReadOnlyList<ILayer> Layers => layers.AsReadOnly();
+
+        /// <summary>
+        /// Gets the active typed scene, if one has been attached.
+        /// </summary>
+        public DrawingScene ActiveScene { get; private set; }
 
         /// <summary>
         /// Event raised before rendering starts.
@@ -103,38 +111,165 @@ namespace Beep.OilandGas.Drawing.Core
         }
 
         /// <summary>
+        /// Attaches a typed scene contract to the drawing engine.
+        /// </summary>
+        public DrawingEngine UseScene(DrawingScene scene)
+        {
+            ActiveScene = scene ?? throw new ArgumentNullException(nameof(scene));
+            ActiveScene.Validate();
+
+            if (ActiveScene.WorldBounds.HasValue)
+            {
+                viewport.ZoomToFit(ActiveScene.WorldBounds.Value, Width, Height);
+            }
+            else
+            {
+                viewport.ApplyState(ActiveScene.ViewportState);
+            }
+
+            SyncSceneViewportState();
+            return this;
+        }
+
+        /// <summary>
+        /// Captures the current viewport state.
+        /// </summary>
+        public SceneViewportState CaptureViewportState()
+        {
+            return viewport.GetState();
+        }
+
+        /// <summary>
+        /// Converts a screen-space point to world coordinates using the current viewport.
+        /// </summary>
+        public SKPoint ScreenToWorld(SKPoint screenPoint)
+        {
+            return viewport.ScreenToWorld(screenPoint.X, screenPoint.Y);
+        }
+
+        /// <summary>
+        /// Converts a world-space point to screen coordinates using the current viewport.
+        /// </summary>
+        public SKPoint WorldToScreen(SKPoint worldPoint)
+        {
+            return viewport.WorldToScreen(worldPoint.X, worldPoint.Y);
+        }
+
+        /// <summary>
+        /// Measures a distance between two screen-space points using the active scene units.
+        /// </summary>
+        public SceneMeasurementResult MeasureDistance(SKPoint startScreenPoint, SKPoint endScreenPoint)
+        {
+            return MeasurePathDistance(new[] { startScreenPoint, endScreenPoint });
+        }
+
+        /// <summary>
+        /// Measures a path length from screen-space vertices using the active scene units.
+        /// </summary>
+        public SceneMeasurementResult MeasurePathDistance(IEnumerable<SKPoint> screenPoints)
+        {
+            EnsureSceneMeasurementAvailable();
+            return SceneMeasurementService.MeasureDistance(ActiveScene, MapScreenPointsToWorld(screenPoints));
+        }
+
+        /// <summary>
+        /// Measures a polygon area from screen-space vertices using the active scene units.
+        /// </summary>
+        public SceneMeasurementResult MeasureArea(IEnumerable<SKPoint> screenPolygon)
+        {
+            EnsureSceneMeasurementAvailable();
+            return SceneMeasurementService.MeasureArea(ActiveScene, MapScreenPointsToWorld(screenPolygon));
+        }
+
+        /// <summary>
+        /// Resolves the topmost interactive feature beneath a screen-space point.
+        /// </summary>
+        public LayerHitResult HitTest(SKPoint screenPoint, float screenTolerance = 6f)
+        {
+            var worldPoint = ScreenToWorld(screenPoint);
+            float worldTolerance = GetWorldTolerance(screenTolerance);
+
+            foreach (var layer in layers.OrderByDescending(candidate => candidate.ZOrder))
+            {
+                if (!layer.IsVisible || layer is not IInteractiveLayer interactiveLayer)
+                    continue;
+
+                var hit = interactiveLayer.HitTest(worldPoint, worldTolerance);
+                if (hit != null)
+                    return hit;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Persists a resolved feature hit into the active scene interaction state.
+        /// </summary>
+        public SceneSelectionAnnotation RecordSelection(LayerHitResult hit, bool replaceExisting = false)
+        {
+            if (hit == null)
+                throw new ArgumentNullException(nameof(hit));
+
+            EnsureSceneMeasurementAvailable();
+            return ActiveScene.InteractionState.AddSelection(hit, replaceExisting);
+        }
+
+        /// <summary>
+        /// Persists a measurement annotation from screen-space vertices into the active scene interaction state.
+        /// </summary>
+        public SceneMeasurementAnnotation RecordMeasurement(SceneMeasurementResult measurement, IEnumerable<SKPoint> screenVertices, string label = null)
+        {
+            EnsureSceneMeasurementAvailable();
+            return ActiveScene.InteractionState.AddMeasurement(measurement, MapScreenPointsToWorld(screenVertices), label);
+        }
+
+        /// <summary>
         /// Renders all layers to a SkiaSharp surface.
         /// </summary>
         /// <returns>The rendered surface.</returns>
         public SKSurface Render()
         {
+            var surface = SKSurface.Create(new SKImageInfo(Width, Height));
+            RenderToCanvas(surface.Canvas);
+            return surface;
+        }
+
+        /// <summary>
+        /// Renders all visible layers to an existing canvas.
+        /// </summary>
+        /// <param name="canvas">The destination canvas.</param>
+        /// <param name="clearCanvas">True to clear the canvas before rendering.</param>
+        public void RenderToCanvas(SKCanvas canvas, bool clearCanvas = true)
+        {
+            if (canvas == null)
+                throw new ArgumentNullException(nameof(canvas));
+
             RenderingStarted?.Invoke(this, EventArgs.Empty);
 
-            var surface = SKSurface.Create(new SKImageInfo(Width, Height));
-            var canvas = surface.Canvas;
+            if (clearCanvas)
+            {
+                canvas.Clear(BackgroundColor);
+            }
 
-            // Clear background
-            canvas.Clear(BackgroundColor);
-
-            // Render layers in order
             foreach (var layer in layers.OrderBy(l => l.ZOrder))
             {
-                if (layer.IsVisible)
+                if (!layer.IsVisible)
+                    continue;
+
+                try
                 {
-                    try
-                    {
-                        layer.Render(canvas, viewport);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new RenderingException($"Layer '{layer.Name}'", 
-                            $"Failed to render layer: {ex.Message}", ex);
-                    }
+                    layer.Render(canvas, viewport);
+                }
+                catch (Exception ex)
+                {
+                    throw new RenderingException($"Layer '{layer.Name}'",
+                        $"Failed to render layer: {ex.Message}", ex);
                 }
             }
 
+            SceneInteractionRenderer.Render(canvas, viewport, ActiveScene);
+
             RenderingCompleted?.Invoke(this, EventArgs.Empty);
-            return surface;
         }
 
         /// <summary>
@@ -181,6 +316,7 @@ namespace Beep.OilandGas.Drawing.Core
             if (bounds.Width > 0 && bounds.Height > 0)
             {
                 viewport.ZoomToFit(bounds, Width, Height);
+                SyncSceneViewportState();
             }
         }
 
@@ -191,6 +327,7 @@ namespace Beep.OilandGas.Drawing.Core
         public void ZoomToRect(SKRect rect)
         {
             viewport.ZoomToFit(rect, Width, Height);
+            SyncSceneViewportState();
         }
 
         /// <summary>
@@ -200,6 +337,7 @@ namespace Beep.OilandGas.Drawing.Core
         public void SetZoom(float zoom)
         {
             viewport.SetZoom(zoom);
+            SyncSceneViewportState();
         }
 
         /// <summary>
@@ -210,6 +348,7 @@ namespace Beep.OilandGas.Drawing.Core
         public void Pan(float deltaX, float deltaY)
         {
             viewport.Pan(deltaX, deltaY);
+            SyncSceneViewportState();
         }
 
         /// <summary>
@@ -218,6 +357,37 @@ namespace Beep.OilandGas.Drawing.Core
         public void ResetViewport()
         {
             viewport.Reset();
+            SyncSceneViewportState();
+        }
+
+        private IEnumerable<SKPoint> MapScreenPointsToWorld(IEnumerable<SKPoint> screenPoints)
+        {
+            if (screenPoints == null)
+                throw new ArgumentNullException(nameof(screenPoints));
+
+            return screenPoints.Select(ScreenToWorld).ToList();
+        }
+
+        private float GetWorldTolerance(float screenTolerance)
+        {
+            return Math.Max(0.1f, screenTolerance) / Math.Max(0.0001f, viewport.Zoom);
+        }
+
+        private void EnsureSceneMeasurementAvailable()
+        {
+            if (ActiveScene == null)
+                throw new InvalidOperationException("Measurements require an active typed scene with coordinate metadata.");
+        }
+
+        private void SyncSceneViewportState()
+        {
+            if (ActiveScene == null)
+                return;
+
+            var state = viewport.GetState();
+            ActiveScene.ViewportState.Zoom = state.Zoom;
+            ActiveScene.ViewportState.PanX = state.PanX;
+            ActiveScene.ViewportState.PanY = state.PanY;
         }
 
         /// <summary>

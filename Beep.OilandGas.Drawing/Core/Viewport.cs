@@ -1,5 +1,6 @@
 using SkiaSharp;
 using System;
+using Beep.OilandGas.Drawing.Scenes;
 
 namespace Beep.OilandGas.Drawing.Core
 {
@@ -40,6 +41,16 @@ namespace Beep.OilandGas.Drawing.Core
             get => panY;
             set => panY = value;
         }
+
+        /// <summary>
+        /// Gets the canvas width in pixels.
+        /// </summary>
+        public int CanvasWidth => canvasWidth;
+
+        /// <summary>
+        /// Gets the canvas height in pixels.
+        /// </summary>
+        public int CanvasHeight => canvasHeight;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Viewport"/> class.
@@ -143,6 +154,32 @@ namespace Beep.OilandGas.Drawing.Core
             zoom = 1.0f;
             panX = 0.0f;
             panY = 0.0f;
+        }
+
+        /// <summary>
+        /// Captures the current viewport state for scene persistence.
+        /// </summary>
+        public SceneViewportState GetState()
+        {
+            return new SceneViewportState
+            {
+                Zoom = Zoom,
+                PanX = PanX,
+                PanY = PanY
+            };
+        }
+
+        /// <summary>
+        /// Applies a previously captured scene viewport state.
+        /// </summary>
+        public void ApplyState(SceneViewportState state)
+        {
+            if (state == null)
+                throw new ArgumentNullException(nameof(state));
+
+            Zoom = state.Zoom;
+            panX = state.PanX;
+            panY = state.PanY;
         }
 
         /// <summary>

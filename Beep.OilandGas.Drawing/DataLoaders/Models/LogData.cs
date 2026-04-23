@@ -59,6 +59,16 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Models
         public Dictionary<string, LogCurveMetadata> CurveMetadata { get; set; } = new Dictionary<string, LogCurveMetadata>();
 
         /// <summary>
+        /// Gets or sets lithology intervals that can be rendered as a strip beside the log curves.
+        /// </summary>
+        public List<LogIntervalData> LithologyIntervals { get; set; } = new List<LogIntervalData>();
+
+        /// <summary>
+        /// Gets or sets zonation intervals that can be rendered as a labeled panel beside the log curves.
+        /// </summary>
+        public List<LogIntervalData> ZoneIntervals { get; set; } = new List<LogIntervalData>();
+
+        /// <summary>
         /// Gets or sets the log metadata.
         /// </summary>
         public Dictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>();

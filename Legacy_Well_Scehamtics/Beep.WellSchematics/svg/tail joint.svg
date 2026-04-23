@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<svg x="-50%" y="0%" width="100%" height="100%" viewBox="-100 0 200 200" xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="none">
+  <desc>Tail Joint</desc>
+<!-- Copyright (c) 2006 Interactive Network Technologies, Inc. -->
+
+    <defs>
+      <linearGradient x1="0%" x2="50%" id="SilverGradient" spreadMethod="reflect" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(160, 160, 160)"/>
+        <stop offset="85%" stop-color="rgb(250, 250, 250)"/>
+      </linearGradient>
+      <linearGradient x1="0%" x2="50%" id="DarkSilverGradient" spreadMethod="reflect" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(150, 150, 150)"/>
+        <stop offset="95%" stop-color="rgb(220, 220, 220)"/>
+      </linearGradient>
+    </defs>
+
+  <polygon fill="url(#DarkSilverGradient)" stroke="black" stroke-width="1"
+      points="-95 0 95 0 100 5 -100 5" />
+  <rect x="-100" y="5" width="200" height="35" fill="url(#SilverGradient)" stroke-width="1" stroke="black"/>
+  <polygon fill="url(#DarkSilverGradient)" stroke="black" stroke-width="1"
+      points="-100, 40, 100, 40, 85 45, -85, 45"/>
+  <rect x="-85" y="45" width="170" height="110" fill="url(#SilverGradient)" stroke-width="1" stroke="black"/>
+  <polygon fill="url(#DarkSilverGradient)" stroke="black" stroke-width="1"
+      points="-85, 155, 85, 155, 100, 160, -100, 160"/>
+  <rect x="-100" y="160" width="200" height="35" fill="url(#SilverGradient)" stroke-width="1" stroke="black"/>
+  <polygon fill="url(#DarkSilverGradient)" stroke="black" stroke-width="1"
+      points="-100, 195,100 195 95 200 -95 200"/>
+
+</svg>

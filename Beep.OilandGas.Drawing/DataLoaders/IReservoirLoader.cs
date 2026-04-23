@@ -96,6 +96,16 @@ namespace Beep.OilandGas.Drawing.DataLoaders
         public bool LoadGeometry { get; set; } = true;
 
         /// <summary>
+        /// Gets or sets whether to load typed grid models used for contouring workflows.
+        /// </summary>
+        public bool LoadGrids { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets whether to load typed surface models used for contouring workflows.
+        /// </summary>
+        public bool LoadSurfaces { get; set; } = true;
+
+        /// <summary>
         /// Gets or sets whether to load layer properties (porosity, permeability, etc.).
         /// </summary>
         public bool LoadProperties { get; set; } = true;

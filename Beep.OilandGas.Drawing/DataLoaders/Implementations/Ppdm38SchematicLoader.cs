@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models;
 using Beep.OilandGas.Drawing.DataLoaders.Models;
+using Beep.OilandGas.Drawing.Validation;
 
 namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
 {
@@ -235,15 +236,51 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         public WellSchematicData LoadSchematicData(string wellIdentifier, WellSchematicLoadConfiguration configuration = null)
         {
             var result = LoadSchematicWithResult(wellIdentifier, configuration);
-            
-            return new WellSchematicData
+            var validationErrors = new List<string>(result.Errors ?? new List<string>());
+            var schematicData = new WellSchematicData
             {
                 WellData = result.Data,
                 DataSource = DataSource,
                 LoadedDate = DateTime.Now,
                 IsValidated = result.Success && (configuration?.ValidateAfterLoad ?? false),
-                ValidationErrors = result.Errors
+                ValidationErrors = validationErrors
             };
+
+            if ((configuration?.LoadDeviationSurvey ?? true) && result.Data?.BoreHoles != null)
+            {
+                foreach (var borehole in result.Data.BoreHoles.Where(borehole => borehole != null))
+                {
+                    var boreholeIdentifier = !string.IsNullOrWhiteSpace(borehole.UBHI)
+                        ? borehole.UBHI
+                        : borehole.GuidID;
+
+                    if (string.IsNullOrWhiteSpace(boreholeIdentifier))
+                        continue;
+
+                    var survey = LoadDeviationSurvey(wellIdentifier, boreholeIdentifier);
+                    if (survey == null)
+                        continue;
+
+                    if (configuration?.ValidateAfterLoad ?? false)
+                    {
+                        var surveyReport = DataNormalizationValidator.ValidateDeviationSurvey(survey);
+                        if (surveyReport.HasErrors)
+                        {
+                            validationErrors.AddRange(surveyReport.Diagnostics.Select(diagnostic => diagnostic.ToString()));
+                            continue;
+                        }
+                    }
+
+                    schematicData.DeviationSurveys[boreholeIdentifier] = survey;
+                }
+            }
+
+            if (schematicData.IsValidated && validationErrors.Count > 0)
+            {
+                schematicData.IsValidated = false;
+            }
+
+            return schematicData;
         }
 
         /// <summary>

@@ -35,6 +35,11 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Models
         public Dictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>();
 
         /// <summary>
+        /// Gets or sets deviation surveys keyed by borehole identifier.
+        /// </summary>
+        public Dictionary<string, DeviationSurvey> DeviationSurveys { get; set; } = new Dictionary<string, DeviationSurvey>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
         /// Gets or sets validation status.
         /// </summary>
         public bool IsValidated { get; set; }
