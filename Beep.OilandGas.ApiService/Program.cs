@@ -4,6 +4,7 @@ using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
+using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using Beep.OilandGas.PPDM39.DataManagement.Repositories;
 using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
@@ -991,19 +992,21 @@ builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.ModuleSetupCont
     };
 });
 
-builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.CorePpdmModule>();
-builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.SharedReferenceModule>();
-builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.WellStatusFacetModule>();
-builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.WellReferenceModule>();
-builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.UserManagement.Modules.SecurityModule>();
-builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.ExplorationModule>();
-builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.DevelopmentModule>();
-builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.ProductionModule>();
-builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.HseModule>();
-builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.EconomicsModule>();
-builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup, Beep.OilandGas.PPDM39.DataManagement.Modules.DemoDataModule>();
+// Module setup boundary:
+// All concrete ModuleSetupBase/IModuleSetup implementations are discovered from
+// Beep.OilandGas assemblies and registered as plugin-style setup modules.
+builder.Services.AddDiscoveredModuleSetups();
 
 builder.Services.AddScoped<Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup.ModuleSetupOrchestrator>();
+
+// PPDM39 Setup Connection Service — focused service for connection lifecycle
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPPDM39SetupConnectionService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.PPDM39.DataManagement.Services.Setup.PPDM39SetupConnectionService>();
+    return new Beep.OilandGas.PPDM39.DataManagement.Services.Setup.PPDM39SetupConnectionService(editor, logger);
+});
 
 // PPDM39 Setup Service
 builder.Services.AddScoped<PPDM39SetupService>(sp =>
@@ -1019,6 +1022,17 @@ builder.Services.AddScoped<PPDM39SetupService>(sp =>
     var moduleSetupOrchestrator = sp.GetService<Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup.ModuleSetupOrchestrator>();
     return new PPDM39SetupService(editor, logger, commonColumnHandler, defaults, metadata, lovService, moduleSetupOrchestrator);
 });
+
+// Interface aliases — both setup and schema-migration consumers resolve the same scoped instance
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPPDM39SetupService>(
+    sp => sp.GetRequiredService<PPDM39SetupService>());
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPPDM39SchemaMigrationService>(
+    sp => sp.GetRequiredService<PPDM39SetupService>());
+
+// DataManagement-owned seeding infrastructure.
+// These services stay centralized because they encapsulate generic PPDM metadata,
+// repository, CSV/template, and LOV import behavior reused by both shared modules
+// and project-owned domain modules.
 
 // WSC v3 Well-Status Facet Seeder
 builder.Services.AddScoped<Beep.OilandGas.PPDM39.DataManagement.SeedData.WellStatusFacetSeeder>(sp =>
@@ -1368,6 +1382,30 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IProspectIdenti
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var logger = loggerFactory.CreateLogger<Beep.OilandGas.ProspectIdentification.Services.ProspectIdentificationService>();
     return new ProspectIdentificationService(
+        editor, commonColumnHandler, defaults, metadata, connectionName, logger);
+});
+
+builder.Services.AddScoped<Beep.OilandGas.ProspectIdentification.Services.ISeismicAnalysisService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.ProspectIdentification.Services.SeismicAnalysisService>();
+    return new Beep.OilandGas.ProspectIdentification.Services.SeismicAnalysisService(
+        editor, commonColumnHandler, defaults, metadata, connectionName, logger);
+});
+
+builder.Services.AddScoped<Beep.OilandGas.ProspectIdentification.Services.IProspectEvaluationService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.ProspectIdentification.Services.ProspectEvaluationService>();
+    return new Beep.OilandGas.ProspectIdentification.Services.ProspectEvaluationService(
         editor, commonColumnHandler, defaults, metadata, connectionName, logger);
 });
 
@@ -1921,6 +1959,56 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IGHGReportingSe
                      .CreateLogger<Beep.OilandGas.PPDM39.DataManagement.Services.Compliance.GHGReportingService>();
     return new Beep.OilandGas.PPDM39.DataManagement.Services.Compliance.GHGReportingService(
         editor, cch, defaults, metadata, connectionName, logger);
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Phase 12: Permits and Applications ────────────────────────────────────────
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPermitApplicationLifecycleService>(sp =>
+{
+    var editor     = sp.GetRequiredService<TheTechIdea.Beep.Editor.IDMEEditor>();
+    var cch        = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.ICommonColumnHandler>();
+    var defaults   = sp.GetRequiredService<Beep.OilandGas.PPDM39.Repositories.IPPDM39DefaultsRepository>();
+    var metadata   = sp.GetRequiredService<Beep.OilandGas.PPDM39.Core.Metadata.IPPDMMetadataRepository>();
+    var logger     = sp.GetRequiredService<ILoggerFactory>()
+                       .CreateLogger<Beep.OilandGas.PermitsAndApplications.Services.PermitApplicationLifecycleService>();
+    return new Beep.OilandGas.PermitsAndApplications.Services.PermitApplicationLifecycleService(
+        editor, cch, defaults, metadata, logger, connectionName);
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPermitApplicationWorkflowService>(sp =>
+{
+    var editor     = sp.GetRequiredService<TheTechIdea.Beep.Editor.IDMEEditor>();
+    var cch        = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.ICommonColumnHandler>();
+    var defaults   = sp.GetRequiredService<Beep.OilandGas.PPDM39.Repositories.IPPDM39DefaultsRepository>();
+    var metadata   = sp.GetRequiredService<Beep.OilandGas.PPDM39.Core.Metadata.IPPDMMetadataRepository>();
+    var logger     = sp.GetRequiredService<ILoggerFactory>()
+                       .CreateLogger<Beep.OilandGas.PermitsAndApplications.Services.PermitApplicationWorkflowService>();
+    return new Beep.OilandGas.PermitsAndApplications.Services.PermitApplicationWorkflowService(
+        editor, cch, defaults, metadata, logger, connectionName);
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPermitComplianceCheckService>(sp =>
+{
+    var editor     = sp.GetRequiredService<TheTechIdea.Beep.Editor.IDMEEditor>();
+    var cch        = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.ICommonColumnHandler>();
+    var defaults   = sp.GetRequiredService<Beep.OilandGas.PPDM39.Repositories.IPPDM39DefaultsRepository>();
+    var metadata   = sp.GetRequiredService<Beep.OilandGas.PPDM39.Core.Metadata.IPPDMMetadataRepository>();
+    var logger     = sp.GetRequiredService<ILoggerFactory>()
+                       .CreateLogger<Beep.OilandGas.PermitsAndApplications.Services.PermitComplianceCheckService>();
+    return new Beep.OilandGas.PermitsAndApplications.Services.PermitComplianceCheckService(
+        editor, cch, defaults, metadata, logger, connectionName);
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPermitStatusHistoryService>(sp =>
+{
+    var editor     = sp.GetRequiredService<TheTechIdea.Beep.Editor.IDMEEditor>();
+    var cch        = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.ICommonColumnHandler>();
+    var defaults   = sp.GetRequiredService<Beep.OilandGas.PPDM39.Repositories.IPPDM39DefaultsRepository>();
+    var metadata   = sp.GetRequiredService<Beep.OilandGas.PPDM39.Core.Metadata.IPPDMMetadataRepository>();
+    var logger     = sp.GetRequiredService<ILoggerFactory>()
+                       .CreateLogger<Beep.OilandGas.PermitsAndApplications.Services.PermitStatusHistoryService>();
+    return new Beep.OilandGas.PermitsAndApplications.Services.PermitStatusHistoryService(
+        editor, cch, defaults, metadata, logger, connectionName);
 });
 // ─────────────────────────────────────────────────────────────────────────────
 

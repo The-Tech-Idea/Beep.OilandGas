@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
+using Beep.OilandGas.PermitsAndApplications.Constants;
+using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -41,7 +43,9 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             var data = _mapper.MapToData(application);
             SetAuditFields(data, userId);
             data.ACTIVE_IND = "Y";
-            data.STATUS =  data.STATUS;
+            // New filings always enter the workflow in Draft (ignore client-supplied status on create).
+            data.STATUS = PermitApplicationStatus.Draft;
+            data.SUBMISSION_COMPLETE_IND = "N";
             data.CREATED_DATE ??= DateTime.UtcNow;
 
             if (string.IsNullOrWhiteSpace(data.PERMIT_APPLICATION_ID))
@@ -93,7 +97,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             var repo = await CreateRepositoryAsync<PERMIT_APPLICATION>("PERMIT_APPLICATION");
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "STATUS", Operator = "=", FilterValue = MapStatusToString(status) },
+                new AppFilter { FieldName = "STATUS", Operator = "=", FilterValue = PermitApplicationStatusCodes.ToStorageKey(status) },
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
             };
 
@@ -112,6 +116,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             if (application == null)
                 throw new InvalidOperationException($"Permit application not found: {applicationId}");
 
+            ValidateStatusTransition(application.STATUS, nameof(PermitApplicationStatus.Submitted));
             application.STATUS = PermitApplicationStatus.Submitted;
             application.SUBMITTED_DATE = DateTime.UtcNow;
             application.SUBMISSION_COMPLETE_IND = "Y";
@@ -139,12 +144,19 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
             if (string.Equals(decision, "Approved", StringComparison.OrdinalIgnoreCase))
             {
+                ValidateStatusTransition(application.STATUS, nameof(PermitApplicationStatus.Approved));
                 application.STATUS = PermitApplicationStatus.Approved;
                 application.EFFECTIVE_DATE = DateTime.UtcNow;
             }
             else if (string.Equals(decision, "Rejected", StringComparison.OrdinalIgnoreCase))
             {
-                application.STATUS =  PermitApplicationStatus.Rejected;
+                ValidateStatusTransition(application.STATUS, nameof(PermitApplicationStatus.Rejected));
+                application.STATUS = PermitApplicationStatus.Rejected;
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    $"Decision must be \"Approved\" or \"Rejected\" (regulator disposition). Received: \"{decision}\".");
             }
 
             SetAuditFields(application, userId);
@@ -159,23 +171,6 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             return $"PA-{timestamp}";
         }
 
-        private string MapStatusToString(PermitApplicationStatus status)
-        {
-            return status switch
-            {
-                PermitApplicationStatus.Draft => "DRAFT",
-                PermitApplicationStatus.Submitted => "SUBMITTED",
-                PermitApplicationStatus.UnderReview => "UNDER_REVIEW",
-                PermitApplicationStatus.AdditionalInformationRequired => "ADDITIONAL_INFO_REQUIRED",
-                PermitApplicationStatus.Approved => "APPROVED",
-                PermitApplicationStatus.Rejected => "REJECTED",
-                PermitApplicationStatus.Withdrawn => "WITHDRAWN",
-                PermitApplicationStatus.Expired => "EXPIRED",
-                PermitApplicationStatus.Renewed => "RENEWED",
-                _ => "DRAFT"
-            };
-        }
-
         private async Task AddStatusHistoryIfChangedAsync(PermitApplicationStatus? previousStatus, PermitApplicationStatus? nextStatus, string applicationId, string userId)
         {
             var normalizedPrevious = PermitStatusTransitionRules.Normalize(previousStatus.ToString());
@@ -187,7 +182,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             if (!PermitStatusTransitionRules.IsTransitionAllowed(normalizedPrevious, normalizedNext))
                 throw new InvalidOperationException($"Invalid status transition: {normalizedPrevious} -> {normalizedNext}");
 
-            await AddStatusHistoryAsync(applicationId, previousStatus, "Status updated", userId);
+            await AddStatusHistoryAsync(applicationId, nextStatus, "Status updated", userId);
         }
 
         private async Task AddStatusHistoryAsync(string applicationId, PermitApplicationStatus? status, string? remarks, string userId)
@@ -197,7 +192,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             {
                 PERMIT_STATUS_HISTORY_ID = GenerateStatusHistoryId(),
                 PERMIT_APPLICATION_ID = applicationId,
-                STATUS = status,
+                STATUS = PermitApplicationStatusCodes.ToStorageKey(status),
                 STATUS_DATE = DateTime.UtcNow,
                 STATUS_REMARKS = remarks,
                 UPDATED_BY = userId,
@@ -212,6 +207,27 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
         {
             var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmssfff");
             return $"PSH-{timestamp}";
+        }
+
+        /// <summary>
+        /// Validates a transition using the same rules as <see cref="PermitApplicationWorkflowService"/>
+        /// and <see cref="PermitStatusHistoryService"/> (agency workflow gate).
+        /// </summary>
+        /// <param name="currentStatus">Current stored status.</param>
+        /// <param name="nextStatusEnumName">Name of the <see cref="PermitApplicationStatus"/> member (e.g. Submitted, Approved).</param>
+        private static void ValidateStatusTransition(PermitApplicationStatus? currentStatus, string nextStatusEnumName)
+        {
+            if (string.IsNullOrWhiteSpace(nextStatusEnumName))
+                throw new ArgumentException("Next status is required.", nameof(nextStatusEnumName));
+
+            if (!Enum.TryParse<PermitApplicationStatus>(nextStatusEnumName, ignoreCase: true, out var nextEnum))
+                throw new InvalidOperationException($"Unknown permit status: {nextStatusEnumName}");
+
+            var normalizedCurrent = PermitStatusTransitionRules.Normalize(currentStatus?.ToString());
+            var normalizedNext = PermitStatusTransitionRules.Normalize(nextEnum.ToString());
+
+            if (!PermitStatusTransitionRules.IsTransitionAllowed(normalizedCurrent, normalizedNext))
+                throw new InvalidOperationException($"Invalid status transition: {normalizedCurrent} -> {normalizedNext}");
         }
     }
 }

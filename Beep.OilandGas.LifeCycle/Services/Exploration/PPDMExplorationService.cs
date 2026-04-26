@@ -16,7 +16,7 @@ using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.ProspectIdentification;
 using Beep.OilandGas.PPDM.Models;
-using PROSPECT = Beep.OilandGas.PPDM39.Models.PROSPECT;
+using PROSPECT = Beep.OilandGas.Models.Data.ProspectIdentification.PROSPECT;
 
 namespace Beep.OilandGas.LifeCycle.Services.Exploration
 {

@@ -169,22 +169,14 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 
         public decimal? BSWVolume
         {
-            get => BSW_VOLUME ?? BSWVOLUME;
-            set
-            {
-                BSW_VOLUME = value;
-                BSWVOLUME = value ?? 0m;
-            }
+            get => BSW_VOLUME;
+            set => BSW_VOLUME = value;
         }
 
         public decimal? BSWPercentage
         {
-            get => BSW_PERCENTAGE ?? BSWPERCENTAGE;
-            set
-            {
-                BSW_PERCENTAGE = value;
-                BSWPERCENTAGE = value ?? 0m;
-            }
+            get => BSW_PERCENTAGE;
+            set => BSW_PERCENTAGE = value;
         }
 
         public decimal? NetVolume

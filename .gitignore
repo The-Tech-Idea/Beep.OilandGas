@@ -198,6 +198,64 @@ PublishScripts/
 *.snupkg
 # The packages folder can be ignored because of Package Restore
 **/[Pp]ackages/*
+
+# Build output and log files (root level)
+*.log
+build*.txt
+build*.log
+msbuild*.log
+ppdm-build.log
+solution-build*.log
+web-build*.log
+client-build*.log
+phase8-*.log
+api-*-errors.log
+web-*-errors.log
+*-errors*.log
+*-warnings*.log
+src-errors.txt
+src-warn*.txt
+src-warnings*.txt
+completedtask-scan.txt
+fromresult-scan*.txt
+null-returns-scan.txt
+stubs-scan.txt
+pa-classes.txt
+razor-hardcoded-scan.txt
+fix-fieldname.ps1
+workload-install.ps1
+
+# Temporary scan and analysis files
+*-scan.txt
+*-scan2.txt
+
+# Database and runtime files
+*.db
+*-runtime-*.json
+*-runtime-*.db
+
+# Legacy directories
+Legacy_Well_Scehamtics/
+
+# IDE and editor files
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Test coverage
+coverage/
+*.coverage
+coverage*.json
+coverage*.xml
+
+# Benchmark artifacts
+BenchmarkDotNet.Artifacts/
+
+# Local user settings
+*.user
+*.userprefs
+*.rsuser
 # except build/, which is used as an MSBuild target.
 !**/[Pp]ackages/build/
 # Uncomment if necessary however generally it will be regenerated when needed

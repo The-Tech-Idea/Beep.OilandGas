@@ -75,11 +75,68 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref DESCRIPTIONValue, value); }
         }
 
-        private String ROW_IDValue;
-        public String ROW_ID
+        // ── Best-practice additions (PPDM 3.9 PDEN / API MPMS allocation) ──────
+
+        // FLUID_TYPE: OIL / GAS / NGL / CONDENSATE / WATER
+        private String FLUID_TYPEValue;
+        public String FLUID_TYPE
         {
-            get { return this.ROW_IDValue; }
-            set { SetProperty(ref ROW_IDValue, value); }
+            get { return this.FLUID_TYPEValue; }
+            set { SetProperty(ref FLUID_TYPEValue, value); }
+        }
+
+        private DateTime? PRODUCTION_PERIOD_STARTValue;
+        public DateTime? PRODUCTION_PERIOD_START
+        {
+            get { return this.PRODUCTION_PERIOD_STARTValue; }
+            set { SetProperty(ref PRODUCTION_PERIOD_STARTValue, value); }
+        }
+
+        private DateTime? PRODUCTION_PERIOD_ENDValue;
+        public DateTime? PRODUCTION_PERIOD_END
+        {
+            get { return this.PRODUCTION_PERIOD_ENDValue; }
+            set { SetProperty(ref PRODUCTION_PERIOD_ENDValue, value); }
+        }
+
+        // ALLOCATED_VOLUME: the well/lease share resulting from the allocation run
+        private Decimal? ALLOCATED_VOLUMEValue;
+        public Decimal? ALLOCATED_VOLUME
+        {
+            get { return this.ALLOCATED_VOLUMEValue; }
+            set { SetProperty(ref ALLOCATED_VOLUMEValue, value); }
+        }
+
+        // ALLOCATED_VOLUME_OUOM: BBL / MCF / MMSCFD etc.
+        private String ALLOCATED_VOLUME_OUOMValue;
+        public String ALLOCATED_VOLUME_OUOM
+        {
+            get { return this.ALLOCATED_VOLUME_OUOMValue; }
+            set { SetProperty(ref ALLOCATED_VOLUME_OUOMValue, value); }
+        }
+
+        // ALLOCATION_FACTOR: decimal fraction applied to total measured volume (0.0–1.0)
+        private Decimal? ALLOCATION_FACTORValue;
+        public Decimal? ALLOCATION_FACTOR
+        {
+            get { return this.ALLOCATION_FACTORValue; }
+            set { SetProperty(ref ALLOCATION_FACTORValue, value); }
+        }
+
+        // ALLOCATION_BASIS: TEST_RATE / METER_READING / GAUGE / CALCULATED
+        private String ALLOCATION_BASISValue;
+        public String ALLOCATION_BASIS
+        {
+            get { return this.ALLOCATION_BASISValue; }
+            set { SetProperty(ref ALLOCATION_BASISValue, value); }
+        }
+
+        // ALLOCATION_STATUS: PROVISIONAL / FINAL / ADJUSTED / DISPUTED
+        private String ALLOCATION_STATUSValue;
+        public String ALLOCATION_STATUS
+        {
+            get { return this.ALLOCATION_STATUSValue; }
+            set { SetProperty(ref ALLOCATION_STATUSValue, value); }
         }
     }
 }

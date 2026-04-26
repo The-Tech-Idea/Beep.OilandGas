@@ -78,19 +78,19 @@ Expose dummy-data and demo-database status through shared contracts so the setup
 
 ## Execution Checklist
 
-- [ ] Remove script-list schema creation from demo flow; call migration orchestration.
-- [ ] Define seed stage catalog with required vs optional stages.
-- [ ] Require schema-complete state before any seed or dummy stage.
-- [ ] Enforce localdb close-before-copy/delete/recreate rules.
-- [ ] Add retention and cleanup policies for failed/cancelled demo operations.
-- [ ] Publish typed status contract for demo and dummy-data completion state.
+- [x] Remove script-list schema creation from demo flow; call migration orchestration.
+- [x] Define seed stage catalog with required vs optional stages.
+- [x] Require schema-complete state before any seed or dummy stage.
+- [x] Enforce localdb close-before-copy/delete/recreate rules.
+- [x] Add retention and cleanup policies for failed/cancelled demo operations.
+- [x] Publish typed status contract for demo and dummy-data completion state.
 
 ## Seed Stage Catalog (Required Baseline)
 
-- [ ] Reference data seed
-- [ ] Well status facet seed
-- [ ] Required LOV seed packs
-- [ ] Optional demo/dummy datasets only after required stages pass
+- [x] Reference data seed
+- [x] Well status facet seed
+- [x] Required LOV seed packs
+- [x] Optional demo/dummy datasets only after required stages pass
 
 ## Acceptance Criteria
 

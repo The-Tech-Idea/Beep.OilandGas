@@ -135,11 +135,7 @@ namespace Beep.OilandGas.Accounting.Services
                         GL_ACCOUNT_MAPPING_ID = Guid.NewGuid().ToString(),
                         MAPPING_KEY = kvp.Key,
                         GL_ACCOUNT_NUMBER = kvp.Value,
-                        DESCRIPTION = $"Default mapping for {kvp.Key}",
-                        ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
-                        PPDM_GUID = Guid.NewGuid().ToString(),
-                        ROW_CREATED_BY = userId,
-                        ROW_CREATED_DATE = DateTime.UtcNow
+                        DESCRIPTION = $"Default mapping for {kvp.Key}"
                     };
 
                     try

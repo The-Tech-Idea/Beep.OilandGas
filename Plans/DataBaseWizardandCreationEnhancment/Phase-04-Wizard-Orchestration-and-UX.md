@@ -87,18 +87,18 @@ The wizard pages should orchestrate `IDataManagementService` and typed setup con
 
 ## Execution Checklist
 
-- [ ] Declare one canonical setup wizard route and component tree.
-- [ ] Map all legacy setup pages/routes to compatibility redirects.
-- [ ] Ensure wizard consumes typed contracts only (no anonymous payload builders).
-- [ ] Surface migration plan summary, policy blocks, and approval state before execute.
-- [ ] Standardize operation ID, progress polling, reconnect behavior, and resume actions.
-- [ ] Publish compatibility route retirement timeline in this phase deliverable.
+- [x] Declare one canonical setup wizard route and component tree.
+- [x] Map all legacy setup pages/routes to compatibility redirects.
+- [x] Ensure wizard consumes typed contracts only (no anonymous payload builders).
+- [x] Surface migration plan summary, policy blocks, and approval state before execute.
+- [x] Standardize operation ID, progress polling, reconnect behavior, and resume actions.
+- [x] Publish compatibility route retirement timeline in this phase deliverable.
 
 ## UX State Contract
 
-- [ ] Required states: ready, warning, blocked, running, resumable, completed, failed.
-- [ ] Each state must map to explicit backend status codes and typed payload fields.
-- [ ] Failure state must include next-safe-action guidance (retry/resume/rollback review).
+- [x] Required states: ready, warning, blocked, running, resumable, completed, failed.
+- [x] Each state must map to explicit backend status codes and typed payload fields.
+- [x] Failure state must include next-safe-action guidance (retry/resume/rollback review).
 
 ## Acceptance Criteria
 

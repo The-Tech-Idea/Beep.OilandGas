@@ -96,6 +96,28 @@ public sealed class BusinessProcessServiceClient : IBusinessProcessServiceClient
         }
     }
 
+    public async Task<ProcessInstance?> ReportHseIncidentAsync(HSEIncidentReportRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        try
+        {
+            return await _apiClient.PostAsync<HSEIncidentReportRequest, ProcessInstance>(
+                "/api/field/current/process/hse/incidents",
+                request,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error reporting workflow HSE incident for type {IncidentType} at {IncidentDateTime}.",
+                request.IncidentType,
+                request.IncidentDateTime);
+            throw;
+        }
+    }
+
     public async Task<List<ProcessInstanceSummary>> GetHseIncidentsAsync(string? status = null, string? severity = null, CancellationToken cancellationToken = default)
     {
         try
@@ -133,6 +155,25 @@ public sealed class BusinessProcessServiceClient : IBusinessProcessServiceClient
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting workflow HSE incident {IncidentId}.", incidentId);
+            throw;
+        }
+    }
+
+    public async Task<ProcessInstance?> EnsureHseIncidentWorkflowAsync(string incidentId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(incidentId))
+            throw new ArgumentException("Incident ID is required.", nameof(incidentId));
+
+        try
+        {
+            return await _apiClient.PostAsync<object, ProcessInstance>(
+                BuildHseIncidentEndpoint(incidentId, "ensure-workflow"),
+                new { },
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error ensuring workflow HSE incident {IncidentId}.", incidentId);
             throw;
         }
     }

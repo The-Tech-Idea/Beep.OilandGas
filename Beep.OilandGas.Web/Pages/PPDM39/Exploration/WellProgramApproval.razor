@@ -526,7 +526,7 @@
         _ => Color.Success
     };
 
-    private static string BuildWellName(Beep.OilandGas.PPDM39.Models.PROSPECT prospect)
+    private static string BuildWellName(Beep.OilandGas.Models.Data.ProspectIdentification.PROSPECT prospect)
         => string.IsNullOrWhiteSpace(prospect.PROSPECT_NAME)
             ? string.Empty
             : $"{prospect.PROSPECT_NAME} A-01";
@@ -554,14 +554,25 @@
 
     private static List<WellProgramRiskItem> BuildRiskItems(Beep.OilandGas.Models.Data.ProspectIdentification.ProspectEvaluation evaluation)
     {
-        return (evaluation.RiskFactors ?? new List<Beep.OilandGas.Models.Data.ProspectIdentification.RiskFactor>())
-            .Where(risk => !string.IsNullOrWhiteSpace(risk.Description))
-            .Select(risk => new WellProgramRiskItem(
-                risk.Description,
-                FormatLikelihood(risk.Probability),
-                string.IsNullOrWhiteSpace(risk.Impact) ? "Unknown" : risk.Impact,
-                string.IsNullOrWhiteSpace(risk.Mitigation) ? "No mitigation recorded" : risk.Mitigation))
-            .ToList();
+        if (!evaluation.RiskScore.HasValue
+            && string.IsNullOrWhiteSpace(evaluation.RiskLevel)
+            && string.IsNullOrWhiteSpace(evaluation.Remarks))
+        {
+            return new List<WellProgramRiskItem>();
+        }
+
+        var description = evaluation.RiskScore.HasValue
+            ? $"Overall prospect risk score {evaluation.RiskScore.Value:N2}"
+            : "Overall prospect risk assessment";
+
+        return new List<WellProgramRiskItem>
+        {
+            new(
+                description,
+                FormatLikelihood(evaluation.ProbabilityOfSuccess.GetValueOrDefault()),
+                string.IsNullOrWhiteSpace(evaluation.RiskLevel) ? "Unknown" : evaluation.RiskLevel,
+                string.IsNullOrWhiteSpace(evaluation.Remarks) ? "No mitigation recorded" : evaluation.Remarks)
+        };
     }
 
     private static string FormatLikelihood(decimal probability)

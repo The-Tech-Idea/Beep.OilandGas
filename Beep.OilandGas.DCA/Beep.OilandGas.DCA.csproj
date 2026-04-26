@@ -25,10 +25,10 @@
 		</None>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.18" />
+		<PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.21" />
 		<PackageReference Include="SkiaSharp" Version="3.119.2" />
 		<PackageReference Include="SkiaSharp.Svg" Version="1.60.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.6" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.7" />
 	</ItemGroup>
 	<Target Name="CopyPackage" AfterTargets="Pack">
 		<Copy SourceFiles="$(OutputPath)$(PackageId).$(PackageVersion).nupkg" DestinationFolder="..\..\..\LocalNugetFiles" />

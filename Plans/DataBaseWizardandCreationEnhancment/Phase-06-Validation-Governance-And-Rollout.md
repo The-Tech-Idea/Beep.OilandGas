@@ -95,20 +95,20 @@ Document:
 
 ## Execution Checklist
 
-- [ ] Add CI checks for migration plan validity and blocked-policy detection.
-- [ ] Persist and validate manifest hash and plan hash for every execution.
-- [ ] Require approval provenance before execute in protected environments.
-- [ ] Enforce masked logging for connection/security fields across setup telemetry.
-- [ ] Add rollout gates with hard-stop conditions on drift or policy failure.
-- [ ] Publish runbooks for resume, rollback/compensation review, and demo cleanup.
+- [x] Add CI checks for migration plan validity and blocked-policy detection. (COMPLETED 2026-04-25)
+- [x] Persist and validate manifest hash and plan hash for every execution. (COMPLETED 2026-04-25)
+- [x] Require approval provenance before execute in protected environments. (COMPLETED 2026-04-25)
+- [x] Enforce masked logging for connection/security fields across setup telemetry. (COMPLETED 2026-04-25)
+- [x] Add rollout gates with hard-stop conditions on drift or policy failure. (COMPLETED 2026-04-25)
+- [x] Publish runbooks for resume, rollback/compensation review, and demo cleanup. (COMPLETED 2026-04-25)
 
 ## Hard-Fail Governance Conditions
 
-- [ ] Manifest hash mismatch between plan and execute.
-- [ ] Plan hash mismatch between approval and execute.
-- [ ] Missing approval metadata in protected mode.
-- [ ] Failed preflight with unacknowledged blockers.
-- [ ] Blocked policy decision not explicitly overridden by approved policy flow.
+- [x] Manifest hash mismatch between plan and execute. (COMPLETED 2026-04-25)
+- [x] Plan hash mismatch between approval and execute. (COMPLETED 2026-04-25)
+- [x] Missing approval metadata in protected mode. (COMPLETED 2026-04-25)
+- [x] Failed preflight with unacknowledged blockers. (COMPLETED 2026-04-25)
+- [x] Blocked policy decision not explicitly overridden by approved policy flow. (COMPLETED 2026-04-25)
 
 ## Acceptance Criteria
 

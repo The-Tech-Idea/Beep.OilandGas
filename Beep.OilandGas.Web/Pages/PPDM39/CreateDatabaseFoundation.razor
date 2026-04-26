@@ -1,0 +1,125 @@
+@page "/ppdm39/create-database/foundation"
+@using Beep.OilandGas.Models.Core.DTOs
+@using Beep.OilandGas.Web.Services
+@inject IDataManagementService DataManagementService
+@inject CreateDatabaseWizardState Wizard
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create PPDM39 Database - Foundation</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Setup - Step 2 of 4</MudText>
+            <MudText Typo="Typo.h5">Install PPDM39 Foundation</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Create the required PPDM39 tables and required reference setup before optional modules are offered.</MudText>
+        </MudStack>
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.ArrowBack" Href="/ppdm39/database-management">
+            Database Management
+        </MudButton>
+    </MudStack>
+
+    <MudStepper @bind-ActiveStep="_activeStep" Variant="Variant.Outlined" Color="Color.Primary" Class="mb-4">
+        <MudStep Title="Target" Icon="@Icons.Material.Filled.Storage" CompletedIcon="@Icons.Material.Filled.CheckCircle" />
+        <MudStep Title="Foundation" Icon="@Icons.Material.Filled.AccountTree" />
+        <MudStep Title="Modules" Icon="@Icons.Material.Filled.Extension" Disabled="true" />
+        <MudStep Title="Summary" Icon="@Icons.Material.Filled.CheckCircle" Disabled="true" />
+    </MudStepper>
+
+    <MudPaper Class="pa-4" Elevation="1">
+        <MudStack Spacing="3">
+            <MudAlert Severity="Severity.Info">
+                PPDM39 is the required database foundation. Optional module setup plugins are discovered only after this foundation exists.
+            </MudAlert>
+
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudChip T="string" Color="Color.Info" Size="Size.Small">@Wizard.ActiveConnectionName</MudChip>
+                @if (Wizard.FoundationInstalled)
+                {
+                    <MudChip T="string" Color="Color.Success" Size="Size.Small">Foundation installed</MudChip>
+                }
+            </MudStack>
+
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Build" OnClick="InstallFoundationAsync" Disabled="@(Wizard.IsInstallingFoundation || !Wizard.TargetReady || Wizard.FoundationInstalled)">
+                    @if (Wizard.IsInstallingFoundation)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                        <MudText Class="ms-2">Installing</MudText>
+                    }
+                    else
+                    {
+                        <MudText>Install PPDM39 Foundation</MudText>
+                    }
+                </MudButton>
+            </MudStack>
+
+            @if (Wizard.SchemaResult != null)
+            {
+                <MudAlert Severity="@(Wizard.SchemaResult.Success ? Severity.Success : Severity.Error)">
+                    @Wizard.SchemaResult.Message
+                    @if (Wizard.SchemaResult.TotalEntities > 0)
+                    {
+                        <MudText Typo="Typo.body2" Class="mt-2">Entities checked: @Wizard.SchemaResult.TotalEntities. Tables to create: @Wizard.SchemaResult.TablesCreated.</MudText>
+                    }
+                </MudAlert>
+            }
+        </MudStack>
+    </MudPaper>
+
+    <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+        <MudButton Variant="Variant.Text" Color="Color.Default" Href="/ppdm39/create-database/target" StartIcon="@Icons.Material.Filled.ArrowBack">Back to Target</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Href="/ppdm39/create-database/modules" Disabled="@(!Wizard.FoundationInstalled)">
+            Continue to Modules
+        </MudButton>
+    </MudStack>
+</MudContainer>
+
+@code {
+    private int _activeStep = 1;
+
+    protected override void OnInitialized()
+    {
+        if (!Wizard.TargetReady)
+        {
+            NavigationManager.NavigateTo("/ppdm39/create-database/target", replace: true);
+        }
+    }
+
+    private async Task InstallFoundationAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Wizard.ActiveConnectionName))
+            return;
+
+        Wizard.IsInstallingFoundation = true;
+        Wizard.SchemaResult = null;
+
+        try
+        {
+            Wizard.SchemaResult = await DataManagementService.CreateSchemaFromMigrationAsync(new CreateSchemaRequest
+            {
+                ConnectionName = Wizard.ActiveConnectionName,
+                SchemaName = Wizard.Schema ?? string.Empty
+            });
+
+            Wizard.FoundationInstalled = Wizard.SchemaResult.Success;
+            if (Wizard.FoundationInstalled)
+            {
+                Snackbar.Add("PPDM39 foundation installed.", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add(Wizard.SchemaResult.Message, Severity.Error);
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Foundation installation failed.", Severity.Error);
+        }
+        finally
+        {
+            Wizard.IsInstallingFoundation = false;
+        }
+    }
+}

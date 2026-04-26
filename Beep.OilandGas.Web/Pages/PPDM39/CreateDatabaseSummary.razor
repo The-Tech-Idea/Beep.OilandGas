@@ -1,0 +1,143 @@
+@page "/ppdm39/create-database/summary"
+@using Beep.OilandGas.Web.Services
+@inject CreateDatabaseWizardState Wizard
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create PPDM39 Database - Summary</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Setup - Step 4 of 4</MudText>
+            <MudText Typo="Typo.h5">Database Setup Summary</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Review the database target, required foundation, and optional module setup results.</MudText>
+        </MudStack>
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.Storage" Href="/ppdm39/database-management">
+            Database Management
+        </MudButton>
+    </MudStack>
+
+    <MudStepper @bind-ActiveStep="_activeStep" Variant="Variant.Outlined" Color="Color.Primary" Class="mb-4">
+        <MudStep Title="Target" Icon="@Icons.Material.Filled.Storage" CompletedIcon="@Icons.Material.Filled.CheckCircle" />
+        <MudStep Title="Foundation" Icon="@Icons.Material.Filled.AccountTree" CompletedIcon="@Icons.Material.Filled.CheckCircle" />
+        <MudStep Title="Modules" Icon="@Icons.Material.Filled.Extension" CompletedIcon="@Icons.Material.Filled.CheckCircle" />
+        <MudStep Title="Summary" Icon="@Icons.Material.Filled.CheckCircle" />
+    </MudStepper>
+
+    <MudPaper Class="pa-4" Elevation="1">
+        <MudStack Spacing="3">
+            <MudAlert Severity="Severity.Success">
+                PPDM39 database setup is ready for review.
+            </MudAlert>
+
+            <MudGrid>
+                <MudItem xs="12" md="4">
+                    <MudPaper Elevation="0" Class="pa-3 border mud-border-lines-default">
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Target Connection</MudText>
+                            <MudText Typo="Typo.h6">@Wizard.ActiveConnectionName</MudText>
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small">Prepared</MudChip>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudPaper Elevation="0" Class="pa-3 border mud-border-lines-default">
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">PPDM39 Foundation</MudText>
+                            <MudText Typo="Typo.h6">@(Wizard.FoundationInstalled ? "Installed" : "Not installed")</MudText>
+                            <MudChip T="string" Color="@(Wizard.FoundationInstalled ? Color.Success : Color.Error)" Size="Size.Small">Required</MudChip>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudPaper Elevation="0" Class="pa-3 border mud-border-lines-default">
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Optional Modules</MudText>
+                            <MudText Typo="Typo.h6">@SelectedModuleCount selected</MudText>
+                            <MudChip T="string" Color="@ModuleStatusColor" Size="Size.Small">@ModuleStatusText</MudChip>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+
+            @if (Wizard.SchemaResult != null)
+            {
+                <MudAlert Severity="@(Wizard.SchemaResult.Success ? Severity.Success : Severity.Error)">
+                    @Wizard.SchemaResult.Message
+                    @if (Wizard.SchemaResult.TotalEntities > 0)
+                    {
+                        <MudText Typo="Typo.body2" Class="mt-2">Entities checked: @Wizard.SchemaResult.TotalEntities. Tables to create: @Wizard.SchemaResult.TablesCreated.</MudText>
+                    }
+                </MudAlert>
+            }
+
+            @if (Wizard.OptionalModules.Count > 0)
+            {
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.h6">Discovered Optional Modules</MudText>
+                    @foreach (var module in Wizard.OptionalModules)
+                    {
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="py-2 border-b mud-border-lines-default">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.body1">@module.Module.ModuleName</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@module.Module.ModuleId</MudText>
+                            </MudStack>
+                            <MudChip T="string" Size="Size.Small" Color="@(module.IsSelected ? Color.Primary : Color.Default)">
+                                @(module.IsSelected ? "Selected" : "Skipped")
+                            </MudChip>
+                        </MudStack>
+                    }
+                </MudStack>
+            }
+
+            @if (Wizard.ModuleSeedResult != null)
+            {
+                <MudAlert Severity="@(Wizard.ModuleSeedResult.Success ? Severity.Success : Severity.Error)">
+                    @Wizard.ModuleSeedResult.Message
+                    <MudText Typo="Typo.body2" Class="mt-2">Rows inserted: @Wizard.ModuleSeedResult.TotalRecordsInserted. Modules run: @Wizard.ModuleSeedResult.ModulesRun.</MudText>
+                </MudAlert>
+            }
+        </MudStack>
+    </MudPaper>
+
+    <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+        <MudButton Variant="Variant.Text" Color="Color.Default" Href="/ppdm39/create-database/modules" StartIcon="@Icons.Material.Filled.ArrowBack">Back to Modules</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" EndIcon="@Icons.Material.Filled.Check" Href="/ppdm39/database-management">
+            Finish Setup
+        </MudButton>
+    </MudStack>
+</MudContainer>
+
+@code {
+    private int _activeStep = 3;
+
+    private int SelectedModuleCount => Wizard.OptionalModules.Count(module => module.IsSelected);
+
+    private string ModuleStatusText => SelectedModuleCount switch
+    {
+        0 => "Skipped",
+        _ when Wizard.ModulesInstalled => "Installed",
+        _ => "Pending"
+    };
+
+    private Color ModuleStatusColor => SelectedModuleCount switch
+    {
+        0 => Color.Default,
+        _ when Wizard.ModulesInstalled => Color.Success,
+        _ => Color.Warning
+    };
+
+    protected override void OnInitialized()
+    {
+        if (!Wizard.TargetReady)
+        {
+            NavigationManager.NavigateTo("/ppdm39/create-database/target", replace: true);
+            return;
+        }
+
+        if (!Wizard.FoundationInstalled)
+        {
+            NavigationManager.NavigateTo("/ppdm39/create-database/foundation", replace: true);
+        }
+    }
+}

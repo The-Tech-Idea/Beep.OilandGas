@@ -113,83 +113,6 @@ public sealed class HSEServiceClient : IHSEServiceClient
         }
     }
 
-    public async Task<bool> TransitionIncidentAsync(string incidentId, TransitionIncidentRequest request, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(request);
-
-        try
-        {
-            return await _apiClient.PostAsync(
-                BuildIncidentEndpoint(incidentId, "transition"),
-                request,
-                cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error transitioning HSE incident {IncidentId} with trigger {Trigger}.", incidentId, request.Trigger);
-            throw;
-        }
-    }
-
-    public async Task<bool> AddIncidentCauseAsync(string incidentId, AddCauseRequest request, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(request);
-
-        try
-        {
-            return await _apiClient.PostAsync(
-                BuildIncidentEndpoint(incidentId, "causes"),
-                request,
-                cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error adding RCA cause for HSE incident {IncidentId}.", incidentId);
-            throw;
-        }
-    }
-
-    public async Task<bool> AddIncidentCorrectiveActionAsync(string incidentId, AddCARequest request, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(request);
-
-        try
-        {
-            return await _apiClient.PostAsync(
-                BuildIncidentEndpoint(incidentId, "cas"),
-                request,
-                cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error adding corrective action for HSE incident {IncidentId}.", incidentId);
-            throw;
-        }
-    }
-
-    public async Task<bool> CompleteIncidentCorrectiveActionAsync(string incidentId, int stepSeq, string notes = "", CancellationToken cancellationToken = default)
-    {
-        if (stepSeq <= 0)
-            throw new ArgumentOutOfRangeException(nameof(stepSeq), "Corrective action step sequence must be positive.");
-
-        try
-        {
-            var suffix = $"cas/{stepSeq}/complete";
-            if (!string.IsNullOrWhiteSpace(notes))
-                suffix += $"?notes={Uri.EscapeDataString(notes)}";
-
-            return await _apiClient.PostAsync(
-                BuildIncidentEndpoint(incidentId, suffix),
-                new { },
-                cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error completing corrective action step {StepSeq} for HSE incident {IncidentId}.", stepSeq, incidentId);
-            throw;
-        }
-    }
-
     public async Task<HAZOPSummary?> GetHazopStudyAsync(string studyId, CancellationToken cancellationToken = default)
     {
         try
@@ -295,24 +218,6 @@ public sealed class HSEServiceClient : IHSEServiceClient
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting HSE KPIs from {From} to {To}.", from, to);
-            throw;
-        }
-    }
-
-    public async Task<HSEIncidentRecord?> ReportIncidentAsync(ReportIncidentRequest request, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(request);
-
-        try
-        {
-            return await _apiClient.PostAsync<ReportIncidentRequest, HSEIncidentRecord>(
-                "/api/field/current/hse/incidents",
-                request,
-                cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error reporting HSE incident of type {IncidentType}.", request.IncidentType);
             throw;
         }
     }

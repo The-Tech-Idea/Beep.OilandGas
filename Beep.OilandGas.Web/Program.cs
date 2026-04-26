@@ -123,6 +123,17 @@ var oidcClientSecret = builder.Configuration["Authentication:Schemes:OpenIdConne
     ?? Environment.GetEnvironmentVariable("BEEP_OILGAS_OIDC_CLIENT_SECRET")
     ?? string.Empty;
 
+static string BuildLoginRedirectUrl(string? returnUrl, string? error = null)
+{
+    var normalizedReturnUrl = string.IsNullOrWhiteSpace(returnUrl) ? "/" : returnUrl;
+    var query = $"returnUrl={Uri.EscapeDataString(normalizedReturnUrl)}";
+
+    if (!string.IsNullOrWhiteSpace(error))
+        query += $"&error={Uri.EscapeDataString(error)}";
+
+    return $"/login?{query}";
+}
+
 // Configure Authentication: Cookie as DEFAULT scheme, OIDC for CHALLENGE
 builder.Services.AddAuthentication(options =>
 {
@@ -141,8 +152,9 @@ builder.Services.AddAuthentication(options =>
     options.ExpireTimeSpan = TimeSpan.FromDays(14);
     options.SlidingExpiration = true;
     
-    // These paths trigger OIDC challenge when user is not authenticated
-    options.LoginPath = "/authentication/login";
+    // Unauthenticated users should land on the app's login page first.
+    // That page can then initiate the OIDC challenge explicitly.
+    options.LoginPath = "/login";
     options.LogoutPath = "/authentication/logout";
     options.AccessDeniedPath = "/access-denied";
 })
@@ -284,7 +296,22 @@ builder.Services.AddAuthentication(options =>
                 .CreateLogger("OIDC");
             logger.LogError(context.Failure, "OIDC remote failure: {Message}", context.Failure?.Message);
             
-            context.Response.Redirect($"/?error={Uri.EscapeDataString(context.Failure?.Message ?? "Authentication failed")}");
+            context.Response.Redirect(BuildLoginRedirectUrl(
+                context.Properties?.RedirectUri,
+                context.Failure?.Message ?? "Authentication failed"));
+            context.HandleResponse();
+            return Task.CompletedTask;
+        },
+
+        OnAuthenticationFailed = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("OIDC");
+            logger.LogError(context.Exception, "OIDC authentication failed: {Message}", context.Exception.Message);
+
+            context.Response.Redirect(BuildLoginRedirectUrl(
+                context.Properties?.RedirectUri,
+                "Identity Server is currently unavailable. Try again after it is running."));
             context.HandleResponse();
             return Task.CompletedTask;
         },
@@ -370,6 +397,9 @@ builder.Services.AddBeepOilandGasAppAuto(builder.Configuration);
         builder.Services.AddScoped<IWellLookupServiceClient, WellLookupServiceClient>();
         builder.Services.AddScoped<IWellStatusServiceClient, WellStatusServiceClient>();
         builder.Services.AddScoped<IWorkOrderServiceClient, WorkOrderServiceClient>();
+        builder.Services.AddScoped<IPermitServiceClient, PermitServiceClient>();
+        builder.Services.AddScoped<IProductionOperationsClient, ProductionOperationsClient>();
+        builder.Services.AddScoped<IEnhancedRecoveryClient, EnhancedRecoveryClient>();
 
         // Progress Tracking Client - SignalR client for real-time progress updates
         builder.Services.AddScoped<IProgressTrackingClient, ProgressTrackingClient>();
@@ -385,6 +415,9 @@ builder.Services.AddBeepOilandGasAppAuto(builder.Configuration);
 
         // First-run setup wizard service
         builder.Services.AddScoped<Beep.OilandGas.Web.Services.IFirstRunService, Beep.OilandGas.Web.Services.FirstRunService>();
+
+        // Multi-page PPDM39 database setup wizard state
+        builder.Services.AddScoped<CreateDatabaseWizardState>();
 
 // PPDM39 Data Management Services
 
@@ -476,6 +509,31 @@ app.UseAntiforgery();
 
 app.MapRazorComponents<Beep.OilandGas.Web.App>()
     .AddInteractiveServerRenderMode();
+
+app.MapGet("/authentication/start-login", async (HttpContext httpContext) =>
+{
+    var returnUrl = httpContext.Request.Query["returnUrl"].ToString();
+    var normalizedReturnUrl = string.IsNullOrWhiteSpace(returnUrl) ? "/" : returnUrl;
+
+    try
+    {
+        await httpContext.ChallengeAsync(OIDC_SCHEME, new AuthenticationProperties
+        {
+            RedirectUri = normalizedReturnUrl
+        });
+    }
+    catch (Exception ex)
+    {
+        var logger = httpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+            .CreateLogger("OIDC");
+        logger.LogError(ex, "OIDC login challenge failed before redirect.");
+
+        httpContext.Response.Redirect(BuildLoginRedirectUrl(
+            normalizedReturnUrl,
+            "Identity Server is currently unavailable. Try again after it is running."));
+    }
+})
+.AllowAnonymous();
 
 // Map authentication endpoints (login/logout)
 app.MapGroup("/authentication").MapLoginAndLogout();

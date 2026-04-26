@@ -22,6 +22,10 @@ using Beep.OilandGas.Models.Enums;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
 {
+    /// <summary>
+    /// Central enum-to-reference-table seeding infrastructure used by shared reference-data modules.
+    /// This service stays in PPDM39.DataManagement because the import logic is generic and cross-domain.
+    /// </summary>
     public class EnumReferenceDataSeeder
     {
         private readonly IDMEEditor _editor;

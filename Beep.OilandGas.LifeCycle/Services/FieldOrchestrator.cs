@@ -13,6 +13,7 @@ using Beep.OilandGas.LifeCycle.Services.Exploration;
 using Beep.OilandGas.LifeCycle.Services.Development;
 using Beep.OilandGas.LifeCycle.Services.Production;
 using Beep.OilandGas.LifeCycle.Services.Decommissioning;
+using Beep.OilandGas.LifeCycle.Services.HSE;
 using Beep.OilandGas.LifeCycle.Services.Processes;
 using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
@@ -49,6 +50,7 @@ namespace Beep.OilandGas.LifeCycle.Services
         private IFieldDevelopmentService? _developmentService;
         private IFieldProductionService? _productionService;
         private IFieldDecommissioningService? _decommissioningService;
+        private IFieldHSEService? _hseService;
         private PPDMProcessService? _processService;
 
         public string? CurrentFieldId => _currentFieldId;
@@ -143,6 +145,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                 _developmentService = null;
                 _productionService = null;
                 _decommissioningService = null;
+                _hseService = null;
                 _processService = null;
 
                 return true;
@@ -1305,6 +1308,27 @@ namespace Beep.OilandGas.LifeCycle.Services
             return _productionService;
         }
 
+        public IFieldHSEService GetHSEService()
+        {
+            if (string.IsNullOrEmpty(_currentFieldId))
+            {
+                throw new InvalidOperationException("No active field is set");
+            }
+
+            if (_hseService == null)
+            {
+                _hseService = new PPDMHSEService(
+                    _currentFieldId,
+                    _editor,
+                    _commonColumnHandler,
+                    _defaults,
+                    _metadata,
+                    _connectionName);
+            }
+
+            return _hseService;
+        }
+
         public IFieldDecommissioningService GetDecommissioningService()
         {
             if (string.IsNullOrEmpty(_currentFieldId))
@@ -1345,6 +1369,7 @@ namespace Beep.OilandGas.LifeCycle.Services
             _developmentService = null;
             _productionService = null;
             _decommissioningService = null;
+            _hseService = null;
             _processService = null;
             _logger?.LogInformation("Active field cleared");
         }

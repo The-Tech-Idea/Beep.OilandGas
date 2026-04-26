@@ -71,12 +71,6 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref GAS_PRICEValue, value); }
         }
 
-        // Standard PPDM columns
-
-        private System.String REMARKValue;
-
-        private System.String SOURCEValue;
-
         // Additional IPPDMEntity properties
         private System.String AREA_IDValue;
         public System.String AREA_ID
@@ -99,9 +93,75 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
 
-        private System.DateTime? EFFECTIVE_DATEValue;
+        // ── Best-practice additions (SEC Reg S-X Rule 4-10 / FASB ASC 932) ──────────
 
-        private System.DateTime? EXPIRY_DATEValue;
+        private System.String FIELD_IDValue;
+        public System.String FIELD_ID
+        {
+            get { return this.FIELD_IDValue; }
+            set { SetProperty(ref FIELD_IDValue, value); }
+        }
+
+        private System.Int32 FISCAL_YEARValue;
+        public System.Int32 FISCAL_YEAR
+        {
+            get { return this.FISCAL_YEARValue; }
+            set { SetProperty(ref FISCAL_YEARValue, value); }
+        }
+
+        // RESERVES_CATEGORY: 1P=PROVED / 2P=PROVED_PROBABLE / 3P=PROVED_PROBABLE_POSSIBLE
+        private System.String RESERVES_CATEGORYValue;
+        public System.String RESERVES_CATEGORY
+        {
+            get { return this.RESERVES_CATEGORYValue; }
+            set { SetProperty(ref RESERVES_CATEGORYValue, value); }
+        }
+
+        // PROVED_DEVELOPED_PRODUCING_OIL (PDP sub-category — required for SEC roll-forward)
+        private System.Decimal? PROVED_DEVELOPED_PRODUCING_OILValue;
+        public System.Decimal? PROVED_DEVELOPED_PRODUCING_OIL
+        {
+            get { return this.PROVED_DEVELOPED_PRODUCING_OILValue; }
+            set { SetProperty(ref PROVED_DEVELOPED_PRODUCING_OILValue, value); }
+        }
+
+        // PROVED_DEVELOPED_NONPRODUCING_OIL (PDNP — required for SEC roll-forward)
+        private System.Decimal? PROVED_DEVELOPED_NONPRODUCING_OILValue;
+        public System.Decimal? PROVED_DEVELOPED_NONPRODUCING_OIL
+        {
+            get { return this.PROVED_DEVELOPED_NONPRODUCING_OILValue; }
+            set { SetProperty(ref PROVED_DEVELOPED_NONPRODUCING_OILValue, value); }
+        }
+
+        private System.String OIL_VOLUME_OUOMValue;
+        public System.String OIL_VOLUME_OUOM
+        {
+            get { return this.OIL_VOLUME_OUOMValue; }
+            set { SetProperty(ref OIL_VOLUME_OUOMValue, value); }
+        }
+
+        private System.String GAS_VOLUME_OUOMValue;
+        public System.String GAS_VOLUME_OUOM
+        {
+            get { return this.GAS_VOLUME_OUOMValue; }
+            set { SetProperty(ref GAS_VOLUME_OUOMValue, value); }
+        }
+
+        // PRICE_DECK_TYPE: SEC_12MO_AVG / NYMEX_STRIP / COMPANY_FORECAST (SEC Reg S-X)
+        private System.String PRICE_DECK_TYPEValue;
+        public System.String PRICE_DECK_TYPE
+        {
+            get { return this.PRICE_DECK_TYPEValue; }
+            set { SetProperty(ref PRICE_DECK_TYPEValue, value); }
+        }
+
+        // ID of the certifying reserve engineer (SEC requires qualified person)
+        private System.String ENGINEER_CERTIFICATION_IDValue;
+        public System.String ENGINEER_CERTIFICATION_ID
+        {
+            get { return this.ENGINEER_CERTIFICATION_IDValue; }
+            set { SetProperty(ref ENGINEER_CERTIFICATION_IDValue, value); }
+        }
 
     }
 }

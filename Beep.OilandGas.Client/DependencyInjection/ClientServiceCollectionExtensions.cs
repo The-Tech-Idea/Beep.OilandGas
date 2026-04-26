@@ -97,6 +97,24 @@ namespace Beep.OilandGas.Client.DependencyInjection
             var options = new AppOptions();
             section.Bind(options);
 
+            if (string.IsNullOrWhiteSpace(options.ApiBaseUrl))
+            {
+                options.ApiBaseUrl = configuration["ApiService:BaseUrl"];
+            }
+
+            if (string.IsNullOrWhiteSpace(options.IdentityServerUrl))
+            {
+                options.IdentityServerUrl = configuration["IdentityServer:Authority"]
+                    ?? configuration["IdentityServer:BaseUrl"]
+                    ?? configuration["Authentication:Schemes:OpenIdConnect:Authority"];
+            }
+
+            if (string.IsNullOrWhiteSpace(options.ClientId))
+            {
+                options.ClientId = configuration["IdentityServer:ClientId"]
+                    ?? configuration["Authentication:Schemes:OpenIdConnect:ClientId"];
+            }
+
             if (options.AccessMode == ServiceAccessMode.Auto)
             {
                 var serviceProvider = services.BuildServiceProvider();

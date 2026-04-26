@@ -18,6 +18,25 @@ This guide helps agents make safe, well-scoped edits that align with Beep.Oiland
    - Field-scoped API endpoints live under `/api/field/current/*`.
    - Services filter by `FIELD_ID` when called through FieldOrchestrator.
 
+## Data Class Shape Rule (Table vs Projection)
+
+Every class is either a **table class** (saved to DB) or a **projection class** (DTOs, results, requests). The shape rules differ:
+
+### Table classes
+- **Must** extend `ModelEntityBase`.
+- **Scalar columns only** — no `List<T>`, `IEnumerable<T>`, `Dictionary<K,V>`, or nested object properties.
+- Named in SCREAMING_SNAKE_CASE matching the PPDM table (e.g. `PROSPECT`, `PROSPECT_RISK_ASSESSMENT`).
+- On Windows, if the SCREAMING_SNAKE_CASE filename would collide with a PascalCase sibling (e.g. `PROSPECT.cs` vs `Prospect.cs`), append `.Table.cs` to the filename only (`PROSPECT.Table.cs`), keeping the class name unchanged.
+- Live in the feature project under `Data/Tables/` or the PPDM39 shared model library.
+
+### Projection classes (DTOs, requests, responses, analysis results)
+- May extend `ModelEntityBase` but are **never** passed to `InsertAsync`/`UpdateAsync`.
+- May freely contain `List<T>`, `Dictionary<K,V>`, and nested objects.
+- Named in PascalCase with a descriptive suffix: `...Request`, `...Response`, `...Result`, `...Summary`, `...Report`.
+- Live under `Data/{Slice}/` in the feature project.
+
+**Quick test**: if the class is ever passed to `repo.InsertAsync(entity)` or `repo.UpdateAsync(entity)`, it is a table class — remove all collections from it immediately.
+
 ## Data Classes (No DTOs)
 
 - All shared models live in `Beep.OilandGas.Models/Data`.
@@ -133,6 +152,8 @@ builder.Services.AddScoped<IMyService>(sp =>
 6. Creating raw `PPDMGenericRepository` for `WELL`/`WELL_STATUS`/`WELL_XREF` outside `WellServices` -> duplicate logic, missed facet init.
 7. Querying `WELL_STATUS` without grouping by `STATUS_TYPE` -> stale/duplicate current-status results. Use `GetCurrentWellStatusByUwiAsync`.
 8. Creating a new well without `initializeDefaultStatuses: true` -> well missing its 15 PPDM 3.9 status facets.
+9. Adding `List<T>`, `Dictionary<K,V>`, or nested object properties to a **table class** (one passed to `InsertAsync`/`UpdateAsync`) -> data layer cannot serialize collections to columns; remove them and use a projection class instead.
+10. On Windows, creating both `PROSPECT.cs` and `Prospect.cs` in the same folder -> filesystem collision; use `PROSPECT.Table.cs` for the table class filename.
 
 ## Quick Verification Steps
 

@@ -215,7 +215,7 @@
 
     private async Task OpenEditDialog(ProspectListItem prospect)
     {
-        Beep.OilandGas.PPDM39.Models.PROSPECT? currentProspect;
+        Beep.OilandGas.Models.Data.ProspectIdentification.PROSPECT? currentProspect;
         try
         {
             currentProspect = await ExplorationService.GetProspectAsync(prospect.Id);
@@ -285,7 +285,7 @@
         }
     }
 
-    private static ProspectRequest BuildProspectRequest(Dictionary<string, object> prospectData, Beep.OilandGas.PPDM39.Models.PROSPECT? existingProspect = null)
+    private static ProspectRequest BuildProspectRequest(Dictionary<string, object> prospectData, Beep.OilandGas.Models.Data.ProspectIdentification.PROSPECT? existingProspect = null)
     {
         var request = new ProspectRequest
         {

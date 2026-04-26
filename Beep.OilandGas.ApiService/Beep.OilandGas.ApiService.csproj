@@ -7,24 +7,24 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.18" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.2" />
-    <PackageReference Include="Microsoft.OpenApi" Version="3.3.1" />
-    <PackageReference Include="Serilog" Version="4.3.0" />
+    <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.21" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.7" />
+    <PackageReference Include="Microsoft.OpenApi" Version="3.5.2" />
+    <PackageReference Include="Serilog" Version="4.3.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.87" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.140" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.96" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.1444" />
     <PackageReference Include="TheTechIdea.Beep.DuckDBDataSourceCore" Version="1.0.45" />
     <PackageReference Include="TheTechIdea.Beep.JsonLoader" Version="2.0.4" />
     <PackageReference Include="TheTechIdea.Beep.MongoDBDataSourceCore" Version="1.0.56" />
     <PackageReference Include="TheTechIdea.Beep.MySqlDataSourceCore" Version="1.0.2" />
     <PackageReference Include="TheTechIdea.Beep.OracleDataSourceCore" Version="1.0.19" />
     <PackageReference Include="TheTechIdea.Beep.PostgreDataSourceCore" Version="1.0.2" />
-    <PackageReference Include="TheTechIdea.Beep.RDBDataSource" Version="2.0.14" />
-    <PackageReference Include="TheTechIdea.Beep.SqliteDatasourceCore" Version="1.0.55" />
+    <PackageReference Include="TheTechIdea.Beep.RDBDataSource" Version="2.0.21" />
+    <PackageReference Include="TheTechIdea.Beep.SqliteDatasourceCore" Version="1.0.56" />
     <PackageReference Include="TheTechIdea.Beep.SqlServerDataSourceCore" Version="1.0.1" />
     <PackageReference Include="TheTechIdea.Beep.TxtXlsCSVFileSourceCore" Version="1.0.13" />
   </ItemGroup>
@@ -44,6 +44,7 @@
     <ProjectReference Include="..\Beep.OilandGas.GasLift\Beep.OilandGas.GasLift.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.GasProperties\Beep.OilandGas.GasProperties.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.HeatMap\Beep.OilandGas.HeatMap.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.HSE\Beep.OilandGas.HSE.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.HydraulicPumps\Beep.OilandGas.HydraulicPumps.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.LeaseAcquisition\Beep.OilandGas.LeaseAcquisition.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />

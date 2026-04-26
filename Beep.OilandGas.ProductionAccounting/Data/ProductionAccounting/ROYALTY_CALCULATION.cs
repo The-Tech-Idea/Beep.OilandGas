@@ -120,33 +120,66 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
              set { SetProperty(ref ROYALTY_STATUSValue, value); }
          }
 
-         // Standard PPDM columns
+        // ── Best-practice additions (COPAS / state royalty rules) ────────────────────
 
-        private System.String REMARKValue;
-
-        private System.String SOURCEValue;
-
-        private System.String ROW_IDValue;
-        public System.String ROW_ID
+        // ROYALTY_TYPE: MINERAL / OVERRIDING / WORKING_INTEREST / NPI / ORRI
+        private System.String ROYALTY_TYPEValue;
+        public System.String ROYALTY_TYPE
         {
-            get { return this.ROW_IDValue; }
-            set { SetProperty(ref ROW_IDValue, value); }
+            get { return this.ROYALTY_TYPEValue; }
+            set { SetProperty(ref ROYALTY_TYPEValue, value); }
         }
 
-        private string CALCULATION_IDValue;
-        public string CALCULATION_ID
+        // ROYALTY_BASIS: GROSS / NET_BACK / WELLHEAD / PROCESSED (basis for value calculation)
+        private System.String ROYALTY_BASISValue;
+        public System.String ROYALTY_BASIS
         {
-            get { return this.CALCULATION_IDValue; }
-            set { SetProperty(ref CALCULATION_IDValue, value); }
+            get { return this.ROYALTY_BASISValue; }
+            set { SetProperty(ref ROYALTY_BASISValue, value); }
         }
 
-       
-
-        private ROYALTY_DEDUCTIONS? DEDUCTIONSValue;
-        public ROYALTY_DEDUCTIONS? DEDUCTIONS
+        // FLUID_TYPE: OIL / GAS / NGL / CONDENSATE / WATER
+        private System.String FLUID_TYPEValue;
+        public System.String FLUID_TYPE
         {
-            get { return this.DEDUCTIONSValue; }
-            set { SetProperty(ref DEDUCTIONSValue, value); }
+            get { return this.FLUID_TYPEValue; }
+            set { SetProperty(ref FLUID_TYPEValue, value); }
+        }
+
+        private System.DateTime? PRODUCTION_PERIOD_STARTValue;
+        public System.DateTime? PRODUCTION_PERIOD_START
+        {
+            get { return this.PRODUCTION_PERIOD_STARTValue; }
+            set { SetProperty(ref PRODUCTION_PERIOD_STARTValue, value); }
+        }
+
+        private System.Decimal? GROSS_VOLUMEValue;
+        public System.Decimal? GROSS_VOLUME
+        {
+            get { return this.GROSS_VOLUMEValue; }
+            set { SetProperty(ref GROSS_VOLUMEValue, value); }
+        }
+
+        private System.String GROSS_VOLUME_OUOMValue;
+        public System.String GROSS_VOLUME_OUOM
+        {
+            get { return this.GROSS_VOLUME_OUOMValue; }
+            set { SetProperty(ref GROSS_VOLUME_OUOMValue, value); }
+        }
+
+        private System.Decimal? PRICE_PER_UNITValue;
+        public System.Decimal? PRICE_PER_UNIT
+        {
+            get { return this.PRICE_PER_UNITValue; }
+            set { SetProperty(ref PRICE_PER_UNITValue, value); }
+        }
+
+        // PAYMENT_STATUS: PENDING / PAID / DISPUTED / SUSPENDED
+        private System.String PAYMENT_STATUSValue;
+        public System.String PAYMENT_STATUS
+        {
+            get { return this.PAYMENT_STATUSValue; }
+            set { SetProperty(ref PAYMENT_STATUSValue, value); }
         }
 
     }

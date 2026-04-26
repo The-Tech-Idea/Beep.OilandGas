@@ -1,5 +1,7 @@
 using System;
+using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
+using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
 
 namespace Beep.OilandGas.PermitsAndApplications.DataMapping
 {

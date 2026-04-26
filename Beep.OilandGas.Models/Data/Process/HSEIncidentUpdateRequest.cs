@@ -22,6 +22,14 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref RcaSummaryValue, value); }
         }
 
+        private string RcaCauseCategoryValue = string.Empty;
+
+        public string RcaCauseCategory
+        {
+            get { return this.RcaCauseCategoryValue; }
+            set { SetProperty(ref RcaCauseCategoryValue, value); }
+        }
+
         private string NotesValue = string.Empty;
 
         public string Notes
@@ -44,6 +52,22 @@ namespace Beep.OilandGas.Models.Data
         {
             get { return this.CorrectiveActionsValue; }
             set { SetProperty(ref CorrectiveActionsValue, value); }
+        }
+
+        private string CorrectiveActionTypeValue = string.Empty;
+
+        public string CorrectiveActionType
+        {
+            get { return this.CorrectiveActionTypeValue; }
+            set { SetProperty(ref CorrectiveActionTypeValue, value); }
+        }
+
+        private DateTime? CorrectiveActionDueDateValue;
+
+        public DateTime? CorrectiveActionDueDate
+        {
+            get { return this.CorrectiveActionDueDateValue; }
+            set { SetProperty(ref CorrectiveActionDueDateValue, value); }
         }
     }
 

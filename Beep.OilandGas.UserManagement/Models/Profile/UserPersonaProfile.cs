@@ -22,4 +22,6 @@ public class UserPersonaProfile : ModelEntityBase
     public string PROFILE_LIFECYCLE_STATE { get; set; } = "Active";
     public DateTime? LAST_ACCESSED_UTC { get; set; }
     public int PROFILE_VERSION { get; set; } = 1;
+    // ── O&G field-scope defaults ──────────────────────────────────────
+    public string? DEFAULT_UNIT_SYSTEM { get; set; }
 }

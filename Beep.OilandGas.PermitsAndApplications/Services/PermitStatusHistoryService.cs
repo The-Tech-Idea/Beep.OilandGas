@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
+using Beep.OilandGas.PermitsAndApplications.Constants;
+using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -115,7 +117,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             {
                 PERMIT_STATUS_HISTORY_ID = GenerateStatusHistoryId(),
                 PERMIT_APPLICATION_ID = applicationId,
-                STATUS = nextStatusEnum,
+                STATUS = PermitApplicationStatusCodes.ToStorageKey(nextStatusEnum),
                 STATUS_DATE = DateTime.UtcNow,
                 STATUS_REMARKS = remarks,
                 UPDATED_BY = userId,

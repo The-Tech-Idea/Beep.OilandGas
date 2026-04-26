@@ -1,0 +1,20 @@
+@using MudBlazor
+
+<MudTooltip Text="@TooltipText" Placement="@Placement">
+    <MudIconButton Icon="@Icons.Material.Filled.HelpOutline"
+                   Size="Size.Small"
+                   Color="Color.Default"
+                   OnClick="@OnHelpClick" />
+</MudTooltip>
+
+@code {
+    [Parameter] public string TooltipText { get; set; } = string.Empty;
+    [Parameter] public Placement Placement { get; set; } = Placement.Top;
+    [Parameter] public EventCallback OnHelpClick { get; set; }
+
+    private void OnHelpClick()
+    {
+        if (OnHelpClick.HasDelegate)
+            OnHelpClick.InvokeAsync();
+    }
+}

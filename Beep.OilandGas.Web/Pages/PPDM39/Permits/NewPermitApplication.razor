@@ -1,0 +1,98 @@
+@page "/ppdm39/permits/new"
+@using Beep.OilandGas.Web.Services
+@inject IPermitServiceClient PermitClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>New Permit Application</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack"
+               OnClick="NavigateBack">
+        Back to Permits
+    </MudButton>
+    <MudText Typo="Typo="Typo.h5" Class="ml-2">New Permit Application</MudText>
+</MudStack>
+
+<MudPaper Elevation="2" Class="pa-4">
+    <MudForm @ref="_form" Model="_request">
+        <MudGrid Spacing="4">
+            <MudItem xs="12" sm="6">
+                <MudSelect T="string" @bind-Value="_request.ApplicationType" Label="Application Type" Required="true"
+                           HelperText="Select the type of permit application">
+                    <MudSelectItem Value="Drilling">Drilling Permit</MudSelectItem>
+                    <MudSelectItem Value="Environmental">Environmental Permit</MudSelectItem>
+                    <MudSelectItem Value="Injection">Injection Permit</MudSelectItem>
+                    <MudSelectItem Value="Facility">Facility Permit</MudSelectItem>
+                    <MudSelectItem Value="Pipeline">Pipeline Permit</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudSelect T="string" @bind-Value="_request.RegulatoryAuthority" Label="Regulatory Authority" Required="true"
+                           HelperText="Select the regulatory authority">
+                    <MudSelectItem Value="RRC">Railroad Commission (RRC)</MudSelectItem>
+                    <MudSelectItem Value="BSEE">Bureau of Safety and Environmental Enforcement (BSEE)</MudSelectItem>
+                    <MudSelectItem Value="BOEM">Bureau of Ocean Energy Management (BOEM)</MudSelectItem>
+                    <MudSelectItem Value="AER">Alberta Energy Regulator (AER)</MudSelectItem>
+                    <MudSelectItem Value="BCER">British Columbia Energy Regulator (BCER)</MudSelectItem>
+                    <MudSelectItem Value="TCEQ">Texas Commission on Environmental Quality (TCEQ)</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string" @bind-Value="_request.ApplicantName" Label="Applicant Name" Required="true"
+                              HelperText="Name of the applicant or company" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string" @bind-Value="_request.WellId" Label="Well ID (Optional)"
+                              HelperText="Associated well identifier" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string" @bind-Value="_request.FacilityId" Label="Facility ID (Optional)"
+                              HelperText="Associated facility identifier" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" @bind-Value="_request.Description" Label="Description" Lines="4"
+                              HelperText="Detailed description of the permit application" />
+            </MudItem>
+        </MudGrid>
+
+        <MudStack Row="true" Class="mt-4" Justify="Justify.End">
+            <MudButton Variant="Variant.Text" OnClick="NavigateBack">Cancel</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateAsync" Disabled="@_submitting">
+                @(_submitting ? "Creating..." : "Create Application")
+            </MudButton>
+        </MudStack>
+    </MudForm>
+</MudPaper>
+
+@code {
+    private MudForm? _form;
+    private bool _submitting;
+    private CreatePermitApplicationRequest _request = new();
+
+    private async Task CreateAsync()
+    {
+        if (!await _form!.Validate()) return;
+
+        _submitting = true;
+        try
+        {
+            var applicationId = await PermitClient.CreateAsync(_request);
+            Snackbar.Add("Permit application created successfully.", Severity.Success);
+            NavigationManager.NavigateTo($"/ppdm39/permits/{applicationId}");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to create application: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+
+    private void NavigateBack()
+    {
+        NavigationManager.NavigateTo("/ppdm39/permits");
+    }
+}

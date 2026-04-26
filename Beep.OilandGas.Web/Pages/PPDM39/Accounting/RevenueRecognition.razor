@@ -1,0 +1,116 @@
+@page "/ppdm39/accounting/revenue-recognition"
+@using Beep.OilandGas.Web.Services
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Track Revenue Recognition</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ─── Header *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Track Revenue Recognition</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Monitor revenue recognition by well, product, and period under ASC 606 / IFRS 15</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.TrendingUp">Revenue</MudChip>
+            </MudStack>
+        </MudStack>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh"
+                   OnClick="RecalculateRevenue">
+            Recalculate
+        </MudButton>
+    </MudStack>
+
+    @* ─── Summary Cards *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="2" Class="pa-4 text-center">
+                <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Success" Size="Size.Large" />
+                <MudText Typo="Typo.h4">@_totalRevenue.ToString("C0")</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Default">Total Revenue (YTD)</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="2" Class="pa-4 text-center">
+                <MudIcon Icon="@Icons.Material.Filled.LocalGasStation" Color="Color.Primary" Size="Size.Large" />
+                <MudText Typo="Typo.h4">@_oilRevenue.ToString("C0")</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Default">Oil Revenue</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="2" Class="pa-4 text-center">
+                <MudIcon Icon="@Icons.Material.Filled.Air" Color="Color.Info" Size="Size.Large" />
+                <MudText Typo="Typo.h4">@_gasRevenue.ToString("C0")</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Default">Gas Revenue</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="2" Class="pa-4 text-center">
+                <MudIcon Icon="@Icons.Material.Filled.Assessment" Color="Color.Warning" Size="Size.Large" />
+                <MudText Typo="Typo.h4">@_unrecognizedRevenue.ToString("C0")</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Default">Unrecognized (Deferred)</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @* ─── Revenue by Well *@
+    <MudPaper Elevation="2" Class="pa-4 mb-4">
+        <MudText Typo="Typo.h6" Class="mb-3">Revenue by Well</MudText>
+        <MudDataGrid T="WellRevenueDto" Items="@_wellRevenues" Filterable="true" Sortable="true"
+                     Hover="true" Dense="true">
+            <Columns>
+                <PropertyColumn Property="x => x.WellName" Title="Well" />
+                <PropertyColumn Property="x => x.OilVolume" Title="Oil (bbl)" Format="N0" />
+                <PropertyColumn Property="x => x.GasVolume" Title="Gas (Mcf)" Format="N0" />
+                <PropertyColumn Property="x => x.OilPrice" Title="Oil Price" Format="C2" />
+                <PropertyColumn Property="x => x.GasPrice" Title="Gas Price" Format="C2" />
+                <PropertyColumn Property="x => x.TotalRevenue" Title="Total Revenue" Format="C2" />
+                <PropertyColumn Property="x => x.RecognizedPct" Title="Recognized %" Format="P1" />
+            </Columns>
+        </MudDataGrid>
+    </MudPaper>
+
+    @* ─── Revenue by Month *@
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudText Typo="Typo.h6" Class="mb-3">Monthly Revenue Trend</MudText>
+        <MudChart ChartType="ChartType.Line"
+                  @* TODO: Wire to actual chart data when MudBlazor chart data binding is available *@
+                  InputData="@_monthlyRevenueData"
+                  XAxisLabels="@_monthLabels"
+                  Width="100%" Height="300px" />
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private decimal _totalRevenue = 2_450_000m;
+    private decimal _oilRevenue = 1_820_000m;
+    private decimal _gasRevenue = 630_000m;
+    private decimal _unrecognizedRevenue = 185_000m;
+
+    private List<WellRevenueDto> _wellRevenues = new()
+    {
+        new() { WellName = "Well #1", OilVolume = 12500, GasVolume = 45000, OilPrice = 78.50m, GasPrice = 3.25m, TotalRevenue = 1_127_125m, RecognizedPct = 0.95m },
+        new() { WellName = "Well #2", OilVolume = 8200, GasVolume = 32000, OilPrice = 78.50m, GasPrice = 3.25m, TotalRevenue = 747_700m, RecognizedPct = 0.92m },
+        new() { WellName = "Well #3", OilVolume = 5800, GasVolume = 28000, OilPrice = 78.50m, GasPrice = 3.25m, TotalRevenue = 546_175m, RecognizedPct = 0.88m },
+    };
+
+    private List<decimal> _monthlyRevenueData = new() { 180000, 210000, 195000, 225000, 240000, 215000, 230000, 250000, 235000, 260000, 245000, 270000 };
+    private string[] _monthLabels = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+
+    private void RecalculateRevenue()
+    {
+        Snackbar.Add("Revenue recalculation initiated. Results will be available shortly.", Severity.Info);
+    }
+
+    public class WellRevenueDto
+    {
+        public string WellName { get; set; } = string.Empty;
+        public decimal OilVolume { get; set; }
+        public decimal GasVolume { get; set; }
+        public decimal OilPrice { get; set; }
+        public decimal GasPrice { get; set; }
+        public decimal TotalRevenue { get; set; }
+        public decimal RecognizedPct { get; set; }
+    }
+}

@@ -61,7 +61,7 @@
                 <MudButton Variant="Variant.Filled" 
                            Size="Size.Large"
                            FullWidth="true"
-                           Href="@($"/authentication/login?returnUrl={Uri.EscapeDataString(ReturnUrl ?? "/")}")"
+                           Href="@($"/authentication/start-login?returnUrl={Uri.EscapeDataString(ReturnUrl ?? "/")}")"
                            StartIcon="@Icons.Material.Filled.Security"
                            Class="og-terminal-code">
                     login_securely()

@@ -10,9 +10,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Modules
 {
     /// <summary>
     /// Module order 100 — optional demo dataset seed.
-    ///
-    /// This module intentionally declares no entity types because it seeds data
-    /// into tables declared by other modules.
+    /// This module stays in PPDM39.DataManagement because demo/reference import helpers are
+    /// centralized there and reused by setup flows across domain projects.
     /// </summary>
     public sealed class DemoDataModule : ModuleSetupBase
     {

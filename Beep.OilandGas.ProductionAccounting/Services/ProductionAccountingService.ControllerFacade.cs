@@ -560,7 +560,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     TANK_BATTERY_ID = tankBatteryId,
                     TICKET_DATE_TIME = ReadValue<DateTime?>(measurement, "MEASUREMENT_DATETIME", "MeasurementDateTime") ?? DateTime.UtcNow,
                     GROSS_VOLUME = ReadValue<decimal?>(measurement, "GROSS_VOLUME", "GrossVolume"),
-                    BSWPERCENTAGE = ReadValue<decimal?>(measurement, "BSW", "BSWPercentage") ?? 0m,
+                    BSW_PERCENTAGE = ReadValue<decimal?>(measurement, "BSW", "BSWPercentage"),
                     TEMPERATURE = ReadValue<decimal?>(measurement, "TEMPERATURE", "Temperature") ?? 0m,
                     API_GRAVITY = ReadValue<decimal?>(measurement, "API_GRAVITY", "ApiGravity") ?? 0m,
                     DISPOSITION_TYPE = dispositionType,
@@ -571,7 +571,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 };
 
                 var grossVolume = ReadValue<decimal?>(ticket, "GROSS_VOLUME", "GrossVolume") ?? 0m;
-                var bswPercentage = ReadValue<decimal?>(ticket, "BSWPERCENTAGE", "BSWPercentage") ?? 0m;
+                var bswPercentage = ReadValue<decimal?>(ticket, "BSW_PERCENTAGE", "BSWPercentage") ?? 0m;
                 ticket.NET_VOLUME = grossVolume * (1m - (bswPercentage / 100m));
                 RunTickets[ticket.RUN_TICKET_ID] = ticket;
                 RunTickets[ticket.RUN_TICKET_NUMBER] = ticket;

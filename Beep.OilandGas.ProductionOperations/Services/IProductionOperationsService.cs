@@ -6,8 +6,10 @@ using Beep.OilandGas.PPDM39.Models;
 namespace Beep.OilandGas.ProductionOperations.Services
 {
     /// <summary>
-    /// Comprehensive production operations service interface
-    /// Manages well production monitoring, equipment reliability, safety incidents, and environmental compliance
+    /// Production operations service interface.
+    /// Manages well production monitoring, equipment reliability, facility operations, and cost analysis.
+    /// HSE concerns (safety incidents, environmental compliance) are owned by the HSE project.
+    /// Pipeline lifecycle management is owned by the PipelineManagement project.
     /// </summary>
     public interface IProductionOperationsService
     {
@@ -90,54 +92,6 @@ namespace Beep.OilandGas.ProductionOperations.Services
         /// Gets facility operational status
         /// </summary>
         Task<FacilityStatus> GetFacilityStatusAsync(string facilityId);
-
-        #endregion
-
-        #region Safety & Incident Management
-
-        /// <summary>
-        /// Records safety incident
-        /// </summary>
-        Task RecordSafetyIncidentAsync(SafetyIncident incident, string userId);
-
-        /// <summary>
-        /// Gets safety incidents for specified criteria
-        /// </summary>
-        Task<List<SafetyIncident>> GetSafetyIncidentsAsync(DateTime startDate, DateTime endDate, string? wellUWI = null, string? facilityId = null);
-
-        /// <summary>
-        /// Updates safety incident status
-        /// </summary>
-        Task UpdateSafetyIncidentAsync(string incidentId, SafetyIncident incident, string userId);
-
-        /// <summary>
-        /// Calculates safety KPIs
-        /// </summary>
-        Task<SafetyKPIs> CalculateSafetyKPIsAsync(DateTime startDate, DateTime endDate);
-
-        #endregion
-
-        #region Environmental Compliance
-
-        /// <summary>
-        /// Records environmental monitoring data
-        /// </summary>
-        Task RecordEnvironmentalDataAsync(EnvironmentalData data, string userId);
-
-        /// <summary>
-        /// Gets environmental monitoring data
-        /// </summary>
-        Task<List<EnvironmentalData>> GetEnvironmentalDataAsync(DateTime startDate, DateTime endDate, string? locationId = null);
-
-        /// <summary>
-        /// Performs environmental compliance check
-        /// </summary>
-        Task<ComplianceCheck> PerformEnvironmentalComplianceCheckAsync(string locationId, DateTime checkDate);
-
-        /// <summary>
-        /// Gets environmental compliance status
-        /// </summary>
-        Task<List<ComplianceStatus>> GetEnvironmentalComplianceStatusAsync(DateTime startDate, DateTime endDate);
 
         #endregion
 

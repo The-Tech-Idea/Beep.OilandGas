@@ -3,6 +3,7 @@ using Beep.OilandGas.Models.Data.HSE;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
+using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
@@ -45,16 +46,13 @@ public class RCAService : IRCAService
         };
 
         var rows = (await repo.GetAsync(filters)).ToList();
-
-        // Map generic objects to CauseFinding via property reflection (dynamic type)
-        return rows.Select(r =>
-        {
-            int    seq  = GetInt(r, "CAUSE_SEQ");
-            string type = GetStr(r, "CAUSE_TYPE");
-            string cat  = GetStr(r, "CAUSE_CATEGORY");
-            string desc = GetStr(r, "CAUSE_DESC");
-            return new CauseFinding(seq, type, cat, desc);
-        })
+        return rows
+        .OfType<HSE_INCIDENT_CAUSE>()
+        .Select(cause => new CauseFinding(
+            Seq: (int)cause.CAUSE_OBS_NO,
+            CauseType: cause.CAUSE_TYPE ?? string.Empty,
+            Category: cause.CAUSE_CODE ?? string.Empty,
+            Description: cause.REMARK ?? string.Empty))
         .OrderBy(c => c.Seq)
         .ToList();
     }
@@ -63,14 +61,16 @@ public class RCAService : IRCAService
     {
         var repo = await BuildRepoAsync();
 
-        var entity = new
+        var entity = new HSE_INCIDENT_CAUSE
         {
-            INCIDENT_ID    = incidentId,
-            CAUSE_SEQ      = request.Seq,
-            CAUSE_TYPE     = request.CauseType,
-            CAUSE_DESC     = request.CauseDesc,
-            CAUSE_CATEGORY = request.CauseCategory,
-            ACTIVE_IND     = "Y",
+            INCIDENT_ID = incidentId,
+            CAUSE_OBS_NO = request.Seq,
+            ACTIVE_IND = "Y",
+            CAUSE_CODE = request.CauseCategory,
+            CAUSE_TYPE = request.CauseType,
+            EFFECTIVE_DATE = DateTime.UtcNow,
+            REMARK = request.CauseDesc,
+            SOURCE = "Beep.OilandGas.HSE",
         };
 
         await repo.InsertAsync(entity, userId);
@@ -79,12 +79,18 @@ public class RCAService : IRCAService
     public async Task UpdateCauseAsync(string incidentId, int causeSeq, UpdateCauseRequest request, string userId)
     {
         var repo = await BuildRepoAsync();
-        var id   = $"{incidentId}|{causeSeq}";
-        var existing = await repo.GetByIdAsync(id);
+        var filters = new List<AppFilter>
+        {
+            new AppFilter { FieldName = "INCIDENT_ID", Operator = "=", FilterValue = incidentId },
+            new AppFilter { FieldName = "CAUSE_OBS_NO", Operator = "=", FilterValue = causeSeq.ToString() },
+            new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" },
+        };
+
+        var existing = (await repo.GetAsync(filters)).OfType<HSE_INCIDENT_CAUSE>().FirstOrDefault();
         if (existing is null) return;
 
-        SetStr(existing, "CAUSE_DESC",     request.CauseDesc);
-        SetStr(existing, "CAUSE_CATEGORY", request.CauseCategory);
+        existing.CAUSE_CODE = request.CauseCategory;
+        existing.REMARK = request.CauseDesc;
         await repo.UpdateAsync(existing, userId);
     }
 
@@ -106,15 +112,4 @@ public class RCAService : IRCAService
             entityType, _connectionName, "HSE_INCIDENT_CAUSE");
     }
 
-    private static int    GetInt(object o, string p) => int.TryParse(GetStr(o, p), out var v) ? v : 0;
-    private static string GetStr(object o, string p)
-    {
-        var prop = o.GetType().GetProperty(p);
-        return prop?.GetValue(o)?.ToString() ?? string.Empty;
-    }
-    private static void SetStr(object o, string p, string v)
-    {
-        var prop = o.GetType().GetProperty(p);
-        prop?.SetValue(o, v);
-    }
 }

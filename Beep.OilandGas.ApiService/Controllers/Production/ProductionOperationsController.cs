@@ -317,8 +317,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
                 TOTAL_PRODUCTION = data.OilVolume + data.GasVolume + data.WaterVolume,
                 ALLOCATION_METHOD = seed?.ALLOCATION_METHOD ?? "PDEN_VOL_SUMMARY_COMPAT",
                 ALLOCATION_RESULTS_JSON = JsonSerializer.Serialize(payload),
-                DESCRIPTION = seed?.DESCRIPTION ?? data.Status,
-                ROW_ID = seed?.ROW_ID
+                DESCRIPTION = seed?.DESCRIPTION ?? data.Status
             };
         }
 

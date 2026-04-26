@@ -154,33 +154,46 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref PROCESSED_DATEValue, value); }
         }
 
-        // Standard PPDM columns
+        // ── Best-practice additions (API MPMS custody-transfer standard) ─────────────
 
-       
-
-        private System.String ROW_IDValue;
-        public System.String ROW_ID
+        private System.String FIELD_IDValue;
+        public System.String FIELD_ID
         {
-            get { return this.ROW_IDValue; }
-            set { SetProperty(ref ROW_IDValue, value); }
+            get { return this.FIELD_IDValue; }
+            set { SetProperty(ref FIELD_IDValue, value); }
         }
 
-      
-
-        private decimal BSWVOLUMEValue;
-        public decimal BSWVOLUME
+        // VOLUME_OUOM: BBL / GAL / MCF depending on product type
+        private System.String VOLUME_OUOMValue;
+        public System.String VOLUME_OUOM
         {
-            get { return this.BSWVOLUMEValue; }
-            set { SetProperty(ref BSWVOLUMEValue, value); }
+            get { return this.VOLUME_OUOMValue; }
+            set { SetProperty(ref VOLUME_OUOMValue, value); }
         }
 
-        private decimal BSWPERCENTAGEValue;
-        public decimal BSWPERCENTAGE
+        // TICKET_STATUS: OPEN / CERTIFIED / VOIDED / ADJUSTED
+        private System.String TICKET_STATUSValue;
+        public System.String TICKET_STATUS
         {
-            get { return this.BSWPERCENTAGEValue; }
-            set { SetProperty(ref BSWPERCENTAGEValue, value); }
+            get { return this.TICKET_STATUSValue; }
+            set { SetProperty(ref TICKET_STATUSValue, value); }
         }
 
-       
+        // GRAVITY_CORRECTION_FACTOR: volume correction to 60°F per API MPMS Chapter 11
+        private System.Decimal? GRAVITY_CORRECTION_FACTORValue;
+        public System.Decimal? GRAVITY_CORRECTION_FACTOR
+        {
+            get { return this.GRAVITY_CORRECTION_FACTORValue; }
+            set { SetProperty(ref GRAVITY_CORRECTION_FACTORValue, value); }
+        }
+
+        // PIPELINE_TICKET_NUMBER: purchaser/pipeline reference number for reconciliation
+        private System.String PIPELINE_TICKET_NUMBERValue;
+        public System.String PIPELINE_TICKET_NUMBER
+        {
+            get { return this.PIPELINE_TICKET_NUMBERValue; }
+            set { SetProperty(ref PIPELINE_TICKET_NUMBERValue, value); }
+        }
+
     }
 }

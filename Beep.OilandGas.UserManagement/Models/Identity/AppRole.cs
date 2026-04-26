@@ -16,4 +16,7 @@ public class AppRole : ModelEntityBase
     public string SOD_FLAG { get; set; } = "N";
     public int? DISPLAY_SORT_ORDER { get; set; }
     public DateTime CREATED_UTC { get; set; } = DateTime.UtcNow;
+    // ── O&G field-scope constraint ─────────────────────────────────────
+    /// <summary>When set, restricts this role to a specific field or field-pattern ('*' = all).</summary>
+    public string? VALID_FIELD_SCOPE { get; set; }
 }

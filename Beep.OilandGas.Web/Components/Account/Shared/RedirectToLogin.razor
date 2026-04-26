@@ -3,9 +3,10 @@
 @code {
     protected override void OnInitialized()
     {
-        // Use OIDC authentication endpoint
+        // Route through the app's login page so client-side navigation
+        // never falls into a NotFound state for /authentication/login.
         var returnUrl = Uri.EscapeDataString(NavigationManager.Uri);
-        NavigationManager.NavigateTo($"/authentication/login?returnUrl={returnUrl}", forceLoad: true);
+        NavigationManager.NavigateTo($"/login?returnUrl={returnUrl}");
     }
 }
 

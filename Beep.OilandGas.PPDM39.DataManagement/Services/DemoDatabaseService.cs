@@ -21,7 +21,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
     /// <summary>
     /// Service for creating and managing demo SQLite databases
     /// </summary>
-    public class DemoDatabaseService
+    public class DemoDatabaseService : IDemoDatabaseService
     {
         private readonly DemoDatabaseConfig _config;
         private readonly DemoDatabaseRepository _repository;
@@ -121,13 +121,10 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     RestoreTestEvidence = $"Demo database bootstrap for user {request.UserId}"
                 });
 
-                if (!planResult.Success)
+        if (!planResult.Success)
                 {
                     // Clean up on failure
-                    if (File.Exists(databasePath))
-                    {
-                        File.Delete(databasePath);
-                    }
+                    TryCleanupFailedDatabase(connectionName, databasePath);
                     return new CreateDemoDatabaseResponse
                     {
                         Success = false,
@@ -146,10 +143,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
                 if (!approvalResult.Success)
                 {
-                    if (File.Exists(databasePath))
-                    {
-                        File.Delete(databasePath);
-                    }
+                    TryCleanupFailedDatabase(connectionName, databasePath);
 
                     return new CreateDemoDatabaseResponse
                     {
@@ -168,10 +162,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
                 if (!startResult.Success || string.IsNullOrWhiteSpace(startResult.OperationId))
                 {
-                    if (File.Exists(databasePath))
-                    {
-                        File.Delete(databasePath);
-                    }
+                    TryCleanupFailedDatabase(connectionName, databasePath);
 
                     return new CreateDemoDatabaseResponse
                     {
@@ -204,10 +195,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
                 if (schemaProgress == null || !schemaProgress.Success)
                 {
-                    if (File.Exists(databasePath))
-                    {
-                        File.Delete(databasePath);
-                    }
+                    TryCleanupFailedDatabase(connectionName, databasePath);
 
                     return new CreateDemoDatabaseResponse
                     {
@@ -221,10 +209,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
                 if (schemaProgress.HasFailed)
                 {
-                    if (File.Exists(databasePath))
-                    {
-                        File.Delete(databasePath);
-                    }
+                    TryCleanupFailedDatabase(connectionName, databasePath);
 
                     return new CreateDemoDatabaseResponse
                     {
@@ -298,27 +283,28 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         {
             try
             {
-                var seedRequest = new SeedDataRequest
-                {
-                    ConnectionName = connectionName,
-                    SkipExisting = true,
-                    UserId = "SYSTEM"
-                };
+                // ── Required stage 1: well-status facets ─────────────────────────────
+                var wellStatusSeeder = new Beep.OilandGas.PPDM39.DataManagement.SeedData.WellStatusFacetSeeder(
+                    _editor, _commonColumnHandler, _defaults, _metadata, connectionName);
+                var facetResult = await wellStatusSeeder.SeedAllAsync("SYSTEM");
+                if (!facetResult.Success)
+                    _logger.LogWarning("Well-status facet seeding had issues for {ConnectionName}: {Message}",
+                        connectionName, facetResult.Message);
+                else
+                    _logger.LogInformation("Well-status facet seeding complete for {ConnectionName}", connectionName);
 
-                // Seed reference data if seeder is available
+                // ── Required stage 2: reference data ─────────────────────────────────
                 if (_referenceDataSeeder != null)
                 {
                     var seedResult = await _referenceDataSeeder.SeedPPDMReferenceTablesAsync(
-                        connectionName, 
+                        connectionName,
                         null, // All tables
                         true, // Skip existing
                         "SYSTEM");
-                    
+
                     if (!seedResult.Success)
-                    {
-                        _logger.LogWarning("Failed to seed reference data for demo database {ConnectionName}: {Message}", 
+                        _logger.LogWarning("Failed to seed reference data for demo database {ConnectionName}: {Message}",
                             connectionName, seedResult.Message);
-                    }
                 }
                 else
                 {
@@ -371,13 +357,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     };
                 }
 
-                // Delete database file
-                if (File.Exists(metadata.DatabasePath))
-                {
-                    File.Delete(metadata.DatabasePath);
-                }
-
-                // Remove connection from IDMEEditor
+                // Close connection first so the file handle is released before deletion
                 try
                 {
                     _editor.ConfigEditor.RemoveConnByName(connectionName);
@@ -385,6 +365,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 catch (Exception ex)
                 {
                     _logger.LogWarning(ex, "Error removing connection {ConnectionName} from IDMEEditor", connectionName);
+                }
+
+                // Delete database file
+                if (File.Exists(metadata.DatabasePath))
+                {
+                    File.Delete(metadata.DatabasePath);
                 }
 
                 // Remove metadata
@@ -467,6 +453,61 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         public List<DemoDatabaseMetadata> GetAllDemoDatabases()
         {
             return _repository.GetAll();
+        }
+
+        /// <summary>
+        /// Returns a typed status snapshot for a demo database covering schema completeness,
+        /// seeding outcomes, and retention state.
+        /// </summary>
+        public Task<DemoDatabaseStatusResult> GetDemoDatabaseStatusAsync(string connectionName)
+        {
+            var metadata = _repository.GetByConnectionName(connectionName);
+            if (metadata == null)
+            {
+                return Task.FromResult(new DemoDatabaseStatusResult
+                {
+                    Exists = false,
+                    ConnectionName = connectionName
+                });
+            }
+
+            return Task.FromResult(new DemoDatabaseStatusResult
+            {
+                Exists = true,
+                ConnectionName = connectionName,
+                SchemaComplete = true, // Metadata presence implies schema creation succeeded
+                SeedingComplete = !string.IsNullOrEmpty(metadata.SeedDataOption) && metadata.SeedDataOption != "none",
+                SeedDataOption = metadata.SeedDataOption,
+                CreatedDate = metadata.CreatedDate,
+                ExpiryDate = metadata.ExpiryDate,
+                IsExpired = metadata.IsExpired
+            });
+        }
+
+        // ── Private helpers ──────────────────────────────────────────────────
+
+        /// <summary>
+        /// Closes and unregisters a partially-created connection then removes the database file.
+        /// Called from all failure paths in <see cref="CreateDemoDatabaseAsync"/> so that
+        /// the file handle is always released before the file is deleted.
+        /// </summary>
+        private void TryCleanupFailedDatabase(string connectionName, string databasePath)
+        {
+            try { _editor.ConfigEditor.RemoveConnByName(connectionName); }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error removing connection {ConnectionName} during failure cleanup", connectionName);
+            }
+
+            try
+            {
+                if (File.Exists(databasePath))
+                    File.Delete(databasePath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error deleting database file {Path} during failure cleanup", databasePath);
+            }
         }
     }
 }

@@ -11,6 +11,7 @@ public interface IClientFileExportService
     Task DownloadJsonAsync<T>(string fileName, T payload);
     Task DownloadTextAsync(string fileName, string content, string contentType);
     Task DownloadBytesAsync(string fileName, byte[] content, string contentType);
+    Task DownloadCsvAsync<T>(string fileName, Func<T, string[]> rowMapper, System.Collections.Generic.IEnumerable<T> data);
 }
 
 public sealed class ClientFileExportService : IClientFileExportService
@@ -52,5 +53,21 @@ public sealed class ClientFileExportService : IClientFileExportService
         var dataUrl = $"data:{contentType};base64,{base64}";
 
         await _jsRuntime.InvokeVoidAsync("downloadFile", fileName, dataUrl);
+    }
+
+    public async Task DownloadCsvAsync<T>(string fileName, Func<T, string[]> rowMapper, System.Collections.Generic.IEnumerable<T> data)
+    {
+        var normalizedFileName = fileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase)
+            ? fileName
+            : $"{fileName}.csv";
+
+        var sb = new StringBuilder();
+        foreach (var row in data)
+        {
+            var fields = rowMapper(row);
+            sb.AppendLine(string.Join(",", fields.Select(f => $"\"{f.Replace("\"", "\"\"")}\"")));
+        }
+
+        await DownloadTextAsync(normalizedFileName, sb.ToString(), "text/csv");
     }
 }

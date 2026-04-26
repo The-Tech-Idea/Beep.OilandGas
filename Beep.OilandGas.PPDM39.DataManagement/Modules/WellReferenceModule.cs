@@ -10,10 +10,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Modules
 {
     /// <summary>
     /// Module order 30 — declares well-specific reference entity types.
-    ///
-    /// Seeding for these references is currently handled by SharedReferenceModule
-    /// to preserve existing behavior; this module exists so well references have
-    /// a dedicated ownership point for future extraction.
+    /// This module stays in PPDM39.DataManagement because these are shared reference entities
+    /// and their seeding boundary belongs with the central reference-data infrastructure.
     /// </summary>
     public sealed class WellReferenceModule : ModuleSetupBase
     {

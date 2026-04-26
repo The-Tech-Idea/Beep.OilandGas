@@ -1,0 +1,177 @@
+@page "/ppdm39/accounting/joint-interest-billing"
+@using Beep.OilandGas.Web.Services
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+<PageTitle>Manage Joint Interest Billing</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ─── Header *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Manage Joint Interest Billing</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Track and manage JIB invoices for working interest partners</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.AccountBalanceWallet">JIB</MudChip>
+            </MudStack>
+        </MudStack>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.ReceiptLong"
+                   OnClick="GenerateJibRun">
+            Generate JIB Run
+        </MudButton>
+    </MudStack>
+
+    @* ─── Summary Cards *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="2" Class="pa-4 text-center">
+                <MudIcon Icon="@Icons.Material.Filled.Receipt" Color="Color.Primary" Size="Size.Large" />
+                <MudText Typo="Typo.h4">@_totalInvoices</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Default">Open Invoices</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="2" Class="pa-4 text-center">
+                <MudIcon Icon="@Icons.Material.Filled.Payments" Color="Color.Success" Size="Size.Large" />
+                <MudText Typo="Typo.h4">@_totalPaid.ToString("C0")</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Default">Total Paid (YTD)</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="2" Class="pa-4 text-center">
+                <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Large" />
+                <MudText Typo="Typo.h4">@_overdueCount</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Default">Overdue Invoices</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="2" Class="pa-4 text-center">
+                <MudIcon Icon="@Icons.Material.Filled.Groups" Color="Color.Secondary" Size="Size.Large" />
+                <MudText Typo="Typo.h4">@_partnerCount</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Default">Active Partners</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @* ─── JIB Invoice Table *@
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-3">
+            <MudText Typo="Typo.h6">JIB Invoices</MudText>
+            <MudSpacer />
+            <MudSelect T="string" Value="@_selectedStatus" Label="Status" Dense="true" Style="width: 150px;"
+                       ValueChanged="@(async (string s) => { _selectedStatus = s; await LoadAsync(); })">
+                <MudSelectItem Value="">All</MudSelectItem>
+                <MudSelectItem Value="Open">Open</MudSelectItem>
+                <MudSelectItem Value="Paid">Paid</MudSelectItem>
+                <MudSelectItem Value="Overdue">Overdue</MudSelectItem>
+                <MudSelectItem Value="Disputed">Disputed</MudSelectItem>
+            </MudSelect>
+            <MudTextField T="string" @bind-Value="_searchTerm" Label="Search" Dense="true" Style="width: 200px;"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          OnInput="@(async (ChangeEventArgs e) => { _searchTerm = e.Value?.ToString(); await LoadAsync(); })" />
+        </MudStack>
+
+        @if (_loading)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+        }
+        else
+        {
+            <MudDataGrid T="JibInvoiceDto" Items="@_invoices" Filterable="true" Sortable="true"
+                         Hover="true" Dense="true" RowClick="OnRowClick">
+                <Columns>
+                    <PropertyColumn Property="x => x.InvoiceNumber" Title="Invoice #" />
+                    <PropertyColumn Property="x => x.PartnerName" Title="Partner" />
+                    <PropertyColumn Property="x => x.WellName" Title="Well" />
+                    <PropertyColumn Property="x => x.InvoiceDate" Title="Date" Format="yyyy-MM-dd" />
+                    <PropertyColumn Property="x => x.DueDate" Title="Due Date" Format="yyyy-MM-dd" />
+                    <PropertyColumn Property="x => x.TotalAmount" Title="Amount" Format="C2" />
+                    <PropertyColumn Property="x => x.PaidAmount" Title="Paid" Format="C2" />
+                    <TemplateColumn Title="Status">
+                        <CellTemplate>
+                            <MudChip T="string" Color="@StatusColor(context.Item.Status)" Size="Size.Small">
+                                @context.Item.Status
+                            </MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private bool _loading;
+    private List<JibInvoiceDto> _invoices = new();
+    private string _selectedStatus = "";
+    private string _searchTerm = "";
+    private int _totalInvoices;
+    private decimal _totalPaid;
+    private int _overdueCount;
+    private int _partnerCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            // TODO: Wire to actual JIB API endpoint when available
+            _invoices = new List<JibInvoiceDto>
+            {
+                new() { InvoiceNumber = "JIB-2026-001", PartnerName = "Partner A LLC", WellName = "Well #1", InvoiceDate = new DateTime(2026, 3, 15), DueDate = new DateTime(2026, 4, 15), TotalAmount = 125000m, PaidAmount = 125000m, Status = "Paid" },
+                new() { InvoiceNumber = "JIB-2026-002", PartnerName = "Partner B Corp", WellName = "Well #2", InvoiceDate = new DateTime(2026, 3, 20), DueDate = new DateTime(2026, 4, 20), TotalAmount = 89000m, PaidAmount = 0m, Status = "Open" },
+                new() { InvoiceNumber = "JIB-2026-003", PartnerName = "Partner C Inc", WellName = "Well #3", InvoiceDate = new DateTime(2026, 2, 10), DueDate = new DateTime(2026, 3, 10), TotalAmount = 210000m, PaidAmount = 0m, Status = "Overdue" },
+            };
+            _totalInvoices = _invoices.Count(i => i.Status == "Open");
+            _totalPaid = _invoices.Sum(i => i.PaidAmount);
+            _overdueCount = _invoices.Count(i => i.Status == "Overdue");
+            _partnerCount = _invoices.Select(i => i.PartnerName).Distinct().Count();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load JIB data: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void OnRowClick(DataGridRowClickEventArgs<JibInvoiceDto> args)
+    {
+        NavigationManager.NavigateTo($"/ppdm39/accounting/jib/{args.Item.InvoiceNumber}");
+    }
+
+    private void GenerateJibRun()
+    {
+        Snackbar.Add("JIB run generation initiated. Check progress for status.", Severity.Info);
+    }
+
+    private static Color StatusColor(string status) => status switch
+    {
+        "Open" => Color.Info,
+        "Paid" => Color.Success,
+        "Overdue" => Color.Error,
+        "Disputed" => Color.Warning,
+        _ => Color.Default
+    };
+
+    public class JibInvoiceDto
+    {
+        public string InvoiceNumber { get; set; } = string.Empty;
+        public string PartnerName { get; set; } = string.Empty;
+        public string WellName { get; set; } = string.Empty;
+        public DateTime InvoiceDate { get; set; }
+        public DateTime DueDate { get; set; }
+        public decimal TotalAmount { get; set; }
+        public decimal PaidAmount { get; set; }
+        public string Status { get; set; } = string.Empty;
+    }
+}

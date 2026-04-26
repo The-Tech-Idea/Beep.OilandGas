@@ -14,6 +14,10 @@ using TheTechIdea.Beep.Report;
 namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
 {
     /// <summary>
+    /// Shared well-status reference-data seeder used by setup flows across the solution.
+    /// It stays in PPDM39.DataManagement because it depends on generic PPDM metadata/repository
+    /// infrastructure rather than a single domain project.
+    ///
     /// Seeds the four PPDM 3.9 well-status reference tables from the static WSC v3 (R-3, June 2020)
     /// catalog embedded in <see cref="WellServices.FACET_CATALOG"/>.
     ///

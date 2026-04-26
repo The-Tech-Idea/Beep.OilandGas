@@ -1,0 +1,122 @@
+@page "/ppdm39/permits"
+@using Beep.OilandGas.Web.Services
+@inject IPermitServiceClient PermitClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Permit Applications</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Permit Applications</MudText>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+}
+else
+{
+    <MudPaper Elevation="2" Class="pa-4 mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-3">
+            <MudText Typo="Typo.h6">Applications</MudText>
+            <MudSpacer />
+            <MudSelect T="string" Value="@_selectedStatus" Label="Status" Dense="true" Style="width: 180px;"
+                       ValueChanged="@(async (string s) => { _selectedStatus = s; await LoadAsync(); })">
+                <MudSelectItem Value="">All</MudSelectItem>
+                <MudSelectItem Value="Draft">Draft</MudSelectItem>
+                <MudSelectItem Value="Submitted">Submitted</MudSelectItem>
+                <MudSelectItem Value="Under Review">Under Review</MudSelectItem>
+                <MudSelectItem Value="Approved">Approved</MudSelectItem>
+                <MudSelectItem Value="Rejected">Rejected</MudSelectItem>
+            </MudSelect>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="NavigateToCreate">
+                New Application
+            </MudButton>
+        </MudStack>
+
+        <MudDataGrid T="PermitApplicationSummary" Items="@_applications" Filterable="true" Sortable="true"
+                     Hover="true" Dense="true" RowClick="@OnRowClick">
+            <Columns>
+                <PropertyColumn Property="x => x.PermitApplicationId" Title="ID" />
+                <PropertyColumn Property="x => x.ApplicationType" Title="Type" />
+                <PropertyColumn Property="x => x.RegulatoryAuthority" Title="Authority" />
+                <PropertyColumn Property="x => x.ApplicantName" Title="Applicant" />
+                <PropertyColumn Property="x => x.CreatedDate" Title="Created" Format="yyyy-MM-dd" />
+                <PropertyColumn Property="x => x.SubmittedDate" Title="Submitted" Format="yyyy-MM-dd" />
+                <TemplateColumn Title="Status">
+                    <CellTemplate>
+                        <MudChip T="string"
+                                 Color="@StatusColor(context.Item.Status)"
+                                 Size="Size.Small">
+                            @context.Item.Status
+                        </MudChip>
+                    </TemplateTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Decision">
+                    <CellTemplate>
+                        @if (!string.IsNullOrEmpty(context.Item.Decision))
+                        {
+                            <MudChip T="string"
+                                     Color="@(context.Item.Decision == "Approved" ? Color.Success : Color.Error)"
+                                     Size="Size.Small">
+                                @context.Item.Decision
+                            </MudChip>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Pending</MudText>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    </MudPaper>
+}
+
+@code {
+    private bool _loading;
+    private List<PermitApplicationSummary> _applications = new();
+    private string _selectedStatus = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var statusFilter = string.IsNullOrWhiteSpace(_selectedStatus) ? null : _selectedStatus;
+            _applications = await PermitClient.GetAllAsync(status: statusFilter);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load permits: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void OnRowClick(DataGridRowClickEventArgs<PermitApplicationSummary> args)
+    {
+        NavigationManager.NavigateTo($"/ppdm39/permits/{args.Item.PermitApplicationId}");
+    }
+
+    private void NavigateToCreate()
+    {
+        NavigationManager.NavigateTo("/ppdm39/permits/new");
+    }
+
+    private static Color StatusColor(string status) => status switch
+    {
+        "Draft" => Color.Default,
+        "Submitted" => Color.Info,
+        "Under Review" => Color.Warning,
+        "Approved" => Color.Success,
+        "Rejected" => Color.Error,
+        _ => Color.Default
+    };
+}

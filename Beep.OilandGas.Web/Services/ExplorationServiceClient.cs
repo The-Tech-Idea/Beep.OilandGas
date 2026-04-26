@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.ProspectIdentification;
 using Microsoft.Extensions.Logging;
-using PROSPECT = Beep.OilandGas.PPDM39.Models.PROSPECT;
+using PROSPECT = Beep.OilandGas.Models.Data.ProspectIdentification.PROSPECT;
 using SEIS_ACQTN_SURVEY = Beep.OilandGas.PPDM39.Models.SEIS_ACQTN_SURVEY;
 using SEIS_LINE = Beep.OilandGas.PPDM39.Models.SEIS_LINE;
 

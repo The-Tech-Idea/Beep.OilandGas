@@ -13,12 +13,14 @@ using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.ProspectIdentification;
 using Beep.OilandGas.PPDM.Models;
+using ProspectRecord = Beep.OilandGas.Models.Data.ProspectIdentification.PROSPECT;
 
 namespace Beep.OilandGas.ProspectIdentification.Services
 {
     /// <summary>
     /// Service for prospect identification operations.
-    /// Uses PPDMGenericRepository for data persistence following LifeCycle patterns.
+    /// Uses PPDMGenericRepository for PPDM-backed prospect persistence and keeps
+    /// richer exploration models as aggregate projections rather than storage entities.
     /// </summary>
     public partial class ProspectIdentificationService : Beep.OilandGas.Models.Core.Interfaces.IProspectIdentificationService
     {
@@ -50,39 +52,40 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             if (string.IsNullOrWhiteSpace(prospectId))
                 throw new ArgumentException("Prospect ID cannot be null or empty", nameof(prospectId));
 
-             _logger?.LogInformation("Evaluating prospect {ProspectId}", prospectId);
+            _logger?.LogInformation("Evaluating prospect {ProspectId}", prospectId);
 
-             // Load the prospect record for evaluation context
-             var prospectRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                 typeof(PROSPECT), _connectionName, "PROSPECT", null);
+            var prospectRepo = CreateProspectRepository();
 
-             var entity = await prospectRepo.GetByIdAsync(prospectId);
-             var prospect = entity as PROSPECT;
+            var entity = await prospectRepo.GetByIdAsync(prospectId);
+            var prospect = entity as ProspectRecord;
 
-             var evaluation = new ProspectEvaluation
-             {
-                 EvaluationId = _defaults.FormatIdForTable("EVAL", Guid.NewGuid().ToString()),
-                 ProspectId = prospectId,
-                 EvaluationDate = DateTime.UtcNow,
-                 EstimatedOilResources = prospect?.ESTIMATED_RESERVES,
-                 RiskScore = prospect?.RISK_FACTOR ?? 0.5m,
-                 ProbabilityOfSuccess = prospect?.RISK_FACTOR != null ? Math.Max(0.05m, 1m - prospect.RISK_FACTOR.Value) : 0.5m,
-                 Recommendation = "Further evaluation recommended"
-             };
+            var estimatedResources = prospect?.ESTIMATED_OIL_VOLUME ?? prospect?.ESTIMATED_RESERVES;
+            var riskScore = prospect?.RISK_FACTOR ?? 0.5m;
+            var probabilityOfSuccess = prospect?.RISK_FACTOR != null
+                ? Math.Max(0.05m, 1m - prospect.RISK_FACTOR.Value)
+                : 0.5m;
 
-             _logger?.LogInformation("Prospect evaluation completed for {ProspectId}", prospectId);
+            var evaluation = new ProspectEvaluation
+            {
+                EvaluationId = _defaults.FormatIdForTable("EVAL", Guid.NewGuid().ToString()),
+                ProspectId = prospectId,
+                EvaluationDate = DateTime.UtcNow,
+                EstimatedOilResources = estimatedResources,
+                RiskScore = riskScore,
+                ProbabilityOfSuccess = probabilityOfSuccess,
+                Recommendation = ResolveRecommendation(prospect, riskScore)
+            };
 
-             await Task.CompletedTask;
-             return evaluation;
+            _logger?.LogInformation("Prospect evaluation completed for {ProspectId}", prospectId);
+
+            return evaluation;
         }
 
         public async Task<List<Prospect>> GetProspectsAsync(Dictionary<string, string>? filters = null)
         {
             _logger?.LogInformation("Getting prospects with filters: {FilterCount}", filters?.Count ?? 0);
 
-            // Create repository for PROSPECT
-            var prospectRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(PROSPECT), _connectionName, "PROSPECT", null);
+            var prospectRepo = CreateProspectRepository();
 
             var appFilters = new List<AppFilter>
             {
@@ -97,14 +100,22 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                 }
             }
 
-             var entities = await prospectRepo.GetAsync(appFilters);
-             var prospects = entities.Cast<PROSPECT>().Select(entity => new Prospect
-             {
-                 ProspectId = entity.PROSPECT_ID ?? string.Empty,
-                 ProspectName = entity.PROSPECT_NAME ?? string.Empty,
-                 FieldId = entity.FIELD_ID ?? string.Empty,
-                 Status = entity.STATUS
-             }).ToList();
+            var entities = await prospectRepo.GetAsync(appFilters);
+            var prospects = entities
+                .OfType<ProspectRecord>()
+                .Select(entity => new Prospect
+                {
+                    ProspectId = entity.PROSPECT_ID ?? string.Empty,
+                    ProspectName = entity.PROSPECT_NAME ?? string.Empty,
+                    Description = string.IsNullOrWhiteSpace(entity.DESCRIPTION) ? entity.REMARK : entity.DESCRIPTION,
+                    FieldId = ResolveFieldId(entity),
+                    Status = ResolveStatus(entity),
+                    RiskLevel = entity.RISK_LEVEL,
+                    EstimatedResources = entity.ESTIMATED_OIL_VOLUME ?? entity.ESTIMATED_RESERVES,
+                    CreatedDate = entity.ROW_CREATED_DATE,
+                    EvaluationDate = entity.EVALUATION_DATE
+                })
+                .ToList();
 
             _logger?.LogInformation("Retrieved {Count} prospects", prospects.Count);
             return prospects;
@@ -124,18 +135,22 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                 prospect.ProspectId = _defaults.FormatIdForTable("PROSPECT", Guid.NewGuid().ToString());
             }
 
-            // Create repository for PROSPECT
-            var prospectRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(PROSPECT), _connectionName, "PROSPECT", null);
+            var prospectRepo = CreateProspectRepository();
 
-            var newEntity = new PROSPECT
+            var newEntity = new ProspectRecord
             {
                 PROSPECT_ID = prospect.ProspectId,
                 PROSPECT_NAME = prospect.ProspectName ?? string.Empty,
+                PRIMARY_FIELD_ID = prospect.FieldId,
                 FIELD_ID = prospect.FieldId,
+                DESCRIPTION = prospect.Description ?? string.Empty,
+                REMARK = prospect.Description ?? string.Empty,
                 EVALUATION_DATE = prospect.EvaluationDate,
+                ESTIMATED_OIL_VOLUME = prospect.EstimatedResources,
                 ESTIMATED_RESERVES = prospect.EstimatedResources,
                 RISK_FACTOR = prospect.RiskScore,
+                RISK_LEVEL = prospect.RiskLevel,
+                PROSPECT_STATUS = prospect.Status ?? "NEW",
                 STATUS = prospect.Status ?? "New",
                 ACTIVE_IND = "Y"
             };
@@ -161,19 +176,18 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             _logger?.LogInformation("Ranking {Count} prospects using {CriteriaCount} criteria",
                 prospectIds.Count, rankingCriteria.Count);
 
-            // Score each prospect by loading its PPDM record and applying weighted criteria
-            var prospectRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(PROSPECT), _connectionName, "PROSPECT", null);
+            var prospectRepo = CreateProspectRepository();
 
             var rankings = new List<ProspectRanking>();
             foreach (var id in prospectIds)
             {
                 var entity = await prospectRepo.GetByIdAsync(id);
-                var p = entity as PROSPECT;
+                var p = entity as ProspectRecord;
 
                 decimal score = 0m;
-                if (rankingCriteria.TryGetValue("EstimatedReserves", out var resWeight) && p?.ESTIMATED_RESERVES != null)
-                    score += resWeight * (p.ESTIMATED_RESERVES.Value / 1_000_000m);
+                var estimatedReserves = p?.ESTIMATED_OIL_VOLUME ?? p?.ESTIMATED_RESERVES;
+                if (rankingCriteria.TryGetValue("EstimatedReserves", out var resWeight) && estimatedReserves != null)
+                    score += resWeight * (estimatedReserves.Value / 1_000_000m);
                 if (rankingCriteria.TryGetValue("RiskFactor", out var riskWeight) && p?.RISK_FACTOR != null)
                     score += riskWeight * (1m - p.RISK_FACTOR.Value);
 
@@ -188,9 +202,58 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             var ordered = rankings.OrderByDescending(r => r.Score).ToList();
             for (int i = 0; i < ordered.Count; i++) ordered[i].Rank = i + 1;
 
-             await Task.CompletedTask;
-             return ordered;
-         }
+            return ordered;
+        }
+
+        private PPDMGenericRepository CreateProspectRepository()
+        {
+            return new PPDMGenericRepository(
+                _editor,
+                _commonColumnHandler,
+                _defaults,
+                _metadata,
+                typeof(ProspectRecord),
+                _connectionName,
+                "PROSPECT",
+                null);
+        }
+
+        private static string ResolveFieldId(ProspectRecord entity)
+        {
+            return !string.IsNullOrWhiteSpace(entity.PRIMARY_FIELD_ID)
+                ? entity.PRIMARY_FIELD_ID
+                : entity.FIELD_ID ?? string.Empty;
+        }
+
+        private static string ResolveStatus(ProspectRecord entity)
+        {
+            return !string.IsNullOrWhiteSpace(entity.PROSPECT_STATUS)
+                ? entity.PROSPECT_STATUS
+                : entity.STATUS;
+        }
+
+        private static string ResolveRecommendation(ProspectRecord? prospect, decimal riskScore)
+        {
+            if (prospect == null)
+                return "Further evaluation recommended";
+
+            if (!string.IsNullOrWhiteSpace(prospect.PROSPECT_STATUS))
+            {
+                return prospect.PROSPECT_STATUS.ToUpperInvariant() switch
+                {
+                    "APPROVED" or "COMMITTED" => "Recommend drilling",
+                    "REJECTED" or "ABANDONED" => "Do not drill",
+                    _ => "Further evaluation recommended"
+                };
+            }
+
+            return riskScore switch
+            {
+                >= 0.7m => "Detailed study required",
+                >= 0.4m => "Further evaluation recommended",
+                _ => "Recommend drilling"
+            };
+        }
 
          /// <summary>
          /// Analyzes seismic interpretation data for prospect definition

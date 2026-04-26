@@ -1,10 +1,61 @@
 # Beep.OilandGas.Web — Update Master Plan
 
 > Created: 2026-04-21  
+> **Last Updated: 2026-04-25** — Phases 6-11 complete; Phase 12 enhancement planning initiated  
 > Scope: Web architecture cleanup, Pages vs Components consolidation, staged calculation-project adoption, and domain-project integration planning  
 > Applies To: `Beep.OilandGas.Web`, `Beep.OilandGas.ApiService`, and the referenced domain projects behind the API  
 > Relationship To Existing Plan: This is a follow-on modernization plan. It does not replace the earlier UX rollout notes; it sequences the cleanup and integration work needed after those pages were created.
 > Scan basis: corrected against a broad repository scan covering routed Razor files, web services, API controllers, and representative service/model folders across the Beep.OilandGas solution, then grounded in one project document per repo-local `.csproj` under `Projects/`.
+
+---
+
+## Current State (2026-04-25)
+
+**Phases 0-11 are complete.** The web application has:
+- 50 navigation links all resolving to backing pages
+- Single root-route owner (`/` → `Pages/Landing.razor`)
+- 10 direct project references (down from 36+)
+- 0 static inline-style occurrences in Razor markup
+- 4 personas with role-aware navigation and ABAC field scoping
+- PBKDF2 password hashing, audit observability, and 11 passing authorization tests
+- Full cross-module workflow linking (exploration → development → drilling → production → decommissioning → compliance/finance)
+
+**Remaining deferred items** (explicitly tracked, not regressions):
+1. Drawing sample build failure (`DrawingSampleHost.razor.cs` type drift)
+2. Thin operational domains (`ProductionOperations`, `EnhancedRecovery`, `DrillingAndConstruction`)
+3. Permit surfacing breadth vs backend validation depth
+4. Finance UI breadth vs service-heavy accounting footprint
+
+---
+
+## Phase 12 — Enhancement and Polish (Proposed)
+
+> Status: Planning  
+> Focus: Address deferred gaps, improve UX polish, expand coverage in thin domains
+
+### Pass A — Deferred Gap Resolution
+| ID | Task | Priority | Notes |
+|----|------|----------|-------|
+| W12-01 | Resolve Drawing sample build failure | High | Fix `DrawingSampleHost.razor.cs` type/namespace drift or retire the sample page |
+| W12-02 | Expand permit/compliance workflow surfacing | Medium | Backend validation exists; add first-class permit intake, review, and approval pages |
+| W12-03 | Broaden finance UI coverage | Medium | Match accounting service depth with production accounting, royalty, and allocation pages |
+| W12-04 | Harden thin operational domains | Medium | Add missing service methods and page surfaces for `ProductionOperations`, `EnhancedRecovery`, `DrillingAndConstruction` |
+
+### Pass B — UX Polish and Performance
+| ID | Task | Priority | Notes |
+|----|------|----------|-------|
+| W12-05 | Add loading states and skeleton screens | Low | Improve perceived performance on data-heavy pages |
+| W12-06 | Optimize API call patterns (batching, caching) | Low | Reduce redundant calls in dashboard and data-management pages |
+| W12-07 | Add keyboard navigation and accessibility audit | Low | WCAG 2.1 AA compliance for core workflow pages |
+| W12-08 | Add export/print support for reports | Low | PDF export for compliance reports, economic evaluations, and work orders |
+
+### Pass C — Operational Readiness
+| ID | Task | Priority | Status | Notes |
+|----|------|----------|--------|-------|
+| W12-09 | Add integration tests for cross-module workflows | Medium | ✅ Done (blocked) | `CrossModuleWorkflowTests.cs` created with 5 workflow chain tests. Blocked by PermitsAndApplications build errors. |
+| W12-10 | Add performance benchmarks for key pages | Low | Planned | Dashboard load time, data grid rendering, calculation response times |
+| W12-11 | Document deployment and environment configuration | Medium | ✅ Done | `Documentation/Deployment-Guide.md` created with architecture, env vars, deploy steps, monitoring, security checklist, troubleshooting |
+| W12-12 | Create user onboarding and help content | Low | Planned | In-app tooltips, guided tours, and contextual help for each workflow area |
 
 ---
 

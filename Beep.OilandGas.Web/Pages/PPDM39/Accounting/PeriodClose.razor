@@ -1,0 +1,165 @@
+@page "/ppdm39/accounting/period-close"
+@using Beep.OilandGas.Web.Services
+@inject IAccountingServiceClient AccountingClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Close Accounting Period</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ─── Header *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Close Accounting Period</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Execute period-end close procedures and lock the accounting period</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Error" Icon="@Icons.Material.Filled.Lock">Period Close</MudChip>
+            </MudStack>
+        </MudStack>
+    </MudStack>
+
+    @* ─── Period Selection *@
+    <MudPaper Elevation="2" Class="pa-4 mb-4">
+        <MudText Typo="Typo.h6" Class="mb-3">Select Period to Close</MudText>
+        <MudGrid>
+            <MudItem xs="12" sm="4">
+                <MudDatePicker @bind-Date="_periodEnd" Label="Period End Date" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudTextField T="string" @bind-Value="_closingNotes" Label="Closing Notes" Lines="3" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="4" Class="d-flex align-end">
+                <MudButton Variant="Variant.Filled" Color="Color.Error" FullWidth="true"
+                           OnClick="ExecutePeriodClose" Disabled="@_closing || !_periodEnd.HasValue"
+                           StartIcon="@Icons.Material.Filled.Lock">
+                    @(_closing ? "Closing..." : "Execute Period Close")
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    @* ─── Pre-Close Checklist *@
+    <MudPaper Elevation="2" Class="pa-4 mb-4">
+        <MudText Typo="Typo.h6" Class="mb-3">Pre-Close Checklist</MudText>
+        <MudList Dense="true">
+            @foreach (var item in _checklist)
+            {
+                <MudListItem>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudCheckBox T="bool" @bind-Value="item.Completed" Disabled="true" />
+                        <MudText>@item.Description</MudText>
+                        <MudSpacer />
+                        <MudChip T="string" Color="@(item.Completed ? Color.Success : Color.Warning)" Size="Size.Small">
+                            @(item.Completed ? "Complete" : "Pending")
+                        </MudChip>
+                    </MudStack>
+                </MudListItem>
+            }
+        </MudList>
+    </MudPaper>
+
+    @* ─── Close History *@
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudText Typo="Typo.h6" Class="mb-3">Period Close History</MudText>
+        @if (_closeHistory.Any())
+        {
+            <MudDataGrid T="PeriodCloseRecord" Items="@_closeHistory" Hover="true" Dense="true">
+                <Columns>
+                    <PropertyColumn Property="x => x.PeriodEnd" Title="Period End" Format="yyyy-MM" />
+                    <PropertyColumn Property="x => x.ClosedDate" Title="Closed On" Format="yyyy-MM-dd HH:mm" />
+                    <PropertyColumn Property="x => x.ClosedBy" Title="Closed By" />
+                    <PropertyColumn Property="x => x.Notes" Title="Notes" />
+                    <TemplateColumn Title="Status">
+                        <CellTemplate>
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small">Closed</MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Color="Color.Default">No periods have been closed yet.</MudText>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private bool _closing;
+    private DateTime? _periodEnd = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1).AddMonths(-1).AddDays(-1);
+    private string _closingNotes = "";
+    private List<ChecklistItem> _checklist = new()
+    {
+        new() { Description = "All revenue entries posted", Completed = true },
+        new() { Description = "All cost allocations completed", Completed = true },
+        new() { Description = "Volume reconciliation balanced", Completed = false },
+        new() { Description = "Royalty calculations finalized", Completed = true },
+        new() { Description = "JIB invoices generated", Completed = false },
+        new() { Description = "Trial balance verified", Completed = false },
+    };
+    private List<PeriodCloseRecord> _closeHistory = new()
+    {
+        new() { PeriodEnd = new DateTime(2026, 2, 28), ClosedDate = new DateTime(2026, 3, 5, 14, 30, 0), ClosedBy = "system", Notes = "February 2026 close" },
+        new() { PeriodEnd = new DateTime(2026, 1, 31), ClosedDate = new DateTime(2026, 2, 4, 16, 15, 0), ClosedBy = "system", Notes = "January 2026 close" },
+    };
+
+    private async Task ExecutePeriodClose()
+    {
+        if (!_periodEnd.HasValue) return;
+
+        var incomplete = _checklist.Where(c => !c.Completed).ToList();
+        if (incomplete.Any())
+        {
+            Snackbar.Add($"{incomplete.Count} checklist items incomplete. Complete all items before closing.", Severity.Warning);
+            return;
+        }
+
+        _closing = true;
+        try
+        {
+            var request = new CloseAccountingPeriodRequest
+            {
+                PeriodEnd = _periodEnd.Value,
+                Notes = _closingNotes
+            };
+            var success = await AccountingClient.ClosePeriodAsync(request);
+            if (success)
+            {
+                Snackbar.Add($"Period ending {_periodEnd.Value:yyyy-MM-dd} closed successfully.", Severity.Success);
+                _closeHistory.Insert(0, new PeriodCloseRecord
+                {
+                    PeriodEnd = _periodEnd.Value,
+                    ClosedDate = DateTime.UtcNow,
+                    ClosedBy = "current_user",
+                    Notes = _closingNotes
+                });
+            }
+            else
+            {
+                Snackbar.Add("Period close failed. Check logs for details.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Period close error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _closing = false;
+        }
+    }
+
+    public class ChecklistItem
+    {
+        public string Description { get; set; } = string.Empty;
+        public bool Completed { get; set; }
+    }
+
+    public class PeriodCloseRecord
+    {
+        public DateTime PeriodEnd { get; set; }
+        public DateTime ClosedDate { get; set; }
+        public string ClosedBy { get; set; } = string.Empty;
+        public string Notes { get; set; } = string.Empty;
+    }
+}

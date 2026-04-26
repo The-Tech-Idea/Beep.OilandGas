@@ -17,6 +17,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<CreateSqliteResult> CreateSqliteAsync(CreateSqliteRequest request);
         Task<SchemaMigrationPlanResult> PlanSchemaMigrationAsync(SchemaMigrationPlanRequest request);
         Task<SchemaMigrationApprovalResult> ApproveSchemaMigrationPlanAsync(SchemaMigrationApprovalRequest request);
+        Task<SchemaMigrationCiValidationResult> ValidateMigrationPlanForCiAsync(string planId);
         Task<SchemaMigrationExecuteResult> ExecuteSchemaMigrationPlanAsync(SchemaMigrationExecuteRequest request);
         Task<OperationStartResponse> StartSchemaMigrationExecutionAsync(SchemaMigrationExecuteRequest request);
         Task<SchemaMigrationProgressResult> GetSchemaMigrationProgressAsync(string executionToken);

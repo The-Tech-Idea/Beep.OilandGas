@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
-using Beep.OilandGas.PPDM39.Models;
-using DomainApplicationComponent = Beep.OilandGas.Models.Data.PermitsAndApplications.APPLICATION_COMPONENT;
+using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
 using PpdmApplicationComponent = Beep.OilandGas.PPDM39.Models.APPLICATION_COMPONENT;
 
 namespace Beep.OilandGas.PermitsAndApplications.DataMapping
@@ -57,49 +56,9 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
                 SUBMISSION_DESCRIPTION = ppdmApplication.SUBMISSION_DESC
             };
 
-            // Map attachments
-            if (attachments != null)
-            {
-                application.ATTACHMENTS = attachments.Select(a => new APPLICATION_ATTACHMENT
-                {
-                    APPLICATION_ATTACHMENT_ID = a.ATTACHMENT_ID ?? Guid.NewGuid().ToString(),
-                    PERMIT_APPLICATION_ID = ppdmApplication.APPLICATION_ID ?? string.Empty,
-                    FILE_NAME = a.PHYSICAL_ITEM_ID,
-                    FILE_TYPE = a.ATTACHMENT_TYPE,
-                    FILE_SIZE = null,
-                    UPLOAD_DATE = a.ROW_CREATED_DATE,
-                    DESCRIPTION = a.ATTACHMENT_DESCRIPTION,
-                    DOCUMENT_TYPE = a.ATTACHMENT_TYPE,
-                    ACTIVE_IND = a.ACTIVE_IND
-                }).ToList();
-            }
-
-            // Map areas
-            if (areas != null)
-            {
-                application.Areas = areas.Select(a => new APPLICATION_AREA
-                {
-                    AREA_ID = a.AREA_ID ?? string.Empty,
-                    AREA_NAME = a.AREA_ID ?? a.DESCRIPTION,
-                    AREA_TYPE = a.AREA_TYPE,
-                    LEGAL_DESCRIPTION = a.DESCRIPTION ?? a.REMARK
-                }).ToList();
-            }
-
-            // Map components
-            if (components != null)
-            {           
-                application.Components = components
-                    .Where(c => !string.IsNullOrEmpty(c.APPLICATION_COMPONENT_TYPE))
-                    .Select((c, index) => new DomainApplicationComponent
-                    {
-                        ComponentId = $"{c.APPLICATION_ID}_{c.COMPONENT_OBS_NO}",
-                        ComponentType = c.APPLICATION_COMPONENT_TYPE ?? string.Empty,
-                        Description = c.REMARK,
-                        Value = c.UWI ?? c.AREA_ID ?? c.FACILITY_ID ?? c.EQUIPMENT_ID, // Use relevant ID as value
-                        SequenceNumber = (int)c.COMPONENT_OBS_NO
-                    }).ToList();
-            }
+            _ = attachments;
+            _ = areas;
+            _ = components;
 
             return application;
         }

@@ -273,75 +273,246 @@ namespace Beep.OilandGas.ProductionOperations.Services
         public async Task RecordWellProductionAsync(WellProductionData productionData, string userId)
         {
             if (productionData == null) throw new ArgumentNullException(nameof(productionData));
+            if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID required", nameof(userId));
             _logger?.LogInformation("Recording well production for {WellUWI}", productionData.WellUWI);
-            await Task.CompletedTask;
+
+            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(PDEN_VOL_SUMMARY), _connectionName, PDEN_VOL_SUMMARY_TABLE, null);
+
+            var entity = new PDEN_VOL_SUMMARY
+            {
+                PDEN_ID = productionData.WellUWI,
+                PDEN_SUBTYPE = "WELL",
+                PERIOD_ID = $"{productionData.ProductionDate:yyyyMM}",
+                PDEN_SOURCE = "DAILY_REPORT",
+                VOLUME_METHOD = "MEASURED",
+                ACTIVITY_TYPE = "PRODUCTION",
+                PERIOD_TYPE = "DAILY",
+                AMENDMENT_SEQ_NO = 0,
+                VOLUME_DATE = productionData.ProductionDate,
+                OIL_VOLUME = productionData.OilVolume,
+                GAS_VOLUME = productionData.GasVolume,
+                WATER_VOLUME = productionData.WaterVolume,
+                ACTIVE_IND = "Y"
+            };
+
+            if (entity is IPPDMEntity ppdmEntity)
+                _commonColumnHandler.PrepareForInsert(ppdmEntity, userId);
+
+            await repo.InsertAsync(entity, userId);
+            _logger?.LogInformation("Recorded well production for {WellUWI} on {Date}", productionData.WellUWI, productionData.ProductionDate);
         }
 
         public async Task<List<WellProductionData>> GetWellProductionAsync(string wellUWI, DateTime startDate, DateTime endDate)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
             _logger?.LogInformation("Getting well production for {WellUWI}", wellUWI);
-            return await Task.FromResult(new List<WellProductionData>());
+
+            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(PDEN_VOL_SUMMARY), _connectionName, PDEN_VOL_SUMMARY_TABLE, null);
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "PDEN_ID", Operator = "=", FilterValue = wellUWI },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            var entities = await repo.GetAsync(filters);
+            return entities.Cast<PDEN_VOL_SUMMARY>()
+                .Where(e => e.VOLUME_DATE >= startDate && e.VOLUME_DATE <= endDate)
+                .OrderByDescending(e => e.VOLUME_DATE)
+                .Select(e => new WellProductionData
+                {
+                    WellUWI = e.PDEN_ID ?? string.Empty,
+                    ProductionDate = e.VOLUME_DATE ?? DateTime.MinValue,
+                    OilVolume = e.OIL_VOLUME,
+                    GasVolume = e.GAS_VOLUME,
+                    WaterVolume = e.WATER_VOLUME,
+                    OperationalStatus = e.ACTIVE_IND == "Y" ? "Active" : "Inactive"
+                })
+                .ToList();
         }
 
         public async Task<WellUptime> CalculateWellUptimeAsync(string wellUWI, DateTime startDate, DateTime endDate)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
             _logger?.LogInformation("Calculating well uptime for {WellUWI}", wellUWI);
-            return await Task.FromResult(new WellUptime { UptimePercentage = 95.0m });
+
+            var production = await GetWellProductionAsync(wellUWI, startDate, endDate);
+            var totalDays = (endDate - startDate).Days + 1;
+            var producingDays = production.Select(p => p.ProductionDate.Date).Distinct().Count();
+            var downDays = totalDays - producingDays;
+
+            return new WellUptime
+            {
+                WellUWI = wellUWI,
+                StartDate = startDate,
+                EndDate = endDate,
+                TotalDays = totalDays,
+                ProducingDays = producingDays,
+                DownDays = downDays,
+                UptimePercentage = totalDays > 0 ? Math.Round((decimal)producingDays / totalDays * 100, 2) : 0m
+            };
         }
 
         public async Task<WellStatus> GetWellStatusAsync(string wellUWI)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
             _logger?.LogInformation("Getting well status for {WellUWI}", wellUWI);
-            return await Task.FromResult(new WellStatus
+
+            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(WELL), _connectionName, "WELL", null);
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellUWI },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            var entities = await repo.GetAsync(filters);
+            var well = entities.Cast<WELL>().FirstOrDefault();
+
+            return new WellStatus
             {
                 WellUWI = wellUWI,
                 StatusDate = DateTime.UtcNow,
-                OperationalStatus = "Active",
-                WellType = "Horizontal",
-                CurrentOilRate = 1250m,
-                CurrentGasRate = 950m,
-                CurrentWaterRate = 220m,
-                WellheadPressure = 1500m,
-                CasingPressure = 1200m,
+                OperationalStatus = well?.CURRENT_STATUS ?? "Unknown",
+                WellType = well?.WELL_TYPE ?? "Unknown",
+                CurrentOilRate = 0m,
+                CurrentGasRate = 0m,
+                CurrentWaterRate = 0m,
                 CurrentIssues = new List<WellIssue>()
-            });
+            };
         }
 
         public async Task UpdateWellParametersAsync(string wellUWI, WellParameters parameters, string userId)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
+            if (parameters == null) throw new ArgumentNullException(nameof(parameters));
+            if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID required", nameof(userId));
             _logger?.LogInformation("Updating well parameters for {WellUWI}", wellUWI);
-            await Task.CompletedTask;
+
+            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(WELL), _connectionName, "WELL", null);
+
+            var existing = (await repo.GetAsync(new List<AppFilter>
+            {
+                new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellUWI },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            })).Cast<WELL>().FirstOrDefault();
+
+            if (existing == null)
+                throw new InvalidOperationException($"Well {wellUWI} not found");
+
+            if (parameters.FlowingTubingPressure.HasValue)
+                existing.FINAL_TD = parameters.FlowingTubingPressure.Value;
+            if (parameters.CasingPressure.HasValue)
+                existing.DRILL_TD = parameters.CasingPressure.Value;
+
+            await repo.UpdateAsync(existing, userId);
+            _logger?.LogInformation("Updated well parameters for {WellUWI}", wellUWI);
         }
 
         public async Task RecordEquipmentMaintenanceAsync(EquipmentMaintenance maintenance, string userId)
         {
             if (maintenance == null) throw new ArgumentNullException(nameof(maintenance));
+            if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID required", nameof(userId));
             _logger?.LogInformation("Recording equipment maintenance for {EquipmentId}", maintenance.EquipmentId);
-            await Task.CompletedTask;
+
+            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(EQUIPMENT_MAINTAIN), _connectionName, "EQUIPMENT_MAINTAIN", null);
+
+            var entity = new EQUIPMENT_MAINTAIN
+            {
+                EQUIPMENT_ID = maintenance.EquipmentId,
+                MAINT_TYPE = maintenance.MaintenanceType ?? "PREVENTIVE",
+                MAINT_STATUS = maintenance.Status ?? "COMPLETED",
+                ACTIVE_IND = "Y"
+            };
+
+            if (entity is IPPDMEntity ppdmEntity)
+                _commonColumnHandler.PrepareForInsert(ppdmEntity, userId);
+
+            await repo.InsertAsync(entity, userId);
+            _logger?.LogInformation("Recorded equipment maintenance for {EquipmentId}", maintenance.EquipmentId);
         }
 
         public async Task<List<EquipmentMaintenance>> GetEquipmentMaintenanceHistoryAsync(string equipmentId, DateTime startDate, DateTime endDate)
         {
             if (string.IsNullOrWhiteSpace(equipmentId)) throw new ArgumentException("Equipment ID required", nameof(equipmentId));
             _logger?.LogInformation("Getting maintenance history for {EquipmentId}", equipmentId);
-            return await Task.FromResult(new List<EquipmentMaintenance>());
+
+            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(EQUIPMENT_MAINTAIN), _connectionName, "EQUIPMENT_MAINTAIN", null);
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "EQUIPMENT_ID", Operator = "=", FilterValue = equipmentId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            var entities = await repo.GetAsync(filters);
+            return entities.Cast<EQUIPMENT_MAINTAIN>()
+                .Where(e => e.ROW_CREATED_DATE >= startDate && e.ROW_CREATED_DATE <= endDate)
+                .Select(e => new EquipmentMaintenance
+                {
+                    EquipmentId = e.EQUIPMENT_ID ?? string.Empty,
+                    MaintenanceType = e.MAINT_TYPE,
+                    Status = e.MAINT_STATUS,
+                    MaintenanceDate = e.ROW_CREATED_DATE ?? DateTime.MinValue
+                })
+                .OrderByDescending(e => e.MaintenanceDate)
+                .ToList();
         }
 
         public async Task ScheduleMaintenanceAsync(MaintenanceSchedule schedule, string userId)
         {
             if (schedule == null) throw new ArgumentNullException(nameof(schedule));
+            if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID required", nameof(userId));
             _logger?.LogInformation("Scheduling maintenance for {EquipmentId}", schedule.EquipmentId);
-            await Task.CompletedTask;
+
+            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(EQUIPMENT_MAINTAIN), _connectionName, "EQUIPMENT_MAINTAIN", null);
+
+            var entity = new EQUIPMENT_MAINTAIN
+            {
+                EQUIPMENT_ID = schedule.EquipmentId,
+                MAINT_TYPE = schedule.MaintenanceType ?? "PREVENTIVE",
+                MAINT_STATUS = "PLANNED",
+                ACTIVE_IND = "Y"
+            };
+
+            if (entity is IPPDMEntity ppdmEntity)
+                _commonColumnHandler.PrepareForInsert(ppdmEntity, userId);
+
+            await repo.InsertAsync(entity, userId);
+            _logger?.LogInformation("Scheduled maintenance for {EquipmentId}", schedule.EquipmentId);
         }
 
         public async Task<List<MaintenanceSchedule>> GetUpcomingMaintenanceAsync(DateTime startDate, DateTime endDate)
         {
             _logger?.LogInformation("Getting upcoming maintenance schedules");
-            return await Task.FromResult(new List<MaintenanceSchedule>());
+
+            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(EQUIPMENT_MAINTAIN), _connectionName, "EQUIPMENT_MAINTAIN", null);
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "MAINT_STATUS", Operator = "=", FilterValue = "PLANNED" },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            var entities = await repo.GetAsync(filters);
+            return entities.Cast<EQUIPMENT_MAINTAIN>()
+                .Where(e => e.ROW_CREATED_DATE >= startDate && e.ROW_CREATED_DATE <= endDate)
+                .Select(e => new MaintenanceSchedule
+                {
+                    EquipmentId = e.EQUIPMENT_ID ?? string.Empty,
+                    MaintenanceType = e.MAINT_TYPE,
+                    ScheduledDate = e.ROW_CREATED_DATE ?? DateTime.MinValue
+                })
+                .OrderBy(e => e.ScheduledDate)
+                .ToList();
         }
 
         public async Task<EquipmentReliability> CalculateEquipmentReliabilityAsync(string equipmentId, DateTime startDate, DateTime endDate)
@@ -365,36 +536,115 @@ namespace Beep.OilandGas.ProductionOperations.Services
         public async Task RecordFacilityProductionAsync(FacilityProduction productionData, string userId)
         {
             if (productionData == null) throw new ArgumentNullException(nameof(productionData));
+            if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID required", nameof(userId));
             _logger?.LogInformation("Recording facility production for {FacilityId}", productionData.FacilityId);
-            await Task.CompletedTask;
+
+            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(PDEN_VOL_SUMMARY), _connectionName, PDEN_VOL_SUMMARY_TABLE, null);
+
+            var entity = new PDEN_VOL_SUMMARY
+            {
+                PDEN_ID = productionData.FacilityId,
+                PDEN_SUBTYPE = "FACILITY",
+                PERIOD_ID = $"{productionData.ProductionDate:yyyyMM}",
+                PDEN_SOURCE = "FACILITY_REPORT",
+                VOLUME_METHOD = "MEASURED",
+                ACTIVITY_TYPE = "PRODUCTION",
+                PERIOD_TYPE = "DAILY",
+                AMENDMENT_SEQ_NO = 0,
+                VOLUME_DATE = productionData.ProductionDate,
+                OIL_VOLUME = productionData.OilVolume,
+                GAS_VOLUME = productionData.GasVolume,
+                WATER_VOLUME = productionData.WaterVolume,
+                ACTIVE_IND = "Y"
+            };
+
+            if (entity is IPPDMEntity ppdmEntity)
+                _commonColumnHandler.PrepareForInsert(ppdmEntity, userId);
+
+            await repo.InsertAsync(entity, userId);
+            _logger?.LogInformation("Recorded facility production for {FacilityId}", productionData.FacilityId);
         }
 
         public async Task<List<FacilityProduction>> GetFacilityProductionAsync(string facilityId, DateTime startDate, DateTime endDate)
         {
             if (string.IsNullOrWhiteSpace(facilityId)) throw new ArgumentException("Facility ID required", nameof(facilityId));
             _logger?.LogInformation("Getting facility production for {FacilityId}", facilityId);
-            return await Task.FromResult(new List<FacilityProduction>());
+
+            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(PDEN_VOL_SUMMARY), _connectionName, PDEN_VOL_SUMMARY_TABLE, null);
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "PDEN_ID", Operator = "=", FilterValue = facilityId },
+                new AppFilter { FieldName = "PDEN_SUBTYPE", Operator = "=", FilterValue = "FACILITY" },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            var entities = await repo.GetAsync(filters);
+            return entities.Cast<PDEN_VOL_SUMMARY>()
+                .Where(e => e.VOLUME_DATE >= startDate && e.VOLUME_DATE <= endDate)
+                .OrderByDescending(e => e.VOLUME_DATE)
+                .Select(e => new FacilityProduction
+                {
+                    FacilityId = e.PDEN_ID ?? string.Empty,
+                    ProductionDate = e.VOLUME_DATE ?? DateTime.MinValue,
+                    OilVolume = e.OIL_VOLUME,
+                    GasVolume = e.GAS_VOLUME,
+                    WaterVolume = e.WATER_VOLUME
+                })
+                .ToList();
         }
 
         public async Task UpdateFacilityStatusAsync(string facilityId, FacilityStatus status, string userId)
         {
             if (string.IsNullOrWhiteSpace(facilityId)) throw new ArgumentException("Facility ID required", nameof(facilityId));
+            if (status == null) throw new ArgumentNullException(nameof(status));
+            if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID required", nameof(userId));
             _logger?.LogInformation("Updating facility status for {FacilityId}", facilityId);
-            await Task.CompletedTask;
+
+            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(FACILITY), _connectionName, "FACILITY", null);
+
+            var existing = (await repo.GetAsync(new List<AppFilter>
+            {
+                new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = facilityId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            })).Cast<FACILITY>().FirstOrDefault();
+
+            if (existing == null)
+                throw new InvalidOperationException($"Facility {facilityId} not found");
+
+            existing.FACILITY_STATUS = status.OperationalStatus ?? existing.FACILITY_STATUS;
+            await repo.UpdateAsync(existing, userId);
+            _logger?.LogInformation("Updated facility status for {FacilityId}", facilityId);
         }
 
         public async Task<FacilityStatus> GetFacilityStatusAsync(string facilityId)
         {
             if (string.IsNullOrWhiteSpace(facilityId)) throw new ArgumentException("Facility ID required", nameof(facilityId));
             _logger?.LogInformation("Getting facility status for {FacilityId}", facilityId);
-            return await Task.FromResult(new FacilityStatus
+
+            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(FACILITY), _connectionName, "FACILITY", null);
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = facilityId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            var entities = await repo.GetAsync(filters);
+            var facility = entities.Cast<FACILITY>().FirstOrDefault();
+
+            return new FacilityStatus
             {
                 FacilityId = facilityId,
                 StatusDate = DateTime.UtcNow,
-                OperationalStatus = "Operational",
-                CapacityUtilization = 0.78m,
-                ProcessingEfficiency = 0.82m
-            });
+                OperationalStatus = facility?.FACILITY_STATUS ?? "Unknown",
+                CapacityUtilization = 0m,
+                ProcessingEfficiency = 0m
+            };
         }
 
         public async Task RecordSafetyIncidentAsync(SafetyIncident incident, string userId)

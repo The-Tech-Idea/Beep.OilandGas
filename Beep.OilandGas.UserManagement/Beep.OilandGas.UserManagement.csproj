@@ -43,7 +43,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="10.0.6" />
+    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="10.0.7" />
   </ItemGroup>
 
 </Project>

@@ -13,6 +13,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<CreateDemoDatabaseResponse> CreateDemoDatabaseAsync(CreateDemoDatabaseRequest request);
         Task<DeleteDemoDatabaseResponse> DeleteDemoDatabaseAsync(string connectionName);
         Task<CleanupDemoDatabasesResponse> CleanupExpiredDatabasesAsync();
+        Task<DemoDatabaseStatusResult> GetDemoDatabaseStatusAsync(string connectionName);
         List<DemoDatabaseMetadata> GetUserDemoDatabases(string userId);
         List<DemoDatabaseMetadata> GetAllDemoDatabases();
     }

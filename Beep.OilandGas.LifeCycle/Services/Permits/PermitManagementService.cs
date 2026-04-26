@@ -103,7 +103,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
                     COUNTRY = mappedApplication.COUNTRY,
                     STATE_PROVINCE = mappedApplication.STATE_PROVINCE,
                     REGULATORY_AUTHORITY = mappedApplication.REGULATORY_AUTHORITY,
-                    CREATED_DATE = mappedApplication.CREATED_DATE,
+                    ROW_CREATED_DATE = mappedApplication.CREATED_DATE,
                     SUBMITTED_DATE = mappedApplication.SUBMITTED_DATE,
                     RECEIVED_DATE = mappedApplication.RECEIVED_DATE,
                     DECISION_DATE = mappedApplication.DECISION_DATE,
@@ -116,9 +116,6 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
                     REMARKS = mappedApplication.REMARKS,
                     SUBMISSION_COMPLETE = mappedApplication.SUBMISSION_COMPLETE,
                     SUBMISSION_DESCRIPTION = mappedApplication.SUBMISSION_DESCRIPTION,
-                    ATTACHMENTS = mappedApplication.ATTACHMENTS,
-                    AREAS = mappedApplication.Areas,
-                    COMPONENTS = mappedApplication.Components,
                     WELL_UWI = application.WELL_UWI, // Preserve from original
                     TARGET_FORMATION = application.TARGET_FORMATION,
                     PROPOSED_DEPTH = application.PROPOSED_DEPTH,
@@ -182,7 +179,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
                     COUNTRY = mappedApplication.COUNTRY,
                     STATE_PROVINCE = mappedApplication.STATE_PROVINCE,
                     REGULATORY_AUTHORITY = mappedApplication.REGULATORY_AUTHORITY,
-                    CREATED_DATE = mappedApplication.CREATED_DATE,
+                    ROW_CREATED_DATE = mappedApplication.CREATED_DATE,
                     SUBMITTED_DATE = mappedApplication.SUBMITTED_DATE,
                     RECEIVED_DATE = mappedApplication.RECEIVED_DATE,
                     DECISION_DATE = mappedApplication.DECISION_DATE,
@@ -195,14 +192,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
                     REMARKS = mappedApplication.REMARKS,
                     SUBMISSION_COMPLETE = mappedApplication.SUBMISSION_COMPLETE,
                     SUBMISSION_DESCRIPTION = mappedApplication.SUBMISSION_DESCRIPTION,
-                    ATTACHMENTS = mappedApplication.ATTACHMENTS,
-                    AREAS = mappedApplication.Areas,
-                    COMPONENTS = mappedApplication.Components,
                     WELL_UWI = application.WELL_UWI, // Preserve from original
-                    TARGET_FORMATION = application.TARGET_FORMATION,
-                    PROPOSED_DEPTH = application.PROPOSED_DEPTH,
-                    DRILLING_METHOD = application.DRILLING_METHOD,
-                    SURFACE_OWNER_NOTIFIED = application.SURFACE_OWNER_NOTIFIED,
                     ENVIRONMENTAL_PERMIT_TYPE = application.ENVIRONMENTAL_PERMIT_TYPE, // Preserve from original
                     WASTE_TYPE = application.WASTE_TYPE,
                     WASTE_VOLUME = application.WASTE_VOLUME,
@@ -271,7 +261,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
                     COUNTRY = mappedApplication.COUNTRY,
                     STATE_PROVINCE = mappedApplication.STATE_PROVINCE,
                     REGULATORY_AUTHORITY = mappedApplication.REGULATORY_AUTHORITY,
-                    CREATED_DATE = mappedApplication.CREATED_DATE,
+                    ROW_CREATED_DATE = mappedApplication.CREATED_DATE,
                     SUBMITTED_DATE = mappedApplication.SUBMITTED_DATE,
                     RECEIVED_DATE = mappedApplication.RECEIVED_DATE,
                     DECISION_DATE = mappedApplication.DECISION_DATE,
@@ -284,10 +274,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
                     REMARKS = mappedApplication.REMARKS,
                     SUBMISSION_COMPLETE = mappedApplication.SUBMISSION_COMPLETE,
                     SUBMISSION_DESCRIPTION = mappedApplication.SUBMISSION_DESCRIPTION,
-                    ATTACHMENTS = mappedApplication.ATTACHMENTS,
-                    AREAS = mappedApplication.Areas,
-                    COMPONENTS = mappedApplication.Components,
-                    WELL_UWI = application.WELL_UWI, // Preserve from original
+                    INJECTION_WELL_UWI = application.INJECTION_WELL_UWI, // Preserve from original
                     INJECTION_TYPE = application.INJECTION_TYPE, // Preserve from original
                     INJECTION_ZONE = application.INJECTION_ZONE,
                     INJECTION_FLUID = application.INJECTION_FLUID,

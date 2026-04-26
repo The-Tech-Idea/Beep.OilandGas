@@ -3,6 +3,7 @@ using Beep.OilandGas.Models.Data.HSE;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
+using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
@@ -12,6 +13,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.HSE;
 
 public class BarrierManagementService : IBarrierManagementService
 {
+    private const string PrimaryFieldComponentRole = "PRIMARY_FIELD_CONTEXT";
+
     private readonly IDMEEditor                _editor;
     private readonly ICommonColumnHandler      _commonColumnHandler;
     private readonly IPPDM39DefaultsRepository _defaults;
@@ -44,49 +47,38 @@ public class BarrierManagementService : IBarrierManagementService
             new AppFilter { FieldName = "ACTIVE_IND",  Operator = "=", FilterValue = "Y" },
         };
 
-        var rows = (await repo.GetAsync(filters)).ToList();
-        var result = new List<BarrierRecord>();
-
-        foreach (var row in rows)
-        {
-            var compType = GetStr(row, "COMPONENT_TYPE");
-            if (!compType.StartsWith("BARRIER")) continue;
-
-            var equipId = GetStr(row, "EQUIP_ID");
-            var status = compType switch
-            {
-                "BARRIER_FAILED"    => BarrierStatus.Failed,
-                "BARRIER_DEGRADED"  => BarrierStatus.Degraded,
-                "BARRIER_EFFECTIVE" => BarrierStatus.Effective,
-                _                   => BarrierStatus.NotApplicable,
-            };
-
-            result.Add(new BarrierRecord(
-                EquipId:     equipId,
-                BarrierName: GetStr(row, "COMPONENT_NOTES"),
-                BarrierType: "PHYSICAL",
-                BarrierSide: BarrierSide.Left,
-                Status:      status,
-                FailureDesc: GetStr(row, "COMPONENT_NOTES")));
-        }
-
-        return result;
+        return (await repo.GetAsync(filters))
+            .OfType<HSE_INCIDENT_COMPONENT>()
+            .Where(IsBarrierComponent)
+            .OrderBy(component => component.COMPONENT_OBS_NO)
+            .Select(component => new BarrierRecord(
+                EquipId: component.EQUIPMENT_ID ?? string.Empty,
+                BarrierName: !string.IsNullOrWhiteSpace(component.EQUIPMENT_ID) ? component.EQUIPMENT_ID : component.COMPONENT_TYPE ?? string.Empty,
+                BarrierType: component.COMPONENT_TYPE ?? string.Empty,
+                BarrierSide: component.COMPONENT_ROLE ?? BarrierSide.Left,
+                Status: string.IsNullOrWhiteSpace(component.INCIDENT_TYPE) ? BarrierStatus.NotApplicable : component.INCIDENT_TYPE,
+                FailureDesc: component.REMARK))
+            .ToList();
     }
 
     public async Task AddBarrierAsync(string incidentId, AddBarrierRequest request, string userId)
     {
         var repo = await BuildComponentRepoAsync();
-        var compType = request.BarrierSide == BarrierSide.Left
-            ? "BARRIER_EFFECTIVE"
-            : "BARRIER_EFFECTIVE";
+        var primaryFieldComponent = await GetPrimaryFieldComponentAsync(incidentId);
+        var nextObsNo = await GetNextComponentObsNoAsync(incidentId);
 
-        var entity = new
+        var entity = new HSE_INCIDENT_COMPONENT
         {
-            INCIDENT_ID      = incidentId,
-            EQUIP_ID         = request.EquipId,
-            COMPONENT_TYPE   = compType,
-            COMPONENT_NOTES  = request.FailureDesc ?? string.Empty,
-            ACTIVE_IND       = "Y",
+            INCIDENT_ID = incidentId,
+            COMPONENT_OBS_NO = nextObsNo,
+            ACTIVE_IND = "Y",
+            COMPONENT_ROLE = request.BarrierSide,
+            COMPONENT_TYPE = request.BarrierType,
+            EQUIPMENT_ID = request.EquipId,
+            FIELD_ID = primaryFieldComponent?.FIELD_ID,
+            INCIDENT_TYPE = BarrierStatus.Effective,
+            JURISDICTION = primaryFieldComponent?.JURISDICTION,
+            REMARK = request.FailureDesc,
         };
 
         await repo.InsertAsync(entity, userId);
@@ -98,22 +90,16 @@ public class BarrierManagementService : IBarrierManagementService
         var filters = new List<AppFilter>
         {
             new AppFilter { FieldName = "INCIDENT_ID", Operator = "=", FilterValue = incidentId },
-            new AppFilter { FieldName = "EQUIP_ID",    Operator = "=", FilterValue = equipId    },
+            new AppFilter { FieldName = "EQUIPMENT_ID", Operator = "=", FilterValue = equipId    },
             new AppFilter { FieldName = "ACTIVE_IND",  Operator = "=", FilterValue = "Y"        },
         };
 
-        var rows = (await repo.GetAsync(filters)).ToList();
-        if (rows.Count == 0) return;
+        var row = (await repo.GetAsync(filters))
+            .OfType<HSE_INCIDENT_COMPONENT>()
+            .FirstOrDefault(IsBarrierComponent);
+        if (row is null) return;
 
-        var row = rows[0];
-        var compType = status switch
-        {
-            BarrierStatus.Failed        => "BARRIER_FAILED",
-            BarrierStatus.Degraded      => "BARRIER_DEGRADED",
-            BarrierStatus.Effective     => "BARRIER_EFFECTIVE",
-            _                           => "BARRIER_NOT_APPLICABLE",
-        };
-        SetStr(row, "COMPONENT_TYPE", compType);
+        row.INCIDENT_TYPE = status;
         await repo.UpdateAsync(row, userId);
     }
 
@@ -145,14 +131,41 @@ public class BarrierManagementService : IBarrierManagementService
             entityType, _connectionName, "HSE_INCIDENT_COMPONENT");
     }
 
-    private static string GetStr(object o, string p)
+    private async Task<HSE_INCIDENT_COMPONENT?> GetPrimaryFieldComponentAsync(string incidentId)
     {
-        var prop = o.GetType().GetProperty(p);
-        return prop?.GetValue(o)?.ToString() ?? string.Empty;
+        var repo = await BuildComponentRepoAsync();
+        var filters = new List<AppFilter>
+        {
+            new AppFilter { FieldName = "INCIDENT_ID", Operator = "=", FilterValue = incidentId },
+            new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" },
+        };
+
+        return (await repo.GetAsync(filters))
+            .OfType<HSE_INCIDENT_COMPONENT>()
+            .FirstOrDefault(component => string.Equals(component.COMPONENT_ROLE, PrimaryFieldComponentRole, StringComparison.OrdinalIgnoreCase));
     }
-    private static void SetStr(object o, string p, string v)
+
+    private async Task<decimal> GetNextComponentObsNoAsync(string incidentId)
     {
-        var prop = o.GetType().GetProperty(p);
-        prop?.SetValue(o, v);
+        var repo = await BuildComponentRepoAsync();
+        var filters = new List<AppFilter>
+        {
+            new AppFilter { FieldName = "INCIDENT_ID", Operator = "=", FilterValue = incidentId },
+            new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" },
+        };
+
+        var maxObsNo = (await repo.GetAsync(filters))
+            .OfType<HSE_INCIDENT_COMPONENT>()
+            .Select(component => component.COMPONENT_OBS_NO)
+            .DefaultIfEmpty(0)
+            .Max();
+
+        return maxObsNo + 1;
+    }
+
+    private static bool IsBarrierComponent(HSE_INCIDENT_COMPONENT component)
+    {
+        return string.Equals(component.COMPONENT_ROLE, BarrierSide.Left, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(component.COMPONENT_ROLE, BarrierSide.Right, StringComparison.OrdinalIgnoreCase);
     }
 }

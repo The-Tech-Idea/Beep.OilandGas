@@ -1,0 +1,246 @@
+@page "/ppdm39/create-database/target"
+@using Beep.OilandGas.Models.Core.DTOs
+@using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.DataManagement
+@using Beep.OilandGas.Web.Services
+@inject IDataManagementService DataManagementService
+@inject ApiClient ApiClient
+@inject CreateDatabaseWizardState Wizard
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create PPDM39 Database - Target</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Setup - Step 1 of 4</MudText>
+            <MudText Typo="Typo.h5">Choose Database Target</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Select a new connection, an existing connection, or a demo database target.</MudText>
+        </MudStack>
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.ArrowBack" Href="/ppdm39/database-management">
+            Database Management
+        </MudButton>
+    </MudStack>
+
+    <MudStepper @bind-ActiveStep="_activeStep" Variant="Variant.Outlined" Color="Color.Primary" Class="mb-4">
+        <MudStep Title="Target" Icon="@Icons.Material.Filled.Storage" />
+        <MudStep Title="Foundation" Icon="@Icons.Material.Filled.AccountTree" Disabled="true" />
+        <MudStep Title="Modules" Icon="@Icons.Material.Filled.Extension" Disabled="true" />
+        <MudStep Title="Summary" Icon="@Icons.Material.Filled.CheckCircle" Disabled="true" />
+    </MudStepper>
+
+    <MudPaper Class="pa-4" Elevation="1">
+        <MudGrid>
+            <MudItem xs="12" md="4">
+                <MudSelect T="string" Label="Setup Target" Variant="Variant.Outlined" @bind-Value="Wizard.TargetMode">
+                    <MudSelectItem Value="@CreateDatabaseWizardState.TargetNewConnection">New database connection</MudSelectItem>
+                    <MudSelectItem Value="@CreateDatabaseWizardState.TargetExistingConnection">Existing connection</MudSelectItem>
+                    <MudSelectItem Value="@CreateDatabaseWizardState.TargetDemoDatabase">Demo database</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+
+            @if (Wizard.TargetMode == CreateDatabaseWizardState.TargetExistingConnection)
+            {
+                <MudItem xs="12" md="8">
+                    <MudSelect T="string" Label="Connection" Variant="Variant.Outlined" @bind-Value="Wizard.SelectedExistingConnection">
+                        @foreach (var connection in Wizard.Connections)
+                        {
+                            <MudSelectItem Value="@connection.ConnectionName">@connection.ConnectionName (@connection.DatabaseType)</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            }
+            else if (Wizard.TargetMode == CreateDatabaseWizardState.TargetDemoDatabase)
+            {
+                <MudItem xs="12" md="4">
+                    <MudTextField @bind-Value="Wizard.DemoConnectionName" Label="Demo Connection Name" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField @bind-Value="Wizard.UserId" Label="User ID" Variant="Variant.Outlined" />
+                </MudItem>
+            }
+            else
+            {
+                <MudItem xs="12" md="4">
+                    <MudSelect T="string" Label="Database Type" Variant="Variant.Outlined" @bind-Value="Wizard.SelectedDatabaseType">
+                        @foreach (var databaseType in Wizard.AvailableDatabaseTypes)
+                        {
+                            <MudSelectItem Value="@databaseType">@databaseType</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField @bind-Value="Wizard.ConnectionName" Label="Connection Name" Variant="Variant.Outlined" />
+                </MudItem>
+            }
+        </MudGrid>
+
+        @if (Wizard.TargetMode == CreateDatabaseWizardState.TargetNewConnection)
+        {
+            <MudGrid Class="mt-3">
+                <MudItem xs="12" md="4">
+                    <MudTextField @bind-Value="Wizard.Host" Label="Host/Server" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" md="2">
+                    <MudNumericField T="int?" @bind-Value="Wizard.Port" Label="Port" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField @bind-Value="Wizard.Database" Label="Database" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" md="2">
+                    <MudTextField @bind-Value="Wizard.Schema" Label="Schema" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField @bind-Value="Wizard.Username" Label="User Name" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField @bind-Value="Wizard.Password" Label="Password" Variant="Variant.Outlined" InputType="InputType.Password" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField @bind-Value="Wizard.ConnectionString" Label="Connection String" Variant="Variant.Outlined" />
+                </MudItem>
+            </MudGrid>
+        }
+
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-4">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.CheckCircle" OnClick="PrepareTargetAsync" Disabled="@(!Wizard.CanPrepareTarget || Wizard.IsPreparingTarget)">
+                @if (Wizard.IsPreparingTarget)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Preparing</MudText>
+                }
+                else
+                {
+                    <MudText>Prepare Target</MudText>
+                }
+            </MudButton>
+            @if (Wizard.TargetReady)
+            {
+                <MudChip T="string" Color="Color.Success" Size="Size.Small">@Wizard.ActiveConnectionName ready</MudChip>
+            }
+        </MudStack>
+
+        @if (Wizard.TargetResultMessage.Length > 0)
+        {
+            <MudAlert Severity="@(Wizard.TargetReady ? Severity.Success : Severity.Error)" Class="mt-4">@Wizard.TargetResultMessage</MudAlert>
+        }
+    </MudPaper>
+
+    <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+        <MudButton Variant="Variant.Text" Color="Color.Default" Href="/ppdm39/database-management">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Href="/ppdm39/create-database/foundation" Disabled="@(!Wizard.TargetReady)">
+            Continue to Foundation
+        </MudButton>
+    </MudStack>
+</MudContainer>
+
+@code {
+    private int _activeStep;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDatabaseTypesAsync();
+        await LoadConnectionsAsync();
+    }
+
+    private async Task LoadDatabaseTypesAsync()
+    {
+        try
+        {
+            Wizard.AvailableDatabaseTypes = await DataManagementService.GetAvailableDatabaseTypesAsync() ?? Wizard.AvailableDatabaseTypes;
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Database types could not be loaded.", Severity.Warning);
+        }
+    }
+
+    private async Task LoadConnectionsAsync()
+    {
+        try
+        {
+            Wizard.Connections = await DataManagementService.GetAllConnectionsAsync() ?? new();
+            Wizard.SelectedExistingConnection ??= Wizard.Connections.FirstOrDefault()?.ConnectionName;
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Connections could not be loaded.", Severity.Warning);
+        }
+    }
+
+    private async Task PrepareTargetAsync()
+    {
+        Wizard.IsPreparingTarget = true;
+        Wizard.ResetForTargetPreparation();
+
+        try
+        {
+            if (Wizard.TargetMode == CreateDatabaseWizardState.TargetExistingConnection)
+            {
+                Wizard.ActiveConnectionName = Wizard.SelectedExistingConnection ?? string.Empty;
+                var result = await DataManagementService.SetCurrentConnectionAsync(Wizard.ActiveConnectionName);
+                Wizard.TargetReady = result.Success;
+                Wizard.TargetResultMessage = result.Message;
+                return;
+            }
+
+            if (Wizard.TargetMode == CreateDatabaseWizardState.TargetDemoDatabase)
+            {
+                var demoResult = await ApiClient.PostAsync<CreateDemoDatabaseRequest, CreateDemoDatabaseResponse>(
+                    "/api/demo/create",
+                    new CreateDemoDatabaseRequest
+                    {
+                        UserId = Wizard.UserId,
+                        ConnectionName = string.IsNullOrWhiteSpace(Wizard.DemoConnectionName) ? null : Wizard.DemoConnectionName,
+                        SeedDataOption = "reference-only"
+                    });
+
+                Wizard.TargetReady = demoResult?.Success == true;
+                Wizard.ActiveConnectionName = demoResult?.ConnectionName ?? string.Empty;
+                Wizard.TargetResultMessage = demoResult?.Message ?? "Demo database creation failed.";
+                Wizard.FoundationInstalled = Wizard.TargetReady;
+                if (Wizard.TargetReady)
+                {
+                    Wizard.SchemaResult = new CreateSchemaResult
+                    {
+                        Success = true,
+                        Message = "Demo database foundation created.",
+                        SchemaName = Wizard.Schema
+                    };
+                }
+                return;
+            }
+
+            var config = Wizard.BuildConnectionConfig();
+            var testResult = await DataManagementService.TestConnectionAsync(config);
+            if (!testResult.Success)
+            {
+                Wizard.TargetResultMessage = testResult.Message;
+                return;
+            }
+
+            var saveResult = await DataManagementService.SaveConnectionAsync(new SaveConnectionRequest
+            {
+                Connection = config.ToConnectionProperties(),
+                SetAsCurrent = true,
+                OpenAfterSave = true,
+                TestAfterSave = false,
+                UserId = Wizard.UserId
+            });
+
+            Wizard.TargetReady = saveResult.Success;
+            Wizard.ActiveConnectionName = saveResult.ConnectionName ?? Wizard.ConnectionName;
+            Wizard.TargetResultMessage = saveResult.Message;
+        }
+        catch (Exception ex)
+        {
+            Wizard.TargetResultMessage = ex.Message;
+            Snackbar.Add("Target preparation failed.", Severity.Error);
+        }
+        finally
+        {
+            Wizard.IsPreparingTarget = false;
+        }
+    }
+}

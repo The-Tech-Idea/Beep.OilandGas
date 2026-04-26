@@ -77,6 +77,11 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         IFieldProductionService GetProductionService();
 
         /// <summary>
+        /// Get HSE service scoped to current field
+        /// </summary>
+        IFieldHSEService GetHSEService();
+
+        /// <summary>
         /// Get decommissioning service scoped to current field
         /// </summary>
         IFieldDecommissioningService GetDecommissioningService();

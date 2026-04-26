@@ -22,6 +22,7 @@ namespace Beep.OilandGas.Models.Data
         public string ConnectionName { get; set; } = string.Empty;
         public string PlanId { get; set; } = string.Empty;
         public string PlanHash { get; set; } = string.Empty;
+        public string ManifestHash { get; set; } = string.Empty;
         public string PolicyDecision { get; set; } = string.Empty;
         public bool RequiresManualApproval { get; set; }
         public bool CanApply { get; set; }
@@ -53,6 +54,7 @@ namespace Beep.OilandGas.Models.Data
         public string Message { get; set; } = string.Empty;
         public string PlanId { get; set; } = string.Empty;
         public string PlanHash { get; set; } = string.Empty;
+        public string ManifestHash { get; set; } = string.Empty;
         public string ApprovedBy { get; set; } = string.Empty;
         public DateTime? ApprovedOnUtc { get; set; }
     }
@@ -62,6 +64,41 @@ namespace Beep.OilandGas.Models.Data
         public string PlanId { get; set; } = string.Empty;
         public string ExecutedBy { get; set; } = string.Empty;
         public bool ResumeIfCheckpointExists { get; set; }
+        public string PlanHash { get; set; } = string.Empty;
+        public string ManifestHash { get; set; } = string.Empty;
+
+        /// <summary>
+        /// When set, the execute path validates that the stored plan hash matches this value.
+        /// A mismatch causes a hard-stop — the plan must be regenerated and re-approved.
+        /// </summary>
+        public string ExpectedPlanHash { get; set; } = string.Empty;
+
+        /// <summary>
+        /// When set, validates that the entity manifest/scope hash still matches the approved plan.
+        /// </summary>
+        public string ExpectedManifestHash { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Required when the plan contains high-risk operations (HighRiskOperationCount > 0) on
+        /// Production or Protected environment tiers. Must be set to <c>true</c> to proceed.
+        /// </summary>
+        public bool AcknowledgeHighRisk { get; set; }
+    }
+
+    public class SchemaMigrationCiValidationResult : ModelEntityBase
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public string PlanId { get; set; } = string.Empty;
+        public string PlanHash { get; set; } = string.Empty;
+        public string ManifestHash { get; set; } = string.Empty;
+        public bool CanMerge { get; set; }
+        public bool CanApply { get; set; }
+        public string PolicyDecision { get; set; } = string.Empty;
+        public int HighRiskOperationCount { get; set; }
+        public List<SchemaMigrationCiGateResult> CiGates { get; set; } = new();
+        public List<SchemaMigrationPolicyFindingResult> PolicyFindings { get; set; } = new();
+        public List<SchemaMigrationPreflightCheckResult> PreflightChecks { get; set; } = new();
     }
 
     public class SchemaMigrationExecuteResult : ModelEntityBase
@@ -70,6 +107,7 @@ namespace Beep.OilandGas.Models.Data
         public string Message { get; set; } = string.Empty;
         public string PlanId { get; set; } = string.Empty;
         public string PlanHash { get; set; } = string.Empty;
+        public string ManifestHash { get; set; } = string.Empty;
         public string ExecutionToken { get; set; } = string.Empty;
         public bool ResumedFromCheckpoint { get; set; }
         public bool RequiresOperatorIntervention { get; set; }
@@ -85,6 +123,7 @@ namespace Beep.OilandGas.Models.Data
         public string Message { get; set; } = string.Empty;
         public string PlanId { get; set; } = string.Empty;
         public string PlanHash { get; set; } = string.Empty;
+        public string ManifestHash { get; set; } = string.Empty;
         public string ExecutionToken { get; set; } = string.Empty;
         public bool IsCompleted { get; set; }
         public bool HasFailed { get; set; }
@@ -102,6 +141,7 @@ namespace Beep.OilandGas.Models.Data
         public string Message { get; set; } = string.Empty;
         public string PlanId { get; set; } = string.Empty;
         public string PlanHash { get; set; } = string.Empty;
+        public string ManifestHash { get; set; } = string.Empty;
         public string ConnectionName { get; set; } = string.Empty;
         public bool IsApproved { get; set; }
         public string ApprovedBy { get; set; } = string.Empty;

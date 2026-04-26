@@ -28,7 +28,7 @@
 		<Copy SourceFiles="$(TargetDir)$(PackageId).dll" DestinationFolder="$(ProjectDir)..\..\outputDLL\$(PackageId)\$(TargetFramework)" SkipUnchangedFiles="false" />
 	</Target>
 	<ItemGroup>
-	  <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.18" />
+	  <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.21" />
 	  <PackageReference Include="SkiaSharp" Version="3.119.2" />
 	  <PackageReference Include="SkiaSharp.Svg" Version="1.60.0" />
 	</ItemGroup>
@@ -38,9 +38,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Compile Remove="Builders\WellLogBuilder.cs" />
-		<Compile Remove="Builders\WellCorrelationBuilder.cs" />
 
+		<Compile Remove="Builders\WellCorrelationBuilder.cs" />
 		<EmbeddedResource Include="LithologySymbols\USGS-FGDC-master\SED\*.svg" />
 		<EmbeddedResource Include="LithologySymbols\USGS-FGDC-master\IGM\*.svg" />
 		<EmbeddedResource Include="Assets\WellSchematic\svg\*.svg" />

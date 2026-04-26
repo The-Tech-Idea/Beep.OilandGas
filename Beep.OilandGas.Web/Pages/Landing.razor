@@ -47,7 +47,8 @@ else if (_errorMessage != null)
             // If user is not authenticated, redirect to login
             if (string.IsNullOrEmpty(_userId))
             {
-                Nav.NavigateTo("/authentication/login");
+                var returnUrl = Uri.EscapeDataString(Nav.Uri);
+                Nav.NavigateTo($"/login?returnUrl={returnUrl}");
                 return;
             }
 

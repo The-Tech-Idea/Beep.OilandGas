@@ -10,6 +10,7 @@ using Beep.OilandGas.Models.Data;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.ApiService.Attributes;
+using PROSPECT = Beep.OilandGas.Models.Data.ProspectIdentification.PROSPECT;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
 {

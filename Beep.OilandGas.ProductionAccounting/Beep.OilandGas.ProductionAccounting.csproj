@@ -21,7 +21,7 @@
 		</None>
 	</ItemGroup>
 	<ItemGroup>
-	  <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.18" />
+	  <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.21" />
 	  <PackageReference Include="SkiaSharp" Version="3.119.2" />
 	  <PackageReference Include="SkiaSharp.Extended" Version="3.0.0" />
 	  <PackageReference Include="SkiaSharp.Svg" Version="1.60.0" />
@@ -29,6 +29,7 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />
 	  <ProjectReference Include="..\Beep.OilandGas.Accounting\Beep.OilandGas.Accounting.csproj" />
+	  <ProjectReference Include="..\Beep.OilandGas.PPDM39\Beep.OilandGas.PPDM39.csproj" />
 	  <ProjectReference Include="..\Beep.OilandGas.PPDM39.DataManagement\Beep.OilandGas.PPDM39.DataManagement.csproj" />
 	</ItemGroup>
 	<Target Name="CopyPackage" AfterTargets="Pack">

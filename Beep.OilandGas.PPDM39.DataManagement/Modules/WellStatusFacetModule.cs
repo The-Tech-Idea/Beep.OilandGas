@@ -6,14 +6,13 @@ using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using Beep.OilandGas.PPDM39.DataManagement.SeedData;
 using Beep.OilandGas.PPDM39.Models;
-using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Modules
 {
     /// <summary>
     /// Module order 20 — seeds the six PPDM 3.9 well-status reference tables.
-    /// Delegates to <see cref="WellStatusFacetSeeder"/> which already implements
-    /// idempotent, ordered seeding for this table set.
+    /// This module stays in PPDM39.DataManagement because the facet seeder is shared
+    /// PPDM reference-data infrastructure rather than a single domain workflow concern.
     /// </summary>
     public sealed class WellStatusFacetModule : ModuleSetupBase
     {
@@ -27,21 +26,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Modules
             typeof(RA_WELL_STATUS)
         };
 
-        private readonly WellStatusFacetSeeder _seeder;
+        public WellStatusFacetModule(ModuleSetupContext context) : base(context) { }
 
-        public WellStatusFacetModule(ModuleSetupContext context) : base(context)
-        {
-            _seeder = new WellStatusFacetSeeder(
-                context.Editor,
-                context.CommonColumnHandler,
-                context.Defaults,
-                context.Metadata,
-                context.ConnectionName);
-        }
-
-        public override string ModuleId   => "WELL_STATUS_FACETS";
+        public override string ModuleId => "WELL_STATUS_FACETS";
         public override string ModuleName => "Well Status Facets (PPDM 3.9)";
-        public override int    Order      => 20;
+        public override int Order => 20;
         public override IReadOnlyList<Type> EntityTypes => _entityTypes;
 
         public override async Task<ModuleSetupResult> SeedAsync(
@@ -54,15 +43,22 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Modules
 
             try
             {
-                var facetResult = await _seeder.SeedAllAsync(userId);
-                result.Success         = facetResult.Success;
+                var seeder = new WellStatusFacetSeeder(
+                    _ctx.Editor,
+                    _ctx.CommonColumnHandler,
+                    _ctx.Defaults,
+                    _ctx.Metadata,
+                    connectionName);
+
+                var facetResult = await seeder.SeedAllAsync(userId);
+                result.Success = facetResult.Success;
                 result.RecordsInserted = facetResult.FacetTypeRows
                                        + facetResult.FacetValueRows
                                        + facetResult.FacetQualifierRows
                                        + facetResult.FacetQualValueRows
                                        + facetResult.RaFacetTypeRows
                                        + facetResult.RaFacetValueRows;
-                result.TablesSeeded    = 6;
+                result.TablesSeeded = 6;
 
                 if (!facetResult.Success)
                     result.Errors.Add(facetResult.Message ?? "WellStatusFacetSeeder reported failure");

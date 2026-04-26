@@ -1,0 +1,31 @@
+@using MudBlazor
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudStack Row="true" AlignItems="AlignItems.Center">
+                <MudIcon Icon="@Icons.Material.Filled.HelpOutline" Color="Color.Primary" Size="Size.Large" />
+                <MudText Typo="Typo.h5">@HelpContent?.Title</MudText>
+            </MudStack>
+            <MudDivider />
+            <MudText Typo="Typo.body1">@HelpContent?.Content</MudText>
+            <MudAlert Severity="Severity.Info" Class="mt-2">
+                <MudText Typo="Typo.body2">
+                    <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" />
+                    For additional support, contact your system administrator or refer to the deployment guide.
+                </MudText>
+            </MudAlert>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Color="Color.Primary">Got it</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public PageHelp? HelpContent { get; set; }
+
+    private void Cancel() => MudDialog.Cancel();
+}

@@ -13,8 +13,10 @@ public interface IBusinessProcessServiceClient
     Task<ProcessDefinition?> GetDefinitionAsync(string processId, CancellationToken cancellationToken = default);
     Task<ProcessInstance?> StartInstanceAsync(ProcessInstanceRequest request, CancellationToken cancellationToken = default);
     Task<ProcessInstance?> SubmitComplianceReportAsync(ComplianceReportRequest request, CancellationToken cancellationToken = default);
+    Task<ProcessInstance?> ReportHseIncidentAsync(HSEIncidentReportRequest request, CancellationToken cancellationToken = default);
     Task<List<ProcessInstanceSummary>> GetHseIncidentsAsync(string? status = null, string? severity = null, CancellationToken cancellationToken = default);
     Task<ProcessInstance?> GetHseIncidentAsync(string incidentId, CancellationToken cancellationToken = default);
+    Task<ProcessInstance?> EnsureHseIncidentWorkflowAsync(string incidentId, CancellationToken cancellationToken = default);
     Task SubmitHseIncidentRcaAsync(string incidentId, HSEIncidentUpdateRequest request, CancellationToken cancellationToken = default);
     Task RaiseHseCorrectiveActionsAsync(string incidentId, HSEIncidentUpdateRequest request, CancellationToken cancellationToken = default);
     Task CloseHseCorrectiveActionAsync(string incidentId, string actionId, CorrectiveActionCloseRequest request, CancellationToken cancellationToken = default);

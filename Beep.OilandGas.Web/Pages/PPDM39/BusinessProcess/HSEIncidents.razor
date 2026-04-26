@@ -1,7 +1,7 @@
 ﻿@page "/ppdm39/hse/incidents"
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.HSE
-@inject ApiClient ApiClient
+@inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
 @inject Beep.OilandGas.Web.Services.IHSEServiceClient HSEClient
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
@@ -20,10 +20,31 @@
         <MudButton Variant="Variant.Filled"
                    Color="Color.Error"
                    StartIcon="@Icons.Material.Filled.AddAlert"
+                   Disabled="@_requiresLogin"
                    OnClick="OpenReportDialogAsync">
             Report Incident
         </MudButton>
     </MudStack>
+
+    @if (!string.IsNullOrWhiteSpace(_loadWarning))
+    {
+        <MudAlert Severity="@(_requiresLogin ? Severity.Info : Severity.Warning)"
+                  Variant="Variant.Outlined"
+                  Class="mb-4">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
+                <MudText Typo="Typo.body2">@_loadWarning</MudText>
+                @if (_requiresLogin)
+                {
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Login"
+                               Href="@BuildLoginUrl()">
+                        Sign In
+                    </MudButton>
+                }
+            </MudStack>
+        </MudAlert>
+    }
 
     @* ── KPI chips ───────────────────────────────────────────────────── *@
     <MudStack Row="true" Spacing="2" Class="mb-4" Wrap="Wrap.Wrap">
@@ -34,6 +55,12 @@
         <MudDivider Vertical="true" FlexItem="true" />
         <MudChip T="string" Color="Color.Default">Open: @_openCount</MudChip>
         <MudChip T="string" Color="Color.Success">Closed: @_closedCount</MudChip>
+        @if (_missingWorkflowCount > 0)
+        {
+            <MudChip T="string" Color="Color.Warning" Icon="@Icons.Material.Filled.SyncProblem">
+                Missing Workflow: @_missingWorkflowCount
+            </MudChip>
+        }
     </MudStack>
 
     @* ── Severity filter ─────────────────────────────────────────────── *@
@@ -83,12 +110,36 @@
                     <StatusBadge Status="@context.Item.Status" />
                 </CellTemplate>
             </TemplateColumn>
+            <TemplateColumn Title="Workflow" Sortable="false">
+                <CellTemplate>
+                    <MudChip T="string"
+                             Variant="Variant.Outlined"
+                             Size="Size.Small"
+                             Color="@(context.Item.HasWorkflow ? Color.Success : Color.Warning)">
+                        @context.Item.WorkflowStatus
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
             <PropertyColumn Property="r => r.ReportedBy"  Title="Reported By" />
             <TemplateColumn Title="" Sortable="false">
                 <CellTemplate>
-                    <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
-                                   Size="Size.Small" Color="Color.Primary"
-                                   OnClick='@(() => NavigationManager.NavigateTo($"/ppdm39/hse/incidents/{Uri.EscapeDataString(context.Item.IncidentId)}"))' />
+                    <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                        @if (!context.Item.HasWorkflow)
+                        {
+                            <MudButton Variant="Variant.Text"
+                                       Size="Size.Small"
+                                       Color="Color.Warning"
+                                       StartIcon="@Icons.Material.Filled.Sync"
+                                       Disabled="@(_ensuringWorkflowIncidentId == context.Item.IncidentId)"
+                                       OnClick='@(() => EnsureWorkflowAsync(context.Item.IncidentId))'>
+                                @(_ensuringWorkflowIncidentId == context.Item.IncidentId ? "Creating..." : "Create Workflow")
+                            </MudButton>
+                        }
+
+                        <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
+                                       Size="Size.Small" Color="Color.Primary"
+                                       OnClick='@(() => NavigationManager.NavigateTo($"/ppdm39/hse/incidents/{Uri.EscapeDataString(context.Item.IncidentId)}"))' />
+                    </MudStack>
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
@@ -154,13 +205,17 @@
     private int _tier4Count = 0;
     private int _openCount  = 0;
     private int _closedCount = 0;
+    private int _missingWorkflowCount = 0;
+    private string? _loadWarning;
+    private bool _requiresLogin;
 
     private List<IncidentRow> _incidents = new();
 
     private IEnumerable<IncidentRow> FilteredIncidents => _incidents.Where(i =>
         (string.IsNullOrWhiteSpace(_search) ||
             i.Description.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
-            i.IncidentType.Contains(_search, StringComparison.OrdinalIgnoreCase)) &&
+            i.IncidentType.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+            i.WorkflowStatus.Contains(_search, StringComparison.OrdinalIgnoreCase)) &&
         (string.IsNullOrWhiteSpace(_tierFilter)   || i.Tier   == _tierFilter) &&
         (string.IsNullOrWhiteSpace(_statusFilter) || i.Status.Equals(_statusFilter, StringComparison.OrdinalIgnoreCase)));
 
@@ -184,17 +239,43 @@
     {
         try
         {
-            var data = await HSEClient.GetIncidentsAsync();
-            _incidents = data.Select(i => new IncidentRow(
-                i.IncidentId,
-                i.IncidentDate,
-                i.IncidentType,
-                i.Description,
-                i.Location,
-                i.Tier.ToString(),
-                i.CurrentState,
-                i.InvestigatorId ?? string.Empty
-            )).ToList();
+            var incidentsTask = HSEClient.GetIncidentsAsync();
+            var workflowsTask = BusinessProcessClient.GetHseIncidentsAsync();
+
+            await Task.WhenAll(incidentsTask, workflowsTask);
+
+            var incidents = await incidentsTask;
+            var workflows = (await workflowsTask)
+                .Where(workflow => !string.IsNullOrWhiteSpace(workflow.EntityId) && !string.IsNullOrWhiteSpace(workflow.InstanceId))
+                .GroupBy(workflow => workflow.EntityId, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    grouping => grouping.Key,
+                    grouping => grouping.OrderByDescending(workflow => workflow.StartedAt).First(),
+                    StringComparer.OrdinalIgnoreCase);
+
+            _incidents = incidents
+                .Select(incident =>
+                {
+                    workflows.TryGetValue(incident.IncidentId, out var workflow);
+                    var hasWorkflow = workflow != null;
+                    var reportedBy = hasWorkflow && !string.IsNullOrWhiteSpace(workflow?.StartedBy)
+                        ? workflow.StartedBy
+                        : incident.InvestigatorId ?? string.Empty;
+
+                    return new IncidentRow(
+                        incident.IncidentId,
+                        incident.IncidentDate,
+                        incident.IncidentType,
+                        incident.Description,
+                        incident.Location,
+                        incident.Tier.ToString(),
+                        incident.CurrentState,
+                        hasWorkflow,
+                        hasWorkflow ? "Linked" : "Missing",
+                        reportedBy);
+                })
+                .OrderByDescending(incident => incident.IncidentDate)
+                .ToList();
 
             _tier1Count = _incidents.Count(i => i.Tier == "1");
             _tier2Count = _incidents.Count(i => i.Tier == "2");
@@ -202,16 +283,41 @@
             _tier4Count = _incidents.Count(i => i.Tier == "4");
             _openCount   = _incidents.Count(i => !string.Equals(i.Status, "CLOSED", StringComparison.OrdinalIgnoreCase));
             _closedCount = _incidents.Count(i => string.Equals(i.Status, "CLOSED", StringComparison.OrdinalIgnoreCase));
+            _missingWorkflowCount = _incidents.Count(i => !i.HasWorkflow);
+            _loadWarning = null;
+            _requiresLogin = false;
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
+        {
+            _incidents = new();
+            _tier1Count = 0;
+            _tier2Count = 0;
+            _tier3Count = 0;
+            _tier4Count = 0;
+            _openCount = 0;
+            _closedCount = 0;
+            _missingWorkflowCount = 0;
+            _requiresLogin = true;
+            _loadWarning = "Sign in to load HSE incidents and workflow status for the current field.";
         }
         catch
         {
+            _requiresLogin = false;
+            _loadWarning = "Could not load HSE incidents.";
             Snackbar.Add("Could not load HSE incidents.", Severity.Warning);
         }
+    }
+
+    private string BuildLoginUrl()
+    {
+        var returnUrl = Uri.EscapeDataString(NavigationManager.Uri);
+        return $"/login?returnUrl={returnUrl}";
     }
 
     // ── Report-incident dialog state ─────────────────────────────────────
     private bool     _showReportDialog  = false;
     private bool     _reporting         = false;
+    private string   _ensuringWorkflowIncidentId = string.Empty;
     private string   _rIncidentType     = "SPILL";
     private int      _rTier             = 4;
     private DateTime _rIncidentDate     = DateTime.Today;
@@ -248,19 +354,20 @@
         _reporting = true;
         try
         {
-            var request = new ReportIncidentRequest(
-                FieldId:      string.Empty,
-                IncidentType: _rIncidentType,
-                Tier:         _rTier,
-                IncidentDate: _rIncidentDate,
-                Location:     _rLocation,
-                Description:  _rDescription,
-                Jurisdiction: _rJurisdiction);
-            var result = await HSEClient.ReportIncidentAsync(request);
+            var request = new HSEIncidentReportRequest
+            {
+                IncidentType = _rIncidentType,
+                Severity = MapTierToSeverity(_rTier),
+                IncidentDateTime = _rIncidentDate,
+                LocationDescription = _rLocation,
+                Description = _rDescription
+            };
+            var result = await BusinessProcessClient.ReportHseIncidentAsync(request);
             _showReportDialog = false;
+            await LoadIncidentsAsync();
             Snackbar.Add("Incident reported.", Severity.Success);
-            if (result != null)
-                NavigationManager.NavigateTo($"/ppdm39/hse/incidents/{Uri.EscapeDataString(result.IncidentId)}");
+            if (result != null && !string.IsNullOrWhiteSpace(result.EntityId))
+                NavigationManager.NavigateTo($"/ppdm39/hse/incidents/{Uri.EscapeDataString(result.EntityId)}");
         }
         catch (Exception)
         {
@@ -269,8 +376,41 @@
         finally { _reporting = false; }
     }
 
+    private async Task EnsureWorkflowAsync(string incidentId)
+    {
+        _ensuringWorkflowIncidentId = incidentId;
+
+        try
+        {
+            var instance = await BusinessProcessClient.EnsureHseIncidentWorkflowAsync(incidentId);
+            await LoadIncidentsAsync();
+
+            Snackbar.Add(
+                instance == null
+                    ? "Workflow was not created for the incident."
+                    : "Workflow created for the incident.",
+                instance == null ? Severity.Warning : Severity.Success);
+        }
+        catch
+        {
+            Snackbar.Add("Could not create workflow for the incident.", Severity.Error);
+        }
+        finally
+        {
+            _ensuringWorkflowIncidentId = string.Empty;
+        }
+    }
+
+    private static string MapTierToSeverity(int tier) => tier switch
+    {
+        1 => "TIER1",
+        2 => "TIER2",
+        3 => "TIER3",
+        _ => "TIER4"
+    };
+
     private record IncidentRow(
         string IncidentId, DateTime IncidentDate, string IncidentType,
         string Description, string Location, string Tier,
-        string Status, string ReportedBy);
+        string Status, bool HasWorkflow, string WorkflowStatus, string ReportedBy);
 }

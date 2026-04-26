@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Beep.OilandGas.Models.Data;
+using BeepDataSourceType = TheTechIdea.Beep.Utilities.DataSourceType;
 
 namespace Beep.OilandGas.Models.Data.DataManagement
 {
@@ -122,6 +123,7 @@ namespace Beep.OilandGas.Models.Data.DataManagement
             var cp = new TheTechIdea.Beep.ConfigUtil.ConnectionProperties
             {
                 ConnectionName = this.ConnectionName,
+                DatabaseType = ParseDataSourceType(this.DatabaseType),
                 Host = this.Host,
                 Port = this.Port,
                 Database = this.Database,
@@ -130,10 +132,26 @@ namespace Beep.OilandGas.Models.Data.DataManagement
                 ConnectionString = this.ConnectionString ?? string.Empty
             };
 
-            // Note: DatabaseType enum parsing commented out due to external dependency issues
-            // Set database type based on string value if available through other means
-            
             return cp;
+        }
+
+        private static BeepDataSourceType ParseDataSourceType(string? databaseType)
+        {
+            if (string.IsNullOrWhiteSpace(databaseType))
+                return BeepDataSourceType.SqlServer;
+
+            if (Enum.TryParse<BeepDataSourceType>(databaseType, true, out var result))
+                return result;
+
+            return databaseType.ToLowerInvariant() switch
+            {
+                "sqlserver" => BeepDataSourceType.SqlServer,
+                "postgre" or "postgresql" => BeepDataSourceType.Postgre,
+                "mysql" or "mariadb" => BeepDataSourceType.Mysql,
+                "oracle" => BeepDataSourceType.Oracle,
+                "sqlite" or "sqllite" => BeepDataSourceType.SqlLite,
+                _ => BeepDataSourceType.SqlServer
+            };
         }
     }
 }

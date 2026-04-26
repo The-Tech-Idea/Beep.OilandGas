@@ -230,6 +230,53 @@ builder.Services.AddScoped<WellServices>(sp =>
 });
 ```
 
+## Data Class Shape Rule (Table vs DTO)
+
+Every C# class in this codebase is either a **table class** or a **projection class**. Apply the correct shape:
+
+### Table classes (persisted to DB via `PPDMGenericRepository`)
+- **Must** extend `ModelEntityBase`.
+- **Only** scalar/key columns: `string`, `int`, `decimal`, `DateTime`, `bool` — no collections, no nested objects.
+- No `List<T>`, `IEnumerable<T>`, `Dictionary<K,V>`, or object-graph navigation properties.
+- Named after the PPDM table in SCREAMING_SNAKE_CASE (e.g. `PROSPECT`, `PROSPECT_RISK_ASSESSMENT`).
+- On Windows, if the table name and a PascalCase sibling would collide, use suffix `.Table.cs` for the filename (e.g. `PROSPECT.Table.cs`) while keeping the class name `PROSPECT`.
+
+```csharp
+// ✅ Correct table class
+public partial class PROSPECT_RISK_ASSESSMENT : ModelEntityBase
+{
+    private string PROSPECT_IDValue = string.Empty;
+    public string PROSPECT_ID { get => PROSPECT_IDValue; set => SetProperty(ref PROSPECT_IDValue, value); }
+
+    private decimal GEOLOGICAL_RISKValue;
+    public decimal GEOLOGICAL_RISK { get => GEOLOGICAL_RISKValue; set => SetProperty(ref GEOLOGICAL_RISKValue, value); }
+    // ... only scalars
+}
+
+// ❌ Wrong — collections in a table class
+public class ProspectRiskAnalysisResult : ModelEntityBase
+{
+    public List<RiskCategory> RiskCategories { get; set; } = new(); // FORBIDDEN
+}
+```
+
+### Projection classes (DTOs, requests, responses, analysis results)
+- May extend `ModelEntityBase` for convenience but **are not persisted** via `PPDMGenericRepository`.
+- May contain `List<T>`, `Dictionary<K,V>`, and nested objects freely.
+- Naming: PascalCase with suffix `Request`, `Response`, `Result`, `Summary`, `Report`, `Analysis`.
+- Live in the feature project under `Data/{Slice}/` — **not** passed to `InsertAsync`/`UpdateAsync`.
+
+```csharp
+// ✅ Correct projection
+public class ProspectRiskAnalysisResult : ModelEntityBase
+{
+    public string AnalysisId { get; set; } = string.Empty;
+    public List<RiskCategory> RiskCategories { get; set; } = new(); // ALLOWED — not saved to DB
+}
+```
+
+**Quick test**: if the class is passed to `repo.InsertAsync(entity)` or `repo.UpdateAsync(entity)`, it is a table class — remove all collections from it.
+
 ## Common Anti-Patterns (Avoid)
 
 ❌ **Wrong**: Registering service before `IDMEEditor` → Startup crash.  

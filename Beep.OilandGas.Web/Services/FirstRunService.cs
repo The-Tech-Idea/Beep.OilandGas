@@ -35,18 +35,37 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<bool> IsSetupRequiredAsync()
         {
+            var canPersistSetupState = true;
+
             try
             {
                 var completed = await _localStorage.GetItemAsync<bool>(SetupCompletedKey);
                 if (completed)
                     return false;
+            }
+            catch (InvalidOperationException ex)
+            {
+                canPersistSetupState = false;
+                _logger.LogDebug(ex, "Local storage is unavailable during prerender; falling back to API setup status.");
+            }
+            catch (Exception ex)
+            {
+                canPersistSetupState = false;
+                _logger.LogWarning(ex, "Could not read setup flag from local storage; falling back to API setup status.");
+            }
 
+            try
+            {
                 // Double-check with the API — connection might have been set up outside the wizard
                 var status = await _apiClient.GetAsync<SetupStatusResult>("api/ppdm39/setup/status");
                 if (status?.HasConnection == true && status.IsSchemaReady)
                 {
-                    // Auto-mark as complete so we don't prompt again
-                    await MarkSetupCompleteAsync(status.ConnectionName ?? string.Empty);
+                    if (canPersistSetupState)
+                    {
+                        // Auto-mark as complete so we don't prompt again when local storage is available.
+                        await MarkSetupCompleteAsync(status.ConnectionName ?? string.Empty);
+                    }
+
                     return false;
                 }
 
@@ -54,7 +73,7 @@ namespace Beep.OilandGas.Web.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Could not determine setup status; assuming setup required");
+                _logger.LogWarning(ex, "Could not determine setup status from the API; assuming setup required");
                 return true;
             }
         }

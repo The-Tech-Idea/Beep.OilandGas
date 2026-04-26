@@ -1,0 +1,106 @@
+name: CI — Build, Test & Module Ownership Guard
+
+on:
+  push:
+    branches: [ "main", "develop", "release/**" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  # ────────────────────────────────────────────────────────────────────────────
+  # 1. Full solution build
+  # ────────────────────────────────────────────────────────────────────────────
+  build:
+    name: Build Solution
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore NuGet packages
+        run: dotnet restore Beep.OilandGas.sln
+
+      - name: Build (errors-only)
+        run: >
+          dotnet build Beep.OilandGas.sln
+          --no-restore
+          --configuration Release
+          -v q
+          -fileloggerparameters:"LogFile=build-ci.log;ErrorsOnly"
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-ci-log
+          path: build-ci.log
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 2. Unit tests (ApiService.Tests)
+  # ────────────────────────────────────────────────────────────────────────────
+  test-api:
+    name: ApiService Tests
+    runs-on: windows-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore Beep.OilandGas.ApiService.Tests/Beep.OilandGas.ApiService.Tests.csproj
+
+      - name: Test
+        run: >
+          dotnet test
+          Beep.OilandGas.ApiService.Tests/Beep.OilandGas.ApiService.Tests.csproj
+          --no-restore
+          --logger "trx;LogFileName=test-results-api.trx"
+          --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-api
+          path: TestResults/test-results-api.trx
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 3. Module Ownership CI Guard
+  #    Scans feature *Module*.cs files for forbidden PPDM39.Models references.
+  #    Fails the PR if any feature module directly registers or instantiates
+  #    Beep.OilandGas.PPDM39.Models types.
+  # ────────────────────────────────────────────────────────────────────────────
+  module-ownership-guard:
+    name: Module Ownership Guard
+    runs-on: windows-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run module ownership guard
+        shell: pwsh
+        run: >
+          Scripts/ci-guard-module-ownership.ps1
+          -RootPath "${{ github.workspace }}"
+
+      - name: Summarize result
+        if: failure()
+        run: |
+          echo "## Module Ownership Violation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "A feature module directly references \`Beep.OilandGas.PPDM39.Models\` types." >> $GITHUB_STEP_SUMMARY
+          echo "Feature modules must only register project-owned table classes in their \`EntityTypes\` list." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "See: \`Plans/module-setup-phase-plan/00_Master_Phased_Plan.md\` — Module Ownership Rules." >> $GITHUB_STEP_SUMMARY
+        shell: bash

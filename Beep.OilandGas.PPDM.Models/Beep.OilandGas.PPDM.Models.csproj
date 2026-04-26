@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 	<TargetFrameworks>net10.0</TargetFrameworks>
@@ -14,10 +14,29 @@
 		<PackageIcon>SimpleODM.png</PackageIcon>
 		<RepositoryUrl>https://github.com/The-Tech-Idea/</RepositoryUrl>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<Version>1.0.18</Version>
+		<Version>1.0.21</Version>
 		<Nullable>enable</Nullable>
 	    <NoWarn>$(NoWarn);CS0169;CS8618</NoWarn>
 </PropertyGroup>
+
+	<ItemGroup>
+	  <Content Remove="C:\Users\f_ald\.nuget\packages\thetechidea.beep.datamanagementengine\2.0.87\contentFiles\any\net10.0\Editor\ETL_BK\ETLDataCopier.examples.md" />
+	  <Content Remove="C:\Users\f_ald\.nuget\packages\thetechidea.beep.datamanagementengine\2.0.87\contentFiles\any\net10.0\Editor\ETL_BK\ETLDataCopier.howto.readme.md" />
+	  <Content Remove="C:\Users\f_ald\.nuget\packages\thetechidea.beep.datamanagementengine\2.0.87\contentFiles\any\net10.0\Editor\ETL_BK\ETLEditor.examples.md" />
+	  <Content Remove="C:\Users\f_ald\.nuget\packages\thetechidea.beep.datamanagementengine\2.0.87\contentFiles\any\net10.0\Editor\ETL_BK\ETLEditor.howto.readme.md" />
+	  <Content Remove="C:\Users\f_ald\.nuget\packages\thetechidea.beep.datamanagementengine\2.0.87\contentFiles\any\net10.0\Editor\ETL_BK\ETLEntityCopyHelper.examples.md" />
+	  <Content Remove="C:\Users\f_ald\.nuget\packages\thetechidea.beep.datamanagementengine\2.0.87\contentFiles\any\net10.0\Editor\ETL_BK\ETLEntityCopyHelper.howto.readme.md" />
+	  <Content Remove="C:\Users\f_ald\.nuget\packages\thetechidea.beep.datamanagementengine\2.0.87\contentFiles\any\net10.0\Editor\ETL_BK\ETLEntityProcessor.examples.md" />
+	  <Content Remove="C:\Users\f_ald\.nuget\packages\thetechidea.beep.datamanagementengine\2.0.87\contentFiles\any\net10.0\Editor\ETL_BK\ETLEntityProcessor.howto.readme.md" />
+	  <Content Remove="C:\Users\f_ald\.nuget\packages\thetechidea.beep.datamanagementengine\2.0.87\contentFiles\any\net10.0\Editor\ETL_BK\ETLScriptBuilder.examples.md" />
+	  <Content Remove="C:\Users\f_ald\.nuget\packages\thetechidea.beep.datamanagementengine\2.0.87\contentFiles\any\net10.0\Editor\ETL_BK\ETLScriptBuilder.howto.readme.md" />
+	  <Content Remove="C:\Users\f_ald\.nuget\packages\thetechidea.beep.datamanagementengine\2.0.87\contentFiles\any\net10.0\Editor\ETL_BK\ETLScriptManager.examples.md" />
+	  <Content Remove="C:\Users\f_ald\.nuget\packages\thetechidea.beep.datamanagementengine\2.0.87\contentFiles\any\net10.0\Editor\ETL_BK\ETLScriptManager.howto.readme.md" />
+	  <Content Remove="C:\Users\f_ald\.nuget\packages\thetechidea.beep.datamanagementengine\2.0.87\contentFiles\any\net10.0\Editor\ETL_BK\ETLValidator.examples.md" />
+	  <Content Remove="C:\Users\f_ald\.nuget\packages\thetechidea.beep.datamanagementengine\2.0.87\contentFiles\any\net10.0\Editor\ETL_BK\ETLValidator.howto.readme.md" />
+	  <Content Remove="C:\Users\f_ald\.nuget\packages\thetechidea.beep.datamanagementengine\2.0.87\contentFiles\any\net10.0\Editor\ETL_BK\README.md" />
+	  <Content Remove="C:\Users\f_ald\.nuget\packages\thetechidea.beep.datamanagementengine\2.0.87\contentFiles\any\net10.0\Editor\ETL_BK\recommendation.instructions.md" />
+	</ItemGroup>
 	<ItemGroup>
 		<None Include="..\..\InstallationScripts\LogoGFx\128\SimpleODM.png">
 			<Pack>True</Pack>
@@ -33,8 +52,7 @@
 		<Copy SourceFiles="$(TargetDir)$(PackageId).dll" DestinationFolder="$(ProjectDir)..\..\outputDLL\$(PackageId)\$(TargetFramework)" SkipUnchangedFiles="false" />
 	</Target>
   <ItemGroup>
-    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.87" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.140" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.1444" />
   </ItemGroup>
 
 </Project>

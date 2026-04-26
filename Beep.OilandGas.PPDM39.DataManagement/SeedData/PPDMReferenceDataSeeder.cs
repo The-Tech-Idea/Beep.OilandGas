@@ -17,7 +17,9 @@ using TheTechIdea.Beep.Editor;
 namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
 {
     /// <summary>
-    /// Seeds reference/lookup tables with standard PPDM data
+    /// Central reference-data/template import infrastructure for PPDM setup.
+    /// This service stays in PPDM39.DataManagement because it encapsulates generic metadata,
+    /// LOV, and repository-based reference-data import behavior reused across modules.
     /// </summary>
     public class PPDMReferenceDataSeeder
     {

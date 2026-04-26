@@ -91,16 +91,16 @@ All connection strings and secrets should be masked through `ConnectionHelper` b
 
 ## Execution Checklist
 
-- [ ] Move SQLite and external connection provisioning out of controller into setup connection service.
-- [ ] Standardize `ConnectionProperties` population for provider identity and behavior flags.
-- [ ] Resolve driver via `ConnectionHelper.GetBestMatchingDriver` for all setup-created connections.
-- [ ] Validate connection string/provider requirements and mask secrets before logging.
-- [ ] Persist only through `ConfigEditor`, then reopen via `IDMEEditor` and verify state.
-- [ ] Replace ad hoc path creation with `EnvironmentService` folder policy.
+- [x] Move SQLite and external connection provisioning out of controller into setup connection service. (`PPDM39SetupConnectionService` created 2026-04-25)
+- [x] Standardize `ConnectionProperties` population for provider identity and behavior flags. (`BuildConnectionProperties` in `PPDM39SetupConnectionService` 2026-04-25)
+- [x] Resolve driver via `ConnectionHelper.GetBestMatchingDriver` for all setup-created connections. (`PopulateBestDriver` with reflection + fallback 2026-04-25)
+- [x] Validate connection string/provider requirements and mask secrets before logging. (credentials never logged; test via `TestConnectionAsync` 2026-04-25)
+- [x] Persist only through `ConfigEditor`, then reopen via `IDMEEditor` and verify state. (`SaveConnection` / `TestConnectionAsync` pattern 2026-04-25)
+- [x] Replace ad hoc path creation with `EnvironmentService` folder policy. (`GetLocalDatabaseFolder()` reads `BEEP_DB_ROOT` env var 2026-04-25)
 
 ## Provider Capability Contract
 
-- [ ] Define capability flags consumed by wizard and orchestration:
+- [x] Define capability flags consumed by wizard and orchestration: (`ProviderCapabilityContracts.cs` + `GetProviderCapabilities` 2026-04-25)
   - supports local file create
   - supports safe additive migration
   - supports destructive operations in protected mode

@@ -130,6 +130,10 @@
         "Description": "Volumes reporting for all products, time periods, activities or methods"
       },
       {
+        "Name": "Production Operations",
+        "Description": "Day-to-day production operations including well monitoring, equipment maintenance, facility management, safety, environmental compliance, and cost tracking"
+      },
+      {
         "Name": "Production Strings",
         "Description": "Describes the conduit between a hydrocarbon source and the surface"
       },
@@ -140,6 +144,10 @@
       {
         "Name": "Production-Related Facilities",
         "Description": "Describes facilities such as pipelines, storage tanks or batteries"
+      },
+      {
+        "Name": "Pipeline Management",
+        "Description": "Lifecycle management for pipelines including construction, operations, maintenance, integrity, and regulatory compliance"
       },
       {
         "Name": "Reporting Hierarchies",

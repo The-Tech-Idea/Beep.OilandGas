@@ -286,6 +286,7 @@ public class RequireCurrentFieldAccessAttributeTests
         public IFieldExplorationService GetExplorationService() => throw new NotImplementedException();
         public IFieldDevelopmentService GetDevelopmentService() => throw new NotImplementedException();
         public IFieldProductionService GetProductionService() => throw new NotImplementedException();
+        public IFieldHSEService GetHSEService() => throw new NotImplementedException();
         public IFieldDecommissioningService GetDecommissioningService() => throw new NotImplementedException();
         public IProcessService GetProcessService() => throw new NotImplementedException();
     }

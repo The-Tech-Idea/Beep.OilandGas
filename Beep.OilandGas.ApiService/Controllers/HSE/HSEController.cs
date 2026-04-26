@@ -13,33 +13,15 @@ namespace Beep.OilandGas.ApiService.Controllers.HSE;
 [RequireCurrentFieldAccess]
 public class HSEController : ControllerBase
 {
-    private readonly IHSEService               _hse;
-    private readonly IRCAService               _rca;
-    private readonly IBarrierManagementService _barriers;
-    private readonly ICorrectiveActionService  _ca;
-    private readonly IHAZOPService             _hazop;
-    private readonly IHSEKPIService            _kpi;
-    private readonly IFieldOrchestrator        _fieldOrchestrator;
+    private readonly IFieldOrchestrator _fieldOrchestrator;
 
-    public HSEController(
-        IHSEService               hse,
-        IRCAService               rca,
-        IBarrierManagementService barriers,
-        ICorrectiveActionService  ca,
-        IHAZOPService             hazop,
-        IHSEKPIService            kpi,
-        IFieldOrchestrator        fieldOrchestrator)
+    public HSEController(IFieldOrchestrator fieldOrchestrator)
     {
-        _hse               = hse;
-        _rca               = rca;
-        _barriers          = barriers;
-        _ca                = ca;
-        _hazop             = hazop;
-        _kpi               = kpi;
         _fieldOrchestrator = fieldOrchestrator;
     }
 
     private string UserId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+    private IFieldHSEService Hse => _fieldOrchestrator.GetHSEService();
 
     // ── Incidents ──────────────────────────────────────────────────────────────
 
@@ -47,19 +29,19 @@ public class HSEController : ControllerBase
     public async Task<ActionResult<List<HSEIncidentRecord>>> GetIncidentsAsync(
         [FromQuery] DateTime? from, [FromQuery] DateTime? to)
     {
-        var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
         DateRangeFilter? range = (from.HasValue && to.HasValue)
             ? new DateRangeFilter(from.Value, to.Value)
             : null;
 
-        return Ok(await _hse.GetFieldIncidentsAsync(fieldId, range));
+        if (string.IsNullOrWhiteSpace(_fieldOrchestrator.CurrentFieldId)) return BadRequest(new { error = "Current field is required." });
+        return Ok(await Hse.GetIncidentsAsync(range));
     }
 
     [HttpGet("incidents/{incidentId}")]
     public async Task<ActionResult<HSEIncidentRecord>> GetIncidentAsync(string incidentId)
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        var result = await _hse.GetByIdAsync(incidentId);
+        var result = await Hse.GetIncidentAsync(incidentId);
         if (result is null) return NotFound(new { error = $"Incident {incidentId} not found." });
         return Ok(result);
     }
@@ -68,7 +50,7 @@ public class HSEController : ControllerBase
     public async Task<ActionResult<HSEIncidentRecord>> ReportAsync(
         [FromBody] ReportIncidentRequest request)
     {
-        var result = await _hse.ReportIncidentAsync(request, UserId);
+        var result = await Hse.ReportIncidentAsync(request, UserId);
         return CreatedAtAction(nameof(GetIncidentAsync), new { incidentId = result.IncidentId }, result);
     }
 
@@ -77,7 +59,7 @@ public class HSEController : ControllerBase
         string incidentId, [FromBody] TransitionIncidentRequest request)
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        var ok = await _hse.TransitionAsync(incidentId, request.Trigger, request.Reason, UserId);
+        var ok = await Hse.TransitionAsync(incidentId, request.Trigger, request.Reason, UserId);
         return ok ? NoContent() : BadRequest(new { error = "Invalid transition." });
     }
 
@@ -86,7 +68,7 @@ public class HSEController : ControllerBase
         string incidentId, [FromQuery] int tier)
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        await _hse.UpdateTierAsync(incidentId, tier, UserId);
+        await Hse.UpdateTierAsync(incidentId, tier, UserId);
         return NoContent();
     }
 
@@ -96,7 +78,7 @@ public class HSEController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
         if (string.IsNullOrWhiteSpace(baId)) return BadRequest(new { error = "Business associate ID is required." });
-        await _hse.AssignInvestigatorAsync(incidentId, baId, UserId);
+        await Hse.AssignInvestigatorAsync(incidentId, baId, UserId);
         return NoContent();
     }
 
@@ -104,42 +86,42 @@ public class HSEController : ControllerBase
 
     [HttpGet("incidents/{incidentId}/causes")]
     public async Task<ActionResult<List<CauseFinding>>> GetCausesAsync(string incidentId)
-        {
-            if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-            return Ok(await _rca.GetCauseChainAsync(incidentId));
-        }
+    {
+        if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
+        return Ok(await Hse.GetCausesAsync(incidentId));
+    }
 
     [HttpPost("incidents/{incidentId}/causes")]
     public async Task<ActionResult> AddCauseAsync(
         string incidentId, [FromBody] AddCauseRequest request)
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        await _rca.AddCauseAsync(incidentId, request, UserId);
+        await Hse.AddCauseAsync(incidentId, request, UserId);
         return NoContent();
     }
 
     [HttpGet("incidents/{incidentId}/rca-complete")]
     public async Task<ActionResult<bool>> IsRCACompleteAsync(string incidentId)
-        {
-            if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-            return Ok(await _rca.IsRCACompleteAsync(incidentId));
-        }
+    {
+        if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
+        return Ok(await Hse.IsRcaCompleteAsync(incidentId));
+    }
 
     // ── Barriers ───────────────────────────────────────────────────────────────
 
     [HttpGet("incidents/{incidentId}/barriers")]
     public async Task<ActionResult<List<BarrierRecord>>> GetBarriersAsync(string incidentId)
-        {
-            if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-            return Ok(await _barriers.GetBarriersForIncidentAsync(incidentId));
-        }
+    {
+        if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
+        return Ok(await Hse.GetBarriersAsync(incidentId));
+    }
 
     [HttpPost("incidents/{incidentId}/barriers")]
     public async Task<ActionResult> AddBarrierAsync(
         string incidentId, [FromBody] AddBarrierRequest request)
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        await _barriers.AddBarrierAsync(incidentId, request, UserId);
+        await Hse.AddBarrierAsync(incidentId, request, UserId);
         return NoContent();
     }
 
@@ -148,33 +130,33 @@ public class HSEController : ControllerBase
         string incidentId, string equipId, [FromQuery] string status)
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-            if (string.IsNullOrWhiteSpace(equipId)) return BadRequest(new { error = "Equipment ID is required." });
+        if (string.IsNullOrWhiteSpace(equipId)) return BadRequest(new { error = "Equipment ID is required." });
         if (string.IsNullOrWhiteSpace(status)) return BadRequest(new { error = "Status is required." });
-        await _barriers.SetBarrierStatusAsync(incidentId, equipId, status, UserId);
+        await Hse.SetBarrierStatusAsync(incidentId, equipId, status, UserId);
         return NoContent();
     }
 
     [HttpGet("incidents/{incidentId}/barriers/summary")]
     public async Task<ActionResult<BarrierSummary>> GetBarrierSummaryAsync(string incidentId)
-        {
-            if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-            return Ok(await _barriers.GetBarrierSummaryAsync(incidentId));
-        }
+    {
+        if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
+        return Ok(await Hse.GetBarrierSummaryAsync(incidentId));
+    }
 
     // ── Corrective Actions ─────────────────────────────────────────────────────
 
     [HttpGet("incidents/{incidentId}/cas")]
     public async Task<ActionResult<List<CAStatus>>> GetCAsAsync(string incidentId)
-        {
-            if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-            return Ok(await _ca.GetCAStatusAsync(incidentId));
-        }
+    {
+        if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
+        return Ok(await Hse.GetCorrectiveActionsAsync(incidentId));
+    }
 
     [HttpPost("incidents/{incidentId}/ca-plan")]
     public async Task<ActionResult<string>> CreateCAPlanAsync(string incidentId)
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        var id = await _ca.CreateCAPlanAsync(incidentId, UserId);
+        var id = await Hse.CreateCaPlanAsync(incidentId, UserId);
         return Ok(id);
     }
 
@@ -183,7 +165,7 @@ public class HSEController : ControllerBase
         string incidentId, [FromBody] AddCARequest request)
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        var id = await _ca.AddCorrectiveActionAsync(incidentId, request, UserId);
+        var id = await Hse.AddCorrectiveActionAsync(incidentId, request, UserId);
         return Ok(id);
     }
 
@@ -192,7 +174,7 @@ public class HSEController : ControllerBase
         string incidentId, int stepSeq, [FromQuery] string notes = "")
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        await _ca.RecordCompletionAsync(incidentId, stepSeq, notes, UserId);
+        await Hse.RecordCompletionAsync(incidentId, stepSeq, notes, UserId);
         return NoContent();
     }
 
@@ -201,8 +183,7 @@ public class HSEController : ControllerBase
     [HttpGet("hazop")]
     public async Task<ActionResult<List<HAZOPSummary>>> GetStudiesAsync()
     {
-        var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-        var studies = await _hazop.GetStudiesAsync(fieldId);
+        var studies = await Hse.GetStudiesAsync();
         return Ok(studies);
     }
 
@@ -210,30 +191,30 @@ public class HSEController : ControllerBase
     public async Task<ActionResult<string>> CreateStudyAsync(
         [FromBody] CreateHAZOPStudyRequest request)
     {
-        var id = await _hazop.CreateStudyAsync(request, UserId);
+        var id = await Hse.CreateStudyAsync(request, UserId);
         return CreatedAtAction(nameof(GetStudySummaryAsync), new { studyId = id }, id);
     }
 
     [HttpGet("hazop/{studyId}")]
     public async Task<ActionResult<HAZOPSummary>> GetStudySummaryAsync(string studyId)
-        {
-            if (string.IsNullOrWhiteSpace(studyId)) return BadRequest(new { error = "Study ID is required." });
-            return Ok(await _hazop.GetSummaryAsync(studyId));
-        }
+    {
+        if (string.IsNullOrWhiteSpace(studyId)) return BadRequest(new { error = "Study ID is required." });
+        return Ok(await Hse.GetStudySummaryAsync(studyId));
+    }
 
     [HttpGet("hazop/{studyId}/nodes")]
     public async Task<ActionResult<List<HAZOPNode>>> GetNodesAsync(string studyId)
-        {
-            if (string.IsNullOrWhiteSpace(studyId)) return BadRequest(new { error = "Study ID is required." });
-            return Ok(await _hazop.GetNodesAsync(studyId));
-        }
+    {
+        if (string.IsNullOrWhiteSpace(studyId)) return BadRequest(new { error = "Study ID is required." });
+        return Ok(await Hse.GetNodesAsync(studyId));
+    }
 
     [HttpPost("hazop/{studyId}/nodes")]
     public async Task<ActionResult<string>> AddNodeAsync(
         string studyId, [FromBody] AddNodeRequest request)
     {
         if (string.IsNullOrWhiteSpace(studyId)) return BadRequest(new { error = "Study ID is required." });
-        var id = await _hazop.AddNodeAsync(studyId, request, UserId);
+        var id = await Hse.AddNodeAsync(studyId, request, UserId);
         return Ok(id);
     }
 
@@ -242,7 +223,7 @@ public class HSEController : ControllerBase
         string studyId, int nodeSeq, [FromBody] AddDeviationRequest request)
     {
         if (string.IsNullOrWhiteSpace(studyId)) return BadRequest(new { error = "Study ID is required." });
-        var id = await _hazop.AddDeviationAsync(studyId, nodeSeq, request, UserId);
+        var id = await Hse.AddDeviationAsync(studyId, nodeSeq, request, UserId);
         return Ok(id);
     }
 
@@ -252,7 +233,7 @@ public class HSEController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(studyId)) return BadRequest(new { error = "Study ID is required." });
         if (string.IsNullOrWhiteSpace(status)) return BadRequest(new { error = "Status is required." });
-        await _hazop.UpdateDeviationStatusAsync(studyId, nodeSeq, condSeq, status, UserId);
+        await Hse.UpdateDeviationStatusAsync(studyId, nodeSeq, condSeq, status, UserId);
         return NoContent();
     }
 
@@ -262,19 +243,17 @@ public class HSEController : ControllerBase
     public async Task<ActionResult<HSEKPISet>> GetKPIsAsync(
         [FromQuery] DateTime? from, [FromQuery] DateTime? to)
     {
-        var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
         var range = new DateRangeFilter(
             from ?? DateTime.UtcNow.AddYears(-1),
             to   ?? DateTime.UtcNow);
 
-        return Ok(await _kpi.GetKPIsAsync(fieldId, range));
+        return Ok(await Hse.GetKpisAsync(range));
     }
 
     [HttpGet("kpi/trend")]
     public async Task<ActionResult<List<TierRateTrend>>> GetTrendAsync(
         [FromQuery] int months = 12)
     {
-        var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-        return Ok(await _kpi.GetTierRateTrendAsync(fieldId, months));
+        return Ok(await Hse.GetTrendAsync(months));
     }
 }

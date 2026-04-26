@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
 
 namespace Beep.OilandGas.PermitsAndApplications.Validation.Rules
 {
@@ -44,7 +45,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Validation.Rules
         private static bool IsFormSatisfied(
             string? formCode,
             string? formName,
-            IReadOnlyList<Beep.OilandGas.Models.Data.PermitsAndApplications.APPLICATION_ATTACHMENT> attachments)
+            IReadOnlyList<APPLICATION_ATTACHMENT> attachments)
         {
             if (attachments.Count == 0)
                 return false;

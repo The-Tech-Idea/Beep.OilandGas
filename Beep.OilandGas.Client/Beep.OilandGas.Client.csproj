@@ -31,11 +31,11 @@
 	</Target>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.2" />
-		<PackageReference Include="Microsoft.Extensions.Options" Version="10.0.6" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.6" />
-		<PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.87" />
-		<PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.140" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.7" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="10.0.7" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.7" />
+		<PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.96" />
+		<PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.1444" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -17,8 +17,9 @@ using TheTechIdea.Beep.Editor;
 namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
 {
     /// <summary>
-    /// Unified service for seeding comprehensive demo/test data
-    /// Consolidates demo data seeding, CSV orchestration, catalog, validation, and template generation
+    /// Unified service for seeding comprehensive demo/test data.
+    /// This service stays in PPDM39.DataManagement because it consolidates generic demo/reference
+    /// import behavior reused by setup flows rather than a single domain-specific workflow.
     /// </summary>
     public class PPDMDemoDataSeeder
     {

@@ -93,19 +93,19 @@ Compatibility routes like `create-schema-from-migration` can remain, but they sh
 
 ## Execution Checklist
 
-- [ ] Introduce a single orchestration service for `plan -> policy -> preflight -> approve -> execute -> checkpoint -> resume`.
-- [ ] Ensure compatibility endpoints call this pipeline instead of direct build-and-execute.
-- [ ] Replace script-based schema assumptions in demo/setup flows with orchestration calls.
-- [ ] Use deterministic PPDM39 entity manifest generation and persist manifest hash.
-- [ ] Persist plan hash and approval metadata before execution.
-- [ ] Persist execution checkpoints and expose resumable operation status.
+- [x] Introduce a single orchestration service for `plan -> policy -> preflight -> approve -> execute -> checkpoint -> resume`. (`PPDM39SetupService` implements `IPPDM39SchemaMigrationService` 2026-04-25)
+- [x] Ensure compatibility endpoints call this pipeline instead of direct build-and-execute. (`schema/*` routes redirected to `_schemaMigrationService` 2026-04-25)
+- [x] Replace script-based schema assumptions in demo/setup flows with orchestration calls. (migration pipeline already governs all schema creation paths 2026-04-25)
+- [x] Use deterministic PPDM39 entity manifest generation and persist manifest hash. (`PlanSchemaMigrationAsync` builds plan with hash via `MigrationManager.BuildMigrationPlanForTypes` 2026-04-25)
+- [x] Persist plan hash and approval metadata before execution. (`ApproveSchemaMigrationPlanAsync` records approver + timestamp; execution gated on `IsApproved` flag 2026-04-25)
+- [x] Persist execution checkpoints and expose resumable operation status. (`CreateExecutionCheckpoint` + `ResumeMigrationPlan` + `GetSchemaMigrationProgressAsync` 2026-04-25)
 
 ## Explicit MigrationManager Rules
 
-- [ ] Run policy evaluation before execute in all environments.
-- [ ] Produce dry-run/preflight/impact artifacts where provider supports them.
-- [ ] Enforce additive-first behavior for SQLite and file-backed stores.
-- [ ] Block destructive changes in protected mode unless explicitly approved by policy.
+- [x] Run policy evaluation before execute in all environments. (`EvaluateMigrationPlanPolicy` called in `PlanSchemaMigrationAsync` 2026-04-25)
+- [x] Produce dry-run/preflight/impact artifacts where provider supports them. (`GenerateDryRunReport` + `RunPreflightChecks` in plan result 2026-04-25)
+- [x] Enforce additive-first behavior for SQLite and file-backed stores. (`ProviderCapabilityInfo.SupportsLocalFileCreate` drives wizard; SQLite treated as additive create 2026-04-25)
+- [x] Block destructive changes in protected mode unless explicitly approved by policy. (plan approval gate via `IsApproved` + `MigrationPolicyOptions.EnvironmentTier` 2026-04-25)
 
 ## Acceptance Criteria
 

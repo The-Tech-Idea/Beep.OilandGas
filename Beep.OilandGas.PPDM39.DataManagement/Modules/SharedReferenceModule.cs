@@ -11,12 +11,9 @@ using Beep.OilandGas.PPDM39.Models;
 namespace Beep.OilandGas.PPDM39.DataManagement.Modules
 {
     /// <summary>
-    /// Module order 10 — seeds cross-domain shared reference tables:
-    /// R_FLUID_TYPE, R_SEVERITY, PPDM_UNIT_OF_MEASURE, R_COMPLETION_STATUS,
-    /// R_COMPLETION_TYPE, R_PRODUCTION_METHOD, R_WELL_TEST_TYPE, R_CAT_EQUIP_TYPE, etc.
-    ///
-    /// Delegates to <see cref="EnumReferenceDataSeeder.SeedAllEnumsAsync"/>
-    /// which handles all enum-backed reference table seeding.
+    /// Module order 10 — seeds cross-domain shared reference tables.
+    /// This module stays in PPDM39.DataManagement because the enum-to-reference import
+    /// pipeline is shared infrastructure consumed across multiple domain projects.
     /// </summary>
     public sealed class SharedReferenceModule : ModuleSetupBase
     {
@@ -52,23 +49,17 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Modules
             typeof(R_PROJECT_TYPE)
         };
 
-        private readonly EnumReferenceDataSeeder _enumSeeder;
+        private readonly LOVManagementService _lovService;
 
         public SharedReferenceModule(ModuleSetupContext context, LOVManagementService lovService)
             : base(context)
         {
-            _enumSeeder = new EnumReferenceDataSeeder(
-                context.Editor,
-                context.CommonColumnHandler,
-                context.Defaults,
-                context.Metadata,
-                lovService,
-                context.ConnectionName);
+            _lovService = lovService ?? throw new ArgumentNullException(nameof(lovService));
         }
 
-        public override string ModuleId   => "R_SHARED_REFERENCES";
+        public override string ModuleId => "R_SHARED_REFERENCES";
         public override string ModuleName => "Shared Reference Tables (Enums)";
-        public override int    Order      => 10;
+        public override int Order => 10;
         public override IReadOnlyList<Type> EntityTypes => _entityTypes;
 
         public override async Task<ModuleSetupResult> SeedAsync(
@@ -81,10 +72,18 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Modules
 
             try
             {
-                int seeded = await _enumSeeder.SeedAllEnumsAsync(userId);
-                result.Success         = true;
+                var enumSeeder = new EnumReferenceDataSeeder(
+                    _ctx.Editor,
+                    _ctx.CommonColumnHandler,
+                    _ctx.Defaults,
+                    _ctx.Metadata,
+                    _lovService,
+                    connectionName);
+
+                int seeded = await enumSeeder.SeedAllEnumsAsync(userId);
+                result.Success = true;
                 result.RecordsInserted = seeded;
-                result.TablesSeeded    = _entityTypes.Count;
+                result.TablesSeeded = _entityTypes.Count;
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {

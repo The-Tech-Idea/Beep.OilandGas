@@ -1,0 +1,181 @@
+@page "/ppdm39/create-database/modules"
+@using Beep.OilandGas.Models.Core.DTOs
+@using Beep.OilandGas.Web.Services
+@inject ApiClient ApiClient
+@inject CreateDatabaseWizardState Wizard
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create PPDM39 Database - Modules</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Setup - Step 3 of 4</MudText>
+            <MudText Typo="Typo.h5">Install Discovered Modules</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Choose optional setup modules discovered from ModuleSetupBase plugins.</MudText>
+        </MudStack>
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.ArrowBack" Href="/ppdm39/database-management">
+            Database Management
+        </MudButton>
+    </MudStack>
+
+    <MudStepper @bind-ActiveStep="_activeStep" Variant="Variant.Outlined" Color="Color.Primary" Class="mb-4">
+        <MudStep Title="Target" Icon="@Icons.Material.Filled.Storage" CompletedIcon="@Icons.Material.Filled.CheckCircle" />
+        <MudStep Title="Foundation" Icon="@Icons.Material.Filled.AccountTree" CompletedIcon="@Icons.Material.Filled.CheckCircle" />
+        <MudStep Title="Modules" Icon="@Icons.Material.Filled.Extension" />
+        <MudStep Title="Summary" Icon="@Icons.Material.Filled.CheckCircle" Disabled="true" />
+    </MudStepper>
+
+    <MudPaper Class="pa-4" Elevation="1">
+        <MudStack Spacing="3">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.h6">Discovered Module Setup Plugins</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Foundation modules are already installed and are hidden from optional selection.</MudText>
+                </MudStack>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadModulesAsync" Disabled="@Wizard.IsLoadingModules">Refresh</MudButton>
+            </MudStack>
+
+            @if (Wizard.IsLoadingModules)
+            {
+                <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+            }
+            else if (Wizard.OptionalModules.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info">No optional setup modules were discovered.</MudAlert>
+            }
+            else
+            {
+                <MudStack Spacing="2">
+                    @foreach (var module in Wizard.OptionalModules)
+                    {
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="py-2 border-b mud-border-lines-default">
+                            <MudCheckBox T="bool" @bind-Value="module.IsSelected" Color="Color.Primary" Label="@module.Module.ModuleName" />
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                <MudChip T="string" Size="Size.Small" Color="Color.Default">@module.Module.ModuleId</MudChip>
+                                <MudChip T="string" Size="Size.Small" Color="Color.Info">@module.Module.EntityTypes.Count tables</MudChip>
+                            </MudStack>
+                        </MudStack>
+                    }
+                </MudStack>
+            }
+
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="InstallSelectedModulesAsync" Disabled="@(!Wizard.CanInstallSelectedModules || Wizard.IsInstallingModules)">
+                    @if (Wizard.IsInstallingModules)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                        <MudText Class="ms-2">Installing</MudText>
+                    }
+                    else
+                    {
+                        <MudText>Install Selected Modules</MudText>
+                    }
+                </MudButton>
+                @if (Wizard.ModulesInstalled)
+                {
+                    <MudChip T="string" Color="Color.Success" Size="Size.Small">Modules installed</MudChip>
+                }
+            </MudStack>
+
+            @if (Wizard.ModuleSeedResult != null)
+            {
+                <MudAlert Severity="@(Wizard.ModuleSeedResult.Success ? Severity.Success : Severity.Error)">
+                    @Wizard.ModuleSeedResult.Message
+                    <MudText Typo="Typo.body2" Class="mt-2">Rows inserted: @Wizard.ModuleSeedResult.TotalRecordsInserted. Modules run: @Wizard.ModuleSeedResult.ModulesRun.</MudText>
+                </MudAlert>
+            }
+        </MudStack>
+    </MudPaper>
+
+    <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+        <MudButton Variant="Variant.Text" Color="Color.Default" Href="/ppdm39/create-database/foundation" StartIcon="@Icons.Material.Filled.ArrowBack">Back to Foundation</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Href="/ppdm39/create-database/summary" Disabled="@(Wizard.IsInstallingModules)">
+            Continue to Summary
+        </MudButton>
+    </MudStack>
+</MudContainer>
+
+@code {
+    private int _activeStep = 2;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Wizard.TargetReady)
+        {
+            NavigationManager.NavigateTo("/ppdm39/create-database/target", replace: true);
+            return;
+        }
+
+        if (!Wizard.FoundationInstalled)
+        {
+            NavigationManager.NavigateTo("/ppdm39/create-database/foundation", replace: true);
+            return;
+        }
+
+        if (Wizard.OptionalModules.Count == 0)
+        {
+            await LoadModulesAsync();
+        }
+    }
+
+    private async Task LoadModulesAsync()
+    {
+        Wizard.IsLoadingModules = true;
+        try
+        {
+            var response = await ApiClient.GetAsync<AvailableModulesResponse>("/api/ppdm39/setup/available-modules");
+            Wizard.OptionalModules = response?.Modules
+                .Where(module => !CreateDatabaseWizardState.FoundationModuleIds.Contains(module.ModuleId))
+                .OrderBy(module => module.Order)
+                .Select(module => new CreateDatabaseWizardState.SelectableModule(module))
+                .ToList() ?? new();
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Discovered modules could not be loaded.", Severity.Error);
+        }
+        finally
+        {
+            Wizard.IsLoadingModules = false;
+        }
+    }
+
+    private async Task InstallSelectedModulesAsync()
+    {
+        var selectedModules = Wizard.OptionalModules
+            .Where(module => module.IsSelected)
+            .Select(module => module.Module.ModuleId)
+            .ToList();
+
+        if (selectedModules.Count == 0 || string.IsNullOrWhiteSpace(Wizard.ActiveConnectionName))
+            return;
+
+        Wizard.IsInstallingModules = true;
+        Wizard.ModuleSeedResult = null;
+
+        try
+        {
+            Wizard.ModuleSeedResult = await ApiClient.PostAsync<ModuleSeedingRequest, ModuleSeedingResponse>(
+                "/api/ppdm39/setup/seed/selected-modules",
+                new ModuleSeedingRequest
+                {
+                    ConnectionName = Wizard.ActiveConnectionName,
+                    UserId = Wizard.UserId,
+                    ModuleIds = selectedModules
+                });
+
+            Wizard.ModulesInstalled = Wizard.ModuleSeedResult?.Success == true;
+            Snackbar.Add(Wizard.ModuleSeedResult?.Message ?? "Module installation completed.", Wizard.ModulesInstalled ? Severity.Success : Severity.Error);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Module installation failed.", Severity.Error);
+        }
+        finally
+        {
+            Wizard.IsInstallingModules = false;
+        }
+    }
+}

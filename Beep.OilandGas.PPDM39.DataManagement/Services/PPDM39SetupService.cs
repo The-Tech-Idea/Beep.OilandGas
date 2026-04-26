@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -18,12 +19,13 @@ using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.Editor;
+using TheTechIdea.Beep.Editor.Migration;
 using TheTechIdea.Beep.Report;
 using BeepDataSourceType = TheTechIdea.Beep.Utilities.DataSourceType;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Services
 {
-    public class PPDM39SetupService : IPPDM39SetupService
+    public class PPDM39SetupService : IPPDM39SetupService, IPPDM39SchemaMigrationService
     {
         private sealed class SchemaMigrationPlanSession
         {
@@ -32,6 +34,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             public string? TargetAssemblyName { get; init; }
             public string? TargetModelNamespace { get; init; }
             public required TheTechIdea.Beep.Editor.Migration.MigrationPlanArtifact Plan { get; init; }
+            public string ManifestHash { get; init; } = string.Empty;
+            public MigrationEnvironmentTier EnvironmentTier { get; init; } = MigrationEnvironmentTier.Development;
             public bool IsApproved { get; set; }
             public string ApprovedBy { get; set; } = string.Empty;
             public string ApprovalNotes { get; set; } = string.Empty;
@@ -189,7 +193,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to create SQLite database for {ConnectionName}", request.ConnectionName);
+                _logger.LogError(ex, "Failed to create SQLite database for {ConnectionName}", MaskConnectionInfo(request.ConnectionName));
                 return new CreateSqliteResult
                 {
                     Success = false,
@@ -238,6 +242,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 foreach (var assembly in entityTypes.Select(type => type.Assembly).Distinct())
                     migration.RegisterAssembly(assembly);
 
+                var manifestHash = BuildManifestHash(request, entityTypes);
+
                 var plan = migration.BuildMigrationPlanForTypes(entityTypes, detectRelationships: true);
                 if (plan == null)
                 {
@@ -253,6 +259,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 {
                     EnvironmentTier = ParseEnvironmentTier(request.EnvironmentTier)
                 };
+                var resolvedTier = policyOptions.EnvironmentTier;
 
                 // Validate connectivity from the active datasource before trusting preflight connectivity output.
                 var connectivityValidated = false;
@@ -262,7 +269,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Connectivity validation probe failed for {ConnectionName}", request.ConnectionName);
+                    _logger.LogWarning(ex, "Connectivity validation probe failed for {ConnectionName}", MaskConnectionInfo(request.ConnectionName));
                 }
 
                 var policy = migration.EvaluateMigrationPlanPolicy(plan, policyOptions);
@@ -292,7 +299,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                         SchemaName = request.SchemaName ?? string.Empty,
                         TargetAssemblyName = request.TargetAssemblyName,
                         TargetModelNamespace = request.TargetModelNamespace,
-                        Plan = plan
+                        Plan = plan,
+                        ManifestHash = manifestHash,
+                        EnvironmentTier = resolvedTier
                     },
                     (_, existing) => new SchemaMigrationPlanSession
                     {
@@ -301,6 +310,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                         TargetAssemblyName = request.TargetAssemblyName,
                         TargetModelNamespace = request.TargetModelNamespace,
                         Plan = plan,
+                        ManifestHash = manifestHash,
+                        EnvironmentTier = resolvedTier,
                         IsApproved = existing.IsApproved,
                         ApprovedBy = existing.ApprovedBy,
                         ApprovalNotes = existing.ApprovalNotes,
@@ -312,7 +323,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to plan schema migration for {ConnectionName}", request.ConnectionName);
+                _logger.LogError(ex, "Failed to plan schema migration for {ConnectionName}", MaskConnectionInfo(request.ConnectionName));
                 return new SchemaMigrationPlanResult
                 {
                     Success = false,
@@ -355,6 +366,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 Message = "Migration plan approved.",
                 PlanId = session.Plan.PlanId,
                 PlanHash = session.Plan.PlanHash,
+                ManifestHash = session.ManifestHash,
                 ApprovedBy = session.ApprovedBy,
                 ApprovedOnUtc = session.ApprovedOnUtc
             });
@@ -392,6 +404,77 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 };
             }
 
+            // ── GOVERNANCE GATES ─────────────────────────────────────────────────
+            // Gate 1: Plan hash integrity — reject if caller provided a hash that no longer matches.
+            var expectedPlanHash = ResolveExpectedPlanHash(request);
+            if (!string.IsNullOrWhiteSpace(expectedPlanHash) &&
+                !string.Equals(expectedPlanHash, session.Plan.PlanHash, StringComparison.Ordinal))
+            {
+                return new SchemaMigrationExecuteResult
+                {
+                    Success = false,
+                    PlanId = session.Plan.PlanId,
+                    PlanHash = session.Plan.PlanHash,
+                    Message = "Plan hash mismatch — the migration plan has changed since it was approved. Regenerate and re-approve the plan before proceeding."
+                };
+            }
+
+            var expectedManifestHash = ResolveExpectedManifestHash(request);
+            if (!string.IsNullOrWhiteSpace(expectedManifestHash) &&
+                !string.Equals(expectedManifestHash, session.ManifestHash, StringComparison.Ordinal))
+            {
+                return new SchemaMigrationExecuteResult
+                {
+                    Success = false,
+                    PlanId = session.Plan.PlanId,
+                    PlanHash = session.Plan.PlanHash,
+                    ManifestHash = session.ManifestHash,
+                    Message = "Manifest hash mismatch — the migration entity scope has changed since approval. Regenerate and re-approve the plan before proceeding."
+                };
+            }
+
+            // Gate 2: Policy-blocked plan — hard stop.
+            if (!CanApplyPlan(session.Plan))
+            {
+                return new SchemaMigrationExecuteResult
+                {
+                    Success = false,
+                    PlanId = session.Plan.PlanId,
+                    PlanHash = session.Plan.PlanHash,
+                    ManifestHash = session.ManifestHash,
+                    Message = $"Execution blocked by policy: {GetPolicyDecision(session.Plan)}. Resolve all policy findings before executing."
+                };
+            }
+
+            // Gate 3: High-risk operations require explicit acknowledgement on Production/Protected tiers.
+            var tierIsElevated = IsProtectedEnvironmentTier(session.EnvironmentTier);
+            var highRiskOperationCount = CountHighRiskOperations(session.Plan);
+            if (tierIsElevated && highRiskOperationCount > 0 && !request.AcknowledgeHighRisk)
+            {
+                return new SchemaMigrationExecuteResult
+                {
+                    Success = false,
+                    PlanId = session.Plan.PlanId,
+                    PlanHash = session.Plan.PlanHash,
+                    ManifestHash = session.ManifestHash,
+                    Message = $"This plan contains {highRiskOperationCount} high-risk operation(s) on a {session.EnvironmentTier} environment. Set AcknowledgeHighRisk=true to confirm you have reviewed the dry-run report and compensation plan."
+                };
+            }
+
+            // Gate 4: Protected-tier approval provenance — require approver identity.
+            if (IsProtectedEnvironmentTier(session.EnvironmentTier) && string.IsNullOrWhiteSpace(session.ApprovedBy))
+            {
+                return new SchemaMigrationExecuteResult
+                {
+                    Success = false,
+                    PlanId = session.Plan.PlanId,
+                    PlanHash = session.Plan.PlanHash,
+                    ManifestHash = session.ManifestHash,
+                    Message = "Execution on a Protected environment requires documented approval with an approver identity. Re-submit approval with ApprovedBy set."
+                };
+            }
+            // ── END GOVERNANCE GATES ─────────────────────────────────────────────
+
             try
             {
                 var migration = CreateMigrationManager(session.ConnectionName, out var dataSource);
@@ -402,6 +485,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                         Success = false,
                         PlanId = session.Plan.PlanId,
                         PlanHash = session.Plan.PlanHash,
+                        ManifestHash = session.ManifestHash,
                         Message = $"Connection '{session.ConnectionName}' not found or could not be opened."
                     };
                 }
@@ -427,6 +511,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     Message = executionResult.Message,
                     PlanId = session.Plan.PlanId,
                     PlanHash = session.Plan.PlanHash,
+                    ManifestHash = session.ManifestHash,
                     ExecutionToken = executionResult.ExecutionToken,
                     ResumedFromCheckpoint = executionResult.ResumedFromCheckpoint,
                     RequiresOperatorIntervention = executionResult.RequiresOperatorIntervention,
@@ -445,6 +530,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     Success = false,
                     PlanId = session.Plan.PlanId,
                     PlanHash = session.Plan.PlanHash,
+                    ManifestHash = session.ManifestHash,
                     Message = "Schema migration execution failed.",
                     CompensationOutcome = ex.Message
                 };
@@ -479,6 +565,63 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     Message = "Migration plan must be approved before execution."
                 };
             }
+
+            // ── GOVERNANCE GATES ─────────────────────────────────────────────────
+            // Gate 1: Plan hash integrity.
+            var expectedPlanHash = ResolveExpectedPlanHash(request);
+            if (!string.IsNullOrWhiteSpace(expectedPlanHash) &&
+                !string.Equals(expectedPlanHash, session.Plan.PlanHash, StringComparison.Ordinal))
+            {
+                return new OperationStartResponse
+                {
+                    Success = false,
+                    Message = "Plan hash mismatch — the migration plan has changed since approval. Regenerate and re-approve before proceeding."
+                };
+            }
+
+            var expectedManifestHash = ResolveExpectedManifestHash(request);
+            if (!string.IsNullOrWhiteSpace(expectedManifestHash) &&
+                !string.Equals(expectedManifestHash, session.ManifestHash, StringComparison.Ordinal))
+            {
+                return new OperationStartResponse
+                {
+                    Success = false,
+                    Message = "Manifest hash mismatch — the migration entity scope has changed since approval. Regenerate and re-approve before proceeding."
+                };
+            }
+
+            // Gate 2: Policy-blocked plan — hard stop.
+            if (!CanApplyPlan(session.Plan))
+            {
+                return new OperationStartResponse
+                {
+                    Success = false,
+                    Message = $"Execution blocked by policy: {GetPolicyDecision(session.Plan)}. Resolve all policy findings before executing."
+                };
+            }
+
+            // Gate 3: High-risk acknowledgement on elevated tiers.
+            var asyncTierIsElevated = IsProtectedEnvironmentTier(session.EnvironmentTier);
+            var highRiskOperationCount = CountHighRiskOperations(session.Plan);
+            if (asyncTierIsElevated && highRiskOperationCount > 0 && !request.AcknowledgeHighRisk)
+            {
+                return new OperationStartResponse
+                {
+                    Success = false,
+                    Message = $"This plan contains {highRiskOperationCount} high-risk operation(s) on a {session.EnvironmentTier} environment. Set AcknowledgeHighRisk=true after reviewing the dry-run and compensation reports."
+                };
+            }
+
+            // Gate 4: Protected-tier requires documented approver identity.
+            if (IsProtectedEnvironmentTier(session.EnvironmentTier) && string.IsNullOrWhiteSpace(session.ApprovedBy))
+            {
+                return new OperationStartResponse
+                {
+                    Success = false,
+                    Message = "Execution on a Protected environment requires an approver identity. Re-submit approval with ApprovedBy set."
+                };
+            }
+            // ── END GOVERNANCE GATES ─────────────────────────────────────────────
 
             try
             {
@@ -608,6 +751,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                             : "Execution in progress.",
                     PlanId = checkpoint.PlanId,
                     PlanHash = checkpoint.PlanHash,
+                    ManifestHash = session.ManifestHash,
                     ExecutionToken = checkpoint.ExecutionToken,
                     IsCompleted = checkpoint.IsCompleted,
                     HasFailed = checkpoint.HasFailed,
@@ -681,6 +825,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     Message = "Schema migration artifacts loaded successfully.",
                     PlanId = plan.PlanId,
                     PlanHash = plan.PlanHash,
+                    ManifestHash = session.ManifestHash,
                     ConnectionName = session.ConnectionName,
                     IsApproved = session.IsApproved,
                     ApprovedBy = session.ApprovedBy,
@@ -707,6 +852,49 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     Message = "Could not load schema migration artifacts."
                 };
             }
+        }
+
+        public async Task<SchemaMigrationCiValidationResult> ValidateMigrationPlanForCiAsync(string planId)
+        {
+            if (string.IsNullOrWhiteSpace(planId))
+            {
+                return new SchemaMigrationCiValidationResult
+                {
+                    Success = false,
+                    Message = "Plan ID is required."
+                };
+            }
+
+            if (!_schemaMigrationPlans.TryGetValue(planId, out var session))
+            {
+                return new SchemaMigrationCiValidationResult
+                {
+                    Success = false,
+                    PlanId = planId,
+                    Message = "Migration plan was not found. Generate a new plan first."
+                };
+            }
+
+            var planResult = MapPlanResult(session);
+            var result = new SchemaMigrationCiValidationResult
+            {
+                Success = planResult.CanApply,
+                Message = planResult.CanApply
+                    ? "Schema migration plan passed CI validation."
+                    : "Schema migration plan failed one or more CI gates.",
+                PlanId = planResult.PlanId,
+                PlanHash = planResult.PlanHash,
+                ManifestHash = planResult.ManifestHash,
+                CanMerge = planResult.CiGates.All(gate => !string.Equals(gate.Decision, "Block", StringComparison.OrdinalIgnoreCase)),
+                CanApply = planResult.CanApply,
+                PolicyDecision = planResult.PolicyDecision,
+                HighRiskOperationCount = planResult.HighRiskOperationCount,
+                CiGates = planResult.CiGates,
+                PolicyFindings = planResult.PolicyFindings,
+                PreflightChecks = planResult.PreflightChecks
+            };
+
+            return await Task.FromResult(result);
         }
 
         // ── DRIVER INFO ───────────────────────────────────────────────────────
@@ -772,7 +960,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             if (config == null)
                 return new ConnectionTestResult { Success = false, Message = "Connection configuration is required" };
 
-            _logger.LogInformation("Testing connection to {Host} ({DatabaseType})", config.Host, config.DatabaseType);
+            _logger.LogInformation("Testing connection to {Host} ({DatabaseType})", MaskConnectionInfo(config.Host), config.DatabaseType);
             try
             {
                 // Register a temporary connection under its name (or a temp name)
@@ -807,7 +995,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Connection test failed for {ConnectionName}", config.ConnectionName);
+                _logger.LogWarning(ex, "Connection test failed for {ConnectionName}", MaskConnectionInfo(config.ConnectionName));
                 return new ConnectionTestResult { Success = false, Message = "Connection test failed", ErrorDetails = ex.Message };
             }
         }
@@ -822,7 +1010,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             if (string.IsNullOrWhiteSpace(config.ConnectionName))
                 return new SaveConnectionResult { Success = false, Message = "Connection name is required" };
 
-            _logger.LogInformation("Saving connection {ConnectionName}", config.ConnectionName);
+            _logger.LogInformation("Saving connection {ConnectionName}", MaskConnectionInfo(config.ConnectionName));
             try
             {
                 var props = BuildConnectionProperties(config, config.ConnectionName);
@@ -850,7 +1038,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to save connection {ConnectionName}", config.ConnectionName);
+                _logger.LogError(ex, "Failed to save connection {ConnectionName}", MaskConnectionInfo(config.ConnectionName));
                 return new SaveConnectionResult { Success = false, Message = "Failed to save connection", ErrorDetails = ex.Message };
             }
         }
@@ -860,7 +1048,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             if (string.IsNullOrWhiteSpace(originalConnectionName) || config == null)
                 return new SaveConnectionResult { Success = false, Message = "Original connection name and configuration are required" };
 
-            _logger.LogInformation("Updating connection {OriginalName} → {NewName}", originalConnectionName, config.ConnectionName);
+            _logger.LogInformation("Updating connection {OriginalName} → {NewName}", MaskConnectionInfo(originalConnectionName), MaskConnectionInfo(config.ConnectionName));
             try
             {
                 if (_editor.ConfigEditor.DataConnectionExist(originalConnectionName))
@@ -870,7 +1058,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to update connection {ConnectionName}", originalConnectionName);
+                _logger.LogError(ex, "Failed to update connection {ConnectionName}", MaskConnectionInfo(originalConnectionName));
                 return new SaveConnectionResult { Success = false, Message = "Failed to update connection", ErrorDetails = ex.Message };
             }
         }
@@ -880,7 +1068,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             if (string.IsNullOrWhiteSpace(connectionName))
                 return new DeleteConnectionResult { Success = false, Message = "Connection name is required" };
 
-            _logger.LogInformation("Deleting connection {ConnectionName}", connectionName);
+            _logger.LogInformation("Deleting connection {ConnectionName}", MaskConnectionInfo(connectionName));
             try
             {
                 if (!_editor.ConfigEditor.DataConnectionExist(connectionName))
@@ -896,7 +1084,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to delete connection {ConnectionName}", connectionName);
+                _logger.LogError(ex, "Failed to delete connection {ConnectionName}", MaskConnectionInfo(connectionName));
                 return new DeleteConnectionResult { Success = false, Message = "Failed to delete connection", ErrorDetails = ex.Message };
             }
         }
@@ -998,16 +1186,33 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             var executionResult = await ExecuteSchemaMigrationPlanAsync(new SchemaMigrationExecuteRequest
             {
                 PlanId = planResult.PlanId,
-                ExecutedBy = "compatibility-route"
+                ExecutedBy = "compatibility-route",
+                PlanHash = planResult.PlanHash,
+                ManifestHash = planResult.ManifestHash,
+                AcknowledgeHighRisk = true
             });
+
+            if (!executionResult.Success)
+            {
+                return new CreateSchemaResult
+                {
+                    Success = false,
+                    Message = executionResult.Message,
+                    ErrorDetails = executionResult.CompensationOutcome,
+                    TablesCreated = planResult.TablesToCreate,
+                    TotalEntities = planResult.TotalEntities
+                };
+            }
+
+            var seedResult = await SeedRequiredModulesAsync(connectionName, "compatibility-route");
 
             return new CreateSchemaResult
             {
-                Success = executionResult.Success,
-                Message = executionResult.Success
-                    ? $"Schema created successfully in '{connectionName}'"
-                    : executionResult.Message,
-                ErrorDetails = executionResult.Success ? null : executionResult.CompensationOutcome,
+                Success = seedResult.Success,
+                Message = seedResult.Success
+                    ? $"Schema created and required module data seeded successfully in '{connectionName}'"
+                    : $"Schema created, but required module seeding failed: {seedResult.Message}",
+                ErrorDetails = seedResult.Success ? null : string.Join(Environment.NewLine, seedResult.Errors),
                 TablesCreated = planResult.TablesToCreate,
                 TotalEntities = planResult.TotalEntities
             };
@@ -1016,7 +1221,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         public async Task<SchemaPrivilegeCheckResult> CheckSchemaPrivilegesAsync(ConnectionConfig config, string? schemaName = null)
         {
             var connectionName = config?.ConnectionName ?? string.Empty;
-            _logger.LogInformation("Checking schema privileges for {ConnectionName}", connectionName);
+            _logger.LogInformation("Checking schema privileges for {ConnectionName}", MaskConnectionInfo(connectionName));
             try
             {
                 var ds = _editor.GetDataSource(connectionName);
@@ -1041,7 +1246,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Privilege check failed for {ConnectionName}", connectionName);
+                _logger.LogWarning(ex, "Privilege check failed for {ConnectionName}", MaskConnectionInfo(connectionName));
                 return new SchemaPrivilegeCheckResult { HasCreatePrivilege = false, Message = "Privilege check failed", ErrorDetails = ex.Message };
             }
         }
@@ -1060,7 +1265,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
         public async Task<ScriptExecutionResult> ExecuteScriptAsync(ConnectionConfig config, string scriptName, string? operationId = null)
         {
-            _logger.LogInformation("ExecuteScript '{Script}' on {ConnectionName}", scriptName, config?.ConnectionName);
+            _logger.LogInformation("ExecuteScript '{Script}' on {ConnectionName}", scriptName, MaskConnectionInfo(config?.ConnectionName));
             return new ScriptExecutionResult
             {
                 ScriptFileName = scriptName,
@@ -1087,7 +1292,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
         public async Task<DropDatabaseResult> DropDatabaseAsync(string connectionName, string? schemaName, bool dropIfExists = true)
         {
-            _logger.LogWarning("DropDatabase requested for {ConnectionName} / schema={Schema}", connectionName, schemaName);
+            _logger.LogWarning("DropDatabase requested for {ConnectionName} / schema={Schema}", MaskConnectionInfo(connectionName), schemaName);
             try
             {
                 var ds = _editor.GetDataSource(connectionName);
@@ -1107,14 +1312,14 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "DropDatabase failed for {ConnectionName}", connectionName);
+                _logger.LogError(ex, "DropDatabase failed for {ConnectionName}", MaskConnectionInfo(connectionName));
                 return new DropDatabaseResult { Success = false, Message = "Drop failed", ErrorDetails = ex.Message };
             }
         }
 
         public async Task<RecreateDatabaseResult> RecreateDatabaseAsync(string connectionName, string? schemaName, bool backupFirst = false, string? backupPath = null)
         {
-            _logger.LogInformation("RecreateDatabase for {ConnectionName}", connectionName);
+            _logger.LogInformation("RecreateDatabase for {ConnectionName}", MaskConnectionInfo(connectionName));
             var dropResult = await DropDatabaseAsync(connectionName, schemaName, dropIfExists: true);
             if (!dropResult.Success)
                 return new RecreateDatabaseResult { Success = false, Message = "Drop step failed: " + dropResult.Message };
@@ -1134,7 +1339,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
         public async Task<CopyDatabaseResult> CopyDatabaseAsync(CopyDatabaseRequest request, string? operationId = null)
         {
-            _logger.LogInformation("CopyDatabase from {Source} to {Target}", request?.SourceConnectionName, request?.TargetConnectionName);
+            _logger.LogInformation("CopyDatabase from {Source} to {Target}", MaskConnectionInfo(request?.SourceConnectionName), MaskConnectionInfo(request?.TargetConnectionName));
             return new CopyDatabaseResult
             {
                 Success = false,
@@ -1193,7 +1398,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "Could not resolve best matching driver for {ConnectionName}; falling back to loaded driver classes", props.ConnectionName);
+                _logger.LogDebug(ex, "Could not resolve best matching driver for {ConnectionName}; falling back to loaded driver classes", MaskConnectionInfo(props.ConnectionName));
                 var driverClass = _editor.ConfigEditor?.DataDriversClasses?
                     .FirstOrDefault(d => d.DatasourceType == props.DatabaseType);
                 if (driverClass != null)
@@ -1254,7 +1459,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "Schema probe failed for connection {ConnectionName}", connectionName);
+                _logger.LogDebug(ex, "Schema probe failed for connection {ConnectionName}", MaskConnectionInfo(connectionName));
                 return false;
             }
         }
@@ -1346,17 +1551,6 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             var hasScope = !string.IsNullOrWhiteSpace(targetAssemblyName) || !string.IsNullOrWhiteSpace(targetModelNamespace);
             if (!hasScope)
             {
-                if (_moduleSetupOrchestrator != null)
-                {
-                    var moduleTypes = _moduleSetupOrchestrator.GetAllEntityTypes();
-                    if (moduleTypes.Count > 0)
-                    {
-                        return moduleTypes
-                            .OrderBy(type => type.FullName, StringComparer.Ordinal)
-                            .ToList();
-                    }
-                }
-
                 return GetPpdm39EntityTypes();
             }
 
@@ -1436,11 +1630,92 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
         private static TheTechIdea.Beep.Editor.Migration.MigrationEnvironmentTier ParseEnvironmentTier(string? environmentTier)
         {
+            if (string.Equals(environmentTier, "Protected", StringComparison.OrdinalIgnoreCase))
+                return TheTechIdea.Beep.Editor.Migration.MigrationEnvironmentTier.Production;
+
             if (Enum.TryParse(environmentTier, true, out TheTechIdea.Beep.Editor.Migration.MigrationEnvironmentTier tier))
                 return tier;
 
             return TheTechIdea.Beep.Editor.Migration.MigrationEnvironmentTier.Development;
         }
+
+        private static bool IsProtectedEnvironmentTier(MigrationEnvironmentTier tier) =>
+            tier is MigrationEnvironmentTier.Staging or MigrationEnvironmentTier.Production;
+
+        private IReadOnlyList<string> GetRequiredModuleIds()
+        {
+            if (_moduleSetupOrchestrator == null)
+                return Array.Empty<string>();
+
+            return _moduleSetupOrchestrator.GetModuleMetadata()
+                .Where(module => IsRequiredFoundationModule(module.ModuleId))
+                .Select(module => module.ModuleId)
+                .ToList();
+        }
+
+        private static bool IsRequiredFoundationModule(string moduleId) =>
+            string.Equals(moduleId, "PPDM_CORE", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(moduleId, "R_SHARED_REFERENCES", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(moduleId, "WELL_STATUS_FACETS", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(moduleId, "WELL_REFERENCES", StringComparison.OrdinalIgnoreCase);
+
+        private async Task<SeedingOperationResult> SeedRequiredModulesAsync(string connectionName, string userId)
+        {
+            var requiredModuleIds = GetRequiredModuleIds();
+            if (requiredModuleIds.Count == 0)
+                return await SeedAllReferenceDataAsync(connectionName, userId);
+
+            return await SeedSelectedModulesAsync(requiredModuleIds, connectionName, userId);
+        }
+
+        private static string ResolveExpectedPlanHash(SchemaMigrationExecuteRequest request) =>
+            !string.IsNullOrWhiteSpace(request.ExpectedPlanHash)
+                ? request.ExpectedPlanHash
+                : request.PlanHash;
+
+        private static string ResolveExpectedManifestHash(SchemaMigrationExecuteRequest request) =>
+            !string.IsNullOrWhiteSpace(request.ExpectedManifestHash)
+                ? request.ExpectedManifestHash
+                : request.ManifestHash;
+
+        private static string BuildManifestHash(SchemaMigrationPlanRequest request, IReadOnlyCollection<Type> entityTypes)
+        {
+            var manifest = string.Join("|", new[]
+            {
+                request.SchemaName ?? string.Empty,
+                request.TargetAssemblyName ?? string.Empty,
+                request.TargetModelNamespace ?? string.Empty,
+                string.Join(",", entityTypes.Select(type => type.FullName).OrderBy(name => name, StringComparer.Ordinal))
+            });
+
+            return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(manifest)));
+        }
+
+        private static int CountHighRiskOperations(MigrationPlanArtifact plan) =>
+            plan.Operations?.Count(operation =>
+                operation.RiskLevel == MigrationPlanRiskLevel.High ||
+                operation.RiskLevel == MigrationPlanRiskLevel.Critical) ?? 0;
+
+        private static bool CanApplyPlan(MigrationPlanArtifact plan) =>
+            (plan.CiValidationReport?.CanMerge ?? true) &&
+            (plan.PreflightReport?.CanApply ?? true) &&
+            plan.PolicyEvaluation?.Decision != MigrationPolicyDecision.Block;
+
+        private static string GetPolicyDecision(MigrationPlanArtifact plan) =>
+            plan.PolicyEvaluation?.Decision.ToString() ?? string.Empty;
+
+        /// <summary>
+        /// Returns a redacted version of <paramref name="connectionName"/> suitable for log output.
+        /// Passwords embedded in ODBC/JDBC-style connection strings are replaced with <c>***</c>.
+        /// The connection name itself (which may be an alias) is safe to log.
+        /// </summary>
+        private static string MaskConnectionInfo(string? connectionName) =>
+            string.IsNullOrWhiteSpace(connectionName)
+                ? "(unnamed)"
+                : System.Text.RegularExpressions.Regex.Replace(
+                      connectionName,
+                      @"(?i)(password|pwd|pass)\s*=\s*[^;]+",
+                      "$1=***");
 
         private void NormalizeConnectivityPreflight(object? preflightReport, bool connectivityValidated, string connectionName)
         {
@@ -1491,7 +1766,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             if (canApplyProperty?.CanWrite == true)
                 canApplyProperty.SetValue(preflightReport, !hasBlockingChecks);
 
-            _logger.LogInformation("Normalized preflight-connectivity result for {ConnectionName} after successful datasource connectivity validation.", connectionName);
+            _logger.LogInformation("Normalized preflight-connectivity result for {ConnectionName} after successful datasource connectivity validation.", MaskConnectionInfo(connectionName));
         }
 
         private static SchemaMigrationPlanResult MapPlanResult(SchemaMigrationPlanSession session)
@@ -1514,6 +1789,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 ConnectionName = session.ConnectionName,
                 PlanId = plan.PlanId,
                 PlanHash = plan.PlanHash,
+                ManifestHash = session.ManifestHash,
                 PolicyDecision = policy?.Decision.ToString() ?? string.Empty,
                 RequiresManualApproval = policy?.RequiresManualApproval ?? false,
                 CanApply = (ciValidation?.CanMerge ?? true) && (preflight?.CanApply ?? true),
@@ -1759,7 +2035,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         public async Task<SeedingOperationResult> SeedWellStatusFacetsAsync(
             string connectionName, string userId = "SYSTEM", string? operationId = null)
         {
-            _logger.LogInformation("Seeding WSC v3 well-status facets into {Connection}", connectionName);
+            _logger.LogInformation("Seeding WSC v3 well-status facets into {Connection}", MaskConnectionInfo(connectionName));
             try
             {
                 var seeder = new WellStatusFacetSeeder(_editor, _commonColumnHandler, _defaults, _metadata, connectionName);
@@ -1787,7 +2063,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Well-status facet seeding failed for {Connection}", connectionName);
+                _logger.LogError(ex, "Well-status facet seeding failed for {Connection}", MaskConnectionInfo(connectionName));
                 return new SeedingOperationResult
                 {
                     Success = false,
@@ -1801,7 +2077,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         public async Task<SeedingOperationResult> SeedEnumReferenceDataAsync(
             string connectionName, string userId = "SYSTEM", string? operationId = null)
         {
-            _logger.LogInformation("Seeding enum reference data into {Connection}", connectionName);
+            _logger.LogInformation("Seeding enum reference data into {Connection}", MaskConnectionInfo(connectionName));
             if (_lovService == null)
             {
                 return new SeedingOperationResult
@@ -1818,7 +2094,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     _editor, _commonColumnHandler, _defaults, _metadata, _lovService, connectionName);
                 var count = await seeder.SeedAllEnumsAsync(userId);
 
-                _logger.LogInformation("Enum reference data seeded: {Count} rows into {Connection}", count, connectionName);
+                _logger.LogInformation("Enum reference data seeded: {Count} rows into {Connection}", count, MaskConnectionInfo(connectionName));
                 return new SeedingOperationResult
                 {
                     Success       = true,
@@ -1828,7 +2104,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Enum reference data seeding failed for {Connection}", connectionName);
+                _logger.LogError(ex, "Enum reference data seeding failed for {Connection}", MaskConnectionInfo(connectionName));
                 return new SeedingOperationResult
                 {
                     Success = false,
@@ -1845,12 +2121,15 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             if (_moduleSetupOrchestrator != null)
             {
                 _logger.LogInformation(
-                    "Seeding all module reference data via ModuleSetupOrchestrator into {Connection}",
-                    connectionName);
+                    "Seeding required module reference data via ModuleSetupOrchestrator into {Connection}",
+                    MaskConnectionInfo(connectionName));
 
                 try
                 {
-                    var orchestrated = await _moduleSetupOrchestrator.RunSeedAsync(connectionName, userId);
+                    var orchestrated = await _moduleSetupOrchestrator.RunSeedForModulesAsync(
+                        GetRequiredModuleIds(),
+                        connectionName,
+                        userId);
 
                     var moduleAggregate = new SeedingOperationResult
                     {
@@ -1911,7 +2190,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 }
             }
 
-            _logger.LogInformation("Seeding all reference data into {Connection}", connectionName);
+            _logger.LogInformation("Seeding all reference data into {Connection}", MaskConnectionInfo(connectionName));
             var aggregate = new SeedingOperationResult();
 
             // 1. WSC v3 facets

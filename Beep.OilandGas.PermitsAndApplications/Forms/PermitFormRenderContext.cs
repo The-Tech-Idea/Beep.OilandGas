@@ -1,5 +1,6 @@
 using System;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
+using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
 
 namespace Beep.OilandGas.PermitsAndApplications.Forms
 {

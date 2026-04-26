@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using PermitApplicationModel = Beep.OilandGas.Models.Data.PermitsAndApplications.PERMIT_APPLICATION;
+using PermitApplicationModel = Beep.OilandGas.PermitsAndApplications.Data.PermitTables.PERMIT_APPLICATION;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
 
 namespace Beep.OilandGas.Models.Core.Interfaces

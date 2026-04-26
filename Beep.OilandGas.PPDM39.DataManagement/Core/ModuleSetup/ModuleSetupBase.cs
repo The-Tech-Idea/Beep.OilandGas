@@ -42,13 +42,20 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup
         /// and table name, wired with the context dependencies.
         /// </summary>
         protected PPDMGenericRepository CreateRepo(Type entityType, string tableName) =>
+            CreateRepo(entityType, tableName, _ctx.ConnectionName);
+
+        /// <summary>
+        /// Creates a <see cref="PPDMGenericRepository"/> for a runtime target connection.
+        /// Module setup runs are passed a connection name, so seeding code should prefer this overload.
+        /// </summary>
+        protected PPDMGenericRepository CreateRepo(Type entityType, string tableName, string connectionName) =>
             new PPDMGenericRepository(
                 _ctx.Editor,
                 _ctx.CommonColumnHandler,
                 _ctx.Defaults,
                 _ctx.Metadata,
                 entityType,
-                _ctx.ConnectionName,
+                connectionName,
                 tableName);
 
         /// <summary>
@@ -56,6 +63,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup
         /// </summary>
         protected PPDMGenericRepository GetRepo<T>(string tableName) =>
             CreateRepo(typeof(T), tableName);
+
+        /// <summary>
+        /// Typed convenience wrapper for a runtime target connection.
+        /// </summary>
+        protected PPDMGenericRepository GetRepo<T>(string tableName, string connectionName) =>
+            CreateRepo(typeof(T), tableName, connectionName);
 
         /// <summary>
         /// Returns <c>true</c> when at least one row matching <paramref name="idFilter"/>

@@ -5,8 +5,9 @@ using System.Threading.Tasks;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using Beep.OilandGas.UserManagement.Contracts.Services;
-using Beep.OilandGas.Models.Data.Security;
-using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.UserManagement.Models.Identity;
+using Beep.OilandGas.UserManagement.Models.Profile;
+using Beep.OilandGas.UserManagement.Models.Scope;
 
 namespace Beep.OilandGas.UserManagement.Modules
 {
@@ -23,13 +24,20 @@ namespace Beep.OilandGas.UserManagement.Modules
     {
         private static readonly IReadOnlyList<Type> _entityTypes = new List<Type>
         {
-            typeof(BUSINESS_ASSOCIATE),
-            typeof(BA_ORGANIZATION),
-            typeof(USER),
-            typeof(ROLE),
-            typeof(PERMISSION),
-            typeof(USER_ROLE),
-            typeof(ROLE_PERMISSION)
+            // ── Identity tables ───────────────────────────────────────────────
+            typeof(AppUser),
+            typeof(AppRole),
+            typeof(AppUserRole),
+            typeof(AppPermission),
+            typeof(AppRolePermission),
+            // ── Scope tables ─────────────────────────────────────────────────
+            typeof(UserScopeAssignment),
+            typeof(OrganizationScope),
+            typeof(UserAssetAccess),
+            // ── Persona / profile tables ──────────────────────────────────────
+            typeof(PersonaDefinition),
+            typeof(PersonaViewPreference),
+            typeof(UserPersonaProfile),
         };
 
         private readonly IDefaultSecuritySeedService _securitySeeder;

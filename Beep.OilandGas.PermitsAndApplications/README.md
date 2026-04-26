@@ -8,6 +8,11 @@ A comprehensive library for managing permits, applications, and regulatory compl
 
 All data is mapped to PPDM39 data model with jurisdiction-specific support.
 
+## Planning & enhancements
+
+- **[MASTER-TODO-TRACKER.md](./MASTER-TODO-TRACKER.md)** — phased checklist (restructure + enhancements)  
+- **[.plans/permit_applications_restructure/ENHANCEMENT_PLAN.md](./.plans/permit_applications_restructure/ENHANCEMENT_PLAN.md)** — oil & gas regulatory workflow enhancement roadmap  
+
 ## Overview
 
 This library provides support for the complete field lifecycle from prospect identification through decommissioning, with full permit and application management capabilities.

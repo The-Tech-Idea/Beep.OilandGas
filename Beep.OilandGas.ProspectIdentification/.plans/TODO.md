@@ -1,0 +1,29 @@
+# Prospect Identification Tracker
+
+- [x] Front-load the planning bundle with exploration business practices, stage-gated process flow, and required data-model families.
+- [x] Build a context map for the ProspectIdentification module, services, workflows, and API consumers.
+- [x] Convert the module discussion from flat entity inventory into a concrete target class layout by workflow slice.
+- [x] Write one approval sheet with the exact current versus planned `ExplorationModule` entity list.
+- [x] Write the exact target folder/class mapping for `Core`, `LeadToProspect`, `ProspectToDiscovery`, `GateReviewAndRanking`, and `SeismicEvidence`.
+- [x] Tighten the module approval sheet into one final approved minimum live module list with no alternatives.
+- [x] Add one final matrix that maps every current class to `Keep Now`, `Stage Later`, or `Defer` with no folder ambiguity.
+- [x] Add one short trigger sheet that defines exactly when `LeadToProspect`, `ProspectToDiscovery`, `GateReviewAndRanking`, and `SeismicEvidence` may move from `Stage Later` into active code.
+- [x] Correct `ExplorationModule.cs` back to the full project table registry and keep runtime stage-gating out of `EntityTypes`.
+- [ ] Plan the module additions for second-wave workflows only after the first live slice is approved and the relevant slice trigger is satisfied.
+- [x] Align the live `ProspectIdentificationService` to the project prospect record shape for field, status, description, and estimated resources.
+- [x] Document the required data-folder boundary for storage tables versus aggregate workflow/reporting models.
+- [x] Document the exploration workflows already seeded in lifecycle.
+- [x] Document the current class-volume pressure and the confirmed duplicate `PROSPECT` ownership in the planning bundle.
+- [x] Audit the 45 files under `Data/ProspectIdentification` and classify which are canonical storage shapes versus temporary local compatibility models.
+- [x] Extend the audit across `Data/Exploration` and `Data/Evaluation` and record the results in `05_Data_Class_Audit.md`.
+- [x] Update the plans to organize active data classes as core data plus workflow/process-owned slices.
+- [ ] Retire the unused shared `Beep.OilandGas.PPDM39.Models.PROSPECT` definition after confirming there is no metadata or reflection dependency on it.
+- [ ] Reorganize the active data layer into a small core set plus workflow/process slices once canonical ownership is settled.
+- [ ] Reduce the local storage layer to the subset backed by real endpoints, real workflow state, or verified project ownership.
+- [ ] Remove or replace local reference/lookup duplicates such as `R_LEAD_STATUS.cs` and `R_PLAY_TYPE.cs` with shared LOV/reference-data handling.
+- [ ] Move request/response and evaluation/reporting models out of flat buckets and under their owning workflow/process slices.
+- [ ] Convert `SeismicAnalysisService` from `UnitOfWork` plus `FIELD`/`SEIS_SET` assumptions to PPDMGenericRepository-based exploration evidence access.
+- [ ] Convert `ProspectEvaluationService` to evaluate real prospect records and supporting evidence instead of treating `FIELD` as the prospect root.
+- [ ] Audit the remaining local PPDM-like exploration classes and decide which should move into shared PPDM model ownership.
+- [ ] Add focused tests for the live prospect service and prospect controller routes.
+- [ ] Reduce or retire the unused parallel project-local service interfaces after consumer confirmation.

@@ -1,6 +1,7 @@
 ﻿@page "/ppdm39/hse/incidents/{Id}"
 @attribute [Authorize(Roles = "SafetyOfficer,Manager,Admin,User")]
 @inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
+@inject Beep.OilandGas.Web.Services.IHSEServiceClient HSEClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -23,6 +24,23 @@
     </MudStack>
 
     <MudDivider Class="mb-4" />
+
+    @if (!_workflowAvailable && !string.IsNullOrWhiteSpace(_workflowWarning))
+    {
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="mb-4">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
+                <MudText Typo="Typo.body2">@_workflowWarning</MudText>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Warning"
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Sync"
+                           Disabled="@_ensuringWorkflow"
+                           OnClick="EnsureWorkflowAsync">
+                    @(_ensuringWorkflow ? "Creating Workflow..." : "Create Workflow")
+                </MudButton>
+            </MudStack>
+        </MudAlert>
+    }
 
     <MudGrid Spacing="3">
 
@@ -77,6 +95,7 @@
                                       Lines="4" Variant="Variant.Outlined" Class="mb-2" />
                         <MudButton Variant="Variant.Filled" Color="Color.Info"
                                    StartIcon="@Icons.Material.Filled.Save"
+                                   Disabled="@(!_workflowAvailable)"
                                    OnClick="SubmitRcaAsync">
                             Submit RCA
                         </MudButton>
@@ -95,6 +114,7 @@
                     <CardHeaderActions>
                         <MudButton Size="Size.Small" Variant="Variant.Text"
                                    StartIcon="@Icons.Material.Filled.Add"
+                                   Disabled="@(!_workflowAvailable)"
                                    OnClick="AddActionAsync">
                             Add
                         </MudButton>
@@ -117,6 +137,7 @@
                                     {
                                         <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
                                                        Size="Size.Small" Color="Color.Success"
+                                                       Disabled="@(!_workflowAvailable)"
                                                        OnClick='@(() => CloseActionAsync(context.Item.ActionId))' />
                                     }
                                 </CellTemplate>
@@ -135,7 +156,7 @@
                                       Lines="2" Variant="Variant.Outlined" Class="mb-2" />
                         <MudButton Variant="Variant.Filled" Color="Color.Success"
                                    StartIcon="@Icons.Material.Filled.CheckCircle"
-                                   Disabled="@(_correctiveActions.Any(a => a.Status != "COMPLETED"))"
+                                   Disabled="@(!_workflowAvailable || _correctiveActions.Any(a => a.Status != "COMPLETED"))"
                                    OnClick="CloseIncidentAsync">
                             Close Incident
                         </MudButton>
@@ -202,6 +223,9 @@
     private string   _closeNotes   = string.Empty;
     private bool     _canEditRca   = true;
     private bool     _canClose     = true;
+    private bool     _workflowAvailable = true;
+    private string   _workflowWarning = string.Empty;
+    private bool     _ensuringWorkflow = false;
 
     private List<ActionRow> _correctiveActions = new();
 
@@ -222,40 +246,100 @@
     {
         try
         {
-            var inst = await BusinessProcessClient.GetHseIncidentAsync(Id);
-            if (inst != null)
+            _workflowAvailable = true;
+            _workflowWarning = string.Empty;
+
+            var incidentTask = HSEClient.GetIncidentAsync(Id);
+            var causesTask = HSEClient.GetIncidentCausesAsync(Id);
+            var correctiveActionsTask = HSEClient.GetIncidentCorrectiveActionsAsync(Id);
+            var processTask = TryGetWorkflowIncidentAsync(Id);
+
+            await Task.WhenAll(incidentTask, causesTask, correctiveActionsTask, processTask);
+
+            var incident = await incidentTask;
+            var causes = await causesTask;
+            var correctiveActions = await correctiveActionsTask;
+            var inst = await processTask;
+
+            if (incident != null)
             {
-                _incidentType = inst.EntityType;
-                _description  = inst.EntityId;
-                _status       = inst.Status.ToString();
-                _location     = inst.EntityId;
-                _reportedBy   = inst.StartedBy;
-                _incidentDate = inst.StartDate;
-                _canEditRca   = !string.Equals(inst.Status.ToString(), "CLOSED", StringComparison.OrdinalIgnoreCase);
-                _canClose     = !string.Equals(inst.Status.ToString(), "CLOSED", StringComparison.OrdinalIgnoreCase);
+                _incidentType = incident.IncidentType;
+                _description = incident.Description;
+                _tier = incident.Tier.ToString();
+                _status = incident.CurrentState;
+                _location = incident.Location;
+                _incidentDate = incident.IncidentDate;
+                _reportedBy = inst?.StartedBy ?? incident.InvestigatorId ?? string.Empty;
+                _canEditRca = _workflowAvailable
+                    && !string.Equals(incident.CurrentState, IncidentState.Closed, StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(incident.CurrentState, IncidentState.Cancelled, StringComparison.OrdinalIgnoreCase);
+                _canClose = _workflowAvailable
+                    && !string.Equals(incident.CurrentState, IncidentState.Closed, StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(incident.CurrentState, IncidentState.Cancelled, StringComparison.OrdinalIgnoreCase);
+            }
 
-                // Map step instances to corrective actions
-                if (inst.StepInstances?.Count > 0)
-                {
-                    _correctiveActions = inst.StepInstances.Select(s => new ActionRow(
-                        s.StepId,
-                        s.StepId,
-                        s.CompletedBy,
-                        s.CompletionDate ?? DateTime.Today.AddDays(14),
-                        s.Status.ToString()
-                    )).ToList();
-                }
+            _correctiveActions = correctiveActions
+                .OrderBy(action => action.StepSeq)
+                .Select(action => new ActionRow(
+                    action.StepSeq.ToString(),
+                    action.Description,
+                    action.ResponsiblePerson ?? string.Empty,
+                    action.DueDate,
+                    action.Status))
+                .ToList();
 
-                // Pull RCA from history
-                var rcaEntry = inst.History?.LastOrDefault(h =>
-                    string.Equals(h.Action, "RCA_SUBMITTED", StringComparison.OrdinalIgnoreCase));
-                if (rcaEntry != null)
-                    _rcaSummary = rcaEntry.Notes;
+            _rcaSummary = causes
+                .Where(cause => string.Equals(cause.CauseType, CauseType.Root, StringComparison.OrdinalIgnoreCase))
+                .Select(cause => cause.Description)
+                .FirstOrDefault(description => !string.IsNullOrWhiteSpace(description))
+                ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(_rcaDraft))
+            {
+                _rcaDraft = _rcaSummary;
             }
         }
         catch
         {
             Snackbar.Add("Could not load incident detail.", Severity.Warning);
+        }
+    }
+
+    private async Task<ProcessInstance?> TryGetWorkflowIncidentAsync(string incidentId)
+    {
+        try
+        {
+            return await BusinessProcessClient.GetHseIncidentAsync(incidentId);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            _workflowAvailable = false;
+            _workflowWarning = "No workflow instance was found for this incident. The PPDM incident record is still available, but workflow actions are disabled for this page.";
+            return null;
+        }
+    }
+
+    private async Task EnsureWorkflowAsync()
+    {
+        _ensuringWorkflow = true;
+
+        try
+        {
+            var instance = await BusinessProcessClient.EnsureHseIncidentWorkflowAsync(Id);
+            await LoadDetailAsync();
+            Snackbar.Add(
+                instance == null
+                    ? "Workflow was not created."
+                    : "Workflow created for this incident.",
+                instance == null ? Severity.Warning : Severity.Success);
+        }
+        catch
+        {
+            Snackbar.Add("Could not create workflow for this incident.", Severity.Error);
+        }
+        finally
+        {
+            _ensuringWorkflow = false;
         }
     }
 
@@ -265,10 +349,11 @@
         {
             var req = new HSEIncidentUpdateRequest
             {
-                RcaSummary = _rcaDraft
+                RcaSummary = _rcaDraft,
+                RcaCauseCategory = CauseCategory.Process
             };
             await BusinessProcessClient.SubmitHseIncidentRcaAsync(Id, req);
-            _rcaSummary = _rcaDraft;
+            await LoadDetailAsync();
             Snackbar.Add("RCA submitted.", Severity.Success);
         }
         catch { Snackbar.Add("Could not submit RCA.", Severity.Error); }
@@ -283,12 +368,7 @@
                 Notes = "Marked completed from incident detail."
             };
             await BusinessProcessClient.CloseHseCorrectiveActionAsync(Id, actionId, req);
-            var action = _correctiveActions.FirstOrDefault(a => a.ActionId == actionId);
-            if (action != null)
-            {
-                _correctiveActions.Remove(action);
-                _correctiveActions.Add(action with { Status = "COMPLETED" });
-            }
+            await LoadDetailAsync();
             Snackbar.Add("Action closed.", Severity.Success);
         }
         catch { Snackbar.Add("Could not close action.", Severity.Error); }
@@ -344,18 +424,13 @@
             var request = new HSEIncidentUpdateRequest
             {
                 AssignedToUserId = _caResponsibleBaId,
-                CorrectiveActions = new List<string> { _caDescription }
+                CorrectiveActions = new List<string> { _caDescription },
+                CorrectiveActionType = _caType,
+                CorrectiveActionDueDate = _caDueDate
             };
 
             await BusinessProcessClient.RaiseHseCorrectiveActionsAsync(Id, request);
-
-            _correctiveActions.Add(new ActionRow(
-                Guid.NewGuid().ToString(),
-                _caDescription,
-                _caResponsibleBaId,
-                _caDueDate,
-                "OPEN"));
-
+            await LoadDetailAsync();
             _showAddActionDialog = false;
             Snackbar.Add("Corrective action added.", Severity.Success);
         }

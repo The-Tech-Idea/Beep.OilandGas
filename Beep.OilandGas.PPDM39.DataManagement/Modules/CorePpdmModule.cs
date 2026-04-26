@@ -10,9 +10,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Modules
 {
     /// <summary>
     /// Module order 0 — core PPDM setup module.
-    ///
-    /// This module invokes the existing PPDM reference-table seed path so setup
-    /// preserves current behavior while moving execution under IModuleSetup.
+    /// This module stays in PPDM39.DataManagement because it is a thin owner for
+    /// shared PPDM reference-data infrastructure that is not specific to any single domain project.
     /// </summary>
     public sealed class CorePpdmModule : ModuleSetupBase
     {

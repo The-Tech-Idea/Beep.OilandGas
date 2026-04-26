@@ -1,5 +1,6 @@
 ﻿using System;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
+using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
 
 namespace Beep.OilandGas.PermitsAndApplications.DataMapping
 {
@@ -105,43 +106,6 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
                 PermitApplicationType.Seismic => "SEISMIC",
                 PermitApplicationType.Groundwater => "GROUNDWATER",
                 _ => "OTHER"
-            };
-        }
-
-        private PermitApplicationStatus MapApplicationStatus(string? status)
-        {
-            if (string.IsNullOrWhiteSpace(status))
-                return PermitApplicationStatus.Draft;
-
-            return status.ToUpperInvariant() switch
-            {
-                "DRAFT" => PermitApplicationStatus.Draft,
-                "SUBMITTED" => PermitApplicationStatus.Submitted,
-                "UNDER_REVIEW" => PermitApplicationStatus.UnderReview,
-                "ADDITIONAL_INFO_REQUIRED" => PermitApplicationStatus.AdditionalInformationRequired,
-                "APPROVED" => PermitApplicationStatus.Approved,
-                "REJECTED" => PermitApplicationStatus.Rejected,
-                "WITHDRAWN" => PermitApplicationStatus.Withdrawn,
-                "EXPIRED" => PermitApplicationStatus.Expired,
-                "RENEWED" => PermitApplicationStatus.Renewed,
-                _ => PermitApplicationStatus.Draft
-            };
-        }
-
-        private string MapApplicationStatusToString(PermitApplicationStatus status)
-        {
-            return status switch
-            {
-                PermitApplicationStatus.Draft => "DRAFT",
-                PermitApplicationStatus.Submitted => "SUBMITTED",
-                PermitApplicationStatus.UnderReview => "UNDER_REVIEW",
-                PermitApplicationStatus.AdditionalInformationRequired => "ADDITIONAL_INFO_REQUIRED",
-                PermitApplicationStatus.Approved => "APPROVED",
-                PermitApplicationStatus.Rejected => "REJECTED",
-                PermitApplicationStatus.Withdrawn => "WITHDRAWN",
-                PermitApplicationStatus.Expired => "EXPIRED",
-                PermitApplicationStatus.Renewed => "RENEWED",
-                _ => "DRAFT"
             };
         }
 

@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
 using Beep.OilandGas.Models.Data;
-using ApplicBa = Beep.OilandGas.Models.Data.PermitsAndApplications.APPLIC_BA;
-using ApplicDesc = Beep.OilandGas.Models.Data.PermitsAndApplications.APPLIC_DESC;
-using ApplicRemark = Beep.OilandGas.Models.Data.PermitsAndApplications.APPLIC_REMARK;
-using BaPermit = Beep.OilandGas.Models.Data.PermitsAndApplications.BA_PERMIT;
-using FacilityLicense = Beep.OilandGas.Models.Data.PermitsAndApplications.FACILITY_LICENSE;
-using WellPermitType = Beep.OilandGas.Models.Data.PermitsAndApplications.WELL_PERMIT_TYPE;
+using ApplicBa = Beep.OilandGas.PPDM39.Models.APPLIC_BA;
+using ApplicDesc = Beep.OilandGas.PPDM39.Models.APPLIC_DESC;
+using ApplicRemark = Beep.OilandGas.PPDM39.Models.APPLIC_REMARK;
+using BaPermit = Beep.OilandGas.PPDM39.Models.BA_PERMIT;
+using FacilityLicense = Beep.OilandGas.PPDM39.Models.FACILITY_LICENSE;
+using WellPermitType = Beep.OilandGas.PPDM39.Models.WELL_PERMIT_TYPE;
+using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {

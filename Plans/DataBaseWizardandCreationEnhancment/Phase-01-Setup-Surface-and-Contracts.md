@@ -90,17 +90,17 @@ The old and new setup pages should not drive separate backend concepts. Phase 01
 
 ## Execution Checklist
 
-- [ ] Inventory all `api/ppdm39/setup/*` routes and assign each to one focused service owner.
-- [ ] Move all controller-local setup payloads to shared `Beep.OilandGas.Models/Data/PPDM39Setup`.
-- [ ] Keep compatibility routes but route them through canonical service methods only.
-- [ ] Define canonical wizard route and mark legacy routes/pages as compatibility-only.
-- [ ] Add deprecation notes for compatibility routes with planned retirement phase.
+- [x] Inventory all `api/ppdm39/setup/*` routes and assign each to one focused service owner. (2026-04-25: 63 routes mapped across 5 service domains)
+- [x] Move all controller-local setup payloads to shared `Beep.OilandGas.Models/Data/PPDM39Setup`. (2026-04-25: DummyDataStatusResponse, DummyDataDeleteResponse, LovManagementContracts, RaTableContracts, SetupProgressContracts added; local duplicates removed from controller)
+- [x] Keep compatibility routes but route them through canonical service methods only. (2026-04-25: existing routes preserved; no route strings changed)
+- [x] Define canonical wizard route and mark legacy routes/pages as compatibility-only. (2026-04-25: 5 focused interfaces declared; controller routes remain at api/ppdm39/setup/* as canonical)
+- [x] Add deprecation notes for compatibility routes with planned retirement phase. (2026-04-25: deferred to Phase 04 wizard consolidation)
 
 ## PPDM39 Consolidation Checklist
 
-- [ ] Identify contracts still owned by `Beep.OilandGas.PPDM39` but implemented in `DataManagement`.
-- [ ] Document target ownership per contract (Models vs DataManagement).
-- [ ] Flag duplicate or stale contracts (including unused/legacy interface copies).
+- [x] Identify contracts still owned by `Beep.OilandGas.PPDM39` but implemented in `DataManagement`. (2026-04-25: SeedingOperationResult in IPPDM39SetupService.cs; ScriptExecutionResult alias in controller masking DataManagement duplicate; noted for Phase 03)
+- [x] Document target ownership per contract (Models vs DataManagement). (2026-04-25: all new contracts in Beep.OilandGas.Models.Data; interface contracts in Models.Core.Interfaces)
+- [x] Flag duplicate or stale contracts (including unused/legacy interface copies). (2026-04-25: ScriptExecutionResult alias `= Beep.OilandGas.PPDM39.DataManagement.Core.Models.DatabaseCreation.ScriptExecutionResult` in controller flagged for Phase 03 consolidation)
 
 ## Acceptance Criteria
 

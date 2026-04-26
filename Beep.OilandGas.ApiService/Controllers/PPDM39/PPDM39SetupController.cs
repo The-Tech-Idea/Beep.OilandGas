@@ -40,6 +40,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
     public class PPDM39SetupController : ControllerBase
     {
         private readonly PPDM39SetupService _setupService;
+        private readonly IPPDM39SchemaMigrationService _schemaMigrationService;
         private readonly IDMEEditor _editor;
         private readonly ILogger<PPDM39SetupController> _logger;
         private readonly IProgressTrackingService? _progressTracking;
@@ -61,6 +62,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
 
         public PPDM39SetupController(
             PPDM39SetupService setupService,
+            IPPDM39SchemaMigrationService schemaMigrationService,
             IDMEEditor editor,
             ILogger<PPDM39SetupController> logger,
             IProgressTrackingService? progressTracking = null,
@@ -80,6 +82,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             IDefaultSecuritySeedService? defaultSecuritySeedService = null)
         {
             _setupService = setupService ?? throw new ArgumentNullException(nameof(setupService));
+            _schemaMigrationService = schemaMigrationService ?? (IPPDM39SchemaMigrationService)setupService;
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _progressTracking = progressTracking;
@@ -2727,7 +2730,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
-                var result = await _setupService.PlanSchemaMigrationAsync(request);
+                var result = await _schemaMigrationService.PlanSchemaMigrationAsync(request);
                 return result.Success ? Ok(result) : BadRequest(result);
             }
             catch (Exception ex)
@@ -2750,7 +2753,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
-                var result = await _setupService.ApproveSchemaMigrationPlanAsync(request);
+                var result = await _schemaMigrationService.ApproveSchemaMigrationPlanAsync(request);
                 return result.Success ? Ok(result) : BadRequest(result);
             }
             catch (Exception ex)
@@ -2765,6 +2768,31 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         }
 
         /// <summary>
+        /// GET /api/ppdm39/setup/schema/ci-validate/{planId}
+        /// Returns CI gate, policy, and preflight validation evidence for a generated migration plan.
+        /// </summary>
+        [AllowAnonymous]
+        [HttpGet("schema/ci-validate/{planId}")]
+        public async Task<ActionResult<SchemaMigrationCiValidationResult>> ValidateSchemaMigrationForCi(string planId)
+        {
+            try
+            {
+                var result = await _schemaMigrationService.ValidateMigrationPlanForCiAsync(planId);
+                return result.Success ? Ok(result) : BadRequest(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating schema migration plan for CI {PlanId}", planId);
+                return StatusCode(500, new SchemaMigrationCiValidationResult
+                {
+                    Success = false,
+                    PlanId = planId,
+                    Message = "Schema migration CI validation failed."
+                });
+            }
+        }
+
+        /// <summary>
         /// POST /api/ppdm39/setup/schema/execute
         /// Executes an approved schema migration plan.
         /// </summary>
@@ -2773,7 +2801,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
-                var result = await _setupService.ExecuteSchemaMigrationPlanAsync(request);
+                var result = await _schemaMigrationService.ExecuteSchemaMigrationPlanAsync(request);
                 return result.Success ? Ok(result) : BadRequest(result);
             }
             catch (Exception ex)
@@ -2796,7 +2824,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
-                var result = await _setupService.StartSchemaMigrationExecutionAsync(request);
+                var result = await _schemaMigrationService.StartSchemaMigrationExecutionAsync(request);
                 return result.Success ? Ok(result) : BadRequest(result);
             }
             catch (Exception ex)
@@ -2819,7 +2847,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
-                var result = await _setupService.GetSchemaMigrationProgressAsync(executionToken);
+                var result = await _schemaMigrationService.GetSchemaMigrationProgressAsync(executionToken);
                 return result.Success ? Ok(result) : NotFound(result);
             }
             catch (Exception ex)
@@ -2844,7 +2872,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
-                var result = await _setupService.GetSchemaMigrationArtifactsAsync(planId);
+                var result = await _schemaMigrationService.GetSchemaMigrationArtifactsAsync(planId);
                 return result.Success ? Ok(result) : NotFound(result);
             }
             catch (Exception ex)
@@ -3123,39 +3151,4 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
     }
 }
 
-// ── DTOs for first-run wizard endpoints ──────────────────────────────────────
-namespace Beep.OilandGas.ApiService.Controllers.PPDM39
-{
-    public class GenerateDummyDataRequest
-    {
-        /// <summary>minimal | standard | full</summary>
-        public string SeedOption { get; set; } = "standard";
-        public string UserId { get; set; } = "SYSTEM";
-    }
 
-    public class GenerateDummyDataResponse
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = string.Empty;
-        public string SeedOption { get; set; } = string.Empty;
-        public int FieldsCreated { get; set; }
-        public int WellsCreated { get; set; }
-        public int ProductionRecords { get; set; }
-        public int FacilitiesCreated { get; set; }
-        public int WellTestsCreated { get; set; }
-        public int ActivitiesCreated { get; set; }
-    }
-
-    public class DummyDataStatusResponse
-    {
-        public bool HasDummyData { get; set; }
-        public string Reason { get; set; } = string.Empty;
-    }
-
-    public class DummyDataDeleteResponse
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = string.Empty;
-        public int RecordsDeleted { get; set; }
-    }
-}

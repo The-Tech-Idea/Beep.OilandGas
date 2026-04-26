@@ -26,4 +26,8 @@ public class AppUser : ModelEntityBase
     // Lifecycle state transition audit
     public DateTime? STATE_CHANGED_UTC { get; set; }
     public string? STATE_CHANGED_BY_USER_ID { get; set; }
+    // ── PPDM 3.9 linkage ──────────────────────────────────────────────
+    /// <summary>Optional link to PPDM BUSINESS_ASSOCIATE for this user's org-person record.</summary>
+    public string? BA_ID { get; set; }
+    public string? EMPLOYEE_ID { get; set; }
 }

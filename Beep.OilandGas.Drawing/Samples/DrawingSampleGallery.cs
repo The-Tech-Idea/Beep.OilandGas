@@ -53,7 +53,14 @@ namespace Beep.OilandGas.Drawing.Samples
                 900,
                 1600,
                 CreateWellSchematicEnhancedVerticalScene,
-                CreateWellSchematicEnhancedVerticalExports())
+                CreateWellSchematicEnhancedVerticalExports()),
+            new DrawingSampleScene(
+                "WellLog_Petrophysical",
+                "Multi-track petrophysical log with GR, resistivity, density-neutron, and depth tracks.",
+                1500,
+                1800,
+                CreateWellLogPetrophysicalScene,
+                Array.Empty<DrawingSampleExportAction>())
         });
 
         /// <summary>
@@ -618,6 +625,106 @@ namespace Beep.OilandGas.Drawing.Samples
                     MaxZ = points.Max(point => point.Z)
                 }
             };
+        }
+
+        /// <summary>
+        /// Builds the standard well-log petrophysical sample scene (GR, resistivity, density-neutron, depth tracks).
+        /// </summary>
+        public static DrawingEngine CreateWellLogPetrophysicalScene()
+        {
+            var depths = new List<double>();
+            var gr = new List<double>();
+            var ild = new List<double>();
+            var dphi = new List<double>();
+            var nphi = new List<double>();
+
+            var rng = new Random(42);
+            for (int i = 0; i <= 400; i++)
+            {
+                double depth = 8800 + i * 5;
+                depths.Add(depth);
+                gr.Add(20 + 110 * Math.Abs(Math.Sin(i * 0.09)) + rng.NextDouble() * 8);
+                ild.Add(0.5 + 199.5 * Math.Pow(Math.Abs(Math.Cos(i * 0.07)), 3) + rng.NextDouble() * 2);
+                dphi.Add(Math.Clamp(0.28 - 0.18 * Math.Abs(Math.Sin(i * 0.11)) + rng.NextDouble() * 0.04, -0.05, 0.45));
+                nphi.Add(Math.Clamp(0.32 - 0.14 * Math.Abs(Math.Sin(i * 0.11 + 0.4)) + rng.NextDouble() * 0.04, -0.05, 0.45));
+            }
+
+            var logData = new LogData
+            {
+                WellIdentifier = "DEMO-01",
+                LogName = "Petrophysical Suite",
+                LogType = "Wireline",
+                DepthUnit = "feet",
+                StartDepth = 8800,
+                EndDepth = 10800,
+                DepthStep = 5,
+                Depths = depths,
+                Curves =
+                {
+                    ["GR"] = gr,
+                    ["ILD"] = ild,
+                    ["DPHI"] = dphi,
+                    ["NPHI"] = nphi
+                },
+                CurveMetadata =
+                {
+                    ["GR"] = new LogCurveMetadata { Mnemonic = "GR", DisplayName = "Gamma Ray", Unit = "gAPI", MinValue = 0, MaxValue = 150 },
+                    ["ILD"] = new LogCurveMetadata { Mnemonic = "ILD", DisplayName = "Deep Resistivity", Unit = "Ohm.m", MinValue = 0.2, MaxValue = 200 },
+                    ["DPHI"] = new LogCurveMetadata { Mnemonic = "DPHI", DisplayName = "Density Porosity", Unit = "v/v", MinValue = -0.15, MaxValue = 0.45 },
+                    ["NPHI"] = new LogCurveMetadata { Mnemonic = "NPHI", DisplayName = "Neutron Porosity", Unit = "v/v", MinValue = -0.15, MaxValue = 0.45 }
+                }
+            };
+
+            var configuration = new LogRendererConfiguration
+            {
+                UseStandardTrackTemplates = false,
+                ShowTrackHeaders = true,
+                ShowDepthScale = true,
+                RenderDepthScaleAsTrack = true,
+                ShowDensityNeutronCrossoverShading = true,
+                Tracks = new List<LogTrackDefinition>
+                {
+                    new LogTrackDefinition
+                    {
+                        Kind = LogTrackKind.Depth,
+                        Name = "Depth",
+                        MajorInterval = 100,
+                        MinorSubdivisionCount = 5,
+                        LabelFormat = "F0"
+                    },
+                    new LogTrackDefinition
+                    {
+                        Name = "Gamma Ray",
+                        Curves = new List<LogTrackCurveDefinition>
+                        {
+                            new LogTrackCurveDefinition { CurveName = "GR", DisplayName = "Gamma Ray", MinValue = 0, MaxValue = 150 }
+                        }
+                    },
+                    new LogTrackDefinition
+                    {
+                        Name = "Resistivity",
+                        Curves = new List<LogTrackCurveDefinition>
+                        {
+                            new LogTrackCurveDefinition { CurveName = "ILD", DisplayName = "Deep Resistivity", MinValue = 0.2, MaxValue = 200, ScaleType = LogTrackScaleType.Logarithmic }
+                        }
+                    },
+                    new LogTrackDefinition
+                    {
+                        Name = "Density-Neutron",
+                        Curves = new List<LogTrackCurveDefinition>
+                        {
+                            new LogTrackCurveDefinition { CurveName = "DPHI", DisplayName = "Density Porosity", MinValue = -0.15, MaxValue = 0.45 },
+                            new LogTrackCurveDefinition { CurveName = "NPHI", DisplayName = "Neutron Porosity", MinValue = -0.15, MaxValue = 0.45 }
+                        }
+                    }
+                }
+            };
+
+            return WellLogBuilder.Create()
+                .WithLogData(logData)
+                .WithConfiguration(configuration)
+                .WithSize(1500, 1800)
+                .Build();
         }
     }
 }
