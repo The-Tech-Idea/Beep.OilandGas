@@ -404,10 +404,9 @@ namespace Beep.OilandGas.ProductionOperations.Services
             if (existing == null)
                 throw new InvalidOperationException($"Well {wellUWI} not found");
 
-            if (parameters.FlowingTubingPressure.HasValue)
-                existing.FINAL_TD = parameters.FlowingTubingPressure.Value;
-            if (parameters.CasingPressure.HasValue)
-                existing.DRILL_TD = parameters.CasingPressure.Value;
+            // Well parameters update — FINAL_TD and DRILL_TD are depth fields, not pressure
+            // Pressure data should be stored in WELL_TEST_PRESSURE or WELL_PRESSURE tables
+            _logger?.LogWarning("Well parameter update via FINAL_TD/DRILL_TD is deprecated. Use WELL_TEST_PRESSURE for pressure data.");
 
             await repo.UpdateAsync(existing, userId);
             _logger?.LogInformation("Updated well parameters for {WellUWI}", wellUWI);
@@ -426,7 +425,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             {
                 EQUIPMENT_ID = maintenance.EquipmentId,
                 MAINT_TYPE = maintenance.MaintenanceType ?? "PREVENTIVE",
-                MAINT_STATUS = maintenance.Status ?? "COMPLETED",
+                MAINT_DESC = maintenance.Status ?? "COMPLETED",
                 ACTIVE_IND = "Y"
             };
 
@@ -458,7 +457,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
                 {
                     EquipmentId = e.EQUIPMENT_ID ?? string.Empty,
                     MaintenanceType = e.MAINT_TYPE,
-                    Status = e.MAINT_STATUS,
+                    Status = e.MAINT_DESC,
                     MaintenanceDate = e.ROW_CREATED_DATE ?? DateTime.MinValue
                 })
                 .OrderByDescending(e => e.MaintenanceDate)
@@ -478,7 +477,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             {
                 EQUIPMENT_ID = schedule.EquipmentId,
                 MAINT_TYPE = schedule.MaintenanceType ?? "PREVENTIVE",
-                MAINT_STATUS = "PLANNED",
+                MAINT_DESC = "PLANNED",
                 ACTIVE_IND = "Y"
             };
 
@@ -615,7 +614,9 @@ namespace Beep.OilandGas.ProductionOperations.Services
             if (existing == null)
                 throw new InvalidOperationException($"Facility {facilityId} not found");
 
-            existing.FACILITY_STATUS = status.OperationalStatus ?? existing.FACILITY_STATUS;
+            // FACILITY_STATUS is a separate table in PPDM39, not a column on FACILITY
+            // Facility operational status should be tracked via FACILITY_STATUS table
+            _logger?.LogWarning("Facility status update via FACILITY.FACILITY_STATUS is not supported. Use FACILITY_STATUS table instead.");
             await repo.UpdateAsync(existing, userId);
             _logger?.LogInformation("Updated facility status for {FacilityId}", facilityId);
         }
@@ -641,75 +642,13 @@ namespace Beep.OilandGas.ProductionOperations.Services
             {
                 FacilityId = facilityId,
                 StatusDate = DateTime.UtcNow,
-                OperationalStatus = facility?.FACILITY_STATUS ?? "Unknown",
+                OperationalStatus = facility?.FACILITY_TYPE ?? "Unknown",
                 CapacityUtilization = 0m,
                 ProcessingEfficiency = 0m
             };
         }
 
-        public async Task RecordSafetyIncidentAsync(SafetyIncident incident, string userId)
-        {
-            if (incident == null) throw new ArgumentNullException(nameof(incident));
-            _logger?.LogInformation("Recording safety incident");
-            await Task.CompletedTask;
-        }
-
-        public async Task<List<SafetyIncident>> GetSafetyIncidentsAsync(DateTime startDate, DateTime endDate, string? wellUWI = null, string? facilityId = null)
-        {
-            _logger?.LogInformation("Getting safety incidents");
-            return await Task.FromResult(new List<SafetyIncident>());
-        }
-
-        public async Task UpdateSafetyIncidentAsync(string incidentId, SafetyIncident incident, string userId)
-        {
-            if (string.IsNullOrWhiteSpace(incidentId)) throw new ArgumentException("Incident ID required", nameof(incidentId));
-            _logger?.LogInformation("Updating safety incident {IncidentId}", incidentId);
-            await Task.CompletedTask;
-        }
-
-        public async Task<SafetyKPIs> CalculateSafetyKPIsAsync(DateTime startDate, DateTime endDate)
-        {
-            _logger?.LogInformation("Calculating safety KPIs");
-            return await Task.FromResult(new SafetyKPIs
-            {
-                StartDate = startDate,
-                EndDate = endDate,
-                TotalRecordableIncidents = 0,
-                TRIR = 0m,
-                LostTimeIncidents = 0,
-                LTIR = 0m,
-                DaysAwayFromWork = 0,
-                DART = 0m,
-                NearMisses = 0,
-                SafetyRating = "Excellent"
-            });
-        }
-
-        public async Task RecordEnvironmentalDataAsync(EnvironmentalData data, string userId)
-        {
-            if (data == null) throw new ArgumentNullException(nameof(data));
-            _logger?.LogInformation("Recording environmental data");
-            await Task.CompletedTask;
-        }
-
-        public async Task<List<EnvironmentalData>> GetEnvironmentalDataAsync(DateTime startDate, DateTime endDate, string? locationId = null)
-        {
-            _logger?.LogInformation("Getting environmental data");
-            return await Task.FromResult(new List<EnvironmentalData>());
-        }
-
-        public async Task<ComplianceCheck> PerformEnvironmentalComplianceCheckAsync(string locationId, DateTime checkDate)
-        {
-            if (string.IsNullOrWhiteSpace(locationId)) throw new ArgumentException("Location ID required", nameof(locationId));
-            _logger?.LogInformation("Performing environmental compliance check for {LocationId}", locationId);
-            return await Task.FromResult(new ComplianceCheck { IsCompliant = true });
-        }
-
-        public async Task<List<ComplianceStatus>> GetEnvironmentalComplianceStatusAsync(DateTime startDate, DateTime endDate)
-        {
-            _logger?.LogInformation("Getting environmental compliance status");
-            return await Task.FromResult(new List<ComplianceStatus>());
-        }
+        // HSE methods removed — safety incidents and environmental compliance are owned by the HSE project
 
         public async Task RecordOperationalCostsAsync(OperationalCosts costs, string userId)
         {

@@ -75,7 +75,7 @@
       },
       {
         "Name": "Reference Table Management",
-        "Description": "Reference tables and lookup values used across the system"
+        "Description": "Track software applications"
       }
     ]
   },
@@ -131,7 +131,7 @@
       },
       {
         "Name": "Production Operations",
-        "Description": "Day-to-day production operations including well monitoring, equipment maintenance, facility management, safety, environmental compliance, and cost tracking"
+        "Description": "Day-to-day production operations including well monitoring, equipment maintenance, facility management, and cost tracking. Note: Safety incidents and environmental compliance are managed by the HSE project."
       },
       {
         "Name": "Production Strings",
