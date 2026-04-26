@@ -1,3 +1,0 @@
-    50679 Warning(s)
-    6 Error(s)
-Time Elapsed 00:03:31.41
