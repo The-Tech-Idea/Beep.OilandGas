@@ -11,6 +11,7 @@ using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.ProductionAccounting.Constants;
 using Beep.OilandGas.ProductionAccounting.Exceptions;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
@@ -87,10 +88,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 INVENTORY_ADJUSTMENT_ID = Guid.NewGuid().ToString(),
                 INVENTORY_ITEM_ID = inventoryItemId,
                 ADJUSTMENT_DATE = valuationDate,
-                ADJUSTMENT_TYPE = "LCM_WRITEDOWN",
+                ADJUSTMENT_TYPE = InventoryAdjustmentTypeCodes.LcmWritedown,
                 QUANTITY_ADJUSTMENT = 0m,
                 UNIT_COST_ADJUSTMENT = unitCostAdjustment,
-                REASON = "Lower of cost or market",
+                REASON = InventoryAdjustmentReasonPhrases.LowerOfCostOrMarket,
                 DESCRIPTION = $"LCM write-down from {unitCost:0.####} to {newUnitCost:0.####}",
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
@@ -133,7 +134,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var commodity = NormalizeCommodity(item.ITEM_TYPE) ?? NormalizeCommodity(item.ITEM_NAME);
             if (string.IsNullOrWhiteSpace(commodity))
-                commodity = "OIL";
+                commodity = PriceIndexCommodityTypeCodes.Oil;
 
             var price = await GetPriceAsync(commodity, valuationDate, cn);
             var adjustments = GetNrvAdjustments(item.REMARK);
@@ -150,7 +151,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 new AppFilter { FieldName = "INVENTORY_ITEM_ID", Operator = "=", FilterValue = inventoryItemId },
                 new AppFilter { FieldName = "VALUATION_DATE", Operator = "<=", FilterValue = valuationDate.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -166,7 +167,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 new AppFilter { FieldName = "COMMODITY_TYPE", Operator = "=", FilterValue = commodityType },
                 new AppFilter { FieldName = "PRICE_DATE", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -184,11 +185,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var upper = input.Trim().ToUpperInvariant();
             if (upper.Contains("GAS"))
-                return "GAS";
+                return PriceIndexCommodityTypeCodes.Gas;
             if (upper.Contains("NGL") || upper.Contains("LIQUID"))
-                return "NGL";
+                return PriceIndexCommodityTypeCodes.Ngl;
             if (upper.Contains("OIL") || upper.Contains("CRUDE"))
-                return "OIL";
+                return PriceIndexCommodityTypeCodes.Oil;
 
             return upper;
         }
@@ -206,11 +207,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var parts = token.Split('=');
                 if (parts.Length != 2)
                     continue;
-                if (parts[0].Equals("TRANSPORT_COST", StringComparison.OrdinalIgnoreCase) &&
+                if (parts[0].Equals(InventoryItemRemarkKeys.TransportCost, StringComparison.OrdinalIgnoreCase) &&
                     decimal.TryParse(parts[1], out var t))
                     transport = t;
-                if ((parts[0].Equals("QUALITY_DED", StringComparison.OrdinalIgnoreCase) ||
-                     parts[0].Equals("QUALITY_ADJ", StringComparison.OrdinalIgnoreCase)) &&
+                if ((parts[0].Equals(InventoryItemRemarkKeys.QualityDed, StringComparison.OrdinalIgnoreCase) ||
+                     parts[0].Equals(InventoryItemRemarkKeys.QualityAdj, StringComparison.OrdinalIgnoreCase)) &&
                     decimal.TryParse(parts[1], out var q))
                     quality = q;
             }

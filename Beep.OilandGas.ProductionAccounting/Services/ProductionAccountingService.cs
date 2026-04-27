@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,6 +12,7 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Accounting.Services;
+using Beep.OilandGas.ProductionAccounting.Constants;
 using Beep.OilandGas.ProductionAccounting.Exceptions;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.Models.Data;
@@ -132,7 +133,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _logger?.LogInformation("Step 2: Allocating production for ticket {TicketId}", RUN_TICKET.RUN_TICKET_ID);
                 var allocation = await _allocationService.AllocateAsync(
                     RUN_TICKET,
-                    "ProRata", // Pro Rata allocation method
+                    AllocationMethods.ProRata,
                     userId,
                     connectionName);
                 if (allocation == null)
@@ -394,7 +395,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = fieldId },
                 new AppFilter { FieldName = "TRANSACTION_DATE", Operator = ">=", FilterValue = startDate.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "TRANSACTION_DATE", Operator = "<=", FilterValue = endDate.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var transactions = (await repo.GetAsync(propertyFilters))?.OfType<REVENUE_TRANSACTION>().ToList() ?? new List<REVENUE_TRANSACTION>();
@@ -406,7 +407,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId },
                 new AppFilter { FieldName = "TRANSACTION_DATE", Operator = ">=", FilterValue = startDate.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "TRANSACTION_DATE", Operator = "<=", FilterValue = endDate.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             return (await repo.GetAsync(fieldFilters))?.OfType<REVENUE_TRANSACTION>().ToList() ?? new List<REVENUE_TRANSACTION>();
@@ -431,7 +432,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 {
                     new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = fieldId },
                     new AppFilter { FieldName = "MEASUREMENT_DATETIME", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd HH:mm:ss") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var measurements = await repo.GetAsync(filters);
@@ -468,7 +469,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 {
                     new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = fieldId },
                     new AppFilter { FieldName = "TRANSACTION_DATE", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var revenues = await repo.GetAsync(filters);
@@ -505,7 +506,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 {
                     new AppFilter { FieldName = "PROPERTY_OR_LEASE_ID", Operator = "=", FilterValue = fieldId },
                     new AppFilter { FieldName = "CALCULATION_DATE", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var royalties = await repo.GetAsync(filters);
@@ -542,7 +543,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 {
                     new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = fieldId },
                     new AppFilter { FieldName = "COST_DATE", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var costs = await repo.GetAsync(filters);
@@ -621,18 +622,20 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var entries = await repo.GetAsync(new List<AppFilter>
                 {
                     new AppFilter { FieldName = "ENTRY_NUMBER", Operator = "=", FilterValue = entryNumber },
-                    new AppFilter { FieldName = "ENTRY_TYPE", Operator = "=", FilterValue = "PERIOD_CLOSE" },
+                    new AppFilter { FieldName = "ENTRY_TYPE", Operator = "=", FilterValue = JournalEntryTypeCodes.PeriodClose },
                     new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 });
 
-                var periodStatus = entries != null && entries.Any() ? "CLOSED" : "OPEN";
+                var periodStatus = entries != null && entries.Any()
+                    ? PeriodCloseStatusCodes.Closed
+                    : PeriodCloseStatusCodes.Open;
                 _logger?.LogDebug("Period status for field {FieldId} and period {Period}: {Status}", fieldId, asOfDate.ToString("yyyy-MM"), periodStatus);
                 return periodStatus;
             }
             catch (Exception ex)
             {
                 _logger?.LogWarning(ex, "Error retrieving period status for field {FieldId}", fieldId);
-                return "OPEN";
+                return PeriodCloseStatusCodes.Open;
             }
         }
 

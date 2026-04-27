@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -454,7 +454,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "ALLOCATION_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var results = await repo.GetAsync(filters);
@@ -478,7 +478,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     var detailFilters = new List<AppFilter>
                     {
                         new AppFilter { FieldName = "ALLOCATION_RESULT_ID", Operator = "=", FilterValue = alloc.ALLOCATION_RESULT_ID },
-                        new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                        new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                     };
 
                     var details = await detailRepo.GetAsync(detailFilters);
@@ -519,7 +519,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 {
                     new AppFilter { FieldName = "PROPERTY_OR_LEASE_ID", Operator = "=", FilterValue = fieldId },
                     new AppFilter { FieldName = "CALCULATION_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var results = await repo.GetAsync(filters);
@@ -564,7 +564,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 {
                     new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = fieldId },
                     new AppFilter { FieldName = "TRANSACTION_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var transactionResults = await transactionRepo.GetAsync(filters);
@@ -580,7 +580,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var allocationResults = await allocationRepo.GetAsync(new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 });
 
                 var allocationList = allocationResults?.Cast<REVENUE_ALLOCATION>().ToList() ?? new List<REVENUE_ALLOCATION>();
@@ -632,7 +632,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "ENTRY_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var results = await repo.GetAsync(filters);
@@ -682,7 +682,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "ALLOCATION_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var results = await repo.GetAsync(filters);
@@ -742,7 +742,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 {
                     new AppFilter { FieldName = "PROPERTY_OR_LEASE_ID", Operator = "=", FilterValue = fieldId },
                     new AppFilter { FieldName = "CALCULATION_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var results = await repo.GetAsync(filters);
@@ -803,7 +803,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 {
                     new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = fieldId },
                     new AppFilter { FieldName = "TRANSACTION_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var results = await repo.GetAsync(filters);
@@ -860,8 +860,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var existing = await repo.GetAsync(new List<AppFilter>
                 {
                     new AppFilter { FieldName = "ENTRY_NUMBER", Operator = "=", FilterValue = entryNumber },
-                    new AppFilter { FieldName = "ENTRY_TYPE", Operator = "=", FilterValue = "PERIOD_CLOSE" },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ENTRY_TYPE", Operator = "=", FilterValue = JournalEntryTypeCodes.PeriodClose },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 });
 
                 if (existing != null && existing.Any())
@@ -889,10 +889,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     JOURNAL_ENTRY_ID = Guid.NewGuid().ToString(),
                     ENTRY_NUMBER = entryNumber,
                     ENTRY_DATE = periodEnd,
-                    ENTRY_TYPE = "PERIOD_CLOSE",
-                    STATUS = "Posted",
+                    ENTRY_TYPE = JournalEntryTypeCodes.PeriodClose,
+                    STATUS = JournalEntryStatusCodes.Posted,
                     DESCRIPTION = entryDescription,
-                    SOURCE_MODULE = "PERIOD_CLOSING",
+                    SOURCE_MODULE = AccountingSourceModuleCodes.PeriodClosing,
                     REFERENCE_NUMBER = referenceNumber,
                     TOTAL_DEBIT = 0m,
                     TOTAL_CREDIT = 0m,
@@ -1058,7 +1058,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 new AppFilter { FieldName = "LEASE_ID", Operator = "=", FilterValue = fieldId },
                 new AppFilter { FieldName = "MEASUREMENT_DATETIME", Operator = ">=", FilterValue = periodStart.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "MEASUREMENT_DATETIME", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var measurementResults = await measurementRepo.GetAsync(measurementFilters);
@@ -1078,7 +1078,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = fieldId },
                 new AppFilter { FieldName = "TRANSACTION_DATE", Operator = ">=", FilterValue = periodStart.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "TRANSACTION_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var revenueResults = await revenueRepo.GetAsync(revenueFilters);
@@ -1108,7 +1108,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = fieldId },
                 new AppFilter { FieldName = "TRANSACTION_DATE", Operator = ">=", FilterValue = periodStart.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "TRANSACTION_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var revenueResults = await revenueRepo.GetAsync(revenueFilters);
@@ -1128,7 +1128,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 new AppFilter { FieldName = "PROPERTY_OR_LEASE_ID", Operator = "=", FilterValue = fieldId },
                 new AppFilter { FieldName = "CALCULATION_DATE", Operator = ">=", FilterValue = periodStart.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "CALCULATION_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var royaltyResults = await royaltyRepo.GetAsync(royaltyFilters);
@@ -1154,7 +1154,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "RUN_TICKET_ID", Operator = "=", FilterValue = allocationRequestId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -1213,7 +1213,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var results = await repo.GetAsync(filters);
@@ -1240,7 +1240,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 return;
             try
             {
-                await _functionalCurrencyService.TranslateBalancesAsync(fieldId, periodEnd, "USD", cn);
+                await _functionalCurrencyService.TranslateBalancesAsync(fieldId, periodEnd, AccountingCurrencyCodes.Usd, cn);
             }
             catch (Exception ex)
             {
@@ -1269,7 +1269,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = fieldId },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var results = await repo.GetAsync(filters);
@@ -1306,7 +1306,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var results = await repo.GetAsync(filters);
@@ -1350,7 +1350,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var results = await repo.GetAsync(filters);
@@ -1394,7 +1394,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var results = await repo.GetAsync(filters);
@@ -1439,8 +1439,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "COST_TYPE", Operator = "=", FilterValue = CostTypes.Acquisition },
-                    new AppFilter { FieldName = "IS_CAPITALIZED", Operator = "=", FilterValue = "Y" },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "IS_CAPITALIZED", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var results = await repo.GetAsync(filters);
@@ -1502,8 +1502,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = fieldId },
                 new AppFilter { FieldName = "COST_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "IS_CAPITALIZED", Operator = "=", FilterValue = "Y" },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "IS_CAPITALIZED", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);

@@ -72,6 +72,10 @@ Implementation note:
   - `IProspectTechnicalMaturationService`
   - `IProspectRiskEconomicAnalysisService`
   - `IProspectPortfolioOptimizationService`
+- Exploration module seed baseline is expanded (2026-04-27):
+  - `R_LEAD_STATUS` defaults for lead lifecycle transitions
+  - `R_PLAY_TYPE` defaults for play screening/classification
+  - `R_EXPLORATION_REFERENCE_CODE` for workflow/process/entity/step/outcome/category token catalogs used by controllers/process services.
 
 ### Phase 3: Service Convergence
 
@@ -79,7 +83,7 @@ Implementation note:
 - [x] `ProspectEvaluationService` reads/writes **`PROSPECT`** via **`PPDMGenericRepository`** and counts active surveys on **`SEIS_ACQTN_SURVEY`** (`AREA_TYPE` = `PROSPECT`). **Optional:** link rows in **`PROSPECT_SEIS_SURVEY`** and related evidence tables instead of inferring only from `AREA_ID`.
 - [x] Introduce workflow-scoped analysis interfaces and wire them in DI to implemented operations on the existing service.
 - [x] Move selected `ProspectIdentificationController` operations to workflow-scoped interfaces (maturation, risk/economics, portfolio optimization) to narrow controller dependencies.
-- [x] Keep `IExplorationApplicationService` as roadmap-only; map each `#region` to deferred, partial overlap, or live substitute — see **`10_IExplorationApplicationService_Region_Map.md`**.
+- [x] Map each former `IExplorationApplicationService` `#region` to deferred, partial overlap, or live substitute — see **`10_IExplorationApplicationService_Region_Map.md`** (file **removed** 2026-04-27).
 
 ### Phase 3.1: Endpoint Consumption Narrowing (execution-ready)
 
@@ -105,7 +109,7 @@ Implementation note:
 
 - [x] Add focused tests for prospect service **mapping and deterministic analysis** (`Beep.OilandGas.ProspectIdentification.Tests`: `ProspectIdentificationServiceMappingTests`, `ProspectIdentificationServiceAnalysisTests`). **Integration** tests for `PPDMGenericRepository` CRUD remain optional.
 - [x] Add controller tests for the prospect compatibility routes (`ProspectIdentificationControllerCompatibilityTests.cs`).
-- [x] Deprecate roadmap-only **`IExplorationApplicationService`** (`[Obsolete]` on interface; no implementations in repo). **Removal** deferred until no external consumers reference the type.
+- [x] **Removed** roadmap-only **`IExplorationApplicationService`** + embedded DTOs (`Services/IExplorationApplicationService.cs`) after grep showed no in-repo / BeepDM consumers (2026-04-27).
 
 ## Rollback Plan
 

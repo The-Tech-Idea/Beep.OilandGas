@@ -12,6 +12,7 @@ using Beep.OilandGas.Models.Data;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.ApiService.Attributes;
+using Beep.OilandGas.LifeCycle.Services.Exploration.Processes;
 using Beep.OilandGas.ProspectIdentification;
 using PROSPECT = Beep.OilandGas.Models.Data.ProspectIdentification.PROSPECT;
 
@@ -617,6 +618,21 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }
         }
 
+        /// <summary>
+        /// Complete the prospect-to-discovery entry step (<see cref="ExplorationReferenceCodes.StepProspectCreation"/>; seed label <c>Prospect Readiness</c>).
+        /// For <see cref="ExplorationReferenceCodes.ProcessNameLeadToProspect"/> use <c>POST …/promote-lead-to-prospect</c> (runs <c>ILeadExplorationService</c>).
+        /// Returns <c>200 OK</c> with <c>false</c> when the underlying process service declines execution/completion without throwing.
+        /// </summary>
+        [HttpPost("workflows/prospect-to-discovery/prospect-readiness")]
+        public Task<ActionResult<bool>> ProspectToDiscoveryProspectReadiness(
+            [FromBody] ExplorationWorkflowStepRequest request,
+            CancellationToken cancellationToken) =>
+            RunExplorationWorkflowStepAsync(
+                request,
+                cancellationToken,
+                "Error completing prospect readiness step",
+                (id, data, user, ct) => _explorationProcessService.CompleteProspectReadinessStepAsync(id, data, user, ct));
+
         /// <summary>Execute <c>RISK_ASSESSMENT</c> for an active Prospect-to-Discovery process instance.</summary>
         [HttpPost("workflows/prospect-to-discovery/risk-assessment")]
         public Task<ActionResult<bool>> ProspectToDiscoveryRiskAssessment(
@@ -827,6 +843,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             return null;
         }
 
+        /// <summary>
+        /// Runs a workflow step for the current field-scoped process instance.
+        /// Returns <c>200 OK</c> with the service boolean result (<c>true</c>/<c>false</c>);
+        /// prerequisite violations are mapped to <c>409 Conflict</c>.
+        /// </summary>
         private async Task<ActionResult<bool>> RunExplorationWorkflowStepAsync(
             ExplorationWorkflowStepRequest request,
             CancellationToken cancellationToken,
@@ -853,6 +874,16 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (OperationCanceledException)
             {
                 throw;
+            }
+            catch (ExplorationWorkflowPrerequisiteException ex)
+            {
+                return Conflict(new
+                {
+                    error = "Workflow prerequisite not satisfied.",
+                    ex.InstanceId,
+                    attemptedStep = ex.AttemptedStepId,
+                    prerequisiteStep = ex.PrerequisiteStepId
+                });
             }
             catch (Exception ex)
             {
@@ -887,6 +918,16 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (OperationCanceledException)
             {
                 throw;
+            }
+            catch (ExplorationWorkflowPrerequisiteException ex)
+            {
+                return Conflict(new
+                {
+                    error = "Workflow prerequisite not satisfied.",
+                    ex.InstanceId,
+                    attemptedStep = ex.AttemptedStepId,
+                    prerequisiteStep = ex.PrerequisiteStepId
+                });
             }
             catch (Exception ex)
             {

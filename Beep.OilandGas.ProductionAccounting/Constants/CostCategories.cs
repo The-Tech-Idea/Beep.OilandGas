@@ -20,5 +20,11 @@ namespace Beep.OilandGas.ProductionAccounting.Constants
         public const string Transportation = "TRANSPORTATION";
         public const string QualityAdjustment = "QUALITY_ADJUSTMENT";
         public const string Tax = "TAX";
+
+        /// <summary>IFRS 6 exploration and evaluation costs (<c>ACCOUNTING_COST.COST_CATEGORY</c>).</summary>
+        public const string ExplorationEvaluation = "EXPLORATION_EVALUATION";
+
+        /// <summary>IAS 23 borrowing costs capitalized to qualifying assets.</summary>
+        public const string BorrowingCost = "BORROWING_COST";
     }
 }

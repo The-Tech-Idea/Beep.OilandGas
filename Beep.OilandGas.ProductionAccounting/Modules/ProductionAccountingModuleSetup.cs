@@ -3,15 +3,31 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.ProductionAccounting.Constants;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
+using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.ProductionAccounting.Modules
 {
     /// <summary>
     /// Module order 70 — declares Production entity types for schema migration.
-    /// This module is owned by ProductionAccounting because production-specific setup behavior
-    /// belongs with that project even when no shared reference-data seed is currently required.
+    /// This module is owned by ProductionAccounting because production-specific setup behavior,
+    /// including project-owned reference values, belongs with this project.
+    ///
+    /// SeedScope (maintenance map):
+    /// - Tables: <c>R_PRODUCTION_ACCOUNTING_REFERENCE_CODE</c>
+    /// - Projections: seeded sets consumed by response/query projections (run-ticket status,
+    ///   allocation/revenue/royalty code families, journal/period/workflow statuses, royalty statement status)
+    /// - Core: <see cref="ProductionAccountingReferenceCodeSeed"/> drives reference codes aligned with
+    ///   <c>Constants/*</c> (including <c>RoyaltyPaymentStatusCodes</c>, <c>RevenueRecognitionStatusCodes</c>,
+    ///   <c>JournalEntryStatusCodes</c>, <c>DocumentWorkflowStatusCodes</c>, <c>ApprovalWorkflowStatusCodes</c>,
+    ///   <c>AccountingSourceModuleCodes</c>, <c>TaxAdjustmentTypeCodes</c>, <c>ImpairmentRecordTypeCodes</c>,
+    ///   <c>ImpairmentEvaluationReasonCodes</c>, <c>InventoryTransactionTypeCodes</c>,
+    ///   <c>InventoryValuationMethodCodes</c>, <c>PriceIndexCommodityTypeCodes</c>,
+    ///   <c>ImbalanceAdjustmentTypeCodes</c>, <c>JibChargeCategoryCodes</c>, <c>CopasOverheadAuditChangeReasons</c>)
+    ///   and projection enums under
+    ///   <c>Models.Data.ProductionAccounting</c>
     /// </summary>
     public sealed class ProductionAccountingModuleSetup : ModuleSetupBase
     {
@@ -149,6 +165,8 @@ namespace Beep.OilandGas.ProductionAccounting.Modules
             typeof(VOTING_RIGHTS),
             // ── Internal control ─────────────────────────────────────────────────────────
             typeof(INTERNAL_CONTROL_RULE),
+            // ── Project-owned reference table (PPDM R_/RA_ gap fill) ───────────────────
+            typeof(R_PRODUCTION_ACCOUNTING_REFERENCE_CODE),
         };
 
         public ProductionAccountingModuleSetup(ModuleSetupContext context) : base(context) { }
@@ -158,15 +176,103 @@ namespace Beep.OilandGas.ProductionAccounting.Modules
         public override int Order => 70;
         public override IReadOnlyList<Type> EntityTypes => _entityTypes;
 
-        public override Task<ModuleSetupResult> SeedAsync(
+        public override async Task<ModuleSetupResult> SeedAsync(
             string connectionName,
             string userId,
             CancellationToken cancellationToken = default)
         {
             var result = NewResult();
-            result.Success = true;
-            result.SkipReason = "No reference seed data defined for Production module.";
-            return Task.FromResult(result);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            try
+            {
+                await SeedProductionAccountingReferenceCodesAsync(connectionName, userId, result, cancellationToken)
+                    .ConfigureAwait(false);
+                result.Success = result.Errors.Count == 0;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                result.Success = false;
+                result.Errors.Add($"R_PRODUCTION_ACCOUNTING_REFERENCE_CODE: {ex.Message}");
+            }
+
+            return result;
+        }
+
+        private async Task SeedProductionAccountingReferenceCodesAsync(
+            string connectionName,
+            string userId,
+            ModuleSetupResult result,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var repo = GetRepo<R_PRODUCTION_ACCOUNTING_REFERENCE_CODE>("R_PRODUCTION_ACCOUNTING_REFERENCE_CODE", connectionName);
+            result.TablesSeeded++;
+
+            foreach (var row in BuildDefaultReferenceCodes())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await UpsertReferenceCodeIfMissingAsync(repo, row, userId, result)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        private IEnumerable<R_PRODUCTION_ACCOUNTING_REFERENCE_CODE> BuildDefaultReferenceCodes()
+        {
+            var active = _ctx.Defaults.GetActiveIndicatorYes();
+            foreach (var (referenceSet, referenceCode, longName) in ProductionAccountingReferenceCodeSeed.GetAllSeedRows())
+                yield return Code(referenceSet, referenceCode, longName, ProductionAccountingReferenceCodeSeed.SourceApplication, active);
+        }
+
+        private static R_PRODUCTION_ACCOUNTING_REFERENCE_CODE Code(
+            string set,
+            string value,
+            string name,
+            string source,
+            string activeInd) =>
+            new()
+            {
+                REFERENCE_SET = set,
+                REFERENCE_CODE = value,
+                LONG_NAME = name,
+                SHORT_NAME = name,
+                SOURCE = source,
+                ACTIVE_IND = activeInd
+            };
+
+        private async Task UpsertReferenceCodeIfMissingAsync(
+            PPDMGenericRepository repo,
+            R_PRODUCTION_ACCOUNTING_REFERENCE_CODE row,
+            string userId,
+            ModuleSetupResult result)
+        {
+            var existing = await repo.GetAsync(
+                new List<AppFilter>
+                {
+                    new AppFilter
+                    {
+                        FieldName = "REFERENCE_SET",
+                        Operator = "=",
+                        FilterValue = row.REFERENCE_SET ?? string.Empty
+                    },
+                    new AppFilter
+                    {
+                        FieldName = "REFERENCE_CODE",
+                        Operator = "=",
+                        FilterValue = row.REFERENCE_CODE ?? string.Empty
+                    }
+                }).ConfigureAwait(false);
+
+            foreach (var _ in existing)
+                return;
+
+            await TryInsertAsync(
+                repo,
+                row,
+                userId,
+                result,
+                $"R_PRODUCTION_ACCOUNTING_REFERENCE_CODE/{row.REFERENCE_SET}/{row.REFERENCE_CODE}")
+                .ConfigureAwait(false);
         }
     }
 }

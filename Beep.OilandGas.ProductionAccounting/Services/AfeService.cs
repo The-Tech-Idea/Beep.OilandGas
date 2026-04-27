@@ -10,6 +10,7 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.ProductionAccounting.Constants;
 using Beep.OilandGas.ProductionAccounting.Exceptions;
 using Beep.OilandGas.PPDM39.Models;
 
@@ -54,7 +55,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new ProductionAccountingException("AFE_NUMBER is required");
 
             afe.AFE_ID ??= Guid.NewGuid().ToString();
-            afe.STATUS ??= "DRAFT";
+            afe.STATUS ??= DocumentWorkflowStatusCodes.Draft;
             afe.ACTIVE_IND = _defaults.GetActiveIndicatorYes();
             afe.PPDM_GUID ??= Guid.NewGuid().ToString();
             afe.ROW_CREATED_BY = userId;
@@ -115,7 +116,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (afe == null)
                 throw new ProductionAccountingException($"AFE not found: {afeId}");
 
-            afe.STATUS = "APPROVED";
+            afe.STATUS = ApprovalWorkflowStatusCodes.Approved;
             afe.APPROVAL_DATE = approvalDate;
             afe.ROW_CHANGED_BY = userId;
             afe.ROW_CHANGED_DATE = DateTime.UtcNow;
@@ -150,7 +151,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var afe = await GetAfeAsync(afeId, cn);
             if (afe == null)
                 throw new ProductionAccountingException($"AFE not found: {afeId}");
-            if (!string.Equals(afe.STATUS, "APPROVED", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(afe.STATUS, ApprovalWorkflowStatusCodes.Approved, StringComparison.OrdinalIgnoreCase))
                 throw new ProductionAccountingException("AFE must be approved before recording costs");
 
             cost.ACCOUNTING_COST_ID ??= Guid.NewGuid().ToString();
@@ -196,7 +197,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "AFE_ID", Operator = "=", FilterValue = afeId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -219,7 +220,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var actualAmount = await GetCostTotalAsync(afeId, cn);
             var varianceAmount = actualAmount - budgetAmount;
             var variancePercent = budgetAmount != 0m ? (varianceAmount / budgetAmount) * 100m : 0m;
-            var status = Math.Abs(variancePercent) >= varianceThreshold ? "THRESHOLD_EXCEEDED" : "OK";
+            var status = Math.Abs(variancePercent) >= varianceThreshold
+                ? CostVarianceReportStatusCodes.ThresholdExceeded
+                : CostVarianceReportStatusCodes.Ok;
 
             var report = new COST_VARIANCE_REPORT
             {
@@ -265,7 +268,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             if (!string.IsNullOrWhiteSpace(afeId))
@@ -335,7 +338,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "AFE_ID", Operator = "=", FilterValue = afeId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);

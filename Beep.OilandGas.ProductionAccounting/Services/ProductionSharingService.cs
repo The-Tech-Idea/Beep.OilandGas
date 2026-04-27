@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -58,7 +58,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = propertyId },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var results = await repo.GetAsync(filters);
@@ -186,7 +186,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ALLOCATION_REQUEST_ID", Operator = "=", FilterValue = ALLOCATION_RESULT.ALLOCATION_REQUEST_ID },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await runTicketRepo.GetAsync(filters);

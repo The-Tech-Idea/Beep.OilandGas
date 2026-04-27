@@ -123,9 +123,29 @@ All endpoints are prefixed with `/api/`
 
 ## Production Services
 
-### Production Operations (`/api/productionoperations`)
-- `GET /api/productionoperations/data` - Get production data
-- `POST /api/productionoperations/data` - Record production data
+### Production Operations (`/api/production/operations`)
+Active contract routes (implemented service members):
+- `POST /api/production/operations/create` - Create production operation cost record
+- `GET /api/production/operations/{operationId}` - Get production operation cost record
+- `PUT /api/production/operations/{operationId}` - Update production operation cost record
+- `GET /api/production/operations/data` - Get production data (well/field scoped query)
+- `POST /api/production/operations/data` - Record production data
+- `POST /api/production/operations/optimize` - Generate optimization recommendations (heuristic)
+
+Compatibility routes (legacy adapter surface):
+- `POST /api/productionoperations/create` - Legacy create operation route (mapped to management service)
+- `GET /api/production/data/{wellId}` - Legacy production data route
+- `POST /api/production/history/{wellId}` - Legacy production history route
+- `POST /api/production/record` - Legacy production record route
+
+Staged local interface members are intentionally not exposed as active API routes until implementation is completed.
+
+### Facility Monitoring (`/api/facility/{facilityId}/monitoring`)
+Vertical facility/equipment tracking for measurements (for example tank levels) and installation lifecycle history.
+- `GET /api/facility/{facilityId}/monitoring/measurements` - List facility/equipment measurements (optional filters: `facilityType`, `equipmentId`, `measurementType`, `startDate`, `endDate`)
+- `POST /api/facility/{facilityId}/monitoring/measurements` - Record a facility/equipment measurement (`FACILITY_MEASUREMENT`)
+- `GET /api/facility/{facilityId}/monitoring/equipment/{equipmentId}/activity` - List equipment install/uninstall/move/replace history
+- `POST /api/facility/{facilityId}/monitoring/equipment/{equipmentId}/activity` - Record equipment lifecycle activity (`FACILITY_EQUIPMENT_ACTIVITY`)
 
 ---
 
@@ -140,6 +160,32 @@ All endpoints are prefixed with `/api/`
 - `GET /api/field/current/wells` - Get field wells
 - `GET /api/field/current/statistics` - Get field statistics
 - `GET /api/field/current/timeline` - Get field timeline
+
+### Field Exploration — current field (`/api/field/current/exploration`)
+Requires active field (`FieldOrchestrator`). Workflow bodies use `ExplorationWorkflowStepRequest` (`InstanceId`, `UserId`, optional `StepData`) where noted. Step routes return `200 OK` with a boolean payload (`true`/`false`) for service result. **Exploration workflow** maturation POSTs return **409 Conflict** if a prior seeded step is still **PENDING** (out-of-order call); body includes `InstanceId`, `attemptedStep`, `prerequisiteStep`.
+
+**Lead → prospect**
+- `POST /api/field/current/exploration/workflows/lead-to-prospect` - Start workflow
+- `POST /api/field/current/exploration/workflows/evaluate-lead` - `LEAD_EVALUATION`
+- `POST /api/field/current/exploration/workflows/approve-lead` - `LEAD_APPROVAL` (approve)
+- `POST /api/field/current/exploration/workflows/reject-lead` - `LEAD_APPROVAL` (reject)
+- `POST /api/field/current/exploration/workflows/promote-lead-to-prospect` - `PROSPECT_CREATION` + `ILeadExplorationService` persistence
+
+**Exploration workflow**
+- `POST /api/field/current/exploration/workflows/prospect-to-discovery` - Start workflow (prospect must be in current field)
+- `POST /api/field/current/exploration/workflows/prospect-to-discovery/prospect-readiness` - First seed step `PROSPECT_CREATION` (prospect-anchored only; no lead hook; can return `200 false` if execution/completion is declined)
+- `POST /api/field/current/exploration/workflows/prospect-to-discovery/risk-assessment` - `RISK_ASSESSMENT`
+- `POST /api/field/current/exploration/workflows/prospect-to-discovery/volume-estimation` - `VOLUME_ESTIMATION`
+- `POST /api/field/current/exploration/workflows/prospect-to-discovery/economic-evaluation` - `ECONOMIC_EVALUATION`
+- `POST /api/field/current/exploration/workflows/prospect-to-discovery/drilling-decision` - `DRILLING_DECISION`
+- `POST /api/field/current/exploration/workflows/prospect-to-discovery/discovery-recording` - `DISCOVERY_RECORDING`
+
+**Discovery → development**
+- `POST /api/field/current/exploration/workflows/discovery-to-development` - Start workflow
+- `POST /api/field/current/exploration/workflows/discovery-to-development/appraisal` - `APPRAISAL`
+- `POST /api/field/current/exploration/workflows/discovery-to-development/reserve-estimation` - `RESERVE_ESTIMATION`
+- `POST /api/field/current/exploration/workflows/discovery-to-development/economic-analysis` - `ECONOMIC_ANALYSIS`
+- `POST /api/field/current/exploration/workflows/discovery-to-development/approve` - `DEVELOPMENT_APPROVAL`
 
 ### Work Orders (`/api/lifecycle/workorders`)
 - `GET /api/lifecycle/workorders` - Get work orders

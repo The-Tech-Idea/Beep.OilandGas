@@ -174,7 +174,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                     new ProcessStepDefinition
                     {
                         StepId = ExplorationReferenceCodes.StepProspectCreation,
-                        StepName = "Prospect Creation",
+                        StepName = "Prospect Readiness",
                         SequenceNumber = 1,
                         StepType = "ACTION",
                         IsRequired = true,

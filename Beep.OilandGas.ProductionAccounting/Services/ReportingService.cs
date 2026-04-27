@@ -20,6 +20,7 @@ using HistoricalReport = Beep.OilandGas.Models.Data.Reporting.ReportHistory;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.ProductionAccounting.Constants;
 using Beep.OilandGas.ProductionAccounting.Exceptions;
 using Beep.OilandGas.PPDM39.Models;
 
@@ -65,7 +66,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var report = new OPERATIONAL_REPORT
             {
                 OPERATIONAL_REPORT_ID = Guid.NewGuid().ToString(),
-                REPORT_TYPE = "OPERATIONAL",
+                REPORT_TYPE = GeneratedReportTypeCodes.Operational,
                 REPORT_PERIOD_START = request.PeriodStart,
                 REPORT_PERIOD_END = request.PeriodEnd,
                 GENERATION_DATE = DateTime.UtcNow,
@@ -114,7 +115,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             decimal? deductionAmount = null;
             decimal? netPayment = null;
 
-            if (string.Equals(request.ReportType, "OWNER", StringComparison.OrdinalIgnoreCase) && request.PropertyIds?.Any() == true)
+            if (string.Equals(request.ReportType, GeneratedReportTypeCodes.Owner, StringComparison.OrdinalIgnoreCase) && request.PropertyIds?.Any() == true)
             {
                 var propertyId = request.PropertyIds.First();
                 var calculations = await GetRoyaltyCalculationsAsync(
@@ -140,8 +141,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 TOTAL_REVENUE = totalRevenue,
                 TOTAL_EXPENSES = totalExpenses,
                 NET_INCOME = netIncome,
-                TAXABLE_INCOME = request.ReportType?.Equals("TAX", StringComparison.OrdinalIgnoreCase) == true ? netIncome : null,
-                TAX_LIABILITY = request.ReportType?.Equals("TAX", StringComparison.OrdinalIgnoreCase) == true ? netIncome * 0.21m : null,
+                TAXABLE_INCOME = request.ReportType?.Equals(GeneratedReportTypeCodes.Tax, StringComparison.OrdinalIgnoreCase) == true ? netIncome : null,
+                TAX_LIABILITY = request.ReportType?.Equals(GeneratedReportTypeCodes.Tax, StringComparison.OrdinalIgnoreCase) == true ? netIncome * 0.21m : null,
                 ROYALTY_AMOUNT = royaltyAmount,
                 DEDUCTIONS = deductionAmount,
                 NET_PAYMENT = netPayment,
@@ -193,7 +194,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 TOTAL_DEDUCTIONS = totalDeductions,
                 NET_PAYMENT_AMOUNT = netPayment,
                 STATEMENT_DATE = DateTime.UtcNow,
-                STATUS = "GENERATED",
+                STATUS = RoyaltyStatementStatusCodes.Generated,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,
@@ -206,7 +207,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return new ReportResult
             {
                 ReportId = statement.ROYALTY_STATEMENT_ID,
-                ReportType = "ROYALTY_STATEMENT",
+                ReportType = GeneratedReportTypeCodes.RoyaltyStatement,
                 GeneratedBy = userId,
                 ReportData = statement
             };
@@ -225,7 +226,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return new ReportResult
             {
                 ReportId = statement?.JOINT_INTEREST_STATEMENT_ID ?? Guid.NewGuid().ToString(),
-                ReportType = "JIB_STATEMENT",
+                ReportType = GeneratedReportTypeCodes.JibStatement,
                 GeneratedBy = userId,
                 ReportData = statement
             };
@@ -237,11 +238,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new ArgumentNullException(nameof(request));
 
             var nextRun = request.StartDate;
-            if (string.Equals(request.ScheduleFrequency, "WEEKLY", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(request.ScheduleFrequency, ReportScheduleFrequencyCodes.Weekly, StringComparison.OrdinalIgnoreCase))
                 nextRun = request.StartDate.AddDays(7);
-            else if (string.Equals(request.ScheduleFrequency, "MONTHLY", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(request.ScheduleFrequency, ReportScheduleFrequencyCodes.Monthly, StringComparison.OrdinalIgnoreCase))
                 nextRun = request.StartDate.AddMonths(1);
-            else if (string.Equals(request.ScheduleFrequency, "DAILY", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(request.ScheduleFrequency, ReportScheduleFrequencyCodes.Daily, StringComparison.OrdinalIgnoreCase))
                 nextRun = request.StartDate.AddDays(1);
 
             var schedule = new ReportSchedule
@@ -251,7 +252,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ScheduleFrequency = request.ScheduleFrequency,
                 NextRunDate = nextRun,
                 LastRunDate = null,
-                Status = "SCHEDULED"
+                Status = ReportScheduleStatusCodes.Scheduled
             };
 
             _scheduleStore[schedule.ScheduleId] = schedule;
@@ -284,7 +285,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         {
             var histories = new List<ReportHistory>();
 
-            if (string.IsNullOrWhiteSpace(reportType) || string.Equals(reportType, "OPERATIONAL", StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(reportType) || string.Equals(reportType, GeneratedReportTypeCodes.Operational, StringComparison.OrdinalIgnoreCase))
             {
                 var operational = await GetOperationalReportsAsync(startDate, endDate, connectionName);
                 histories.AddRange(operational.Select(r => new HistoricalReport
@@ -295,11 +296,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     GeneratedBy = r.GENERATED_BY,
                     PeriodStart = r.REPORT_PERIOD_START ?? DateTime.MinValue,
                     PeriodEnd = r.REPORT_PERIOD_END ?? DateTime.MinValue,
-                    Status = "GENERATED"
+                    Status = RoyaltyStatementStatusCodes.Generated
                 }));
             }
 
-            if (string.IsNullOrWhiteSpace(reportType) || string.Equals(reportType, "FINANCIAL", StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(reportType) || string.Equals(reportType, GeneratedReportTypeCodes.Financial, StringComparison.OrdinalIgnoreCase))
             {
                 var financial = await GetFinancialReportsAsync(startDate, endDate, connectionName);
                 histories.AddRange(financial.Select(r => new HistoricalReport
@@ -310,7 +311,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     GeneratedBy = r.ROW_CREATED_BY,
                     PeriodStart = r.PERIOD_START ?? DateTime.MinValue,
                     PeriodEnd = r.PERIOD_END ?? DateTime.MinValue,
-                    Status = "GENERATED"
+                    Status = RoyaltyStatementStatusCodes.Generated
                 }));
             }
 
@@ -324,7 +325,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 new AppFilter { FieldName = "TICKET_DATE_TIME", Operator = ">=", FilterValue = start.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "TICKET_DATE_TIME", Operator = "<=", FilterValue = end.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             if (wellIds != null && wellIds.Count > 0)
@@ -341,7 +342,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var repo = await GetRepoAsync<OPERATIONAL_REPORT>("OPERATIONAL_REPORT", connectionName);
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             if (startDate.HasValue)
@@ -358,7 +359,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var repo = await GetRepoAsync<FINANCIAL_REPORT>("FINANCIAL_REPORT", connectionName);
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             if (startDate.HasValue)
@@ -377,7 +378,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 new AppFilter { FieldName = "ENTRY_DATE", Operator = ">=", FilterValue = start.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "ENTRY_DATE", Operator = "<=", FilterValue = end.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -397,7 +398,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = propertyId },
                 new AppFilter { FieldName = "CALCULATION_DATE", Operator = ">=", FilterValue = start.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "CALCULATION_DATE", Operator = "<=", FilterValue = end.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             if (!string.IsNullOrWhiteSpace(ownerId))
@@ -419,7 +420,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 new AppFilter { FieldName = "JIB_ID", Operator = "=", FilterValue = leaseId },
                 new AppFilter { FieldName = "REPORT_PERIOD_START", Operator = ">=", FilterValue = periodStart.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "REPORT_PERIOD_END", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);

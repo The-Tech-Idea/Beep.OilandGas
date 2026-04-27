@@ -9,6 +9,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.ProductionAccounting.Constants;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
@@ -66,7 +67,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             // Placeholder: in a full implementation, fetch trial balance by entity.
             const decimal placeholderBalance = 0m;
-            const string baseCurrency = "USD";
+            var baseCurrency = AccountingCurrencyCodes.Usd;
 
             var translatedAmount = await TranslateAmountAsync(
                 placeholderBalance,
@@ -128,7 +129,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 new AppFilter { FieldName = "FROM_CURRENCY", Operator = "=", FilterValue = fromCurrency },
                 new AppFilter { FieldName = "TO_CURRENCY", Operator = "=", FilterValue = toCurrency },
                 new AppFilter { FieldName = "RATE_DATE", Operator = "<=", FilterValue = rateDate.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);

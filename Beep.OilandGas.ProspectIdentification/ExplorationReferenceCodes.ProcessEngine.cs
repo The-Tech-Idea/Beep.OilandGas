@@ -1,6 +1,9 @@
 namespace Beep.OilandGas.ProspectIdentification
 {
-    /// <summary>Process definition names, IDs, entity anchors, step IDs, and step outcomes for exploration workflows.</summary>
+    /// <summary>
+    /// Process definition names, IDs, entity anchors, step IDs, and step outcomes for exploration workflows.
+    /// Seeded to <c>R_EXPLORATION_REFERENCE_CODE</c> by <c>ExplorationModule</c>.
+    /// </summary>
     public static partial class ExplorationReferenceCodes
     {
         public const string ProcessNameLeadToProspect = "LeadToProspect";
@@ -35,6 +38,12 @@ namespace Beep.OilandGas.ProspectIdentification
         public const string StepLeadCreation = "LEAD_CREATION";
         public const string StepLeadEvaluation = "LEAD_EVALUATION";
         public const string StepLeadApproval = "LEAD_APPROVAL";
+
+        /// <summary>
+        /// Shared step id: on <see cref="ProcessNameLeadToProspect"/> it materializes a field <c>PROSPECT</c> from a <c>LEAD</c>
+        /// (see <c>ILeadExplorationService</c>). On <see cref="ProcessNameProspectToDiscovery"/> it is the first seed step — entry /
+        /// readiness for maturation (same id; no lead hook).
+        /// </summary>
         public const string StepProspectCreation = "PROSPECT_CREATION";
         public const string StepProspectAssessment = "PROSPECT_ASSESSMENT";
         public const string StepRiskAssessment = "RISK_ASSESSMENT";

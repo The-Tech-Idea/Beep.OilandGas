@@ -69,8 +69,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (totalTax <= 0m)
                 return null;
 
-            await InsertTaxTransactionAsync(revenueTransaction, "SEVERANCE", severanceAmount, userId, cn);
-            await InsertTaxTransactionAsync(revenueTransaction, "AD_VALOREM", adValoremAmount, userId, cn);
+            await InsertTaxTransactionAsync(revenueTransaction, ProductionTaxAssessmentCodes.Severance, severanceAmount, userId, cn);
+            await InsertTaxTransactionAsync(revenueTransaction, ProductionTaxAssessmentCodes.AdValorem, adValoremAmount, userId, cn);
 
             revenueTransaction.TAX_AMOUNT = totalTax;
             revenueTransaction.ROW_CHANGED_BY = userId;
@@ -89,7 +89,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return new TAX_TRANSACTION
             {
                 TAX_TRANSACTION_ID = Guid.NewGuid().ToString(),
-                TAX_TYPE = "TOTAL_PRODUCTION_TAX",
+                TAX_TYPE = ProductionTaxAssessmentCodes.TotalProductionTax,
                 TAX_DATE = revenueTransaction.TRANSACTION_DATE ?? DateTime.UtcNow,
                 TAX_AMOUNT = totalTax,
                 TAX_JURISDICTION = ExtractJurisdiction(taxData.REMARK),
@@ -114,7 +114,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var repo = await CreateRepoAsync<GOVERNMENTAL_TAX_DATA>("GOVERNMENTAL_TAX_DATA", cn);
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -175,7 +175,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = propertyId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -195,7 +195,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 TAX_ADJUSTMENT_ID = Guid.NewGuid().ToString(),
                 PROPERTY_ID = propertyId,
-                ADJUSTMENT_TYPE = "IDC_DEDUCTION",
+                ADJUSTMENT_TYPE = TaxAdjustmentTypeCodes.IdcDeduction,
                 PERIOD_END_DATE = periodEnd,
                 AMOUNT = idcTotal,
                 NOTES = "IDC deduction based on drilling/completion costs",
@@ -224,7 +224,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = propertyId },
                 new AppFilter { FieldName = "PERIOD_END_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var records = await amortRepo.GetAsync(filters);
@@ -241,7 +241,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 TAX_ADJUSTMENT_ID = Guid.NewGuid().ToString(),
                 PROPERTY_ID = propertyId,
-                ADJUSTMENT_TYPE = "TAX_DEPLETION",
+                ADJUSTMENT_TYPE = TaxAdjustmentTypeCodes.TaxDepletion,
                 PERIOD_END_DATE = periodEnd,
                 AMOUNT = taxDepletion,
                 NOTES = $"Tax depletion at rate {taxRate:0.####}",
@@ -282,7 +282,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (data == null)
                 return 1m;
 
-            var rate = ExtractRate(data.REMARK, "TAX_DEPLETION_RATE");
+            var rate = ExtractRate(data.REMARK, ProductionTaxRemarkKeys.TaxDepletionRate);
             return rate > 0m ? rate : 1m;
         }
 
@@ -292,7 +292,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (data == null)
                 return 0m;
 
-            var rate = ExtractRate(data.REMARK, "DEFERRED_TAX_RATE");
+            var rate = ExtractRate(data.REMARK, ProductionTaxRemarkKeys.DeferredTaxRate);
             if (rate > 1m)
                 rate /= 100m;
             return rate;

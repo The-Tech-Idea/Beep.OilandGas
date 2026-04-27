@@ -7,6 +7,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.ProductionAccounting.Constants;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
@@ -58,8 +59,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 COST_CENTER_ID = cguId,
                 IMPAIRMENT_DATE = testDate,
                 IMPAIRMENT_AMOUNT = impairment,
-                IMPAIRMENT_TYPE = "IAS36",
-                REASON = impairment > 0m ? "RECOVERABLE_BELOW_CARRYING" : "NO_IMPAIRMENT",
+                IMPAIRMENT_TYPE = ImpairmentRecordTypeCodes.Ias36,
+                REASON = impairment > 0m
+                    ? ImpairmentEvaluationReasonCodes.RecoverableBelowCarrying
+                    : ImpairmentEvaluationReasonCodes.NoImpairment,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,

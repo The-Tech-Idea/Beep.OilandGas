@@ -20,7 +20,8 @@ namespace Beep.OilandGas.ProductionOperations.Services
 {
     /// <summary>
     /// Service for production operations management.
-    /// Uses PPDMGenericRepository for data persistence following LifeCycle patterns.
+    /// API-facing production operations surface using PPDMGenericRepository for persistence.
+    /// This is the canonical pattern for active production/facility paths in Phase 2.
     /// </summary>
     public partial class ProductionOperationsService : IProductionOperationsService, Beep.OilandGas.Models.Core.Interfaces.IProductionOperationsService
     {

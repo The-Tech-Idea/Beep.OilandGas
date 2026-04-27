@@ -71,7 +71,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 IMBALANCE_ADJUSTMENT_ID = Guid.NewGuid().ToString(),
                 ADJUSTMENT_AMOUNT = Math.Abs(volume),  // Store absolute value, track direction in REASON
-                ADJUSTMENT_TYPE = volume > 0 ? ImbalanceType.Overproduced : ImbalanceType.Underproduced,
+                ADJUSTMENT_TYPE = volume > 0
+                    ? ImbalanceAdjustmentTypeCodes.Overproduced
+                    : ImbalanceAdjustmentTypeCodes.Underproduced,
                 PROPERTY_OR_LEASE_ID = leaseId,
                 REASON = $"Imbalance for lease {leaseId}",
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
@@ -132,7 +134,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 foreach (var adj in adjustments)
                 {
-                    if (adj.ADJUSTMENT_TYPE == ImbalanceType.Overproduced)
+                    if (adj.ADJUSTMENT_TYPE == ImbalanceAdjustmentTypeCodes.Overproduced)
                         cumulativeOverproduction += ((decimal?)adj.ADJUSTMENT_AMOUNT) ?? 0m;
                     else
                         cumulativeUnderproduction += ((decimal?)adj.ADJUSTMENT_AMOUNT) ?? 0m;
@@ -172,11 +174,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 // Calculate net outstanding imbalance
                 decimal overproduced = adjustments
-                    .Where(a => a.ADJUSTMENT_TYPE == ImbalanceType.Overproduced)
+                    .Where(a => a.ADJUSTMENT_TYPE == ImbalanceAdjustmentTypeCodes.Overproduced)
                     .Sum(a => ((decimal?)a.ADJUSTMENT_AMOUNT) ?? 0m);
 
                 decimal underproduced = adjustments
-                    .Where(a => a.ADJUSTMENT_TYPE == ImbalanceType.Underproduced)
+                    .Where(a => a.ADJUSTMENT_TYPE == ImbalanceAdjustmentTypeCodes.Underproduced)
                     .Sum(a => ((decimal?)a.ADJUSTMENT_AMOUNT) ?? 0m);
 
                 decimal netImbalance = overproduced - underproduced;
@@ -214,7 +216,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 // Validation 2: Type must be valid
                 if (string.IsNullOrWhiteSpace(imbalance.ADJUSTMENT_TYPE) ||
-                    !new[] { ImbalanceType.Overproduced, ImbalanceType.Underproduced }.Contains(imbalance.ADJUSTMENT_TYPE))
+                    !new[]
+                    {
+                        ImbalanceAdjustmentTypeCodes.Overproduced,
+                        ImbalanceAdjustmentTypeCodes.Underproduced
+                    }.Contains(imbalance.ADJUSTMENT_TYPE))
                 {
                     _logger?.LogWarning("Imbalance {AdjustmentId}: Invalid adjustment type {Type}",
                         imbalance.IMBALANCE_ADJUSTMENT_ID, imbalance.ADJUSTMENT_TYPE);
@@ -260,7 +266,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 new AppFilter { FieldName = "PROPERTY_OR_LEASE_ID", Operator = "=", FilterValue = leaseId },
                 new AppFilter { FieldName = "ROW_CREATED_DATE", Operator = ">=", FilterValue = startDate.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "ROW_CREATED_DATE", Operator = "<=", FilterValue = endDate.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -277,25 +283,5 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             // Avoid DateTime.MinValue/MaxValue which some providers cannot translate.
             return await GetImbalanceAdjustmentsAsync(leaseId, new DateTime(1900, 1, 1), DateTime.UtcNow.Date.AddDays(1), cn);
         }
-    }
-
-    /// <summary>
-    /// Imbalance adjustment type constants.
-    /// </summary>
-    public static class ImbalanceType
-    {
-        public const string Overproduced = "OVER-PRODUCED";
-        public const string Underproduced = "UNDER-PRODUCED";
-    }
-
-    /// <summary>
-    /// Imbalance status constants per PPDM39 standards.
-    /// </summary>
-    public static class ImbalanceStatus
-    {
-        public const string Pending = "PENDING";
-        public const string Reconciled = "RECONCILED";
-        public const string Settled = "SETTLED";
-        public const string Void = "VOID";
     }
 }

@@ -264,7 +264,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = propertyId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -313,7 +313,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "WELL_ID", Operator = "=", FilterValue = wellId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var costs = await repo.GetAsync(filters);
@@ -340,7 +340,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "WELL_ID", Operator = "=", FilterValue = wellId },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var measurements = await repo.GetAsync(filters);
@@ -377,7 +377,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "PROPERTY_ID", Operator = "LIKE", FilterValue = $"%{wellId}%" },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var reserves = await repo.GetAsync(filters);

@@ -7,6 +7,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.ProductionAccounting.Constants;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
@@ -48,9 +49,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new ArgumentNullException(nameof(userId));
 
             cost.ACCOUNTING_COST_ID ??= Guid.NewGuid().ToString();
-            cost.COST_CATEGORY = "BORROWING_COST";
+            cost.COST_CATEGORY = CostCategories.BorrowingCost;
             cost.IS_CAPITALIZED = _defaults.GetActiveIndicatorYes();
-            cost.IS_EXPENSED = "N";
+            cost.IS_EXPENSED = _defaults.GetActiveIndicatorNo();
             cost.COST_DATE = periodEnd;
             cost.ACTIVE_IND = _defaults.GetActiveIndicatorYes();
             cost.PPDM_GUID ??= Guid.NewGuid().ToString();

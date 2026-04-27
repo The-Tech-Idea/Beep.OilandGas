@@ -24,7 +24,7 @@
 
 ### Parallel / legacy project-local surfaces
 
-- `ProspectIdentification/Services/IExplorationApplicationService.cs` (roadmap contract; **`[Obsolete]`**; not DI-registered — see **`10_IExplorationApplicationService_Region_Map.md`**)
+- ~~`ProspectIdentification/Services/IExplorationApplicationService.cs`~~ **removed** (2026-04-27); historical map: **`10_IExplorationApplicationService_Region_Map.md`**
 - `ProspectIdentification/Services/ISeismicAnalysisService.cs`
 - `ProspectIdentification/Services/IProspectEvaluationService.cs`
 - `ProspectIdentification/Services/SeismicAnalysisService.cs`

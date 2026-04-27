@@ -849,6 +849,9 @@ builder.Services.AddScoped<ProductionAccountingService>(sp =>
         accountingServices);
 });
 
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IProductionAccountingService>(sp =>
+    sp.GetRequiredService<ProductionAccountingService>());
+
 // GL Integration Services
 // Register IJournalEntryService
 builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IJournalEntryService>(sp =>
@@ -1402,7 +1405,10 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IProductionOper
 builder.Services.AddScoped<IProductionManagementService>(sp =>
 {
     var editor = sp.GetRequiredService<IDMEEditor>();
-    return new ProductionManagementService(editor, connectionName);
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    return new ProductionManagementService(editor, commonColumnHandler, defaults, metadata, connectionName);
 });
 
 // Prospect Identification Service (concrete + split workflow interfaces → same scoped instance)

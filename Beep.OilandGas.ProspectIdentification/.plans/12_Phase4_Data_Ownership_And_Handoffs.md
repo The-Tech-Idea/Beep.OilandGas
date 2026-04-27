@@ -28,12 +28,16 @@ All of the following require an **active field** (`FieldOrchestrator.CurrentFiel
 
 | Step ID (`ExplorationReferenceCodes`) | `ExplorationController` route (relative to field exploration API) | `ExplorationProcessService` entry |
 |---------------------------------------|---------------------------------------------------------------------|-----------------------------------|
+| `StepProspectCreation` | `POST …/workflows/prospect-to-discovery/prospect-readiness` | `CompleteProspectReadinessStepAsync` ( **`PROSPECT_TO_DISCOVERY`** + **`EntityTypeProspect`** only; does **not** call `ILeadExplorationService` — use **`…/promote-lead-to-prospect`** on lead workflows) |
 | `StepRiskAssessment` | `POST …/workflows/prospect-to-discovery/risk-assessment` | `PerformRiskAssessmentAsync` |
 | `StepVolumeEstimation` | `POST …/workflows/prospect-to-discovery/volume-estimation` | `PerformVolumeEstimationAsync` |
 | `StepEconomicEvaluation` | `POST …/workflows/prospect-to-discovery/economic-evaluation` | `PerformEconomicEvaluationAsync` |
+| `StepDrillingDecision` | `POST …/workflows/prospect-to-discovery/drilling-decision` | `MakeDrillingDecisionAsync` |
 | `StepDiscoveryRecording` | `POST …/workflows/prospect-to-discovery/discovery-recording` | `RecordDiscoveryAsync` (also completes step on success) |
 
 Each handler delegates to **`IProcessService.ExecuteStepAsync`** with the fixed step id above. Persisted domain tables (e.g. **`PROSPECT_RISK_ASSESSMENT`**) are the responsibility of **process step execution** / future domain handlers inside **`IProcessService`** implementations—not of **`ProspectIdentificationController`**.
+
+**Prerequisite chain (2026-04-27):** For **`PROSPECT_TO_DISCOVERY`** + **`EntityTypeProspect`** and **`DISCOVERY_TO_DEVELOPMENT`** + **`EntityTypeDiscovery`**, **`ExplorationProcessService`** requires the prior seeded step to have left **`PENDING`** on **`ProcessInstance.StepInstances`** (so **`IN_PROGRESS`** after **`ExecuteStepAsync`**, or **`COMPLETED`** after **`CompleteStepAsync`**, e.g. readiness). When blocked, the service throws **`ExplorationWorkflowPrerequisiteException`**; **`ExplorationController`** maps it to **HTTP 409 Conflict** with `instanceId`, `attemptedStep`, `prerequisiteStep`.
 
 ### 2.2 Optional pre-step analysis (ProspectIdentification)
 
@@ -41,7 +45,7 @@ Each handler delegates to **`IProcessService.ExecuteStepAsync`** with the fixed 
 |---------|---------|------|
 | Deterministic maturation / risk math / portfolio math | `POST api/ProspectIdentification/workflow/...` | **Advisory** — UI or integration can call before composing **`StepData`** for **`ExplorationWorkflowStepRequest`**. Does **not** advance **`ProcessInstance`**. |
 
-Rule: **advance state only** through **`ExplorationController`** workflow POSTs after the client holds a **`InstanceId`** from **`StartProspectToDiscoveryProcessAsync`**.
+Rule: **advance state only** through **`ExplorationController`** workflow POSTs after the client holds an **`InstanceId`** from **`StartProspectToDiscoveryProcessAsync`**, beginning with **`prospect-readiness`** for step **`StepProspectCreation`** when following the seeded **ProspectToDiscovery** order.
 
 ---
 
@@ -79,3 +83,7 @@ From **`Beep.OilandGas.Models.Processes.ProcessInstance`**:
 | Date | Change |
 |------|--------|
 | 2026-04-27 | Initial Phase 4 ownership + handoff + entity-id rules. |
+| 2026-04-27 | §2.1: added **`StepProspectCreation`** / **`prospect-readiness`** + **`StepDrillingDecision`**; clarified advance-state rule for first maturation step. |
+| 2026-04-27 | §2.1 note: **`ExplorationProcessService`** linear prerequisites for prospect→discovery maturation steps (`StepInstances` not **`PENDING`**). |
+| 2026-04-27 | Prerequisite failures: **`ExplorationWorkflowPrerequisiteException`** → **`ExplorationController`** **409 Conflict** JSON. |
+| 2026-04-27 | Extended prerequisite chain to **`DISCOVERY_TO_DEVELOPMENT`** steps (appraisal → reserve → economic analysis → development approval). |

@@ -17,6 +17,9 @@ namespace Beep.OilandGas.ProductionAccounting.Constants
         /// <summary>Yield-based allocation (reserve-weighted).</summary>
         public const string Yield = "Yield";
 
+        /// <summary>Custom revenue allocation code; not included in <see cref="AllMethods"/> (production allocation engine).</summary>
+        public const string CustomRevenue = "CUSTOM";
+
         /// <summary>Get all valid allocation methods.</summary>
         public static string[] AllMethods => new[] { ProRata, Equation, Volumetric, Yield };
     }

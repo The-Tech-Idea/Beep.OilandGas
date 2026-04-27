@@ -3,69 +3,65 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.PPDM39.Core.Metadata;
+using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.PPDM.Models;
 using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
-using TheTechIdea.Beep.Editor.UOW;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Beep.ConfigUtil;
 
 namespace Beep.OilandGas.ProductionOperations.Services
 {
     /// <summary>
     /// Service for managing production operations.
-    /// Uses UnitOfWork directly for data access.
+    /// Compatibility-focused production management surface implemented on PPDMGenericRepository.
+    /// Data-access convergence guidance is tracked per
+    /// <c>.plans/07_Phase2_Data_Access_Strategy_Matrix.md</c>.
     /// </summary>
     public partial class ProductionManagementService : IProductionManagementService
     {
         private const string PdenSubtypeFacility = "FACILITY";
 
         private readonly IDMEEditor _editor;
+        private readonly ICommonColumnHandler _commonColumnHandler;
+        private readonly IPPDM39DefaultsRepository _defaults;
+        private readonly IPPDMMetadataRepository _metadata;
         private readonly string _connectionName;
 
-        public ProductionManagementService(IDMEEditor editor, string connectionName = "PPDM39")
+        public ProductionManagementService(
+            IDMEEditor editor,
+            ICommonColumnHandler commonColumnHandler,
+            IPPDM39DefaultsRepository defaults,
+            IPPDMMetadataRepository metadata,
+            string connectionName = "PPDM39")
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
+            _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
+            _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
+            _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName;
         }
 
-        private List<T> ConvertToList<T>(object units) where T : class
+        private PPDMGenericRepository Repo<T>(string tableName)
         {
-            var result = new List<T>();
-            if (units == null) return result;
-            
-            if (units is System.Collections.IEnumerable enumerable)
-            {
-                foreach (var item in enumerable)
-                {
-                    if (item is T entity)
-                    {
-                        result.Add(entity);
-                    }
-                }
-            }
-            return result;
-        }
-
-        private IUnitOfWorkWrapper GetPDENUnitOfWork()
-        {
-            return UnitOfWorkFactory.CreateUnitOfWork(typeof(PDEN), _editor, _connectionName, "PDEN", "PDEN_ID");
-        }
-
-        private IUnitOfWorkWrapper GetWellUnitOfWork()
-        {
-            return UnitOfWorkFactory.CreateUnitOfWork(typeof(WELL), _editor, _connectionName, "WELL", "UWI");
-        }
-
-        private IUnitOfWorkWrapper GetFacilityUnitOfWork()
-        {
-            return UnitOfWorkFactory.CreateUnitOfWork(typeof(FACILITY), _editor, _connectionName, "FACILITY", "FACILITY_ID");
+            return new PPDMGenericRepository(
+                _editor,
+                _commonColumnHandler,
+                _defaults,
+                _metadata,
+                typeof(T),
+                _connectionName,
+                tableName,
+                null);
         }
 
         public async Task<List<PDEN>> GetProductionOperationsAsync(string? wellUWI = null, DateTime? startDate = null, DateTime? endDate = null, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var pdenUow = GetPDENUnitOfWork();
+            var repo = Repo<PDEN>("PDEN");
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
@@ -73,11 +69,10 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
             if (!string.IsNullOrWhiteSpace(wellUWI))
             {
-                filters.Add(new AppFilter { FieldName = "UWI", FilterValue = wellUWI, Operator = "=" });
+                filters.Add(new AppFilter { FieldName = "CURRENT_WELL_STR_NUMBER", FilterValue = wellUWI, Operator = "=" });
             }
 
-            var units = await pdenUow.Get(filters);
-            List<PDEN> pdenList = ConvertToList<PDEN>(units);
+            var pdenList = (await repo.GetAsync(filters)).Cast<PDEN>().ToList();
 
             if (startDate.HasValue)
                 pdenList = pdenList.Where(p => p.CURRENT_STATUS_DATE >= startDate.Value).ToList();
@@ -93,8 +88,8 @@ namespace Beep.OilandGas.ProductionOperations.Services
             if (string.IsNullOrWhiteSpace(operationId))
                 return null;
 
-            var pdenUow = GetPDENUnitOfWork();
-            var pden = pdenUow.Read(operationId) as PDEN;
+            var repo = Repo<PDEN>("PDEN");
+            var pden = await repo.GetByIdAsync(operationId) as PDEN;
             if (pden == null || pden.ACTIVE_IND != "Y")
                 return null;
 
@@ -107,11 +102,11 @@ namespace Beep.OilandGas.ProductionOperations.Services
             if (createRequest == null)
                 throw new ArgumentNullException(nameof(createRequest));
 
-            var pdenUow = GetPDENUnitOfWork();
+            var repo = Repo<PDEN>("PDEN");
             var operationDate = createRequest.OperationDate ?? DateTime.UtcNow;
             var pden = new PDEN
             {
-                PDEN_ID = Guid.NewGuid().ToString(),
+                PDEN_ID = _defaults.FormatIdForTable("PDEN", Guid.NewGuid().ToString("N")),
                 PDEN_SUBTYPE = string.IsNullOrWhiteSpace(createRequest.OperationType) ? "PRODUCTION" : createRequest.OperationType.Trim(),
                 ACTIVE_IND = "Y",
                 CURRENT_STATUS_DATE = operationDate,
@@ -126,11 +121,9 @@ namespace Beep.OilandGas.ProductionOperations.Services
                 ROW_CHANGED_DATE = DateTime.UtcNow
             };
 
-            var result = await pdenUow.InsertDoc(pden);
-            if (result.Flag != Errors.Ok)
-                throw new InvalidOperationException($"Failed to create production operation: {result.Message}");
-
-            await pdenUow.Commit();
+            if (pden is IPPDMEntity entity)
+                _commonColumnHandler.PrepareForInsert(entity, "SYSTEM");
+            await repo.InsertAsync(pden, "SYSTEM");
 
             return pden;
         }
@@ -138,7 +131,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
         public async Task<List<PDEN>> GetProductionReportsAsync(string? wellUWI = null, DateTime? startDate = null, DateTime? endDate = null, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var pdenUow = GetPDENUnitOfWork();
+            var repo = Repo<PDEN>("PDEN");
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
@@ -146,11 +139,10 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
             if (!string.IsNullOrWhiteSpace(wellUWI))
             {
-                filters.Add(new AppFilter { FieldName = "UWI", FilterValue = wellUWI, Operator = "=" });
+                filters.Add(new AppFilter { FieldName = "CURRENT_WELL_STR_NUMBER", FilterValue = wellUWI, Operator = "=" });
             }
 
-            var units = await pdenUow.Get(filters);
-            List<PDEN> pdenList = ConvertToList<PDEN>(units);
+            var pdenList = (await repo.GetAsync(filters)).Cast<PDEN>().ToList();
 
             if (startDate.HasValue)
                 pdenList = pdenList.Where(p => p.CURRENT_STATUS_DATE >= startDate.Value).ToList();
@@ -166,14 +158,13 @@ namespace Beep.OilandGas.ProductionOperations.Services
             if (string.IsNullOrWhiteSpace(wellUWI))
                 return new List<PDEN>();
 
-            var pdenUow = GetPDENUnitOfWork();
+            var repo = Repo<PDEN>("PDEN");
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "UWI", FilterValue = wellUWI, Operator = "=" },
+                new AppFilter { FieldName = "CURRENT_WELL_STR_NUMBER", FilterValue = wellUWI, Operator = "=" },
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
             };
-            var units = await pdenUow.Get(filters);
-            List<PDEN> pdenList = ConvertToList<PDEN>(units);
+            var pdenList = (await repo.GetAsync(filters)).Cast<PDEN>().ToList();
 
             return pdenList;
         }
@@ -184,12 +175,17 @@ namespace Beep.OilandGas.ProductionOperations.Services
             if (string.IsNullOrWhiteSpace(facilityId))
                 return new List<FACILITY>();
 
-            var facilityUow = GetFacilityUnitOfWork();
-            var facility = facilityUow.Read(facilityId) as FACILITY;
-            if (facility == null)
+            var repo = Repo<FACILITY>("FACILITY");
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "FACILITY_ID", FilterValue = facilityId, Operator = "=" },
+                new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
+            };
+            var facilities = (await repo.GetAsync(filters)).Cast<FACILITY>().ToList();
+            if (facilities.Count == 0)
                 return new List<FACILITY>();
 
-            return new List<FACILITY> { facility };
+            return facilities;
         }
     }
 }

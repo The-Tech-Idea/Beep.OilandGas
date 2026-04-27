@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Security.Claims;
 using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Attributes;
 using Microsoft.Extensions.Logging;
 
@@ -19,13 +18,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
     {
         private readonly IFieldOrchestrator _fieldOrchestrator;
         private readonly IAccountingService _accountingService;
-        private readonly ProductionAccountingService _productionAccountingService;
+        private readonly IProductionAccountingService _productionAccountingService;
         private readonly ILogger<AccountingController> _logger;
 
         public AccountingController(
             IFieldOrchestrator fieldOrchestrator,
             IAccountingService accountingService,
-            ProductionAccountingService productionAccountingService,
+            IProductionAccountingService productionAccountingService,
             ILogger<AccountingController> logger)
         {
             _fieldOrchestrator  = fieldOrchestrator  ?? throw new ArgumentNullException(nameof(fieldOrchestrator));

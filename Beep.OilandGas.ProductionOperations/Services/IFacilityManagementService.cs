@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data.ProductionOperations;
 using Beep.OilandGas.PPDM39.Models;
 
 namespace Beep.OilandGas.ProductionOperations.Services;
@@ -59,4 +60,31 @@ public interface IFacilityManagementService
 
     Task<(int MaintenanceEvents, int WorkOrders, decimal? EstimatedAvailabilityPercent)> GetFacilityReliabilityMetricsAsync(
         string facilityId, string? facilityType, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<FACILITY_MEASUREMENT>> ListFacilityMeasurementsAsync(
+        string facilityId,
+        string? facilityType,
+        string? equipmentId,
+        string? measurementType,
+        DateTime? startDate,
+        DateTime? endDate,
+        CancellationToken cancellationToken = default);
+
+    Task<FACILITY_MEASUREMENT> RecordFacilityMeasurementAsync(
+        FACILITY_MEASUREMENT measurement,
+        string userId,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<FACILITY_EQUIPMENT_ACTIVITY>> ListEquipmentActivityAsync(
+        string facilityId,
+        string? facilityType,
+        string equipmentId,
+        DateTime? startDate,
+        DateTime? endDate,
+        CancellationToken cancellationToken = default);
+
+    Task<FACILITY_EQUIPMENT_ACTIVITY> RecordEquipmentActivityAsync(
+        FACILITY_EQUIPMENT_ACTIVITY activity,
+        string userId,
+        CancellationToken cancellationToken = default);
 }

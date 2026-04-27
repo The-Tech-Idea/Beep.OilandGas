@@ -31,4 +31,6 @@
 - [ ] Audit the remaining local PPDM-like exploration classes and decide which should move into shared PPDM model ownership.
 - [x] Add focused tests for **`ProspectIdentificationController`** legacy **`/api/prospect/*`** and core **`api/ProspectIdentification`** routes (`Beep.OilandGas.ApiService.Tests/ProspectIdentificationControllerCompatibilityTests.cs`).
 - [x] Add focused unit tests for **`ProspectIdentificationService`** row→DTO mapping helpers and analysis branches (`Beep.OilandGas.ProspectIdentification.Tests`). Optional later: **`PPDMGenericRepository`** integration tests with a test database.
-- [x] Mark roadmap **`IExplorationApplicationService`** as **`[Obsolete]`** (no in-repo implementations). **Retire** the file only after confirming no external assemblies reference the type.
+- [x] **Retired** roadmap **`IExplorationApplicationService`** + embedded roadmap DTOs (`Services/IExplorationApplicationService.cs` deleted). Grep: zero **`Beep.OilandGas`** / **`BeepDM`** `.cs` references (2026-04-27). External NuGet consumers: restore from git or reintroduce types under `Models.Data` if needed.
+- [x] Expanded exploration module reference seeding baseline (2026-04-27): `R_LEAD_STATUS`, `R_PLAY_TYPE`, and `R_EXPLORATION_REFERENCE_CODE` now seed core workflow/process/entity/step/outcome tokens plus `PROSPECT_STATUS` and `RISK_LEVEL` defaults.
+- [ ] Normalize lookup ownership long-term: keep using project-local `R_*` seeds for now, then decide migration path to shared PPDM39 reference ownership/LOV governance to close the duplicate-lookup concern.

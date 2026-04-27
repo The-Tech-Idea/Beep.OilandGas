@@ -9,6 +9,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.ProductionAccounting.Constants;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
@@ -57,7 +58,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "PROPERTY_OR_LEASE_ID", Operator = "=", FilterValue = propertyOrLeaseId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -85,7 +86,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "PROPERTY_OR_LEASE_ID", Operator = "=", FilterValue = propertyOrLeaseId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -113,7 +114,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 .Where(o => !string.IsNullOrWhiteSpace(o.DIVISION_ORDER_ID))
                 .Where(o => divisionOrders.All(d =>
                     !string.Equals(d.DIVISION_ORDER_ID, o.DIVISION_ORDER_ID, StringComparison.OrdinalIgnoreCase) ||
-                    !string.Equals(d.STATUS, "APPROVED", StringComparison.OrdinalIgnoreCase)))
+                    !string.Equals(d.STATUS, ApprovalWorkflowStatusCodes.Approved, StringComparison.OrdinalIgnoreCase)))
                 .Select(o => o.DIVISION_ORDER_ID)
                 .Distinct()
                 .ToList();
@@ -189,7 +190,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "PROPERTY_OR_LEASE_ID", Operator = "=", FilterValue = propertyOrLeaseId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -201,7 +202,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var date = asOfDate.Value.Date;
             return divisionOrders
                 .Where(d =>
-                    string.Equals(d.STATUS, "APPROVED", StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(d.STATUS, ApprovalWorkflowStatusCodes.Approved, StringComparison.OrdinalIgnoreCase) &&
                     (!d.EFFECTIVE_DATE.HasValue || d.EFFECTIVE_DATE.Value.Date <= date) &&
                     (!d.EXPIRATION_DATE.HasValue || d.EXPIRATION_DATE.Value.Date >= date))
                 .ToList();

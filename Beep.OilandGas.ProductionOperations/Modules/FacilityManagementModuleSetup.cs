@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data.ProductionOperations;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using Beep.OilandGas.PPDM39.Models;
@@ -11,10 +12,9 @@ namespace Beep.OilandGas.ProductionOperations.Modules
 {
     /// <summary>
     /// Module order 80 — Facility Management.
-    /// <see cref="EntityTypes"/> is empty: this module does not introduce new database tables;
-    /// facility lifecycle uses existing PPDM39 entities (for example <c>FACILITY</c>, <c>WORK_ORDER</c>,
-    /// <c>PDEN</c>) owned by the core model / other setup modules. This class only supplies optional
-    /// reference seeding (for example <c>CAT_EQUIPMENT</c> catalog rows).
+    /// This module extends PPDM39 facility lifecycle with vertical monitoring tables and reference sets
+    /// while continuing to use core PPDM entities (for example <c>FACILITY</c>, <c>WORK_ORDER</c>,
+    /// <c>PDEN</c>) owned by the core model / other setup modules.
     /// License and maintenance picklists in PPDM39 live in <c>R_*</c> tables (for example
     /// <see cref="R_LICENSE_STATUS"/>, <see cref="R_FAC_MAINT_STATUS"/>); transactional rows use
     /// <c>FACILITY_LIC_STATUS</c>, <c>FACILITY_MAINT_STATUS</c>, etc. Reference seeding for those
@@ -22,7 +22,15 @@ namespace Beep.OilandGas.ProductionOperations.Modules
     /// </summary>
     public sealed class FacilityManagementModuleSetup : ModuleSetupBase
     {
-        private static readonly IReadOnlyList<Type> _entityTypes = Array.Empty<Type>();
+        // SeedScope:
+        // - Tables: FACILITY_MEASUREMENT, FACILITY_EQUIPMENT_ACTIVITY
+        // - Core: R_FACILITY_MONITORING_CODE (vertical monitoring/action reference sets)
+        private static readonly IReadOnlyList<Type> _entityTypes = new[]
+        {
+            typeof(FACILITY_MEASUREMENT),
+            typeof(FACILITY_EQUIPMENT_ACTIVITY),
+            typeof(R_FACILITY_MONITORING_CODE)
+        };
 
         public FacilityManagementModuleSetup(ModuleSetupContext context) : base(context) { }
 
@@ -38,6 +46,7 @@ namespace Beep.OilandGas.ProductionOperations.Modules
         {
             var result = NewResult();
             await SeedEquipmentCatalogAsync(connectionName, userId, result, cancellationToken);
+            await SeedFacilityMonitoringReferenceCodesAsync(connectionName, userId, result, cancellationToken);
             result.Success = true;
             return result;
         }
@@ -129,6 +138,78 @@ namespace Beep.OilandGas.ProductionOperations.Modules
                 };
                 await TryInsertAsync(repo, entity, userId, result, $"CatalogEquip:{code}");
             }
+        }
+
+        private async Task SeedFacilityMonitoringReferenceCodesAsync(
+            string connectionName, string userId, ModuleSetupResult result, CancellationToken ct)
+        {
+            var repo = GetRepo<R_FACILITY_MONITORING_CODE>("R_FACILITY_MONITORING_CODE", connectionName);
+            var rows = new (string Set, string Code, string LongName, string ShortName)[]
+            {
+                ("EQUIPMENT_ACTIVITY_TYPE", "INSTALL", "Equipment Installed", "INSTALL"),
+                ("EQUIPMENT_ACTIVITY_TYPE", "UNINSTALL", "Equipment Uninstalled", "UNINSTALL"),
+                ("EQUIPMENT_ACTIVITY_TYPE", "MOVE", "Equipment Moved", "MOVE"),
+                ("EQUIPMENT_ACTIVITY_TYPE", "REPLACE", "Equipment Replaced", "REPLACE"),
+
+                ("MEASUREMENT_TYPE", "TANK_LEVEL", "Tank Level", "TANK_LEVEL"),
+                ("MEASUREMENT_TYPE", "FLOW_RATE", "Flow Rate", "FLOW_RATE"),
+                ("MEASUREMENT_TYPE", "PRESSURE", "Pressure", "PRESSURE"),
+                ("MEASUREMENT_TYPE", "TEMPERATURE", "Temperature", "TEMPERATURE"),
+                ("MEASUREMENT_TYPE", "VIBRATION", "Vibration", "VIBRATION"),
+                ("MEASUREMENT_TYPE", "POWER_DRAW", "Power Draw", "POWER_DRAW"),
+
+                ("MEASUREMENT_QUALITY", "MEASURED", "Directly Measured", "MEASURED"),
+                ("MEASUREMENT_QUALITY", "ESTIMATED", "Estimated", "ESTIMATED"),
+                ("MEASUREMENT_QUALITY", "IMPUTED", "Imputed", "IMPUTED"),
+
+                ("MEASUREMENT_UOM", "PERCENT", "Percent", "%"),
+                ("MEASUREMENT_UOM", "M", "Meter", "M"),
+                ("MEASUREMENT_UOM", "FT", "Foot", "FT"),
+                ("MEASUREMENT_UOM", "PSI", "Pressure (PSI)", "PSI"),
+                ("MEASUREMENT_UOM", "DEG_C", "Degrees Celsius", "C"),
+                ("MEASUREMENT_UOM", "DEG_F", "Degrees Fahrenheit", "F"),
+            };
+
+            foreach (var (setName, code, longName, shortName) in rows)
+            {
+                ct.ThrowIfCancellationRequested();
+                try
+                {
+                    await UpsertFacilityMonitoringReferenceCodeIfMissingAsync(repo, setName, code, longName, shortName, userId);
+                }
+                catch (Exception ex)
+                {
+                    result.Errors.Add($"MonitoringRef:{setName}:{code}: {ex.Message}");
+                }
+            }
+        }
+
+        private async Task UpsertFacilityMonitoringReferenceCodeIfMissingAsync(
+            dynamic repo,
+            string referenceSet,
+            string referenceCode,
+            string longName,
+            string shortName,
+            string userId)
+        {
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "REFERENCE_SET", Operator = "=", FilterValue = referenceSet },
+                new AppFilter { FieldName = "REFERENCE_CODE", Operator = "=", FilterValue = referenceCode }
+            };
+
+            var existing = await repo.GetAsync(filters);
+            foreach (var _ in existing) return;
+
+            var row = new R_FACILITY_MONITORING_CODE
+            {
+                REFERENCE_SET = referenceSet,
+                REFERENCE_CODE = referenceCode,
+                LONG_NAME = longName,
+                SHORT_NAME = shortName,
+                ACTIVE_IND = "Y"
+            };
+            await repo.InsertAsync(row, userId);
         }
     }
 }

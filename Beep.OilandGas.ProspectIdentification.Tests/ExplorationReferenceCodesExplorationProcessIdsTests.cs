@@ -30,4 +30,15 @@ public class ExplorationReferenceCodesExplorationProcessIdsTests
         Assert.Equal(ExplorationReferenceCodes.ExplorationCategoryToken, ExplorationReferenceCodes.ProcessTypeExploration);
         Assert.Equal("EXPLORATION", ExplorationReferenceCodes.ProcessTypeExploration);
     }
+
+    [Fact]
+    public void ProspectToDiscovery_StepIds_MatchSeededChainOrder()
+    {
+        Assert.Equal("PROSPECT_CREATION", ExplorationReferenceCodes.StepProspectCreation);
+        Assert.Equal("RISK_ASSESSMENT", ExplorationReferenceCodes.StepRiskAssessment);
+        Assert.Equal("VOLUME_ESTIMATION", ExplorationReferenceCodes.StepVolumeEstimation);
+        Assert.Equal("ECONOMIC_EVALUATION", ExplorationReferenceCodes.StepEconomicEvaluation);
+        Assert.Equal("DRILLING_DECISION", ExplorationReferenceCodes.StepDrillingDecision);
+        Assert.Equal("DISCOVERY_RECORDING", ExplorationReferenceCodes.StepDiscoveryRecording);
+    }
 }

@@ -7,6 +7,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.ProductionAccounting.Constants;
 using Beep.OilandGas.ProductionAccounting.Exceptions;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
@@ -51,7 +52,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (!string.Equals(afe.ACTIVE_IND, _defaults.GetActiveIndicatorYes(), StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            return string.Equals(afe.STATUS, "APPROVED", StringComparison.OrdinalIgnoreCase);
+            return string.Equals(afe.STATUS, ApprovalWorkflowStatusCodes.Approved, StringComparison.OrdinalIgnoreCase);
         }
 
         public async Task<AFE> ApproveAfeAsync(string afeId, DateTime approvalDate, string userId, string cn = "PPDM39")
@@ -65,7 +66,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (afe == null)
                 throw new ProductionAccountingException($"AFE not found: {afeId}");
 
-            afe.STATUS = "APPROVED";
+            afe.STATUS = ApprovalWorkflowStatusCodes.Approved;
             afe.APPROVAL_DATE = approvalDate;
             afe.ROW_CHANGED_BY = userId;
             afe.ROW_CHANGED_DATE = DateTime.UtcNow;
@@ -97,7 +98,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (!string.Equals(afe.ACTIVE_IND, _defaults.GetActiveIndicatorYes(), StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            if (!string.Equals(afe.STATUS, "APPROVED", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(afe.STATUS, ApprovalWorkflowStatusCodes.Approved, StringComparison.OrdinalIgnoreCase))
                 return false;
 
             if (afe.ESTIMATED_COST.HasValue)

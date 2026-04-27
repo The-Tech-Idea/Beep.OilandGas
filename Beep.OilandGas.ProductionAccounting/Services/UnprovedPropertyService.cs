@@ -107,7 +107,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 GROUP_NAME = groupName,
                 EFFECTIVE_DATE = effectiveDate,
                 EXPIRY_DATE = expiryDate,
-                STATUS = "ACTIVE",
+                STATUS = LeaseLifecycleStatusCodes.Active,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,
@@ -139,7 +139,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 OPTION_DATE = optionDate,
                 OPTION_EXPIRY_DATE = optionExpiryDate,
                 BONUS_AMOUNT = bonusAmount,
-                STATUS = "ACTIVE",
+                STATUS = LeaseLifecycleStatusCodes.Active,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,
@@ -184,7 +184,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 RENTAL_DATE = rentalDate,
                 AMOUNT = amount,
                 NEXT_DUE_DATE = nextDueDate,
-                STATUS = "PAID",
+                STATUS = RoyaltyPaymentStatusCodes.Paid,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,
@@ -221,7 +221,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var leaseRepo = await CreateRepoAsync<LEASE_CONTRACT>("LEASE_CONTRACT", cn);
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var leases = await leaseRepo.GetAsync(filters);
@@ -235,7 +235,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     LEASE_EXPIRY_EVENT_ID = Guid.NewGuid().ToString(),
                     LEASE_ID = lease.LEASE_ID,
                     EXPIRY_DATE = lease.EXPIRY_DATE,
-                    ACTION_TAKEN = "WRITE_OFF",
+                    ACTION_TAKEN = LeaseExpiryActionCodes.WriteOff,
                     NOTES = "Lease expired; unproved costs written off",
                     ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                     PPDM_GUID = Guid.NewGuid().ToString(),
@@ -293,7 +293,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 PROPERTY_ID = propertyId,
                 AMOUNT = impairmentAmount,
                 COST_DATE = asOfDate,
-                COST_TYPE = "IMPAIRMENT",
+                COST_TYPE = CostTypes.Impairment,
                 COST_CATEGORY = CostCategories.Lease,
                 IS_CAPITALIZED = "N",
                 IS_EXPENSED = "Y",
@@ -330,7 +330,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = propertyId },
                 new AppFilter { FieldName = "COST_TYPE", Operator = "=", FilterValue = CostTypes.Acquisition },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -364,8 +364,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = propertyId },
                 new AppFilter { FieldName = "COST_TYPE", Operator = "=", FilterValue = CostTypes.Acquisition },
-                new AppFilter { FieldName = "IS_CAPITALIZED", Operator = "=", FilterValue = "Y" },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "IS_CAPITALIZED", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -419,7 +419,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 PROPERTY_ID = propertyId,
                 AMOUNT = carrying,
                 COST_DATE = asOfDate,
-                COST_TYPE = "EXPIRY_WRITE_OFF",
+                COST_TYPE = CostTypes.ExpiryWriteOff,
                 COST_CATEGORY = CostCategories.Lease,
                 IS_CAPITALIZED = "N",
                 IS_EXPENSED = "Y",

@@ -13,6 +13,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
 {
     /// <summary>
     /// API controller for production operations.
+    /// Active endpoints map to implemented members in
+    /// <c>Beep.OilandGas.Models.Core.Interfaces.IProductionOperationsService</c>.
+    /// Staged/placeholder methods in the expanded local production-operations surface
+    /// are intentionally not exposed here until implementation is completed.
     /// </summary>
     [ApiController]
     [Route("api/production/operations")]

@@ -19,15 +19,14 @@ namespace Beep.OilandGas.ProductionOperations.Services
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var pdenUow = GetPDENUnitOfWork();
+            var repo = Repo<PDEN>("PDEN");
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" },
                 new AppFilter { FieldName = "PDEN_SUBTYPE", FilterValue = PdenSubtypeFacility, Operator = "=" }
             };
 
-            object units = await pdenUow.Get(filters).ConfigureAwait(false);
-            List<PDEN> list = ConvertToList<PDEN>(units);
+            var list = (await repo.GetAsync(filters).ConfigureAwait(false)).Cast<PDEN>().ToList();
 
             if (startDate.HasValue)
                 list = list.Where(p => p.CURRENT_STATUS_DATE >= startDate.Value).ToList();

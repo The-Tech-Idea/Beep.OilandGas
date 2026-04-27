@@ -10,6 +10,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.ProductionAccounting.Constants;
 using Beep.OilandGas.ProductionAccounting.Exceptions;
 using Beep.OilandGas.PPDM39.Models;
 
@@ -56,7 +57,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ENTITY_NAME = entityName,
                 ENTITY_ID = entityId,
                 AMOUNT = amount,
-                STATUS = "PENDING",
+                STATUS = ApprovalWorkflowStatusCodes.Pending,
                 REQUESTED_BY = requestedBy,
                 REQUESTED_DATE = DateTime.UtcNow,
                 COMMENTS = comment,
@@ -86,7 +87,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (!await ValidateSegregationOfDutiesAsync(approval.ENTITY_NAME, approval.REQUESTED_BY, approverId, approval.AMOUNT, cn))
                 throw new ProductionAccountingException("Segregation-of-duties violation: approver must differ from requestor");
 
-            approval.STATUS = "APPROVED";
+            approval.STATUS = ApprovalWorkflowStatusCodes.Approved;
             approval.APPROVED_BY = approverId;
             approval.APPROVAL_DATE = DateTime.UtcNow;
             approval.COMMENTS = comment ?? approval.COMMENTS;
@@ -104,7 +105,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 new AppFilter { FieldName = "ENTITY_NAME", Operator = "=", FilterValue = entityName },
                 new AppFilter { FieldName = "ENTITY_ID", Operator = "=", FilterValue = entityId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -146,7 +147,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ENTITY_NAME", Operator = "=", FilterValue = entityName },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);

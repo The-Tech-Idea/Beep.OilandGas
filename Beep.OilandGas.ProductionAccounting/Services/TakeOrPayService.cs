@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,6 +10,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.ProductionAccounting.Constants;
 using Beep.OilandGas.ProductionAccounting.Exceptions;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
@@ -92,13 +93,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var deficiency = minVolume - deliveredVolume;
             if (deficiency <= 0m)
             {
-                await UpdateObligationStatusAsync(obligation, "SATISFIED", userId, cn);
+                await UpdateObligationStatusAsync(obligation, ContractPerformanceStatusCodes.Satisfied, userId, cn);
                 await ApplyMakeupBalanceAsync(contract.SALES_CONTRACT_ID, deliveredVolume - minVolume, contractDate, userId, cn);
                 return null;
             }
 
             var adjustmentRevenue = deficiency * price;
-            var isGas = string.Equals(contract.COMMODITY_TYPE, "GAS", StringComparison.OrdinalIgnoreCase);
+            var isGas = string.Equals(contract.COMMODITY_TYPE, RevenueLineProductCodes.Gas, StringComparison.OrdinalIgnoreCase);
 
             var revenueTransaction = new REVENUE_TRANSACTION
             {
@@ -109,14 +110,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 WELL_ID = RUN_TICKET.WELL_ID,
                 AFE_ID = RUN_TICKET.AFE_ID,
                 TRANSACTION_DATE = contractDate,
-                REVENUE_TYPE = "TAKE_OR_PAY",
+                REVENUE_TYPE = RevenueTypeCodes.TakeOrPay,
                 GROSS_REVENUE = adjustmentRevenue,
                 NET_REVENUE = adjustmentRevenue,
                 OIL_VOLUME = isGas ? 0m : deficiency,
                 GAS_VOLUME = isGas ? deficiency : 0m,
                 OIL_PRICE = isGas ? null : price,
                 GAS_PRICE = isGas ? price : null,
-                CURRENCY_CODE = contract.CURRENCY_CODE ?? "USD",
+                CURRENCY_CODE = contract.CURRENCY_CODE ?? AccountingCurrencyCodes.Usd,
                 DESCRIPTION = $"Take-or-pay deficiency for contract {contract.CONTRACT_NUMBER}",
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
@@ -127,7 +128,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var repo = await CreateRepoAsync<REVENUE_TRANSACTION>("REVENUE_TRANSACTION", cn);
             await repo.InsertAsync(revenueTransaction, userId);
 
-            await UpdateObligationStatusAsync(obligation, "PARTIALLY_SATISFIED", userId, cn);
+            await UpdateObligationStatusAsync(obligation, ContractPerformanceStatusCodes.PartiallySatisfied, userId, cn);
             await ApplyMakeupBalanceAsync(contract.SALES_CONTRACT_ID, -deficiency, contractDate, userId, cn);
 
             _logger?.LogWarning(
@@ -144,7 +145,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var buyerId = RUN_TICKET.PURCHASER;
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             if (!string.IsNullOrWhiteSpace(buyerId))
@@ -167,7 +168,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "SALES_CONTRACT_ID", Operator = "=", FilterValue = salesContractId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -188,7 +189,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "SALES_CONTRACT_ID", Operator = "=", FilterValue = salesContractId },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var results = await repo.GetAsync(filters);
@@ -219,7 +220,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "SALES_CONTRACT_ID", Operator = "=", FilterValue = salesContractId },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var results = await repo.GetAsync(filters);

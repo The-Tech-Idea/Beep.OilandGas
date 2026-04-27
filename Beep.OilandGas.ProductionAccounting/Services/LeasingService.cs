@@ -9,6 +9,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.ProductionAccounting.Constants;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
@@ -115,7 +116,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 LEASE_LIABILITY = pv,
                 INTEREST_EXPENSE = 0m,
                 AMORTIZATION_EXPENSE = 0m,
-                CURRENCY_CODE = lease.CURRENCY_CODE ?? "USD",
+                CURRENCY_CODE = lease.CURRENCY_CODE ?? AccountingCurrencyCodes.Usd,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,
@@ -166,7 +167,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "LEASE_ID", Operator = "=", FilterValue = leaseId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);

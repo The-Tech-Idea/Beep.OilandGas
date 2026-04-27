@@ -7,6 +7,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.ProductionAccounting.Constants;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
@@ -53,7 +54,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             obligation.EMISSIONS_VOLUME = emissionsVolume;
             obligation.ALLOWANCE_PRICE = allowancePrice;
             obligation.LIABILITY_AMOUNT = emissionsVolume * allowancePrice;
-            obligation.STATUS = "OPEN";
+            obligation.STATUS = EmissionsObligationStatusCodes.Open;
             obligation.ACTIVE_IND = _defaults.GetActiveIndicatorYes();
             obligation.PPDM_GUID ??= Guid.NewGuid().ToString();
             obligation.ROW_CREATED_BY = userId;
@@ -99,7 +100,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 SETTLEMENT_DATE = settlementDate,
                 ALLOWANCES_SURRENDERED = allowancesSurrendered,
                 SETTLEMENT_VALUE = 0m,
-                STATUS = "SETTLED",
+                STATUS = SettlementOutcomeCodes.Settled,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,

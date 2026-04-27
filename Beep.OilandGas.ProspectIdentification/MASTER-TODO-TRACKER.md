@@ -16,7 +16,7 @@ Single tracker for revising **data classes → services → process orchestratio
 | Area | Current state | Target state |
 |------|----------------|--------------|
 | **Data** | Rich table set in `ExplorationModule`; some projections vs PPDM overlap documented in `.plans` | One canonical **prospect/lead/play** model per aggregate; clear **read models** vs **write models**; `PROSPECT_WORKFLOW_STAGE` drives funnel state |
-| **Services** | **`IProspectIdentificationService`** + **`IProspectTechnicalMaturationService`** / **`IProspectRiskEconomicAnalysisService`** / **`IProspectPortfolioOptimizationService`** (same scoped `ProspectIdentificationService`); roadmap **`IExplorationApplicationService`** (not DI) | Split **domain application services** (lead, program/budget, permit) + **thin** API facades; implement or drop remaining roadmap methods |
+| **Services** | **`IProspectIdentificationService`** + **`IProspectTechnicalMaturationService`** / **`IProspectRiskEconomicAnalysisService`** / **`IProspectPortfolioOptimizationService`** (same scoped `ProspectIdentificationService`); ~~roadmap **`IExplorationApplicationService`**~~ **removed** (2026-04-27) | Split **domain application services** (lead, program/budget, permit) + **thin** API facades as new features land |
 | **Process** | `ExplorationProcessService` delegates to `IProcessService` with step IDs matching initializer | **Step handlers** persist to correct tables; **gate** rules enforced; optional alignment of internal names with catalog `EXP-*` |
 
 ---
@@ -29,7 +29,7 @@ Single tracker for revising **data classes → services → process orchestratio
 |---|------|------------------------|--------|
 | 0.1 | Inventory all exploration-related **controllers**, **DI registrations**, and **interface** implementations | `EXPLORATION_SURFACE.md` | Done |
 | 0.5 | Seed **`R_LEAD_STATUS`** (`ACTIVE`, `PROSPECT`, `CLOSED`) with exploration module setup | `ExplorationModule.SeedAsync` → `UpsertIfMissingAsync` on `R_LEAD_STATUS` | Done |
-| 0.2 | Resolve **duplicate** `IProspectIdentificationService` (`Models.Core.Interfaces` vs `ProspectIdentification/Services`) | Live API = `Models.Core.Interfaces.IProspectIdentificationService`; roadmap = `IExplorationApplicationService` in `Services/IExplorationApplicationService.cs` | Done |
+| 0.2 | Resolve **duplicate** `IProspectIdentificationService` (`Models.Core.Interfaces` vs `ProspectIdentification/Services`) | Live API = `Models.Core.Interfaces.IProspectIdentificationService`; former roadmap `IExplorationApplicationService` **removed** (see `.plans/10_*.md`) | Done |
 | 0.3 | Map seeded processes to catalog **EXP-*** IDs | Table in `EXPLORATION_SURFACE.md` | Done |
 | 0.4 | Confirm canonical **`PROSPECT`** type for all writes (per `.plans/03`) | Grep: no stray `PPDM39.Models.PROSPECT` for new code | Ongoing (grep in CI) |
 
@@ -65,7 +65,7 @@ Single tracker for revising **data classes → services → process orchestratio
 
 ## Phase 2 — Service decomposition (from “god interface” to workflows)
 
-**Goal:** Replace the monolithic `IExplorationApplicationService` roadmap surface (`Services/IExplorationApplicationService.cs`) with **workflow-scoped** services consumed by API and/or `ExplorationProcessService`.
+**Goal:** ~~Replace the monolithic `IExplorationApplicationService` roadmap surface~~ (file **removed** 2026-04-27); extend **workflow-scoped** services consumed by API and/or `ExplorationProcessService` as catalog gaps close.
 
 ### 2.1 Recommended service boundaries
 
@@ -81,7 +81,7 @@ Single tracker for revising **data classes → services → process orchestratio
 
 | # | Task | Verification |
 |---|------|--------------|
-| 2.1 | Extract methods from large interface file into above interfaces + **partial** `ProspectIdentificationService` classes (one file per concern) | **Part done** — partials as above; **`IProspectTechnicalMaturationService`**, **`IProspectRiskEconomicAnalysisService`**, **`IProspectPortfolioOptimizationService`** in `Core/Interfaces` + DI (same instance as **`IProspectIdentificationService`**); roadmap **`IExplorationApplicationService`** + catalog-mapped handlers still open |
+| 2.1 | Extract methods from large interface file into above interfaces + **partial** `ProspectIdentificationService` classes (one file per concern) | **Part done** — partials as above; **`IProspectTechnicalMaturationService`**, **`IProspectRiskEconomicAnalysisService`**, **`IProspectPortfolioOptimizationService`** in `Core/Interfaces` + DI (same instance as **`IProspectIdentificationService`**); **`IExplorationApplicationService`** **removed** (no consumers); **open:** new interfaces for program/permit/play when implemented + catalog-mapped handlers |
 | 2.0 | **`ILeadExplorationService`** — `LeadExplorationService` (LifeCycle) persists `PROSPECT` + `LEAD_ID` via **`IFieldExplorationService`**; idempotent by `GetProspectForFieldByLeadIdAsync`; `ExplorationProcessService` invokes after `PROSPECT_CREATION` | Done — unit tests: `LeadExplorationServiceTests`, `ExplorationProcessServiceTests`; **`POST …/workflows/reject-lead`**, **`promote-lead-to-prospect`**; **`CancellationToken`** on lead workflow service + controller |
 | 2.2 | Implement **only** APIs needed for Phase 3 process MVP; mark advanced methods (VOI, genetic portfolio) as **future** or stub with `NotSupportedException` + doc | Swagger shows accurate availability — **`EnsureWorkflowProcessMatchesCurrentFieldAsync`** on lead + prospect/discovery step POSTs + **`IsProcessInstanceInFieldAsync`** |
 | 2.2c | **Start-workflow** field guards: **`GetProspectForFieldAsync`** before prospect→discovery; **`IsProspectDiscoveryInFieldAsync`** (`PROSPECT_DISCOVERY` → prospect in field) before discovery→development; **`EnsureLeadInFieldForWorkflowStartAsync`** before lead→prospect (validates **`LEAD.FIELD_ID`**, persists when unset, **one DB read**) | Done — **`ExplorationController`** returns **404** when IDs are out of scope; **`EXPLORATION_SURFACE.md`**; **`Beep.OilandGas.ApiService.Tests`** green |
@@ -169,14 +169,14 @@ Each subsection lists **business intent**, **actors**, **data in/out**, **system
 
 | Step ID (seed) | Business action | Typical tables | Service |
 |----------------|-----------------|----------------|---------|
-| `PROSPECT_CREATION` | Ensure prospect shell | `PROSPECT` | Exploration CRUD |
+| `PROSPECT_CREATION` | Lead path: promote from `LEAD`. Prospect→discovery path: readiness / entry (API **`POST …/workflows/prospect-to-discovery/prospect-readiness`**; seed display **Prospect Readiness**) | `PROSPECT` | `ILeadExplorationService` vs process step only |
 | `RISK_ASSESSMENT` | Document COS elements | `PROSPECT_RISK_ASSESSMENT`, trap/source | `IProspectMaturationService` |
 | `VOLUME_ESTIMATION` | STOIIP/GIIP, recovery, P10/50/90 | `PROSPECT_VOLUME_ESTIMATE` | Same |
 | `ECONOMIC_EVALUATION` | Price deck, costs, fiscal | `PROSPECT_ECONOMIC` | `IProspectEconomicService` |
 | `DRILLING_DECISION` | Drill / defer / drop | Process outcome + `PROSPECT_STATUS` | Process + `PPDMExplorationService.UpdateProspectStatusAsync` |
 | `DISCOVERY_RECORDING` | HC found post-drill | `PROSPECT_DISCOVERY`, update `PROSPECT` | `IProspectDiscoveryService` |
 
-**Enhancement TODO:** Each `ExplorationProcessService.Perform*` method should invoke a **step handler** that validates prerequisites (e.g. volume exists before economics) per `process_Exploration.md`.
+**Enhancement TODO:** Wire **domain step handlers** inside **`IProcessService`** / persistence (PPDM rows). **Partially done (2026-04-27):** **`ExplorationProcessService`** enforces linear **process-state** prerequisite chains for **`PROSPECT_TO_DISCOVERY`** (risk → volume → economics → drilling → discovery) and **`DISCOVERY_TO_DEVELOPMENT`** (appraisal → reserve → economic analysis → development approval), with prior step not **`PENDING`** on **`ProcessInstance.StepInstances`**; **`ExplorationWorkflowPrerequisiteException`** → **409** on **`ExplorationController`**.
 
 ---
 
@@ -265,11 +265,11 @@ Each subsection lists **business intent**, **actors**, **data in/out**, **system
 
 | Item | Gap |
 |------|-----|
-| `ProspectIdentification/Services/IExplorationApplicationService.cs` | Large roadmap surface; **`[Obsolete]`**; not registered — **region disposition:** `.plans/10_IExplorationApplicationService_Region_Map.md` |
+| ~~`ProspectIdentification/Services/IExplorationApplicationService.cs`~~ | **Deleted** 2026-04-27 (obsolete roadmap interface + embedded DTOs; zero in-repo refs). **Historical disposition:** `.plans/10_IExplorationApplicationService_Region_Map.md` |
 | `ExplorationProcessService` | Thin wrapper over **`IProcessService`** for exploration steps; domain persistence for step payloads still mostly in process engine — **handoff map:** `.plans/12_Phase4_Data_Ownership_And_Handoffs.md` |
 | `process_Exploration.md` | References `LeadToProspectProcess.cs` etc.; confirm files exist or update plan |
 | Business catalog `EXP-*` | Naming differs from `LEAD_TO_PROSPECT`; align or document mapping |
-| `Beep.OilandGas.ProspectIdentification.Tests` | **25** xUnit tests — `ProspectIdentificationService` + **`ExplorationReferenceCodes`** gate / process-id drift guards (no live DB); **`Beep.OilandGas.ApiService.Tests`** **93** passed (exploration + cross-module) |
+| `Beep.OilandGas.ProspectIdentification.Tests` | **26** xUnit tests — `ProspectIdentificationService` + **`ExplorationReferenceCodes`** gate / process-id / prospect→discovery step-chain drift guards (no live DB); **`Beep.OilandGas.ApiService.Tests`** **130** passed (exploration + cross-module) |
 
 ---
 
@@ -277,11 +277,11 @@ Each subsection lists **business intent**, **actors**, **data in/out**, **system
 
 - [x] Phase 0 complete (0.1–0.3 done; 0.4 ad hoc grep)  
 - [ ] Phase 1 data rules + DTO alignment  
-- [x] Phase 2 exploration **MVP** (2.0, 2.2–2.2e, 2.3–2.3b, 2.4; field guards, `ExplorationReferenceCodes` + initializer alignment, DI / `IFieldExplorationService`) — **still open:** 2.1 remainder (roadmap **`IExplorationApplicationService`** disposition, deeper catalog-aligned splits)  
+- [x] Phase 2 exploration **MVP** (2.0, 2.2–2.2e, 2.3–2.3b, 2.4; field guards, `ExplorationReferenceCodes` + initializer alignment, DI / `IFieldExplorationService`; **`IExplorationApplicationService`** file **removed**) — **still open:** 2.1 new surface (`IExplorationProgramService`, play service, deeper catalog splits) as product requires  
 - [ ] Phase 3 step handlers for WF-D, WF-E, WF-J minimum  
 - [ ] Phase 4 API routes + OpenAPI  
 - [ ] Phase 5 security + idempotency  
 
 ---
 
-*Last updated: rollup + test counts; verification Apr 2026 — `dotnet test` Beep.OilandGas.ProspectIdentification.Tests (**25**), Beep.OilandGas.ApiService.Tests (**93**); `dotnet build` Beep.OilandGas.ApiService.*
+*Last updated: Apr 2026 — **`ExplorationProcessService`** exploration workflow **step prerequisites** (`StepInstances`) for prospect→discovery and discovery→development; ApiService.Tests **130**; ProspectIdentification.Tests **26**.*

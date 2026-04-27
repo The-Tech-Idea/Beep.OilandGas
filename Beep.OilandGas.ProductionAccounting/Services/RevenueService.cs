@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -91,7 +91,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 decimal commodityPrice = RUN_TICKET.PRICE_PER_BARREL > 0
                     ? RUN_TICKET.PRICE_PER_BARREL.Value
-                    : await GetCommodityPriceAsync("OIL", priceDate, cn);
+                    : await GetCommodityPriceAsync(RevenueLineProductCodes.Oil, priceDate, cn);
 
                 var totalVolume = ALLOCATION_RESULT.ALLOCATED_VOLUME ?? ALLOCATION_RESULT.TOTAL_VOLUME ?? allocatedVolume;
                 var grossRevenueTotal = totalVolume * commodityPrice;
@@ -247,7 +247,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 {
                     new AppFilter { FieldName = "COMMODITY_TYPE", Operator = "=", FilterValue = commodity },
                     new AppFilter { FieldName = "PRICE_DATE", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var prices = await repo.GetAsync(filters);
@@ -286,7 +286,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ALLOCATION_RESULT_ID", Operator = "=", FilterValue = allocationResultId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -316,7 +316,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ALLOCATION_RESULT_ID", Operator = "=", FilterValue = ALLOCATION_RESULT.ALLOCATION_RESULT_ID },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var existing = await repo.GetAsync(filters);
@@ -332,12 +332,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 WELL_ID = RUN_TICKET.WELL_ID,
                 AFE_ID = GetAfeId(ALLOCATION_RESULT, RUN_TICKET),
                 TRANSACTION_DATE = priceDate,
-                REVENUE_TYPE = "OIL",
+                REVENUE_TYPE = RevenueLineProductCodes.Oil,
                 GROSS_REVENUE = grossRevenueTotal,
                 NET_REVENUE = netRevenueTotal,
                 OIL_VOLUME = ALLOCATION_RESULT.ALLOCATED_VOLUME ?? ALLOCATION_RESULT.TOTAL_VOLUME ?? 0m,
                 OIL_PRICE = commodityPrice,
-                CURRENCY_CODE = "USD",
+                CURRENCY_CODE = AccountingCurrencyCodes.Usd,
                 DESCRIPTION = $"Revenue from allocation {ALLOCATION_RESULT.ALLOCATION_RESULT_ID}",
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
@@ -376,7 +376,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ALLOCATION_REQUEST_ID", Operator = "=", FilterValue = allocationRequestId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -398,10 +398,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
     /// </summary>
     public static class RevenueStatus
     {
-        public const string Deferred = "DEFERRED";
-        public const string Recognized = "RECOGNIZED";
-        public const string Billed = "BILLED";
-        public const string Collected = "COLLECTED";
+        public const string Deferred = RevenueRecognitionStatusCodes.Deferred;
+        public const string Recognized = RevenueRecognitionStatusCodes.Recognized;
+        public const string Billed = RevenueRecognitionStatusCodes.Billed;
+        public const string Collected = RevenueRecognitionStatusCodes.Collected;
     }
 
     /// <summary>
@@ -409,8 +409,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
     /// </summary>
     public static class RevenueAllocationMethod
     {
-        public const string ProRata = "PRO-RATA";
-        public const string Equation = "EQUATION";
-        public const string Custom = "CUSTOM";
+        /// <summary>Same as <see cref="AllocationMethods.ProRata"/> — matches <c>R_PRODUCTION_ACCOUNTING_REFERENCE_CODE</c> ALLOCATION_METHOD.</summary>
+        public const string ProRata = AllocationMethods.ProRata;
+
+        public const string Equation = AllocationMethods.Equation;
+
+        /// <summary>Same as <see cref="AllocationMethods.CustomRevenue"/>.</summary>
+        public const string Custom = AllocationMethods.CustomRevenue;
     }
 }

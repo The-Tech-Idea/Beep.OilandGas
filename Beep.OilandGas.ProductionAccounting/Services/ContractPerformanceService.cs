@@ -10,6 +10,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.ProductionAccounting.Constants;
 using Beep.OilandGas.ProductionAccounting.Exceptions;
 using Beep.OilandGas.PPDM39.Models;
 
@@ -49,7 +50,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new ProductionAccountingException("SALES_CONTRACT_ID is required");
 
             obligation.CONTRACT_PERFORMANCE_OBLIGATION_ID ??= Guid.NewGuid().ToString();
-            obligation.STATUS ??= "OPEN";
+            obligation.STATUS ??= ContractPerformanceStatusCodes.Open;
             obligation.ACTIVE_IND = _defaults.GetActiveIndicatorYes();
             obligation.PPDM_GUID ??= Guid.NewGuid().ToString();
             obligation.ROW_CREATED_BY = userId;
@@ -71,7 +72,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new ProductionAccountingException($"Obligation not found: {obligationId}");
 
             obligation.SATISFIED_DATE = satisfiedDate;
-            obligation.STATUS = "SATISFIED";
+            obligation.STATUS = ContractPerformanceStatusCodes.Satisfied;
             obligation.ROW_CHANGED_BY = userId;
             obligation.ROW_CHANGED_DATE = DateTime.UtcNow;
 
@@ -88,8 +89,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "SALES_CONTRACT_ID", Operator = "=", FilterValue = salesContractId },
-                new AppFilter { FieldName = "STATUS", Operator = "!=", FilterValue = "SATISFIED" },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "STATUS", Operator = "!=", FilterValue = ContractPerformanceStatusCodes.Satisfied },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);

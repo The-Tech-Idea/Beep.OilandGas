@@ -69,7 +69,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 new AppFilter { FieldName = "COMMODITY_TYPE", Operator = "=", FilterValue = productId },
                 new AppFilter { FieldName = "PRICE_DATE", Operator = "<=", FilterValue = date.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var prices = await repo.GetAsync(filters);
@@ -109,7 +109,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 new AppFilter { FieldName = "COMMODITY_TYPE", Operator = "=", FilterValue = productId },
                 new AppFilter { FieldName = "PRICE_DATE", Operator = ">=", FilterValue = start.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "PRICE_DATE", Operator = "<=", FilterValue = end.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var prices = await repo.GetAsync(filters);

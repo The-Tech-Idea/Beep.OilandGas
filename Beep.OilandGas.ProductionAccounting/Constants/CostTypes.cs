@@ -9,6 +9,12 @@ namespace Beep.OilandGas.ProductionAccounting.Constants
         public const string Development = "DEVELOPMENT";
         public const string Acquisition = "ACQUISITION";
         public const string Production = "PRODUCTION";
+
+        /// <summary>Impairment of unproved property / leasehold (ASC 360 / industry practice).</summary>
+        public const string Impairment = "IMPAIRMENT";
+
+        /// <summary>Write-off triggered when lease expires with unproved costs.</summary>
+        public const string ExpiryWriteOff = "EXPIRY_WRITE_OFF";
     }
 }
 

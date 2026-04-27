@@ -10,6 +10,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.ProductionAccounting.Constants;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
@@ -82,7 +83,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 JIB_CHARGE_ID = Guid.NewGuid().ToString(),
                 JOINT_INTEREST_STATEMENT_ID = statement.JOINT_INTEREST_STATEMENT_ID,
                 DESCRIPTION = "COPAS Overhead",
-                CATEGORY = "OVERHEAD",
+                CATEGORY = JibChargeCategoryCodes.Overhead,
                 AMOUNT = overhead,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
@@ -105,7 +106,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var repo = await CreateRepoAsync<COST_SHARING>("COST_SHARING", cn);
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -125,7 +126,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var repo = await CreateRepoAsync<COPAS_OVERHEAD_SCHEDULE>("COPAS_OVERHEAD_SCHEDULE", cn);
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 if (!string.IsNullOrWhiteSpace(leaseId))
@@ -160,7 +161,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var scheduleRepo = await CreateRepoAsync<COPAS_OVERHEAD_SCHEDULE>("COPAS_OVERHEAD_SCHEDULE", cn);
                 var scheduleFilters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() },
                     new AppFilter { FieldName = "LEASE_ID", Operator = "=", FilterValue = leaseId }
                 };
 
@@ -180,7 +181,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     CHANGE_DATE = asOfDate,
                     OLD_RATE = null,
                     NEW_RATE = schedule.OVERHEAD_RATE,
-                    CHANGE_REASON = "Applied overhead schedule",
+                    CHANGE_REASON = CopasOverheadAuditChangeReasons.AppliedOverheadSchedule,
                     ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                     PPDM_GUID = Guid.NewGuid().ToString(),
                     ROW_CREATED_BY = userId,

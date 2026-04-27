@@ -10,6 +10,7 @@ using Beep.OilandGas.Models.Data.Royalty;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.ProductionAccounting.Constants;
 using Beep.OilandGas.ProductionAccounting.Exceptions;
 using Beep.OilandGas.PPDM39.Models;
 
@@ -49,7 +50,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new ProductionAccountingException("ROYALTY_STATEMENT_ID is required");
 
             dispute.ROYALTY_DISPUTE_ID ??= Guid.NewGuid().ToString();
-            dispute.STATUS ??= "OPEN";
+            dispute.STATUS ??= RoyaltyDisputeStatusCodes.Open;
             dispute.DISPUTE_DATE ??= DateTime.UtcNow;
             dispute.ACTIVE_IND = _defaults.GetActiveIndicatorYes();
             dispute.PPDM_GUID ??= Guid.NewGuid().ToString();
@@ -71,7 +72,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (dispute == null)
                 throw new ProductionAccountingException($"Dispute not found: {disputeId}");
 
-            dispute.STATUS = "RESOLVED";
+            dispute.STATUS = RoyaltyDisputeStatusCodes.Resolved;
             dispute.RESOLUTION_DATE = resolutionDate;
             dispute.RESOLUTION_NOTES = resolutionNotes;
             dispute.ROW_CREATED_BY ??= userId;
@@ -90,7 +91,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ROYALTY_OWNER_BA_ID", Operator = "=", FilterValue = royaltyOwnerBaId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             if (!string.IsNullOrWhiteSpace(status))

@@ -18,8 +18,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
     /// <c>ExplorationController</c>. Data-slice ownership, route-to-method handoffs for risk/volume/economics/discovery, and
     /// <see cref="ProcessInstance"/> anchor rules are documented in
     /// <c>Beep.OilandGas.ProspectIdentification/.plans/12_Phase4_Data_Ownership_And_Handoffs.md</c>.
+    /// For <see cref="ExplorationReferenceCodes.ProcessIdProspectToDiscovery"/> instances, maturation step methods enforce a linear prerequisite chain
+    /// using <see cref="ProcessInstance.StepInstances"/> (prior step must not be <see cref="StepStatus.PENDING"/> — matches execute-only vs completed steps).
     /// </summary>
-    public class ExplorationProcessService
+    public partial class ExplorationProcessService
     {
         private readonly IProcessService _processService;
         private readonly ILeadExplorationService? _leadExplorationService;
@@ -241,7 +243,76 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         }
 
         /// <summary>
-        /// Perform risk assessment
+        /// Runs and completes <see cref="ExplorationReferenceCodes.StepProspectCreation"/> for a
+        /// <see cref="ExplorationReferenceCodes.ProcessIdProspectToDiscovery"/> instance anchored on
+        /// <see cref="ExplorationReferenceCodes.EntityTypeProspect"/>. Does not invoke
+        /// <see cref="ILeadExplorationService"/> — use <see cref="PromoteLeadToProspectAsync"/> for lead workflows.
+        /// </summary>
+        public async Task<bool> CompleteProspectReadinessStepAsync(
+            string instanceId,
+            PROCESS_STEP_DATA stepData,
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var instance = await _processService.GetProcessInstanceAsync(instanceId);
+                if (instance == null)
+                    return false;
+
+                if (!string.Equals(
+                        instance.ProcessId,
+                        ExplorationReferenceCodes.ProcessIdProspectToDiscovery,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger?.LogDebug(
+                        "Prospect readiness: instance {InstanceId} process {ProcessId} is not {Expected}",
+                        instanceId,
+                        instance.ProcessId,
+                        ExplorationReferenceCodes.ProcessIdProspectToDiscovery);
+                    return false;
+                }
+
+                if (!string.Equals(
+                        instance.EntityType,
+                        ExplorationReferenceCodes.EntityTypeProspect,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger?.LogDebug(
+                        "Prospect readiness: instance {InstanceId} entity type {EntityType} is not PROSPECT",
+                        instanceId,
+                        instance.EntityType);
+                    return false;
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+                var executed = await _processService.ExecuteStepAsync(
+                    instanceId,
+                    ExplorationReferenceCodes.StepProspectCreation,
+                    stepData,
+                    userId);
+                if (!executed)
+                    return false;
+
+                cancellationToken.ThrowIfCancellationRequested();
+                return await _processService.CompleteStepAsync(
+                    instanceId,
+                    ExplorationReferenceCodes.StepProspectCreation,
+                    ExplorationReferenceCodes.OutcomeSuccess,
+                    userId);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error completing prospect readiness step for process instance: {InstanceId}", instanceId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Perform risk assessment.
+        /// Prospect→discovery: requires <see cref="ExplorationReferenceCodes.StepProspectCreation"/> to have advanced past <see cref="StepStatus.PENDING"/>.
+        /// Throws <see cref="ExplorationWorkflowPrerequisiteException"/> when blocked (HTTP 409 from <c>ExplorationController</c>).
         /// </summary>
         public async Task<bool> PerformRiskAssessmentAsync(
             string instanceId,
@@ -251,6 +322,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+                var instance = await _processService.GetProcessInstanceAsync(instanceId);
+                RequireExplorationWorkflowStepPrerequisite(
+                    instance,
+                    IsProspectToDiscoveryProspectWorkflow,
+                    ExplorationReferenceCodes.StepProspectCreation,
+                    ExplorationReferenceCodes.StepRiskAssessment,
+                    instanceId);
+
                 cancellationToken.ThrowIfCancellationRequested();
                 return await _processService.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepRiskAssessment, riskData, userId);
             }
@@ -262,7 +342,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         }
 
         /// <summary>
-        /// Perform volume estimation
+        /// Perform volume estimation.
+        /// Prospect→discovery: requires <see cref="ExplorationReferenceCodes.StepRiskAssessment"/> advanced past <see cref="StepStatus.PENDING"/>.
+        /// Throws <see cref="ExplorationWorkflowPrerequisiteException"/> when blocked (HTTP 409 from <c>ExplorationController</c>).
         /// </summary>
         public async Task<bool> PerformVolumeEstimationAsync(
             string instanceId,
@@ -272,6 +354,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+                var instance = await _processService.GetProcessInstanceAsync(instanceId);
+                RequireExplorationWorkflowStepPrerequisite(
+                    instance,
+                    IsProspectToDiscoveryProspectWorkflow,
+                    ExplorationReferenceCodes.StepRiskAssessment,
+                    ExplorationReferenceCodes.StepVolumeEstimation,
+                    instanceId);
+
                 cancellationToken.ThrowIfCancellationRequested();
                 return await _processService.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepVolumeEstimation, volumeData, userId);
             }
@@ -283,7 +374,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         }
 
         /// <summary>
-        /// Perform economic evaluation
+        /// Perform economic evaluation.
+        /// Prospect→discovery: requires <see cref="ExplorationReferenceCodes.StepVolumeEstimation"/> advanced past <see cref="StepStatus.PENDING"/>.
+        /// Throws <see cref="ExplorationWorkflowPrerequisiteException"/> when blocked (HTTP 409 from <c>ExplorationController</c>).
         /// </summary>
         public async Task<bool> PerformEconomicEvaluationAsync(
             string instanceId,
@@ -293,6 +386,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+                var instance = await _processService.GetProcessInstanceAsync(instanceId);
+                RequireExplorationWorkflowStepPrerequisite(
+                    instance,
+                    IsProspectToDiscoveryProspectWorkflow,
+                    ExplorationReferenceCodes.StepVolumeEstimation,
+                    ExplorationReferenceCodes.StepEconomicEvaluation,
+                    instanceId);
+
                 cancellationToken.ThrowIfCancellationRequested();
                 return await _processService.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepEconomicEvaluation, economicData, userId);
             }
@@ -304,7 +406,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         }
 
         /// <summary>
-        /// Make drilling decision
+        /// Make drilling decision.
+        /// Prospect→discovery: requires <see cref="ExplorationReferenceCodes.StepEconomicEvaluation"/> advanced past <see cref="StepStatus.PENDING"/>.
+        /// Throws <see cref="ExplorationWorkflowPrerequisiteException"/> when blocked (HTTP 409 from <c>ExplorationController</c>).
         /// </summary>
         public async Task<bool> MakeDrillingDecisionAsync(
             string instanceId,
@@ -314,6 +418,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+                var instance = await _processService.GetProcessInstanceAsync(instanceId);
+                RequireExplorationWorkflowStepPrerequisite(
+                    instance,
+                    IsProspectToDiscoveryProspectWorkflow,
+                    ExplorationReferenceCodes.StepEconomicEvaluation,
+                    ExplorationReferenceCodes.StepDrillingDecision,
+                    instanceId);
+
                 cancellationToken.ThrowIfCancellationRequested();
                 return await _processService.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepDrillingDecision, decisionData, userId);
             }
@@ -325,7 +438,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         }
 
         /// <summary>
-        /// Record discovery
+        /// Record discovery.
+        /// Prospect→discovery: requires <see cref="ExplorationReferenceCodes.StepDrillingDecision"/> advanced past <see cref="StepStatus.PENDING"/>.
+        /// Throws <see cref="ExplorationWorkflowPrerequisiteException"/> when blocked (HTTP 409 from <c>ExplorationController</c>).
         /// </summary>
         public async Task<bool> RecordDiscoveryAsync(
             string instanceId,
@@ -335,6 +450,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+                var instance = await _processService.GetProcessInstanceAsync(instanceId);
+                RequireExplorationWorkflowStepPrerequisite(
+                    instance,
+                    IsProspectToDiscoveryProspectWorkflow,
+                    ExplorationReferenceCodes.StepDrillingDecision,
+                    ExplorationReferenceCodes.StepDiscoveryRecording,
+                    instanceId);
+
                 cancellationToken.ThrowIfCancellationRequested();
                 var result = await _processService.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepDiscoveryRecording, discoveryData, userId);
                 
@@ -394,7 +518,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         }
 
         /// <summary>
-        /// Perform appraisal
+        /// Perform appraisal.
+        /// Discovery→development: requires <see cref="ExplorationReferenceCodes.StepDiscoveryRecording"/> advanced past <see cref="StepStatus.PENDING"/>.
+        /// Throws <see cref="ExplorationWorkflowPrerequisiteException"/> when blocked (HTTP 409 from <c>ExplorationController</c>).
         /// </summary>
         public async Task<bool> PerformAppraisalAsync(
             string instanceId,
@@ -404,6 +530,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+                var instance = await _processService.GetProcessInstanceAsync(instanceId);
+                RequireExplorationWorkflowStepPrerequisite(
+                    instance,
+                    IsDiscoveryToDevelopmentDiscoveryWorkflow,
+                    ExplorationReferenceCodes.StepDiscoveryRecording,
+                    ExplorationReferenceCodes.StepAppraisal,
+                    instanceId);
+
                 cancellationToken.ThrowIfCancellationRequested();
                 return await _processService.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepAppraisal, appraisalData, userId);
             }
@@ -415,7 +550,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         }
 
         /// <summary>
-        /// Estimate reserves
+        /// Estimate reserves.
+        /// Discovery→development: requires <see cref="ExplorationReferenceCodes.StepAppraisal"/> advanced past <see cref="StepStatus.PENDING"/>.
+        /// Throws <see cref="ExplorationWorkflowPrerequisiteException"/> when blocked (HTTP 409 from <c>ExplorationController</c>).
         /// </summary>
         public async Task<bool> EstimateReservesAsync(
             string instanceId,
@@ -425,6 +562,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+                var instance = await _processService.GetProcessInstanceAsync(instanceId);
+                RequireExplorationWorkflowStepPrerequisite(
+                    instance,
+                    IsDiscoveryToDevelopmentDiscoveryWorkflow,
+                    ExplorationReferenceCodes.StepAppraisal,
+                    ExplorationReferenceCodes.StepReserveEstimation,
+                    instanceId);
+
                 cancellationToken.ThrowIfCancellationRequested();
                 return await _processService.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepReserveEstimation, reserveData, userId);
             }
@@ -436,7 +582,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         }
 
         /// <summary>
-        /// Perform development economic analysis
+        /// Perform development economic analysis.
+        /// Discovery→development: requires <see cref="ExplorationReferenceCodes.StepReserveEstimation"/> advanced past <see cref="StepStatus.PENDING"/>.
+        /// Throws <see cref="ExplorationWorkflowPrerequisiteException"/> when blocked (HTTP 409 from <c>ExplorationController</c>).
         /// </summary>
         public async Task<bool> PerformDevelopmentEconomicAnalysisAsync(
             string instanceId,
@@ -446,6 +594,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+                var instance = await _processService.GetProcessInstanceAsync(instanceId);
+                RequireExplorationWorkflowStepPrerequisite(
+                    instance,
+                    IsDiscoveryToDevelopmentDiscoveryWorkflow,
+                    ExplorationReferenceCodes.StepReserveEstimation,
+                    ExplorationReferenceCodes.StepDevelopmentEconomicAnalysis,
+                    instanceId);
+
                 cancellationToken.ThrowIfCancellationRequested();
                 return await _processService.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepDevelopmentEconomicAnalysis, economicData, userId);
             }
@@ -457,7 +614,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         }
 
         /// <summary>
-        /// Approve development
+        /// Approve development.
+        /// Discovery→development: requires <see cref="ExplorationReferenceCodes.StepDevelopmentEconomicAnalysis"/> advanced past <see cref="StepStatus.PENDING"/>.
+        /// Throws <see cref="ExplorationWorkflowPrerequisiteException"/> when blocked (HTTP 409 from <c>ExplorationController</c>).
         /// </summary>
         public async Task<bool> ApproveDevelopmentAsync(
             string instanceId,
@@ -466,6 +625,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+                var instance = await _processService.GetProcessInstanceAsync(instanceId);
+                RequireExplorationWorkflowStepPrerequisite(
+                    instance,
+                    IsDiscoveryToDevelopmentDiscoveryWorkflow,
+                    ExplorationReferenceCodes.StepDevelopmentEconomicAnalysis,
+                    ExplorationReferenceCodes.StepDevelopmentApproval,
+                    instanceId);
+
                 cancellationToken.ThrowIfCancellationRequested();
                 return await _processService.CompleteStepAsync(instanceId, ExplorationReferenceCodes.StepDevelopmentApproval, ExplorationReferenceCodes.OutcomeApproved, userId);
             }

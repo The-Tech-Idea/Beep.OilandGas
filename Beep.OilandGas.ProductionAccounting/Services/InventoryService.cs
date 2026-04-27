@@ -257,7 +257,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new ArgumentNullException(nameof(userId));
 
             var transactions = await GetInventoryTransactionsAsync(inventoryItemId, valuationDate, cn);
-            var valuationMethod = string.IsNullOrWhiteSpace(method) ? "WEIGHTED_AVG" : method.ToUpperInvariant();
+            var valuationMethod = string.IsNullOrWhiteSpace(method)
+                ? InventoryValuationMethodCodes.WeightedAvg
+                : method.ToUpperInvariant();
 
             var valuation = CalculateValuation(transactions, valuationMethod);
             var record = new INVENTORY_VALUATION
@@ -299,7 +301,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 t.TRANSACTION_DATE.Value.Date >= periodStart.Date &&
                 t.TRANSACTION_DATE.Value.Date <= periodEnd.Date).ToList();
 
-            var opening = CalculateValuation(openingTransactions, "WEIGHTED_AVG");
+            var opening = CalculateValuation(openingTransactions, InventoryValuationMethodCodes.WeightedAvg);
             var receipts = periodTransactions.Where(t => IsReceipt(t)).Sum(t => t.QUANTITY ?? 0m);
             var deliveries = periodTransactions.Where(t => IsIssue(t)).Sum(t => Math.Abs(t.QUANTITY ?? 0m));
             var closing = opening.Quantity + receipts - deliveries;
@@ -330,7 +332,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 new AppFilter { FieldName = "INVENTORY_ITEM_ID", Operator = "=", FilterValue = inventoryItemId },
                 new AppFilter { FieldName = "TRANSACTION_DATE", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
@@ -363,7 +365,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 else if (IsIssue(tx))
                 {
                     var issueQuantity = Math.Abs(quantity);
-                    if (method == "WEIGHTED_AVG")
+                    if (string.Equals(method, InventoryValuationMethodCodes.WeightedAvg, StringComparison.OrdinalIgnoreCase))
                     {
                         var avgCost = totalQuantity == 0m ? 0m : totalCost / totalQuantity;
                         totalQuantity -= issueQuantity;
@@ -392,7 +394,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             ref decimal totalQuantity,
             ref decimal totalCost)
         {
-            var orderedLayers = method == "LIFO"
+            var orderedLayers = string.Equals(method, InventoryValuationMethodCodes.Lifo, StringComparison.OrdinalIgnoreCase)
                 ? layers.OrderByDescending(l => l.Sequence).ToList()
                 : layers.OrderBy(l => l.Sequence).ToList();
 
@@ -417,9 +419,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 return false;
             if ((tx.QUANTITY ?? 0m) > 0m)
                 return true;
-            return string.Equals(tx.TRANSACTION_TYPE, "RECEIPT", StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(tx.TRANSACTION_TYPE, "PURCHASE", StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(tx.TRANSACTION_TYPE, "IN", StringComparison.OrdinalIgnoreCase);
+            return string.Equals(tx.TRANSACTION_TYPE, InventoryTransactionTypeCodes.Receipt, StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(tx.TRANSACTION_TYPE, InventoryTransactionTypeCodes.Purchase, StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(tx.TRANSACTION_TYPE, InventoryTransactionTypeCodes.In, StringComparison.OrdinalIgnoreCase);
         }
 
         private bool IsIssue(INVENTORY_TRANSACTION tx)
@@ -428,9 +430,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 return false;
             if ((tx.QUANTITY ?? 0m) < 0m)
                 return true;
-            return string.Equals(tx.TRANSACTION_TYPE, "ISSUE", StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(tx.TRANSACTION_TYPE, "SALE", StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(tx.TRANSACTION_TYPE, "OUT", StringComparison.OrdinalIgnoreCase);
+            return string.Equals(tx.TRANSACTION_TYPE, InventoryTransactionTypeCodes.Issue, StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(tx.TRANSACTION_TYPE, InventoryTransactionTypeCodes.Sale, StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(tx.TRANSACTION_TYPE, InventoryTransactionTypeCodes.Out, StringComparison.OrdinalIgnoreCase);
         }
 
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string cn)

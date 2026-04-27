@@ -2,7 +2,8 @@ namespace Beep.OilandGas.ProspectIdentification
 {
     /// <summary>
     /// Canonical codes for exploration reference tables and process orchestration.
-    /// Align with <c>R_LEAD_STATUS</c> seeding in <c>ExplorationModule</c> and exploration rows in <c>ProcessDefinitionInitializer</c> (LifeCycle).
+    /// Align with <c>R_LEAD_STATUS</c>/<c>R_EXPLORATION_REFERENCE_CODE</c> seeding in <c>ExplorationModule</c>
+    /// and exploration rows in <c>ProcessDefinitionInitializer</c> (LifeCycle).
     /// </summary>
     public static partial class ExplorationReferenceCodes
     {

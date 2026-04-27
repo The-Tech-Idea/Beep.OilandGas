@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data.ProductionOperations;
 using Beep.OilandGas.PPDM.Models;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Report;
@@ -11,6 +12,8 @@ namespace Beep.OilandGas.ProductionOperations.Services;
 
 public sealed partial class FacilityManagementService
 {
+    private const string MonitoringSourceDefault = "FACILITY_MONITORING";
+
     public async Task<IReadOnlyList<FACILITY_EQUIPMENT>> ListFacilityEquipmentAsync(string facilityId, string? facilityType, CancellationToken cancellationToken = default)
     {
         var f = await ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
@@ -293,5 +296,120 @@ public sealed partial class FacilityManagementService
         if (maint.Count + woInRange > 0)
             avail = 100m;
         return (maint.Count, woInRange, avail);
+    }
+
+    public async Task<IReadOnlyList<FACILITY_MEASUREMENT>> ListFacilityMeasurementsAsync(
+        string facilityId,
+        string? facilityType,
+        string? equipmentId,
+        string? measurementType,
+        DateTime? startDate,
+        DateTime? endDate,
+        CancellationToken cancellationToken = default)
+    {
+        var f = await ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
+        if (f == null) return Array.Empty<FACILITY_MEASUREMENT>();
+
+        var repo = Repo<FACILITY_MEASUREMENT>("FACILITY_MEASUREMENT");
+        var filters = new List<AppFilter>
+        {
+            new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = f.FACILITY_ID },
+            new AppFilter { FieldName = "FACILITY_TYPE", Operator = "=", FilterValue = f.FACILITY_TYPE },
+            new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+        };
+        if (!string.IsNullOrWhiteSpace(equipmentId))
+            filters.Add(new AppFilter { FieldName = "EQUIPMENT_ID", Operator = "=", FilterValue = equipmentId.Trim() });
+        if (!string.IsNullOrWhiteSpace(measurementType))
+            filters.Add(new AppFilter { FieldName = "MEASUREMENT_TYPE", Operator = "=", FilterValue = measurementType.Trim() });
+
+        var rows = (await repo.GetAsync(filters)).Cast<FACILITY_MEASUREMENT>().ToList();
+        if (startDate.HasValue)
+            rows = rows.Where(r => (r.MEASURED_DATE ?? DateTime.MinValue) >= startDate.Value).ToList();
+        if (endDate.HasValue)
+            rows = rows.Where(r => (r.MEASURED_DATE ?? DateTime.MaxValue) <= endDate.Value).ToList();
+        return rows.OrderByDescending(r => r.MEASURED_DATE ?? r.ROW_CREATED_DATE).ToList();
+    }
+
+    public async Task<FACILITY_MEASUREMENT> RecordFacilityMeasurementAsync(
+        FACILITY_MEASUREMENT measurement,
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (measurement == null) throw new ArgumentNullException(nameof(measurement));
+        if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID is required.", nameof(userId));
+
+        var f = await ResolveFacilityRowAsync(measurement.FACILITY_ID, measurement.FACILITY_TYPE, cancellationToken).ConfigureAwait(false)
+                ?? throw new InvalidOperationException("Facility not found.");
+
+        measurement.FACILITY_ID = f.FACILITY_ID;
+        measurement.FACILITY_TYPE = f.FACILITY_TYPE;
+        measurement.MEASUREMENT_ID = string.IsNullOrWhiteSpace(measurement.MEASUREMENT_ID)
+            ? _defaults.FormatIdForTable("FACILITY_MEASUREMENT", Guid.NewGuid().ToString("N"))
+            : measurement.MEASUREMENT_ID;
+        measurement.MEASURED_DATE ??= DateTime.UtcNow;
+        measurement.SOURCE_SYSTEM = string.IsNullOrWhiteSpace(measurement.SOURCE_SYSTEM) ? MonitoringSourceDefault : measurement.SOURCE_SYSTEM;
+        measurement.ACTIVE_IND ??= "Y";
+
+        if (measurement is IPPDMEntity e)
+            _commonColumnHandler.PrepareForInsert(e, userId);
+        var repo = Repo<FACILITY_MEASUREMENT>("FACILITY_MEASUREMENT");
+        return (await repo.InsertAsync(measurement, userId) as FACILITY_MEASUREMENT)!;
+    }
+
+    public async Task<IReadOnlyList<FACILITY_EQUIPMENT_ACTIVITY>> ListEquipmentActivityAsync(
+        string facilityId,
+        string? facilityType,
+        string equipmentId,
+        DateTime? startDate,
+        DateTime? endDate,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(equipmentId)) throw new ArgumentException("Equipment ID is required.", nameof(equipmentId));
+        var f = await ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
+        if (f == null) return Array.Empty<FACILITY_EQUIPMENT_ACTIVITY>();
+
+        var repo = Repo<FACILITY_EQUIPMENT_ACTIVITY>("FACILITY_EQUIPMENT_ACTIVITY");
+        var filters = new List<AppFilter>
+        {
+            new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = f.FACILITY_ID },
+            new AppFilter { FieldName = "FACILITY_TYPE", Operator = "=", FilterValue = f.FACILITY_TYPE },
+            new AppFilter { FieldName = "EQUIPMENT_ID", Operator = "=", FilterValue = equipmentId.Trim() },
+            new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+        };
+
+        var rows = (await repo.GetAsync(filters)).Cast<FACILITY_EQUIPMENT_ACTIVITY>().ToList();
+        if (startDate.HasValue)
+            rows = rows.Where(r => (r.ACTIVITY_DATE ?? DateTime.MinValue) >= startDate.Value).ToList();
+        if (endDate.HasValue)
+            rows = rows.Where(r => (r.ACTIVITY_DATE ?? DateTime.MaxValue) <= endDate.Value).ToList();
+        return rows.OrderByDescending(r => r.ACTIVITY_DATE ?? r.ROW_CREATED_DATE).ToList();
+    }
+
+    public async Task<FACILITY_EQUIPMENT_ACTIVITY> RecordEquipmentActivityAsync(
+        FACILITY_EQUIPMENT_ACTIVITY activity,
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (activity == null) throw new ArgumentNullException(nameof(activity));
+        if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID is required.", nameof(userId));
+        if (string.IsNullOrWhiteSpace(activity.EQUIPMENT_ID)) throw new ArgumentException("Equipment ID is required.", nameof(activity));
+
+        var f = await ResolveFacilityRowAsync(activity.FACILITY_ID, activity.FACILITY_TYPE, cancellationToken).ConfigureAwait(false)
+                ?? throw new InvalidOperationException("Facility not found.");
+
+        activity.FACILITY_ID = f.FACILITY_ID;
+        activity.FACILITY_TYPE = f.FACILITY_TYPE;
+        activity.ACTIVITY_ID = string.IsNullOrWhiteSpace(activity.ACTIVITY_ID)
+            ? _defaults.FormatIdForTable("FACILITY_EQUIPMENT_ACTIVITY", Guid.NewGuid().ToString("N"))
+            : activity.ACTIVITY_ID;
+        activity.ACTIVITY_DATE ??= DateTime.UtcNow;
+        activity.SOURCE_SYSTEM = string.IsNullOrWhiteSpace(activity.SOURCE_SYSTEM) ? MonitoringSourceDefault : activity.SOURCE_SYSTEM;
+        activity.ACTIVITY_TYPE = string.IsNullOrWhiteSpace(activity.ACTIVITY_TYPE) ? "INSTALL" : activity.ACTIVITY_TYPE.Trim().ToUpperInvariant();
+        activity.ACTIVE_IND ??= "Y";
+
+        if (activity is IPPDMEntity e)
+            _commonColumnHandler.PrepareForInsert(e, userId);
+        var repo = Repo<FACILITY_EQUIPMENT_ACTIVITY>("FACILITY_EQUIPMENT_ACTIVITY");
+        return (await repo.InsertAsync(activity, userId) as FACILITY_EQUIPMENT_ACTIVITY)!;
     }
 }

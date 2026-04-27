@@ -268,7 +268,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 COST_CENTER_ID = costCenterId,
                 IMPAIRMENT_DATE = DateTime.UtcNow,
                 IMPAIRMENT_AMOUNT = impairmentAmount,
-                IMPAIRMENT_TYPE = "CEILING_TEST",
+                IMPAIRMENT_TYPE = ImpairmentRecordTypeCodes.CeilingTest,
                 REASON = reason,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
@@ -306,7 +306,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "POOL_ID", Operator = "=", FilterValue = costCenterId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var costs = await repo.GetAsync(filters);
@@ -326,7 +326,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "COST_CENTER_ID", Operator = "=", FilterValue = costCenterId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var records = await repo.GetAsync(filters);
@@ -351,7 +351,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "COST_CENTER_ID", Operator = "=", FilterValue = costCenterId },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var measurements = await repo.GetAsync(filters);
@@ -399,7 +399,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "COST_CENTER_ID", Operator = "LIKE", FilterValue = $"%{costCenterId}%" },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var reserves = await repo.GetAsync(filters);
@@ -452,7 +452,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "COST_CENTER_ID", Operator = "LIKE", FilterValue = $"%{costCenterId}%" },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
 
                 var reserves = await repo.GetAsync(filters);

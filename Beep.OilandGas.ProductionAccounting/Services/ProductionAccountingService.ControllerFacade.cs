@@ -12,6 +12,7 @@ using Beep.OilandGas.Models.Data.Pricing;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.Storage;
 using Beep.OilandGas.Models.Data.Trading;
+using Beep.OilandGas.ProductionAccounting.Constants;
 using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
@@ -183,7 +184,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     PO_DATE = ReadValue<DateTime?>(request, nameof(CreatePurchaseOrderRequest.PoDate)) ?? DateTime.UtcNow,
                     EXPECTED_DELIVERY_DATE = ReadValue<DateTime?>(request, nameof(CreatePurchaseOrderRequest.ExpectedDeliveryDate)),
                     DESCRIPTION = ReadValue<string>(request, nameof(CreatePurchaseOrderRequest.Description)),
-                    STATUS = "DRAFT",
+                    STATUS = DocumentWorkflowStatusCodes.Draft,
                     ACTIVE_IND = _service._defaults.GetActiveIndicatorYes(),
                     ROW_CREATED_BY = userId,
                     ROW_CREATED_DATE = DateTime.UtcNow
@@ -227,7 +228,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     TAX_AMOUNT = ReadValue<decimal?>(request, nameof(CreateInvoiceRequest.TaxAmount)) ?? 0m,
                     TOTAL_AMOUNT = (ReadValue<decimal?>(request, nameof(CreateInvoiceRequest.Subtotal)) ?? 0m) + (ReadValue<decimal?>(request, nameof(CreateInvoiceRequest.TaxAmount)) ?? 0m),
                     BALANCE_DUE = (ReadValue<decimal?>(request, nameof(CreateInvoiceRequest.Subtotal)) ?? 0m) + (ReadValue<decimal?>(request, nameof(CreateInvoiceRequest.TaxAmount)) ?? 0m),
-                    STATUS = "DRAFT",
+                    STATUS = DocumentWorkflowStatusCodes.Draft,
                     ACTIVE_IND = _service._defaults.GetActiveIndicatorYes(),
                     ROW_CREATED_BY = userId,
                     ROW_CREATED_DATE = DateTime.UtcNow
@@ -338,7 +339,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     DESCRIPTION = description,
                     TOTAL_DEBIT = lines.Sum(line => line.DebitAmount ?? 0m),
                     TOTAL_CREDIT = lines.Sum(line => line.CreditAmount ?? 0m),
-                    STATUS = "DRAFT",
+                    STATUS = DocumentWorkflowStatusCodes.Draft,
                     ACTIVE_IND = _service._defaults.GetActiveIndicatorYes(),
                     ROW_CREATED_BY = userId,
                     ROW_CREATED_DATE = DateTime.UtcNow
@@ -434,7 +435,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     DUE_DATE = request.DueDate,
                     TOTAL_AMOUNT = request.TotalAmount,
                     BALANCE_DUE = request.TotalAmount,
-                    STATUS = "DRAFT",
+                    STATUS = DocumentWorkflowStatusCodes.Draft,
                     ACTIVE_IND = _service._defaults.GetActiveIndicatorYes(),
                     ROW_CREATED_BY = userId,
                     ROW_CREATED_DATE = DateTime.UtcNow
@@ -482,7 +483,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     DUE_DATE = request.DueDate,
                     TOTAL_AMOUNT = request.TotalAmount,
                     BALANCE_DUE = request.TotalAmount,
-                    STATUS = "DRAFT",
+                    STATUS = DocumentWorkflowStatusCodes.Draft,
                     ACTIVE_IND = _service._defaults.GetActiveIndicatorYes(),
                     ROW_CREATED_BY = userId,
                     ROW_CREATED_DATE = DateTime.UtcNow
@@ -667,7 +668,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         IndexName = indexName,
                         IndexDate = DateTime.UtcNow,
                         Price = price,
-                        Currency = "USD"
+                        Currency = AccountingCurrencyCodes.Usd
                     };
                     Indices[indexName] = resolved;
                     return resolved;
@@ -774,7 +775,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     PAYMENT_DATE = paymentDate,
                     ROYALTY_AMOUNT = amount,
                     NET_PAYMENT = amount,
-                    STATUS = "Pending",
+                    STATUS = RoyaltyPaymentStatusCodes.Pending,
                     ACTIVE_IND = _service._defaults.GetActiveIndicatorYes(),
                     ROW_CREATED_BY = "system",
                     ROW_CREATED_DATE = DateTime.UtcNow
@@ -821,7 +822,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     REPORT_PERIOD_START = startDate,
                     REPORT_PERIOD_END = endDate,
                     GENERATION_DATE = DateTime.UtcNow,
-                    REPORT_TYPE = "Operational"
+                    REPORT_TYPE = GeneratedReportTypeCodes.Operational
                 };
             }
 
@@ -835,7 +836,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     REPORT_PERIOD_START = startDate,
                     REPORT_PERIOD_END = endDate,
                     GENERATION_DATE = DateTime.UtcNow,
-                    REPORT_TYPE = "Lease"
+                    REPORT_TYPE = GeneratedReportTypeCodes.Lease
                 };
             }
         }

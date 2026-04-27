@@ -266,7 +266,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     ALLOCATION_DETAIL_ID = Guid.NewGuid().ToString(),
                     ALLOCATION_RESULT_ID = ALLOCATION_RESULT.ALLOCATION_RESULT_ID,
                     ENTITY_ID = item.Ownership.OWNER_ID,
-                    ENTITY_TYPE = "OWNER",
+                    ENTITY_TYPE = AllocationEntityTypeCodes.Owner,
                     ENTITY_NAME = item.Ownership.OWNER_ID,
                     ALLOCATION_PERCENTAGE = item.ScaledPct,
                     ALLOCATED_VOLUME = item.AllocatedVolume,
@@ -441,7 +441,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             return orders
                 .Where(o =>
-                    string.Equals(o.STATUS, "APPROVED", StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(o.STATUS, ApprovalWorkflowStatusCodes.Approved, StringComparison.OrdinalIgnoreCase) &&
                     (!o.EFFECTIVE_DATE.HasValue || o.EFFECTIVE_DATE.Value.Date <= effectiveDate.Value) &&
                     (!o.EXPIRATION_DATE.HasValue || o.EXPIRATION_DATE.Value.Date >= effectiveDate.Value))
                 .ToList();
@@ -492,7 +492,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var approvedOrders = new HashSet<string>(
                 divisionOrders
-                    .Where(d => string.Equals(d.STATUS, "APPROVED", StringComparison.OrdinalIgnoreCase))
+                    .Where(d => string.Equals(d.STATUS, ApprovalWorkflowStatusCodes.Approved, StringComparison.OrdinalIgnoreCase))
                     .Select(d => d.DIVISION_ORDER_ID ?? string.Empty),
                 StringComparer.OrdinalIgnoreCase);
 

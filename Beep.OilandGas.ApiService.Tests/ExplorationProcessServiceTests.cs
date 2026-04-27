@@ -1,6 +1,6 @@
 using System.Threading;
-using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.LifeCycle.Services.Exploration.Processes;
+using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.ProspectIdentification;
@@ -133,6 +133,111 @@ public class ExplorationProcessServiceTests
     }
 
     [Fact]
+    public async Task CompleteProspectReadinessStepAsync_ReturnsFalse_WhenInstanceMissing()
+    {
+        var processService = new Mock<IProcessService>(MockBehavior.Strict);
+        processService.Setup(p => p.GetProcessInstanceAsync("missing")).ReturnsAsync((ProcessInstance?)null);
+
+        var sut = CreateService(processService.Object);
+
+        var ok = await sut.CompleteProspectReadinessStepAsync("missing", new PROCESS_STEP_DATA(), "u");
+
+        Assert.False(ok);
+        processService.Verify(
+            p => p.ExecuteStepAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<PROCESS_STEP_DATA>(), It.IsAny<string>()),
+            Times.Never);
+        processService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task CompleteProspectReadinessStepAsync_ReturnsFalse_WhenNotProspectToDiscoveryProcess()
+    {
+        const string instanceId = "inst-pr-1";
+        var instance = new ProcessInstance
+        {
+            InstanceId = instanceId,
+            ProcessId = ExplorationReferenceCodes.ProcessIdLeadToProspect,
+            EntityType = ExplorationReferenceCodes.EntityTypeProspect,
+            EntityId = "P-1"
+        };
+
+        var processService = new Mock<IProcessService>(MockBehavior.Strict);
+        processService.Setup(p => p.GetProcessInstanceAsync(instanceId)).ReturnsAsync(instance);
+
+        var sut = CreateService(processService.Object);
+
+        Assert.False(await sut.CompleteProspectReadinessStepAsync(instanceId, new PROCESS_STEP_DATA(), "u"));
+
+        processService.Verify(
+            p => p.ExecuteStepAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<PROCESS_STEP_DATA>(), It.IsAny<string>()),
+            Times.Never);
+        processService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task CompleteProspectReadinessStepAsync_ReturnsFalse_WhenEntityTypeIsNotProspect()
+    {
+        const string instanceId = "inst-pr-2";
+        var instance = new ProcessInstance
+        {
+            InstanceId = instanceId,
+            ProcessId = ExplorationReferenceCodes.ProcessIdProspectToDiscovery,
+            EntityType = ExplorationReferenceCodes.EntityTypeLead,
+            EntityId = "L-1"
+        };
+
+        var processService = new Mock<IProcessService>(MockBehavior.Strict);
+        processService.Setup(p => p.GetProcessInstanceAsync(instanceId)).ReturnsAsync(instance);
+
+        var sut = CreateService(processService.Object);
+
+        Assert.False(await sut.CompleteProspectReadinessStepAsync(instanceId, new PROCESS_STEP_DATA(), "u"));
+
+        processService.Verify(
+            p => p.ExecuteStepAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<PROCESS_STEP_DATA>(), It.IsAny<string>()),
+            Times.Never);
+        processService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task CompleteProspectReadinessStepAsync_ExecutesAndCompletesProspectCreation_WhenAnchoredProspect()
+    {
+        const string instanceId = "inst-pr-3";
+        var stepData = new PROCESS_STEP_DATA { DataJson = """{"Note":"ready"}""" };
+        var instance = new ProcessInstance
+        {
+            InstanceId = instanceId,
+            ProcessId = ExplorationReferenceCodes.ProcessIdProspectToDiscovery,
+            EntityType = ExplorationReferenceCodes.EntityTypeProspect,
+            EntityId = "P-9"
+        };
+
+        var processService = new Mock<IProcessService>(MockBehavior.Strict);
+        processService.Setup(p => p.GetProcessInstanceAsync(instanceId)).ReturnsAsync(instance);
+        processService
+            .Setup(p => p.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepProspectCreation, stepData, "u"))
+            .ReturnsAsync(true);
+        processService
+            .Setup(p => p.CompleteStepAsync(
+                instanceId,
+                ExplorationReferenceCodes.StepProspectCreation,
+                ExplorationReferenceCodes.OutcomeSuccess,
+                "u"))
+            .ReturnsAsync(true);
+
+        var lead = new Mock<ILeadExplorationService>(MockBehavior.Strict);
+        var sut = CreateService(processService.Object, lead.Object);
+
+        Assert.True(await sut.CompleteProspectReadinessStepAsync(instanceId, stepData, "u"));
+
+        lead.Verify(
+            l => l.AfterProspectCreationStepCompletedAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        processService.VerifyAll();
+        lead.VerifyAll();
+    }
+
+    [Fact]
     public async Task PerformRiskAssessmentAsync_Throws_WhenAlreadyCanceled()
     {
         using var cts = new CancellationTokenSource();
@@ -147,6 +252,254 @@ public class ExplorationProcessServiceTests
         processService.Verify(
             p => p.ExecuteStepAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<PROCESS_STEP_DATA>(), It.IsAny<string>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task PerformRiskAssessmentAsync_Throws_WhenProspectToDiscovery_ButProspectCreationStillPending()
+    {
+        const string instanceId = "ptd-risk-block";
+        var instance = new ProcessInstance
+        {
+            InstanceId = instanceId,
+            ProcessId = ExplorationReferenceCodes.ProcessIdProspectToDiscovery,
+            EntityType = ExplorationReferenceCodes.EntityTypeProspect,
+            StepInstances =
+            [
+                new ProcessStepInstance
+                {
+                    StepId = ExplorationReferenceCodes.StepProspectCreation,
+                    Status = StepStatus.PENDING
+                }
+            ]
+        };
+
+        var processService = new Mock<IProcessService>(MockBehavior.Strict);
+        processService.Setup(p => p.GetProcessInstanceAsync(instanceId)).ReturnsAsync(instance);
+
+        var sut = CreateService(processService.Object);
+
+        var ex = await Assert.ThrowsAsync<ExplorationWorkflowPrerequisiteException>(
+            () => sut.PerformRiskAssessmentAsync(instanceId, new PROCESS_STEP_DATA(), "u"));
+
+        Assert.Equal(instanceId, ex.InstanceId);
+        Assert.Equal(ExplorationReferenceCodes.StepRiskAssessment, ex.AttemptedStepId);
+        Assert.Equal(ExplorationReferenceCodes.StepProspectCreation, ex.PrerequisiteStepId);
+
+        processService.Verify(
+            p => p.ExecuteStepAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<PROCESS_STEP_DATA>(), It.IsAny<string>()),
+            Times.Never);
+        processService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task PerformRiskAssessmentAsync_ExecutesStep_WhenProspectCreationAdvanced()
+    {
+        const string instanceId = "ptd-risk-ok";
+        var data = new PROCESS_STEP_DATA();
+        var instance = new ProcessInstance
+        {
+            InstanceId = instanceId,
+            ProcessId = ExplorationReferenceCodes.ProcessIdProspectToDiscovery,
+            EntityType = ExplorationReferenceCodes.EntityTypeProspect,
+            StepInstances =
+            [
+                new ProcessStepInstance
+                {
+                    StepId = ExplorationReferenceCodes.StepProspectCreation,
+                    Status = StepStatus.COMPLETED
+                }
+            ]
+        };
+
+        var processService = new Mock<IProcessService>(MockBehavior.Strict);
+        processService.Setup(p => p.GetProcessInstanceAsync(instanceId)).ReturnsAsync(instance);
+        processService
+            .Setup(p => p.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepRiskAssessment, data, "u"))
+            .ReturnsAsync(true);
+
+        var sut = CreateService(processService.Object);
+
+        Assert.True(await sut.PerformRiskAssessmentAsync(instanceId, data, "u"));
+
+        processService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task PerformRiskAssessmentAsync_SkipsPrerequisite_WhenNotProspectToDiscoveryProcess()
+    {
+        const string instanceId = "other-proc";
+        var data = new PROCESS_STEP_DATA();
+        var instance = new ProcessInstance
+        {
+            InstanceId = instanceId,
+            ProcessId = ExplorationReferenceCodes.ProcessIdLeadToProspect,
+            EntityType = ExplorationReferenceCodes.EntityTypeLead,
+            StepInstances = []
+        };
+
+        var processService = new Mock<IProcessService>(MockBehavior.Strict);
+        processService.Setup(p => p.GetProcessInstanceAsync(instanceId)).ReturnsAsync(instance);
+        processService
+            .Setup(p => p.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepRiskAssessment, data, "u"))
+            .ReturnsAsync(true);
+
+        var sut = CreateService(processService.Object);
+
+        Assert.True(await sut.PerformRiskAssessmentAsync(instanceId, data, "u"));
+
+        processService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task PerformVolumeEstimationAsync_Throws_WhenRiskAssessmentStillPending()
+    {
+        const string instanceId = "ptd-vol-block";
+        var instance = new ProcessInstance
+        {
+            InstanceId = instanceId,
+            ProcessId = ExplorationReferenceCodes.ProcessIdProspectToDiscovery,
+            EntityType = ExplorationReferenceCodes.EntityTypeProspect,
+            StepInstances =
+            [
+                new ProcessStepInstance
+                {
+                    StepId = ExplorationReferenceCodes.StepProspectCreation,
+                    Status = StepStatus.COMPLETED
+                },
+                new ProcessStepInstance
+                {
+                    StepId = ExplorationReferenceCodes.StepRiskAssessment,
+                    Status = StepStatus.PENDING
+                }
+            ]
+        };
+
+        var processService = new Mock<IProcessService>(MockBehavior.Strict);
+        processService.Setup(p => p.GetProcessInstanceAsync(instanceId)).ReturnsAsync(instance);
+
+        var sut = CreateService(processService.Object);
+
+        await Assert.ThrowsAsync<ExplorationWorkflowPrerequisiteException>(
+            () => sut.PerformVolumeEstimationAsync(instanceId, new PROCESS_STEP_DATA(), "u"));
+
+        processService.Verify(
+            p => p.ExecuteStepAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<PROCESS_STEP_DATA>(), It.IsAny<string>()),
+            Times.Never);
+        processService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task PerformVolumeEstimationAsync_ExecutesStep_WhenRiskInProgress()
+    {
+        const string instanceId = "ptd-vol-ok";
+        var data = new PROCESS_STEP_DATA();
+        var instance = new ProcessInstance
+        {
+            InstanceId = instanceId,
+            ProcessId = ExplorationReferenceCodes.ProcessIdProspectToDiscovery,
+            EntityType = ExplorationReferenceCodes.EntityTypeProspect,
+            StepInstances =
+            [
+                new ProcessStepInstance
+                {
+                    StepId = ExplorationReferenceCodes.StepProspectCreation,
+                    Status = StepStatus.COMPLETED
+                },
+                new ProcessStepInstance
+                {
+                    StepId = ExplorationReferenceCodes.StepRiskAssessment,
+                    Status = StepStatus.IN_PROGRESS
+                }
+            ]
+        };
+
+        var processService = new Mock<IProcessService>(MockBehavior.Strict);
+        processService.Setup(p => p.GetProcessInstanceAsync(instanceId)).ReturnsAsync(instance);
+        processService
+            .Setup(p => p.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepVolumeEstimation, data, "u"))
+            .ReturnsAsync(true);
+
+        var sut = CreateService(processService.Object);
+
+        Assert.True(await sut.PerformVolumeEstimationAsync(instanceId, data, "u"));
+
+        processService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task PerformEconomicEvaluationAsync_Throws_WhenVolumeStillPending()
+    {
+        const string instanceId = "ptd-eco-block";
+        var instance = new ProcessInstance
+        {
+            InstanceId = instanceId,
+            ProcessId = ExplorationReferenceCodes.ProcessIdProspectToDiscovery,
+            EntityType = ExplorationReferenceCodes.EntityTypeProspect,
+            StepInstances =
+            [
+                new ProcessStepInstance
+                {
+                    StepId = ExplorationReferenceCodes.StepRiskAssessment,
+                    Status = StepStatus.IN_PROGRESS
+                },
+                new ProcessStepInstance
+                {
+                    StepId = ExplorationReferenceCodes.StepVolumeEstimation,
+                    Status = StepStatus.PENDING
+                }
+            ]
+        };
+
+        var processService = new Mock<IProcessService>(MockBehavior.Strict);
+        processService.Setup(p => p.GetProcessInstanceAsync(instanceId)).ReturnsAsync(instance);
+
+        var sut = CreateService(processService.Object);
+
+        await Assert.ThrowsAsync<ExplorationWorkflowPrerequisiteException>(
+            () => sut.PerformEconomicEvaluationAsync(instanceId, new PROCESS_STEP_DATA(), "u"));
+
+        processService.Verify(
+            p => p.ExecuteStepAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<PROCESS_STEP_DATA>(), It.IsAny<string>()),
+            Times.Never);
+        processService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task RecordDiscoveryAsync_Throws_WhenDrillingDecisionStillPending()
+    {
+        const string instanceId = "ptd-disc-block";
+        var instance = new ProcessInstance
+        {
+            InstanceId = instanceId,
+            ProcessId = ExplorationReferenceCodes.ProcessIdProspectToDiscovery,
+            EntityType = ExplorationReferenceCodes.EntityTypeProspect,
+            StepInstances =
+            [
+                new ProcessStepInstance
+                {
+                    StepId = ExplorationReferenceCodes.StepEconomicEvaluation,
+                    Status = StepStatus.IN_PROGRESS
+                },
+                new ProcessStepInstance
+                {
+                    StepId = ExplorationReferenceCodes.StepDrillingDecision,
+                    Status = StepStatus.PENDING
+                }
+            ]
+        };
+
+        var processService = new Mock<IProcessService>(MockBehavior.Strict);
+        processService.Setup(p => p.GetProcessInstanceAsync(instanceId)).ReturnsAsync(instance);
+
+        var sut = CreateService(processService.Object);
+
+        await Assert.ThrowsAsync<ExplorationWorkflowPrerequisiteException>(
+            () => sut.RecordDiscoveryAsync(instanceId, new PROCESS_STEP_DATA(), "u"));
+
+        processService.Verify(
+            p => p.ExecuteStepAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<PROCESS_STEP_DATA>(), It.IsAny<string>()),
+            Times.Never);
+        processService.VerifyAll();
     }
 
     [Fact]
@@ -428,6 +781,195 @@ public class ExplorationProcessServiceTests
 
         Assert.False(await sut.IsProcessInstanceInFieldAsync(instanceId, "FIELD-1"));
 
+        processService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task PerformAppraisalAsync_Throws_WhenDiscoveryRecordingStillPending()
+    {
+        const string instanceId = "d2d-appraisal-block";
+        var instance = new ProcessInstance
+        {
+            InstanceId = instanceId,
+            ProcessId = ExplorationReferenceCodes.ProcessIdDiscoveryToDevelopment,
+            EntityType = ExplorationReferenceCodes.EntityTypeDiscovery,
+            StepInstances =
+            [
+                new ProcessStepInstance
+                {
+                    StepId = ExplorationReferenceCodes.StepDiscoveryRecording,
+                    Status = StepStatus.PENDING
+                }
+            ]
+        };
+
+        var processService = new Mock<IProcessService>(MockBehavior.Strict);
+        processService.Setup(p => p.GetProcessInstanceAsync(instanceId)).ReturnsAsync(instance);
+        var sut = CreateService(processService.Object);
+
+        await Assert.ThrowsAsync<ExplorationWorkflowPrerequisiteException>(
+            () => sut.PerformAppraisalAsync(instanceId, new PROCESS_STEP_DATA(), "u"));
+
+        processService.Verify(
+            p => p.ExecuteStepAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<PROCESS_STEP_DATA>(), It.IsAny<string>()),
+            Times.Never);
+        processService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task EstimateReservesAsync_Throws_WhenAppraisalStillPending()
+    {
+        const string instanceId = "d2d-reserve-block";
+        var instance = new ProcessInstance
+        {
+            InstanceId = instanceId,
+            ProcessId = ExplorationReferenceCodes.ProcessIdDiscoveryToDevelopment,
+            EntityType = ExplorationReferenceCodes.EntityTypeDiscovery,
+            StepInstances =
+            [
+                new ProcessStepInstance
+                {
+                    StepId = ExplorationReferenceCodes.StepAppraisal,
+                    Status = StepStatus.PENDING
+                }
+            ]
+        };
+
+        var processService = new Mock<IProcessService>(MockBehavior.Strict);
+        processService.Setup(p => p.GetProcessInstanceAsync(instanceId)).ReturnsAsync(instance);
+        var sut = CreateService(processService.Object);
+
+        await Assert.ThrowsAsync<ExplorationWorkflowPrerequisiteException>(
+            () => sut.EstimateReservesAsync(instanceId, new PROCESS_STEP_DATA(), "u"));
+
+        processService.Verify(
+            p => p.ExecuteStepAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<PROCESS_STEP_DATA>(), It.IsAny<string>()),
+            Times.Never);
+        processService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task PerformDevelopmentEconomicAnalysisAsync_Throws_WhenReserveEstimationStillPending()
+    {
+        const string instanceId = "d2d-economic-block";
+        var instance = new ProcessInstance
+        {
+            InstanceId = instanceId,
+            ProcessId = ExplorationReferenceCodes.ProcessIdDiscoveryToDevelopment,
+            EntityType = ExplorationReferenceCodes.EntityTypeDiscovery,
+            StepInstances =
+            [
+                new ProcessStepInstance
+                {
+                    StepId = ExplorationReferenceCodes.StepReserveEstimation,
+                    Status = StepStatus.PENDING
+                }
+            ]
+        };
+
+        var processService = new Mock<IProcessService>(MockBehavior.Strict);
+        processService.Setup(p => p.GetProcessInstanceAsync(instanceId)).ReturnsAsync(instance);
+        var sut = CreateService(processService.Object);
+
+        await Assert.ThrowsAsync<ExplorationWorkflowPrerequisiteException>(
+            () => sut.PerformDevelopmentEconomicAnalysisAsync(instanceId, new PROCESS_STEP_DATA(), "u"));
+
+        processService.Verify(
+            p => p.ExecuteStepAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<PROCESS_STEP_DATA>(), It.IsAny<string>()),
+            Times.Never);
+        processService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task ApproveDevelopmentAsync_Throws_WhenDevelopmentEconomicAnalysisStillPending()
+    {
+        const string instanceId = "d2d-approve-block";
+        var instance = new ProcessInstance
+        {
+            InstanceId = instanceId,
+            ProcessId = ExplorationReferenceCodes.ProcessIdDiscoveryToDevelopment,
+            EntityType = ExplorationReferenceCodes.EntityTypeDiscovery,
+            StepInstances =
+            [
+                new ProcessStepInstance
+                {
+                    StepId = ExplorationReferenceCodes.StepDevelopmentEconomicAnalysis,
+                    Status = StepStatus.PENDING
+                }
+            ]
+        };
+
+        var processService = new Mock<IProcessService>(MockBehavior.Strict);
+        processService.Setup(p => p.GetProcessInstanceAsync(instanceId)).ReturnsAsync(instance);
+        var sut = CreateService(processService.Object);
+
+        await Assert.ThrowsAsync<ExplorationWorkflowPrerequisiteException>(
+            () => sut.ApproveDevelopmentAsync(instanceId, "u"));
+
+        processService.Verify(
+            p => p.CompleteStepAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()),
+            Times.Never);
+        processService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task PerformAppraisalAsync_Executes_WhenDiscoveryRecordingAdvanced()
+    {
+        const string instanceId = "d2d-appraisal-ok";
+        var payload = new PROCESS_STEP_DATA();
+        var instance = new ProcessInstance
+        {
+            InstanceId = instanceId,
+            ProcessId = ExplorationReferenceCodes.ProcessIdDiscoveryToDevelopment,
+            EntityType = ExplorationReferenceCodes.EntityTypeDiscovery,
+            StepInstances =
+            [
+                new ProcessStepInstance
+                {
+                    StepId = ExplorationReferenceCodes.StepDiscoveryRecording,
+                    Status = StepStatus.COMPLETED
+                }
+            ]
+        };
+
+        var processService = new Mock<IProcessService>(MockBehavior.Strict);
+        processService.Setup(p => p.GetProcessInstanceAsync(instanceId)).ReturnsAsync(instance);
+        processService
+            .Setup(p => p.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepAppraisal, payload, "u"))
+            .ReturnsAsync(true);
+        var sut = CreateService(processService.Object);
+
+        Assert.True(await sut.PerformAppraisalAsync(instanceId, payload, "u"));
+        processService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task ApproveDevelopmentAsync_Completes_WhenEconomicAnalysisAdvanced()
+    {
+        const string instanceId = "d2d-approve-ok";
+        var instance = new ProcessInstance
+        {
+            InstanceId = instanceId,
+            ProcessId = ExplorationReferenceCodes.ProcessIdDiscoveryToDevelopment,
+            EntityType = ExplorationReferenceCodes.EntityTypeDiscovery,
+            StepInstances =
+            [
+                new ProcessStepInstance
+                {
+                    StepId = ExplorationReferenceCodes.StepDevelopmentEconomicAnalysis,
+                    Status = StepStatus.IN_PROGRESS
+                }
+            ]
+        };
+
+        var processService = new Mock<IProcessService>(MockBehavior.Strict);
+        processService.Setup(p => p.GetProcessInstanceAsync(instanceId)).ReturnsAsync(instance);
+        processService
+            .Setup(p => p.CompleteStepAsync(instanceId, ExplorationReferenceCodes.StepDevelopmentApproval, ExplorationReferenceCodes.OutcomeApproved, "u"))
+            .ReturnsAsync(true);
+        var sut = CreateService(processService.Object);
+
+        Assert.True(await sut.ApproveDevelopmentAsync(instanceId, "u"));
         processService.VerifyAll();
     }
 

@@ -76,9 +76,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 GROSS_VOLUME = ticket.GROSS_VOLUME,
                 NET_VOLUME = netVolume,
                 MEASUREMENT_METHOD = string.IsNullOrWhiteSpace(ticket.MEASUREMENT_METHOD)
-                    ? "AUTOMATED"
+                    ? LegacyMeasurementMethodCodes.Automated
                     : ticket.MEASUREMENT_METHOD,
-                MEASUREMENT_STANDARD = "API",
+                MEASUREMENT_STANDARD = MeasurementStandard.API.ToString(),
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_DATE = DateTime.UtcNow,
@@ -148,7 +148,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 new AppFilter { FieldName = "WELL_ID", Operator = "=", FilterValue = wellId },
                 new AppFilter { FieldName = "MEASUREMENT_DATETIME", Operator = ">=", FilterValue = start.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "MEASUREMENT_DATETIME", Operator = "<=", FilterValue = end.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var records = await repo.GetAsync(filters);
@@ -182,7 +182,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 new AppFilter { FieldName = "LEASE_ID", Operator = "=", FilterValue = leaseId },
                 new AppFilter { FieldName = "MEASUREMENT_DATETIME", Operator = ">=", FilterValue = start.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "MEASUREMENT_DATETIME", Operator = "<=", FilterValue = end.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var records = await repo.GetAsync(filters);

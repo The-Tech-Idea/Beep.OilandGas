@@ -7,6 +7,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.ProductionAccounting.Constants;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
@@ -47,9 +48,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new ArgumentNullException(nameof(userId));
 
             cost.ACCOUNTING_COST_ID ??= Guid.NewGuid().ToString();
-            cost.COST_CATEGORY = "EXPLORATION_EVALUATION";
-            cost.IS_CAPITALIZED = capitalize ? _defaults.GetActiveIndicatorYes() : "N";
-            cost.IS_EXPENSED = capitalize ? "N" : _defaults.GetActiveIndicatorYes();
+            cost.COST_CATEGORY = CostCategories.ExplorationEvaluation;
+            cost.IS_CAPITALIZED = capitalize ? _defaults.GetActiveIndicatorYes() : _defaults.GetActiveIndicatorNo();
+            cost.IS_EXPENSED = capitalize ? _defaults.GetActiveIndicatorNo() : _defaults.GetActiveIndicatorYes();
             cost.COST_DATE ??= DateTime.UtcNow;
             cost.ACTIVE_IND = _defaults.GetActiveIndicatorYes();
             cost.PPDM_GUID ??= Guid.NewGuid().ToString();

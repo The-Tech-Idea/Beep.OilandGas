@@ -15,6 +15,11 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<bool> ProcessProductionCycleAsync(RUN_TICKET RUN_TICKET, string userId, string connectionName = "PPDM39");
         Task<AccountingStatusData> GetAccountingStatusAsync(string fieldId, DateTime? asOfDate = null, string connectionName = "PPDM39");
         Task<bool> ClosePeriodAsync(string fieldId, DateTime periodEnd, string userId, string connectionName = "PPDM39");
+        Task<List<REVENUE_TRANSACTION>> GetRevenueTransactionsAsync(
+            string fieldId,
+            DateTime startDate,
+            DateTime endDate,
+            string connectionName = "PPDM39");
     }
 
     /// <summary>

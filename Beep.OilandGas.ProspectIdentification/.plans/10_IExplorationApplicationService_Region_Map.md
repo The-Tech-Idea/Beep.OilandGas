@@ -1,13 +1,14 @@
-# IExplorationApplicationService — region map (roadmap vs live)
+# IExplorationApplicationService — region map (historical)
 
-**Contract:** `Beep.OilandGas.ProspectIdentification/Services/IExplorationApplicationService.cs`  
-**Status:** Not registered in DI. Live HTTP and field workflows use **`IProspectIdentificationService`** plus **`IProspectTechnicalMaturationService`**, **`IProspectRiskEconomicAnalysisService`**, **`IProspectPortfolioOptimizationService`** (`Beep.OilandGas.Models.Core.Interfaces`), **`ISeismicAnalysisService`**, **`IProspectEvaluationService`**, **`IFieldExplorationService`**, and **`ILeadExplorationService`** as appropriate.
+**Removed (2026-04-27):** `Services/IExplorationApplicationService.cs` (obsolete roadmap interface plus embedded roadmap DTOs). **No** `Beep.OilandGas` / `BeepDM` `.cs` references; safe removal. Restore from git history if an external consumer still needed the type.
 
-This sheet satisfies **Phase 3** of `04_Execution_Plan.md`: each `#region` on the interface is classified as **deferred**, **partial overlap** (conceptual or subset), or **implemented elsewhere** (with pointer).
+**Live contracts:** **`IProspectIdentificationService`** plus **`IProspectTechnicalMaturationService`**, **`IProspectRiskEconomicAnalysisService`**, **`IProspectPortfolioOptimizationService`** (`Beep.OilandGas.Models.Core.Interfaces`), **`ISeismicAnalysisService`**, **`IProspectEvaluationService`**, **`IFieldExplorationService`**, and **`ILeadExplorationService`** as appropriate.
+
+This sheet satisfies **Phase 3** of `04_Execution_Plan.md`: each former `#region` on the removed interface is classified as **deferred**, **partial overlap** (conceptual or subset), or **implemented elsewhere** (with pointer).
 
 ---
 
-## Interface method regions (lines ~20–210)
+## Interface method regions (historical layout; file removed)
 
 | `#region` | Roadmap methods (summary) | Classification | Live / planned substitute |
 |-----------|---------------------------|----------------|---------------------------|
@@ -22,7 +23,7 @@ This sheet satisfies **Phase 3** of `04_Execution_Plan.md`: each `#region` on th
 
 ---
 
-## DTO regions in the same file (lines ~213+)
+## DTO regions (were in the same file as the interface; removed with file)
 
 | `#region` | Classification | Notes |
 |-----------|----------------|-------|
@@ -37,7 +38,7 @@ This sheet satisfies **Phase 3** of `04_Execution_Plan.md`: each `#region` on th
 
 ## Verification
 
-- Grep **`IExplorationApplicationService`** in **`Beep.OilandGas.ApiService`** — should find **no** `AddScoped` / constructor injection (roadmap-only).
+- **2026-04-27:** Grep **`IExplorationApplicationService`** / roadmap DTO names across **`Beep.OilandGas`** (`*.cs`) — **no** usages outside the removed file; **`BeepDM`** — none.
 - Live workflow analysis: **`ProspectIdentificationController.WorkflowAnalysis.cs`** + **`ProspectIdentificationControllerWorkflowTests`**.
 
 ---
@@ -48,3 +49,4 @@ This sheet satisfies **Phase 3** of `04_Execution_Plan.md`: each `#region` on th
 |------|--------|
 | 2026-04-27 | Initial map; Phase 3 checklist closure in `04_Execution_Plan.md`. |
 | 2026-04-27 | Interface marked **`[Obsolete]`** (roadmap-only); removal deferred until external consumers are cleared. |
+| 2026-04-27 | **Removed** `IExplorationApplicationService.cs` after in-repo / BeepDM grep showed zero consumers. |
