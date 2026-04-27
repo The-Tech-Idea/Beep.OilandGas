@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers.BusinessProcess;
-using Beep.OilandGas.LifeCycle.Models.Processes;
+using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.LifeCycle.Services.Processes;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.HSE;

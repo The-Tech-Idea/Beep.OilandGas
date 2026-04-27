@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.PPDM39.Models;
 
@@ -26,32 +27,37 @@ namespace Beep.OilandGas.ProductionOperations.Services
         /// <summary>
         /// Gets production operations.
         /// </summary>
-        Task<List<PDEN>> GetProductionOperationsAsync(string? wellUWI = null, DateTime? startDate = null, DateTime? endDate = null);
+        Task<List<PDEN>> GetProductionOperationsAsync(string? wellUWI = null, DateTime? startDate = null, DateTime? endDate = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets a production operation by ID.
         /// </summary>
-        Task<PDEN?> GetProductionOperationAsync(string operationId);
+        Task<PDEN?> GetProductionOperationAsync(string operationId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Creates a new production operation.
         /// </summary>
-        Task<PDEN> CreateProductionOperationAsync(CreateProductionOperationRequest createRequest);
+        Task<PDEN> CreateProductionOperationAsync(CreateProductionOperationRequest createRequest, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets production reports.
         /// </summary>
-        Task<List<PDEN>> GetProductionReportsAsync(string? wellUWI = null, DateTime? startDate = null, DateTime? endDate = null);
+        Task<List<PDEN>> GetProductionReportsAsync(string? wellUWI = null, DateTime? startDate = null, DateTime? endDate = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets well operations.
         /// </summary>
-        Task<List<PDEN>> GetWellOperationsAsync(string wellUWI);
+        Task<List<PDEN>> GetWellOperationsAsync(string wellUWI, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Gets facility operations.
+        /// Gets facility master row(s) for the given facility identifier.
         /// </summary>
-        Task<List<FACILITY>> GetFacilityOperationsAsync(string facilityId);
+        Task<List<FACILITY>> GetFacilityOperationsAsync(string facilityId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Lists PDEN rows used for facility-level production reporting (<c>PDEN_SUBTYPE = FACILITY</c>).
+        /// </summary>
+        Task<IReadOnlyList<PDEN>> ListFacilityPdenDeclarationsAsync(DateTime? startDate = null, DateTime? endDate = null, CancellationToken cancellationToken = default);
     }
 }
 

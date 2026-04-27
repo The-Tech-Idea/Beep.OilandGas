@@ -7,10 +7,18 @@ using Beep.OilandGas.Models.Data.ProspectIdentification;
 namespace Beep.OilandGas.ProspectIdentification.Services
 {
     /// <summary>
-    /// Comprehensive prospect identification service interface
-    /// Orchestrates the complete prospect identification workflow from data acquisition to final evaluation
+    /// Roadmap contract for future exploration application features (data acquisition through portfolio).
+    /// Not registered in DI; the live API uses <see cref="Beep.OilandGas.Models.Core.Interfaces.IProspectIdentificationService"/>
+    /// plus workflow-scoped analysis interfaces implemented by the same service:
+    /// <see cref="Beep.OilandGas.Models.Core.Interfaces.IProspectTechnicalMaturationService"/>,
+    /// <see cref="Beep.OilandGas.Models.Core.Interfaces.IProspectRiskEconomicAnalysisService"/>,
+    /// <see cref="Beep.OilandGas.Models.Core.Interfaces.IProspectPortfolioOptimizationService"/>.
+    /// Region-by-region disposition (deferred vs partial vs live substitute) is documented in
+    /// <c>Beep.OilandGas.ProspectIdentification/.plans/10_IExplorationApplicationService_Region_Map.md</c>.
     /// </summary>
-    public interface IProspectIdentificationService
+    [Obsolete(
+        "Roadmap-only contract: not for DI registration or production implementations. Use Beep.OilandGas.Models.Core.Interfaces.IProspectIdentificationService plus IProspectTechnicalMaturationService, IProspectRiskEconomicAnalysisService, and IProspectPortfolioOptimizationService. See .plans/10_IExplorationApplicationService_Region_Map.md.")]
+    public interface IExplorationApplicationService
     {
         #region Workflow Management
 

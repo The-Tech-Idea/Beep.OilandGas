@@ -13,6 +13,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Beep.OilandGas.ProspectIdentification.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Beep.OilandGas.LeaseAcquisition\Beep.OilandGas.LeaseAcquisition.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.PPDM39\Beep.OilandGas.PPDM39.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.PPDM39.DataManagement\Beep.OilandGas.PPDM39.DataManagement.csproj" />

@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using Beep.OilandGas.PPDM39.DataManagement.SeedData;
+using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.Models.Data.ProspectIdentification;
+using Beep.OilandGas.ProspectIdentification;
 
 namespace Beep.OilandGas.ProspectIdentification.Modules
 {
@@ -59,7 +61,7 @@ namespace Beep.OilandGas.ProspectIdentification.Modules
             _referenceSeeder = referenceSeeder ?? throw new ArgumentNullException(nameof(referenceSeeder));
         }
 
-        public override string ModuleId => "EXPLORATION";
+        public override string ModuleId => ExplorationReferenceCodes.ExplorationModuleRegistryId;
         public override string ModuleName => "Exploration";
         public override int Order => 50;
         public override IReadOnlyList<Type> EntityTypes => _entityTypes;
@@ -96,7 +98,79 @@ namespace Beep.OilandGas.ProspectIdentification.Modules
                 result.Errors.Add(ex.Message);
             }
 
+            try
+            {
+                await SeedRLeadStatusReferenceRowsAsync(connectionName, userId, result, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                result.Errors.Add($"R_LEAD_STATUS: {ex.Message}");
+            }
+
             return result;
+        }
+
+        /// <summary>
+        /// Idempotent rows for <c>R_LEAD_STATUS</c> so <c>LEAD.LEAD_STATUS</c> updates (e.g. promotion to <c>PROSPECT</c>) satisfy reference integrity.
+        /// </summary>
+        private async Task SeedRLeadStatusReferenceRowsAsync(
+            string connectionName,
+            string userId,
+            ModuleSetupResult result,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var repo = GetRepo<R_LEAD_STATUS>("R_LEAD_STATUS", connectionName);
+            result.TablesSeeded++;
+
+            foreach (var row in BuildDefaultLeadStatuses())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await UpsertIfMissingAsync(
+                    repo,
+                    row,
+                    new AppFilter
+                    {
+                        FieldName = "LEAD_STATUS",
+                        Operator = "=",
+                        FilterValue = row.LEAD_STATUS ?? string.Empty
+                    },
+                    userId,
+                    result,
+                    $"R_LEAD_STATUS/{row.LEAD_STATUS}").ConfigureAwait(false);
+            }
+        }
+
+        private static IEnumerable<R_LEAD_STATUS> BuildDefaultLeadStatuses()
+        {
+            yield return new R_LEAD_STATUS
+            {
+                LEAD_STATUS = ExplorationReferenceCodes.LeadStatusActive,
+                LONG_NAME = "Active lead",
+                SHORT_NAME = "Active",
+                ABBREVIATION = "ACT",
+                ACTIVE_IND = "Y",
+                SOURCE = "APPLICATION"
+            };
+            yield return new R_LEAD_STATUS
+            {
+                LEAD_STATUS = ExplorationReferenceCodes.LeadStatusPromotedToProspect,
+                LONG_NAME = "Promoted to prospect",
+                SHORT_NAME = "Prospect",
+                ABBREVIATION = "PROSP",
+                ACTIVE_IND = "Y",
+                SOURCE = "APPLICATION"
+            };
+            yield return new R_LEAD_STATUS
+            {
+                LEAD_STATUS = ExplorationReferenceCodes.LeadStatusClosed,
+                LONG_NAME = "Closed lead",
+                SHORT_NAME = "Closed",
+                ABBREVIATION = "CLS",
+                ACTIVE_IND = "Y",
+                SOURCE = "APPLICATION"
+            };
         }
     }
 }

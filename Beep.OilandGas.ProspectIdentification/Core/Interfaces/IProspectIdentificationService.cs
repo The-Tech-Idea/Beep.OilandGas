@@ -1,3 +1,5 @@
+// Physical location: Beep.OilandGas.ProspectIdentification (assembly) — namespace matches Models.Core.Interfaces
+// so ApiService and other hosts resolve the contract alongside other cross-cutting service interfaces.
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
@@ -6,8 +8,10 @@ using Beep.OilandGas.Models.Data.ProspectIdentification;
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
     /// <summary>
-    /// Service interface for prospect identification operations.
-    /// Provides prospect evaluation, ranking, and risk assessment.
+    /// Live prospect identification API contract (evaluate, list, create, rank).
+    /// Implemented by <see cref="Beep.OilandGas.ProspectIdentification.Services.ProspectIdentificationService"/> together with
+    /// <see cref="IProspectTechnicalMaturationService"/>, <see cref="IProspectRiskEconomicAnalysisService"/>, and
+    /// <see cref="IProspectPortfolioOptimizationService"/> (same instance in DI).
     /// </summary>
     public interface IProspectIdentificationService
     {
@@ -41,15 +45,5 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <returns>Ranked list of prospects</returns>
         Task<List<ProspectRanking>> RankProspectsAsync(List<string> prospectIds, Dictionary<string, decimal> rankingCriteria);
     }
-
-    /// <summary>
-    /// DTO for prospect ranking.
-    /// </summary>
-    
 }
-
-
-
-
-
 

@@ -47,6 +47,9 @@ await explorationProcessService.EvaluateLeadAsync(instance.InstanceId, evaluatio
 // Approve lead
 await explorationProcessService.ApproveLeadAsync(instance.InstanceId, userId);
 
+// Or reject (optional reason is logged; completes LEAD_APPROVAL as REJECTED)
+await explorationProcessService.RejectLeadAsync(instance.InstanceId, "Does not meet criteria", userId);
+
 // Promote to prospect
 await explorationProcessService.PromoteLeadToProspectAsync(instance.InstanceId, prospectData, userId);
 ```

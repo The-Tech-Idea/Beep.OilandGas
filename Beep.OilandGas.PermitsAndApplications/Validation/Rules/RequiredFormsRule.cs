@@ -21,7 +21,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Validation.Rules
             if (status == "DRAFT" && !submissionComplete)
                 return result;
 
-            var attachments = request.Attachments ?? Array.Empty<Beep.OilandGas.Models.Data.PermitsAndApplications.APPLICATION_ATTACHMENT>();
+            var attachments = request.Attachments ?? Array.Empty<APPLICATION_ATTACHMENT>();
             var missingForms = new List<string>();
 
             foreach (var form in request.RequiredForms)

@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,7 +8,6 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Models;
-using Beep.OilandGas.LifeCycle.Services.Exploration;
 using Beep.OilandGas.LifeCycle.Services.Development;
 using Beep.OilandGas.LifeCycle.Services.Production;
 using Beep.OilandGas.LifeCycle.Services.Decommissioning;
@@ -22,7 +20,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Beep.OilandGas.Models.Data.ProspectIdentification;
-using PROSPECT = Beep.OilandGas.PPDM39.Models.PROSPECT;
 
 namespace Beep.OilandGas.LifeCycle.Services
 {
@@ -45,8 +42,8 @@ namespace Beep.OilandGas.LifeCycle.Services
         private string? _currentFieldId;
         private PPDMGenericRepository? _fieldRepository;
 
-        // Phase services (created on demand when field is set)
-        private IFieldExplorationService? _explorationService;
+        // Phase services (created on demand when field is set; exploration is always DI-scoped)
+        private readonly IFieldExplorationService _fieldExplorationService;
         private IFieldDevelopmentService? _developmentService;
         private IFieldProductionService? _productionService;
         private IFieldDecommissioningService? _decommissioningService;
@@ -63,6 +60,7 @@ namespace Beep.OilandGas.LifeCycle.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             PPDMMappingService mappingService,
+            IFieldExplorationService fieldExplorationService,
             string connectionName = "PPDM39",
             ILogger<FieldOrchestrator>? logger = null,
             IAccessControlService? accessControlService = null,
@@ -77,6 +75,7 @@ namespace Beep.OilandGas.LifeCycle.Services
             _logger = logger;
             _accessControlService = accessControlService;
             _httpContextAccessor = httpContextAccessor;
+            _fieldExplorationService = fieldExplorationService ?? throw new ArgumentNullException(nameof(fieldExplorationService));
         }
 
         private string? GetCurrentUserId()
@@ -104,16 +103,9 @@ namespace Beep.OilandGas.LifeCycle.Services
                     return false;
                 }
 
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{fieldMetadata.EntityTypeName}");
-                if (entityType == null)
-                {
-                    _logger?.LogError($"Entity type not found for FIELD: {fieldMetadata.EntityTypeName}");
-                    return false;
-                }
-
                 _fieldRepository = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, _connectionName, "FIELD");
+                    typeof(FIELD), _connectionName, "FIELD");
 
                 var formattedFieldId = _defaults.FormatIdForTable("FIELD", fieldId);
                 var field = await _fieldRepository.GetByIdAsync(formattedFieldId);
@@ -139,9 +131,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                 _currentFieldId = formattedFieldId;
                 _logger?.LogInformation($"Active field set to: {fieldId}");
 
-                // Phase services will be created on demand via Get*Service() methods
-                // Reset phase services to ensure they use the new field context
-                _explorationService = null;
+                // Phase services (except injected exploration) are created on demand; reset so they bind to the new field
                 _developmentService = null;
                 _productionService = null;
                 _decommissioningService = null;
@@ -359,21 +349,13 @@ namespace Beep.OilandGas.LifeCycle.Services
                     decimal gasVol = 0;
                     decimal waterVol = 0;
 
-                    if (prodRecord is PDEN_VOL_SUMMARY pden)
-                    {
-                        oilVol = pden.OIL_VOLUME;
-                        gasVol = pden.GAS_VOLUME;
-                        waterVol = pden.WATER_VOLUME;
-                        prodDate = pden.EFFECTIVE_DATE;
-                    }
-                    else
-                    {
-                        // Use Entity properties via reflection (works with any Entity type)
-                        oilVol = GetDecimalValue(prodRecord, "OIL_VOLUME");
-                        gasVol = GetDecimalValue(prodRecord, "GAS_VOLUME");
-                        waterVol = GetDecimalValue(prodRecord, "WATER_VOLUME");
-                        prodDate = GetDateProperty(prodRecord, "EFFECTIVE_DATE") ?? GetDateProperty(prodRecord, "PDEN_DATE");
-                    }
+                    if (prodRecord is not PDEN_VOL_SUMMARY pden)
+                        continue;
+
+                    oilVol = pden.OIL_VOLUME;
+                    gasVol = pden.GAS_VOLUME;
+                    waterVol = pden.WATER_VOLUME;
+                    prodDate = pden.EFFECTIVE_DATE ?? pden.VOLUME_DATE;
 
                     totalOilProduction += oilVol;
                     totalGasProduction += gasVol;
@@ -404,34 +386,9 @@ namespace Beep.OilandGas.LifeCycle.Services
                     stats.AverageDailyProduction = daysDiff > 0 ? totalVolume / daysDiff : 0;
                 }
 
-                // Get reserves from RESERVE_ENTITY
-                var reserveRepo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(RESERVE_ENTITY), _connectionName, "RESERVE_ENTITY");
-                
-                var reserveFilters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = _currentFieldId }
-                };
-                var reserveData = await reserveRepo.GetAsync(reserveFilters);
-
-                // RESERVE_ENTITY is a PPDM grouping entity; actual reserve volumes live in
-                // related tables (e.g. RESERVE_CLASS_CALC). Use GetDecimalValue for any
-                // extended/custom columns that may be added via the generic fallback path.
-                decimal provedReserves = 0;
-                decimal probableReserves = 0;
-                decimal possibleReserves = 0;
-
-                foreach (var reserveRecord in reserveData ?? Enumerable.Empty<object>())
-                {
-                    provedReserves   += GetDecimalValue(reserveRecord, "PROVED_RESERVES");
-                    probableReserves += GetDecimalValue(reserveRecord, "PROBABLE_RESERVES");
-                    possibleReserves += GetDecimalValue(reserveRecord, "POSSIBLE_RESERVES");
-                }
-
-                stats.ProvedReserves = provedReserves > 0 ? provedReserves : null;
-                stats.ProbableReserves = probableReserves > 0 ? probableReserves : null;
-                stats.PossibleReserves = possibleReserves > 0 ? possibleReserves : null;
+                // RESERVE_ENTITY is a grouping row in PPDM; proved/probable/possible volumes
+                // are not scalar columns on that entity in our model. Populate reserve stats
+                // from a dedicated reserves service when available.
 
                 // Get facility counts
                 var facilityRepo = new PPDMGenericRepository(
@@ -449,18 +406,10 @@ namespace Beep.OilandGas.LifeCycle.Services
 
                 foreach (var facilityRecord in facilityData ?? Enumerable.Empty<object>())
                 {
-                    if (facilityRecord is FACILITY f)
-                    {
-                        // Use ACTIVE_IND directly — PPDM standard; 'Y' = active
-                        if (f.ACTIVE_IND == "Y")
-                            activeFacilities++;
-                    }
-                    else
-                    {
-                        var status = GetStringValue(facilityRecord, "ACTIVE_IND");
-                        if (status == "Y")
-                            activeFacilities++;
-                    }
+                    if (facilityRecord is not FACILITY f)
+                        continue;
+                    if (f.ACTIVE_IND == "Y")
+                        activeFacilities++;
                 }
 
                 stats.TotalFacilityCount = totalFacilities;
@@ -509,26 +458,13 @@ namespace Beep.OilandGas.LifeCycle.Services
 
                 foreach (var prospectRecord in prospects ?? Enumerable.Empty<object>())
                 {
-                    string? prospectId = null;
-                    string? prospectName = null;
-                    DateTime? prospectDate = null;
-                    DateTime? discoveryDate = null;
+                    if (prospectRecord is not PROSPECT p)
+                        continue;
 
-                    if (prospectRecord is PROSPECT p)
-                    {
-                        prospectId = p.PROSPECT_ID;
-                        prospectName = p.PROSPECT_NAME;
-                        prospectDate = GetDateProperty(p, "PROSPECT_DATE");
-                        discoveryDate = GetDateProperty(p, "DISCOVERY_DATE");
-                    }
-                    else
-                    {
-                        // Use Entity properties via reflection (works with any Entity type)
-                        prospectId = GetStringValue(prospectRecord, "PROSPECT_ID");
-                        prospectName = GetStringValue(prospectRecord, "PROSPECT_NAME");
-                        prospectDate = GetDateProperty(prospectRecord, "PROSPECT_DATE");
-                        discoveryDate = GetDateProperty(prospectRecord, "DISCOVERY_DATE");
-                    }
+                    var prospectId = p.PROSPECT_ID;
+                    var prospectName = p.PROSPECT_NAME;
+                    var prospectDate = p.EVALUATION_DATE ?? p.ROW_CREATED_DATE;
+                    var discoveryDate = p.DISCOVERY_DATE;
 
                     if (prospectDate.HasValue)
                     {
@@ -571,29 +507,13 @@ namespace Beep.OilandGas.LifeCycle.Services
 
                 foreach (var wellRecord in wells ?? Enumerable.Empty<object>())
                 {
-                    string? wellId = null;
-                    string? wellName = null;
-                    DateTime? spudDate = null;
-                    DateTime? completionDate = null;
-                    DateTime? firstProdDate = null;
+                    if (wellRecord is not WELL w)
+                        continue;
 
-                    if (wellRecord is WELL w)
-                    {
-                        wellId = w.WELL_ID;
-                        wellName = w.WELL_NAME;
-                        spudDate = GetDateProperty(w, "SPUD_DATE");
-                        completionDate = GetDateProperty(w, "COMPLETION_DATE");
-                        firstProdDate = GetDateProperty(w, "FIRST_PROD_DATE");
-                    }
-                    else
-                    {
-                        // Use Entity properties via reflection (works with any Entity type)
-                        wellId = GetStringValue(wellRecord, "WELL_ID");
-                        wellName = GetStringValue(wellRecord, "WELL_NAME");
-                        spudDate = GetDateProperty(wellRecord, "SPUD_DATE");
-                        completionDate = GetDateProperty(wellRecord, "COMPLETION_DATE");
-                        firstProdDate = GetDateProperty(wellRecord, "FIRST_PROD_DATE");
-                    }
+                    var wellId = w.WELL_ID;
+                    var wellName = w.WELL_NAME;
+                    var spudDate = w.SPUD_DATE;
+                    var completionDate = w.COMPLETION_DATE;
 
                     if (spudDate.HasValue)
                     {
@@ -623,19 +543,6 @@ namespace Beep.OilandGas.LifeCycle.Services
                         });
                     }
 
-                    if (firstProdDate.HasValue)
-                    {
-                        timeline.Events.Add(new FieldTimelineEvent
-                        {
-                            EventId = Guid.NewGuid().ToString(),
-                            EventType = "Production",
-                            EventDescription = $"First production: {wellName ?? wellId}",
-                            EventDate = firstProdDate.Value,
-                            EntityType = "WELL",
-                            EntityId = wellId,
-                            EntityName = wellName
-                        });
-                    }
                 }
 
                 // Query PDEN_VOL_SUMMARY for monthly production events (aggregate by month)
@@ -651,20 +558,11 @@ namespace Beep.OilandGas.LifeCycle.Services
                 var monthlyProduction = new Dictionary<(int Year, int Month), decimal>();
                 foreach (var prodRecord in productionData ?? Enumerable.Empty<object>())
                 {
-                    DateTime? prodDate = null;
-                    decimal volume = 0;
+                    if (prodRecord is not PDEN_VOL_SUMMARY pden)
+                        continue;
 
-                    if (prodRecord is PDEN_VOL_SUMMARY pden)
-                    {
-                        prodDate = pden.EFFECTIVE_DATE;
-                        volume = pden.OIL_VOLUME + pden.GAS_VOLUME;
-                    }
-                    else
-                    {
-                        // Use Entity properties via reflection (works with any Entity type)
-                        prodDate = GetDateProperty(prodRecord, "EFFECTIVE_DATE") ?? GetDateProperty(prodRecord, "PDEN_DATE");
-                        volume = GetDecimalValue(prodRecord, "OIL_VOLUME") + GetDecimalValue(prodRecord, "GAS_VOLUME");
-                    }
+                    var prodDate = pden.EFFECTIVE_DATE ?? pden.VOLUME_DATE;
+                    var volume = pden.OIL_VOLUME + pden.GAS_VOLUME;
 
                     if (prodDate.HasValue && volume > 0)
                     {
@@ -694,7 +592,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                 // Query WELL_ABANDONMENT or WELL_STATUS for decommissioning events
                 var wellAbandonmentRepo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(object), _connectionName, "WELL_ABANDONMENT");
+                    typeof(WELL_ABANDONMENT), _connectionName, "WELL_ABANDONMENT");
                 var abandonmentFilters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = _currentFieldId }
@@ -703,12 +601,11 @@ namespace Beep.OilandGas.LifeCycle.Services
 
                 foreach (var abandonRecord in abandonments ?? Enumerable.Empty<object>())
                 {
-                    string? wellId = null;
-                    DateTime? abandonmentDate = null;
+                    if (abandonRecord is not WELL_ABANDONMENT a)
+                        continue;
 
-                    // Use Entity properties via reflection (works with any Entity type)
-                    wellId = GetStringValue(abandonRecord, "WELL_ID");
-                    abandonmentDate = GetDateProperty(abandonRecord, "ABANDONMENT_DATE");
+                    var wellId = a.UWI;
+                    var abandonmentDate = a.ABANDONMENT_DATE;
 
                     if (abandonmentDate.HasValue && !string.IsNullOrEmpty(wellId))
                     {
@@ -736,26 +633,13 @@ namespace Beep.OilandGas.LifeCycle.Services
 
                 foreach (var facilityRecord in facilities ?? Enumerable.Empty<object>())
                 {
-                    string? facilityId = null;
-                    string? facilityName = null;
-                    DateTime? startDate = null;
-                    DateTime? endDate = null;
+                    if (facilityRecord is not FACILITY f)
+                        continue;
 
-                    if (facilityRecord is FACILITY f)
-                    {
-                        facilityId = f.FACILITY_ID;
-                        facilityName = f.FACILITY_LONG_NAME;
-                        startDate = GetDateProperty(f, "FACILITY_START_DATE") ?? GetDateProperty(f, "START_DATE");
-                        endDate = GetDateProperty(f, "FACILITY_END_DATE") ?? GetDateProperty(f, "END_DATE");
-                    }
-                    else
-                    {
-                        // Use Entity properties via reflection (works with any Entity type)
-                        facilityId = GetStringValue(facilityRecord, "FACILITY_ID");
-                        facilityName = GetStringValue(facilityRecord, "FACILITY_NAME");
-                        startDate = GetDateProperty(facilityRecord, "FACILITY_START_DATE") ?? GetDateProperty(facilityRecord, "START_DATE");
-                        endDate = GetDateProperty(facilityRecord, "FACILITY_END_DATE") ?? GetDateProperty(facilityRecord, "END_DATE");
-                    }
+                    var facilityId = f.FACILITY_ID;
+                    var facilityName = f.FACILITY_LONG_NAME;
+                    var startDate = f.ACTIVE_DATE ?? f.CONSTRUCTED_DATE ?? f.EFFECTIVE_DATE;
+                    var endDate = f.INACTIVE_DATE ?? f.ABANDONED_DATE ?? f.EXPIRY_DATE;
 
                     if (startDate.HasValue)
                     {
@@ -798,23 +682,12 @@ namespace Beep.OilandGas.LifeCycle.Services
 
                 foreach (var poolRecord in pools ?? Enumerable.Empty<object>())
                 {
-                    string? poolId = null;
-                    string? poolName = null;
-                    DateTime? definitionDate = null;
+                    if (poolRecord is not POOL p)
+                        continue;
 
-                    if (poolRecord is POOL p)
-                    {
-                        poolId = p.POOL_ID;
-                        poolName = p.POOL_NAME;
-                        definitionDate = GetDateProperty(p, "POOL_DEFINITION_DATE") ?? GetDateProperty(p, "DEFINITION_DATE");
-                    }
-                    else
-                    {
-                        // Use Entity properties via reflection (works with any Entity type)
-                        poolId = GetStringValue(poolRecord, "POOL_ID");
-                        poolName = GetStringValue(poolRecord, "POOL_NAME");
-                        definitionDate = GetDateProperty(poolRecord, "POOL_DEFINITION_DATE") ?? GetDateProperty(poolRecord, "DEFINITION_DATE");
-                    }
+                    var poolId = p.POOL_ID;
+                    var poolName = p.POOL_NAME;
+                    var definitionDate = p.DISCOVERY_DATE ?? p.EFFECTIVE_DATE ?? p.CURRENT_STATUS_DATE;
 
                     if (definitionDate.HasValue)
                     {
@@ -1208,9 +1081,8 @@ namespace Beep.OilandGas.LifeCycle.Services
                     var activityMeta = await _metadata.GetTableMetadataAsync("WELL_ACTIVITY");
                     if (activityMeta != null)
                     {
-                        var actEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{activityMeta.EntityTypeName}") ?? typeof(object);
                         var actRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                            actEntityType, _connectionName, "WELL_ACTIVITY");
+                            typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY");
 
                         // Look for active activities older than 30 days that imply pending work (INSP_ or MAINT_ prefix)
                         var cutoff = DateTime.UtcNow.AddDays(-30).ToString("yyyy-MM-dd");
@@ -1265,14 +1137,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                 throw new InvalidOperationException("No active field is set");
             }
 
-            if (_explorationService == null)
-            {
-                // Logger is optional, pass null for now
-                _explorationService = new Beep.OilandGas.LifeCycle.Services.Exploration.PPDMExplorationService(
-                    _editor, _commonColumnHandler, _defaults, _metadata, _mappingService, _connectionName, null);
-            }
-
-            return _explorationService;
+            return _fieldExplorationService;
         }
 
         public IFieldDevelopmentService GetDevelopmentService()
@@ -1365,7 +1230,6 @@ namespace Beep.OilandGas.LifeCycle.Services
         {
             _currentFieldId = null;
             _fieldRepository = null;
-            _explorationService = null;
             _developmentService = null;
             _productionService = null;
             _decommissioningService = null;
@@ -1374,84 +1238,5 @@ namespace Beep.OilandGas.LifeCycle.Services
             _logger?.LogInformation("Active field cleared");
         }
 
-        #region Helper Methods
-
-        /// <summary>
-        /// Gets decimal value from Entity object or Dictionary (for backward compatibility)
-        /// </summary>
-        private decimal GetDecimalValue(object? obj, string propertyName)
-        {
-            if (obj == null) return 0;
-            
-            // Try Entity object first (using reflection)
-            var prop = obj.GetType().GetProperty(propertyName);
-            if (prop != null)
-            {
-                var value = prop.GetValue(obj);
-                if (value is decimal d) return d;
-                // handle nullable decimal stored as object
-                if (value is null) { }
-                else if (value is decimal) return (decimal)value;
-                else if (value is double db) return (decimal)db;
-                else if (value is int i) return i;
-                else if (value is long l) return l;
-                else if (decimal.TryParse(value?.ToString(), out var parsed)) return parsed;
-            }
-            
-            // Fallback to Dictionary for backward compatibility (will be removed when all services are updated)
-            if (obj is IDictionary<string, object> dict && dict.TryGetValue(propertyName, out var dictValue))
-            {
-                if (dictValue is decimal) return (decimal)dictValue;
-                if (dictValue is double db) return (decimal)db;
-                if (dictValue is int i) return i;
-                if (dictValue is long l) return l;
-                if (decimal.TryParse(dictValue?.ToString(), out var parsed)) return parsed;
-            }
-            
-            return 0;
-        }
-
-        /// <summary>
-        /// Gets string value from Entity object or Dictionary (for backward compatibility)
-        /// </summary>
-        private string? GetStringValue(object? obj, string propertyName)
-        {
-            if (obj == null) return null;
-            
-            // Try Entity object first (using reflection)
-            var prop = obj.GetType().GetProperty(propertyName);
-            if (prop != null)
-            {
-                return prop.GetValue(obj)?.ToString();
-            }
-            
-            // Fallback to Dictionary for backward compatibility (will be removed when all services are updated)
-            if (obj is IDictionary<string, object> dict && dict.TryGetValue(propertyName, out var dictValue))
-            {
-                return dictValue?.ToString();
-            }
-            
-            return null;
-        }
-
-        private DateTime? GetDateProperty(object? obj, string propertyName)
-        {
-            if (obj == null) return null;
-            var prop = obj.GetType().GetProperty(propertyName);
-            if (prop != null)
-            {
-                var value = prop.GetValue(obj);
-                if (value is DateTime dt) return dt;
-            }
-            // Fallback to Dictionary (for backward compatibility)
-            if (obj is IDictionary<string, object> dict && dict.TryGetValue(propertyName, out var dictValue))
-            {
-                if (dictValue is DateTime dt2) return dt2;
-                if (DateTime.TryParse(dictValue?.ToString(), out var parsed)) return parsed;
-            }
-            return null;
-        }
-
-        #endregion
     }
 }

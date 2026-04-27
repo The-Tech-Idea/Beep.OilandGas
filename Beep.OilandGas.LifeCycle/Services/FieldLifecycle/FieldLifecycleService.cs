@@ -15,6 +15,7 @@ using ValidationResult = Beep.OilandGas.Models.Data.ValidationResult;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
 using Beep.OilandGas.Models.Data.LifeCycle;
+using Beep.OilandGas.ProspectIdentification;
 
 namespace Beep.OilandGas.LifeCycle.Services.FieldLifecycle
 {
@@ -34,7 +35,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldLifecycle
         // Field phase transitions
         private readonly Dictionary<string, List<string>> _allowedTransitions = new Dictionary<string, List<string>>
         {
-            { "EXPLORATION", new List<string> { "DEVELOPMENT", "REJECTED" } },
+            { ExplorationReferenceCodes.FieldLifecyclePhaseExploration, new List<string> { "DEVELOPMENT", "REJECTED" } },
             { "DEVELOPMENT", new List<string> { "PRODUCTION", "REJECTED" } },
             { "PRODUCTION", new List<string> { "DECLINE", "DECOMMISSIONING" } },
             { "DECLINE", new List<string> { "PRODUCTION", "DECOMMISSIONING" } },
@@ -69,7 +70,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldLifecycle
                 var currentPhase = await GetCurrentFieldPhaseAsync(fieldId);
                 if (string.IsNullOrEmpty(currentPhase))
                 {
-                    currentPhase = "EXPLORATION"; // Default initial phase
+                    currentPhase = ExplorationReferenceCodes.FieldLifecyclePhaseExploration; // Default initial phase
                 }
 
                 if (!CanTransition(currentPhase, targetPhase))
@@ -104,7 +105,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldLifecycle
                 var currentPhase = await GetCurrentFieldPhaseAsync(fieldId);
                 if (string.IsNullOrEmpty(currentPhase))
                 {
-                    currentPhase = "EXPLORATION";
+                    currentPhase = ExplorationReferenceCodes.FieldLifecyclePhaseExploration;
                 }
 
                 return _allowedTransitions.ContainsKey(currentPhase)
@@ -128,7 +129,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldLifecycle
                 var currentPhase = await GetCurrentFieldPhaseAsync(fieldId);
                 if (string.IsNullOrEmpty(currentPhase))
                 {
-                    currentPhase = "EXPLORATION";
+                    currentPhase = ExplorationReferenceCodes.FieldLifecyclePhaseExploration;
                 }
 
                 return CanTransition(currentPhase, targetPhase);

@@ -38,6 +38,16 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref FieldIdValue, value); }
 
         } // Auto-set by service, but included for clarity
+
+        private string? LeadIdValue;
+
+        /// <summary>Optional source lead when promoting LEAD → PROSPECT (stored on PROSPECT.LEAD_ID).</summary>
+        public string? LeadId
+        {
+            get => LeadIdValue;
+            set => SetProperty(ref LeadIdValue, value);
+        }
+
         private string? DescriptionValue;
 
         public string? Description

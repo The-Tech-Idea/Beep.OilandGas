@@ -67,7 +67,7 @@ public class PermitsController : ControllerBase
 
         // Return all active applications
         var allStatuses = Enum.GetValues<PermitApplicationStatus>();
-        var allApps = new List<Beep.OilandGas.PPDM39.Models.PERMIT_APPLICATION>();
+        var allApps = new List<PERMIT_APPLICATION>();
         foreach (var s in allStatuses)
         {
             var batch = await _lifecycle.GetByStatusAsync(s);
@@ -89,13 +89,13 @@ public class PermitsController : ControllerBase
         if (app == null)
             return NotFound(new { error = $"Permit application {applicationId} not found." });
 
-        var history = await _statusHistory.GetStatusHistoryAsync(applicationId);
+        var history = await _statusHistory.GetHistoryAsync(applicationId);
         var complianceResult = await _compliance.CheckComplianceAsync(applicationId);
 
         return Ok(new PermitApplicationDetail
         {
             Application = app,
-            StatusHistory = history,
+            StatusHistory = history.ToList(),
             ComplianceResult = complianceResult
         });
     }
@@ -111,13 +111,16 @@ public class PermitsController : ControllerBase
 
         var application = new PERMIT_APPLICATION
         {
-            APPLICATION_TYPE = request.ApplicationType,
-            REGULATORY_AUTHORITY = request.RegulatoryAuthority,
-            APPLICANT_NAME = request.ApplicantName,
+            APPLICATION_TYPE = ParseApplicationType(request.ApplicationType),
+            REGULATORY_AUTHORITY = ParseRegulatoryAuthority(request.RegulatoryAuthority),
+            APPLICANT_ID = string.IsNullOrWhiteSpace(request.ApplicantName) ? "unknown" : request.ApplicantName.Trim(),
             WELL_ID = request.WellId,
             FACILITY_ID = request.FacilityId,
-            DESCRIPTION = request.Description,
-            FIELD_ID = _fieldOrchestrator.CurrentFieldId ?? string.Empty
+            REMARKS = request.Description,
+            FIELD_ID = _fieldOrchestrator.CurrentFieldId ?? string.Empty,
+            STATUS = PermitApplicationStatus.Draft,
+            COUNTRY = Country.UnitedStates,
+            STATE_PROVINCE = StateProvince.Other
         };
 
         var created = await _lifecycle.CreateAsync(application, UserId);
@@ -139,10 +142,14 @@ public class PermitsController : ControllerBase
         if (existing == null)
             return NotFound(new { error = $"Permit application {applicationId} not found." });
 
-        existing.APPLICATION_TYPE = request.ApplicationType ?? existing.APPLICATION_TYPE;
-        existing.REGULATORY_AUTHORITY = request.RegulatoryAuthority ?? existing.REGULATORY_AUTHORITY;
-        existing.APPLICANT_NAME = request.ApplicantName ?? existing.APPLICANT_NAME;
-        existing.DESCRIPTION = request.Description ?? existing.DESCRIPTION;
+        if (!string.IsNullOrWhiteSpace(request.ApplicationType))
+            existing.APPLICATION_TYPE = ParseApplicationType(request.ApplicationType);
+        if (!string.IsNullOrWhiteSpace(request.RegulatoryAuthority))
+            existing.REGULATORY_AUTHORITY = ParseRegulatoryAuthority(request.RegulatoryAuthority);
+        if (!string.IsNullOrWhiteSpace(request.ApplicantName))
+            existing.APPLICANT_ID = request.ApplicantName.Trim();
+        if (request.Description != null)
+            existing.REMARKS = request.Description;
 
         await _lifecycle.UpdateAsync(applicationId, existing, UserId);
         return NoContent();
@@ -164,7 +171,7 @@ public class PermitsController : ControllerBase
             return NotFound(new { error = $"Permit application {applicationId} not found." });
 
         var submitted = await _lifecycle.SubmitAsync(applicationId, UserId);
-        return Ok(new { applicationId = submitted.PERMIT_APPLICATION_ID, status = submitted.STATUS });
+        return Ok(new { applicationId = submitted.PERMIT_APPLICATION_ID, status = submitted.STATUS.ToString() });
     }
 
     /// <summary>
@@ -186,7 +193,7 @@ public class PermitsController : ControllerBase
             request.Remarks ?? string.Empty,
             UserId);
 
-        return Ok(new { applicationId = result.PERMIT_APPLICATION_ID, status = result.STATUS, decision = result.DECISION });
+        return Ok(new { applicationId = result.PERMIT_APPLICATION_ID, status = result.STATUS.ToString(), decision = result.DECISION });
     }
 
     /// <summary>
@@ -204,15 +211,25 @@ public class PermitsController : ControllerBase
 
     // ── Helper Methods ────────────────────────────────────────────────────────
 
+    private static PermitApplicationType ParseApplicationType(string? value) =>
+        Enum.TryParse<PermitApplicationType>(value, ignoreCase: true, out var parsed)
+            ? parsed
+            : PermitApplicationType.Other;
+
+    private static RegulatoryAuthority ParseRegulatoryAuthority(string? value) =>
+        Enum.TryParse<RegulatoryAuthority>(value, ignoreCase: true, out var parsed)
+            ? parsed
+            : RegulatoryAuthority.Other;
+
     private static PermitApplicationSummary ToSummary(PERMIT_APPLICATION app, string fieldId)
     {
         return new PermitApplicationSummary
         {
             PermitApplicationId = app.PERMIT_APPLICATION_ID,
-            ApplicationType = app.APPLICATION_TYPE,
-            RegulatoryAuthority = app.REGULATORY_AUTHORITY,
-            ApplicantName = app.APPLICANT_NAME,
-            Status = app.STATUS,
+            ApplicationType = app.APPLICATION_TYPE.ToString(),
+            RegulatoryAuthority = app.REGULATORY_AUTHORITY.ToString(),
+            ApplicantName = app.APPLICANT_ID ?? string.Empty,
+            Status = app.STATUS.ToString(),
             CreatedDate = app.CREATED_DATE,
             SubmittedDate = app.SUBMITTED_DATE,
             DecisionDate = app.DECISION_DATE,

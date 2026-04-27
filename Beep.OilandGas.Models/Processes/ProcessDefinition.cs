@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Beep.OilandGas.Models.Data.ProspectIdentification;
 
-namespace Beep.OilandGas.LifeCycle.Models.Processes
+namespace Beep.OilandGas.Models.Processes
 {
     /// <summary>
     /// Defines a process template/workflow definition
@@ -22,4 +21,3 @@ namespace Beep.OilandGas.LifeCycle.Models.Processes
         public string CreatedBy { get; set; } = string.Empty;
     }
 }
-

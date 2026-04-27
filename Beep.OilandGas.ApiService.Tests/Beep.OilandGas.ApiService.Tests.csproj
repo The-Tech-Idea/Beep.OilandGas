@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Beep.OilandGas.ApiService\Beep.OilandGas.ApiService.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.ProspectIdentification\Beep.OilandGas.ProspectIdentification.csproj" />
   </ItemGroup>
 
 </Project>

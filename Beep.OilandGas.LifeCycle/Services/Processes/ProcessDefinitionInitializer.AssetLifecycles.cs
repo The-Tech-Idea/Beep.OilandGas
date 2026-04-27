@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.LifeCycle.Models.Processes;
+using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.Models.Data.Process;
 
 namespace Beep.OilandGas.LifeCycle.Services.Processes

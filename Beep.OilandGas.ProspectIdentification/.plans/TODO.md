@@ -11,6 +11,9 @@
 - [x] Correct `ExplorationModule.cs` back to the full project table registry and keep runtime stage-gating out of `EntityTypes`.
 - [ ] Plan the module additions for second-wave workflows only after the first live slice is approved and the relevant slice trigger is satisfied.
 - [x] Align the live `ProspectIdentificationService` to the project prospect record shape for field, status, description, and estimated resources.
+- [x] Split `ProspectIdentificationService` into partial classes by concern (core, prospects/portfolio, technical maturation, risk/economics).
+- [x] Add workflow-scoped interfaces in `Models.Core.Interfaces` for technical maturation, risk/economic analysis, and portfolio optimization.
+- [x] Register workflow-scoped interfaces in Api DI to resolve to the same scoped `ProspectIdentificationService` instance.
 - [x] Document the required data-folder boundary for storage tables versus aggregate workflow/reporting models.
 - [x] Document the exploration workflows already seeded in lifecycle.
 - [x] Document the current class-volume pressure and the confirmed duplicate `PROSPECT` ownership in the planning bundle.
@@ -22,8 +25,10 @@
 - [ ] Reduce the local storage layer to the subset backed by real endpoints, real workflow state, or verified project ownership.
 - [ ] Remove or replace local reference/lookup duplicates such as `R_LEAD_STATUS.cs` and `R_PLAY_TYPE.cs` with shared LOV/reference-data handling.
 - [ ] Move request/response and evaluation/reporting models out of flat buckets and under their owning workflow/process slices.
-- [ ] Convert `SeismicAnalysisService` from `UnitOfWork` plus `FIELD`/`SEIS_SET` assumptions to PPDMGenericRepository-based exploration evidence access.
-- [ ] Convert `ProspectEvaluationService` to evaluate real prospect records and supporting evidence instead of treating `FIELD` as the prospect root.
+- [x] `SeismicAnalysisService` — **`PPDMGenericRepository`** on **`SEIS_ACQTN_SURVEY`** (and **`PROSPECT`** for validation on create); no **`UnitOfWork`**. Extend later with **`SEIS_LINE`** / **`PROSPECT_SEIS_SURVEY`** if product requires explicit links.
+- [x] `ProspectEvaluationService` — **`PPDMGenericRepository`** on **`PROSPECT`** + survey count from **`SEIS_ACQTN_SURVEY`**; **`FIELD`** is only prospect column data, not a surrogate root entity.
+- [x] Move selected controller operations to workflow-scoped interfaces so API dependencies match the new service boundaries (`ProspectIdentificationController` + `*.WorkflowAnalysis.cs`, `ProspectAnalysisWorkflowRequests.cs`).
 - [ ] Audit the remaining local PPDM-like exploration classes and decide which should move into shared PPDM model ownership.
-- [ ] Add focused tests for the live prospect service and prospect controller routes.
-- [ ] Reduce or retire the unused parallel project-local service interfaces after consumer confirmation.
+- [x] Add focused tests for **`ProspectIdentificationController`** legacy **`/api/prospect/*`** and core **`api/ProspectIdentification`** routes (`Beep.OilandGas.ApiService.Tests/ProspectIdentificationControllerCompatibilityTests.cs`).
+- [x] Add focused unit tests for **`ProspectIdentificationService`** row→DTO mapping helpers and analysis branches (`Beep.OilandGas.ProspectIdentification.Tests`). Optional later: **`PPDMGenericRepository`** integration tests with a test database.
+- [x] Mark roadmap **`IExplorationApplicationService`** as **`[Obsolete]`** (no in-repo implementations). **Retire** the file only after confirming no external assemblies reference the type.

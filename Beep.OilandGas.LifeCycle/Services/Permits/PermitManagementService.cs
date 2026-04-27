@@ -15,6 +15,7 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
+using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
 
 namespace Beep.OilandGas.LifeCycle.Services.Permits
 {
@@ -120,7 +121,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
                     TARGET_FORMATION = application.TARGET_FORMATION,
                     PROPOSED_DEPTH = application.PROPOSED_DEPTH,
                     DRILLING_METHOD = application.DRILLING_METHOD,
-                    SURFACE_OWNER_NOTIFIED = application.SURFACE_OWNER_NOTIFIED
+                    SURFACE_OWNER_NOTIFIED_IND = application.SURFACE_OWNER_NOTIFIED_IND
                 };
             }
             catch (Exception ex)
@@ -192,11 +193,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
                     REMARKS = mappedApplication.REMARKS,
                     SUBMISSION_COMPLETE = mappedApplication.SUBMISSION_COMPLETE,
                     SUBMISSION_DESCRIPTION = mappedApplication.SUBMISSION_DESCRIPTION,
-                    WELL_UWI = application.WELL_UWI, // Preserve from original
                     ENVIRONMENTAL_PERMIT_TYPE = application.ENVIRONMENTAL_PERMIT_TYPE, // Preserve from original
                     WASTE_TYPE = application.WASTE_TYPE,
                     WASTE_VOLUME = application.WASTE_VOLUME,
-                    NORMINVOLVED = application.NORMINVOLVED
+                    NORM_INVOLVED_IND = application.NORM_INVOLVED_IND
                 };
             }
             catch (Exception ex)
@@ -247,7 +247,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
                 }
 
                 _logger?.LogInformation("Created injection permit application {ApplicationId}",
-                    application.INJECTION_PERMIT_APPLICATION_ID);
+                    application.PERMIT_APPLICATION_ID);
 
                 // Map back to domain model
                 var mappedApplication = _applicationMapper.MapToDomain(
@@ -255,7 +255,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
                 // Convert to INJECTION_PERMIT_APPLICATION
                 return new INJECTION_PERMIT_APPLICATION
                 {
-                    INJECTION_PERMIT_APPLICATION_ID = mappedApplication.APPLICATION_ID,
+                    PERMIT_APPLICATION_ID = mappedApplication.APPLICATION_ID ?? string.Empty,
                     APPLICATION_TYPE = mappedApplication.APPLICATION_TYPE,
                     STATUS = mappedApplication.STATUS,
                     COUNTRY = mappedApplication.COUNTRY,

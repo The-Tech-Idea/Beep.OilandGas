@@ -382,7 +382,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         /// Start Well Abandonment workflow
         /// </summary>
         [HttpPost("workflows/well-abandonment")]
-        public async Task<ActionResult<Beep.OilandGas.LifeCycle.Models.Processes.ProcessInstance>> StartWellAbandonmentProcess(
+        public async Task<ActionResult<Beep.OilandGas.Models.Processes.ProcessInstance>> StartWellAbandonmentProcess(
             [FromBody] StartWellAbandonmentRequest request)
         {
             try
@@ -577,7 +577,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         /// Start Facility Decommissioning workflow
         /// </summary>
         [HttpPost("workflows/facility-decommissioning")]
-        public async Task<ActionResult<Beep.OilandGas.LifeCycle.Models.Processes.ProcessInstance>> StartFacilityDecommissioningProcess(
+        public async Task<ActionResult<Beep.OilandGas.Models.Processes.ProcessInstance>> StartFacilityDecommissioningProcess(
             [FromBody] StartFacilityDecommissioningRequest request)
         {
             try

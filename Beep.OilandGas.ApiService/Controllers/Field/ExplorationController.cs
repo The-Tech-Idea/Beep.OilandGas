@@ -2,20 +2,28 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.Models.Data.LifeCycle;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.ApiService.Attributes;
+using Beep.OilandGas.ProspectIdentification;
 using PROSPECT = Beep.OilandGas.Models.Data.ProspectIdentification.PROSPECT;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
 {
     /// <summary>
     /// API controller for Exploration phase business workflows, field-scoped
+    /// 
+    /// Process identifiers for exploration and gate flows are centralized in <see cref="ExplorationReferenceCodes"/>
+    /// (e.g. <see cref="ExplorationReferenceCodes.ProcessIdLeadToProspect"/>,
+    /// <see cref="ExplorationReferenceCodes.ProcessIdProspectToDiscovery"/>,
+    /// <see cref="ExplorationReferenceCodes.ProcessIdGateExplorationReview"/>).
     /// 
     /// NOTE: This controller now owns the field-scoped prospect list/detail/create/delete boundary.
     /// More generic PPDM CRUD remains available through DataManagementController when needed.
@@ -24,7 +32,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
     /// - Get seismic lines: GET /api/datamanagement/SEIS_LINE
     /// - Get exploratory wells: GET /api/datamanagement/WELL with filters
     /// 
-    /// This controller focuses on exploration workflow processes via ExplorationProcessService.
+    /// This controller focuses on exploration workflow processes via ExplorationProcessService
+    /// (lead funnel, prospect→discovery steps, discovery→development steps — see route summaries on actions).
     /// </summary>
     [ApiController]
     [Route("api/field/current/exploration")]
@@ -33,14 +42,14 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
     {
         private readonly IFieldOrchestrator _fieldOrchestrator;
         private readonly Beep.OilandGas.LifeCycle.Services.Exploration.Processes.ExplorationProcessService _explorationProcessService;
-        private readonly Beep.OilandGas.LifeCycle.Services.Exploration.PPDMExplorationService _explorationService;
+        private readonly IFieldExplorationService _explorationService;
         private readonly Beep.OilandGas.ProductionAccounting.Services.ProductionAccountingService _productionAccountingService;
         private readonly ILogger<ExplorationController> _logger;
 
         public ExplorationController(
             IFieldOrchestrator fieldOrchestrator,
             Beep.OilandGas.LifeCycle.Services.Exploration.Processes.ExplorationProcessService explorationProcessService,
-            Beep.OilandGas.LifeCycle.Services.Exploration.PPDMExplorationService explorationService,
+            IFieldExplorationService explorationService,
             Beep.OilandGas.ProductionAccounting.Services.ProductionAccountingService productionAccountingService,
             ILogger<ExplorationController> logger)
         {
@@ -336,8 +345,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         /// Start Lead to Prospect workflow
         /// </summary>
         [HttpPost("workflows/lead-to-prospect")]
-        public async Task<ActionResult<Beep.OilandGas.LifeCycle.Models.Processes.ProcessInstance>> StartLeadToProspectProcess(
-            [FromBody] StartLeadToProspectRequest request)
+        public async Task<ActionResult<Beep.OilandGas.Models.Processes.ProcessInstance>> StartLeadToProspectProcess(
+            [FromBody] StartLeadToProspectRequest request,
+            CancellationToken cancellationToken)
         {
             try
             {
@@ -357,12 +367,28 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "User ID is required." });
                 }
 
+                if (!await _explorationService.EnsureLeadInFieldForWorkflowStartAsync(
+                        currentFieldId,
+                        request.LeadId,
+                        request.UserId).ConfigureAwait(false))
+                {
+                    return NotFound(new
+                    {
+                        error = $"Lead '{request.LeadId}' was not found for the current field."
+                    });
+                }
+
                 var instance = await _explorationProcessService.StartLeadToProspectProcessAsync(
-                    request.LeadId, 
-                    currentFieldId, 
-                    request.UserId);
-                
+                    request.LeadId,
+                    currentFieldId,
+                    request.UserId,
+                    cancellationToken);
+
                 return Ok(instance);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -375,7 +401,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         /// Evaluate lead
         /// </summary>
         [HttpPost("workflows/evaluate-lead")]
-        public async Task<ActionResult<bool>> EvaluateLead([FromBody] EvaluateLeadRequest request)
+        public async Task<ActionResult<bool>> EvaluateLead(
+            [FromBody] EvaluateLeadRequest request,
+            CancellationToken cancellationToken)
         {
             try
             {
@@ -389,12 +417,23 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "User ID is required." });
                 }
 
+                var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
+                    request.InstanceId,
+                    cancellationToken).ConfigureAwait(false);
+                if (scopeDenied != null)
+                    return scopeDenied;
+
                 var result = await _explorationProcessService.EvaluateLeadAsync(
-                    request.InstanceId, 
-                    request.EvaluationData ?? new Dictionary<string, object>(), 
-                    request.UserId);
-                
+                    request.InstanceId,
+                    request.EvaluationData ?? new Dictionary<string, object>(),
+                    request.UserId,
+                    cancellationToken);
+
                 return Ok(result);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -407,7 +446,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         /// Approve lead
         /// </summary>
         [HttpPost("workflows/approve-lead")]
-        public async Task<ActionResult<bool>> ApproveLead([FromBody] ApproveLeadRequest request)
+        public async Task<ActionResult<bool>> ApproveLead(
+            [FromBody] ApproveLeadRequest request,
+            CancellationToken cancellationToken)
         {
             try
             {
@@ -421,8 +462,21 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "User ID is required." });
                 }
 
-                var result = await _explorationProcessService.ApproveLeadAsync(request.InstanceId, request.UserId);
+                var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
+                    request.InstanceId,
+                    cancellationToken).ConfigureAwait(false);
+                if (scopeDenied != null)
+                    return scopeDenied;
+
+                var result = await _explorationProcessService.ApproveLeadAsync(
+                    request.InstanceId,
+                    request.UserId,
+                    cancellationToken);
                 return Ok(result);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -432,11 +486,91 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         }
 
         /// <summary>
+        /// Reject lead (completes <c>LEAD_APPROVAL</c> with outcome <c>REJECTED</c>).
+        /// </summary>
+        [HttpPost("workflows/reject-lead")]
+        public async Task<ActionResult<bool>> RejectLead(
+            [FromBody] RejectLeadRequest request,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                    return BadRequest(new { error = "Instance ID is required." });
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                    return BadRequest(new { error = "User ID is required." });
+
+                var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
+                    request.InstanceId,
+                    cancellationToken).ConfigureAwait(false);
+                if (scopeDenied != null)
+                    return scopeDenied;
+
+                var result = await _explorationProcessService.RejectLeadAsync(
+                    request.InstanceId,
+                    request.Reason ?? string.Empty,
+                    request.UserId,
+                    cancellationToken);
+                return Ok(result);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting lead");
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>
+        /// Run <c>PROSPECT_CREATION</c>, complete the step on success, then persist field prospect / lead status via <c>ILeadExplorationService</c>.
+        /// </summary>
+        [HttpPost("workflows/promote-lead-to-prospect")]
+        public async Task<ActionResult<bool>> PromoteLeadToProspect(
+            [FromBody] PromoteLeadToProspectRequest request,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                    return BadRequest(new { error = "Instance ID is required." });
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                    return BadRequest(new { error = "User ID is required." });
+
+                var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
+                    request.InstanceId,
+                    cancellationToken).ConfigureAwait(false);
+                if (scopeDenied != null)
+                    return scopeDenied;
+
+                var stepData = request.ProspectData ?? new Dictionary<string, object>();
+                var ok = await _explorationProcessService.PromoteLeadToProspectAsync(
+                    request.InstanceId,
+                    stepData,
+                    request.UserId,
+                    cancellationToken);
+                return Ok(ok);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error promoting lead to prospect");
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>
         /// Start Prospect to Discovery workflow
         /// </summary>
         [HttpPost("workflows/prospect-to-discovery")]
-        public async Task<ActionResult<Beep.OilandGas.LifeCycle.Models.Processes.ProcessInstance>> StartProspectToDiscoveryProcess(
-            [FromBody] StartProspectToDiscoveryRequest request)
+        public async Task<ActionResult<Beep.OilandGas.Models.Processes.ProcessInstance>> StartProspectToDiscoveryProcess(
+            [FromBody] StartProspectToDiscoveryRequest request,
+            CancellationToken cancellationToken)
         {
             try
             {
@@ -456,12 +590,25 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "User ID is required." });
                 }
 
+                if (await _explorationService.GetProspectForFieldAsync(currentFieldId, request.ProspectId).ConfigureAwait(false) == null)
+                {
+                    return NotFound(new
+                    {
+                        error = $"Prospect '{request.ProspectId}' was not found for the current field."
+                    });
+                }
+
                 var instance = await _explorationProcessService.StartProspectToDiscoveryProcessAsync(
-                    request.ProspectId, 
-                    currentFieldId, 
-                    request.UserId);
-                
+                    request.ProspectId,
+                    currentFieldId,
+                    request.UserId,
+                    cancellationToken);
+
                 return Ok(instance);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -470,12 +617,68 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }
         }
 
+        /// <summary>Execute <c>RISK_ASSESSMENT</c> for an active Prospect-to-Discovery process instance.</summary>
+        [HttpPost("workflows/prospect-to-discovery/risk-assessment")]
+        public Task<ActionResult<bool>> ProspectToDiscoveryRiskAssessment(
+            [FromBody] ExplorationWorkflowStepRequest request,
+            CancellationToken cancellationToken) =>
+            RunExplorationWorkflowStepAsync(
+                request,
+                cancellationToken,
+                "Error executing risk assessment step",
+                (id, data, user, ct) => _explorationProcessService.PerformRiskAssessmentAsync(id, data, user, ct));
+
+        /// <summary>Execute <c>VOLUME_ESTIMATION</c>.</summary>
+        [HttpPost("workflows/prospect-to-discovery/volume-estimation")]
+        public Task<ActionResult<bool>> ProspectToDiscoveryVolumeEstimation(
+            [FromBody] ExplorationWorkflowStepRequest request,
+            CancellationToken cancellationToken) =>
+            RunExplorationWorkflowStepAsync(
+                request,
+                cancellationToken,
+                "Error executing volume estimation step",
+                (id, data, user, ct) => _explorationProcessService.PerformVolumeEstimationAsync(id, data, user, ct));
+
+        /// <summary>Execute <c>ECONOMIC_EVALUATION</c>.</summary>
+        [HttpPost("workflows/prospect-to-discovery/economic-evaluation")]
+        public Task<ActionResult<bool>> ProspectToDiscoveryEconomicEvaluation(
+            [FromBody] ExplorationWorkflowStepRequest request,
+            CancellationToken cancellationToken) =>
+            RunExplorationWorkflowStepAsync(
+                request,
+                cancellationToken,
+                "Error executing economic evaluation step",
+                (id, data, user, ct) => _explorationProcessService.PerformEconomicEvaluationAsync(id, data, user, ct));
+
+        /// <summary>Execute <c>DRILLING_DECISION</c>.</summary>
+        [HttpPost("workflows/prospect-to-discovery/drilling-decision")]
+        public Task<ActionResult<bool>> ProspectToDiscoveryDrillingDecision(
+            [FromBody] ExplorationWorkflowStepRequest request,
+            CancellationToken cancellationToken) =>
+            RunExplorationWorkflowStepAsync(
+                request,
+                cancellationToken,
+                "Error executing drilling decision step",
+                (id, data, user, ct) => _explorationProcessService.MakeDrillingDecisionAsync(id, data, user, ct));
+
+        /// <summary>Execute <c>DISCOVERY_RECORDING</c> and complete the step on success.</summary>
+        [HttpPost("workflows/prospect-to-discovery/discovery-recording")]
+        public Task<ActionResult<bool>> ProspectToDiscoveryDiscoveryRecording(
+            [FromBody] ExplorationWorkflowStepRequest request,
+            CancellationToken cancellationToken) =>
+            RunExplorationWorkflowStepAsync(
+                request,
+                cancellationToken,
+                "Error executing discovery recording step",
+                (id, data, user, ct) => _explorationProcessService.RecordDiscoveryAsync(id, data, user, ct));
+
         /// <summary>
         /// Start Discovery to Development workflow
         /// </summary>
         [HttpPost("workflows/discovery-to-development")]
-        public async Task<ActionResult<Beep.OilandGas.LifeCycle.Models.Processes.ProcessInstance>> StartDiscoveryToDevelopmentProcess(
-            [FromBody] StartDiscoveryToDevelopmentRequest request)
+        public async Task<ActionResult<Beep.OilandGas.Models.Processes.ProcessInstance>> StartDiscoveryToDevelopmentProcess(
+            [FromBody] StartDiscoveryToDevelopmentRequest request,
+            CancellationToken cancellationToken)
         {
             try
             {
@@ -495,12 +698,25 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "User ID is required." });
                 }
 
+                if (!await _explorationService.IsProspectDiscoveryInFieldAsync(currentFieldId, request.DiscoveryId).ConfigureAwait(false))
+                {
+                    return NotFound(new
+                    {
+                        error = $"Discovery '{request.DiscoveryId}' was not found for the current field."
+                    });
+                }
+
                 var instance = await _explorationProcessService.StartDiscoveryToDevelopmentProcessAsync(
-                    request.DiscoveryId, 
-                    currentFieldId, 
-                    request.UserId);
-                
+                    request.DiscoveryId,
+                    currentFieldId,
+                    request.UserId,
+                    cancellationToken);
+
                 return Ok(instance);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -508,6 +724,46 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
+
+        /// <summary>Execute <c>APPRAISAL</c> for an active Discovery-to-Development process instance.</summary>
+        [HttpPost("workflows/discovery-to-development/appraisal")]
+        public Task<ActionResult<bool>> DiscoveryToDevelopmentAppraisal(
+            [FromBody] ExplorationWorkflowStepRequest request,
+            CancellationToken cancellationToken) =>
+            RunExplorationWorkflowStepAsync(
+                request,
+                cancellationToken,
+                "Error executing appraisal step",
+                (id, data, user, ct) => _explorationProcessService.PerformAppraisalAsync(id, data, user, ct));
+
+        /// <summary>Execute <c>RESERVE_ESTIMATION</c>.</summary>
+        [HttpPost("workflows/discovery-to-development/reserve-estimation")]
+        public Task<ActionResult<bool>> DiscoveryToDevelopmentReserveEstimation(
+            [FromBody] ExplorationWorkflowStepRequest request,
+            CancellationToken cancellationToken) =>
+            RunExplorationWorkflowStepAsync(
+                request,
+                cancellationToken,
+                "Error executing reserve estimation step",
+                (id, data, user, ct) => _explorationProcessService.EstimateReservesAsync(id, data, user, ct));
+
+        /// <summary>Execute <c>ECONOMIC_ANALYSIS</c> (discovery-to-development workflow step).</summary>
+        [HttpPost("workflows/discovery-to-development/economic-analysis")]
+        public Task<ActionResult<bool>> DiscoveryToDevelopmentEconomicAnalysis(
+            [FromBody] ExplorationWorkflowStepRequest request,
+            CancellationToken cancellationToken) =>
+            RunExplorationWorkflowStepAsync(
+                request,
+                cancellationToken,
+                "Error executing development economic analysis step",
+                (id, data, user, ct) => _explorationProcessService.PerformDevelopmentEconomicAnalysisAsync(id, data, user, ct));
+
+        /// <summary>Complete <c>DEVELOPMENT_APPROVAL</c> as <c>APPROVED</c>.</summary>
+        [HttpPost("workflows/discovery-to-development/approve")]
+        public Task<ActionResult<bool>> DiscoveryToDevelopmentApprove(
+            [FromBody] ExplorationWorkflowStepRequest request,
+            CancellationToken cancellationToken) =>
+            RunApproveDevelopmentWorkflowAsync(request, cancellationToken);
 
         /// <summary>POST /api/field/current/exploration/prospects/{id}/decision</summary>
         /// Records an approval gate decision (Approved / Deferred / Rejected) for an exploration well program.
@@ -541,6 +797,100 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error recording decision for prospect {ProspectId}", id);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>
+        /// Returns a bad request when there is no current field or the process instance is not tied to it; otherwise <c>null</c>.
+        /// </summary>
+        private async Task<ActionResult<bool>?> EnsureWorkflowProcessMatchesCurrentFieldAsync(
+            string instanceId,
+            CancellationToken cancellationToken)
+        {
+            var fieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(fieldId))
+                return new ActionResult<bool>(BadRequest(new { error = "No active field selected." }));
+
+            if (!await _explorationProcessService.IsProcessInstanceInFieldAsync(
+                    instanceId,
+                    fieldId,
+                    cancellationToken)
+                .ConfigureAwait(false))
+            {
+                return new ActionResult<bool>(BadRequest(new
+                {
+                    error = "Process instance not found or is not tied to the current field."
+                }));
+            }
+
+            return null;
+        }
+
+        private async Task<ActionResult<bool>> RunExplorationWorkflowStepAsync(
+            ExplorationWorkflowStepRequest request,
+            CancellationToken cancellationToken,
+            string errorLogMessage,
+            Func<string, PROCESS_STEP_DATA, string, CancellationToken, Task<bool>> execute)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                    return BadRequest(new { error = "Instance ID is required." });
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                    return BadRequest(new { error = "User ID is required." });
+
+                var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
+                    request.InstanceId,
+                    cancellationToken).ConfigureAwait(false);
+                if (scopeDenied != null)
+                    return scopeDenied;
+
+                PROCESS_STEP_DATA stepData = request.StepData ?? new Dictionary<string, object>();
+                var ok = await execute(request.InstanceId, stepData, request.UserId, cancellationToken);
+                return Ok(ok);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "{Message} (instance {InstanceId})", errorLogMessage, request.InstanceId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        private async Task<ActionResult<bool>> RunApproveDevelopmentWorkflowAsync(
+            ExplorationWorkflowStepRequest request,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                    return BadRequest(new { error = "Instance ID is required." });
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                    return BadRequest(new { error = "User ID is required." });
+
+                var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
+                    request.InstanceId,
+                    cancellationToken).ConfigureAwait(false);
+                if (scopeDenied != null)
+                    return scopeDenied;
+
+                var ok = await _explorationProcessService.ApproveDevelopmentAsync(
+                    request.InstanceId,
+                    request.UserId,
+                    cancellationToken);
+                return Ok(ok);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving development (instance {InstanceId})", request.InstanceId);
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }

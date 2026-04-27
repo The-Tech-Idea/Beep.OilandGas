@@ -95,5 +95,5 @@ Prospect identification should start from the real exploration business process,
 - [x] Breaking changes to live API contract avoided by keeping `Beep.OilandGas.Models.Core.Interfaces.IProspectIdentificationService` unchanged.
 - [x] Database migration scope narrowed to exploration-domain tables only; `POOL*` remains in development/reservoir ownership.
 - [ ] Local PPDM-style model volume is high, and `PROSPECT` is now a confirmed duplicate ownership case between the project and the shared PPDM package.
-- [ ] Seismic and evaluation services still need conversion off direct `UnitOfWork` + `FIELD`/`SEIS_SET` assumptions.
+- [x] `SeismicAnalysisService` and `ProspectEvaluationService` use **`PPDMGenericRepository`** (no **`UnitOfWork`**). Optional follow-up: **`SEIS_LINE`**, **`PROSPECT_SEIS_SURVEY`**, and other evidence tables beyond **`AREA_ID`** on **`SEIS_ACQTN_SURVEY`**.
 - [ ] Prospect-identification test coverage still needs to be added.

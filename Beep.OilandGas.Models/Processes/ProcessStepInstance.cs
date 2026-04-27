@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data.Process;
 
-namespace Beep.OilandGas.LifeCycle.Models.Processes
+namespace Beep.OilandGas.Models.Processes
 {
     /// <summary>
     /// Represents an instance of a process step execution
@@ -62,18 +62,4 @@ namespace Beep.OilandGas.LifeCycle.Models.Processes
         APPROVED,
         REJECTED
     }
-
-    /// <summary>
-    /// Validation result for a process step
-    /// </summary>
-    //public class ValidationResult
-    //{
-    //    public string ValidationId { get; set; } = string.Empty;
-    //    public string RuleId { get; set; } = string.Empty;
-    //    public bool IsValid { get; set; }
-    //    public string ErrorMessage { get; set; } = string.Empty;
-    //    public DateTime ValidatedDate { get; set; } = DateTime.UtcNow;
-    //    public string ValidatedBy { get; set; } = string.Empty;
-    //}
 }
-

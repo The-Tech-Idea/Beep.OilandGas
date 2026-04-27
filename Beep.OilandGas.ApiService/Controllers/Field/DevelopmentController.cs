@@ -242,7 +242,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         /// Start Pool Definition workflow
         /// </summary>
         [HttpPost("workflows/pool-definition")]
-        public async Task<ActionResult<Beep.OilandGas.LifeCycle.Models.Processes.ProcessInstance>> StartPoolDefinitionProcess(
+        public async Task<ActionResult<Beep.OilandGas.Models.Processes.ProcessInstance>> StartPoolDefinitionProcess(
             [FromBody] StartPoolDefinitionRequest request)
         {
             try
@@ -405,7 +405,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         /// Start Facility Development workflow
         /// </summary>
         [HttpPost("workflows/facility-development")]
-        public async Task<ActionResult<Beep.OilandGas.LifeCycle.Models.Processes.ProcessInstance>> StartFacilityDevelopmentProcess(
+        public async Task<ActionResult<Beep.OilandGas.Models.Processes.ProcessInstance>> StartFacilityDevelopmentProcess(
             [FromBody] StartFacilityDevelopmentRequest request)
         {
             try
@@ -448,7 +448,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         /// Start Well Development workflow
         /// </summary>
         [HttpPost("workflows/well-development")]
-        public async Task<ActionResult<Beep.OilandGas.LifeCycle.Models.Processes.ProcessInstance>> StartWellDevelopmentProcess(
+        public async Task<ActionResult<Beep.OilandGas.Models.Processes.ProcessInstance>> StartWellDevelopmentProcess(
             [FromBody] StartWellDevelopmentRequest request)
         {
             try
@@ -491,7 +491,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         /// Start Pipeline Development workflow
         /// </summary>
         [HttpPost("workflows/pipeline-development")]
-        public async Task<ActionResult<Beep.OilandGas.LifeCycle.Models.Processes.ProcessInstance>> StartPipelineDevelopmentProcess(
+        public async Task<ActionResult<Beep.OilandGas.Models.Processes.ProcessInstance>> StartPipelineDevelopmentProcess(
             [FromBody] StartPipelineDevelopmentRequest request)
         {
             try
@@ -691,8 +691,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                     {
                         StepId        = s.StepId,
                         StepName      = _fdpStepNames.TryGetValue(s.StepId, out var n) ? n : s.StepId,
-                        IsCompleted   = s.Status == Beep.OilandGas.LifeCycle.Models.Processes.StepStatus.COMPLETED,
-                        IsActive      = s.Status == Beep.OilandGas.LifeCycle.Models.Processes.StepStatus.IN_PROGRESS,
+                        IsCompleted   = s.Status == Beep.OilandGas.Models.Processes.StepStatus.COMPLETED,
+                        IsActive      = s.Status == Beep.OilandGas.Models.Processes.StepStatus.IN_PROGRESS,
                         CompletedDate = s.CompletionDate?.ToString("MMM yyyy") ?? string.Empty,
                     }).ToList();
 

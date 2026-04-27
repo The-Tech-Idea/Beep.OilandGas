@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
+using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
 using Beep.OilandGas.PermitsAndApplications.DataMapping;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;

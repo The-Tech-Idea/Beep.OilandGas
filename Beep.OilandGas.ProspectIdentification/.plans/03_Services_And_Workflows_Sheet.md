@@ -6,8 +6,17 @@
 
 - `Beep.OilandGas.Models.Core.Interfaces.IProspectIdentificationService`
   - Current live API contract.
-  - Used by `Beep.OilandGas.ApiService/Controllers/Operations/ProspectIdentificationController.cs`.
-- `Beep.OilandGas.LifeCycle.Services.Exploration.PPDMExplorationService`
+  - Used by `Beep.OilandGas.ApiService/Controllers/Operations/ProspectIdentificationController.cs` (core CRUD/evaluate/rank).
+- `Beep.OilandGas.Models.Core.Interfaces.IProspectTechnicalMaturationService`
+  - Live DI surface for technical maturation analysis operations.
+  - Implemented by `ProspectIdentificationService` (same scoped instance as `IProspectIdentificationService`).
+- `Beep.OilandGas.Models.Core.Interfaces.IProspectRiskEconomicAnalysisService`
+  - Live DI surface for prospect risk/economic analysis operations.
+  - Implemented by `ProspectIdentificationService` (same scoped instance as `IProspectIdentificationService`).
+- `Beep.OilandGas.Models.Core.Interfaces.IProspectPortfolioOptimizationService`
+  - Live DI surface for portfolio optimization over ranked prospects.
+  - Implemented by `ProspectIdentificationService` (same scoped instance as `IProspectIdentificationService`).
+- `Beep.OilandGas.ProspectIdentification.Services.PPDMExplorationService`
   - Field-scoped exploration CRUD and evidence access.
   - Owns `PROSPECT`, `SEIS_ACQTN_SURVEY`, `SEIS_LINE`, and `WELL` access in the lifecycle boundary.
 - `Beep.OilandGas.LifeCycle.Services.Exploration.Processes.ExplorationProcessService`
@@ -15,7 +24,7 @@
 
 ### Parallel / legacy project-local surfaces
 
-- `ProspectIdentification/Services/IProspectIdentificationService.cs`
+- `ProspectIdentification/Services/IExplorationApplicationService.cs` (roadmap contract; **`[Obsolete]`**; not DI-registered — see **`10_IExplorationApplicationService_Region_Map.md`**)
 - `ProspectIdentification/Services/ISeismicAnalysisService.cs`
 - `ProspectIdentification/Services/IProspectEvaluationService.cs`
 - `ProspectIdentification/Services/SeismicAnalysisService.cs`
@@ -181,16 +190,20 @@ These stay out until a real workflow and endpoint prove they belong in the activ
 - Do not widen the local `PROSPECT` further. New computed or compatibility data belongs in projections, request/response models, or domain results.
 - Keep field scoping explicit through `PRIMARY_FIELD_ID` / `FIELD_ID` on the prospect record.
 - Use workflow IDs that already exist in lifecycle instead of creating a second workflow vocabulary in the ProspectIdentification project.
-- When converting `SeismicAnalysisService`, prefer `SEIS_ACQTN_SURVEY`, `SEIS_LINE`, and linked `WELL` evidence over `FIELD` plus `SEIS_SET` assumptions.
-- When converting `ProspectEvaluationService`, stop treating `FIELD` as the prospect root entity; evaluate the actual prospect and attach evidence from seismic, analog, and well tables.
+- **`SeismicAnalysisService`** already persists via **`SEIS_ACQTN_SURVEY`** (and validates **`PROSPECT`** on create). Prefer adding **`SEIS_LINE`**, **`PROSPECT_SEIS_SURVEY`**, and **`WELL`** evidence when workflows need them beyond **`AREA_ID`** / **`AREA_TYPE`** on the survey row.
+- **`ProspectEvaluationService`** already evaluates **`PROSPECT`** and uses seismic survey counts from **`SEIS_ACQTN_SURVEY`**. Enrich with dedicated prospect–evidence link tables and analog/well queries when those endpoints go live.
 - If a class cannot be assigned to core or a named workflow/process, it should be treated as deferred instead of remaining in the active data surface.
 - Resolve `PROSPECT` model ownership before expanding DI onto the broader project-local service interfaces.
 
 ## Current Status
 
 - [x] Live prospect service aligned to the project prospect record shape for field, status, description, and estimated resources.
+- [x] `ProspectIdentificationService` split into concern-based partial classes and mapped to workflow-scoped interfaces in DI.
 - [x] Existing lifecycle workflows identified and documented.
 - [ ] `PROSPECT` still has split ownership between the local project data folder and the shared PPDM package.
-- [ ] `SeismicAnalysisService` still needs PPDMGenericRepository conversion.
-- [ ] `ProspectEvaluationService` still needs PPDM-first prospect/evidence mapping.
-- [ ] No focused tests yet cover the live prospect service or workflow orchestration.
+- [x] `SeismicAnalysisService` uses **`PPDMGenericRepository`** for seismic survey CRUD (stub analysis methods unchanged).
+- [x] `ProspectEvaluationService` uses **`PPDMGenericRepository`** for **`PROSPECT`** and **`SEIS_ACQTN_SURVEY`**-based survey counts.
+- [x] Controller unit tests cover workflow analysis endpoints (`ProspectIdentificationControllerWorkflowTests`).
+- [x] Phase 4 alignment docs: **`11_ProspectIdentificationApi_Workflow_Alignment.md`** (HTTP vs process owner), **`12_Phase4_Data_Ownership_And_Handoffs.md`** (slices, step POST handoffs, `ProcessInstance` anchors).
+- [x] Unit tests cover **`ProspectIdentificationService`** mapping (`ResolveFieldId` / `ResolveStatus` / `ResolveRecommendation`) and repo-free analysis methods (`Beep.OilandGas.ProspectIdentification.Tests`).
+- [ ] No end-to-end tests yet cover lifecycle workflow orchestration against a real process store.

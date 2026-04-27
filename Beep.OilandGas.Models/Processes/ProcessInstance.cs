@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data.Process;
 
-namespace Beep.OilandGas.LifeCycle.Models.Processes
+namespace Beep.OilandGas.Models.Processes
 {
     /// <summary>
     /// Represents an active process instance
@@ -38,4 +38,3 @@ namespace Beep.OilandGas.LifeCycle.Models.Processes
         SUSPENDED
     }
 }
-

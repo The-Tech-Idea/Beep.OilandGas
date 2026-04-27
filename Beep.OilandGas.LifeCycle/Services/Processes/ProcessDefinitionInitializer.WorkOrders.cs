@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.LifeCycle.Models.Processes;
+using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.ProspectIdentification;
 
 namespace Beep.OilandGas.LifeCycle.Services.Processes
 {
@@ -200,19 +201,19 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         {
             var definition = new ProcessDefinition
             {
-                ProcessId    = "GATE_EXPLORATION_REVIEW",
-                ProcessName  = "ExplorationGateReview",
-                ProcessType  = "GATE_REVIEW",
-                EntityType   = "POOL",
+                ProcessId    = ExplorationReferenceCodes.ProcessIdGateExplorationReview,
+                ProcessName  = ExplorationReferenceCodes.ProcessNameExplorationGateReview,
+                ProcessType  = ExplorationReferenceCodes.ProcessTypeGateReview,
+                EntityType   = ExplorationReferenceCodes.EntityTypeExplorationGateReview,
                 Description  = "SPE-PRMS 2018 exploration gate — risked resources, well plan, budget sanction.",
                 IsActive     = true,
                 Steps        = new List<ProcessStepDefinition>
                 {
-                    new() { StepId = "GATE_EXP_PACKAGE",   StepName = "Prepare Exploration Package",  SequenceNumber = 1, StepType = "ACTION",   IsRequired = true,  NextStepId = "GATE_EXP_RESOURCES" },
-                    new() { StepId = "GATE_EXP_RESOURCES", StepName = "Risked Resources Estimate",     SequenceNumber = 2, StepType = "ACTION",   IsRequired = true,  NextStepId = "GATE_EXP_ECONOMICS" },
-                    new() { StepId = "GATE_EXP_ECONOMICS", StepName = "Economic Screening (EMV)",      SequenceNumber = 3, StepType = "ACTION",   IsRequired = true,  NextStepId = "GATE_EXP_APPROVAL" },
-                    new() { StepId = "GATE_EXP_APPROVAL",  StepName = "Management Gate Approval",      SequenceNumber = 4, StepType = "APPROVAL", IsRequired = true,  RequiresApproval = true, NextStepId = "GATE_EXP_COMMIT" },
-                    new() { StepId = "GATE_EXP_COMMIT",    StepName = "Drill Commitment & AFE",        SequenceNumber = 5, StepType = "ACTION",   IsRequired = true,  NextStepId = string.Empty }
+                    new() { StepId = ExplorationReferenceCodes.StepGateExplorationPackage,   StepName = "Prepare Exploration Package",  SequenceNumber = 1, StepType = "ACTION",   IsRequired = true,  NextStepId = ExplorationReferenceCodes.StepGateExplorationResources },
+                    new() { StepId = ExplorationReferenceCodes.StepGateExplorationResources, StepName = "Risked Resources Estimate",     SequenceNumber = 2, StepType = "ACTION",   IsRequired = true,  NextStepId = ExplorationReferenceCodes.StepGateExplorationEconomics },
+                    new() { StepId = ExplorationReferenceCodes.StepGateExplorationEconomics, StepName = "Economic Screening (EMV)",      SequenceNumber = 3, StepType = "ACTION",   IsRequired = true,  NextStepId = ExplorationReferenceCodes.StepGateExplorationApproval },
+                    new() { StepId = ExplorationReferenceCodes.StepGateExplorationApproval,  StepName = "Management Gate Approval",      SequenceNumber = 4, StepType = "APPROVAL", IsRequired = true,  RequiresApproval = true, NextStepId = ExplorationReferenceCodes.StepGateExplorationCommit },
+                    new() { StepId = ExplorationReferenceCodes.StepGateExplorationCommit,    StepName = "Drill Commitment & AFE",        SequenceNumber = 5, StepType = "ACTION",   IsRequired = true,  NextStepId = string.Empty }
                 },
                 Transitions   = new Dictionary<string, ProcessTransition>(),
                 Configuration = new Dictionary<string, object>()

@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using Beep.OilandGas.ApiService.Controllers.Field;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Calculations;
+using Beep.OilandGas.Models.Data.Drilling;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -96,12 +98,11 @@ namespace Beep.OilandGas.ApiService.Tests
             var mockEorService = new Mock<IEnhancedRecoveryService>();
             var mockEconomicService = new Mock<IEconomicEvaluationService>();
 
-            var pilotAnalysisId = "EOR-PILOT-001";
             var evalId = "EVAL-2026-001";
 
             mockEorService
                 .Setup(x => x.AnalyzeEOReconomicsAsync(It.IsAny<string>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<int>(), It.IsAny<double>()))
-                .ReturnsAsync(new EOREconomicAnalysis { NPV = 5_000_000, IRR = 0.18, IsViable = true });
+                .ReturnsAsync(new EOREconomicAnalysis { NetPresentValue = 5_000_000, InternalRateOfReturn = 0.18 });
 
             mockEconomicService
                 .Setup(x => x.CreateEvaluationFromEorAsync(It.IsAny<string>(), It.IsAny<string>()))
@@ -112,8 +113,8 @@ namespace Beep.OilandGas.ApiService.Tests
             var createdEvalId = await mockEconomicService.Object.CreateEvaluationFromEorAsync("FIELD-003", "user-1");
 
             // Assert
-            Assert.True(analysis.IsViable);
-            Assert.Equal(5_000_000, analysis.NPV);
+            Assert.True(analysis.NetPresentValue > 0);
+            Assert.Equal(5_000_000, analysis.NetPresentValue);
             Assert.Equal(evalId, createdEvalId);
             mockEorService.Verify(x => x.AnalyzeEOReconomicsAsync("FIELD-003", 500000, 75.0, 10_000_000, 15.0, 20, 0.10), Times.Once);
             mockEconomicService.Verify(x => x.CreateEvaluationFromEorAsync("FIELD-003", "user-1"), Times.Once);
@@ -172,12 +173,11 @@ namespace Beep.OilandGas.ApiService.Tests
             var mockDrillingService = new Mock<IDrillingOperationService>();
             var mockDevelopmentService = new Mock<IDevelopmentService>();
 
-            var drillingOpId = "DRILL-OP-001";
             var constructionId = "CONST-001";
 
             mockDrillingService
-                .Setup(x => x.CreateDrillingOperationAsync(It.IsAny<CreateDrillingOperation>(), It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(new DRILLING_OPERATION { UWI = "WELL-002" });
+                .Setup(x => x.CreateDrillingOperationAsync(It.IsAny<CREATE_DRILLING_OPERATION>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new DRILLING_OPERATION { WELL_UWI = "WELL-002" });
 
             mockDevelopmentService
                 .Setup(x => x.CreateConstructionProgressAsync(It.IsAny<string>(), It.IsAny<string>()))
@@ -185,13 +185,13 @@ namespace Beep.OilandGas.ApiService.Tests
 
             // Act
             var drillingOp = await mockDrillingService.Object.CreateDrillingOperationAsync(
-                new CreateDrillingOperation { WellUwi = "WELL-002" }, "FIELD-004", "user-1");
-            var constructionProgressId = await mockDevelopmentService.Object.CreateConstructionProgressAsync(drillingOp.UWI, "user-1");
+                new CREATE_DRILLING_OPERATION { WellUWI = "WELL-002" }, "FIELD-004", "user-1");
+            var constructionProgressId = await mockDevelopmentService.Object.CreateConstructionProgressAsync(drillingOp.WELL_UWI, "user-1");
 
             // Assert
-            Assert.Equal("WELL-002", drillingOp.UWI);
+            Assert.Equal("WELL-002", drillingOp.WELL_UWI);
             Assert.Equal(constructionId, constructionProgressId);
-            mockDrillingService.Verify(x => x.CreateDrillingOperationAsync(It.IsAny<CreateDrillingOperation>(), "FIELD-004", "user-1"), Times.Once);
+            mockDrillingService.Verify(x => x.CreateDrillingOperationAsync(It.IsAny<CREATE_DRILLING_OPERATION>(), "FIELD-004", "user-1"), Times.Once);
             mockDevelopmentService.Verify(x => x.CreateConstructionProgressAsync("WELL-002", "user-1"), Times.Once);
         }
 

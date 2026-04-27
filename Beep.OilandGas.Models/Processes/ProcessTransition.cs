@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Beep.OilandGas.LifeCycle.Models.Processes
+namespace Beep.OilandGas.Models.Processes
 {
     /// <summary>
     /// Represents a state transition in a process
@@ -39,4 +39,3 @@ namespace Beep.OilandGas.LifeCycle.Models.Processes
         public int ExecutionOrder { get; set; }
     }
 }
-

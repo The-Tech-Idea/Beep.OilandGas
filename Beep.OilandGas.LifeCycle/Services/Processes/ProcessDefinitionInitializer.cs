@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.LifeCycle.Models.Processes;
+using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.Models.Data.Process;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.PipelineAnalysis;
 using Beep.OilandGas.Models.Data.ProductionForecasting;
 using Beep.OilandGas.Models.Data.ProspectIdentification;
+using Beep.OilandGas.ProspectIdentification;
 
 namespace Beep.OilandGas.LifeCycle.Services.Processes
 {
@@ -96,54 +97,54 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         {
             var definition = new ProcessDefinition
             {
-                ProcessId = "LEAD_TO_PROSPECT",
-                ProcessName = "LeadToProspect",
-                ProcessType = "EXPLORATION",
-                EntityType = "LEAD",
+                ProcessId = ExplorationReferenceCodes.ProcessIdLeadToProspect,
+                ProcessName = ExplorationReferenceCodes.ProcessNameLeadToProspect,
+                ProcessType = ExplorationReferenceCodes.ProcessTypeExploration,
+                EntityType = ExplorationReferenceCodes.EntityTypeLead,
                 Description = "Workflow for promoting a Lead to a Prospect",
                 IsActive = true,
                 Steps = new List<ProcessStepDefinition>
                 {
                     new ProcessStepDefinition
                     {
-                        StepId = "LEAD_CREATION",
+                        StepId = ExplorationReferenceCodes.StepLeadCreation,
                         StepName = "Lead Creation",
                         SequenceNumber = 1,
                         StepType = "ACTION",
                         IsRequired = true,
-                        NextStepId = "LEAD_EVALUATION"
+                        NextStepId = ExplorationReferenceCodes.StepLeadEvaluation
                     },
                     new ProcessStepDefinition
                     {
-                        StepId = "LEAD_EVALUATION",
+                        StepId = ExplorationReferenceCodes.StepLeadEvaluation,
                         StepName = "Lead Evaluation",
                         SequenceNumber = 2,
                         StepType = "ACTION",
                         IsRequired = true,
-                        NextStepId = "LEAD_APPROVAL"
+                        NextStepId = ExplorationReferenceCodes.StepLeadApproval
                     },
                     new ProcessStepDefinition
                     {
-                        StepId = "LEAD_APPROVAL",
+                        StepId = ExplorationReferenceCodes.StepLeadApproval,
                         StepName = "Lead Approval",
                         SequenceNumber = 3,
                         StepType = "APPROVAL",
                         IsRequired = true,
                         RequiresApproval = true,
-                        NextStepId = "PROSPECT_CREATION"
+                        NextStepId = ExplorationReferenceCodes.StepProspectCreation
                     },
                     new ProcessStepDefinition
                     {
-                        StepId = "PROSPECT_CREATION",
+                        StepId = ExplorationReferenceCodes.StepProspectCreation,
                         StepName = "Prospect Creation",
                         SequenceNumber = 4,
                         StepType = "ACTION",
                         IsRequired = true,
-                        NextStepId = "PROSPECT_ASSESSMENT"
+                        NextStepId = ExplorationReferenceCodes.StepProspectAssessment
                     },
                     new ProcessStepDefinition
                     {
-                        StepId = "PROSPECT_ASSESSMENT",
+                        StepId = ExplorationReferenceCodes.StepProspectAssessment,
                         StepName = "Prospect Initial Assessment",
                         SequenceNumber = 5,
                         StepType = "ACTION",
@@ -162,63 +163,63 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         {
             var definition = new ProcessDefinition
             {
-                ProcessId = "PROSPECT_TO_DISCOVERY",
-                ProcessName = "ProspectToDiscovery",
-                ProcessType = "EXPLORATION",
-                EntityType = "PROSPECT",
+                ProcessId = ExplorationReferenceCodes.ProcessIdProspectToDiscovery,
+                ProcessName = ExplorationReferenceCodes.ProcessNameProspectToDiscovery,
+                ProcessType = ExplorationReferenceCodes.ProcessTypeExploration,
+                EntityType = ExplorationReferenceCodes.EntityTypeProspect,
                 Description = "Workflow for evaluating a Prospect and recording Discovery",
                 IsActive = true,
                 Steps = new List<ProcessStepDefinition>
                 {
                     new ProcessStepDefinition
                     {
-                        StepId = "PROSPECT_CREATION",
+                        StepId = ExplorationReferenceCodes.StepProspectCreation,
                         StepName = "Prospect Creation",
                         SequenceNumber = 1,
                         StepType = "ACTION",
                         IsRequired = true,
-                        NextStepId = "RISK_ASSESSMENT"
+                        NextStepId = ExplorationReferenceCodes.StepRiskAssessment
                     },
                     new ProcessStepDefinition
                     {
-                        StepId = "RISK_ASSESSMENT",
+                        StepId = ExplorationReferenceCodes.StepRiskAssessment,
                         StepName = "Risk Assessment",
                         SequenceNumber = 2,
                         StepType = "ACTION",
                         IsRequired = true,
-                        NextStepId = "VOLUME_ESTIMATION"
+                        NextStepId = ExplorationReferenceCodes.StepVolumeEstimation
                     },
                     new ProcessStepDefinition
                     {
-                        StepId = "VOLUME_ESTIMATION",
+                        StepId = ExplorationReferenceCodes.StepVolumeEstimation,
                         StepName = "Volume Estimation",
                         SequenceNumber = 3,
                         StepType = "ACTION",
                         IsRequired = true,
-                        NextStepId = "ECONOMIC_EVALUATION"
+                        NextStepId = ExplorationReferenceCodes.StepEconomicEvaluation
                     },
                     new ProcessStepDefinition
                     {
-                        StepId = "ECONOMIC_EVALUATION",
+                        StepId = ExplorationReferenceCodes.StepEconomicEvaluation,
                         StepName = "Economic Evaluation",
                         SequenceNumber = 4,
                         StepType = "ACTION",
                         IsRequired = true,
-                        NextStepId = "DRILLING_DECISION"
+                        NextStepId = ExplorationReferenceCodes.StepDrillingDecision
                     },
                     new ProcessStepDefinition
                     {
-                        StepId = "DRILLING_DECISION",
+                        StepId = ExplorationReferenceCodes.StepDrillingDecision,
                         StepName = "Drilling Decision",
                         SequenceNumber = 5,
                         StepType = "APPROVAL",
                         IsRequired = true,
                         RequiresApproval = true,
-                        NextStepId = "DISCOVERY_RECORDING"
+                        NextStepId = ExplorationReferenceCodes.StepDiscoveryRecording
                     },
                     new ProcessStepDefinition
                     {
-                        StepId = "DISCOVERY_RECORDING",
+                        StepId = ExplorationReferenceCodes.StepDiscoveryRecording,
                         StepName = "Discovery Recording",
                         SequenceNumber = 6,
                         StepType = "ACTION",
@@ -237,53 +238,53 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         {
             var definition = new ProcessDefinition
             {
-                ProcessId = "DISCOVERY_TO_DEVELOPMENT",
-                ProcessName = "DiscoveryToDevelopment",
-                ProcessType = "EXPLORATION",
-                EntityType = "DISCOVERY",
+                ProcessId = ExplorationReferenceCodes.ProcessIdDiscoveryToDevelopment,
+                ProcessName = ExplorationReferenceCodes.ProcessNameDiscoveryToDevelopment,
+                ProcessType = ExplorationReferenceCodes.ProcessTypeExploration,
+                EntityType = ExplorationReferenceCodes.EntityTypeDiscovery,
                 Description = "Workflow for appraising Discovery and making Development decision",
                 IsActive = true,
                 Steps = new List<ProcessStepDefinition>
                 {
                     new ProcessStepDefinition
                     {
-                        StepId = "DISCOVERY_RECORDING",
+                        StepId = ExplorationReferenceCodes.StepDiscoveryRecording,
                         StepName = "Discovery Recording",
                         SequenceNumber = 1,
                         StepType = "ACTION",
                         IsRequired = true,
-                        NextStepId = "APPRAISAL"
+                        NextStepId = ExplorationReferenceCodes.StepAppraisal
                     },
                     new ProcessStepDefinition
                     {
-                        StepId = "APPRAISAL",
+                        StepId = ExplorationReferenceCodes.StepAppraisal,
                         StepName = "Appraisal",
                         SequenceNumber = 2,
                         StepType = "ACTION",
                         IsRequired = true,
-                        NextStepId = "RESERVE_ESTIMATION"
+                        NextStepId = ExplorationReferenceCodes.StepReserveEstimation
                     },
                     new ProcessStepDefinition
                     {
-                        StepId = "RESERVE_ESTIMATION",
+                        StepId = ExplorationReferenceCodes.StepReserveEstimation,
                         StepName = "Reserve Estimation",
                         SequenceNumber = 3,
                         StepType = "ACTION",
                         IsRequired = true,
-                        NextStepId = "ECONOMIC_ANALYSIS"
+                        NextStepId = ExplorationReferenceCodes.StepDevelopmentEconomicAnalysis
                     },
                     new ProcessStepDefinition
                     {
-                        StepId = "ECONOMIC_ANALYSIS",
+                        StepId = ExplorationReferenceCodes.StepDevelopmentEconomicAnalysis,
                         StepName = "Economic Analysis",
                         SequenceNumber = 4,
                         StepType = "ACTION",
                         IsRequired = true,
-                        NextStepId = "DEVELOPMENT_APPROVAL"
+                        NextStepId = ExplorationReferenceCodes.StepDevelopmentApproval
                     },
                     new ProcessStepDefinition
                     {
-                        StepId = "DEVELOPMENT_APPROVAL",
+                        StepId = ExplorationReferenceCodes.StepDevelopmentApproval,
                         StepName = "Development Approval",
                         SequenceNumber = 5,
                         StepType = "APPROVAL",

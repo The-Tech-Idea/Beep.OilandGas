@@ -13,10 +13,10 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
 
             return new ApplicationRemark
             {
-                Id = data.APPLIC_REMARK_ID ?? string.Empty,
-                ApplicationId = data.PERMIT_APPLICATION_ID ?? string.Empty,
+                Id = data.REMARK_ID ?? string.Empty,
+                ApplicationId = data.APPLICATION_ID ?? string.Empty,
                 RemarkType = data.REMARK_TYPE ?? string.Empty,
-                RemarkText = data.REMARK_TEXT ?? string.Empty,
+                RemarkText = data.REMARK ?? string.Empty,
                 EffectiveDate = data.EFFECTIVE_DATE,
                 ExpiryDate = data.EXPIRY_DATE
             };
@@ -29,10 +29,10 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
 
             var data = existing ?? new APPLIC_REMARK();
 
-            data.APPLIC_REMARK_ID = model.Id;
-            data.PERMIT_APPLICATION_ID = model.ApplicationId;
+            data.REMARK_ID = model.Id;
+            data.APPLICATION_ID = model.ApplicationId;
             data.REMARK_TYPE = model.RemarkType;
-            data.REMARK_TEXT = model.RemarkText;
+            data.REMARK = model.RemarkText;
             data.EFFECTIVE_DATE = model.EffectiveDate;
             data.EXPIRY_DATE = model.ExpiryDate;
 

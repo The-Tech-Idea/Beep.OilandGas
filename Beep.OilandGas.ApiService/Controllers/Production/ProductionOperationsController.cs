@@ -69,7 +69,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
                     Status = string.IsNullOrWhiteSpace(request.Status) ? null : request.Status,
                     AssignedTo = string.IsNullOrWhiteSpace(request.AssignedTo) ? null : request.AssignedTo,
                     Remarks = string.IsNullOrWhiteSpace(request.Remarks) ? null : request.Remarks
-                });
+                }, HttpContext.RequestAborted);
 
                 return Ok(MapToLegacyOperation(created, request));
             }

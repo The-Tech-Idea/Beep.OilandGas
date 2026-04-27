@@ -17,6 +17,7 @@ using TheTechIdea.Beep.Report;
 using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.PPDM.Models;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.ProspectIdentification;
 
 namespace Beep.OilandGas.LifeCycle.Services.FieldManagement
 {
@@ -89,7 +90,10 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement
                 var createdField = result as FIELD ?? throw new InvalidOperationException("Failed to create field");
 
                 // Initialize field phase to EXPLORATION
-                await _lifecycleService.StartFieldPhaseAsync(createdField.FIELD_ID, "EXPLORATION", userId);
+                await _lifecycleService.StartFieldPhaseAsync(
+                    createdField.FIELD_ID,
+                    ExplorationReferenceCodes.FieldLifecyclePhaseExploration,
+                    userId);
 
                 _logger?.LogInformation("Field created: {FieldId}, Name: {FieldName}", createdField.FIELD_ID, createdField.FIELD_NAME);
 
@@ -97,7 +101,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement
                 {
                     FieldId = createdField.FIELD_ID,
                     FieldName = createdField.FIELD_NAME ?? string.Empty,
-                    CurrentPhase = "EXPLORATION",
+                    CurrentPhase = ExplorationReferenceCodes.FieldLifecyclePhaseExploration,
                     Status = "ACTIVE",
                     FieldType = createdField.FIELD_TYPE ?? string.Empty,
                     AreaId = createdField.AREA_ID ?? string.Empty

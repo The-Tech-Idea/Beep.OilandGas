@@ -14,13 +14,13 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
 
             return new ApplicationBusinessAssociate
             {
-                Id = data.APPLIC_BA_ID ?? string.Empty,
-                ApplicationId = data.PERMIT_APPLICATION_ID ?? string.Empty,
-                BusinessAssociateId = data.BUSINESS_ASSOCIATE_ID ?? string.Empty,
-                Role = data.BA_ROLE ?? string.Empty,
+                Id = data.APPLICATION_BA_ID ?? string.Empty,
+                ApplicationId = data.APPLICATION_ID ?? string.Empty,
+                BusinessAssociateId = data.CONTACT_BA_ID ?? string.Empty,
+                Role = data.APPLICATION_BA_ROLE ?? string.Empty,
                 EffectiveDate = data.EFFECTIVE_DATE,
                 ExpiryDate = data.EXPIRY_DATE,
-                Remarks = data.REMARKS ?? string.Empty
+                Remarks = data.REMARK ?? string.Empty
             };
         }
 
@@ -31,13 +31,13 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
 
             var data = existing ?? new APPLIC_BA();
 
-            data.APPLIC_BA_ID = model.Id;
-            data.PERMIT_APPLICATION_ID = model.ApplicationId;
-            data.BUSINESS_ASSOCIATE_ID = model.BusinessAssociateId;
-            data.BA_ROLE = model.Role;
+            data.APPLICATION_BA_ID = model.Id;
+            data.APPLICATION_ID = model.ApplicationId;
+            data.CONTACT_BA_ID = model.BusinessAssociateId;
+            data.APPLICATION_BA_ROLE = model.Role;
             data.EFFECTIVE_DATE = model.EffectiveDate;
             data.EXPIRY_DATE = model.ExpiryDate;
-            data.REMARKS = model.Remarks;
+            data.REMARK = model.Remarks;
 
             return data;
         }

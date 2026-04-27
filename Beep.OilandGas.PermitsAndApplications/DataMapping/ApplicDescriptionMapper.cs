@@ -13,9 +13,9 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
 
             return new ApplicationDescription
             {
-                Id = data.APPLIC_DESC_ID ?? string.Empty,
-                ApplicationId = data.PERMIT_APPLICATION_ID ?? string.Empty,
-                DescriptionType = data.DESCRIPTION_TYPE ?? string.Empty,
+                Id = data.DESCRIPTION_ID ?? string.Empty,
+                ApplicationId = data.APPLICATION_ID ?? string.Empty,
+                DescriptionType = data.APPLIC_DESC_TYPE ?? string.Empty,
                 Description = data.DESCRIPTION ?? string.Empty,
                 EffectiveDate = data.EFFECTIVE_DATE,
                 ExpiryDate = data.EXPIRY_DATE
@@ -29,9 +29,9 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
 
             var data = existing ?? new APPLIC_DESC();
 
-            data.APPLIC_DESC_ID = model.Id;
-            data.PERMIT_APPLICATION_ID = model.ApplicationId;
-            data.DESCRIPTION_TYPE = model.DescriptionType;
+            data.DESCRIPTION_ID = model.Id;
+            data.APPLICATION_ID = model.ApplicationId;
+            data.APPLIC_DESC_TYPE = model.DescriptionType;
             data.DESCRIPTION = model.Description;
             data.EFFECTIVE_DATE = model.EffectiveDate;
             data.EXPIRY_DATE = model.ExpiryDate;

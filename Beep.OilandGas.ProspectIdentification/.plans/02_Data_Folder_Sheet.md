@@ -154,4 +154,4 @@ These should be grouped by the workflow or decision stage they support rather th
 - [x] The target organization is now documented as core data classes plus workflow/process-owned slices.
 - [ ] The confirmed duplicate `PROSPECT` ownership still needs to be collapsed into one canonical model boundary.
 - [ ] The speculative local storage shapes still need to be reduced to the subset backed by real processes, endpoints, or persisted workflow state.
-- [ ] Seismic and evaluation services still need to drop legacy `FIELD`/`SEIS_SET` stand-ins where those are acting as prospect surrogates.
+- [x] Seismic and evaluation services use **`PPDMGenericRepository`** for **`SEIS_ACQTN_SURVEY`** and **`PROSPECT`** (no legacy **`UnitOfWork`** / **`SEIS_SET`** path in code). Optional: add explicit **`PROSPECT_SEIS_SURVEY`** (or equivalent) rows instead of relying only on survey **`AREA_ID`**.

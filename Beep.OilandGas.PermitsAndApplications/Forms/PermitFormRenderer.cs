@@ -62,7 +62,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Forms
                     "WELL_UWI" => context.DrillingApplication.WELL_UWI,
                     "LEGAL_DESCRIPTION" => context.DrillingApplication.LEGAL_DESCRIPTION,
                     "TARGET_FORMATION" => context.DrillingApplication.TARGET_FORMATION,
-                    "PROPOSED_DEPTH" => context.DrillingApplication.PROPOSED_DEPTH?.ToString(),
+                    "PROPOSED_DEPTH" => context.DrillingApplication.PROPOSED_DEPTH.ToString(),
                     "DRILLING_METHOD" => context.DrillingApplication.DRILLING_METHOD,
                     "SURFACE_OWNER_NOTIFIED_IND" => context.DrillingApplication.SURFACE_OWNER_NOTIFIED_IND,
                     "ENVIRONMENTAL_ASSESSMENT_REQUIRED_IND" => context.DrillingApplication.ENVIRONMENTAL_ASSESSMENT_REQUIRED_IND,

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Editor;
@@ -15,8 +16,10 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// Service for managing production operations.
     /// Uses UnitOfWork directly for data access.
     /// </summary>
-    public class ProductionManagementService : IProductionManagementService
+    public partial class ProductionManagementService : IProductionManagementService
     {
+        private const string PdenSubtypeFacility = "FACILITY";
+
         private readonly IDMEEditor _editor;
         private readonly string _connectionName;
 
@@ -59,8 +62,9 @@ namespace Beep.OilandGas.ProductionOperations.Services
             return UnitOfWorkFactory.CreateUnitOfWork(typeof(FACILITY), _editor, _connectionName, "FACILITY", "FACILITY_ID");
         }
 
-        public async Task<List<PDEN>> GetProductionOperationsAsync(string? wellUWI = null, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<List<PDEN>> GetProductionOperationsAsync(string? wellUWI = null, DateTime? startDate = null, DateTime? endDate = null, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var pdenUow = GetPDENUnitOfWork();
             var filters = new List<AppFilter>
             {
@@ -83,8 +87,9 @@ namespace Beep.OilandGas.ProductionOperations.Services
             return pdenList;
         }
 
-        public async Task<PDEN?> GetProductionOperationAsync(string operationId)
+        public async Task<PDEN?> GetProductionOperationAsync(string operationId, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (string.IsNullOrWhiteSpace(operationId))
                 return null;
 
@@ -96,8 +101,9 @@ namespace Beep.OilandGas.ProductionOperations.Services
             return pden;
         }
 
-        public async Task<PDEN> CreateProductionOperationAsync(CreateProductionOperationRequest createRequest)
+        public async Task<PDEN> CreateProductionOperationAsync(CreateProductionOperationRequest createRequest, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (createRequest == null)
                 throw new ArgumentNullException(nameof(createRequest));
 
@@ -129,8 +135,9 @@ namespace Beep.OilandGas.ProductionOperations.Services
             return pden;
         }
 
-        public async Task<List<PDEN>> GetProductionReportsAsync(string? wellUWI = null, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<List<PDEN>> GetProductionReportsAsync(string? wellUWI = null, DateTime? startDate = null, DateTime? endDate = null, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var pdenUow = GetPDENUnitOfWork();
             var filters = new List<AppFilter>
             {
@@ -153,8 +160,9 @@ namespace Beep.OilandGas.ProductionOperations.Services
             return pdenList;
         }
 
-        public async Task<List<PDEN>> GetWellOperationsAsync(string wellUWI)
+        public async Task<List<PDEN>> GetWellOperationsAsync(string wellUWI, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (string.IsNullOrWhiteSpace(wellUWI))
                 return new List<PDEN>();
 
@@ -170,8 +178,9 @@ namespace Beep.OilandGas.ProductionOperations.Services
             return pdenList;
         }
 
-        public async Task<List<FACILITY>> GetFacilityOperationsAsync(string facilityId)
+        public async Task<List<FACILITY>> GetFacilityOperationsAsync(string facilityId, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (string.IsNullOrWhiteSpace(facilityId))
                 return new List<FACILITY>();
 

@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.LifeCycle.Models.Processes;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Processes;
 
-namespace Beep.OilandGas.LifeCycle.Services.Processes
+namespace Beep.OilandGas.Models.Core.Interfaces
 {
     /// <summary>
-    /// Interface for process/workflow management service
+    /// Interface for process/workflow management service.
     /// </summary>
     public interface IProcessService
     {
@@ -56,4 +56,3 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         Task<bool> RejectStepAsync(string approvalId, string rejectedBy, string reason, string userId);
     }
 }
-

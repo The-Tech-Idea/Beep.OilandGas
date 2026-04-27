@@ -288,7 +288,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                     },
                     userId);
 
-                Beep.OilandGas.LifeCycle.Models.Processes.ProcessInstance? processInstance = null;
+                Beep.OilandGas.Models.Processes.ProcessInstance? processInstance = null;
                 string? message = null;
 
                 if (request.StartWorkflow)

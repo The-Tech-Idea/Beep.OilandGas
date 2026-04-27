@@ -2,34 +2,37 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.LifeCycle.Models.Processes;
-using Beep.OilandGas.LifeCycle.Services.Processes;
+using System.Threading;
+using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.Models.Data.Process;
-using Beep.OilandGas.LifeCycle.Services.Exploration;
-
+using Beep.OilandGas.Models.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.ProspectIdentification;
+using Beep.OilandGas.ProspectIdentification;
 
 namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
 {
     /// <summary>
-    /// Service for Exploration process orchestration
-    /// Handles Lead to Prospect, Prospect to Discovery, and Discovery to Development workflows
+    /// Service for exploration process orchestration: Lead to Prospect, Prospect to Discovery, and Discovery to Development.
+    /// Step-level persistence is delegated to <see cref="IProcessService"/>; HTTP entry and field guards live on the field
+    /// <c>ExplorationController</c>. Data-slice ownership, route-to-method handoffs for risk/volume/economics/discovery, and
+    /// <see cref="ProcessInstance"/> anchor rules are documented in
+    /// <c>Beep.OilandGas.ProspectIdentification/.plans/12_Phase4_Data_Ownership_And_Handoffs.md</c>.
     /// </summary>
     public class ExplorationProcessService
     {
         private readonly IProcessService _processService;
-        private readonly PPDMExplorationService _explorationService;
+        private readonly ILeadExplorationService? _leadExplorationService;
         private readonly ILogger<ExplorationProcessService>? _logger;
 
         public ExplorationProcessService(
             IProcessService processService,
-            PPDMExplorationService explorationService,
-            ILogger<ExplorationProcessService>? logger = null)
+            ILogger<ExplorationProcessService>? logger = null,
+            ILeadExplorationService? leadExplorationService = null)
         {
             _processService = processService ?? throw new ArgumentNullException(nameof(processService));
-            _explorationService = explorationService ?? throw new ArgumentNullException(nameof(explorationService));
             _logger = logger;
+            _leadExplorationService = leadExplorationService;
         }
 
         #region Lead to Prospect Process
@@ -37,22 +40,29 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Start Lead to Prospect workflow
         /// </summary>
-        public async Task<ProcessInstance> StartLeadToProspectProcessAsync(string leadId, string fieldId, string userId)
+        public async Task<ProcessInstance> StartLeadToProspectProcessAsync(
+            string leadId,
+            string fieldId,
+            string userId,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                var processDef = await _processService.GetProcessDefinitionsByTypeAsync("EXPLORATION");
-                var leadToProspectProcess = processDef.FirstOrDefault(p => p.ProcessName == "LeadToProspect");
+                cancellationToken.ThrowIfCancellationRequested();
+                var processDef = await _processService.GetProcessDefinitionsByTypeAsync(ExplorationReferenceCodes.ProcessTypeExploration);
+                cancellationToken.ThrowIfCancellationRequested();
+                var leadToProspectProcess = processDef.FirstOrDefault(p => p.ProcessName == ExplorationReferenceCodes.ProcessNameLeadToProspect);
                 
                 if (leadToProspectProcess == null)
                 {
-                    throw new InvalidOperationException("LeadToProspect process definition not found");
+                    throw new InvalidOperationException($"{ExplorationReferenceCodes.ProcessNameLeadToProspect} process definition not found");
                 }
 
+                cancellationToken.ThrowIfCancellationRequested();
                 return await _processService.StartProcessAsync(
                     leadToProspectProcess.ProcessId,
                     leadId,
-                    "LEAD",
+                    ExplorationReferenceCodes.EntityTypeLead,
                     fieldId,
                     userId);
             }
@@ -66,18 +76,24 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Evaluate lead
         /// </summary>
-        public async Task<bool> EvaluateLeadAsync(string instanceId, PROCESS_STEP_DATA evaluationData, string userId)
+        public async Task<bool> EvaluateLeadAsync(
+            string instanceId,
+            PROCESS_STEP_DATA evaluationData,
+            string userId,
+            CancellationToken cancellationToken = default)
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var instance = await _processService.GetProcessInstanceAsync(instanceId);
                 if (instance == null)
                 {
                     return false;
                 }
 
+                cancellationToken.ThrowIfCancellationRequested();
                 // Execute evaluation step
-                return await _processService.ExecuteStepAsync(instanceId, "LEAD_EVALUATION", evaluationData, userId);
+                return await _processService.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepLeadEvaluation, evaluationData, userId);
             }
             catch (Exception ex)
             {
@@ -89,18 +105,23 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Approve lead
         /// </summary>
-        public async Task<bool> ApproveLeadAsync(string instanceId, string userId)
+        public async Task<bool> ApproveLeadAsync(
+            string instanceId,
+            string userId,
+            CancellationToken cancellationToken = default)
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var instance = await _processService.GetProcessInstanceAsync(instanceId);
                 if (instance == null)
                 {
                     return false;
                 }
 
+                cancellationToken.ThrowIfCancellationRequested();
                 // Complete approval step
-                return await _processService.CompleteStepAsync(instanceId, "LEAD_APPROVAL", "APPROVED", userId);
+                return await _processService.CompleteStepAsync(instanceId, ExplorationReferenceCodes.StepLeadApproval, ExplorationReferenceCodes.OutcomeApproved, userId);
             }
             catch (Exception ex)
             {
@@ -112,18 +133,25 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Reject lead
         /// </summary>
-        public async Task<bool> RejectLeadAsync(string instanceId, string reason, string userId)
+        public async Task<bool> RejectLeadAsync(
+            string instanceId,
+            string reason,
+            string userId,
+            CancellationToken cancellationToken = default)
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var instance = await _processService.GetProcessInstanceAsync(instanceId);
                 if (instance == null)
                 {
                     return false;
                 }
 
+                cancellationToken.ThrowIfCancellationRequested();
+                _logger?.LogDebug("Rejecting lead for instance {InstanceId}: {Reason}", instanceId, reason);
                 // Complete approval step with rejection
-                return await _processService.CompleteStepAsync(instanceId, "LEAD_APPROVAL", "REJECTED", userId);
+                return await _processService.CompleteStepAsync(instanceId, ExplorationReferenceCodes.StepLeadApproval, ExplorationReferenceCodes.OutcomeRejected, userId);
             }
             catch (Exception ex)
             {
@@ -135,23 +163,32 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Promote lead to prospect
         /// </summary>
-        public async Task<bool> PromoteLeadToProspectAsync(string instanceId, PROCESS_STEP_DATA prospectData, string userId)
+        public async Task<bool> PromoteLeadToProspectAsync(
+            string instanceId,
+            PROCESS_STEP_DATA prospectData,
+            string userId,
+            CancellationToken cancellationToken = default)
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var instance = await _processService.GetProcessInstanceAsync(instanceId);
                 if (instance == null)
                 {
                     return false;
                 }
 
+                cancellationToken.ThrowIfCancellationRequested();
                 // Execute prospect creation step
-                var result = await _processService.ExecuteStepAsync(instanceId, "PROSPECT_CREATION", prospectData, userId);
+                var result = await _processService.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepProspectCreation, prospectData, userId);
                 
                 if (result)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     // Complete the step
-                    await _processService.CompleteStepAsync(instanceId, "PROSPECT_CREATION", "SUCCESS", userId);
+                    await _processService.CompleteStepAsync(instanceId, ExplorationReferenceCodes.StepProspectCreation, ExplorationReferenceCodes.OutcomeSuccess, userId);
+                    if (_leadExplorationService != null)
+                        await _leadExplorationService.AfterProspectCreationStepCompletedAsync(instanceId, userId, cancellationToken);
                 }
 
                 return result;
@@ -170,22 +207,29 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Start Prospect to Discovery workflow
         /// </summary>
-        public async Task<ProcessInstance> StartProspectToDiscoveryProcessAsync(string prospectId, string fieldId, string userId)
+        public async Task<ProcessInstance> StartProspectToDiscoveryProcessAsync(
+            string prospectId,
+            string fieldId,
+            string userId,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                var processDef = await _processService.GetProcessDefinitionsByTypeAsync("EXPLORATION");
-                var prospectToDiscoveryProcess = processDef.FirstOrDefault(p => p.ProcessName == "ProspectToDiscovery");
+                cancellationToken.ThrowIfCancellationRequested();
+                var processDef = await _processService.GetProcessDefinitionsByTypeAsync(ExplorationReferenceCodes.ProcessTypeExploration);
+                cancellationToken.ThrowIfCancellationRequested();
+                var prospectToDiscoveryProcess = processDef.FirstOrDefault(p => p.ProcessName == ExplorationReferenceCodes.ProcessNameProspectToDiscovery);
                 
                 if (prospectToDiscoveryProcess == null)
                 {
-                    throw new InvalidOperationException("ProspectToDiscovery process definition not found");
+                    throw new InvalidOperationException($"{ExplorationReferenceCodes.ProcessNameProspectToDiscovery} process definition not found");
                 }
 
+                cancellationToken.ThrowIfCancellationRequested();
                 return await _processService.StartProcessAsync(
                     prospectToDiscoveryProcess.ProcessId,
                     prospectId,
-                    "PROSPECT",
+                    ExplorationReferenceCodes.EntityTypeProspect,
                     fieldId,
                     userId);
             }
@@ -199,11 +243,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Perform risk assessment
         /// </summary>
-        public async Task<bool> PerformRiskAssessmentAsync(string instanceId, PROCESS_STEP_DATA riskData, string userId)
+        public async Task<bool> PerformRiskAssessmentAsync(
+            string instanceId,
+            PROCESS_STEP_DATA riskData,
+            string userId,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _processService.ExecuteStepAsync(instanceId, "RISK_ASSESSMENT", riskData, userId);
+                cancellationToken.ThrowIfCancellationRequested();
+                return await _processService.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepRiskAssessment, riskData, userId);
             }
             catch (Exception ex)
             {
@@ -215,11 +264,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Perform volume estimation
         /// </summary>
-        public async Task<bool> PerformVolumeEstimationAsync(string instanceId, PROCESS_STEP_DATA volumeData, string userId)
+        public async Task<bool> PerformVolumeEstimationAsync(
+            string instanceId,
+            PROCESS_STEP_DATA volumeData,
+            string userId,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _processService.ExecuteStepAsync(instanceId, "VOLUME_ESTIMATION", volumeData, userId);
+                cancellationToken.ThrowIfCancellationRequested();
+                return await _processService.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepVolumeEstimation, volumeData, userId);
             }
             catch (Exception ex)
             {
@@ -231,11 +285,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Perform economic evaluation
         /// </summary>
-        public async Task<bool> PerformEconomicEvaluationAsync(string instanceId, PROCESS_STEP_DATA economicData, string userId)
+        public async Task<bool> PerformEconomicEvaluationAsync(
+            string instanceId,
+            PROCESS_STEP_DATA economicData,
+            string userId,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _processService.ExecuteStepAsync(instanceId, "ECONOMIC_EVALUATION", economicData, userId);
+                cancellationToken.ThrowIfCancellationRequested();
+                return await _processService.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepEconomicEvaluation, economicData, userId);
             }
             catch (Exception ex)
             {
@@ -247,11 +306,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Make drilling decision
         /// </summary>
-        public async Task<bool> MakeDrillingDecisionAsync(string instanceId, PROCESS_STEP_DATA decisionData, string userId)
+        public async Task<bool> MakeDrillingDecisionAsync(
+            string instanceId,
+            PROCESS_STEP_DATA decisionData,
+            string userId,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _processService.ExecuteStepAsync(instanceId, "DRILLING_DECISION", decisionData, userId);
+                cancellationToken.ThrowIfCancellationRequested();
+                return await _processService.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepDrillingDecision, decisionData, userId);
             }
             catch (Exception ex)
             {
@@ -263,15 +327,21 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Record discovery
         /// </summary>
-        public async Task<bool> RecordDiscoveryAsync(string instanceId, PROCESS_STEP_DATA discoveryData, string userId)
+        public async Task<bool> RecordDiscoveryAsync(
+            string instanceId,
+            PROCESS_STEP_DATA discoveryData,
+            string userId,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _processService.ExecuteStepAsync(instanceId, "DISCOVERY_RECORDING", discoveryData, userId);
+                cancellationToken.ThrowIfCancellationRequested();
+                var result = await _processService.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepDiscoveryRecording, discoveryData, userId);
                 
                 if (result)
                 {
-                    await _processService.CompleteStepAsync(instanceId, "DISCOVERY_RECORDING", "SUCCESS", userId);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    await _processService.CompleteStepAsync(instanceId, ExplorationReferenceCodes.StepDiscoveryRecording, ExplorationReferenceCodes.OutcomeSuccess, userId);
                 }
 
                 return result;
@@ -290,22 +360,29 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Start Discovery to Development workflow
         /// </summary>
-        public async Task<ProcessInstance> StartDiscoveryToDevelopmentProcessAsync(string discoveryId, string fieldId, string userId)
+        public async Task<ProcessInstance> StartDiscoveryToDevelopmentProcessAsync(
+            string discoveryId,
+            string fieldId,
+            string userId,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                var processDef = await _processService.GetProcessDefinitionsByTypeAsync("EXPLORATION");
-                var discoveryToDevelopmentProcess = processDef.FirstOrDefault(p => p.ProcessName == "DiscoveryToDevelopment");
+                cancellationToken.ThrowIfCancellationRequested();
+                var processDef = await _processService.GetProcessDefinitionsByTypeAsync(ExplorationReferenceCodes.ProcessTypeExploration);
+                cancellationToken.ThrowIfCancellationRequested();
+                var discoveryToDevelopmentProcess = processDef.FirstOrDefault(p => p.ProcessName == ExplorationReferenceCodes.ProcessNameDiscoveryToDevelopment);
                 
                 if (discoveryToDevelopmentProcess == null)
                 {
-                    throw new InvalidOperationException("DiscoveryToDevelopment process definition not found");
+                    throw new InvalidOperationException($"{ExplorationReferenceCodes.ProcessNameDiscoveryToDevelopment} process definition not found");
                 }
 
+                cancellationToken.ThrowIfCancellationRequested();
                 return await _processService.StartProcessAsync(
                     discoveryToDevelopmentProcess.ProcessId,
                     discoveryId,
-                    "DISCOVERY",
+                    ExplorationReferenceCodes.EntityTypeDiscovery,
                     fieldId,
                     userId);
             }
@@ -319,11 +396,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Perform appraisal
         /// </summary>
-        public async Task<bool> PerformAppraisalAsync(string instanceId, PROCESS_STEP_DATA appraisalData, string userId)
+        public async Task<bool> PerformAppraisalAsync(
+            string instanceId,
+            PROCESS_STEP_DATA appraisalData,
+            string userId,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _processService.ExecuteStepAsync(instanceId, "APPRAISAL", appraisalData, userId);
+                cancellationToken.ThrowIfCancellationRequested();
+                return await _processService.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepAppraisal, appraisalData, userId);
             }
             catch (Exception ex)
             {
@@ -335,11 +417,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Estimate reserves
         /// </summary>
-        public async Task<bool> EstimateReservesAsync(string instanceId, PROCESS_STEP_DATA reserveData, string userId)
+        public async Task<bool> EstimateReservesAsync(
+            string instanceId,
+            PROCESS_STEP_DATA reserveData,
+            string userId,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _processService.ExecuteStepAsync(instanceId, "RESERVE_ESTIMATION", reserveData, userId);
+                cancellationToken.ThrowIfCancellationRequested();
+                return await _processService.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepReserveEstimation, reserveData, userId);
             }
             catch (Exception ex)
             {
@@ -351,11 +438,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Perform development economic analysis
         /// </summary>
-        public async Task<bool> PerformDevelopmentEconomicAnalysisAsync(string instanceId, PROCESS_STEP_DATA economicData, string userId)
+        public async Task<bool> PerformDevelopmentEconomicAnalysisAsync(
+            string instanceId,
+            PROCESS_STEP_DATA economicData,
+            string userId,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _processService.ExecuteStepAsync(instanceId, "DEVELOPMENT_ECONOMIC_ANALYSIS", economicData, userId);
+                cancellationToken.ThrowIfCancellationRequested();
+                return await _processService.ExecuteStepAsync(instanceId, ExplorationReferenceCodes.StepDevelopmentEconomicAnalysis, economicData, userId);
             }
             catch (Exception ex)
             {
@@ -367,17 +459,47 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Approve development
         /// </summary>
-        public async Task<bool> ApproveDevelopmentAsync(string instanceId, string userId)
+        public async Task<bool> ApproveDevelopmentAsync(
+            string instanceId,
+            string userId,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _processService.CompleteStepAsync(instanceId, "DEVELOPMENT_APPROVAL", "APPROVED", userId);
+                cancellationToken.ThrowIfCancellationRequested();
+                return await _processService.CompleteStepAsync(instanceId, ExplorationReferenceCodes.StepDevelopmentApproval, ExplorationReferenceCodes.OutcomeApproved, userId);
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, $"Error approving development for process instance: {instanceId}");
                 throw;
             }
+        }
+
+        #endregion
+
+        #region Process instance validation
+
+        /// <summary>
+        /// True when the instance exists and <see cref="ProcessInstance.FieldId"/> matches <paramref name="fieldId"/> (trimmed, ordinal case-insensitive).
+        /// </summary>
+        public async Task<bool> IsProcessInstanceInFieldAsync(
+            string instanceId,
+            string fieldId,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(instanceId) || string.IsNullOrWhiteSpace(fieldId))
+                return false;
+
+            cancellationToken.ThrowIfCancellationRequested();
+            var instance = await _processService.GetProcessInstanceAsync(instanceId).ConfigureAwait(false);
+            if (instance == null)
+                return false;
+
+            if (string.IsNullOrWhiteSpace(instance.FieldId))
+                return false;
+
+            return string.Equals(instance.FieldId.Trim(), fieldId.Trim(), StringComparison.OrdinalIgnoreCase);
         }
 
         #endregion

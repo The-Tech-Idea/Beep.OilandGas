@@ -1,4 +1,4 @@
-﻿@page "/ppdm39/hse/incidents/{Id}"
+@page "/ppdm39/hse/incidents/{Id}"
 @attribute [Authorize(Roles = "SafetyOfficer,Manager,Admin,User")]
 @inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
 @inject Beep.OilandGas.Web.Services.IHSEServiceClient HSEClient
@@ -204,7 +204,7 @@
 </MudDialog>
 
 @using Microsoft.AspNetCore.Authorization
-@using Beep.OilandGas.LifeCycle.Models.Processes
+@using Beep.OilandGas.Models.Processes
 @using Beep.OilandGas.Models.Data.HSE
 
 @code {

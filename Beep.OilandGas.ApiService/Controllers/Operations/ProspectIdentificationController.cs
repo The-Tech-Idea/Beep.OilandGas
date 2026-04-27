@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.ProspectIdentification;
 using Beep.OilandGas.Models.Data.Operations;
+using Beep.OilandGas.ProspectIdentification;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System.Linq;
@@ -10,18 +11,33 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
 {
     /// <summary>
     /// API controller for prospect identification operations.
+    /// Lifecycle process instances (see <see cref="ExplorationReferenceCodes.ProcessIdLeadToProspect"/>,
+    /// <see cref="ExplorationReferenceCodes.ProcessIdProspectToDiscovery"/>) are advanced from field <c>ExplorationController</c>,
+    /// not from legacy <c>/api/prospect/*</c> routes;
+    /// see <c>Beep.OilandGas.ProspectIdentification/.plans/11_ProspectIdentificationApi_Workflow_Alignment.md</c>.
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class ProspectIdentificationController : ControllerBase
+    public partial class ProspectIdentificationController : ControllerBase
     {
         private readonly IProspectIdentificationService _service;
+        private readonly IProspectTechnicalMaturationService _technicalMaturation;
+        private readonly IProspectRiskEconomicAnalysisService _riskEconomic;
+        private readonly IProspectPortfolioOptimizationService _portfolioOptimization;
         private readonly ILogger<ProspectIdentificationController> _logger;
 
-        public ProspectIdentificationController(IProspectIdentificationService service, ILogger<ProspectIdentificationController> logger)
+        public ProspectIdentificationController(
+            IProspectIdentificationService service,
+            IProspectTechnicalMaturationService technicalMaturation,
+            IProspectRiskEconomicAnalysisService riskEconomic,
+            IProspectPortfolioOptimizationService portfolioOptimization,
+            ILogger<ProspectIdentificationController> logger)
         {
             _service = service;
+            _technicalMaturation = technicalMaturation;
+            _riskEconomic = riskEconomic;
+            _portfolioOptimization = portfolioOptimization;
             _logger = logger;
         }
 

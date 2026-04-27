@@ -33,7 +33,7 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
             data.BUSINESS_ASSOCIATE_ID = model.BusinessAssociateId;
             data.JURISDICTION = model.Jurisdiction;
             data.PERMIT_TYPE = model.PermitType;
-            data.PERMIT_OBS_NO = model.PermitObservationNumber;
+            data.PERMIT_OBS_NO = model.PermitObservationNumber ?? 0m;
             data.PERMIT_NUM = model.PermitNumber;
             data.EFFECTIVE_DATE = model.EffectiveDate;
             data.EXPIRY_DATE = model.ExpiryDate;

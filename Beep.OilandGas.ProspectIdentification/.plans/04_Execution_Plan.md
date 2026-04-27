@@ -2,7 +2,7 @@
 
 ## Current State
 
-The project owns its module registration and a live API-facing prospect service, but the exploration module was still carrying pool-development tables and the broader project service surface remains split between a small live contract and several larger, mostly parallel interfaces. Some services are PPDM-first already, while others still rely on `UnitOfWork` plus `FIELD`/`SEIS_SET` substitutions. The project currently contains 95 C# files, including 45 under `Data/ProspectIdentification`, and there is a confirmed duplicate `PROSPECT` model between the local data folder and the shared PPDM package. The current data planning also classifies files by technical type, but not yet by the workflow or process that owns them.
+The project owns its module registration and a live API-facing prospect service, but the exploration module was still carrying pool-development tables and the broader project service surface remains split between a small live contract and several larger, mostly parallel interfaces. **`SeismicAnalysisService`** and **`ProspectEvaluationService`** already use **`PPDMGenericRepository`** for **`SEIS_ACQTN_SURVEY`** and **`PROSPECT`** (field scoping uses **`PRIMARY_FIELD_ID` / `FIELD_ID`** on the prospect row, not a `FIELD` table stand-in). Optional next depth is **`SEIS_LINE`**, **`PROSPECT_SEIS_SURVEY`**, and other evidence links. The project currently contains 95 C# files, including 45 under `Data/ProspectIdentification`, and there is a confirmed duplicate `PROSPECT` model between the local data folder and the shared PPDM package. The current data planning also classifies files by technical type, but not yet by the workflow or process that owns them.
 
 ## Target State
 
@@ -15,13 +15,16 @@ Prospect identification should be anchored on real exploration PPDM tables, with
 | `ProspectIdentification/Modules/ExplorationModule.cs` | modify | blocked by actual exploration table ownership |
 | `ProspectIdentification/Services/ProspectIdentificationService.cs` | modify | consumed by ApiService registration and controller |
 | `ProspectIdentification/Data/ProspectIdentification/PROSPECT.cs` | future modify or retire | currently duplicates shared PPDM `PROSPECT` ownership |
-| `ProspectIdentification/Services/SeismicAnalysisService.cs` | future modify | should follow lifecycle exploration PPDM patterns |
-| `ProspectIdentification/Services/ProspectEvaluationService.cs` | future modify | should stop using `FIELD` as prospect root |
+| `ProspectIdentification/Services/SeismicAnalysisService.cs` | optional extend | PPDM surveys via repo; add `SEIS_LINE` / prospect–survey link tables when workflows need them |
+| `ProspectIdentification/Services/ProspectEvaluationService.cs` | optional extend | PPDM `PROSPECT` + survey count; enrich with `PROSPECT_SEIS_SURVEY` / analog tables when wired |
 | `ProspectIdentification/.plans/*.md` | create | documents sequencing and remaining work |
 | `ProspectIdentification/.plans/06_ExplorationModule_Approval_Sheet.md` | create | blocks any later module-list edit |
 | `ProspectIdentification/.plans/07_Target_Slice_Folder_Class_Mapping.md` | create | defines exact target folder/class placement |
 | `ProspectIdentification/.plans/08_Current_Class_Disposition_Matrix.md` | create | defines final keep-now, stage-later, defer classification |
 | `ProspectIdentification/.plans/09_Implementation_Trigger_Sheet.md` | create | defines when stage-later slices may move into active code |
+| `ProspectIdentification/.plans/10_IExplorationApplicationService_Region_Map.md` | create | maps each roadmap `#region` to deferred vs live substitute |
+| `ProspectIdentification/.plans/11_ProspectIdentificationApi_Workflow_Alignment.md` | create | maps HTTP routes to lifecycle workflow ownership |
+| `ProspectIdentification/.plans/12_Phase4_Data_Ownership_And_Handoffs.md` | create | workflow IDs → data slices; step handoffs; `ProcessInstance` entity rules |
 
 ## Execution Plan
 
@@ -58,24 +61,51 @@ Implementation note:
 - [ ] Leave future-only classes deferred until they are backed by a real endpoint or workflow.
 - [ ] Audit other local PPDM-style classes against the shared PPDM package before preserving them in the project.
 
+Implementation note:
+
+- `ProspectIdentificationService` is now split into partial classes by concern:
+  - `Services/ProspectIdentificationService.cs` (constructor/core helpers)
+  - `Services/ProspectIdentificationService.ProspectsAndPortfolio.cs`
+  - `Services/ProspectIdentificationService.TechnicalMaturation.cs`
+  - `Services/ProspectIdentificationService.RiskAndEconomics.cs`
+- Workflow-scoped interfaces were added in `Core/Interfaces` and mapped in DI to the same scoped service instance:
+  - `IProspectTechnicalMaturationService`
+  - `IProspectRiskEconomicAnalysisService`
+  - `IProspectPortfolioOptimizationService`
+
 ### Phase 3: Service Convergence
 
-- [ ] Convert `SeismicAnalysisService` from `UnitOfWork` usage to `PPDMGenericRepository` over `SEIS_ACQTN_SURVEY`, `SEIS_LINE`, and linked evidence tables.
-- [ ] Convert `ProspectEvaluationService` to evaluate real prospect records plus supporting evidence rather than `FIELD` stand-ins.
-- [ ] Reduce the parallel project-local service interfaces to implemented operations before wiring them into DI.
+- [x] `SeismicAnalysisService` uses **`PPDMGenericRepository`** for **`SEIS_ACQTN_SURVEY`** (and **`PROSPECT`** for create validation). Synthetic attribute/AVO/report paths remain stubs. **Optional:** add **`SEIS_LINE`**, **`PROSPECT_SEIS_SURVEY`**, and richer evidence persistence.
+- [x] `ProspectEvaluationService` reads/writes **`PROSPECT`** via **`PPDMGenericRepository`** and counts active surveys on **`SEIS_ACQTN_SURVEY`** (`AREA_TYPE` = `PROSPECT`). **Optional:** link rows in **`PROSPECT_SEIS_SURVEY`** and related evidence tables instead of inferring only from `AREA_ID`.
+- [x] Introduce workflow-scoped analysis interfaces and wire them in DI to implemented operations on the existing service.
+- [x] Move selected `ProspectIdentificationController` operations to workflow-scoped interfaces (maturation, risk/economics, portfolio optimization) to narrow controller dependencies.
+- [x] Keep `IExplorationApplicationService` as roadmap-only; map each `#region` to deferred, partial overlap, or live substitute — see **`10_IExplorationApplicationService_Region_Map.md`**.
+
+### Phase 3.1: Endpoint Consumption Narrowing (execution-ready)
+
+- [x] Add/extend endpoints that consume `IProspectTechnicalMaturationService` directly for:
+  - seismic interpretation analysis
+  - resource estimation
+  - trap/migration/seal-source analysis
+- [x] Add/extend endpoints that consume `IProspectRiskEconomicAnalysisService` directly for:
+  - risk assessment
+  - economic viability screening
+- [x] Add/extend endpoints that consume `IProspectPortfolioOptimizationService` directly for portfolio optimization on ranked prospects.
+- [x] Keep existing compatibility routes stable; do not break the current `IProspectIdentificationService` routes.
+- [x] Add controller tests for workflow endpoints (delegate + validation); extend for full OpenAPI examples when routes stabilize.
 
 ### Phase 4: Workflow Alignment
 
-- [ ] Map prospect service operations to seeded lifecycle workflow IDs: `LEAD_TO_PROSPECT`, `PROSPECT_TO_DISCOVERY`, and `GATE_EXPLORATION_REVIEW`.
-- [ ] Use those same workflow IDs to drive data-class ownership and folder boundaries.
-- [ ] Add explicit workflow handoff points for risk assessment, volume estimation, economics, and discovery recording.
-- [ ] Keep workflow entity IDs tied to the real prospect or lead IDs.
+- [x] Map prospect **HTTP surface** to seeded lifecycle workflow IDs (`LEAD_TO_PROSPECT`, `PROSPECT_TO_DISCOVERY`, `GATE_EXPLORATION_REVIEW`) — see **`11_ProspectIdentificationApi_Workflow_Alignment.md`** (field **`ExplorationController`** owns instance advance; **`ProspectIdentificationController`** = data/analysis helpers).
+- [x] Use those same workflow IDs to drive **data-class ownership / folder slices** — see **`12_Phase4_Data_Ownership_And_Handoffs.md`** §1 (ties to **`02_Data_Folder_Sheet.md`** target slices).
+- [x] Add explicit **workflow handoff** documentation for risk, volume, economics, discovery — **`12_Phase4_Data_Ownership_And_Handoffs.md`** §2 (maps **`ExplorationController`** routes → **`ExplorationProcessService`** → step IDs).
+- [x] Document **`ProcessInstance.EntityId` / `EntityType` / `FieldId`** rules so anchors stay real **`LEAD`** / **`PROSPECT`** / discovery ids — **`12_Phase4_Data_Ownership_And_Handoffs.md`** §3.
 
 ### Phase 5: Tests And Cleanup
 
-- [ ] Add focused tests for the live prospect service mapping.
-- [ ] Add controller tests for the prospect compatibility routes.
-- [ ] Remove or deprecate any unused parallel interfaces after consumers are confirmed.
+- [x] Add focused tests for prospect service **mapping and deterministic analysis** (`Beep.OilandGas.ProspectIdentification.Tests`: `ProspectIdentificationServiceMappingTests`, `ProspectIdentificationServiceAnalysisTests`). **Integration** tests for `PPDMGenericRepository` CRUD remain optional.
+- [x] Add controller tests for the prospect compatibility routes (`ProspectIdentificationControllerCompatibilityTests.cs`).
+- [x] Deprecate roadmap-only **`IExplorationApplicationService`** (`[Obsolete]` on interface; no implementations in repo). **Removal** deferred until no external consumers reference the type.
 
 ## Rollback Plan
 
@@ -94,5 +124,5 @@ If planning changes are not approved:
 
 - The project has multiple overlapping prospect model and service surfaces; refactors must avoid changing the live API contract accidentally.
 - The confirmed duplicate `PROSPECT` model makes imports, ownership, and future persistence mapping easy to drift.
-- `SeismicAnalysisService` and `ProspectEvaluationService` still embed legacy data assumptions and can drift from the lifecycle exploration boundary if rewritten piecemeal.
+- `SeismicAnalysisService` and `ProspectEvaluationService` are PPDM-repository-based for surveys/prospects; optional evidence tables (`SEIS_LINE`, `PROSPECT_SEIS_SURVEY`) can still drift from lifecycle boundaries if added without following **`12_`** slice rules.
 - Prospect-identification test coverage is currently missing.

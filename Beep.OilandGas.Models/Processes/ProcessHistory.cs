@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Beep.OilandGas.LifeCycle.Models.Processes
+namespace Beep.OilandGas.Models.Processes
 {
     /// <summary>
     /// Represents a history entry for a process instance
@@ -20,4 +20,3 @@ namespace Beep.OilandGas.LifeCycle.Models.Processes
         public Dictionary<string, object> ActionData { get; set; } = new Dictionary<string, object>();
     }
 }
-

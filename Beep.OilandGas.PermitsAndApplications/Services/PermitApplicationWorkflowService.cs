@@ -454,16 +454,16 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 injectionApplication.ACTIVE_IND = "Y";
 
                 // Generate ID if not provided
-                if (string.IsNullOrEmpty(injectionApplication.INJECTION_PERMIT_APPLICATION_ID))
+                if (string.IsNullOrEmpty(injectionApplication.PERMIT_APPLICATION_ID))
                 {
-                    injectionApplication.INJECTION_PERMIT_APPLICATION_ID = await GenerateInjectionApplicationIdAsync();
+                    injectionApplication.PERMIT_APPLICATION_ID = await GenerateInjectionApplicationIdAsync();
                 }
 
                 var repo = await CreateRepositoryAsync<INJECTION_PERMIT_APPLICATION>("INJECTION_PERMIT_APPLICATION");
 
                 await repo.InsertAsync(injectionApplication, userId);
 
-                _logger?.LogInformation("Injection permit application created with ID: {ApplicationId}", injectionApplication.INJECTION_PERMIT_APPLICATION_ID);
+                _logger?.LogInformation("Injection permit application created with ID: {ApplicationId}", injectionApplication.PERMIT_APPLICATION_ID);
                 return injectionApplication;
             }
             catch (Exception ex)
@@ -840,13 +840,13 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             {
                 _logger?.LogInformation("Adding APPLIC_BA for application: {ApplicationId}", applicationId);
 
-                associate.PERMIT_APPLICATION_ID = applicationId;
+                associate.APPLICATION_ID = applicationId;
                 associate.ACTIVE_IND = "Y";
                 SetAuditFields(associate, userId);
 
-                if (string.IsNullOrEmpty(associate.APPLIC_BA_ID))
+                if (string.IsNullOrEmpty(associate.APPLICATION_BA_ID))
                 {
-                    associate.APPLIC_BA_ID = await GenerateApplicBusinessAssociateIdAsync();
+                    associate.APPLICATION_BA_ID = await GenerateApplicBusinessAssociateIdAsync();
                 }
 
                 var repo = await CreateRepositoryAsync<APPLIC_BA>("APPLIC_BA");
@@ -871,7 +871,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 var repo = await CreateRepositoryAsync<APPLIC_BA>("APPLIC_BA");
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "PERMIT_APPLICATION_ID", Operator = "=", FilterValue = applicationId },
+                    new AppFilter { FieldName = "APPLICATION_ID", Operator = "=", FilterValue = applicationId },
                     new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
                 };
 
@@ -897,13 +897,13 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             {
                 _logger?.LogInformation("Adding APPLIC_DESC for application: {ApplicationId}", applicationId);
 
-                description.PERMIT_APPLICATION_ID = applicationId;
+                description.APPLICATION_ID = applicationId;
                 description.ACTIVE_IND = "Y";
                 SetAuditFields(description, userId);
 
-                if (string.IsNullOrEmpty(description.APPLIC_DESC_ID))
+                if (string.IsNullOrEmpty(description.DESCRIPTION_ID))
                 {
-                    description.APPLIC_DESC_ID = await GenerateApplicDescriptionIdAsync();
+                    description.DESCRIPTION_ID = await GenerateApplicDescriptionIdAsync();
                 }
 
                 var repo = await CreateRepositoryAsync<APPLIC_DESC>("APPLIC_DESC");
@@ -928,7 +928,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 var repo = await CreateRepositoryAsync<APPLIC_DESC>("APPLIC_DESC");
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "PERMIT_APPLICATION_ID", Operator = "=", FilterValue = applicationId },
+                    new AppFilter { FieldName = "APPLICATION_ID", Operator = "=", FilterValue = applicationId },
                     new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
                 };
 
@@ -954,13 +954,13 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             {
                 _logger?.LogInformation("Adding APPLIC_REMARK for application: {ApplicationId}", applicationId);
 
-                remark.PERMIT_APPLICATION_ID = applicationId;
+                remark.APPLICATION_ID = applicationId;
                 remark.ACTIVE_IND = "Y";
                 SetAuditFields(remark, userId);
 
-                if (string.IsNullOrEmpty(remark.APPLIC_REMARK_ID))
+                if (string.IsNullOrEmpty(remark.REMARK_ID))
                 {
-                    remark.APPLIC_REMARK_ID = await GenerateApplicRemarkIdAsync();
+                    remark.REMARK_ID = await GenerateApplicRemarkIdAsync();
                 }
 
                 var repo = await CreateRepositoryAsync<APPLIC_REMARK>("APPLIC_REMARK");
@@ -985,7 +985,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 var repo = await CreateRepositoryAsync<APPLIC_REMARK>("APPLIC_REMARK");
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "PERMIT_APPLICATION_ID", Operator = "=", FilterValue = applicationId },
+                    new AppFilter { FieldName = "APPLICATION_ID", Operator = "=", FilterValue = applicationId },
                     new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
                 };
 

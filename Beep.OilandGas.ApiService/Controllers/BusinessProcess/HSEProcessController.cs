@@ -10,7 +10,7 @@ using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.HSE;
 using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.LifeCycle.Services.Processes;
-using Beep.OilandGas.LifeCycle.Models.Processes;
+using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.ApiService.Attributes;
 
 namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess

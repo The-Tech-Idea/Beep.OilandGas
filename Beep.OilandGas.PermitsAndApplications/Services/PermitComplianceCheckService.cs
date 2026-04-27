@@ -52,7 +52,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             var drilling = await GetDrillingApplicationAsync(application.PERMIT_APPLICATION_ID);
             var environmental = await GetEnvironmentalApplicationAsync(application.PERMIT_APPLICATION_ID);
             var injection = await GetInjectionApplicationAsync(application.PERMIT_APPLICATION_ID);
-            var mitResults = await GetMitResultsAsync(injection?.INJECTION_PERMIT_APPLICATION_ID);
+            var mitResults = await GetMitResultsAsync(injection?.PERMIT_APPLICATION_ID);
 
             ValidateCoreFields(application, result);
             ValidateTypeSpecific(application, drilling, environmental, injection, mitResults, result);
@@ -140,7 +140,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                     result.Violations.Add("Well UWI or legal description is required.");
                 if (string.IsNullOrWhiteSpace(drilling.TARGET_FORMATION))
                     result.Violations.Add("Target formation is required.");
-                if (!drilling.PROPOSED_DEPTH.HasValue || drilling.PROPOSED_DEPTH <= 0)
+                if (drilling.PROPOSED_DEPTH <= 0)
                     result.Violations.Add("Proposed depth is required.");
                 if (string.IsNullOrWhiteSpace(drilling.DRILLING_METHOD))
                     result.Violations.Add("Drilling method is required.");

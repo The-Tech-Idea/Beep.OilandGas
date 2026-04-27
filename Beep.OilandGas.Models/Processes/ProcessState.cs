@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Beep.OilandGas.LifeCycle.Models.Processes
+namespace Beep.OilandGas.Models.Processes
 {
     /// <summary>
     /// Represents a state in a process state machine
@@ -17,4 +17,3 @@ namespace Beep.OilandGas.LifeCycle.Models.Processes
         public bool IsTerminal { get; set; } = false;
     }
 }
-

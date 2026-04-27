@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Beep.OilandGas.ProspectIdentification;
 
 namespace Beep.OilandGas.Models.Data
 {
@@ -61,8 +62,8 @@ namespace Beep.OilandGas.Models.Data
 
         }
         
-        // Well classification
-        private string WellTypeValue = "EXPLORATION";
+        // Well classification (PPDM WELL.WELL_TYPE exploratory default)
+        private string WellTypeValue = ExplorationReferenceCodes.PpdmWellTypeExploration;
 
         public string WellType
 
@@ -72,7 +73,7 @@ namespace Beep.OilandGas.Models.Data
 
             set { SetProperty(ref WellTypeValue, value); }
 
-        } // Should be "EXPLORATION"
+        }
         private string? StatusValue;
 
         public string? Status

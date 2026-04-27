@@ -30,6 +30,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
         private readonly IDMEEditor _editor;
         private readonly string _connectionName;
         private readonly ILogger<ProductionOperationsService>? _logger;
+        private readonly IFacilityManagementService _facilityManagement;
         private const string PDEN_VOL_SUMMARY_TABLE = "PDEN_VOL_SUMMARY";
         private const string PRODUCTION_COSTS_TABLE = "PRODUCTION_COSTS";
 
@@ -38,6 +39,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
+            IFacilityManagementService facilityManagement,
             string connectionName = "PPDM39",
             ILogger<ProductionOperationsService>? logger = null)
         {
@@ -45,6 +47,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
+            _facilityManagement = facilityManagement ?? throw new ArgumentNullException(nameof(facilityManagement));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _logger = logger;
         }
@@ -290,9 +293,9 @@ namespace Beep.OilandGas.ProductionOperations.Services
                 PERIOD_TYPE = "DAILY",
                 AMENDMENT_SEQ_NO = 0,
                 VOLUME_DATE = productionData.ProductionDate,
-                OIL_VOLUME = productionData.OilVolume,
-                GAS_VOLUME = productionData.GasVolume,
-                WATER_VOLUME = productionData.WaterVolume,
+                OIL_VOLUME = productionData.OilVolume ?? 0m,
+                GAS_VOLUME = productionData.GasVolume ?? 0m,
+                WATER_VOLUME = productionData.WaterVolume ?? 0m,
                 ACTIVE_IND = "Y"
             };
 
@@ -425,7 +428,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             {
                 EQUIPMENT_ID = maintenance.EquipmentId,
                 MAINT_TYPE = maintenance.MaintenanceType ?? "PREVENTIVE",
-                MAINT_DESC = maintenance.Status ?? "COMPLETED",
+                REMARK = maintenance.Description ?? "COMPLETED",
                 ACTIVE_IND = "Y"
             };
 
@@ -457,7 +460,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
                 {
                     EquipmentId = e.EQUIPMENT_ID ?? string.Empty,
                     MaintenanceType = e.MAINT_TYPE,
-                    Status = e.MAINT_DESC,
+                    Description = e.REMARK ?? string.Empty,
                     MaintenanceDate = e.ROW_CREATED_DATE ?? DateTime.MinValue
                 })
                 .OrderByDescending(e => e.MaintenanceDate)
@@ -477,7 +480,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             {
                 EQUIPMENT_ID = schedule.EquipmentId,
                 MAINT_TYPE = schedule.MaintenanceType ?? "PREVENTIVE",
-                MAINT_DESC = "PLANNED",
+                REMARK = "PLANNED",
                 ACTIVE_IND = "Y"
             };
 
@@ -538,12 +541,12 @@ namespace Beep.OilandGas.ProductionOperations.Services
             if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID required", nameof(userId));
             _logger?.LogInformation("Recording facility production for {FacilityId}", productionData.FacilityId);
 
-            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(PDEN_VOL_SUMMARY), _connectionName, PDEN_VOL_SUMMARY_TABLE, null);
+            var pdenId = await _facilityManagement.EnsureFacilityPdenAsync(productionData.FacilityId, null, userId, default)
+                .ConfigureAwait(false);
 
             var entity = new PDEN_VOL_SUMMARY
             {
-                PDEN_ID = productionData.FacilityId,
+                PDEN_ID = pdenId,
                 PDEN_SUBTYPE = "FACILITY",
                 PERIOD_ID = $"{productionData.ProductionDate:yyyyMM}",
                 PDEN_SOURCE = "FACILITY_REPORT",
@@ -558,11 +561,8 @@ namespace Beep.OilandGas.ProductionOperations.Services
                 ACTIVE_IND = "Y"
             };
 
-            if (entity is IPPDMEntity ppdmEntity)
-                _commonColumnHandler.PrepareForInsert(ppdmEntity, userId);
-
-            await repo.InsertAsync(entity, userId);
-            _logger?.LogInformation("Recorded facility production for {FacilityId}", productionData.FacilityId);
+            await _facilityManagement.RecordFacilityProductionVolumeAsync(entity, userId, default).ConfigureAwait(false);
+            _logger?.LogInformation("Recorded facility production for {FacilityId} (PDEN {PdenId})", productionData.FacilityId, pdenId);
         }
 
         public async Task<List<FacilityProduction>> GetFacilityProductionAsync(string facilityId, DateTime startDate, DateTime endDate)
@@ -570,29 +570,18 @@ namespace Beep.OilandGas.ProductionOperations.Services
             if (string.IsNullOrWhiteSpace(facilityId)) throw new ArgumentException("Facility ID required", nameof(facilityId));
             _logger?.LogInformation("Getting facility production for {FacilityId}", facilityId);
 
-            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(PDEN_VOL_SUMMARY), _connectionName, PDEN_VOL_SUMMARY_TABLE, null);
+            var volumes = await _facilityManagement
+                .ListFacilityProductionVolumesAsync(facilityId, null, startDate, endDate, default)
+                .ConfigureAwait(false);
 
-            var filters = new List<AppFilter>
+            return volumes.Select(e => new FacilityProduction
             {
-                new AppFilter { FieldName = "PDEN_ID", Operator = "=", FilterValue = facilityId },
-                new AppFilter { FieldName = "PDEN_SUBTYPE", Operator = "=", FilterValue = "FACILITY" },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-            };
-
-            var entities = await repo.GetAsync(filters);
-            return entities.Cast<PDEN_VOL_SUMMARY>()
-                .Where(e => e.VOLUME_DATE >= startDate && e.VOLUME_DATE <= endDate)
-                .OrderByDescending(e => e.VOLUME_DATE)
-                .Select(e => new FacilityProduction
-                {
-                    FacilityId = e.PDEN_ID ?? string.Empty,
-                    ProductionDate = e.VOLUME_DATE ?? DateTime.MinValue,
-                    OilVolume = e.OIL_VOLUME,
-                    GasVolume = e.GAS_VOLUME,
-                    WaterVolume = e.WATER_VOLUME
-                })
-                .ToList();
+                FacilityId = facilityId,
+                ProductionDate = e.VOLUME_DATE ?? DateTime.MinValue,
+                OilVolume = e.OIL_VOLUME,
+                GasVolume = e.GAS_VOLUME,
+                WaterVolume = e.WATER_VOLUME
+            }).ToList();
         }
 
         public async Task UpdateFacilityStatusAsync(string facilityId, FacilityStatus status, string userId)
@@ -602,23 +591,24 @@ namespace Beep.OilandGas.ProductionOperations.Services
             if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID required", nameof(userId));
             _logger?.LogInformation("Updating facility status for {FacilityId}", facilityId);
 
-            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(FACILITY), _connectionName, "FACILITY", null);
-
-            var existing = (await repo.GetAsync(new List<AppFilter>
-            {
-                new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = facilityId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-            })).Cast<FACILITY>().FirstOrDefault();
-
-            if (existing == null)
+            var facility = await _facilityManagement.GetFacilityAsync(facilityId, null, default).ConfigureAwait(false);
+            if (facility == null)
                 throw new InvalidOperationException($"Facility {facilityId} not found");
 
-            // FACILITY_STATUS is a separate table in PPDM39, not a column on FACILITY
-            // Facility operational status should be tracked via FACILITY_STATUS table
-            _logger?.LogWarning("Facility status update via FACILITY.FACILITY_STATUS is not supported. Use FACILITY_STATUS table instead.");
-            await repo.UpdateAsync(existing, userId);
-            _logger?.LogInformation("Updated facility status for {FacilityId}", facilityId);
+            var statusRow = new FACILITY_STATUS
+            {
+                FACILITY_ID = facility.FACILITY_ID,
+                FACILITY_TYPE = facility.FACILITY_TYPE,
+                STATUS = string.IsNullOrWhiteSpace(status.OperationalStatus) ? "UNKNOWN" : status.OperationalStatus.Trim(),
+                STATUS_TYPE = "OPERATIONAL",
+                EFFECTIVE_DATE = status.StatusDate == default ? DateTime.UtcNow : status.StatusDate,
+                PERCENT_CAPABILITY = status.CapacityUtilization,
+                ACTIVE_IND = "Y"
+            };
+
+            await _facilityManagement.AddFacilityStatusAsync(statusRow, userId, enforceActiveLicenseForOperationalStatus: true, default)
+                .ConfigureAwait(false);
+            _logger?.LogInformation("Recorded FACILITY_STATUS for {FacilityId}", facilityId);
         }
 
         public async Task<FacilityStatus> GetFacilityStatusAsync(string facilityId)
@@ -626,24 +616,16 @@ namespace Beep.OilandGas.ProductionOperations.Services
             if (string.IsNullOrWhiteSpace(facilityId)) throw new ArgumentException("Facility ID required", nameof(facilityId));
             _logger?.LogInformation("Getting facility status for {FacilityId}", facilityId);
 
-            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(FACILITY), _connectionName, "FACILITY", null);
-
-            var filters = new List<AppFilter>
-            {
-                new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = facilityId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-            };
-
-            var entities = await repo.GetAsync(filters);
-            var facility = entities.Cast<FACILITY>().FirstOrDefault();
+            var facility = await _facilityManagement.GetFacilityAsync(facilityId, null, default).ConfigureAwait(false);
+            var history = await _facilityManagement.ListFacilityStatusHistoryAsync(facilityId, null, default).ConfigureAwait(false);
+            var latest = history.FirstOrDefault();
 
             return new FacilityStatus
             {
                 FacilityId = facilityId,
-                StatusDate = DateTime.UtcNow,
-                OperationalStatus = facility?.FACILITY_TYPE ?? "Unknown",
-                CapacityUtilization = 0m,
+                StatusDate = latest?.EFFECTIVE_DATE ?? DateTime.UtcNow,
+                OperationalStatus = latest?.STATUS ?? latest?.STATUS_TYPE ?? facility?.FACILITY_TYPE ?? "Unknown",
+                CapacityUtilization = latest?.PERCENT_CAPABILITY ?? 0m,
                 ProcessingEfficiency = 0m
             };
         }

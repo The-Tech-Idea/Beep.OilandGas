@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
+using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
 
 namespace Beep.OilandGas.DevelopmentPlanning.Services
 {

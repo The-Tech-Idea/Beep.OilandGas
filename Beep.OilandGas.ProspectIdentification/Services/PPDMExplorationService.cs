@@ -12,13 +12,14 @@ using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Editor;
-using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.ProspectIdentification;
+using Beep.OilandGas.ProspectIdentification;
 using Beep.OilandGas.PPDM.Models;
 using PROSPECT = Beep.OilandGas.Models.Data.ProspectIdentification.PROSPECT;
+using LEAD = Beep.OilandGas.Models.Data.ProspectIdentification.LEAD;
 
-namespace Beep.OilandGas.LifeCycle.Services.Exploration
+namespace Beep.OilandGas.ProspectIdentification.Services
 {
     /// <summary>
     /// Service for Exploration phase data management, field-scoped
@@ -110,6 +111,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
                 
                 // Set FIELD_ID directly
                 prospectEntity.FIELD_ID = _defaults.FormatIdForTable("PROSPECT", fieldId);
+
+                if (!string.IsNullOrWhiteSpace(prospectData.LeadId))
+                    prospectEntity.LEAD_ID = _defaults.FormatIdForTable("LEAD", prospectData.LeadId);
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
                     typeof(PROSPECT), _connectionName, "PROSPECT", null);
@@ -223,6 +227,215 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
             catch (Exception ex)
             {
                 _logger?.LogError(ex, $"Error getting prospect {prospectId} for field: {fieldId}");
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<PROSPECT?> GetProspectForFieldByLeadIdAsync(string fieldId, string leadId)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(leadId))
+                    return null;
+
+                var prospects = await GetProspectsForFieldAsync(fieldId, new List<AppFilter>
+                {
+                    new AppFilter
+                    {
+                        FieldName = "LEAD_ID",
+                        FilterValue = _defaults.FormatIdForTable("LEAD", leadId),
+                        Operator = "="
+                    }
+                });
+
+                return prospects.FirstOrDefault();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting prospect for lead {LeadId} in field {FieldId}", leadId, fieldId);
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<bool> IsLeadInFieldAsync(string fieldId, string leadId)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(fieldId) || string.IsNullOrWhiteSpace(leadId))
+                    return false;
+
+                var (lead, _) = await LoadLeadWithRepositoryAsync(leadId).ConfigureAwait(false);
+                if (lead == null)
+                    return false;
+
+                if (string.IsNullOrWhiteSpace(lead.FIELD_ID))
+                {
+                    _logger?.LogWarning(
+                        "LEAD {LeadId} has no FIELD_ID; allowing in current field scope. Use {Ensure} on workflow start to persist.",
+                        leadId,
+                        nameof(EnsureLeadInFieldForWorkflowStartAsync));
+                    return true;
+                }
+
+                var expectedFieldId = _defaults.FormatIdForTable("FIELD", fieldId);
+                return string.Equals(lead.FIELD_ID, expectedFieldId, StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error resolving lead {LeadId} for field {FieldId}", leadId, fieldId);
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<bool> EnsureLeadInFieldForWorkflowStartAsync(string fieldId, string leadId, string userId)
+        {
+            if (string.IsNullOrWhiteSpace(fieldId))
+                throw new ArgumentException("Field id is required.", nameof(fieldId));
+            if (string.IsNullOrWhiteSpace(leadId))
+                throw new ArgumentException("Lead id is required.", nameof(leadId));
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("User id is required.", nameof(userId));
+
+            try
+            {
+                var (lead, repo) = await LoadLeadWithRepositoryAsync(leadId).ConfigureAwait(false);
+                if (lead == null || repo == null)
+                    return false;
+
+                var expectedFieldId = _defaults.FormatIdForTable("FIELD", fieldId);
+
+                if (!string.IsNullOrWhiteSpace(lead.FIELD_ID))
+                {
+                    return string.Equals(lead.FIELD_ID, expectedFieldId, StringComparison.OrdinalIgnoreCase);
+                }
+
+                lead.FIELD_ID = expectedFieldId;
+                await repo.UpdateAsync(lead, userId).ConfigureAwait(false);
+                _logger?.LogInformation(
+                    "Bound LEAD {LeadId} to field {FieldId} on workflow start (FIELD_ID was unset).",
+                    leadId,
+                    fieldId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error ensuring lead {LeadId} for field {FieldId}", leadId, fieldId);
+                throw;
+            }
+        }
+
+        private async Task<(LEAD? lead, PPDMGenericRepository? repo)> LoadLeadWithRepositoryAsync(
+            string leadId,
+            bool throwIfMetadataMissing = false)
+        {
+            if (string.IsNullOrWhiteSpace(leadId))
+                return (null, null);
+
+            var metadata = await _metadata.GetTableMetadataAsync("LEAD");
+            if (metadata == null)
+            {
+                if (throwIfMetadataMissing)
+                    throw new InvalidOperationException("LEAD table metadata not found");
+                _logger?.LogWarning("LEAD table metadata not found");
+                return (null, null);
+            }
+
+            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(LEAD), _connectionName, "LEAD", null);
+
+            var formattedLeadId = _defaults.FormatIdForTable("LEAD", leadId);
+            var leads = await repo.GetAsync(new List<AppFilter>
+            {
+                new AppFilter
+                {
+                    FieldName = "LEAD_ID",
+                    FilterValue = formattedLeadId,
+                    Operator = "="
+                }
+            }).ConfigureAwait(false);
+
+            return (leads.FirstOrDefault() as LEAD, repo);
+        }
+
+        /// <inheritdoc />
+        public async Task<bool> IsProspectDiscoveryInFieldAsync(string fieldId, string discoveryId)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(fieldId) || string.IsNullOrWhiteSpace(discoveryId))
+                    return false;
+
+                var metadata = await _metadata.GetTableMetadataAsync("PROSPECT_DISCOVERY");
+                if (metadata == null)
+                {
+                    _logger?.LogWarning("PROSPECT_DISCOVERY table metadata not found");
+                    return false;
+                }
+
+                var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(PROSPECT_DISCOVERY), _connectionName, "PROSPECT_DISCOVERY", null);
+
+                var formattedDiscoveryId = _defaults.FormatIdForTable("PROSPECT_DISCOVERY", discoveryId);
+                var rows = await repo.GetAsync(new List<AppFilter>
+                {
+                    new AppFilter
+                    {
+                        FieldName = "DISCOVERY_ID",
+                        FilterValue = formattedDiscoveryId,
+                        Operator = "="
+                    }
+                }).ConfigureAwait(false);
+
+                var discovery = rows.Cast<PROSPECT_DISCOVERY>().FirstOrDefault();
+                if (discovery == null || string.IsNullOrWhiteSpace(discovery.PROSPECT_ID))
+                    return false;
+
+                var prospectsInField = await GetProspectsForFieldAsync(fieldId, new List<AppFilter>
+                {
+                    new AppFilter
+                    {
+                        FieldName = "PROSPECT_ID",
+                        FilterValue = discovery.PROSPECT_ID,
+                        Operator = "="
+                    }
+                }).ConfigureAwait(false);
+
+                return prospectsInField.Count > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error resolving discovery {DiscoveryId} for field {FieldId}", discoveryId, fieldId);
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task UpdateLeadStatusAsync(string leadId, string leadStatus, string userId)
+        {
+            if (string.IsNullOrWhiteSpace(leadId))
+                throw new ArgumentException("Lead id is required.", nameof(leadId));
+            if (string.IsNullOrWhiteSpace(leadStatus))
+                throw new ArgumentException("Lead status is required.", nameof(leadStatus));
+
+            try
+            {
+                var (lead, repo) = await LoadLeadWithRepositoryAsync(leadId, throwIfMetadataMissing: true)
+                    .ConfigureAwait(false);
+                if (lead == null || repo == null)
+                {
+                    _logger?.LogWarning("UpdateLeadStatusAsync: LEAD {LeadId} not found", leadId);
+                    return;
+                }
+
+                lead.LEAD_STATUS = leadStatus;
+                await repo.UpdateAsync(lead, userId).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error updating LEAD status for {LeadId}", leadId);
                 throw;
             }
         }
@@ -369,7 +582,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
                     new AppFilter
                     {
                         FieldName = "WELL_TYPE",
-                        FilterValue = "EXPLORATION",
+                        FilterValue = ExplorationReferenceCodes.PpdmWellTypeExploration,
                         Operator = "="
                     }
                 };
