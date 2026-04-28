@@ -13,6 +13,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 {
     /// <summary>
     /// IFRS 6 exploration and evaluation accounting service.
+    /// Sets <see cref="CostCategories.ExplorationEvaluation"/>; default <see cref="CostTypes.Exploration"/> when <c>COST_TYPE</c> is unset (seeded <c>COST_TYPE</c> / <c>COST_CATEGORY</c>).
     /// </summary>
     public class ExplorationEvaluationService : IExplorationEvaluationService
     {
@@ -48,6 +49,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new ArgumentNullException(nameof(userId));
 
             cost.ACCOUNTING_COST_ID ??= Guid.NewGuid().ToString();
+            if (string.IsNullOrWhiteSpace(cost.COST_TYPE))
+                cost.COST_TYPE = CostTypes.Exploration;
             cost.COST_CATEGORY = CostCategories.ExplorationEvaluation;
             cost.IS_CAPITALIZED = capitalize ? _defaults.GetActiveIndicatorYes() : _defaults.GetActiveIndicatorNo();
             cost.IS_EXPENSED = capitalize ? _defaults.GetActiveIndicatorNo() : _defaults.GetActiveIndicatorYes();

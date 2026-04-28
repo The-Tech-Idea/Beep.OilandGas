@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -66,9 +67,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 COST_DATE = acquisitionDate,
                 COST_TYPE = CostTypes.Acquisition,
                 COST_CATEGORY = CostCategories.Lease,
-                IS_CAPITALIZED = "Y",
-                IS_EXPENSED = "N",
-                DESCRIPTION = "Unproved property acquisition",
+                IS_CAPITALIZED = _defaults.GetActiveIndicatorYes(),
+                IS_EXPENSED = _defaults.GetActiveIndicatorNo(),
+                DESCRIPTION = UnprovedPropertyDescriptionPhrases.UnprovedAcquisition,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,
@@ -156,7 +157,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     bonusAmount,
                     optionDate,
                     CostCategories.LeaseOption,
-                    "Lease option bonus",
+                    UnprovedPropertyDescriptionPhrases.LeaseOptionBonus,
                     userId,
                     cn);
             }
@@ -201,7 +202,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     amount,
                     rentalDate,
                     CostCategories.DelayRental,
-                    "Delay rental expense",
+                    UnprovedPropertyDescriptionPhrases.DelayRentalExpense,
                     userId,
                     cn);
             }
@@ -236,7 +237,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     LEASE_ID = lease.LEASE_ID,
                     EXPIRY_DATE = lease.EXPIRY_DATE,
                     ACTION_TAKEN = LeaseExpiryActionCodes.WriteOff,
-                    NOTES = "Lease expired; unproved costs written off",
+                    NOTES = UnprovedPropertyDescriptionPhrases.LeaseExpiryEventNotes,
                     ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                     PPDM_GUID = Guid.NewGuid().ToString(),
                     ROW_CREATED_BY = userId,
@@ -295,9 +296,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 COST_DATE = asOfDate,
                 COST_TYPE = CostTypes.Impairment,
                 COST_CATEGORY = CostCategories.Lease,
-                IS_CAPITALIZED = "N",
-                IS_EXPENSED = "Y",
-                DESCRIPTION = $"Unproved property impairment (PV {pv:0.##})",
+                IS_CAPITALIZED = _defaults.GetActiveIndicatorNo(),
+                IS_EXPENSED = _defaults.GetActiveIndicatorYes(),
+                DESCRIPTION = string.Format(CultureInfo.InvariantCulture, UnprovedPropertyDescriptionPhrases.UnprovedImpairmentPvFormat, pv),
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,
@@ -341,11 +342,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             foreach (var cost in costs)
             {
                 cost.COST_TYPE = CostTypes.Development;
-                cost.IS_CAPITALIZED = "Y";
-                cost.IS_EXPENSED = "N";
+                cost.IS_CAPITALIZED = _defaults.GetActiveIndicatorYes();
+                cost.IS_EXPENSED = _defaults.GetActiveIndicatorNo();
                 cost.ROW_CHANGED_BY = userId;
                 cost.ROW_CHANGED_DATE = DateTime.UtcNow;
-                cost.REMARK = "Reclassified to proved property";
+                cost.REMARK = UnprovedPropertyDescriptionPhrases.ReclassifiedToProvedCostRemark;
 
                 await repo.UpdateAsync(cost, userId);
             }
@@ -389,8 +390,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 COST_DATE = costDate,
                 COST_TYPE = CostTypes.Acquisition,
                 COST_CATEGORY = category,
-                IS_CAPITALIZED = "N",
-                IS_EXPENSED = "Y",
+                IS_CAPITALIZED = _defaults.GetActiveIndicatorNo(),
+                IS_EXPENSED = _defaults.GetActiveIndicatorYes(),
                 DESCRIPTION = description,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
@@ -421,9 +422,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 COST_DATE = asOfDate,
                 COST_TYPE = CostTypes.ExpiryWriteOff,
                 COST_CATEGORY = CostCategories.Lease,
-                IS_CAPITALIZED = "N",
-                IS_EXPENSED = "Y",
-                DESCRIPTION = "Unproved lease expiry write-off",
+                IS_CAPITALIZED = _defaults.GetActiveIndicatorNo(),
+                IS_EXPENSED = _defaults.GetActiveIndicatorYes(),
+                DESCRIPTION = UnprovedPropertyDescriptionPhrases.LeaseExpiryWriteOff,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,

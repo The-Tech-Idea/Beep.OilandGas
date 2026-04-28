@@ -14,6 +14,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 {
     /// <summary>
     /// Authorization workflow service for accounting transactions (AFE approvals).
+    /// <c>AFE.STATUS</c> uses <see cref="AfeStatusCodes"/> (seeded <c>AFE_STATUS</c>).
     /// </summary>
     public class AuthorizationWorkflowService : IAuthorizationWorkflowService
     {
@@ -52,7 +53,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (!string.Equals(afe.ACTIVE_IND, _defaults.GetActiveIndicatorYes(), StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            return string.Equals(afe.STATUS, ApprovalWorkflowStatusCodes.Approved, StringComparison.OrdinalIgnoreCase);
+            return string.Equals(afe.STATUS, AfeStatusCodes.Approved, StringComparison.OrdinalIgnoreCase);
         }
 
         public async Task<AFE> ApproveAfeAsync(string afeId, DateTime approvalDate, string userId, string cn = "PPDM39")
@@ -66,7 +67,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (afe == null)
                 throw new ProductionAccountingException($"AFE not found: {afeId}");
 
-            afe.STATUS = ApprovalWorkflowStatusCodes.Approved;
+            afe.STATUS = AfeStatusCodes.Approved;
             afe.APPROVAL_DATE = approvalDate;
             afe.ROW_CHANGED_BY = userId;
             afe.ROW_CHANGED_DATE = DateTime.UtcNow;
@@ -98,7 +99,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (!string.Equals(afe.ACTIVE_IND, _defaults.GetActiveIndicatorYes(), StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            if (!string.Equals(afe.STATUS, ApprovalWorkflowStatusCodes.Approved, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(afe.STATUS, AfeStatusCodes.Approved, StringComparison.OrdinalIgnoreCase))
                 return false;
 
             if (afe.ESTIMATED_COST.HasValue)

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -649,7 +649,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _editor, _commonColumnHandler, _defaults, _metadata,
                 entityType, cn, "RUN_TICKET");
 
-            RUN_TICKET.IS_PROCESSED = "Y";
+            RUN_TICKET.IS_PROCESSED = _defaults.GetActiveIndicatorYes();
             RUN_TICKET.PROCESSED_DATE = DateTime.UtcNow;
             RUN_TICKET.ROW_CHANGED_BY = userId;
             RUN_TICKET.ROW_CHANGED_DATE = DateTime.UtcNow;
@@ -686,7 +686,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     INTEREST_PERCENTAGE = percentage,
                     ALLOCATED_AMOUNT = amount,
                     ALLOCATION_METHOD = RevenueAllocationMethod.ProRata,
-                    DESCRIPTION = "Take-or-pay allocation",
+                    DESCRIPTION = TakeOrPayDescriptionPhrases.RevenueAllocation,
                     ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                     PPDM_GUID = Guid.NewGuid().ToString(),
                     ROW_CREATED_BY = userId,

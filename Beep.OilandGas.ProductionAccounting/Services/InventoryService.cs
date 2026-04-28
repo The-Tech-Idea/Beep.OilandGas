@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -271,7 +272,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 QUANTITY = valuation.Quantity,
                 UNIT_COST = valuation.UnitCost,
                 TOTAL_VALUE = valuation.TotalValue,
-                DESCRIPTION = $"{valuationMethod} valuation as of {valuationDate:yyyy-MM-dd}",
+                DESCRIPTION = string.Format(
+                    CultureInfo.InvariantCulture,
+                    InventoryDescriptionPhrases.ValuationAsOfFormat,
+                    valuationMethod,
+                    valuationDate),
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,

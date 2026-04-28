@@ -196,8 +196,19 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 // Validation 3: Cost type should be valid if set
                 if (!string.IsNullOrWhiteSpace(cost.COST_TYPE))
                 {
-                    var validTypes = new[] { CostTypes.Exploration, CostTypes.Development, CostTypes.Acquisition, CostTypes.Production };
-                    if (!validTypes.Contains(cost.COST_TYPE))
+                    var validTypes = new[]
+                    {
+                        CostTypes.Exploration,
+                        CostTypes.Development,
+                        CostTypes.Acquisition,
+                        CostTypes.Production,
+                        CostTypes.Impairment,
+                        CostTypes.ExpiryWriteOff,
+                        RoyaltyDeductionCostTypeCodes.Transportation,
+                        RoyaltyDeductionCostTypeCodes.AdValorem,
+                        RoyaltyDeductionCostTypeCodes.Severance
+                    };
+                    if (!validTypes.Any(t => string.Equals(t, cost.COST_TYPE, StringComparison.OrdinalIgnoreCase)))
                     {
                         _logger?.LogWarning("Accounting cost {CostId}: Invalid cost type {Type}",
                             cost.ACCOUNTING_COST_ID, cost.COST_TYPE);
@@ -279,8 +290,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     cost.COST_TYPE = CostTypes.Development;
                 }
 
-                cost.IS_CAPITALIZED = "Y";
-                cost.IS_EXPENSED = "N";
+                cost.IS_CAPITALIZED = _defaults.GetActiveIndicatorYes();
+                cost.IS_EXPENSED = _defaults.GetActiveIndicatorNo();
                 cost.ROW_CHANGED_BY = userId;
                 cost.ROW_CHANGED_DATE = DateTime.UtcNow;
 

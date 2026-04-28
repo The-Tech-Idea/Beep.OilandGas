@@ -12,6 +12,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 {
     /// <summary>
     /// Asset swap and farm-in/farm-out accounting service.
+    /// When wiring to <c>JOURNAL_ENTRY</c> or audit trails, use
+    /// <see cref="Beep.OilandGas.ProductionAccounting.Constants.AccountingSourceModuleCodes.AssetSwap"/> for <c>SOURCE_MODULE</c> (seeded).
     /// </summary>
     public class AssetSwapService : IAssetSwapService
     {

@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -126,7 +127,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             if (!string.IsNullOrWhiteSpace(propertyId))
             {
-                var match = all.FirstOrDefault(t => RemarkHasValue(t.REMARK, "PROPERTY_ID", propertyId));
+                var match = all.FirstOrDefault(t => RemarkHasValue(t.REMARK, ProductionTaxRemarkKeys.PropertyId, propertyId));
                 if (match != null)
                     return match;
             }
@@ -198,7 +199,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ADJUSTMENT_TYPE = TaxAdjustmentTypeCodes.IdcDeduction,
                 PERIOD_END_DATE = periodEnd,
                 AMOUNT = idcTotal,
-                NOTES = "IDC deduction based on drilling/completion costs",
+                NOTES = ProductionTaxNotesPhrases.IdcDeductionFromDrillingCompletion,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,
@@ -244,7 +245,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ADJUSTMENT_TYPE = TaxAdjustmentTypeCodes.TaxDepletion,
                 PERIOD_END_DATE = periodEnd,
                 AMOUNT = taxDepletion,
-                NOTES = $"Tax depletion at rate {taxRate:0.####}",
+                NOTES = string.Format(CultureInfo.InvariantCulture, ProductionTaxNotesPhrases.TaxDepletionAtRateFormat, taxRate),
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,
@@ -264,7 +265,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     PERIOD_END_DATE = periodEnd,
                     DEFERRED_TAX_ASSET = deferred < 0m ? Math.Abs(deferred) : 0m,
                     DEFERRED_TAX_LIABILITY = deferred > 0m ? deferred : 0m,
-                    NOTES = "Deferred tax from depletion timing",
+                    NOTES = ProductionTaxNotesPhrases.DeferredTaxFromDepletionTiming,
                     ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                     PPDM_GUID = Guid.NewGuid().ToString(),
                     ROW_CREATED_BY = userId,
@@ -329,7 +330,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var parts = token.Split('=');
                 if (parts.Length != 2)
                     continue;
-                if (parts[0].Equals("JURISDICTION", StringComparison.OrdinalIgnoreCase))
+                if (parts[0].Equals(ProductionTaxRemarkKeys.Jurisdiction, StringComparison.OrdinalIgnoreCase))
                     return parts[1];
             }
 

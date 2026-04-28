@@ -550,7 +550,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 {
                     JIB_CHARGE_ID = Guid.NewGuid().ToString(),
                     JOINT_INTEREST_STATEMENT_ID = statement.JOINT_INTEREST_STATEMENT_ID,
-                    DESCRIPTION = cost.DESCRIPTION ?? "Cost allocation",
+                    DESCRIPTION = cost.DESCRIPTION ?? JointInterestBillingDescriptionPhrases.DefaultCostChargeDescription,
                     CATEGORY = cost.ALLOCATION_METHOD,
                     AMOUNT = cost.ALLOCATED_AMOUNT ?? 0m,
                     ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
@@ -576,7 +576,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 {
                     JIB_CREDIT_ID = Guid.NewGuid().ToString(),
                     JOINT_INTEREST_STATEMENT_ID = statement.JOINT_INTEREST_STATEMENT_ID,
-                    DESCRIPTION = revenue.DESCRIPTION ?? "Revenue allocation",
+                    DESCRIPTION = revenue.DESCRIPTION ?? JointInterestBillingDescriptionPhrases.DefaultRevenueCreditDescription,
                     CATEGORY = revenue.ALLOCATION_METHOD,
                     AMOUNT = revenue.ALLOCATED_AMOUNT ?? 0m,
                     ACTIVE_IND = _defaults.GetActiveIndicatorYes(),

@@ -48,3 +48,6 @@ Status legend: Implemented, Partial, Not scoped, TBD
 - [ ] Complete IAS 37 ARO/decommissioning calculations and disclosure support.
 - [ ] Add governance for IAS 8 policy changes and error corrections.
 
+## Code anchors (narrative text)
+
+Shared user-facing / persisted narrative strings for this area live in `Constants/ProductionAccountingDescriptionPhrases.cs` (period close, take-or-pay, revenue allocation/transaction lines, inventory LCM/valuation, drilling scenario tokens/lines, JIB charge/credit fallbacks, COPAS JIB, unproved property, allocation, production tax notes, reserve disclosure). Codes and numeric defaults (currency, take-or-pay obligation type, `MIN_VOLUME`/`PRICE` parse keys, commodity price index fallback) live in `Constants/WorkflowReferenceCodes.cs`. Reference data aligned with `R_PRODUCTION_ACCOUNTING_REFERENCE_CODE` is seeded from `Constants/ProductionAccountingReferenceCodeSeed.cs` and `Modules/ProductionAccountingModuleSetup.cs`.

@@ -82,7 +82,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 JIB_CHARGE_ID = Guid.NewGuid().ToString(),
                 JOINT_INTEREST_STATEMENT_ID = statement.JOINT_INTEREST_STATEMENT_ID,
-                DESCRIPTION = "COPAS Overhead",
+                DESCRIPTION = CopasOverheadDescriptionPhrases.JibChargeCopasOverhead,
                 CATEGORY = JibChargeCategoryCodes.Overhead,
                 AMOUNT = overhead,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),

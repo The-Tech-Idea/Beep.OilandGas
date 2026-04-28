@@ -17,8 +17,8 @@ using Beep.OilandGas.PPDM39.Models;
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
     /// <summary>
-    /// Pricing Service - Manages product pricing and revenue calculation.
-    /// Provides price indices and calculates revenue from volumes and prices.
+    /// <c>PRICE_INDEX</c> lookups by <c>COMMODITY_TYPE</c> — use <see cref="PriceIndexCommodityTypeCodes"/> for seeded tokens (<c>PRICE_INDEX_COMMODITY_TYPE</c>).
+    /// Missing rows or null <c>PRICE_VALUE</c> use <see cref="CommodityPricingFallbackDefaults.DefaultUnitPriceWhenIndexMissing"/> (same default as revenue flows).
     /// </summary>
     public class PricingService : IPricingService
     {
@@ -54,8 +54,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(productId))
                 throw new ArgumentNullException(nameof(productId));
 
+            var commodityType = productId.Trim();
+            if (!PriceIndexCommodityTypeCodes.IsSeededCommodityType(commodityType))
+                _logger?.LogDebug("Price lookup for non-canonical COMMODITY_TYPE {CommodityType} (expected one of seeded price-index types)", commodityType);
+
             _logger?.LogInformation("Getting price for product {ProductId} on {Date}",
-                productId, date.ToShortDateString());
+                commodityType, date.ToShortDateString());
 
             var metadata = await _metadata.GetTableMetadataAsync("PRICE_INDEX");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -67,7 +71,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "COMMODITY_TYPE", Operator = "=", FilterValue = productId },
+                new AppFilter { FieldName = "COMMODITY_TYPE", Operator = "=", FilterValue = commodityType },
                 new AppFilter { FieldName = "PRICE_DATE", Operator = "<=", FilterValue = date.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
@@ -77,9 +81,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ?? new List<PRICE_INDEX>();
 
             if (!priceList.Any())
-                throw new AccountingException($"No pricing found for {productId} as of {date}");
+            {
+                _logger?.LogWarning(
+                    "No PRICE_INDEX rows for {CommodityType} as of {Date}; using fallback unit price {Fallback}",
+                    commodityType, date.ToShortDateString(), CommodityPricingFallbackDefaults.DefaultUnitPriceWhenIndexMissing);
+                return CommodityPricingFallbackDefaults.DefaultUnitPriceWhenIndexMissing;
+            }
 
-            return priceList.First().PRICE_VALUE ?? 0;
+            return priceList.First().PRICE_VALUE ?? CommodityPricingFallbackDefaults.DefaultUnitPriceWhenIndexMissing;
         }
 
         /// <summary>
@@ -96,6 +105,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (start > end)
                 throw new ArgumentException("start must be <= end", nameof(start));
 
+            var commodityType = productId.Trim();
+
             var metadata = await _metadata.GetTableMetadataAsync("PRICE_INDEX");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
                 ?? typeof(PRICE_INDEX);
@@ -106,7 +117,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "COMMODITY_TYPE", Operator = "=", FilterValue = productId },
+                new AppFilter { FieldName = "COMMODITY_TYPE", Operator = "=", FilterValue = commodityType },
                 new AppFilter { FieldName = "PRICE_DATE", Operator = ">=", FilterValue = start.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "PRICE_DATE", Operator = "<=", FilterValue = end.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }

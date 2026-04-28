@@ -17,13 +17,10 @@ using Beep.OilandGas.PPDM39.Models;
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
     /// <summary>
-    /// Full Cost Service - Capitalizes all exploration/development costs in cost centers.
-    /// Per ASC 932: All costs capitalized within cost center, subject to SEC ceiling test.
-    /// 
-    /// Ceiling Test (SEC Requirement):
-    ///   IF Net Book Value > Fair Value THEN record impairment
-    ///   Net Book Value = Capitalized Costs - Accumulated Depletion
-    ///   Fair Value = PV of proved reserves + other assets
+    /// Full Cost Service — capitalizes exploration/development costs in cost-center pools (ASC 932).
+    /// Uses <see cref="AccountingMethods.FullCost"/> policy with <see cref="AmortizationMethods.UnitOfProduction"/> depletion when reserves exist;
+    /// <see cref="ImpairmentRecordTypeCodes.CeilingTest"/> and <see cref="ImpairmentRecordReasonPhrases"/> for ceiling-driven impairments;
+    /// <see cref="FullCostCalculationFallbacks"/> / <see cref="FullCostRecordedCostDefaults"/> instead of magic numbers or ad hoc type strings.
     /// </summary>
     public class FullCostService : IFullCostService
     {
@@ -129,7 +126,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 if (fairValueEstimate <= 0)
                 {
                     // Fallback: Use simplified approach if reserves valuation not available
-                    fairValueEstimate = capitalizedCosts * 1.2m;  // Allow 20% appreciation
+                    fairValueEstimate = capitalizedCosts * FullCostCalculationFallbacks.FairValueMultipleOfCapitalizedCostsWhenPvUnavailable;
                     _logger?.LogWarning(
                         "Could not calculate fair value from proved reserves, using fallback 1.2x capitalized costs");
                 }
@@ -143,7 +140,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     await RecordImpairmentAsync(
                         costCenterId,
                         impairmentAmount,
-                        "SEC ceiling test impairment",
+                        ImpairmentRecordReasonPhrases.SecCeilingTestImpairment,
                         userId,
                         cn);
                     return false;
@@ -202,7 +199,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 else
                 {
                     // Fallback: Use simple percentage if reserves not available
-                    depletionAmount = capitalizedCosts * 0.08m;
+                    depletionAmount = capitalizedCosts * FullCostCalculationFallbacks.DepletionFractionOfCapitalizedCostsWhenReservesMissing;
                     _logger?.LogWarning(
                         "Total proved reserves for cost center {CostCenterId} is zero or not found, using fallback 8% depletion: ${Amount}",
                         costCenterId, depletionAmount);
@@ -487,7 +484,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                                (reserves.PROVED_UNDEVELOPED_GAS_RESERVES ?? 0);
             decimal gasPrice = reserves.GAS_PRICE ?? 0;
 
-            decimal discountFactor = 0.9091m;
+            decimal discountFactor = FullCostCalculationFallbacks.SimpleReservePvDiscountFactor;
 
             decimal oilValue = (oilVolume * oilPrice) * discountFactor;
             decimal gasValue = (gasVolume * gasPrice) * discountFactor;

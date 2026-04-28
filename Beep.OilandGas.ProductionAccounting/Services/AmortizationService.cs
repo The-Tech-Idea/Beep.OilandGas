@@ -96,20 +96,20 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     }
                 }
 
-                if (periodDepletion <= 0m && totalReserves > 0)
+                if (periodDepletion <= 0m && totalReserves > 0m)
                 {
                     periodDepletion = (periodProduction * capitalizedCosts) / totalReserves;
                     _logger?.LogDebug(
                         "Depletion (UOP) for asset {AssetId}: ({Production} x ${Cost}) / {Reserves} = ${Amount}",
                         assetId, periodProduction, capitalizedCosts, totalReserves, periodDepletion);
                 }
-                else
+
+                if (periodDepletion <= 0m)
                 {
-                    // Fallback: Use simple percentage if reserves not available
-                    periodDepletion = capitalizedCosts * 0.06m;
+                    periodDepletion = capitalizedCosts * AmortizationCalculationFallbacks.DepletionFactorOfCapitalizedCost;
                     _logger?.LogWarning(
-                        "Total proved reserves for asset {AssetId} is zero or not found, using fallback 6% depletion: ${Amount}",
-                        assetId, periodDepletion);
+                        "Depletion for asset {AssetId} used fallback factor {FallbackFactor} of capitalized cost (${Amount})",
+                        assetId, AmortizationCalculationFallbacks.DepletionFactorOfCapitalizedCost, periodDepletion);
                 }
 
                 // Create amortization record
@@ -180,7 +180,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 NET_CAPITALIZED_COSTS = capitalizedCosts,
                 AMORTIZATION_AMOUNT = depletion,
                 ACCOUNTING_METHOD = AmortizationMethods.UnitOfProduction,
-                REMARK = $"FIELD_ID={fieldId}",
+                REMARK = $"{AmortizationRecordRemarkKeys.FieldId}={fieldId}",
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_DATE = DateTime.UtcNow,
@@ -340,6 +340,16 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     _logger?.LogWarning("Amortization record {RecordId}: Depletion exceeds capitalized costs",
                         record.AMORTIZATION_RECORD_ID);
                     throw new AccountingException("Depletion amount cannot exceed capitalized costs");
+                }
+
+                // Validation 5: Accounting method must match seeded <c>AMORTIZATION_METHOD</c> when present
+                if (!string.IsNullOrWhiteSpace(record.ACCOUNTING_METHOD) &&
+                    !AmortizationMethods.AllSeeded.Any(m =>
+                        string.Equals(m, record.ACCOUNTING_METHOD, StringComparison.OrdinalIgnoreCase)))
+                {
+                    _logger?.LogWarning("Amortization record {RecordId}: Unknown accounting method {Method}",
+                        record.AMORTIZATION_RECORD_ID, record.ACCOUNTING_METHOD);
+                    throw new AccountingException($"Unknown amortization method: {record.ACCOUNTING_METHOD}");
                 }
 
                 _logger?.LogInformation("Amortization record {RecordId} validation passed", record.AMORTIZATION_RECORD_ID);

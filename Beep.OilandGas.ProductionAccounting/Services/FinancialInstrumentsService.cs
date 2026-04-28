@@ -7,11 +7,15 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.ProductionAccounting.Constants;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
     /// <summary>
     /// IFRS 9 financial instruments and hedge accounting service.
+    /// <c>FINANCIAL_INSTRUMENT</c> uses <see cref="FinancialInstrumentTypeCodes"/>, <see cref="FinancialInstrumentStatusCodes"/>,
+    /// and <see cref="AccountingCurrencyCodes"/> (seed <c>FINANCIAL_INSTRUMENT_TYPE</c>, <c>FINANCIAL_INSTRUMENT_STATUS</c>, <c>FUNCTIONAL_CURRENCY_CODE</c>).
+    /// Disclosure / extension tokens: <see cref="FinancialInstrumentMeasurementCodes"/> (<c>IFRS9_MEASUREMENT_CATEGORY</c> seed).
     /// </summary>
     public class FinancialInstrumentsService : IFinancialInstrumentsService
     {
@@ -52,8 +56,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             instrument.VALUATION_DATE = valuationDate;
             instrument.ACTIVE_IND = _defaults.GetActiveIndicatorYes();
             instrument.PPDM_GUID ??= Guid.NewGuid().ToString();
-            instrument.ROW_CHANGED_BY = userId;
-            instrument.ROW_CHANGED_DATE = DateTime.UtcNow;
 
             var metadata = await _metadata.GetTableMetadataAsync("FINANCIAL_INSTRUMENT");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -65,9 +67,35 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var existing = await repo.GetByIdAsync(instrument.INSTRUMENT_ID) as FINANCIAL_INSTRUMENT;
             if (existing == null)
+            {
+                if (string.IsNullOrWhiteSpace(instrument.STATUS))
+                    instrument.STATUS = FinancialInstrumentStatusCodes.Active;
+                if (string.IsNullOrWhiteSpace(instrument.INSTRUMENT_TYPE))
+                    instrument.INSTRUMENT_TYPE = FinancialInstrumentTypeCodes.Derivative;
+                if (string.IsNullOrWhiteSpace(instrument.CURRENCY_CODE))
+                    instrument.CURRENCY_CODE = AccountingCurrencyCodes.Usd;
+                instrument.ROW_CREATED_BY = userId;
+                instrument.ROW_CREATED_DATE = DateTime.UtcNow;
                 await repo.InsertAsync(instrument, userId);
+            }
             else
+            {
+                if (string.IsNullOrWhiteSpace(instrument.STATUS))
+                    instrument.STATUS = string.IsNullOrWhiteSpace(existing.STATUS)
+                        ? FinancialInstrumentStatusCodes.Active
+                        : existing.STATUS;
+                if (string.IsNullOrWhiteSpace(instrument.INSTRUMENT_TYPE))
+                    instrument.INSTRUMENT_TYPE = string.IsNullOrWhiteSpace(existing.INSTRUMENT_TYPE)
+                        ? FinancialInstrumentTypeCodes.Derivative
+                        : existing.INSTRUMENT_TYPE;
+                if (string.IsNullOrWhiteSpace(instrument.CURRENCY_CODE))
+                    instrument.CURRENCY_CODE = string.IsNullOrWhiteSpace(existing.CURRENCY_CODE)
+                        ? AccountingCurrencyCodes.Usd
+                        : existing.CURRENCY_CODE;
+                instrument.ROW_CHANGED_BY = userId;
+                instrument.ROW_CHANGED_DATE = DateTime.UtcNow;
                 await repo.UpdateAsync(instrument, userId);
+            }
 
             _logger?.LogInformation(
                 "Updated fair value for instrument {InstrumentId} to {FairValue}",

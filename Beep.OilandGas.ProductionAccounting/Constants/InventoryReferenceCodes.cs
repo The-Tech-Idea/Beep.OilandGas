@@ -1,3 +1,5 @@
+using System;
+
 namespace Beep.OilandGas.ProductionAccounting.Constants
 {
     /// <summary>
@@ -32,6 +34,14 @@ namespace Beep.OilandGas.ProductionAccounting.Constants
         public const string Oil = "OIL";
         public const string Gas = "GAS";
         public const string Ngl = "NGL";
+
+        /// <summary>Values seeded under <c>PRICE_INDEX_COMMODITY_TYPE</c>.</summary>
+        public static readonly string[] AllSeeded = { Oil, Gas, Ngl };
+
+        /// <summary>True if <paramref name="commodityType"/> matches a seeded code (case-insensitive).</summary>
+        public static bool IsSeededCommodityType(string? commodityType) =>
+            !string.IsNullOrWhiteSpace(commodityType) &&
+            Array.Exists(AllSeeded, c => string.Equals(c, commodityType, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>Keys in <c>INVENTORY_ITEM.REMARK</c> for NRV-style adjustments.</summary>

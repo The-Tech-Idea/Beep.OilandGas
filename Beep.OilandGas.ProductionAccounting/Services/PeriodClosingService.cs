@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -915,7 +915,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         LINE_NUMBER = lineNumber++,
                         DEBIT_AMOUNT = grossRevenue,
                         CREDIT_AMOUNT = 0m,
-                        DESCRIPTION = "Close revenue",
+                        DESCRIPTION = PeriodCloseJournalLineDescriptionPhrases.CloseRevenue,
                         ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                         PPDM_GUID = Guid.NewGuid().ToString(),
                         ROW_CREATED_BY = userId,
@@ -933,7 +933,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         LINE_NUMBER = lineNumber++,
                         DEBIT_AMOUNT = 0m,
                         CREDIT_AMOUNT = totalRoyalty,
-                        DESCRIPTION = "Close royalty expense",
+                        DESCRIPTION = PeriodCloseJournalLineDescriptionPhrases.CloseRoyaltyExpense,
                         ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                         PPDM_GUID = Guid.NewGuid().ToString(),
                         ROW_CREATED_BY = userId,
@@ -953,7 +953,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         LINE_NUMBER = lineNumber++,
                         DEBIT_AMOUNT = retainedDebit,
                         CREDIT_AMOUNT = retainedCredit,
-                        DESCRIPTION = "Close net income to retained earnings",
+                        DESCRIPTION = PeriodCloseJournalLineDescriptionPhrases.CloseNetIncomeToRetainedEarnings,
                         ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                         PPDM_GUID = Guid.NewGuid().ToString(),
                         ROW_CREATED_BY = userId,

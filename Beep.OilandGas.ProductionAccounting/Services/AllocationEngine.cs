@@ -107,7 +107,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var allocatedTotal = details.Sum(d => d.ALLOCATED_VOLUME ?? 0m);
                 ALLOCATION_RESULT.ALLOCATED_VOLUME = allocatedTotal;
                 ALLOCATION_RESULT.ALLOCATION_VARIANCE = (ALLOCATION_RESULT.TOTAL_VOLUME ?? 0m) - allocatedTotal;
-                ALLOCATION_RESULT.DESCRIPTION = $"Pro-rata allocation for run ticket {RUN_TICKET.RUN_TICKET_ID}";
+                ALLOCATION_RESULT.DESCRIPTION =
+                    AllocationDescriptionPhrases.ProRataRunTicketPrefix + RUN_TICKET.RUN_TICKET_ID;
                 ALLOCATION_RESULT.ROW_CHANGED_BY = userId;
                 ALLOCATION_RESULT.ROW_CHANGED_DATE = DateTime.UtcNow;
 

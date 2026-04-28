@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -133,7 +134,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     INTEREST_PERCENTAGE = allocationPercentage,
                     ALLOCATED_AMOUNT = allocatedAmount,
                     ALLOCATION_METHOD = RevenueAllocationMethod.ProRata,
-                    DESCRIPTION = $"Revenue allocation for {allocation.ENTITY_NAME}",
+                    DESCRIPTION = string.Format(
+                        CultureInfo.InvariantCulture,
+                        RevenueDescriptionPhrases.AllocationForEntityFormat,
+                        allocation.ENTITY_NAME ?? string.Empty),
                     ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                     PPDM_GUID = Guid.NewGuid().ToString(),
                     ROW_CREATED_DATE = DateTime.UtcNow,
@@ -256,7 +260,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 if (priceList.Any())
                 {
-                    decimal price = priceList.First().PRICE_VALUE ?? 75.00m;
+                    decimal price = priceList.First().PRICE_VALUE ?? CommodityPricingFallbackDefaults.DefaultUnitPriceWhenIndexMissing;
                     _logger?.LogDebug("Retrieved commodity price: ${Price}/BBL", price);
                     return price;
                 }
@@ -338,7 +342,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 OIL_VOLUME = ALLOCATION_RESULT.ALLOCATED_VOLUME ?? ALLOCATION_RESULT.TOTAL_VOLUME ?? 0m,
                 OIL_PRICE = commodityPrice,
                 CURRENCY_CODE = AccountingCurrencyCodes.Usd,
-                DESCRIPTION = $"Revenue from allocation {ALLOCATION_RESULT.ALLOCATION_RESULT_ID}",
+                DESCRIPTION = string.Format(
+                    CultureInfo.InvariantCulture,
+                    RevenueDescriptionPhrases.FromAllocationIdFormat,
+                    ALLOCATION_RESULT.ALLOCATION_RESULT_ID ?? string.Empty),
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_DATE = DateTime.UtcNow,

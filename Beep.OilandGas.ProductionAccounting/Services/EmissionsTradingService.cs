@@ -13,6 +13,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 {
     /// <summary>
     /// Emissions trading and carbon accounting service.
+    /// Obligation <c>STATUS</c> uses <see cref="EmissionsObligationStatusCodes"/> (seed <c>EMISSIONS_OBLIGATION_STATUS</c>);
+    /// settlement <c>STATUS</c> uses <see cref="SettlementOutcomeCodes"/> (seed <c>EMISSIONS_SETTLEMENT_STATUS</c>).
     /// </summary>
     public class EmissionsTradingService : IEmissionsTradingService
     {

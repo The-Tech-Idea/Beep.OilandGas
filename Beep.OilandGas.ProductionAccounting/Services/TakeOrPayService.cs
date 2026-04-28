@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -66,10 +67,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var contractDate = RUN_TICKET.TICKET_DATE_TIME ?? DateTime.UtcNow;
             var schedule = await GetScheduleAsync(contract.SALES_CONTRACT_ID, contractDate, cn);
             var minVolume = schedule?.MIN_VOLUME
-                ?? ParseDecimal(obligation.OBLIGATION_DESCRIPTION, "MIN_VOLUME")
-                ?? ParseDecimal(obligation.REMARK, "MIN_VOLUME")
-                ?? ParseDecimal(obligation.OBLIGATION_DESCRIPTION, "MIN_QTY")
-                ?? ParseDecimal(obligation.REMARK, "MIN_QTY")
+                ?? ParseDecimal(obligation.OBLIGATION_DESCRIPTION, TakeOrPayObligationParseKeys.MinVolume)
+                ?? ParseDecimal(obligation.REMARK, TakeOrPayObligationParseKeys.MinVolume)
+                ?? ParseDecimal(obligation.OBLIGATION_DESCRIPTION, TakeOrPayObligationParseKeys.MinQty)
+                ?? ParseDecimal(obligation.REMARK, TakeOrPayObligationParseKeys.MinQty)
                 ?? 0m;
 
             if (minVolume <= 0m)
@@ -82,8 +83,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 price = sp;
             else if (contract.BASE_PRICE is decimal cbp)
                 price = cbp;
-            var priceOverride = ParseDecimal(obligation.OBLIGATION_DESCRIPTION, "PRICE")
-                ?? ParseDecimal(obligation.REMARK, "PRICE");
+            var priceOverride = ParseDecimal(obligation.OBLIGATION_DESCRIPTION, TakeOrPayObligationParseKeys.Price)
+                ?? ParseDecimal(obligation.REMARK, TakeOrPayObligationParseKeys.Price);
             if (priceOverride.HasValue && priceOverride.Value > 0m)
                 price = priceOverride.Value;
 
@@ -118,7 +119,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 OIL_PRICE = isGas ? null : price,
                 GAS_PRICE = isGas ? price : null,
                 CURRENCY_CODE = contract.CURRENCY_CODE ?? AccountingCurrencyCodes.Usd,
-                DESCRIPTION = $"Take-or-pay deficiency for contract {contract.CONTRACT_NUMBER}",
+                DESCRIPTION = string.Format(
+                    CultureInfo.InvariantCulture,
+                    TakeOrPayDescriptionPhrases.DeficiencyForContractFormat,
+                    contract.CONTRACT_NUMBER ?? string.Empty),
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,
@@ -176,9 +180,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ?? new List<CONTRACT_PERFORMANCE_OBLIGATION>();
 
             return obligations.FirstOrDefault(o =>
-                string.Equals(o.OBLIGATION_TYPE, "TAKE_OR_PAY", StringComparison.OrdinalIgnoreCase) ||
-                (o.OBLIGATION_DESCRIPTION?.IndexOf("TAKE_OR_PAY", StringComparison.OrdinalIgnoreCase) >= 0) ||
-                (o.REMARK?.IndexOf("TAKE_OR_PAY", StringComparison.OrdinalIgnoreCase) >= 0));
+                string.Equals(o.OBLIGATION_TYPE, RevenueTypeCodes.TakeOrPay, StringComparison.OrdinalIgnoreCase) ||
+                (o.OBLIGATION_DESCRIPTION?.IndexOf(RevenueTypeCodes.TakeOrPay, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                (o.REMARK?.IndexOf(RevenueTypeCodes.TakeOrPay, StringComparison.OrdinalIgnoreCase) >= 0));
         }
 
         private async Task<TAKE_OR_PAY_SCHEDULE?> GetScheduleAsync(string salesContractId, DateTime contractDate, string cn)

@@ -7,7 +7,8 @@ namespace Beep.OilandGas.ProductionAccounting.Constants
 {
     /// <summary>
     /// Canonical catalog of <c>R_PRODUCTION_ACCOUNTING_REFERENCE_CODE</c> rows.
-    /// Keep in sync with <see cref="AllocationMethods"/>, <see cref="AllocationStatus"/>, and
+    /// Keep in sync with <see cref="AllocationMethods"/>, <see cref="AllocationStatus"/>, <see cref="AfeStatusCodes"/>,
+    /// <see cref="FinancialInstrumentTypeCodes"/>, <see cref="FinancialInstrumentStatusCodes"/>, <see cref="FinancialInstrumentMeasurementCodes"/>, and
     /// projection enums under <c>Models.Data.ProductionAccounting</c>; module setup seeds these idempotently.
     /// </summary>
     public static class ProductionAccountingReferenceCodeSeed
@@ -80,6 +81,10 @@ namespace Beep.OilandGas.ProductionAccounting.Constants
             yield return ("COST_TYPE", CostTypes.Impairment, "Impairment");
             yield return ("COST_TYPE", CostTypes.ExpiryWriteOff, "Lease expiry write-off");
 
+            yield return ("COST_TYPE", RoyaltyDeductionCostTypeCodes.Transportation, "Transportation (royalty deduction)");
+            yield return ("COST_TYPE", RoyaltyDeductionCostTypeCodes.AdValorem, "Ad valorem tax (royalty deduction)");
+            yield return ("COST_TYPE", RoyaltyDeductionCostTypeCodes.Severance, "Severance tax (royalty deduction)");
+
             yield return ("COST_CATEGORY", CostCategories.Drilling, "Drilling");
             yield return ("COST_CATEGORY", CostCategories.Sidetrack, "Sidetrack");
             yield return ("COST_CATEGORY", CostCategories.PlugBack, "Plug back");
@@ -132,6 +137,17 @@ namespace Beep.OilandGas.ProductionAccounting.Constants
             yield return ("REVENUE_TYPE", RevenueTypeCodes.TakeOrPay, "Take or pay adjustment");
             yield return ("FUNCTIONAL_CURRENCY_CODE", AccountingCurrencyCodes.Usd, "US Dollar");
 
+            yield return ("FINANCIAL_INSTRUMENT_TYPE", FinancialInstrumentTypeCodes.Derivative, "Derivative");
+            yield return ("FINANCIAL_INSTRUMENT_TYPE", FinancialInstrumentTypeCodes.CommodityContract, "Commodity contract");
+            yield return ("FINANCIAL_INSTRUMENT_TYPE", FinancialInstrumentTypeCodes.DebtInstrument, "Debt instrument");
+
+            yield return ("FINANCIAL_INSTRUMENT_STATUS", FinancialInstrumentStatusCodes.Active, "Active");
+            yield return ("FINANCIAL_INSTRUMENT_STATUS", FinancialInstrumentStatusCodes.Inactive, "Inactive");
+
+            yield return ("IFRS9_MEASUREMENT_CATEGORY", FinancialInstrumentMeasurementCodes.FairValueThroughProfitOrLoss, "Fair value through profit or loss");
+            yield return ("IFRS9_MEASUREMENT_CATEGORY", FinancialInstrumentMeasurementCodes.FairValueThroughOtherComprehensiveIncome, "Fair value through OCI");
+            yield return ("IFRS9_MEASUREMENT_CATEGORY", FinancialInstrumentMeasurementCodes.AmortizedCost, "Amortized cost");
+
             yield return ("MEASUREMENT_METHOD", LegacyMeasurementMethodCodes.Automated, "Automated (legacy)");
 
             yield return ("REPORT_SERVICE_TYPE", GeneratedReportTypeCodes.Operational, "Operational report");
@@ -154,8 +170,14 @@ namespace Beep.OilandGas.ProductionAccounting.Constants
             yield return ("ROYALTY_STATEMENT_STATUS", RoyaltyStatementStatusCodes.Generated, "Generated");
 
             yield return ("ACCOUNTING_SOURCE_MODULE", AccountingSourceModuleCodes.PeriodClosing, "Period closing");
+            yield return ("ACCOUNTING_SOURCE_MODULE", AccountingSourceModuleCodes.AssetSwap, "Asset swap / farm-in farm-out");
             yield return ("APPROVAL_WORKFLOW_STATUS", ApprovalWorkflowStatusCodes.Pending, "Pending approval");
             yield return ("APPROVAL_WORKFLOW_STATUS", ApprovalWorkflowStatusCodes.Approved, "Approved");
+
+            yield return ("AFE_STATUS", AfeStatusCodes.Draft, "Draft (AFE)");
+            yield return ("AFE_STATUS", AfeStatusCodes.Approved, "Approved (AFE)");
+
+            yield return ("INTERNAL_CONTROL_RULE_TYPE", InternalControlRuleTypeCodes.SegregationOfDuties, "Segregation of duties");
 
             yield return ("ROYALTY_DISPUTE_STATUS", RoyaltyDisputeStatusCodes.Open, "Open");
             yield return ("ROYALTY_DISPUTE_STATUS", RoyaltyDisputeStatusCodes.Resolved, "Resolved");
@@ -166,6 +188,8 @@ namespace Beep.OilandGas.ProductionAccounting.Constants
             yield return ("CONTRACT_OBLIGATION_STATUS", ContractPerformanceStatusCodes.Open, "Open");
             yield return ("CONTRACT_OBLIGATION_STATUS", ContractPerformanceStatusCodes.Satisfied, "Satisfied");
             yield return ("CONTRACT_OBLIGATION_STATUS", ContractPerformanceStatusCodes.PartiallySatisfied, "Partially satisfied");
+            yield return ("ASSET_RETIREMENT_OBLIGATION_STATUS", AssetRetirementObligationStatusCodes.Active, "ARO active");
+            yield return ("ASSET_RETIREMENT_OBLIGATION_STATUS", AssetRetirementObligationStatusCodes.Closed, "ARO closed");
             yield return ("IMBALANCE_SETTLEMENT_STATUS", SettlementOutcomeCodes.Settled, "Settled");
             yield return ("IMBALANCE_ADJUSTMENT_TYPE", ImbalanceAdjustmentTypeCodes.Overproduced, "Over-produced");
             yield return ("IMBALANCE_ADJUSTMENT_TYPE", ImbalanceAdjustmentTypeCodes.Underproduced, "Under-produced");

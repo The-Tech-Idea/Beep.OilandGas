@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -65,10 +65,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _logger?.LogInformation("Starting allocation for run ticket {RunTicketId} using method {Method}",
                 RUN_TICKET.RUN_TICKET_ID, method);
 
-            // Delegate to allocation engine for core calculation
+            // Canonical method string must match seeded <c>ALLOCATION_METHOD</c> codes (<see cref="AllocationMethods"/>).
             var normalizedMethod = AllocationMethods.AllMethods
-                .FirstOrDefault(m => string.Equals(m, method, StringComparison.OrdinalIgnoreCase))
-                ?? method;
+                .FirstOrDefault(m => string.Equals(m, method, StringComparison.OrdinalIgnoreCase));
+            if (normalizedMethod == null)
+                throw new AllocationException($"Invalid allocation method: {method}");
 
             var ALLOCATION_RESULT = await _allocationEngine.AllocateAsync(RUN_TICKET, normalizedMethod, userId, cn);
 
@@ -208,7 +209,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Validation 6: If allocation method uses percentages, verify they sum to 100%
-                if (allocation.ALLOCATION_METHOD == AllocationMethods.ProRata)
+                if (string.Equals(allocation.ALLOCATION_METHOD, AllocationMethods.ProRata, StringComparison.OrdinalIgnoreCase))
                 {
                     var percentageDetails = details
                         .Where(d => d.ALLOCATION_PERCENTAGE.HasValue && d.ALLOCATION_PERCENTAGE > 0)

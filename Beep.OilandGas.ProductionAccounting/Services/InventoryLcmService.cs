@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -92,7 +93,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 QUANTITY_ADJUSTMENT = 0m,
                 UNIT_COST_ADJUSTMENT = unitCostAdjustment,
                 REASON = InventoryAdjustmentReasonPhrases.LowerOfCostOrMarket,
-                DESCRIPTION = $"LCM write-down from {unitCost:0.####} to {newUnitCost:0.####}",
+                DESCRIPTION = string.Format(
+                    CultureInfo.InvariantCulture,
+                    InventoryDescriptionPhrases.LcmWritedownFormat,
+                    unitCost,
+                    newUnitCost),
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,

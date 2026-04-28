@@ -13,6 +13,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 {
     /// <summary>
     /// IAS 23 borrowing cost capitalization service.
+    /// Sets <see cref="CostCategories.BorrowingCost"/>; default <see cref="CostTypes.Development"/> when <c>COST_TYPE</c> is unset (seeded <c>COST_TYPE</c> / <c>COST_CATEGORY</c>).
     /// </summary>
     public class BorrowingCostCapitalizationService : IBorrowingCostCapitalizationService
     {
@@ -49,6 +50,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new ArgumentNullException(nameof(userId));
 
             cost.ACCOUNTING_COST_ID ??= Guid.NewGuid().ToString();
+            if (string.IsNullOrWhiteSpace(cost.COST_TYPE))
+                cost.COST_TYPE = CostTypes.Development;
             cost.COST_CATEGORY = CostCategories.BorrowingCost;
             cost.IS_CAPITALIZED = _defaults.GetActiveIndicatorYes();
             cost.IS_EXPENSED = _defaults.GetActiveIndicatorNo();

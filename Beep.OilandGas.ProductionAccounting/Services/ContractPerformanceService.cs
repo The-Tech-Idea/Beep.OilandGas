@@ -18,6 +18,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 {
     /// <summary>
     /// Tracks ASC 606 performance obligations for sales contracts.
+    /// <c>STATUS</c> uses <see cref="ContractPerformanceStatusCodes"/> (seeded <c>CONTRACT_OBLIGATION_STATUS</c> in <c>R_PRODUCTION_ACCOUNTING_REFERENCE_CODE</c>).
     /// </summary>
     public class ContractPerformanceService : IContractPerformanceService
     {

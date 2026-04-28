@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -17,13 +18,9 @@ using Beep.OilandGas.PPDM39.Models;
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
     /// <summary>
-    /// Imbalance Service - Manages over/under-production situations and inventory reconciliation.
-    /// Tracks cumulative imbalance, calculates monetary settlement value, handles imbalance reserves.
-    /// 
-    /// Formula:
-    ///   Imbalance = |Produced Volume - Sold Volume|
-    ///   Imbalance Liability = Imbalance Volume × Settlement Price
-    ///   Settlement = Imbalance Volume × Settlement Price
+    /// Lease imbalance — over/under production and reconciliation.
+    /// <c>ADJUSTMENT_TYPE</c> uses <see cref="ImbalanceAdjustmentTypeCodes"/> (seed <c>IMBALANCE_ADJUSTMENT_TYPE</c>);
+    /// settlement outcomes align with <see cref="SettlementOutcomeCodes"/> (seed <c>IMBALANCE_SETTLEMENT_STATUS</c>) when downstream posts cash/volume settlements.
     /// </summary>
     public class ImbalanceService : IImbalanceService
     {
@@ -75,7 +72,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     ? ImbalanceAdjustmentTypeCodes.Overproduced
                     : ImbalanceAdjustmentTypeCodes.Underproduced,
                 PROPERTY_OR_LEASE_ID = leaseId,
-                REASON = $"Imbalance for lease {leaseId}",
+                REASON = string.Format(CultureInfo.InvariantCulture, ImbalanceDescriptionPhrases.ImbalanceForLeaseFormat, leaseId),
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_DATE = DateTime.UtcNow,
@@ -174,11 +171,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 // Calculate net outstanding imbalance
                 decimal overproduced = adjustments
-                    .Where(a => a.ADJUSTMENT_TYPE == ImbalanceAdjustmentTypeCodes.Overproduced)
+                    .Where(a => string.Equals(a.ADJUSTMENT_TYPE, ImbalanceAdjustmentTypeCodes.Overproduced, StringComparison.OrdinalIgnoreCase))
                     .Sum(a => ((decimal?)a.ADJUSTMENT_AMOUNT) ?? 0m);
 
                 decimal underproduced = adjustments
-                    .Where(a => a.ADJUSTMENT_TYPE == ImbalanceAdjustmentTypeCodes.Underproduced)
+                    .Where(a => string.Equals(a.ADJUSTMENT_TYPE, ImbalanceAdjustmentTypeCodes.Underproduced, StringComparison.OrdinalIgnoreCase))
                     .Sum(a => ((decimal?)a.ADJUSTMENT_AMOUNT) ?? 0m);
 
                 decimal netImbalance = overproduced - underproduced;
@@ -214,13 +211,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     throw new AllocationException($"Imbalance amount must be positive: {imbalance.ADJUSTMENT_AMOUNT}");
                 }
 
-                // Validation 2: Type must be valid
+                // Validation 2: Type must be valid (case-insensitive vs seeded codes)
                 if (string.IsNullOrWhiteSpace(imbalance.ADJUSTMENT_TYPE) ||
-                    !new[]
-                    {
-                        ImbalanceAdjustmentTypeCodes.Overproduced,
-                        ImbalanceAdjustmentTypeCodes.Underproduced
-                    }.Contains(imbalance.ADJUSTMENT_TYPE))
+                    !ImbalanceAdjustmentTypeCodes.AllSeeded.Contains(imbalance.ADJUSTMENT_TYPE, StringComparer.OrdinalIgnoreCase))
                 {
                     _logger?.LogWarning("Imbalance {AdjustmentId}: Invalid adjustment type {Type}",
                         imbalance.IMBALANCE_ADJUSTMENT_ID, imbalance.ADJUSTMENT_TYPE);

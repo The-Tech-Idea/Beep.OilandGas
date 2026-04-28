@@ -15,6 +15,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 {
     /// <summary>
     /// IAS 21 functional currency and FX translation service.
+    /// Base/reporting currency tokens use <see cref="AccountingCurrencyCodes"/> (seed <c>FUNCTIONAL_CURRENCY_CODE</c>).
+    /// Automated rows use <see cref="ProductionAccountingAuditActors.System"/> for <c>ROW_CREATED_BY</c> when no caller user id exists.
     /// </summary>
     public class FunctionalCurrencyService : IFunctionalCurrencyService
     {
@@ -89,7 +91,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 RATE_USED = rate,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
-                ROW_CREATED_BY = "system",
+                ROW_CREATED_BY = ProductionAccountingAuditActors.System,
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 

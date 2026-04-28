@@ -48,10 +48,53 @@ namespace Beep.OilandGas.ProductionAccounting.Constants
         public const string TakeOrPay = "TAKE_OR_PAY";
     }
 
+    /// <summary>Key in <c>AMORTIZATION_RECORD.REMARK</c> for field-scoped rollforward tagging.</summary>
+    public static class AmortizationRecordRemarkKeys
+    {
+        public const string FieldId = "FIELD_ID";
+    }
+
+    /// <summary>Keys in <c>OBLIGATION_DESCRIPTION</c> / <c>REMARK</c> for take-or-pay schedule fallback parsing.</summary>
+    public static class TakeOrPayObligationParseKeys
+    {
+        public const string MinVolume = "MIN_VOLUME";
+        public const string MinQty = "MIN_QTY";
+        public const string Price = "PRICE";
+    }
+
+    /// <summary>Fallback <c>PRICE_INDEX.PRICE_VALUE</c> when null or when royalty flows lack an index row.</summary>
+    public static class CommodityPricingFallbackDefaults
+    {
+        public const decimal DefaultUnitPriceWhenIndexMissing = 75.00m;
+    }
+
     /// <summary>ISO 4217 functional / reporting currency defaults.</summary>
     public static class AccountingCurrencyCodes
     {
         public const string Usd = "USD";
+    }
+
+    /// <summary>IFRS 9 <c>FINANCIAL_INSTRUMENT.INSTRUMENT_TYPE</c>; seeded as <c>FINANCIAL_INSTRUMENT_TYPE</c>.</summary>
+    public static class FinancialInstrumentTypeCodes
+    {
+        public const string Derivative = "DERIVATIVE";
+        public const string CommodityContract = "COMMODITY_CONTRACT";
+        public const string DebtInstrument = "DEBT_INSTRUMENT";
+    }
+
+    /// <summary>IFRS 9 <c>FINANCIAL_INSTRUMENT.STATUS</c>; seeded as <c>FINANCIAL_INSTRUMENT_STATUS</c>.</summary>
+    public static class FinancialInstrumentStatusCodes
+    {
+        public const string Active = "ACTIVE";
+        public const string Inactive = "INACTIVE";
+    }
+
+    /// <summary>IFRS 9 measurement categories (FVPL, FVOCI, amortized cost) for disclosure and future persisted classification fields.</summary>
+    public static class FinancialInstrumentMeasurementCodes
+    {
+        public const string FairValueThroughProfitOrLoss = "FVPL";
+        public const string FairValueThroughOtherComprehensiveIncome = "FVOCI";
+        public const string AmortizedCost = "AMORTIZED_COST";
     }
 
     /// <summary><c>ROYALTY_DISPUTE.STATUS</c> and related dispute lifecycle.</summary>
@@ -78,6 +121,9 @@ namespace Beep.OilandGas.ProductionAccounting.Constants
     {
         public const string Overproduced = "OVER-PRODUCED";
         public const string Underproduced = "UNDER-PRODUCED";
+
+        /// <summary>All values emitted to <c>R_PRODUCTION_ACCOUNTING_REFERENCE_CODE</c> for <c>IMBALANCE_ADJUSTMENT_TYPE</c>.</summary>
+        public static readonly string[] AllSeeded = { Overproduced, Underproduced };
     }
 
     /// <summary><c>EMISSIONS_OBLIGATION.STATUS</c> while liability is open.</summary>
@@ -86,7 +132,16 @@ namespace Beep.OilandGas.ProductionAccounting.Constants
         public const string Open = "OPEN";
     }
 
-    /// <summary>ASC 606 contract performance obligation lifecycle (take-or-pay, etc.).</summary>
+    /// <summary>IAS 37 <c>ASSET_RETIREMENT_OBLIGATION.STATUS</c>; seeded as <c>ASSET_RETIREMENT_OBLIGATION_STATUS</c>.</summary>
+    public static class AssetRetirementObligationStatusCodes
+    {
+        public const string Active = "ACTIVE";
+        public const string Closed = "CLOSED";
+    }
+
+    /// <summary>
+    /// ASC 606 contract performance obligation lifecycle (take-or-pay, etc.); seeded as <c>CONTRACT_OBLIGATION_STATUS</c>.
+    /// </summary>
     public static class ContractPerformanceStatusCodes
     {
         public const string Open = "OPEN";
@@ -98,6 +153,9 @@ namespace Beep.OilandGas.ProductionAccounting.Constants
     public static class LegacyMeasurementMethodCodes
     {
         public const string Automated = "AUTOMATED";
+
+        /// <summary>Constants-backed codes for <c>MEASUREMENT_METHOD</c> (see also enum-backed rows in <see cref="ProductionAccountingReferenceCodeSeed"/>).</summary>
+        public static readonly string[] AllSeeded = { Automated };
     }
 
     /// <summary>Strings written to <c>OPERATIONAL_REPORT</c> / <c>FINANCIAL_REPORT</c> and reporting service results.</summary>
@@ -124,6 +182,12 @@ namespace Beep.OilandGas.ProductionAccounting.Constants
     public static class CopasOverheadAuditChangeReasons
     {
         public const string AppliedOverheadSchedule = "Applied overhead schedule";
+    }
+
+    /// <summary><c>INTERNAL_CONTROL_RULE.RULE_TYPE</c> for SoD and related checks.</summary>
+    public static class InternalControlRuleTypeCodes
+    {
+        public const string SegregationOfDuties = "SEGREGATION_OF_DUTIES";
     }
 
     public static class ReportScheduleStatusCodes
@@ -183,6 +247,8 @@ namespace Beep.OilandGas.ProductionAccounting.Constants
     {
         public const string TaxDepletionRate = "TAX_DEPLETION_RATE";
         public const string DeferredTaxRate = "DEFERRED_TAX_RATE";
+        public const string PropertyId = "PROPERTY_ID";
+        public const string Jurisdiction = "JURISDICTION";
     }
 
     /// <summary><c>IMPAIRMENT_RECORD.IMPAIRMENT_TYPE</c> framework markers.</summary>
@@ -190,12 +256,18 @@ namespace Beep.OilandGas.ProductionAccounting.Constants
     {
         public const string Ias36 = "IAS36";
         public const string CeilingTest = "CEILING_TEST";
+
+        /// <summary>All values emitted to <c>R_PRODUCTION_ACCOUNTING_REFERENCE_CODE</c> for <c>IMPAIRMENT_RECORD_TYPE</c>.</summary>
+        public static readonly string[] AllSeeded = { Ias36, CeilingTest };
     }
 
-    /// <summary><c>IMPAIRMENT_RECORD.REASON</c> evaluation outcomes.</summary>
+    /// <summary><c>IMPAIRMENT_RECORD.REASON</c> evaluation outcomes (seed <c>IMPAIRMENT_EVALUATION_REASON</c>).</summary>
     public static class ImpairmentEvaluationReasonCodes
     {
         public const string RecoverableBelowCarrying = "RECOVERABLE_BELOW_CARRYING";
         public const string NoImpairment = "NO_IMPAIRMENT";
+
+        /// <summary>All values emitted for <c>IMPAIRMENT_EVALUATION_REASON</c> in <see cref="ProductionAccountingReferenceCodeSeed"/>.</summary>
+        public static readonly string[] AllSeeded = { RecoverableBelowCarrying, NoImpairment };
     }
 }

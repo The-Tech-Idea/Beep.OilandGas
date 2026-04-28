@@ -17,8 +17,9 @@ using Beep.OilandGas.PPDM39.Models;
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
     /// <summary>
-    /// Measurement Service - Records and validates production measurements.
-    /// Converts run tickets to measurement records for accounting.
+    /// Production measurement — run ticket to <c>MEASUREMENT_RECORD</c>.
+    /// Default / legacy method: <see cref="LegacyMeasurementMethodCodes.Automated"/>; standard default <see cref="MeasurementStandardCodes.Api"/> (enum-backed <c>MEASUREMENT_STANDARD</c> seed).
+    /// BSW math uses <see cref="MeasurementVolumeRules"/>; persisted methods must pass <see cref="MeasurementMethodValidation.IsSeededOrLegacy"/>.
     /// </summary>
     public class MeasurementService : IMeasurementService
     {
@@ -61,8 +62,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var netVolume = ticket.NET_VOLUME;
             if (!netVolume.HasValue && ticket.GROSS_VOLUME.HasValue && ticket.BSW_PERCENTAGE.HasValue)
             {
-                var bswFraction = ticket.BSW_PERCENTAGE.GetValueOrDefault(0m) / 100m;
-                netVolume = ticket.GROSS_VOLUME.GetValueOrDefault(0m) * (1m - bswFraction);
+                var bswFraction = ticket.BSW_PERCENTAGE.GetValueOrDefault(0m) / MeasurementVolumeRules.BswPercentScale;
+                netVolume = ticket.GROSS_VOLUME.GetValueOrDefault(0m) * (MeasurementVolumeRules.NetOilWholeFraction - bswFraction);
             }
 
             var measurement = new MEASUREMENT_RECORD
@@ -78,7 +79,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 MEASUREMENT_METHOD = string.IsNullOrWhiteSpace(ticket.MEASUREMENT_METHOD)
                     ? LegacyMeasurementMethodCodes.Automated
                     : ticket.MEASUREMENT_METHOD,
-                MEASUREMENT_STANDARD = MeasurementStandard.API.ToString(),
+                MEASUREMENT_STANDARD = MeasurementStandardCodes.Api,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_DATE = DateTime.UtcNow,
@@ -204,6 +205,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 if (measurement.GROSS_VOLUME == null || measurement.GROSS_VOLUME <= 0)
                     throw new AllocationException($"Gross volume must be positive: {measurement.GROSS_VOLUME}");
 
+                if (!string.IsNullOrWhiteSpace(measurement.MEASUREMENT_METHOD) &&
+                    !MeasurementMethodValidation.IsSeededOrLegacy(measurement.MEASUREMENT_METHOD))
+                    throw new AllocationException($"Unknown measurement method: {measurement.MEASUREMENT_METHOD}");
+
                 if (measurement.NET_VOLUME.HasValue && measurement.NET_VOLUME < 0)
                     throw new AllocationException($"Net volume cannot be negative: {measurement.NET_VOLUME}");
 
@@ -211,7 +216,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     throw new AllocationException("Net volume cannot exceed gross volume");
 
                 if (measurement.BSW_PERCENTAGE.HasValue &&
-                    (measurement.BSW_PERCENTAGE < 0m || measurement.BSW_PERCENTAGE > 100m))
+                    (measurement.BSW_PERCENTAGE < 0m || measurement.BSW_PERCENTAGE > MeasurementVolumeRules.BswPercentScale))
                     throw new AllocationException($"BSW percentage must be between 0 and 100: {measurement.BSW_PERCENTAGE}");
 
                 _logger?.LogInformation("Measurement {MeasurementId} validation passed", measurement.MEASUREMENT_ID);

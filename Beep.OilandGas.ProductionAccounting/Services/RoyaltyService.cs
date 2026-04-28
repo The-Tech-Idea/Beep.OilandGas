@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -459,7 +459,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
         /// <summary>
         /// Gets commodity price from PRICE_INDEX table.
-        /// Falls back to $75/BBL if not found.
+        /// Falls back to <see cref="CommodityPricingFallbackDefaults.DefaultUnitPriceWhenIndexMissing"/> if not found.
         /// </summary>
         private async Task<decimal> GetCommodityPriceAsync(string commodity, DateTime asOfDate, string cn)
         {
@@ -487,7 +487,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 if (priceList.Any())
                 {
                     var latestPrice = priceList.First();
-                    decimal price = latestPrice.PRICE_VALUE ?? 75.00m;
+                    decimal price = latestPrice.PRICE_VALUE ?? CommodityPricingFallbackDefaults.DefaultUnitPriceWhenIndexMissing;
                     _logger?.LogDebug(
                         "Retrieved commodity price for {Commodity}: ${Price}/unit as of {Date}",
                         commodity, price, latestPrice.PRICE_DATE);
@@ -496,14 +496,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 // No price found - log warning and use fallback
                 _logger?.LogWarning(
-                    "No price index found for commodity {Commodity} as of {Date}, using fallback $75.00/unit",
-                    commodity, asOfDate.ToShortDateString());
-                return 75.00m;  // Fallback directly instead of returning 0
+                    "No price index found for commodity {Commodity} as of {Date}, using fallback unit price {FallbackPrice}",
+                    commodity, asOfDate.ToShortDateString(), CommodityPricingFallbackDefaults.DefaultUnitPriceWhenIndexMissing);
+                return CommodityPricingFallbackDefaults.DefaultUnitPriceWhenIndexMissing;
             }
             catch (Exception ex)
             {
-                _logger?.LogWarning(ex, "Error retrieving commodity price for {Commodity}, using fallback $75.00/unit", commodity);
-                return 75.00m;  // Fallback directly instead of returning 0
+                _logger?.LogWarning(ex, "Error retrieving commodity price for {Commodity}, using fallback unit price {FallbackPrice}", commodity, CommodityPricingFallbackDefaults.DefaultUnitPriceWhenIndexMissing);
+                return CommodityPricingFallbackDefaults.DefaultUnitPriceWhenIndexMissing;
             }
         }
 
@@ -703,6 +703,15 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             await repo.UpdateAsync(royalty, userId);
         }
 
+        private static bool MatchesCostType(string? costType, string canonical, string containsToken)
+        {
+            if (string.IsNullOrEmpty(costType))
+                return false;
+            if (string.Equals(costType, canonical, StringComparison.OrdinalIgnoreCase))
+                return true;
+            return costType.Contains(containsToken, StringComparison.OrdinalIgnoreCase);
+        }
+
         private static decimal NormalizeRate(decimal rawRate)
         {
             if (rawRate <= 0)
@@ -742,15 +751,15 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 // Sum costs by type
                 decimal transportation = costList
-                    .Where(c => c.COST_TYPE == "TRANSPORTATION" || c.COST_TYPE?.Contains("TRANSPORT") == true)
+                    .Where(c => MatchesCostType(c.COST_TYPE, RoyaltyDeductionCostTypeCodes.Transportation, RoyaltyDeductionCostTypeCodes.TransportContainsToken))
                     .Sum(c => c.AMOUNT);
 
                 decimal adValorem = costList
-                    .Where(c => c.COST_TYPE == "AD_VALOREM" || c.COST_TYPE?.Contains("VALOREM") == true)
+                    .Where(c => MatchesCostType(c.COST_TYPE, RoyaltyDeductionCostTypeCodes.AdValorem, RoyaltyDeductionCostTypeCodes.AdValoremContainsToken))
                     .Sum(c => c.AMOUNT);
 
                 decimal severance = costList
-                    .Where(c => c.COST_TYPE == "SEVERANCE" || c.COST_TYPE?.Contains("SEVERANCE") == true)
+                    .Where(c => MatchesCostType(c.COST_TYPE, RoyaltyDeductionCostTypeCodes.Severance, RoyaltyDeductionCostTypeCodes.SeveranceContainsToken))
                     .Sum(c => c.AMOUNT);
 
                 _logger?.LogDebug(

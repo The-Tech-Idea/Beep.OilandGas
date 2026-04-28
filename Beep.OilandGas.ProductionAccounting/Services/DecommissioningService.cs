@@ -7,11 +7,13 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.ProductionAccounting.Constants;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
     /// <summary>
     /// IAS 37 decommissioning and ARO service.
+    /// <c>ASSET_RETIREMENT_OBLIGATION.STATUS</c> uses <see cref="AssetRetirementObligationStatusCodes"/> (seed <c>ASSET_RETIREMENT_OBLIGATION_STATUS</c>).
     /// </summary>
     public class DecommissioningService : IDecommissioningService
     {
@@ -74,12 +76,18 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var existing = await repo.GetByIdAsync(obligation.ARO_ID) as ASSET_RETIREMENT_OBLIGATION;
             if (existing == null)
             {
+                if (string.IsNullOrWhiteSpace(obligation.STATUS))
+                    obligation.STATUS = AssetRetirementObligationStatusCodes.Active;
                 obligation.ROW_CREATED_BY = userId;
                 obligation.ROW_CREATED_DATE = DateTime.UtcNow;
                 await repo.InsertAsync(obligation, userId);
             }
             else
             {
+                if (string.IsNullOrWhiteSpace(obligation.STATUS))
+                    obligation.STATUS = string.IsNullOrWhiteSpace(existing.STATUS)
+                        ? AssetRetirementObligationStatusCodes.Active
+                        : existing.STATUS;
                 obligation.ROW_CHANGED_BY = userId;
                 obligation.ROW_CHANGED_DATE = DateTime.UtcNow;
                 await repo.UpdateAsync(obligation, userId);

@@ -12,7 +12,10 @@ using Beep.OilandGas.ProductionAccounting.Constants;
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
     /// <summary>
-    /// IAS 36 impairment testing service.
+    /// IAS 36 impairment testing — compares carrying amount to recoverable amount (higher of VIU and FVLCTS).
+    /// Persists <c>IMPAIRMENT_RECORD</c> with <c>IMPAIRMENT_TYPE</c> = <see cref="ImpairmentRecordTypeCodes.Ias36"/> and
+    /// <c>REASON</c> from <see cref="ImpairmentEvaluationReasonCodes"/> (seed <c>IMPAIRMENT_RECORD_TYPE</c> / <c>IMPAIRMENT_EVALUATION_REASON</c>).
+    /// CGU id is persisted in <c>COST_CENTER_ID</c>.
     /// </summary>
     public class ImpairmentTestingService : IImpairmentTestingService
     {

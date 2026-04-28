@@ -14,7 +14,9 @@ using Beep.OilandGas.ProductionAccounting.Constants;
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
     /// <summary>
-    /// Lease economic interest service for ownership and royalty validation.
+    /// Lease economic interest — loads <c>OWNERSHIP_INTEREST</c> / <c>ROYALTY_INTEREST</c> / <c>DIVISION_ORDER</c> and validates WI, royalty, and NRI sums.
+    /// Division order approval uses <see cref="ApprovalWorkflowStatusCodes.Approved"/> (seed <c>APPROVAL_WORKFLOW_STATUS</c>).
+    /// Fraction normalization and sum caps use <see cref="LeaseEconomicInterestFractionRules"/> / <see cref="LeaseEconomicInterestValidation"/>.
     /// </summary>
     public class LeaseEconomicInterestService : ILeaseEconomicInterestService
     {
@@ -127,9 +129,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 return false;
             }
 
-            bool workingOk = workingTotal <= 1.0m + 0.0001m;
-            bool royaltyOk = (royaltyTotal + directRoyaltyTotal) <= 1.0m + 0.0001m;
-            bool nriOk = nriTotal <= 1.0m + 0.0001m;
+            var cap = LeaseEconomicInterestValidation.FullInterestFraction + LeaseEconomicInterestValidation.SumToleranceEpsilon;
+            bool workingOk = workingTotal <= cap;
+            bool royaltyOk = (royaltyTotal + directRoyaltyTotal) <= cap;
+            bool nriOk = nriTotal <= cap;
 
             if (!workingOk || !royaltyOk || !nriOk)
             {
@@ -244,7 +247,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 return 0m;
             if (value.Value <= 0m)
                 return 0m;
-            return value.Value > 1m ? value.Value / 100m : value.Value;
+            return value.Value > LeaseEconomicInterestFractionRules.PercentVersusFractionThreshold
+                ? value.Value / LeaseEconomicInterestFractionRules.PercentScaleDivisor
+                : value.Value;
         }
     }
 }

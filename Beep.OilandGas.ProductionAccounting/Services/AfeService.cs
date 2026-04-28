@@ -55,7 +55,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new ProductionAccountingException("AFE_NUMBER is required");
 
             afe.AFE_ID ??= Guid.NewGuid().ToString();
-            afe.STATUS ??= DocumentWorkflowStatusCodes.Draft;
+            afe.STATUS ??= AfeStatusCodes.Draft;
             afe.ACTIVE_IND = _defaults.GetActiveIndicatorYes();
             afe.PPDM_GUID ??= Guid.NewGuid().ToString();
             afe.ROW_CREATED_BY = userId;
@@ -116,7 +116,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (afe == null)
                 throw new ProductionAccountingException($"AFE not found: {afeId}");
 
-            afe.STATUS = ApprovalWorkflowStatusCodes.Approved;
+            afe.STATUS = AfeStatusCodes.Approved;
             afe.APPROVAL_DATE = approvalDate;
             afe.ROW_CHANGED_BY = userId;
             afe.ROW_CHANGED_DATE = DateTime.UtcNow;
@@ -151,7 +151,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var afe = await GetAfeAsync(afeId, cn);
             if (afe == null)
                 throw new ProductionAccountingException($"AFE not found: {afeId}");
-            if (!string.Equals(afe.STATUS, ApprovalWorkflowStatusCodes.Approved, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(afe.STATUS, AfeStatusCodes.Approved, StringComparison.OrdinalIgnoreCase))
                 throw new ProductionAccountingException("AFE must be approved before recording costs");
 
             cost.ACCOUNTING_COST_ID ??= Guid.NewGuid().ToString();

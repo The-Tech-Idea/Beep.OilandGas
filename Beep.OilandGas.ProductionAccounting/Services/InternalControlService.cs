@@ -131,8 +131,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 if (rule.THRESHOLD_AMOUNT.HasValue && amount < rule.THRESHOLD_AMOUNT.Value)
                     continue;
 
-                if (string.Equals(rule.RULE_TYPE, "SEGREGATION_OF_DUTIES", StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(rule.REQUIRE_SECOND_APPROVER, "Y", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(rule.RULE_TYPE, InternalControlRuleTypeCodes.SegregationOfDuties, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(rule.REQUIRE_SECOND_APPROVER, _defaults.GetActiveIndicatorYes(), StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }

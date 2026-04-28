@@ -64,7 +64,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 LEASE_LIABILITY = pv,
                 INTEREST_EXPENSE = 0m,
                 AMORTIZATION_EXPENSE = 0m,
-                CURRENCY_CODE = leaseContract.CURRENCY_CODE ?? "USD",
+                CURRENCY_CODE = leaseContract.CURRENCY_CODE ?? AccountingCurrencyCodes.Usd,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,

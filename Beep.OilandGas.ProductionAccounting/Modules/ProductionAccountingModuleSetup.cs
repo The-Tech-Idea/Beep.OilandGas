@@ -22,10 +22,19 @@ namespace Beep.OilandGas.ProductionAccounting.Modules
     /// - Core: <see cref="ProductionAccountingReferenceCodeSeed"/> drives reference codes aligned with
     ///   <c>Constants/*</c> (including <c>RoyaltyPaymentStatusCodes</c>, <c>RevenueRecognitionStatusCodes</c>,
     ///   <c>JournalEntryStatusCodes</c>, <c>DocumentWorkflowStatusCodes</c>, <c>ApprovalWorkflowStatusCodes</c>,
-    ///   <c>AccountingSourceModuleCodes</c>, <c>TaxAdjustmentTypeCodes</c>, <c>ImpairmentRecordTypeCodes</c>,
+    ///   <c>LeaseEconomicInterestValidation</c>, <c>LeaseEconomicInterestFractionRules</c>,
+    ///   <c>AccountingSourceModuleCodes</c>, <c>AccountingCurrencyCodes</c>, <c>ProductionAccountingAuditActors</c>,
+    ///   <c>CostTypes</c>, <c>CostCategories</c>, <c>TaxAdjustmentTypeCodes</c>, <c>ImpairmentRecordTypeCodes</c>,
     ///   <c>ImpairmentEvaluationReasonCodes</c>, <c>InventoryTransactionTypeCodes</c>,
-    ///   <c>InventoryValuationMethodCodes</c>, <c>PriceIndexCommodityTypeCodes</c>,
-    ///   <c>ImbalanceAdjustmentTypeCodes</c>, <c>JibChargeCategoryCodes</c>, <c>CopasOverheadAuditChangeReasons</c>)
+    ///   <c>InventoryValuationMethodCodes</c>, <c>PriceIndexCommodityTypeCodes</c>, <c>CommodityPricingFallbackDefaults</c>, <c>RoyaltyDeductionCostTypeCodes</c>,
+    ///   <c>SettlementOutcomeCodes</c>, <c>EmissionsObligationStatusCodes</c>,
+    ///   <c>FinancialInstrumentTypeCodes</c>, <c>FinancialInstrumentStatusCodes</c>, <c>FinancialInstrumentMeasurementCodes</c>,
+    ///   <c>ImbalanceAdjustmentTypeCodes</c>, <c>JibChargeCategoryCodes</c>, <c>CopasOverheadAuditChangeReasons</c>,
+    ///   <c>AmortizationMethods</c> / <c>AmortizationCalculationFallbacks</c>, <c>AmortizationRecordRemarkKeys</c>,
+    ///   <c>LegacyMeasurementMethodCodes</c>, <c>MeasurementStandardCodes</c>, <c>MeasurementVolumeRules</c>, <c>MeasurementMethodValidation</c>,
+    ///   <c>AssetRetirementObligationStatusCodes</c>, <c>DrillingScenarioPhraseCodes</c>, <c>InternalControlRuleTypeCodes</c>, <c>AfeStatusCodes</c>,
+    ///   <c>ProductionAccountingDescriptionPhrases</c> / <c>ImbalanceDescriptionPhrases</c> / <c>ImpairmentRecordReasonPhrases</c>,
+    ///   <c>FullCostCalculationFallbacks</c>, <c>FullCostRecordedCostDefaults</c>)
     ///   and projection enums under
     ///   <c>Models.Data.ProductionAccounting</c>
     /// </summary>

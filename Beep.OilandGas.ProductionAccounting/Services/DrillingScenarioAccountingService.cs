@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -21,14 +22,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
     {
         private static readonly string[] KnownScenarios =
         {
-            "SUCCESSFUL",
-            "SUCCESS",
-            "DRY_HOLE",
-            "DRY",
-            "SIDETRACK",
-            "PLUG_BACK",
-            "ABANDONED",
-            "FAILED"
+            DrillingScenarioPhraseCodes.Successful,
+            DrillingScenarioPhraseCodes.Success,
+            DrillingScenarioPhraseCodes.DryHole,
+            DrillingScenarioPhraseCodes.Dry,
+            DrillingScenarioPhraseCodes.Sidetrack,
+            DrillingScenarioPhraseCodes.PlugBack,
+            DrillingScenarioPhraseCodes.Abandoned,
+            DrillingScenarioPhraseCodes.Failed
         };
 
         private readonly IDMEEditor _editor;
@@ -76,8 +77,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (cost <= 0m)
                 throw new AccountingException("Drilling cost must be positive.");
 
-            var normalized = scenario?.Trim().ToUpperInvariant() ?? "UNKNOWN";
-            var isDry = normalized.Contains("DRY") || normalized.Contains("FAILED") || normalized.Contains("ABANDON");
+            var normalized = scenario?.Trim().ToUpperInvariant() ?? DrillingScenarioDescriptionPhrases.UnknownScenarioToken;
+            var isDry = normalized.Contains(DrillingScenarioPhraseCodes.Dry, StringComparison.Ordinal)
+                || normalized.Contains(DrillingScenarioPhraseCodes.Failed, StringComparison.Ordinal)
+                || normalized.Contains(DrillingScenarioPhraseCodes.AbandonStem, StringComparison.Ordinal);
             var category = GetScenarioCategory(normalized);
 
             var record = new ACCOUNTING_COST
@@ -88,9 +91,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 COST_DATE = costDate,
                 COST_TYPE = isDry ? CostTypes.Exploration : CostTypes.Development,
                 COST_CATEGORY = category,
-                IS_CAPITALIZED = isDry ? "N" : "Y",
-                IS_EXPENSED = isDry ? "Y" : "N",
-                DESCRIPTION = $"Drilling scenario: {normalized}",
+                IS_CAPITALIZED = isDry ? _defaults.GetActiveIndicatorNo() : _defaults.GetActiveIndicatorYes(),
+                IS_EXPENSED = isDry ? _defaults.GetActiveIndicatorYes() : _defaults.GetActiveIndicatorNo(),
+                DESCRIPTION = string.Format(
+                    CultureInfo.InvariantCulture,
+                    DrillingScenarioDescriptionPhrases.ScenarioCostLineFormat,
+                    normalized),
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,
@@ -129,9 +135,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 COST_DATE = salvageDate,
                 COST_TYPE = CostTypes.Production,
                 COST_CATEGORY = CostCategories.Salvage,
-                IS_CAPITALIZED = "N",
-                IS_EXPENSED = "Y",
-                DESCRIPTION = "Dry hole salvage recovery",
+                IS_CAPITALIZED = _defaults.GetActiveIndicatorNo(),
+                IS_EXPENSED = _defaults.GetActiveIndicatorYes(),
+                DESCRIPTION = DrillingCostDescriptionPhrases.DryHoleSalvageRecovery,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,
@@ -170,9 +176,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 COST_DATE = costDate,
                 COST_TYPE = CostTypes.Exploration,
                 COST_CATEGORY = CostCategories.TestWell,
-                IS_CAPITALIZED = "N",
-                IS_EXPENSED = "Y",
-                DESCRIPTION = "Test well contribution",
+                IS_CAPITALIZED = _defaults.GetActiveIndicatorNo(),
+                IS_EXPENSED = _defaults.GetActiveIndicatorYes(),
+                DESCRIPTION = DrillingCostDescriptionPhrases.TestWellContribution,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,
@@ -191,9 +197,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
         private static string GetScenarioCategory(string scenario)
         {
-            if (scenario.Contains("SIDETRACK"))
+            if (scenario.Contains(DrillingScenarioPhraseCodes.Sidetrack, StringComparison.Ordinal))
                 return CostCategories.Sidetrack;
-            if (scenario.Contains("PLUG_BACK"))
+            if (scenario.Contains(DrillingScenarioPhraseCodes.PlugBack, StringComparison.Ordinal))
                 return CostCategories.PlugBack;
             return CostCategories.Drilling;
         }

@@ -9,6 +9,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.ProductionAccounting.Constants;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
@@ -66,7 +67,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 TOTAL_PROVED_GAS = totalGas,
                 PV10 = pv10,
                 DISCOUNT_RATE = 0.10m,
-                DISCLOSURE_NOTES = "IFRS-style reserve disclosure package generated from proved reserves and cashflows.",
+                DISCLOSURE_NOTES = ReserveDisclosureNotesPhrases.IfrsStylePackageFromProvedReserves,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = "system",

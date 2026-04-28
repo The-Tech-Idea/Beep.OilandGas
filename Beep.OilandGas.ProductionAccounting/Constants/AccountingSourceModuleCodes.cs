@@ -7,5 +7,8 @@ namespace Beep.OilandGas.ProductionAccounting.Constants
     public static class AccountingSourceModuleCodes
     {
         public const string PeriodClosing = "PERIOD_CLOSING";
+
+        /// <summary>Provenance for farm-in / farm-out and property exchange journal pipelines.</summary>
+        public const string AssetSwap = "ASSET_SWAP";
     }
 }
