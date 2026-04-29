@@ -159,7 +159,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error calculating depletion");
+                _logger?.LogError(
+                    ex,
+                    "Error calculating depletion for well {WellId} from {StartDate} to {EndDate}",
+                    wellId,
+                    startDate,
+                    endDate);
                 throw;
             }
         }
@@ -236,7 +241,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Accounting cost validation failed");
+                _logger?.LogError(
+                    ex,
+                    "Accounting cost validation failed for cost record {AccountingCostId}",
+                    cost.ACCOUNTING_COST_ID);
                 throw;
             }
         }

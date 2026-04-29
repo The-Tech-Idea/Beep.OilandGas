@@ -146,7 +146,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error calculating amortization");
+                _logger?.LogError(
+                    ex,
+                    "Error calculating amortization for asset {AssetId}, period {Period}",
+                    assetId,
+                    period);
                 throw;
             }
         }
@@ -289,7 +293,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error getting accumulated depletion");
+                _logger?.LogError(
+                    ex,
+                    "Error getting accumulated depletion for asset {AssetId}",
+                    assetId);
                 throw;
             }
         }
@@ -357,7 +364,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Amortization validation failed");
+                _logger?.LogError(
+                    ex,
+                    "Amortization validation failed for record {AmortizationRecordId}",
+                    record.AMORTIZATION_RECORD_ID);
                 throw;
             }
         }

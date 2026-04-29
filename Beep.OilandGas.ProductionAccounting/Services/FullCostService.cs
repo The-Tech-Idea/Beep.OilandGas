@@ -151,7 +151,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error performing ceiling test");
+                _logger?.LogError(
+                    ex,
+                    "Error performing ceiling test for cost center {CostCenterId}",
+                    costCenterId);
                 throw;
             }
         }
@@ -209,7 +212,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error calculating depletion");
+                _logger?.LogError(
+                    ex,
+                    "Error calculating depletion for cost center {CostCenterId}",
+                    costCenterId);
                 throw;
             }
         }
@@ -237,7 +243,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Full Cost validation failed");
+                _logger?.LogError(
+                    ex,
+                    "Full Cost validation failed for cost record {AccountingCostId}",
+                    cost?.ACCOUNTING_COST_ID);
                 throw;
             }
         }

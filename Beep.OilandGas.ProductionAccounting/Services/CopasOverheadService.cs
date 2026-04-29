@@ -148,8 +148,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     rate /= 100m;
                 return rate;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogWarning(
+                    ex,
+                    "Failed to resolve COPAS overhead rate for lease {LeaseId} as of {AsOfDate}",
+                    leaseId,
+                    asOfDate);
                 return 0m;
             }
         }
@@ -191,9 +196,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var auditRepo = await CreateRepoAsync<COPAS_OVERHEAD_AUDIT>("COPAS_OVERHEAD_AUDIT", cn);
                 await auditRepo.InsertAsync(audit, userId);
             }
-            catch
+            catch (Exception ex)
             {
-                // Optional audit table not available; skip
+                _logger?.LogWarning(
+                    ex,
+                    "Skipping COPAS overhead audit write for lease {LeaseId}; optional audit table or metadata unavailable",
+                    leaseId);
             }
         }
 

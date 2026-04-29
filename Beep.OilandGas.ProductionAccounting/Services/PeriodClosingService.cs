@@ -160,6 +160,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return true;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Period close readiness validation cancelled for field {FieldId}",
+                    fieldId);
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogError(
@@ -247,6 +254,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
             catch (InvalidOperationException)
             {
+                throw;
+            }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Period close cancelled for field {FieldId}",
+                    fieldId);
                 throw;
             }
             catch (Exception ex)
@@ -421,6 +435,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return unreconciledItems;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Unreconciled item retrieval cancelled for field {FieldId}",
+                    fieldId);
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogError(
@@ -491,9 +512,21 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return items;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Unreconciled allocation retrieval cancelled for field {FieldId} as of {PeriodEnd}",
+                    fieldId,
+                    periodEnd);
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error retrieving unreconciled allocations for field {FieldId}", fieldId);
+                _logger?.LogError(
+                    ex,
+                    "Error retrieving unreconciled allocations for field {FieldId} as of {PeriodEnd}",
+                    fieldId,
+                    periodEnd);
                 return new List<string>();
             }
         }
@@ -536,9 +569,21 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return items;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Unreconciled royalty retrieval cancelled for field {FieldId} as of {PeriodEnd}",
+                    fieldId,
+                    periodEnd);
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error retrieving unreconciled royalties for field {FieldId}", fieldId);
+                _logger?.LogError(
+                    ex,
+                    "Error retrieving unreconciled royalties for field {FieldId} as of {PeriodEnd}",
+                    fieldId,
+                    periodEnd);
                 return new List<string>();
             }
         }
@@ -605,9 +650,21 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return items;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Unreconciled revenue retrieval cancelled for field {FieldId} as of {PeriodEnd}",
+                    fieldId,
+                    periodEnd);
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error retrieving unreconciled revenue for field {FieldId}", fieldId);
+                _logger?.LogError(
+                    ex,
+                    "Error retrieving unreconciled revenue for field {FieldId} as of {PeriodEnd}",
+                    fieldId,
+                    periodEnd);
                 return new List<string>();
             }
         }
@@ -653,9 +710,21 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return items;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Unbalanced GL retrieval cancelled for field {FieldId} as of {PeriodEnd}",
+                    fieldId,
+                    periodEnd);
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error retrieving unbalanced GL entries for field {FieldId}", fieldId);
+                _logger?.LogError(
+                    ex,
+                    "Error retrieving unbalanced GL entries for field {FieldId} as of {PeriodEnd}",
+                    fieldId,
+                    periodEnd);
                 return new List<string>();
             }
         }
@@ -708,6 +777,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _logger?.LogInformation(
                     "Successfully marked {Count} allocations as closed for field {FieldId}",
                     allocResults.Count, fieldId);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Allocation close marking cancelled for field {FieldId}",
+                    fieldId);
+                throw;
             }
             catch (Exception ex)
             {
@@ -770,6 +846,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     "Successfully marked {Count} royalties as accrued for field {FieldId}",
                     royalties.Count, fieldId);
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Royalty close marking cancelled for field {FieldId}",
+                    fieldId);
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogError(
@@ -825,6 +908,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _logger?.LogInformation(
                     "Successfully marked {Count} revenue items as processed for field {FieldId}",
                     revenues.Count, fieldId);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Revenue close marking cancelled for field {FieldId}",
+                    fieldId);
+                throw;
             }
             catch (Exception ex)
             {
@@ -1003,6 +1093,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _logger?.LogInformation(
                     "Period close GL entry {EntryId} created for field {FieldId} as of {PeriodEnd}",
                     closingEntry.JOURNAL_ENTRY_ID, fieldId, periodEnd.ToShortDateString());
+            }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Period close entry posting cancelled for field {FieldId}",
+                    fieldId);
+                throw;
             }
             catch (Exception ex)
             {
@@ -1186,6 +1283,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     userId,
                     cn);
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Impairment testing cancelled for field {FieldId}",
+                    fieldId);
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogWarning(ex, "Impairment testing failed for field {FieldId}", fieldId);
@@ -1225,6 +1329,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     await _decommissioningService.AccreteAroAsync(aro.ARO_ID, periodEnd, userId, cn);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "ARO accretion cancelled for field {FieldId}",
+                    fieldId);
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogWarning(ex, "ARO accretion failed for field {FieldId}", fieldId);
@@ -1241,6 +1352,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             try
             {
                 await _functionalCurrencyService.TranslateBalancesAsync(fieldId, periodEnd, AccountingCurrencyCodes.Usd, cn);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Functional currency translation cancelled for field {FieldId}",
+                    fieldId);
+                throw;
             }
             catch (Exception ex)
             {
@@ -1280,6 +1398,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 {
                     await _leasingService.RemeasureLeaseAsync(lease.LEASE_ID, periodEnd, userId, cn);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Lease remeasurement cancelled for field {FieldId}",
+                    fieldId);
+                throw;
             }
             catch (Exception ex)
             {
@@ -1323,6 +1448,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         userId,
                         cn);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Hedge measurement cancelled for period {PeriodEnd}",
+                    periodEnd);
+                throw;
             }
             catch (Exception ex)
             {
@@ -1368,6 +1500,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         cn);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Emissions obligation update cancelled for period {PeriodEnd}",
+                    periodEnd);
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogWarning(ex, "Emissions obligation update failed for period {PeriodEnd}", periodEnd);
@@ -1411,6 +1550,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         userId,
                         cn);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Inventory LCM adjustment cancelled for period {PeriodEnd}",
+                    periodEnd);
+                throw;
             }
             catch (Exception ex)
             {
@@ -1462,6 +1608,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         cn);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Unproved property impairment testing cancelled for period {PeriodEnd}",
+                    periodEnd);
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogWarning(ex, "Unproved property impairment tests failed for period {PeriodEnd}", periodEnd);
@@ -1478,6 +1631,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             try
             {
                 await _reserveDisclosureService.BuildDisclosureAsync(fieldId, periodEnd, cn);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Reserve disclosure build cancelled for field {FieldId}",
+                    fieldId);
+                throw;
             }
             catch (Exception ex)
             {

@@ -22,7 +22,8 @@ namespace Beep.OilandGas.ProductionAccounting.Modules
     /// - Core: <see cref="ProductionAccountingReferenceCodeSeed"/> drives reference codes aligned with
     ///   <c>Constants/*</c> (including <c>RoyaltyPaymentStatusCodes</c>, <c>RevenueRecognitionStatusCodes</c>,
     ///   <c>JournalEntryStatusCodes</c>, <c>DocumentWorkflowStatusCodes</c>, <c>ApprovalWorkflowStatusCodes</c>,
-    ///   <c>LeaseEconomicInterestValidation</c>, <c>LeaseEconomicInterestFractionRules</c>,
+    ///   <c>LeaseEconomicInterestValidation</c>, <c>LeaseEconomicInterestFractionRules</c>, <c>PsaEntitlementCalculationDefaults</c>,
+    ///   <c>ReserveAccountingServiceExceptionMessages</c>, <c>ReserveCashflowPresentValueDefaults</c>, <c>BoeConversionFactors</c>,
     ///   <c>AccountingSourceModuleCodes</c>, <c>AccountingCurrencyCodes</c>, <c>ProductionAccountingAuditActors</c>,
     ///   <c>CostTypes</c>, <c>CostCategories</c>, <c>TaxAdjustmentTypeCodes</c>, <c>ImpairmentRecordTypeCodes</c>,
     ///   <c>ImpairmentEvaluationReasonCodes</c>, <c>InventoryTransactionTypeCodes</c>,
@@ -32,6 +33,7 @@ namespace Beep.OilandGas.ProductionAccounting.Modules
     ///   <c>ImbalanceAdjustmentTypeCodes</c>, <c>JibChargeCategoryCodes</c>, <c>CopasOverheadAuditChangeReasons</c>,
     ///   <c>AmortizationMethods</c> / <c>AmortizationCalculationFallbacks</c>, <c>AmortizationRecordRemarkKeys</c>,
     ///   <c>LegacyMeasurementMethodCodes</c>, <c>MeasurementStandardCodes</c>, <c>MeasurementVolumeRules</c>, <c>MeasurementMethodValidation</c>,
+    ///   <c>FinancialReportGlRollupAccountPrefixes</c>, <c>FinancialReportTaxVariantPlaceholders</c>, <c>ReportingRemarkFormats</c>,
     ///   <c>AssetRetirementObligationStatusCodes</c>, <c>DrillingScenarioPhraseCodes</c>, <c>InternalControlRuleTypeCodes</c>, <c>AfeStatusCodes</c>,
     ///   <c>ProductionAccountingDescriptionPhrases</c> / <c>ImbalanceDescriptionPhrases</c> / <c>ImpairmentRecordReasonPhrases</c>,
     ///   <c>FullCostCalculationFallbacks</c>, <c>FullCostRecordedCostDefaults</c>)

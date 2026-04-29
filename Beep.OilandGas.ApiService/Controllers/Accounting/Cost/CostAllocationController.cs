@@ -4,6 +4,7 @@ using Beep.OilandGas.Models.Data.Accounting.Cost;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
@@ -21,15 +22,18 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
     public class CostAllocationController : ControllerBase
     {
         private readonly ProductionAccountingService _service;
+        private readonly IAllocationService _allocationService;
         private readonly IAccountingService _accountingService;
         private readonly ILogger<CostAllocationController> _logger;
 
         public CostAllocationController(
             ProductionAccountingService service,
+            IAllocationService allocationService,
             IAccountingService accountingService,
             ILogger<CostAllocationController> logger)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
+            _allocationService = allocationService ?? throw new ArgumentNullException(nameof(allocationService));
             _accountingService = accountingService ?? throw new ArgumentNullException(nameof(accountingService));
             _logger = logger;
         }
@@ -95,6 +99,113 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
                 _logger.LogError(ex, "Error allocating costs");
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
+        }
+
+        /// <summary>Service-backed production allocation from a run ticket.</summary>
+        [HttpPost("service/allocate")]
+        public async Task<ActionResult<ALLOCATION_RESULT>> AllocateProductionAsync(
+            [FromBody] AllocateProductionRequest request,
+            [FromQuery] string? connectionName = null)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+                if (request == null || request.RunTicket == null)
+                    return BadRequest(new { error = "Run ticket payload is required." });
+                if (string.IsNullOrWhiteSpace(request.Method))
+                    return BadRequest(new { error = "Allocation method is required." });
+
+                var result = await _allocationService.AllocateAsync(
+                    request.RunTicket,
+                    request.Method,
+                    ResolveUserId(),
+                    connectionName ?? _service.DefaultConnectionName);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error allocating production via service endpoint");
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>Service-backed allocation lookup by id.</summary>
+        [HttpGet("service/{allocationId}")]
+        public async Task<ActionResult<ALLOCATION_RESULT>> GetAllocationAsync(
+            string allocationId,
+            [FromQuery] string? connectionName = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(allocationId))
+                    return BadRequest(new { error = "Allocation ID is required." });
+
+                var result = await _allocationService.GetAsync(allocationId, connectionName ?? _service.DefaultConnectionName);
+                if (result == null)
+                    return NotFound(new { error = $"Allocation {allocationId} not found." });
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving allocation {AllocationId}", allocationId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>Service-backed allocation detail lookup.</summary>
+        [HttpGet("service/{allocationId}/details")]
+        public async Task<ActionResult<List<ALLOCATION_DETAIL>>> GetAllocationDetailsAsync(
+            string allocationId,
+            [FromQuery] string? connectionName = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(allocationId))
+                    return BadRequest(new { error = "Allocation ID is required." });
+
+                var details = await _allocationService.GetDetailsAsync(allocationId, connectionName ?? _service.DefaultConnectionName);
+                return Ok(details);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving allocation details for {AllocationId}", allocationId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>Service-backed reverse allocation endpoint.</summary>
+        [HttpPost("service/{allocationId}/reverse")]
+        public async Task<ActionResult> ReverseAllocationAsync(
+            string allocationId,
+            [FromQuery] string? connectionName = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(allocationId))
+                    return BadRequest(new { error = "Allocation ID is required." });
+
+                await _allocationService.ReverseAsync(
+                    allocationId,
+                    ResolveUserId(),
+                    connectionName ?? _service.DefaultConnectionName);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reversing allocation {AllocationId}", allocationId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        private string ResolveUserId()
+        {
+            return User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? User.FindFirstValue("sub")
+                ?? "system";
         }
     }
 

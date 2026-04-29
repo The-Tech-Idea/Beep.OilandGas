@@ -19,27 +19,38 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 {
     public partial class ProductionAccountingService
     {
+        /// <summary>Legacy controller-style façade: seeded status/report/currency constants; batch user id <see cref="ProductionAccountingAuditActors"/>.</summary>
         public TraditionalAccountingCompatibility TraditionalAccounting => new(this);
 
+        /// <summary>Compatibility-only manager surface for legacy production endpoints and fallback behavior.</summary>
         public ProductionManagerCompatibility ProductionManager => new(this);
 
+        /// <summary>Compatibility-only manager surface for legacy pricing adapters.</summary>
         public PricingManagerCompatibility PricingManager => new(this);
 
+        /// <summary>Compatibility-only manager surface for legacy ownership/division-order adapters.</summary>
         public OwnershipManagerCompatibility OwnershipManager => new(this);
 
+        /// <summary>Compatibility-only manager surface for legacy royalty payment adapters.</summary>
         public RoyaltyManagerCompatibility RoyaltyManager => new(this);
 
+        /// <summary>Compatibility-only manager surface; active report generation uses <c>IReportingService</c>.</summary>
         public ReportingManagerCompatibility ReportManager => new(this);
 
+        /// <summary>Compatibility-only manager surface for in-memory storage facility helpers.</summary>
         public StorageManagerCompatibility StorageManager => new(this);
 
+        /// <summary>Compatibility-only manager surface for legacy lease lookups.</summary>
         public LeaseManagerCompatibility LeaseManager => new(this);
 
+        /// <summary>Staged compatibility surface for exchange-contract adapter flows.</summary>
         public TradingCompatibilityService TradingService => new(this);
 
+        /// <summary>Compatibility-only full-cost facade; active paths should use <c>IFullCostService</c>.</summary>
         public FullCostAccountingCompatibility CreateFullCostAccounting(string? connectionName = null)
             => new(this, connectionName ?? ConnectionName);
 
+        /// <summary>Compatibility-only successful-efforts facade; active paths should use <c>ISuccessfulEffortsService</c>.</summary>
         public SuccessfulEffortsAccountingCompatibility CreateSuccessfulEffortsAccounting(string? connectionName = null)
             => new(this, connectionName ?? ConnectionName);
 
@@ -75,8 +86,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                     return (T)Convert.ChangeType(value, targetType);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    System.Diagnostics.Trace.TraceWarning(
+                        "Compatibility ReadValue conversion failed for source type {0}: {1}",
+                        source.GetType().Name,
+                        ex.Message);
                 }
             }
 
@@ -85,50 +100,125 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
         private T? GetEntityById<T>(string tableName, string id, string? connectionName = null) where T : class
         {
+            return RunSyncCompatibility(
+                async () =>
+                {
+                    var entity = await GetRepository(typeof(T), connectionName ?? ConnectionName, tableName)
+                        .GetByIdAsync(id)
+                        .ConfigureAwait(false);
+                    return entity as T;
+                },
+                "GetEntityById",
+                tableName,
+                id);
+        }
+
+        private async Task<T?> GetEntityByIdAsync<T>(string tableName, string id, string? connectionName = null) where T : class
+        {
             try
             {
-                return GetRepository(typeof(T), connectionName ?? ConnectionName, tableName)
+                var entity = await GetRepository(typeof(T), connectionName ?? ConnectionName, tableName)
                     .GetByIdAsync(id)
-                    .GetAwaiter()
-                    .GetResult() as T;
+                    .ConfigureAwait(false);
+                return entity as T;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogWarning(
+                    ex,
+                    "Compatibility GetEntityByIdAsync failed for table {TableName}, id {EntityId}",
+                    tableName,
+                    id);
                 return null;
             }
         }
 
         private List<T> GetEntities<T>(string tableName, IEnumerable<AppFilter>? filters = null, string? connectionName = null) where T : class
         {
-            try
-            {
-                var results = GetRepository(typeof(T), connectionName ?? ConnectionName, tableName)
-                    .GetAsync(filters?.ToList() ?? new List<AppFilter>())
-                    .GetAwaiter()
-                    .GetResult();
-
-                return results?.OfType<T>().ToList() ?? new List<T>();
-            }
-            catch
-            {
-                return new List<T>();
-            }
+            return RunSyncCompatibility(
+                    async () =>
+                    {
+                        var results = await GetRepository(typeof(T), connectionName ?? ConnectionName, tableName)
+                            .GetAsync(filters?.ToList() ?? new List<AppFilter>())
+                            .ConfigureAwait(false);
+                        return results?.OfType<T>().ToList() ?? new List<T>();
+                    },
+                    "GetEntities",
+                    tableName)
+                ?? new List<T>();
         }
 
         private void TryInsertEntity(object entity, string tableName, string userId, string? connectionName = null)
         {
+            RunSyncCompatibility(
+                async () =>
+                {
+                    await GetRepository(entity.GetType(), connectionName ?? ConnectionName, tableName)
+                        .InsertAsync(entity, userId)
+                        .ConfigureAwait(false);
+                },
+                "TryInsertEntity",
+                tableName,
+                entity.GetType().Name);
+        }
+
+        private async Task TryInsertEntityAsync(object entity, string tableName, string userId, string? connectionName = null)
+        {
             try
             {
-                GetRepository(entity.GetType(), connectionName ?? ConnectionName, tableName)
+                await GetRepository(entity.GetType(), connectionName ?? ConnectionName, tableName)
                     .InsertAsync(entity, userId)
-                    .GetAwaiter()
-                    .GetResult();
+                    .ConfigureAwait(false);
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogError(
+                    ex,
+                    "Compatibility TryInsertEntityAsync failed for table {TableName}, entity {EntityType}",
+                    tableName,
+                    entity.GetType().Name);
             }
         }
 
+        private T? RunSyncCompatibility<T>(Func<Task<T>> operation, string operationName, params object?[] contextValues)
+        {
+            try
+            {
+                return operation().ConfigureAwait(false).GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(
+                    ex,
+                    "Compatibility sync bridge failed for operation {OperationName} with context [{ContextValues}]",
+                    operationName,
+                    string.Join(", ", contextValues.Select(v => v?.ToString() ?? "<null>")));
+                return default;
+            }
+        }
+
+        private bool RunSyncCompatibility(Func<Task> operation, string operationName, params object?[] contextValues)
+        {
+            try
+            {
+                operation().ConfigureAwait(false).GetAwaiter().GetResult();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(
+                    ex,
+                    "Compatibility sync bridge failed for operation {OperationName} with context [{ContextValues}]",
+                    operationName,
+                    string.Join(", ", contextValues.Select(v => v?.ToString() ?? "<null>")));
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Compatibility behavior class: <c>active</c>.
+        /// Facade that keeps legacy traditional-accounting endpoints operational through compatibility wrappers.
+        /// </summary>
         public sealed class TraditionalAccountingCompatibility
         {
             public TraditionalAccountingCompatibility(ProductionAccountingService service)
@@ -157,6 +247,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             public AccountsPayableCompatibility AccountsPayable { get; }
         }
 
+        /// <summary>
+        /// Compatibility behavior class: <c>active</c>.
+        /// Uses accounting services when available, otherwise canonical repository-backed compatibility helpers.
+        /// </summary>
         public sealed class PurchaseOrderCompatibility
         {
             private readonly ProductionAccountingService _service;
@@ -169,7 +263,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             public PURCHASE_ORDER? GetPurchaseOrder(string id)
             {
                 if (_service._accountingServices?.PurchaseOrders != null)
-                    return _service._accountingServices.PurchaseOrders.GetPOByIdAsync(id).GetAwaiter().GetResult();
+                    return _service.RunSyncCompatibility(
+                        () => _service._accountingServices.PurchaseOrders.GetPOByIdAsync(id),
+                        "PurchaseOrders.GetPOByIdAsync",
+                        id);
 
                 return _service.GetEntityById<PURCHASE_ORDER>("PURCHASE_ORDER", id);
             }
@@ -195,6 +292,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
+        /// <summary>
+        /// Compatibility behavior class: <c>active</c>.
+        /// Uses accounting services when available, otherwise canonical repository-backed compatibility helpers.
+        /// </summary>
         public sealed class InvoiceCompatibility
         {
             private readonly ProductionAccountingService _service;
@@ -207,7 +308,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             public INVOICE? GetInvoice(string id)
             {
                 if (_service._accountingServices?.Invoices != null)
-                    return _service._accountingServices.Invoices.GetInvoiceAsync(id).GetAwaiter().GetResult();
+                    return _service.RunSyncCompatibility(
+                        () => _service._accountingServices.Invoices.GetInvoiceAsync(id),
+                        "Invoices.GetInvoiceAsync",
+                        id);
 
                 return _service.GetEntityById<INVOICE>("INVOICE", id);
             }
@@ -215,7 +319,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             public INVOICE CreateInvoice(CreateInvoiceRequest request, string userId)
             {
                 if (_service._accountingServices?.Invoices != null)
-                    return _service._accountingServices.Invoices.CreateInvoiceAsync(request, userId).GetAwaiter().GetResult();
+                    return _service.RunSyncCompatibility(
+                            () => _service._accountingServices.Invoices.CreateInvoiceAsync(request, userId),
+                            "Invoices.CreateInvoiceAsync",
+                            request?.InvoiceNumber,
+                            userId)
+                        ?? new INVOICE();
 
                 var invoice = new INVOICE
                 {
@@ -239,6 +348,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
+        /// <summary>
+        /// Compatibility behavior class: <c>active</c>.
+        /// Uses accounting services when available, otherwise canonical repository-backed compatibility helpers.
+        /// </summary>
         public sealed class GeneralLedgerCompatibility
         {
             private readonly ProductionAccountingService _service;
@@ -251,7 +364,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             public List<GL_ACCOUNT> GetAllAccounts()
             {
                 if (_service._accountingServices?.GlAccounts != null)
-                    return _service._accountingServices.GlAccounts.GetAllAccountsAsync().GetAwaiter().GetResult();
+                    return _service.RunSyncCompatibility(
+                            () => _service._accountingServices.GlAccounts.GetAllAccountsAsync(),
+                            "GlAccounts.GetAllAccountsAsync")
+                        ?? new List<GL_ACCOUNT>();
 
                 return _service.GetEntities<GL_ACCOUNT>("GL_ACCOUNT");
             }
@@ -266,13 +382,18 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 if (_service._accountingServices?.GlAccounts != null)
                 {
-                    return _service._accountingServices.GlAccounts.CreateAccountAsync(
-                        request.AccountNumber,
-                        request.AccountName,
-                        request.AccountType,
-                        request.NormalBalance,
-                        request.Description,
-                        userId).GetAwaiter().GetResult();
+                    return _service.RunSyncCompatibility(
+                            () => _service._accountingServices.GlAccounts.CreateAccountAsync(
+                                request.AccountNumber,
+                                request.AccountName,
+                                request.AccountType,
+                                request.NormalBalance,
+                                request.Description,
+                                userId),
+                            "GlAccounts.CreateAccountAsync",
+                            request?.AccountNumber,
+                            userId)
+                        ?? new GL_ACCOUNT();
                 }
 
                 var account = new GL_ACCOUNT
@@ -296,6 +417,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
+        /// <summary>
+        /// Compatibility behavior class: <c>active</c>.
+        /// Uses accounting services when available, otherwise canonical repository-backed compatibility helpers.
+        /// </summary>
         public sealed class JournalEntryCompatibility
         {
             private readonly ProductionAccountingService _service;
@@ -319,15 +444,22 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         DESCRIPTION = line.Description
                     }).ToList();
 
-                    var entry = _service._accountingServices.JournalEntries.CreateEntryAsync(
+                    var entryTask = _service._accountingServices.JournalEntries.CreateEntryAsync(
                         entryDate,
                         description,
                         journalLines,
                         userId,
                         entryNumber,
-                        entryType).GetAwaiter().GetResult();
-                    entry.ENTRY_TYPE = entryType;
-                    return entry;
+                        entryType);
+                    var bridgedEntry = _service.RunSyncCompatibility(
+                        () => entryTask,
+                        "JournalEntries.CreateEntryAsync",
+                        entryNumber,
+                        userId);
+                    if (bridgedEntry == null)
+                        return new JOURNAL_ENTRY();
+                    bridgedEntry.ENTRY_TYPE = entryType;
+                    return bridgedEntry;
                 }
 
                 var manualEntry = new JOURNAL_ENTRY
@@ -352,7 +484,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             public void PostJournalEntry(string id, string userId)
             {
                 if (_service._accountingServices?.JournalEntries != null)
-                    _service._accountingServices.JournalEntries.PostEntryAsync(id, userId).GetAwaiter().GetResult();
+                    _service.RunSyncCompatibility(
+                        () => _service._accountingServices.JournalEntries.PostEntryAsync(id, userId),
+                        "JournalEntries.PostEntryAsync",
+                        id,
+                        userId);
             }
 
             public JOURNAL_ENTRY? GetJournalEntry(string id)
@@ -368,6 +504,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
+        /// <summary>
+        /// Compatibility behavior class: <c>active</c>.
+        /// Repository-backed compatibility wrapper for legacy inventory transaction APIs.
+        /// </summary>
         public sealed class InventoryCompatibility
         {
             private readonly ProductionAccountingService _service;
@@ -404,6 +544,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
+        /// <summary>
+        /// Compatibility behavior class: <c>active</c>.
+        /// Uses accounting services when available, otherwise canonical repository-backed compatibility helpers.
+        /// </summary>
         public sealed class AccountsReceivableCompatibility
         {
             private readonly ProductionAccountingService _service;
@@ -416,7 +560,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             public AR_INVOICE? GetARInvoice(string id)
             {
                 if (_service._accountingServices?.AccountsReceivable != null)
-                    return _service._accountingServices.AccountsReceivable.GetInvoiceAsync(id).GetAwaiter().GetResult();
+                    return _service.RunSyncCompatibility(
+                        () => _service._accountingServices.AccountsReceivable.GetInvoiceAsync(id),
+                        "AccountsReceivable.GetInvoiceAsync",
+                        id);
 
                 return _service.GetEntityById<AR_INVOICE>("AR_INVOICE", id);
             }
@@ -424,7 +571,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             public AR_INVOICE CreateARInvoice(CreateARInvoiceRequest request, string userId)
             {
                 if (_service._accountingServices?.AccountsReceivable != null)
-                    return _service._accountingServices.AccountsReceivable.CreateInvoiceAsync(request, userId).GetAwaiter().GetResult();
+                    return _service.RunSyncCompatibility(
+                            () => _service._accountingServices.AccountsReceivable.CreateInvoiceAsync(request, userId),
+                            "AccountsReceivable.CreateInvoiceAsync",
+                            request?.InvoiceNumber,
+                            userId)
+                        ?? new AR_INVOICE();
 
                 var invoice = new AR_INVOICE
                 {
@@ -446,6 +598,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
+        /// <summary>
+        /// Compatibility behavior class: <c>active</c>.
+        /// Uses accounting services when available, otherwise canonical repository-backed compatibility helpers.
+        /// </summary>
         public sealed class AccountsPayableCompatibility
         {
             private readonly ProductionAccountingService _service;
@@ -464,14 +620,19 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 if (_service._accountingServices?.AccountsPayableInvoices != null)
                 {
-                    return _service._accountingServices.AccountsPayableInvoices.CreateBillAsync(
-                        request.VendorBaId,
-                        request.TotalAmount,
-                        request.InvoiceDate,
-                        request.InvoiceNumber,
-                        null,
-                        request.DueDate,
-                        userId).GetAwaiter().GetResult();
+                    return _service.RunSyncCompatibility(
+                            () => _service._accountingServices.AccountsPayableInvoices.CreateBillAsync(
+                                request.VendorBaId,
+                                request.TotalAmount,
+                                request.InvoiceDate,
+                                request.InvoiceNumber,
+                                null,
+                                request.DueDate,
+                                userId),
+                            "AccountsPayableInvoices.CreateBillAsync",
+                            request?.InvoiceNumber,
+                            userId)
+                        ?? new AP_INVOICE();
                 }
 
                 var bill = new AP_INVOICE
@@ -494,6 +655,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
+        /// <summary>
+        /// Compatibility behavior class: <c>fallback-only</c>.
+        /// Mixes in-memory legacy caches with repository reads to preserve historical controller behavior.
+        /// </summary>
         public sealed class ProductionManagerCompatibility
         {
             private static readonly ConcurrentDictionary<string, RUN_TICKET> RunTickets = new(StringComparer.OrdinalIgnoreCase);
@@ -507,6 +672,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             public IEnumerable<RUN_TICKET> GetRunTicketsByDateRange(DateTime startDate, DateTime endDate)
             {
+                _service._logger?.LogWarning(
+                    "Compatibility fallback-only ProductionManager.GetRunTicketsByDateRange invoked for range {StartDate} to {EndDate}",
+                    startDate,
+                    endDate);
                 var cached = RunTickets.Values
                     .Where(ticket => (ReadValue<DateTime?>(ticket, "TICKET_DATE_TIME", "TicketDateTime") ?? DateTime.MinValue) >= startDate
                         && (ReadValue<DateTime?>(ticket, "TICKET_DATE_TIME", "TicketDateTime") ?? DateTime.MinValue) <= endDate)
@@ -523,6 +692,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             public IEnumerable<RUN_TICKET> GetRunTicketsByLease(string leaseId)
             {
+                _service._logger?.LogWarning(
+                    "Compatibility fallback-only ProductionManager.GetRunTicketsByLease invoked for lease {LeaseId}",
+                    leaseId);
                 var cached = RunTickets.Values
                     .Where(ticket => string.Equals(ReadValue<string>(ticket, "LEASE_ID", "LeaseId"), leaseId, StringComparison.OrdinalIgnoreCase))
                     .ToList();
@@ -537,6 +709,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             public RUN_TICKET? GetRunTicket(string id)
             {
+                _service._logger?.LogWarning(
+                    "Compatibility fallback-only ProductionManager.GetRunTicket invoked for id {RunTicketId}",
+                    id);
                 if (RunTickets.TryGetValue(id, out var ticket))
                     return ticket;
 
@@ -552,6 +727,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             public RUN_TICKET CreateRunTicket(string leaseId, string? wellId, string? tankBatteryId, MEASUREMENT_RECORD measurement, string dispositionType, string purchaser)
             {
+                _service._logger?.LogWarning(
+                    "Compatibility fallback-only ProductionManager.CreateRunTicket invoked for lease {LeaseId}, well {WellId}, tank {TankBatteryId}",
+                    leaseId,
+                    wellId,
+                    tankBatteryId);
                 var ticket = new RUN_TICKET
                 {
                     RUN_TICKET_ID = Guid.NewGuid().ToString(),
@@ -567,26 +747,33 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     DISPOSITION_TYPE = dispositionType,
                     PURCHASER = purchaser,
                     ACTIVE_IND = _service._defaults.GetActiveIndicatorYes(),
-                    ROW_CREATED_BY = "system",
+                    ROW_CREATED_BY = ProductionAccountingAuditActors.System,
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
                 var grossVolume = ReadValue<decimal?>(ticket, "GROSS_VOLUME", "GrossVolume") ?? 0m;
                 var bswPercentage = ReadValue<decimal?>(ticket, "BSW_PERCENTAGE", "BSWPercentage") ?? 0m;
-                ticket.NET_VOLUME = grossVolume * (1m - (bswPercentage / 100m));
+                ticket.NET_VOLUME = grossVolume * (MeasurementVolumeRules.NetOilWholeFraction - (bswPercentage / MeasurementVolumeRules.BswPercentScale));
                 RunTickets[ticket.RUN_TICKET_ID] = ticket;
                 RunTickets[ticket.RUN_TICKET_NUMBER] = ticket;
-                _service.TryInsertEntity(ticket, "RUN_TICKET", "system");
+                _service.TryInsertEntity(ticket, "RUN_TICKET", ProductionAccountingAuditActors.System);
                 return ticket;
             }
 
             public TankInventoryRecord? GetTankInventory(string id)
             {
+                _service._logger?.LogWarning(
+                    "Compatibility fallback-only ProductionManager.GetTankInventory invoked for inventory id {InventoryId}",
+                    id);
                 return TankInventories.TryGetValue(id, out var inventory) ? inventory : null;
             }
 
             public TankInventoryRecord CreateTankInventory(string tankBatteryId, DateTime inventoryDate, decimal openingInventory, decimal receipts, decimal deliveries, decimal actualClosingInventory)
             {
+                _service._logger?.LogWarning(
+                    "Compatibility fallback-only ProductionManager.CreateTankInventory invoked for tank {TankBatteryId} on {InventoryDate}",
+                    tankBatteryId,
+                    inventoryDate);
                 var inventory = new TankInventoryRecord
                 {
                     InventoryId = Guid.NewGuid().ToString(),
@@ -603,6 +790,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
+        /// <summary>
+        /// Compatibility behavior class: <c>fallback-only</c>.
+        /// Preserves legacy run-ticket valuation helpers and index-manager adapter behavior.
+        /// </summary>
         public sealed class PricingManagerCompatibility
         {
             private readonly ProductionAccountingService _service;
@@ -619,6 +810,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             public RUN_TICKET_VALUATION ValueRunTicket(RUN_TICKET ticket, PricingMethod pricingMethod, decimal? fixedPrice, string? indexName, decimal? differential, object? _) 
             {
+                _service._logger?.LogWarning(
+                    "Compatibility fallback-only PricingManager.ValueRunTicket invoked for ticket {RunTicketNumber}, method {PricingMethod}",
+                    ReadValue<string>(ticket, "RUN_TICKET_NUMBER", "RunTicketNumber") ?? string.Empty,
+                    pricingMethod);
                 var indexManager = GetIndexManager();
                 var latestIndex = !string.IsNullOrWhiteSpace(indexName)
                     ? indexManager.GetLatestPrice(indexName)
@@ -645,6 +840,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
+        /// <summary>
+        /// Compatibility behavior class: <c>fallback-only</c>.
+        /// Uses pricing service first and falls back to cached in-memory compatibility values.
+        /// </summary>
         public sealed class PriceIndexManagerCompatibility
         {
             private static readonly ConcurrentDictionary<string, PriceIndex> Indices = new(StringComparer.OrdinalIgnoreCase);
@@ -662,7 +861,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 try
                 {
-                    var price = _service._pricingService.GetPriceAsync(indexName, DateTime.UtcNow, ConnectionName).GetAwaiter().GetResult();
+                    var price = _service.RunSyncCompatibility(
+                        () => _service._pricingService.GetPriceAsync(indexName, DateTime.UtcNow, ConnectionName),
+                        "PricingService.GetPriceAsync",
+                        indexName);
+                    if (price <= 0m)
+                        return null;
                     var resolved = new PriceIndex
                     {
                         IndexName = indexName,
@@ -673,8 +877,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     Indices[indexName] = resolved;
                     return resolved;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    _service._logger?.LogWarning(
+                        ex,
+                        "GetLatestPrice compatibility fallback used for index {IndexName}",
+                        indexName);
                     return null;
                 }
             }
@@ -684,10 +892,17 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 if (index?.IndexName == null)
                     return;
 
+                _service._logger?.LogWarning(
+                    "Compatibility fallback-only PriceIndexManager.AddOrUpdatePriceIndex invoked for index {IndexName}",
+                    index.IndexName);
                 Indices[index.IndexName] = index;
             }
         }
 
+        /// <summary>
+        /// Compatibility behavior class: <c>staged</c>.
+        /// Maintains legacy division-order/ownership behavior while active APIs migrate to canonical services.
+        /// </summary>
         public sealed class OwnershipManagerCompatibility
         {
             private static readonly ConcurrentDictionary<string, List<OWNERSHIP_INTEREST>> OwnershipByProperty = new(StringComparer.OrdinalIgnoreCase);
@@ -731,7 +946,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     EFFECTIVE_START_DATE = effectiveDate,
                     EFFECTIVE_END_DATE = null,
                     ACTIVE_IND = _service._defaults.GetActiveIndicatorYes(),
-                    ROW_CREATED_BY = "system",
+                    ROW_CREATED_BY = ProductionAccountingAuditActors.System,
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
@@ -744,15 +959,27 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         return existing;
                     });
 
-                _service.TryInsertEntity(ownershipInterest, "OWNERSHIP_INTEREST", "system");
+                _service.TryInsertEntity(ownershipInterest, "OWNERSHIP_INTEREST", ProductionAccountingAuditActors.System);
                 return divisionOrder;
             }
 
+            /// <summary>
+            /// Compatibility behavior class: <c>staged</c>.
+            /// Explicit no-op placeholder retained for legacy callers while approval is handled in canonical workflows.
+            /// </summary>
             public void ApproveDivisionOrder(string divisionOrderId, string userId)
             {
+                _service._logger?.LogWarning(
+                    "ApproveDivisionOrder is compatibility-staged and currently a no-op. DivisionOrderId={DivisionOrderId}, UserId={UserId}",
+                    divisionOrderId,
+                    userId);
             }
         }
 
+        /// <summary>
+        /// Compatibility behavior class: <c>staged</c>.
+        /// Preserves legacy royalty manager adapters while canonical royalty APIs are service-backed.
+        /// </summary>
         public sealed class RoyaltyManagerCompatibility
         {
             private static readonly ConcurrentDictionary<string, List<ROYALTY_PAYMENT>> PaymentsByOwner = new(StringComparer.OrdinalIgnoreCase);
@@ -777,7 +1004,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     NET_PAYMENT = amount,
                     STATUS = RoyaltyPaymentStatusCodes.Pending,
                     ACTIVE_IND = _service._defaults.GetActiveIndicatorYes(),
-                    ROW_CREATED_BY = "system",
+                    ROW_CREATED_BY = ProductionAccountingAuditActors.System,
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
@@ -790,7 +1017,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         return existing;
                     });
 
-                _service.TryInsertEntity(payment, "ROYALTY_PAYMENT", "system");
+                _service.TryInsertEntity(payment, "ROYALTY_PAYMENT", ProductionAccountingAuditActors.System);
                 return payment;
             }
 
@@ -805,6 +1032,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
+        /// <summary>
+        /// Compatibility behavior class: <c>staged</c>.
+        /// Generates lightweight report projections for legacy callers while active reporting uses <c>IReportingService</c>.
+        /// </summary>
         public sealed class ReportingManagerCompatibility
         {
             private readonly ProductionAccountingService _service;
@@ -841,6 +1072,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
+        /// <summary>
+        /// Compatibility behavior class: <c>fallback-only</c>.
+        /// In-memory storage-facility compatibility adapter for legacy controller surfaces.
+        /// </summary>
         public sealed class StorageManagerCompatibility
         {
             private static readonly ConcurrentDictionary<string, StorageFacility> Facilities = new(StringComparer.OrdinalIgnoreCase);
@@ -854,6 +1089,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             public StorageFacility? GetFacility(string facilityId)
             {
+                _service._logger?.LogWarning(
+                    "Compatibility fallback-only StorageManager.GetFacility invoked for facility {FacilityId}",
+                    facilityId);
                 if (Facilities.TryGetValue(facilityId, out var facility))
                     return facility;
 
@@ -862,6 +1100,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             public IEnumerable<TankBatteryInfo> GetTankBatteriesByLease(string leaseId)
             {
+                _service._logger?.LogWarning(
+                    "Compatibility fallback-only StorageManager.GetTankBatteriesByLease invoked for lease {LeaseId}",
+                    leaseId);
                 if (TankBatteriesByLease.TryGetValue(leaseId, out var tankBatteries))
                     return tankBatteries;
 
@@ -870,20 +1111,32 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             public void RegisterFacility(StorageFacility facility)
             {
+                _service._logger?.LogWarning(
+                    "Compatibility fallback-only StorageManager.RegisterFacility invoked for facility {FacilityId}",
+                    facility?.FacilityId);
                 Facilities[facility.FacilityId] = facility;
             }
         }
 
+        /// <summary>
+        /// Compatibility behavior class: <c>fallback-only</c>.
+        /// In-memory lease lookup compatibility adapter for legacy controller surfaces.
+        /// </summary>
         public sealed class LeaseManagerCompatibility
         {
             private static readonly ConcurrentDictionary<string, LeaseInfo> Leases = new(StringComparer.OrdinalIgnoreCase);
+            private readonly ProductionAccountingService _service;
 
             public LeaseManagerCompatibility(ProductionAccountingService service)
             {
+                _service = service;
             }
 
             public LeaseInfo? GetLease(string leaseId)
             {
+                _service._logger?.LogWarning(
+                    "Compatibility fallback-only LeaseManager.GetLease invoked for lease {LeaseId}",
+                    leaseId);
                 if (Leases.TryGetValue(leaseId, out var lease))
                     return lease;
 
@@ -893,6 +1146,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
+        /// <summary>
+        /// Compatibility behavior class: <c>staged</c>.
+        /// Transitional exchange-contract compatibility adapter while active trading paths remain under service migration.
+        /// </summary>
         public sealed class TradingCompatibilityService
         {
             private static readonly ConcurrentDictionary<string, EXCHANGE_CONTRACT> Contracts = new(StringComparer.OrdinalIgnoreCase);
@@ -908,11 +1165,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 if (Contracts.TryGetValue(contractId, out var contract))
                     return Task.FromResult<EXCHANGE_CONTRACT?>(contract);
 
-                var stored = _service.GetEntityById<EXCHANGE_CONTRACT>("EXCHANGE_CONTRACT", contractId, connectionName);
-                return Task.FromResult<EXCHANGE_CONTRACT?>(stored);
+                return _service.GetEntityByIdAsync<EXCHANGE_CONTRACT>("EXCHANGE_CONTRACT", contractId, connectionName);
             }
 
-            public Task<EXCHANGE_CONTRACT> RegisterContractAsync(CreateExchangeContractRequest request, string userId, string? connectionName = null)
+            public async Task<EXCHANGE_CONTRACT> RegisterContractAsync(CreateExchangeContractRequest request, string userId, string? connectionName = null)
             {
                 var contract = new EXCHANGE_CONTRACT
                 {
@@ -927,11 +1183,16 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 };
 
                 Contracts[contract.CONTRACT_ID] = contract;
-                _service.TryInsertEntity(contract, "EXCHANGE_CONTRACT", userId, connectionName);
-                return Task.FromResult(contract);
+                await _service.TryInsertEntityAsync(contract, "EXCHANGE_CONTRACT", userId, connectionName)
+                    .ConfigureAwait(false);
+                return contract;
             }
         }
 
+        /// <summary>
+        /// Compatibility behavior class: <c>fallback-only</c>.
+        /// Legacy full-cost accounting helper with in-memory totals and fallback ceiling-test behavior.
+        /// </summary>
         public sealed class FullCostAccountingCompatibility
         {
             private static readonly ConcurrentDictionary<string, decimal> TotalsByCostCenter = new(StringComparer.OrdinalIgnoreCase);
@@ -964,15 +1225,30 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 return TotalsByCostCenter.TryGetValue(costCenterId, out var total) ? total : 0m;
             }
 
+            /// <summary>
+            /// Compatibility behavior class: <c>fallback-only</c>.
+            /// Attempts canonical full-cost ceiling test and falls back to pass-through compatibility result on failure.
+            /// </summary>
             public object PerformCeilingTest(string costCenterId, object? reserves, decimal discountRate, string? connectionName = null)
             {
                 bool passes;
                 try
                 {
-                    passes = _service._fcService.PerformCeilingTestAsync(costCenterId, "system", connectionName ?? _connectionName).GetAwaiter().GetResult();
+                    var bridged = _service.RunSyncCompatibility(
+                        () => _service._fcService.PerformCeilingTestAsync(
+                            costCenterId,
+                            ProductionAccountingAuditActors.System,
+                            connectionName ?? _connectionName),
+                        "FullCostService.PerformCeilingTestAsync",
+                        costCenterId);
+                    passes = bridged;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    _service._logger?.LogWarning(
+                        ex,
+                        "PerformCeilingTest compatibility fallback used for cost center {CostCenterId}",
+                        costCenterId);
                     passes = true;
                 }
 
@@ -990,6 +1266,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
+        /// <summary>
+        /// Compatibility behavior class: <c>fallback-only</c>.
+        /// Legacy successful-efforts helper that forwards to canonical service with warning-logged fallback on failures.
+        /// </summary>
         public sealed class SuccessfulEffortsAccountingCompatibility
         {
             private readonly ProductionAccountingService _service;
@@ -1038,10 +1318,22 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 try
                 {
-                    _service._seService.RecordCostAsync(wellOrPropertyId, amount, "system", connectionName ?? _connectionName).GetAwaiter().GetResult();
+                    _service.RunSyncCompatibility(
+                        () => _service._seService.RecordCostAsync(
+                            wellOrPropertyId,
+                            amount,
+                            ProductionAccountingAuditActors.System,
+                            connectionName ?? _connectionName),
+                        "SuccessfulEffortsService.RecordCostAsync",
+                        wellOrPropertyId,
+                        amount);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    _service._logger?.LogWarning(
+                        ex,
+                        "SuccessfulEfforts compatibility RecordCost failed for id {WellOrPropertyId}",
+                        wellOrPropertyId);
                 }
             }
         }

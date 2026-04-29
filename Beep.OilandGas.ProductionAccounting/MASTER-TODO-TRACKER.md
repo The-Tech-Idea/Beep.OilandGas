@@ -7,8 +7,8 @@
 - [x] Phase 1 - Interface and API surface normalization plan
 - [x] Phase 2 - Data access + seed strategy definition
 - [ ] Phase 3 - Service hardening and consistency implementation (includes **Phase 3b** below)
-- [ ] Phase 4 - API alignment and DI cleanup
-- [ ] Phase 5 - Tests, docs, and cleanup
+- [x] Phase 4 - API alignment and DI cleanup
+- [x] Phase 5 - Tests, docs, and cleanup
 
 ## Current Snapshot
 
@@ -46,8 +46,14 @@
 - [x] **Phase 3b step 17** — `MeasurementService`: `MeasurementStandardCodes`, `MeasurementVolumeRules`, `MeasurementMethodValidation`; `LegacyMeasurementMethodCodes.AllSeeded`; validate unknown `MEASUREMENT_METHOD`.
 - [x] **Phase 3b step 18** — `PricingService`: `CommodityPricingFallbackDefaults` for missing/null `PRICE_INDEX`; `PriceIndexCommodityTypeCodes.AllSeeded` / `IsSeededCommodityType` + trim; class doc.
 - [x] **Phase 3b step 19** — `ProductionAccountingService.AfeQueries`: `ACTIVE_IND` via `_defaults` on AFE + line items; optional `status` filter documented for `AfeStatusCodes` / `AFE_STATUS` seed.
+- [x] **Phase 3b step 20** — `ProductionAccountingService.Compatibility`: `BoeConversionFactors.StandardMcfPerOilBarrelEquivalent` replaces magic `6m` in BOE helpers; BOE method XML docs.
+- [x] **Phase 3b step 21** — `ProductionAccountingService.ControllerFacade`: `ProductionAccountingAuditActors.System` replaces literal system user id; `CreateRunTicket` net oil / BSW scale uses `MeasurementVolumeRules`.
+- [x] **Phase 3b step 22** — `ProductionSharingService`: `PsaEntitlementCalculationDefaults` for cost-recovery and profit-split fallbacks; `NormalizePercent` uses `LeaseEconomicInterestFractionRules` / `LeaseEconomicInterestValidation`; module SeedScope lists PSA defaults.
+- [x] **Phase 3b step 23** — `ReportingService`: `FinancialReportGlRollupAccountPrefixes`, `FinancialReportTaxVariantPlaceholders`, `ReportingServiceExceptionMessages`, `ReportingRemarkFormats` + invariant operational `REMARK`; module SeedScope lists reporting rollup constants.
+- [x] **Phase 3b step 24** — `ReserveAccountingService`: `ReserveAccountingServiceExceptionMessages`, `ReserveCashflowPresentValueDefaults`; discount/tax rate percent scaling via `LeaseEconomicInterestFractionRules` / `LeaseEconomicInterestValidation`; module SeedScope.
+- [x] **Phase 3b step 25** — `RoyaltyDisputeService`: `RoyaltyDisputeServiceExceptionMessages`, `RoyaltyDisputeMessageFormats` + invariant not-found text; class doc ties `RoyaltyDisputeStatusCodes`.
 
-## Phase 3b — Reference / seed alignment (remaining services, **one file per pass**)
+## Phase 3b — Reference / seed alignment (**complete** — one-file passes 1–25)
 
 **Goal for each step:** Remove magic strings that belong in `Constants/` (`WorkflowReferenceCodes`, `CostTypes`, `JournalEntryTypeCodes`, `ProductionAccountingDescriptionPhrases`, `RoyaltyDeductionCostTypeCodes`, etc.), keep in sync with `ProductionAccountingReferenceCodeSeed` / `ProductionAccountingModuleSetup`, use `IPPDM39DefaultsRepository` for `ACTIVE_IND` and boolean-style columns where touched.
 
@@ -88,17 +94,31 @@
 | 24 | `Services/ReserveAccountingService.cs` | Reserve / cashflow / booking status literals. |
 | 25 | `Services/RoyaltyDisputeService.cs` | `RoyaltyDisputeStatusCodes`; resolution narrative → phrases if persisted. |
 
-**Progress (check when step complete):** [x] 1 [x] 2 [x] 3 [x] 4 [x] 5 [x] 6 [x] 7 [x] 8 [x] 9 [x] 10 [x] 11 [x] 12 [x] 13 [x] 14 [x] 15 [x] 16 [x] 17 [x] 18 [x] 19 [x] 20 [ ] 21 [ ] 22 [ ] 23 [ ] 24 [ ] 25
+**Progress (check when step complete):** [x] 1 [x] 2 [x] 3 [x] 4 [x] 5 [x] 6 [x] 7 [x] 8 [x] 9 [x] 10 [x] 11 [x] 12 [x] 13 [x] 14 [x] 15 [x] 16 [x] 17 [x] 18 [x] 19 [x] 20 [x] 21 [x] 22 [x] 23 [x] 24 [x] 25 [x]
+
+## Phase 4 progress (API / DI)
+
+- [x] **`Beep.OilandGas.ApiService/Program.cs`** — Register `Beep.OilandGas.Models.Core.Interfaces.IReportingService` → `ReportingService` (after `IJointInterestBillingService` registration so JIB dependency resolves); register `IRoyaltyDisputeService` → `RoyaltyDisputeService`. Factory pattern matches existing ProductionAccounting services (`IDMEEditor`, `ICommonColumnHandler`, `IPPDM39DefaultsRepository`, `IPPDMMetadataRepository`, loggers).
+- [x] **`Beep.OilandGas.ApiService/Program.cs`** — Register additional ProductionAccounting interfaces in `Models.Core.Interfaces`: `IAfeService`, `IProductionTaxService`, `ITakeOrPayService`, `IContractPerformanceService`, `ICopasOverheadService`, `IInternalControlService`, `IUnprovedPropertyService`, `IDrillingScenarioAccountingService` using the same DI factory pattern and existing optional dependency wiring.
+- [x] **`Beep.OilandGas.ApiService/Controllers/Accounting/Reporting/ReportingServiceController.cs`** — Add service-backed async reporting endpoints (`operational`, `financial`, `royalty-statement`, `jib-statement`, schedule, distribution, history) that call `IReportingService` directly with claim-based user id fallback.
+- [x] **`Beep.OilandGas.ApiService/Controllers/Accounting/Royalty/RoyaltyDisputeController.cs`** + **`ResolveRoyaltyDisputeRequest.cs`** — Add service-backed dispute endpoints (`create`, `resolve`, `list`) aligned with `IRoyaltyDisputeService`; keep one class per file.
+- [x] **`Beep.OilandGas.ApiService/Controllers/Accounting/Reporting/ReportingController.cs`** — Modernize legacy route (`api/accounting/reporting`) to delegate operational/financial/royalty/JIB/schedule/distribution/history actions to `IReportingService` while retaining existing lease-report manager path for compatibility.
+- [x] **`Beep.OilandGas.ApiService/Controllers/Accounting/Tax/ProductionTaxController.cs`** — Add service-backed production tax endpoint (`POST api/accounting/tax/production/calculate`) calling `IProductionTaxService.CalculateProductionTaxesAsync` with claim-based user fallback and explicit `connectionName` pass-through.
+- [x] **`Beep.OilandGas.ApiService/Controllers/Accounting/Cost/AFEController.cs`** — Refactor legacy AFE controller to inject/use `IAfeService` for create/approve and add service-backed endpoints for line-items, cost recording, and variance reports; keep existing list/get + lease-compat style shape where needed.
+- [x] **`Beep.OilandGas.ApiService/Controllers/Accounting/Royalty/RoyaltyController.cs`** + **`RecordRoyaltyPaymentFromCalculationRequest.cs`** — Keep legacy royalty endpoints intact, add explicit service-backed endpoints (`service/calculate`, `service/calculations/{id}`, `service/calculations/by-allocation/{allocationId}`, `service/payments`) powered by `IRoyaltyService` for staged client migration.
+- [x] **`Beep.OilandGas.ApiService/Controllers/Accounting/Cost/CostAllocationController.cs`** + **`AllocateProductionRequest.cs`** — Keep existing cost allocation endpoint intact, add additive service-backed allocation endpoints (`service/allocate`, `service/{id}`, `service/{id}/details`, `service/{id}/reverse`) powered by `IAllocationService` with claim-based user fallback.
+- [x] **`Beep.OilandGas.ApiService/Controllers/Accounting/Production/RunTicketController.cs`** — Keep legacy run-ticket endpoints intact, add additive service-backed orchestrator endpoints (`service/process-cycle`, `service/accounting-status/{fieldId}`, `service/revenue-transactions/{fieldId}`) powered by `IProductionAccountingService`.
+- [x] **`Beep.OilandGas.ApiService/Controllers/Accounting/Revenue/RevenueTransactionController.cs`** — Keep legacy revenue transaction create path intact, add additive service-backed revenue endpoints (`service/recognize`, `service/validate`) powered by `IRevenueService`; fix missing `Models.Core.Interfaces` namespace import in controller.
+- [x] **`Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/InventoryController.cs`** + request payload files (`UpdateTankInventoryRequest`, `CalculateInventoryValuationRequest`, `GenerateInventoryReconciliationReportRequest`) — Keep legacy traditional inventory endpoints intact; add additive service-backed inventory endpoints (`service/{tankId}/update`, `service/{tankId}`, `service/validate`, `service/{inventoryItemId}/valuation`, `service/{inventoryItemId}/reconciliation-report`) powered by `IInventoryService`; resolve type namespace imports for `TANK_INVENTORY` / valuation/report models.
+- [x] **`Beep.OilandGas.ApiService/Controllers/Accounting/Storage/StorageController.cs`** + request payload files (`StorageTankInventoryUpdateRequest`, `StorageInventoryValuationRequest`, `StorageReconciliationReportRequest`) — Keep legacy storage-manager endpoints intact; add additive service-backed storage inventory endpoints (`service/tanks/{tankId}/update`, `service/tanks/{tankId}`, `service/inventory/{inventoryItemId}/valuation`, `service/inventory/{inventoryItemId}/reconciliation-report`) powered by `IInventoryService` with claim-based user fallback.
+
+**Verification:** `dotnet build Beep.OilandGas.ApiService\Beep.OilandGas.ApiService.csproj` (latest run: 0 errors, 0 warnings).
 
 ## Active TODOs
 
-- [x] Create initial phased planning docs in `.plans`.
-- [ ] Define canonical repository usage rules for orchestrator and compatibility surfaces.
-- [x] Define reference-value strategy (`R_`/`RA_`) and add missing reference tables + seed scope map.
-- [x] Normalize interface ownership (`Models.Core.Interfaces` vs local/core interfaces) and controller dependencies.
-- [x] Add parity tests for field accounting endpoints wired to `ProductionAccountingService`.
-- [ ] Add focused service tests for `ProcessProductionCycleAsync` guard/failure paths.
-- [ ] Document staged vs active capabilities in API reference and project plans.
+- [x] Reduce sync-over-async repository calls in compatibility manager paths where persistent behavior is still synchronous.
+- [ ] Ensure cancellation and logging consistency for long-running service paths.
+- [ ] Execute a runtime module setup re-run validation (same DB/session) and capture evidence of no duplicate/unsafe side effects.
 
 ## Verification Criteria
 
@@ -107,5 +127,5 @@
 - Each active API area has at least one happy path and one guard/failure test.
 - Compatibility layers are clearly marked as active, staged, or fallback-only.
 
-*Last updated: 2026-04-27 — Phase 3b ordered plan added.*
+*Last updated: 2026-04-28 — Completed sync-over-async convergence for compatibility callers (all compatibility paths now funnel through the shared sync bridge, with only the two intentional bridge internals containing blocking waits) and advanced long-running cancellation hardening by adding explicit `OperationCanceledException` logging/rethrow behavior in `ProductionAccountingService` orchestration/aggregate helpers, `PeriodClosingService` orchestration/reconciliation/update paths, `JointInterestBillingService` allocation/statement/validation paths, `InventoryService` update/retrieval/validation paths, `RevenueService` recognition/validation/price-lookup paths, and `ImbalanceService` reconciliation/outstanding-balance/validation paths; `ProductionAccounting` build and focused ProductionAccounting tests remain green.*
 

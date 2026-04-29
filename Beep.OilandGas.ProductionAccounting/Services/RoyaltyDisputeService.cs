@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -17,7 +18,8 @@ using Beep.OilandGas.PPDM39.Models;
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
     /// <summary>
-    /// Royalty dispute workflows.
+    /// Royalty dispute workflows. Status values use <see cref="RoyaltyDisputeStatusCodes"/>; exception text uses
+    /// <see cref="RoyaltyDisputeServiceExceptionMessages"/> / <see cref="RoyaltyDisputeMessageFormats"/>.
     /// </summary>
     public class RoyaltyDisputeService : IRoyaltyDisputeService
     {
@@ -47,7 +49,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (dispute == null)
                 throw new ArgumentNullException(nameof(dispute));
             if (string.IsNullOrWhiteSpace(dispute.ROYALTY_STATEMENT_ID))
-                throw new ProductionAccountingException("ROYALTY_STATEMENT_ID is required");
+                throw new ProductionAccountingException(RoyaltyDisputeServiceExceptionMessages.RoyaltyStatementIdRequired);
 
             dispute.ROYALTY_DISPUTE_ID ??= Guid.NewGuid().ToString();
             dispute.STATUS ??= RoyaltyDisputeStatusCodes.Open;
@@ -70,7 +72,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var repo = await GetRepoAsync<ROYALTY_DISPUTE>("ROYALTY_DISPUTE", cn);
             var dispute = await repo.GetByIdAsync(disputeId) as ROYALTY_DISPUTE;
             if (dispute == null)
-                throw new ProductionAccountingException($"Dispute not found: {disputeId}");
+                throw new ProductionAccountingException(string.Format(CultureInfo.InvariantCulture, RoyaltyDisputeMessageFormats.DisputeNotFoundFormat, disputeId));
 
             dispute.STATUS = RoyaltyDisputeStatusCodes.Resolved;
             dispute.RESOLUTION_DATE = resolutionDate;

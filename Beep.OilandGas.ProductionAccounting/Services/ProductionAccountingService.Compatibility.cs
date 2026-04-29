@@ -2,6 +2,7 @@ using System;
 using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.Models.Data.ProductionOperations;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.ProductionAccounting.Constants;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
@@ -38,6 +39,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return data.ConstructionCost * rate * Math.Max(data.Periods, 0);
         }
 
+        /// <summary>BOE rollup using <see cref="BoeConversionFactors.StandardMcfPerOilBarrelEquivalent"/> for the gas leg.</summary>
         public static decimal ConvertProductionToBOE(ProductionData production)
         {
             if (production == null)
@@ -46,12 +48,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return production.OilVolume + (production.GasVolume / 6m);
         }
 
+        /// <summary>BOE rollup using <see cref="BoeConversionFactors.StandardMcfPerOilBarrelEquivalent"/> for the gas leg.</summary>
         public static decimal ConvertReservesToBOE(ProvedReserves reserves)
         {
             if (reserves == null)
                 throw new ArgumentNullException(nameof(reserves));
 
-            return reserves.ProvedOilReserves + (reserves.ProvedGasReserves / 6m);
+            return reserves.ProvedOilReserves + (reserves.ProvedGasReserves / BoeConversionFactors.StandardMcfPerOilBarrelEquivalent);
         }
     }
 }

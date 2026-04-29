@@ -224,7 +224,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Measurement validation failed");
+                _logger?.LogError(
+                    ex,
+                    "Measurement validation failed for measurement {MeasurementId}",
+                    measurement.MEASUREMENT_ID);
                 throw;
             }
         }

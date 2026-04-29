@@ -202,8 +202,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     (!s.PERIOD_START.HasValue || s.PERIOD_START.Value.Date <= contractDate.Date) &&
                     (!s.PERIOD_END.HasValue || s.PERIOD_END.Value.Date >= contractDate.Date));
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogWarning(
+                    ex,
+                    "Failed to load TAKE_OR_PAY_SCHEDULE for contract {SalesContractId}",
+                    salesContractId);
                 return null;
             }
         }
@@ -258,9 +262,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 await repo.UpdateAsync(balance, userId);
             }
-            catch
+            catch (Exception ex)
             {
-                // Optional table not available; skip
+                _logger?.LogWarning(
+                    ex,
+                    "Skipping TAKE_OR_PAY_BALANCE update for contract {SalesContractId}; optional table or metadata unavailable",
+                    salesContractId);
             }
         }
 

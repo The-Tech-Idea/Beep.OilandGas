@@ -16,6 +16,20 @@ namespace Beep.OilandGas.ApiService.Tests;
 public class ProductionAccountingServiceProcessCycleTests
 {
     [Fact]
+    public async Task ProcessProductionCycleAsync_ThrowsArgumentNullException_WhenRunTicketIsNull()
+    {
+        var service = CreateService(CreateDependencies());
+        await Assert.ThrowsAsync<ArgumentNullException>(() => service.ProcessProductionCycleAsync(null!, "user-guard"));
+    }
+
+    [Fact]
+    public async Task ProcessProductionCycleAsync_ThrowsArgumentNullException_WhenUserIdIsBlank()
+    {
+        var service = CreateService(CreateDependencies());
+        await Assert.ThrowsAsync<ArgumentNullException>(() => service.ProcessProductionCycleAsync(CreateRunTicket("RT-GUARD"), " "));
+    }
+
+    [Fact]
     public async Task ProcessProductionCycleAsync_ReturnsFalse_WhenMeasurementRecordingFails()
     {
         var deps = CreateDependencies();
@@ -73,6 +87,68 @@ public class ProductionAccountingServiceProcessCycleTests
     }
 
     [Fact]
+    public async Task ProcessProductionCycleAsync_ReturnsFalse_WhenRoyaltyCalculationFails()
+    {
+        var deps = CreateDependencies();
+        SetupPreRoyaltySuccess(deps, "user-5", "AR-2");
+        deps.RoyaltyService
+            .Setup(x => x.CalculateAsync(It.IsAny<ALLOCATION_DETAIL>(), "user-5", "PPDM39"))
+            .ReturnsAsync((ROYALTY_CALCULATION?)null);
+
+        var service = CreateService(deps);
+        var result = await service.ProcessProductionCycleAsync(CreateRunTicket("RT-5"), "user-5");
+
+        Assert.False(result);
+        deps.RevenueService.Verify(
+            x => x.RecognizeRevenueAsync(It.IsAny<ALLOCATION_DETAIL>(), It.IsAny<string>(), It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ProcessProductionCycleAsync_ReturnsFalse_WhenRevenueRecognitionFails()
+    {
+        var deps = CreateDependencies();
+        SetupPreRoyaltySuccess(deps, "user-6", "AR-3");
+        deps.RoyaltyService
+            .Setup(x => x.CalculateAsync(It.IsAny<ALLOCATION_DETAIL>(), "user-6", "PPDM39"))
+            .ReturnsAsync(new ROYALTY_CALCULATION());
+        deps.RevenueService
+            .Setup(x => x.RecognizeRevenueAsync(It.IsAny<ALLOCATION_DETAIL>(), "user-6", "PPDM39"))
+            .ReturnsAsync((REVENUE_ALLOCATION?)null);
+
+        var service = CreateService(deps);
+        var result = await service.ProcessProductionCycleAsync(CreateRunTicket("RT-6"), "user-6");
+
+        Assert.False(result);
+        deps.JournalEntryService.Verify(
+            x => x.CreateEntryAsync(It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ProcessProductionCycleAsync_ThrowsProductionAccountingException_WhenGlPostingThrows()
+    {
+        var deps = CreateDependencies();
+        SetupPreRoyaltySuccess(deps, "user-7", "AR-4");
+        deps.RoyaltyService
+            .Setup(x => x.CalculateAsync(It.IsAny<ALLOCATION_DETAIL>(), "user-7", "PPDM39"))
+            .ReturnsAsync(new ROYALTY_CALCULATION());
+        deps.RevenueService
+            .Setup(x => x.RecognizeRevenueAsync(It.IsAny<ALLOCATION_DETAIL>(), "user-7", "PPDM39"))
+            .ReturnsAsync(new REVENUE_ALLOCATION { ALLOCATED_AMOUNT = 123.45m });
+        deps.JournalEntryService
+            .Setup(x => x.CreateEntryAsync(It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), "user-7", "PPDM39"))
+            .ThrowsAsync(new InvalidOperationException("gl failure"));
+
+        var service = CreateService(deps);
+        var ex = await Assert.ThrowsAsync<ProductionAccountingException>(
+            () => service.ProcessProductionCycleAsync(CreateRunTicket("RT-7"), "user-7"));
+
+        Assert.IsType<InvalidOperationException>(ex.InnerException);
+        Assert.Contains("RT-7", ex.Message);
+    }
+
+    [Fact]
     public async Task ProcessProductionCycleAsync_ThrowsProductionAccountingException_WhenUnexpectedErrorOccurs()
     {
         var deps = CreateDependencies();
@@ -94,6 +170,19 @@ public class ProductionAccountingServiceProcessCycleTests
         RUN_TICKET_ID = id,
         RUN_TICKET_NUMBER = id
     };
+
+    private static void SetupPreRoyaltySuccess(TestDependencies deps, string userId, string allocationResultId)
+    {
+        deps.MeasurementService
+            .Setup(x => x.RecordAsync(It.IsAny<RUN_TICKET>(), userId, "PPDM39"))
+            .ReturnsAsync(new MEASUREMENT_RECORD());
+        deps.AllocationService
+            .Setup(x => x.AllocateAsync(It.IsAny<RUN_TICKET>(), "ProRata", userId, "PPDM39"))
+            .ReturnsAsync(new ALLOCATION_RESULT { ALLOCATION_RESULT_ID = allocationResultId });
+        deps.AllocationService
+            .Setup(x => x.GetDetailsAsync(allocationResultId, "PPDM39"))
+            .ReturnsAsync([new ALLOCATION_DETAIL()]);
+    }
 
     private static ProductionAccountingService CreateService(TestDependencies d)
     {

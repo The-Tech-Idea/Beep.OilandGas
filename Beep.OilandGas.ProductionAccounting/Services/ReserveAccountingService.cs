@@ -9,12 +9,14 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.ProductionAccounting.Constants;
 using Beep.OilandGas.ProductionAccounting.Exceptions;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
     /// <summary>
-    /// Reserve accounting service for maintaining proved reserves and depletion inputs.
+    /// Reserve accounting service for maintaining proved reserves and depletion inputs. Cashflow NPV uses
+    /// <see cref="ReserveCashflowPresentValueDefaults"/> and percent-style rates normalize with <see cref="LeaseEconomicInterestFractionRules"/>.
     /// </summary>
     public class ReserveAccountingService : IReserveAccountingService
     {
@@ -46,7 +48,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
             if (string.IsNullOrWhiteSpace(reserves.PROPERTY_ID))
-                throw new ProductionAccountingException("PROPERTY_ID is required for reserves");
+                throw new ProductionAccountingException(ReserveAccountingServiceExceptionMessages.PropertyIdRequiredForReserves);
 
             reserves.RESERVES_ID ??= Guid.NewGuid().ToString();
             reserves.RESERVE_DATE ??= DateTime.UtcNow.Date;
@@ -136,9 +138,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (reserves == null)
                 throw new ArgumentNullException(nameof(reserves));
             if (string.IsNullOrWhiteSpace(reserves.PROPERTY_ID))
-                throw new ProductionAccountingException("PROPERTY_ID is required");
+                throw new ProductionAccountingException(ReserveAccountingServiceExceptionMessages.PropertyIdRequired);
             if (!reserves.RESERVE_DATE.HasValue)
-                throw new ProductionAccountingException("RESERVE_DATE is required");
+                throw new ProductionAccountingException(ReserveAccountingServiceExceptionMessages.ReserveDateRequired);
 
             bool valid = (reserves.PROVED_DEVELOPED_OIL_RESERVES ?? 0m) >= 0m &&
                          (reserves.PROVED_UNDEVELOPED_OIL_RESERVES ?? 0m) >= 0m &&
@@ -158,9 +160,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
             if (string.IsNullOrWhiteSpace(cashflow.PROPERTY_ID))
-                throw new ProductionAccountingException("PROPERTY_ID is required for cashflow");
+                throw new ProductionAccountingException(ReserveAccountingServiceExceptionMessages.PropertyIdRequiredForCashflow);
             if (!cashflow.PERIOD_END_DATE.HasValue)
-                throw new ProductionAccountingException("PERIOD_END_DATE is required for cashflow");
+                throw new ProductionAccountingException(ReserveAccountingServiceExceptionMessages.PeriodEndDateRequiredForCashflow);
 
             cashflow.RESERVE_CASHFLOW_ID ??= Guid.NewGuid().ToString();
             cashflow.ACTIVE_IND = _defaults.GetActiveIndicatorYes();
@@ -239,17 +241,18 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     netCashFlow = CalculateNetCashFlow(cashflow);
                 }
 
-                var years = (decimal)(cashflow.PERIOD_END_DATE.Value.Date - baseDate.Date).TotalDays / 365m;
+                var years = (decimal)(cashflow.PERIOD_END_DATE.Value.Date - baseDate.Date).TotalDays
+                    / ReserveCashflowPresentValueDefaults.DaysPerYearForYearFraction;
                 if (years < 0m)
                     years = 0m;
 
-                var rate = cashflow.DISCOUNT_RATE ?? 0.10m;
-                if (rate > 1m)
-                    rate /= 100m;
+                var rate = cashflow.DISCOUNT_RATE ?? ReserveCashflowPresentValueDefaults.DefaultAnnualDiscountRateFraction;
+                if (rate > LeaseEconomicInterestFractionRules.PercentVersusFractionThreshold)
+                    rate /= LeaseEconomicInterestFractionRules.PercentScaleDivisor;
 
                 var discountFactor = (decimal)Math.Pow((double)(1m + rate), (double)years);
                 if (discountFactor <= 0m)
-                    discountFactor = 1m;
+                    discountFactor = LeaseEconomicInterestValidation.FullInterestFraction;
 
                 totalPv += netCashFlow.Value / discountFactor;
             }
@@ -268,8 +271,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var abandonment = cashflow.ABANDONMENT_COST ?? 0m;
 
             var taxRate = cashflow.TAX_RATE ?? 0m;
-            if (taxRate > 1m)
-                taxRate /= 100m;
+            if (taxRate > LeaseEconomicInterestFractionRules.PercentVersusFractionThreshold)
+                taxRate /= LeaseEconomicInterestFractionRules.PercentScaleDivisor;
             var taxes = grossRevenue * taxRate;
 
             return grossRevenue - operating - development - abandonment - taxes;

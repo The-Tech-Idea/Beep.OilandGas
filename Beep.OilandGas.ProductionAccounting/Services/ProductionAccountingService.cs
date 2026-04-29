@@ -243,6 +243,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return true;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Production cycle cancelled for ticket {TicketId}",
+                    RUN_TICKET.RUN_TICKET_ID);
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogError(
@@ -307,6 +314,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return status;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Accounting status retrieval cancelled for field {FieldId}",
+                    fieldId);
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogError(
@@ -361,6 +375,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 return result;
+            }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Period close cancelled for field {FieldId}",
+                    fieldId);
+                throw;
             }
             catch (Exception ex)
             {
@@ -445,6 +466,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return totalProduction;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Total production calculation cancelled for field {FieldId}",
+                    fieldId);
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogWarning(ex, "Error calculating total production for field {FieldId}", fieldId);
@@ -481,6 +509,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     fieldId, totalRevenue, revenueList.Count);
 
                 return totalRevenue;
+            }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Total revenue calculation cancelled for field {FieldId}",
+                    fieldId);
+                throw;
             }
             catch (Exception ex)
             {
@@ -519,6 +554,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return totalRoyalty;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Total royalty calculation cancelled for field {FieldId}",
+                    fieldId);
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogWarning(ex, "Error calculating total royalty for field {FieldId}", fieldId);
@@ -556,6 +598,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return totalCosts;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Total costs calculation cancelled for field {FieldId}",
+                    fieldId);
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogWarning(ex, "Error calculating total costs for field {FieldId}", fieldId);
@@ -577,6 +626,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _logger?.LogDebug("Retrieved accounting method for field {FieldId}: {Method}", 
                     fieldId, accountingMethod);
                 return accountingMethod;
+            }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Accounting method retrieval cancelled for field {FieldId}",
+                    fieldId);
+                throw;
             }
             catch (Exception ex)
             {
@@ -600,8 +656,16 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var field = await repo.GetByIdAsync(fieldId);
                 return field as FIELD;
             }
-            catch
+            catch (OperationCanceledException)
             {
+                _logger?.LogWarning(
+                    "Field retrieval cancelled for field {FieldId}",
+                    fieldId);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Failed to retrieve FIELD row for field id {FieldId}", fieldId);
                 return null;
             }
         }
@@ -631,6 +695,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     : PeriodCloseStatusCodes.Open;
                 _logger?.LogDebug("Period status for field {FieldId} and period {Period}: {Status}", fieldId, asOfDate.ToString("yyyy-MM"), periodStatus);
                 return periodStatus;
+            }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Period status retrieval cancelled for field {FieldId}",
+                    fieldId);
+                throw;
             }
             catch (Exception ex)
             {

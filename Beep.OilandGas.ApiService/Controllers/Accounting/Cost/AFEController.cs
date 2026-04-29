@@ -1,10 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.ProductionAccounting.Services;
+using Beep.OilandGas.ProductionAccounting.Constants;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
@@ -17,13 +21,16 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
     public class AFEController : ControllerBase
     {
         private readonly ProductionAccountingService _service;
+        private readonly IAfeService _afeService;
         private readonly ILogger<AFEController> _logger;
 
         public AFEController(
             ProductionAccountingService service,
+            IAfeService afeService,
             ILogger<AFEController> logger)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
+            _afeService = afeService ?? throw new ArgumentNullException(nameof(afeService));
             _logger = logger;
         }
 
@@ -66,8 +73,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         [HttpPost]
         public async Task<ActionResult<object>> CreateAFE(
             [FromBody] CreateAFERequest request,
-            [FromQuery] string? connectionName = null,
-            [FromQuery] string? userId = null)
+            [FromQuery] string? connectionName = null)
         {
             try
             {
@@ -75,25 +81,20 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
                     return BadRequest(ModelState);
 
                 var connName = connectionName ?? _service.DefaultConnectionName;
-                var repository = _service.GetRepository(typeof(AFE), connName, "AFE");
+                var userId = ResolveUserId();
 
                 var afe = new AFE
                 {
-                    AFE_ID = Guid.NewGuid().ToString(),
                     AFE_NUMBER = request.AfeNumber,
                     AFE_NAME = request.AfeName ?? request.AfeNumber,
                     PROPERTY_ID = request.PropertyId,
                     ESTIMATED_COST = request.BudgetAmount,
-                    ROW_EFFECTIVE_DATE = request.EffectiveDate ?? DateTime.UtcNow,
-                    ACTIVE_IND = "Y",
-                    ROW_CREATED_DATE = DateTime.UtcNow,
-                    ROW_CREATED_BY = userId ?? "system"
+                    ROW_EFFECTIVE_DATE = request.EffectiveDate ?? DateTime.UtcNow
                 };
 
-                var result = await repository.InsertAsync(afe, userId ?? "system");
-                var afeId = afe.AFE_ID;
+                var created = await _afeService.CreateAfeAsync(afe, userId, connName);
 
-                return Ok(new { AfeId = afeId, AfeNumber = request.AfeNumber });
+                return Ok(new { AfeId = created.AFE_ID, AfeNumber = created.AFE_NUMBER });
             }
             catch (Exception ex)
             {
@@ -138,48 +139,156 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             }
         }
 
-        /// <summary>Approve an AFE — sets ACTIVE_IND to 'A' (approved).</summary>
+        /// <summary>Approve an AFE using <see cref="IAfeService"/>.</summary>
         [HttpPatch("{id}/approve")]
-        public async Task<ActionResult> ApproveAFE(string id, [FromQuery] string? userId = null)
+        public async Task<ActionResult> ApproveAFE(string id, [FromQuery] string? connectionName = null)
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "AFE ID is required." });
             try
             {
-                var connName   = _service.DefaultConnectionName;
-                var repository = _service.GetRepository(typeof(AFE), connName, "AFE");
-                var afe        = await repository.GetByIdAsync(id) as AFE;
-                    if (afe == null) return NotFound(new { error = $"AFE {id} not found." });
-
-                afe.ACTIVE_IND        = "A";  // approved
-                afe.ROW_CHANGED_BY    = userId ?? "system";
-                afe.ROW_CHANGED_DATE  = DateTime.UtcNow;
-                await repository.UpdateAsync(afe, userId ?? "system");
+                var connName = connectionName ?? _service.DefaultConnectionName;
+                await _afeService.ApproveAfeAsync(id, DateTime.UtcNow, ResolveUserId(), connName);
                 return NoContent();
             }
             catch (Exception ex) { _logger.LogError(ex, "Error approving AFE {AfeId}", id); return StatusCode(500, new { error = "An internal error occurred." }); }
         }
 
-        /// <summary>Reject an AFE — sets ACTIVE_IND to 'R' (returned for revision).</summary>
+        /// <summary>Reject an AFE by reverting status to draft for revision.</summary>
         [HttpPatch("{id}/reject")]
-        public async Task<ActionResult> RejectAFE(string id, [FromQuery] string? userId = null)
+        public async Task<ActionResult> RejectAFE(string id, [FromQuery] string? connectionName = null)
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "AFE ID is required." });
             try
             {
-                var connName   = _service.DefaultConnectionName;
+                var connName = connectionName ?? _service.DefaultConnectionName;
                 var repository = _service.GetRepository(typeof(AFE), connName, "AFE");
-                var afe        = await repository.GetByIdAsync(id) as AFE;
-                    if (afe == null) return NotFound(new { error = $"AFE {id} not found." });
+                var afe = await repository.GetByIdAsync(id) as AFE;
+                if (afe == null)
+                    return NotFound(new { error = $"AFE {id} not found." });
 
-                afe.ACTIVE_IND        = "R";  // returned
-                afe.ROW_CHANGED_BY    = userId ?? "system";
-                afe.ROW_CHANGED_DATE  = DateTime.UtcNow;
-                await repository.UpdateAsync(afe, userId ?? "system");
+                afe.STATUS = AfeStatusCodes.Draft;
+                afe.ROW_CHANGED_BY = ResolveUserId();
+                afe.ROW_CHANGED_DATE = DateTime.UtcNow;
+                await repository.UpdateAsync(afe, ResolveUserId());
                 return NoContent();
             }
             catch (Exception ex) { _logger.LogError(ex, "Error rejecting AFE {AfeId}", id); return StatusCode(500, new { error = "An internal error occurred." }); }
+        }
+
+        [HttpPost("{id}/line-items")]
+        public async Task<ActionResult<AFE_LINE_ITEM>> AddLineItemAsync(
+            string id,
+            [FromBody] AFE_LINE_ITEM lineItem,
+            [FromQuery] string? connectionName = null)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { error = "AFE ID is required." });
+            try
+            {
+                lineItem.AFE_ID = id;
+                var result = await _afeService.AddLineItemAsync(lineItem, ResolveUserId(), connectionName ?? _service.DefaultConnectionName);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding AFE line item for {AfeId}", id);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        [HttpPost("{id}/costs")]
+        public async Task<ActionResult<ACCOUNTING_COST>> RecordCostAsync(
+            string id,
+            [FromBody] ACCOUNTING_COST cost,
+            [FromQuery] string? connectionName = null)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { error = "AFE ID is required." });
+            try
+            {
+                var result = await _afeService.RecordCostAsync(id, cost, ResolveUserId(), connectionName ?? _service.DefaultConnectionName);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error recording AFE cost for {AfeId}", id);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        [HttpGet("{id}/line-items")]
+        public async Task<ActionResult<List<AFE_LINE_ITEM>>> GetLineItemsAsync(string id, [FromQuery] string? connectionName = null)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { error = "AFE ID is required." });
+            try
+            {
+                var lineItems = await _afeService.GetLineItemsAsync(id, connectionName ?? _service.DefaultConnectionName);
+                return Ok(lineItems);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting line items for {AfeId}", id);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        [HttpPost("{id}/variance-report")]
+        public async Task<ActionResult<COST_VARIANCE_REPORT>> GenerateVarianceReportAsync(
+            string id,
+            [FromQuery] decimal varianceThreshold = 10m,
+            [FromQuery] string? connectionName = null)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { error = "AFE ID is required." });
+            try
+            {
+                var report = await _afeService.GenerateBudgetVarianceReportAsync(
+                    id,
+                    varianceThreshold,
+                    ResolveUserId(),
+                    connectionName ?? _service.DefaultConnectionName);
+                return Ok(report);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating variance report for {AfeId}", id);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        [HttpGet("variance-reports")]
+        public async Task<ActionResult<List<COST_VARIANCE_REPORT>>> GetVarianceReportsAsync(
+            [FromQuery] string? afeId = null,
+            [FromQuery] string? costCenterId = null,
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null,
+            [FromQuery] string? connectionName = null)
+        {
+            try
+            {
+                var reports = await _afeService.GetVarianceReportsAsync(
+                    afeId,
+                    costCenterId,
+                    startDate,
+                    endDate,
+                    connectionName ?? _service.DefaultConnectionName);
+                return Ok(reports);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting AFE variance reports");
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        private string ResolveUserId()
+        {
+            return User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? User.FindFirstValue("sub")
+                ?? "system";
         }
     }
 }

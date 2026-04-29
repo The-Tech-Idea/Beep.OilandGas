@@ -2,10 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Inventory;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
@@ -21,15 +24,18 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
     public class InventoryController : ControllerBase
     {
         private readonly ProductionAccountingService _service;
+        private readonly IInventoryService _inventoryService;
         private readonly GLIntegrationService _glIntegration;
         private readonly ILogger<InventoryController> _logger;
 
         public InventoryController(
             ProductionAccountingService service,
+            IInventoryService inventoryService,
             GLIntegrationService glIntegration,
             ILogger<InventoryController> logger)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
+            _inventoryService = inventoryService ?? throw new ArgumentNullException(nameof(inventoryService));
             _glIntegration = glIntegration ?? throw new ArgumentNullException(nameof(glIntegration));
             _logger = logger;
         }
@@ -159,6 +165,155 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
                 _logger.LogError(ex, "Error getting inventory transaction {TransactionId}", id);
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
+        }
+
+        /// <summary>Service-backed tank inventory update (delta volume).</summary>
+        [HttpPost("service/{tankId}/update")]
+        public async Task<ActionResult<TANK_INVENTORY>> UpdateTankInventoryAsync(
+            string tankId,
+            [FromBody] UpdateTankInventoryRequest request,
+            [FromQuery] string? connectionName = null)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+                if (string.IsNullOrWhiteSpace(tankId))
+                    return BadRequest(new { error = "Tank ID is required." });
+
+                var inventory = await _inventoryService.UpdateInventoryAsync(
+                    tankId,
+                    request.VolumeDelta,
+                    ResolveUserId(),
+                    connectionName ?? _service.DefaultConnectionName);
+
+                return Ok(inventory);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating inventory for tank {TankId}", tankId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>Service-backed tank inventory lookup.</summary>
+        [HttpGet("service/{tankId}")]
+        public async Task<ActionResult<TANK_INVENTORY>> GetTankInventoryAsync(
+            string tankId,
+            [FromQuery] string? connectionName = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(tankId))
+                    return BadRequest(new { error = "Tank ID is required." });
+
+                var inventory = await _inventoryService.GetInventoryAsync(
+                    tankId,
+                    connectionName ?? _service.DefaultConnectionName);
+
+                if (inventory == null)
+                    return NotFound(new { error = $"Tank inventory {tankId} not found." });
+
+                return Ok(inventory);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting inventory for tank {TankId}", tankId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>Service-backed inventory validation.</summary>
+        [HttpPost("service/validate")]
+        public async Task<ActionResult<object>> ValidateInventoryAsync(
+            [FromBody] TANK_INVENTORY inventory,
+            [FromQuery] string? connectionName = null)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+                if (inventory == null)
+                    return BadRequest(new { error = "Inventory payload is required." });
+
+                var isValid = await _inventoryService.ValidateAsync(
+                    inventory,
+                    connectionName ?? _service.DefaultConnectionName);
+
+                return Ok(new { IsValid = isValid });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating inventory");
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>Service-backed valuation calculation for an inventory item.</summary>
+        [HttpPost("service/{inventoryItemId}/valuation")]
+        public async Task<ActionResult<INVENTORY_VALUATION>> CalculateValuationAsync(
+            string inventoryItemId,
+            [FromBody] CalculateInventoryValuationRequest request,
+            [FromQuery] string? connectionName = null)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+                if (string.IsNullOrWhiteSpace(inventoryItemId))
+                    return BadRequest(new { error = "Inventory item ID is required." });
+
+                var valuation = await _inventoryService.CalculateValuationAsync(
+                    inventoryItemId,
+                    request.ValuationDate,
+                    request.Method,
+                    ResolveUserId(),
+                    connectionName ?? _service.DefaultConnectionName);
+
+                return Ok(valuation);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calculating valuation for inventory item {InventoryItemId}", inventoryItemId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>Service-backed inventory reconciliation summary.</summary>
+        [HttpPost("service/{inventoryItemId}/reconciliation-report")]
+        public async Task<ActionResult<INVENTORY_REPORT_SUMMARY>> GenerateReconciliationReportAsync(
+            string inventoryItemId,
+            [FromBody] GenerateInventoryReconciliationReportRequest request,
+            [FromQuery] string? connectionName = null)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+                if (string.IsNullOrWhiteSpace(inventoryItemId))
+                    return BadRequest(new { error = "Inventory item ID is required." });
+
+                var report = await _inventoryService.GenerateReconciliationReportAsync(
+                    inventoryItemId,
+                    request.PeriodStart,
+                    request.PeriodEnd,
+                    ResolveUserId(),
+                    connectionName ?? _service.DefaultConnectionName);
+
+                return Ok(report);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating reconciliation report for inventory item {InventoryItemId}", inventoryItemId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        private string ResolveUserId()
+        {
+            return User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? User.FindFirstValue("sub")
+                ?? "system";
         }
     }
 

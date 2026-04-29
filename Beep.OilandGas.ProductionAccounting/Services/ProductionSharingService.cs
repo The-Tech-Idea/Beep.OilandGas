@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.ProductionAccounting.Constants;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
@@ -102,14 +103,20 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 if (totalVolume <= 0m)
                     return null;
 
-                var costRecoveryLimit = NormalizePercent(agreement.COST_RECOVERY_LIMIT_PCT, 0.6m);
-                var governmentSplit = NormalizePercent(agreement.GOVERNMENT_PROFIT_SPLIT_PCT, 0.5m);
-                var contractorSplit = NormalizePercent(agreement.CONTRACTOR_PROFIT_SPLIT_PCT, 1m - governmentSplit);
+                var costRecoveryLimit = NormalizePercent(
+                    agreement.COST_RECOVERY_LIMIT_PCT,
+                    PsaEntitlementCalculationDefaults.DefaultCostRecoveryLimitFraction);
+                var governmentSplit = NormalizePercent(
+                    agreement.GOVERNMENT_PROFIT_SPLIT_PCT,
+                    PsaEntitlementCalculationDefaults.DefaultGovernmentProfitSplitFraction);
+                var contractorSplit = NormalizePercent(
+                    agreement.CONTRACTOR_PROFIT_SPLIT_PCT,
+                    LeaseEconomicInterestValidation.FullInterestFraction - governmentSplit);
 
                 if (governmentSplit + contractorSplit == 0m)
                 {
-                    governmentSplit = 0.5m;
-                    contractorSplit = 0.5m;
+                    governmentSplit = PsaEntitlementCalculationDefaults.DefaultGovernmentProfitSplitFraction;
+                    contractorSplit = PsaEntitlementCalculationDefaults.DefaultGovernmentProfitSplitFraction;
                 }
 
                 var costOilVolume = totalVolume * costRecoveryLimit;
@@ -199,12 +206,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 return defaultValue;
 
             var value = rawPercent.Value;
-            if (value > 1m)
-                value /= 100m;
+            if (value > LeaseEconomicInterestFractionRules.PercentVersusFractionThreshold)
+                value /= LeaseEconomicInterestFractionRules.PercentScaleDivisor;
             if (value < 0m)
                 value = 0m;
-            if (value > 1m)
-                value = 1m;
+            if (value > LeaseEconomicInterestValidation.FullInterestFraction)
+                value = LeaseEconomicInterestValidation.FullInterestFraction;
             return value;
         }
     }

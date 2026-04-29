@@ -118,12 +118,22 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return tankInventory;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Inventory update cancelled for tank {TankId} by user {UserId}",
+                    tankId,
+                    userId);
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogError(
                     ex,
-                    "Error updating inventory for tank {TankId}: {ErrorMessage}",
-                    tankId, ex.Message);
+                    "Error updating inventory for tank {TankId} by volume {Volume} for user {UserId}",
+                    tankId,
+                    volume,
+                    userId);
                 throw new ProductionAccountingException(
                     $"Failed to update inventory for tank {tankId}", ex);
             }
@@ -169,12 +179,19 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return tankInventory;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Inventory retrieval cancelled for tank {TankId}",
+                    tankId);
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogError(
                     ex,
-                    "Error retrieving inventory for tank {TankId}: {ErrorMessage}",
-                    tankId, ex.Message);
+                    "Error retrieving inventory for tank {TankId}",
+                    tankId);
                 throw new ProductionAccountingException(
                     $"Failed to retrieve inventory for tank {tankId}", ex);
             }
@@ -234,12 +251,19 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 throw;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Inventory validation cancelled for tank {TankBatteryId}",
+                    inventory.TANK_BATTERY_ID);
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogError(
                     ex,
-                    "Error validating inventory for tank {TankBatteryId}: {ErrorMessage}",
-                    inventory.TANK_BATTERY_ID, ex.Message);
+                    "Error validating inventory for tank {TankBatteryId}",
+                    inventory.TANK_BATTERY_ID);
                 throw new ProductionAccountingException(
                     $"Failed to validate inventory for tank {inventory.TANK_BATTERY_ID}", ex);
             }

@@ -161,9 +161,21 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return revenueAllocation;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Revenue recognition cancelled for allocation detail {AllocationDetailId} (allocation result {AllocationResultId})",
+                    allocation.ALLOCATION_DETAIL_ID,
+                    allocation.ALLOCATION_RESULT_ID);
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error recognizing revenue");
+                _logger?.LogError(
+                    ex,
+                    "Error recognizing revenue for allocation detail {AllocationDetailId} (allocation result {AllocationResultId})",
+                    allocation.ALLOCATION_DETAIL_ID,
+                    allocation.ALLOCATION_RESULT_ID);
                 throw;
             }
         }
@@ -224,9 +236,19 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     allocation.REVENUE_ALLOCATION_ID);
                 return true;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Revenue allocation validation cancelled for allocation {RevenueAllocationId}",
+                    allocation.REVENUE_ALLOCATION_ID);
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Revenue allocation validation failed");
+                _logger?.LogError(
+                    ex,
+                    "Revenue allocation validation failed for allocation {RevenueAllocationId}",
+                    allocation.REVENUE_ALLOCATION_ID);
                 throw;
             }
         }
@@ -267,9 +289,21 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 throw new AccountingException($"No price index found for commodity {commodity} as of {asOfDate:yyyy-MM-dd}");
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Commodity price lookup cancelled for {Commodity} as of {AsOfDate}",
+                    commodity,
+                    asOfDate);
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger?.LogWarning(ex, "Error retrieving commodity price");
+                _logger?.LogWarning(
+                    ex,
+                    "Error retrieving commodity price for {Commodity} as of {AsOfDate}",
+                    commodity,
+                    asOfDate);
                 throw;
             }
         }

@@ -146,9 +146,23 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return true;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Imbalance reconciliation cancelled for lease {LeaseId} from {StartDate} to {EndDate}",
+                    leaseId,
+                    startDate,
+                    endDate);
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error reconciling imbalances");
+                _logger?.LogError(
+                    ex,
+                    "Error reconciling imbalances for lease {LeaseId} from {StartDate} to {EndDate}",
+                    leaseId,
+                    startDate,
+                    endDate);
                 throw;
             }
         }
@@ -183,9 +197,19 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _logger?.LogInformation("Lease {LeaseId} outstanding imbalance: {Imbalance}", leaseId, netImbalance);
                 return netImbalance;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Outstanding imbalance lookup cancelled for lease {LeaseId}",
+                    leaseId);
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error getting outstanding imbalance");
+                _logger?.LogError(
+                    ex,
+                    "Error getting outstanding imbalance for lease {LeaseId}",
+                    leaseId);
                 throw;
             }
         }
@@ -230,9 +254,19 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _logger?.LogInformation("Imbalance {AdjustmentId} validation passed", imbalance.IMBALANCE_ADJUSTMENT_ID);
                 return true;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Imbalance validation cancelled for adjustment {ImbalanceAdjustmentId}",
+                    imbalance.IMBALANCE_ADJUSTMENT_ID);
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Imbalance validation failed");
+                _logger?.LogError(
+                    ex,
+                    "Imbalance validation failed for adjustment {ImbalanceAdjustmentId}",
+                    imbalance.IMBALANCE_ADJUSTMENT_ID);
                 throw;
             }
         }

@@ -111,9 +111,19 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _logger?.LogInformation("Allocation {AllocationId} successfully distributed to participants", allocation.ALLOCATION_RESULT_ID);
                 return true;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "JIB participant allocation cancelled for allocation result {AllocationResultId}",
+                    allocation.ALLOCATION_RESULT_ID);
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error allocating to participants");
+                _logger?.LogError(
+                    ex,
+                    "Error allocating JIB costs to participants for allocation result {AllocationResultId}",
+                    allocation.ALLOCATION_RESULT_ID);
                 throw;
             }
         }
@@ -255,9 +265,21 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return true;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "JIB statement generation cancelled for lease {LeaseId} and period ending {PeriodEnd}",
+                    leaseId,
+                    periodEnd);
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error generating JIB statement for lease {LeaseId}: {ErrorMessage}", leaseId, ex.Message);
+                _logger?.LogError(
+                    ex,
+                    "Error generating JIB statement for lease {LeaseId}, period ending {PeriodEnd}",
+                    leaseId,
+                    periodEnd);
                 throw new ProductionAccountingException($"Failed to generate JIB statement for lease {leaseId}", ex);
             }
         }
@@ -366,9 +388,19 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 throw;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "JIB validation cancelled for lease {LeaseId}",
+                    leaseId);
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "JIB validation failed for lease {LeaseId}: {ErrorMessage}", leaseId, ex.Message);
+                _logger?.LogError(
+                    ex,
+                    "JIB validation failed for lease {LeaseId}",
+                    leaseId);
                 throw new ProductionAccountingException($"Error validating JIB data for lease {leaseId}", ex);
             }
         }

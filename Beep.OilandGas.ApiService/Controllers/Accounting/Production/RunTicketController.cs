@@ -2,8 +2,10 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
@@ -19,15 +21,18 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
     public class RunTicketController : ControllerBase
     {
         private readonly ProductionAccountingService _service;
+        private readonly IProductionAccountingService _productionAccountingService;
         private readonly GLIntegrationService _glIntegration;
         private readonly ILogger<RunTicketController> _logger;
 
         public RunTicketController(
             ProductionAccountingService service,
+            IProductionAccountingService productionAccountingService,
             GLIntegrationService glIntegration,
             ILogger<RunTicketController> logger)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
+            _productionAccountingService = productionAccountingService ?? throw new ArgumentNullException(nameof(productionAccountingService));
             _glIntegration = glIntegration ?? throw new ArgumentNullException(nameof(glIntegration));
             _logger = logger;
         }
@@ -140,6 +145,96 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
                 _logger.LogError(ex, "Error creating run ticket");
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
+        }
+
+        /// <summary>Service-backed full production-accounting cycle for a ticket payload.</summary>
+        [HttpPost("service/process-cycle")]
+        public async Task<ActionResult> ProcessProductionCycleAsync(
+            [FromBody] RUN_TICKET runTicket,
+            [FromQuery] string? connectionName = null)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+                if (runTicket == null)
+                    return BadRequest(new { error = "Run ticket payload is required." });
+
+                var processed = await _productionAccountingService.ProcessProductionCycleAsync(
+                    runTicket,
+                    ResolveUserId(),
+                    connectionName ?? _service.DefaultConnectionName);
+
+                return Ok(new { Processed = processed });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing production cycle");
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>Service-backed accounting status lookup.</summary>
+        [HttpGet("service/accounting-status/{fieldId}")]
+        public async Task<ActionResult<AccountingStatusData>> GetAccountingStatusAsync(
+            string fieldId,
+            [FromQuery] DateTime? asOfDate = null,
+            [FromQuery] string? connectionName = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(fieldId))
+                    return BadRequest(new { error = "Field ID is required." });
+
+                var status = await _productionAccountingService.GetAccountingStatusAsync(
+                    fieldId,
+                    asOfDate,
+                    connectionName ?? _service.DefaultConnectionName);
+
+                return Ok(status);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting accounting status for field {FieldId}", fieldId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>Service-backed revenue transactions query for a field/date window.</summary>
+        [HttpGet("service/revenue-transactions/{fieldId}")]
+        public async Task<ActionResult<List<REVENUE_TRANSACTION>>> GetRevenueTransactionsAsync(
+            string fieldId,
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate,
+            [FromQuery] string? connectionName = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(fieldId))
+                    return BadRequest(new { error = "Field ID is required." });
+                if (endDate < startDate)
+                    return BadRequest(new { error = "End date must be on or after start date." });
+
+                var transactions = await _productionAccountingService.GetRevenueTransactionsAsync(
+                    fieldId,
+                    startDate,
+                    endDate,
+                    connectionName ?? _service.DefaultConnectionName);
+
+                return Ok(transactions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting revenue transactions for field {FieldId}", fieldId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        private string ResolveUserId()
+        {
+            return User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? User.FindFirstValue("sub")
+                ?? "system";
         }
 
         private RUN_TICKET MapToRunTicketDto(RUN_TICKET ticket)

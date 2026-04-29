@@ -104,6 +104,18 @@ namespace Beep.OilandGas.ProductionAccounting.Constants
         public const string Resolved = "RESOLVED";
     }
 
+    /// <summary>User-facing validation text for royalty dispute operations.</summary>
+    public static class RoyaltyDisputeServiceExceptionMessages
+    {
+        public const string RoyaltyStatementIdRequired = "ROYALTY_STATEMENT_ID is required";
+    }
+
+    /// <summary>Invariant <c>string.Format</c> when a dispute row is missing (placeholder 0: dispute id).</summary>
+    public static class RoyaltyDisputeMessageFormats
+    {
+        public const string DisputeNotFoundFormat = "Dispute not found: {0}";
+    }
+
     /// <summary>Lease carrying group, lease option, and similar lease-admin <c>STATUS</c> values.</summary>
     public static class LeaseLifecycleStatusCodes
     {

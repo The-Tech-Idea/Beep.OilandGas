@@ -201,12 +201,105 @@ Requires active field (`FieldOrchestrator`). Workflow bodies use `ExplorationWor
 ## Accounting Services
 
 ### Royalty (`/api/accounting/royalty`)
-- `POST /api/accounting/royalty/calculate` - Calculate royalties
-- `GET /api/accounting/royalty/calculations` - Get royalty calculations
+Active service-backed routes:
+- `POST /api/accounting/royalty/service/calculate` - Calculate royalties through `IRoyaltyService`
+- `GET /api/accounting/royalty/service/calculations/{id}` - Get royalty calculation by id through `IRoyaltyService`
+- `GET /api/accounting/royalty/service/calculations/by-allocation/{allocationId}` - Get royalty calculations by allocation
+- `POST /api/accounting/royalty/service/payments` - Record royalty payment from an existing calculation
+
+Compatibility/legacy routes:
+- `POST /api/accounting/royalty/calculate` - Legacy royalty calculation route
+- `GET /api/accounting/royalty/calculations` - Legacy royalty listing/query route
 
 ### Cost Allocation (`/api/accounting/cost-allocation`)
-- `POST /api/accounting/cost-allocation/allocate` - Allocate costs
-- `GET /api/accounting/cost-allocation/allocations` - Get cost allocations
+Active service-backed routes:
+- `POST /api/accounting/cost-allocation/service/allocate` - Allocate production through `IAllocationService`
+- `GET /api/accounting/cost-allocation/service/{id}` - Get allocation result by id
+- `GET /api/accounting/cost-allocation/service/{id}/details` - Get allocation details by result id
+- `POST /api/accounting/cost-allocation/service/{id}/reverse` - Reverse an allocation result
+
+Compatibility/legacy routes:
+- `POST /api/accounting/cost-allocation/allocate` - Legacy allocation route
+- `GET /api/accounting/cost-allocation/allocations` - Legacy allocation listing route
+
+### Reporting (`/api/accounting/reporting`)
+Active service-backed routes:
+- `POST /api/accounting/reporting/operational` - Generate operational report through `IReportingService`
+- `POST /api/accounting/reporting/financial` - Generate financial report through `IReportingService`
+- `POST /api/accounting/reporting/royalty-statement` - Generate royalty statement through `IReportingService`
+- `POST /api/accounting/reporting/jib-statement` - Generate JIB statement through `IReportingService`
+- `POST /api/accounting/reporting/schedule` - Create report schedule through `IReportingService`
+- `GET /api/accounting/reporting/schedules` - List report schedules
+- `POST /api/accounting/reporting/distribute` - Distribute report through `IReportingService`
+- `GET /api/accounting/reporting/history` - Report generation/distribution history
+
+Compatibility/legacy routes:
+- Existing lease-report manager paths remain for backward compatibility and staged migration.
+
+### AFE (`/api/accounting/afe`)
+Active service-backed routes:
+- `POST /api/accounting/afe` - Create AFE through `IAfeService`
+- `POST /api/accounting/afe/{id}/approve` - Approve AFE through `IAfeService`
+- `POST /api/accounting/afe/{id}/line-items` - Add AFE line item
+- `GET /api/accounting/afe/{id}/line-items` - List AFE line items
+- `POST /api/accounting/afe/{id}/costs` - Record AFE cost
+- `POST /api/accounting/afe/{id}/variance-report` - Generate variance report
+- `GET /api/accounting/afe/variance-reports` - Query variance reports
+
+Compatibility/legacy routes:
+- Existing AFE list/get and compatibility routes remain available while clients migrate.
+
+### Production Tax (`/api/accounting/tax/production`)
+Active service-backed routes:
+- `POST /api/accounting/tax/production/calculate` - Calculate production taxes through `IProductionTaxService`
+
+### Run Tickets / Production Accounting (`/api/accounting/runticket`)
+Active service-backed routes:
+- `POST /api/accounting/runticket/service/process-cycle` - Run orchestration workflow through `IProductionAccountingService`
+- `GET /api/accounting/runticket/service/accounting-status/{fieldId}` - Get accounting status
+- `GET /api/accounting/runticket/service/revenue-transactions/{fieldId}` - Get revenue transactions
+
+Compatibility/legacy routes:
+- Existing run ticket CRUD and manager-based accounting routes remain available.
+
+### Revenue (`/api/accounting/revenue`)
+Active service-backed routes:
+- `POST /api/accounting/revenue/service/recognize` - Recognize revenue through `IRevenueService`
+- `POST /api/accounting/revenue/service/validate` - Validate revenue allocation through `IRevenueService`
+
+Compatibility/legacy routes:
+- Existing revenue creation route remains available for staged migration.
+
+### Inventory (Traditional) (`/api/accounting/traditional/inventory`)
+Active service-backed routes:
+- `POST /api/accounting/traditional/inventory/service/{tankId}/update` - Update tank inventory
+- `GET /api/accounting/traditional/inventory/service/{tankId}` - Get tank inventory
+- `POST /api/accounting/traditional/inventory/service/validate` - Validate inventory payload
+- `POST /api/accounting/traditional/inventory/service/{inventoryItemId}/valuation` - Calculate inventory valuation
+- `POST /api/accounting/traditional/inventory/service/{inventoryItemId}/reconciliation-report` - Generate reconciliation report
+
+Compatibility/legacy routes:
+- Existing manager-backed traditional inventory routes remain available.
+
+### Storage (`/api/accounting/storage`)
+Active service-backed routes:
+- `POST /api/accounting/storage/service/tanks/{tankId}/update` - Update storage tank inventory
+- `GET /api/accounting/storage/service/tanks/{tankId}` - Get storage tank inventory
+- `POST /api/accounting/storage/service/inventory/{inventoryItemId}/valuation` - Calculate storage inventory valuation
+- `POST /api/accounting/storage/service/inventory/{inventoryItemId}/reconciliation-report` - Generate storage reconciliation report
+
+Compatibility/legacy routes:
+- Existing storage facility manager routes remain available.
+
+### Royalty Disputes (`/api/accounting/royalty-dispute`)
+Active service-backed routes:
+- `POST /api/accounting/royalty-dispute/create` - Create royalty dispute through `IRoyaltyDisputeService`
+- `POST /api/accounting/royalty-dispute/{id}/resolve` - Resolve royalty dispute through `IRoyaltyDisputeService`
+- `GET /api/accounting/royalty-dispute` - List royalty disputes
+
+Staged note:
+- Service-backed accounting routes are the preferred contract for new clients.
+- Compatibility/legacy routes remain intentionally available during staged client migration.
 
 ### Volume Reconciliation (`/api/accounting/volume-reconciliation`)
 - `POST /api/accounting/volume-reconciliation/reconcile` - Reconcile volumes

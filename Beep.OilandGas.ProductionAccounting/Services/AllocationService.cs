@@ -235,7 +235,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
             catch (AllocationException ex)
             {
-                _logger?.LogError(ex, "Allocation validation failed");
+                _logger?.LogError(
+                    ex,
+                    "Allocation validation failed for allocation {AllocationResultId}",
+                    allocation.ALLOCATION_RESULT_ID);
                 throw;
             }
         }

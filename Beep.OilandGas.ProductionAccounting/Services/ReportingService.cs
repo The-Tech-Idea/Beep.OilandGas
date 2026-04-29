@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -27,7 +28,9 @@ using Beep.OilandGas.PPDM39.Models;
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
     /// <summary>
-    /// Reporting service for operational, financial, royalty, and JIB reports.
+    /// Reporting service for operational, financial, royalty, and JIB reports. Uses
+    /// <see cref="GeneratedReportTypeCodes"/>, <see cref="ReportScheduleFrequencyCodes"/>, <see cref="ReportScheduleStatusCodes"/>,
+    /// <see cref="FinancialReportGlRollupAccountPrefixes"/>, and <see cref="FinancialReportTaxVariantPlaceholders"/> for typed tokens and rollups.
     /// </summary>
     public class ReportingService : IReportingService
     {
@@ -73,7 +76,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 GENERATED_BY = userId,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
-                REMARK = $"RunTickets={runTickets.Count}, TotalNetVolume={totalVolume}",
+                REMARK = string.Format(
+                    CultureInfo.InvariantCulture,
+                    ReportingRemarkFormats.OperationalRunTicketSummaryFormat,
+                    runTickets.Count,
+                    totalVolume),
                 ROW_CREATED_BY = userId,
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
@@ -104,9 +111,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var accountId = entry.GL_ACCOUNT_ID ?? string.Empty;
                 var netAmount = (entry.CREDIT_AMOUNT ?? 0m) - (entry.DEBIT_AMOUNT ?? 0m);
 
-                if (accountId.StartsWith("4", StringComparison.OrdinalIgnoreCase))
+                if (accountId.StartsWith(FinancialReportGlRollupAccountPrefixes.Revenue, StringComparison.OrdinalIgnoreCase))
                     totalRevenue += netAmount;
-                if (accountId.StartsWith("5", StringComparison.OrdinalIgnoreCase) || accountId.StartsWith("6", StringComparison.OrdinalIgnoreCase))
+                if (accountId.StartsWith(FinancialReportGlRollupAccountPrefixes.OperatingExpensePrimary, StringComparison.OrdinalIgnoreCase)
+                    || accountId.StartsWith(FinancialReportGlRollupAccountPrefixes.OperatingExpenseSecondary, StringComparison.OrdinalIgnoreCase))
                     totalExpenses += (entry.DEBIT_AMOUNT ?? 0m) - (entry.CREDIT_AMOUNT ?? 0m);
             }
 
@@ -142,7 +150,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 TOTAL_EXPENSES = totalExpenses,
                 NET_INCOME = netIncome,
                 TAXABLE_INCOME = request.ReportType?.Equals(GeneratedReportTypeCodes.Tax, StringComparison.OrdinalIgnoreCase) == true ? netIncome : null,
-                TAX_LIABILITY = request.ReportType?.Equals(GeneratedReportTypeCodes.Tax, StringComparison.OrdinalIgnoreCase) == true ? netIncome * 0.21m : null,
+                TAX_LIABILITY = request.ReportType?.Equals(GeneratedReportTypeCodes.Tax, StringComparison.OrdinalIgnoreCase) == true
+                    ? netIncome * FinancialReportTaxVariantPlaceholders.IllustrativeCorporateIncomeTaxRate
+                    : null,
                 ROYALTY_AMOUNT = royaltyAmount,
                 DEDUCTIONS = deductionAmount,
                 NET_PAYMENT = netPayment,
@@ -169,7 +179,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.RoyaltyOwnerBaId))
-                throw new ProductionAccountingException("Royalty owner BA ID is required");
+                throw new ProductionAccountingException(ReportingServiceExceptionMessages.RoyaltyOwnerBaIdRequired);
 
             var calculations = await GetRoyaltyCalculationsAsync(
                 request.RoyaltyOwnerBaId,
@@ -218,7 +228,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.LeaseId))
-                throw new ProductionAccountingException("Lease ID is required");
+                throw new ProductionAccountingException(ReportingServiceExceptionMessages.LeaseIdRequired);
 
             await _jibService.GenerateStatementAsync(request.LeaseId, request.PeriodEnd, userId, connectionName ?? ConnectionName);
             var statement = await GetJointInterestStatementAsync(request.LeaseId, request.PeriodStart, request.PeriodEnd, connectionName);

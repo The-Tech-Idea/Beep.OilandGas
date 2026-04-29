@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
@@ -19,15 +21,18 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
     public class RevenueTransactionController : ControllerBase
     {
         private readonly ProductionAccountingService _service;
+        private readonly IRevenueService _revenueService;
         private readonly GLIntegrationService _glIntegration;
         private readonly ILogger<RevenueTransactionController> _logger;
 
         public RevenueTransactionController(
             ProductionAccountingService service,
+            IRevenueService revenueService,
             GLIntegrationService glIntegration,
             ILogger<RevenueTransactionController> logger)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
+            _revenueService = revenueService ?? throw new ArgumentNullException(nameof(revenueService));
             _glIntegration = glIntegration ?? throw new ArgumentNullException(nameof(glIntegration));
             _logger = logger;
         }
@@ -83,6 +88,70 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
                 _logger.LogError(ex, "Error creating revenue transaction");
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
+        }
+
+        /// <summary>
+        /// Service-backed revenue recognition from allocation detail.
+        /// </summary>
+        [HttpPost("service/recognize")]
+        public async Task<ActionResult<REVENUE_ALLOCATION>> RecognizeRevenueAsync(
+            [FromBody] ALLOCATION_DETAIL allocationDetail,
+            [FromQuery] string? connectionName = null)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+                if (allocationDetail == null)
+                    return BadRequest(new { error = "Allocation detail payload is required." });
+
+                var result = await _revenueService.RecognizeRevenueAsync(
+                    allocationDetail,
+                    ResolveUserId(),
+                    connectionName ?? _service.DefaultConnectionName);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error recognizing revenue via service endpoint");
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>
+        /// Service-backed revenue allocation validation.
+        /// </summary>
+        [HttpPost("service/validate")]
+        public async Task<ActionResult<object>> ValidateRevenueAllocationAsync(
+            [FromBody] REVENUE_ALLOCATION allocation,
+            [FromQuery] string? connectionName = null)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+                if (allocation == null)
+                    return BadRequest(new { error = "Revenue allocation payload is required." });
+
+                var isValid = await _revenueService.ValidateAsync(
+                    allocation,
+                    connectionName ?? _service.DefaultConnectionName);
+
+                return Ok(new { IsValid = isValid });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating revenue allocation via service endpoint");
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        private string ResolveUserId()
+        {
+            return User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? User.FindFirstValue("sub")
+                ?? "system";
         }
     }
 
