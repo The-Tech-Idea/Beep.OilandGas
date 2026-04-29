@@ -73,6 +73,7 @@
 - Extended cancellation hardening into `InventoryService` by adding explicit `OperationCanceledException` passthrough + warning logs for inventory update, retrieval, and validation paths.
 - Extended cancellation hardening into `RevenueService` by adding explicit `OperationCanceledException` passthrough + warning logs for revenue recognition, allocation validation, and commodity-price lookup paths.
 - Extended cancellation hardening into `ImbalanceService` by adding explicit `OperationCanceledException` passthrough + warning logs for reconciliation, outstanding-imbalance lookup, and adjustment validation paths.
+- Extended cancellation hardening into `MeasurementService` by adding explicit `OperationCanceledException` passthrough + warning logs for measurement validation.
 
 ## Phase 6.3 - Tracker and Exit Review
 

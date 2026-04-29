@@ -222,6 +222,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _logger?.LogInformation("Measurement {MeasurementId} validation passed", measurement.MEASUREMENT_ID);
                 return true;
             }
+            catch (OperationCanceledException)
+            {
+                _logger?.LogWarning(
+                    "Measurement validation cancelled for measurement {MeasurementId}",
+                    measurement.MEASUREMENT_ID);
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogError(
