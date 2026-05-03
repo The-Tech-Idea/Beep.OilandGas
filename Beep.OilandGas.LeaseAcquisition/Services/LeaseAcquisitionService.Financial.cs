@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.LeaseAcquisition.Services;
+using Beep.OilandGas.LeaseAcquisition.Data.Lease.Projections;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.LeaseAcquisition.Services
@@ -90,7 +90,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 32: Manages lease payments and escrows
         /// </summary>
-        public async Task<LeasePayment> ProcessLeasePaymentAsync(string leaseId, PaymentDetails payment, string userId)
+        public async Task<LeasePaymentDetail> ProcessLeasePaymentAsync(string leaseId, PaymentDetails payment, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -103,7 +103,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Processing lease payment for {LeaseId}", leaseId);
 
-                var paymentDto = new LeasePayment
+                var paymentDto = new LeasePaymentDetail
                 {
                     PaymentId = $"PAY-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,

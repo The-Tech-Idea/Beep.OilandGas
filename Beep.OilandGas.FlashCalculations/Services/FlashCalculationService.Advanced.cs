@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.FlashCalculations.Calculations;
 using Beep.OilandGas.Models.Data.Calculations;
@@ -11,13 +12,18 @@ namespace Beep.OilandGas.FlashCalculations.Services
 {
     public partial class FlashCalculationService
     {
-        public async Task<FlashCalculationResult> RunRigorousFlashAsync(FlashCalculationRequest request)
+        /// <inheritdoc />
+        public async Task<FlashCalculationResult> RunRigorousFlashAsync(
+            FlashCalculationRequest request,
+            CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (request.Pressure == null || request.Temperature == null)
                 throw new ArgumentException("Pressure and Temperature are required for PT Flash.");
             if (request.FeedComposition == null || !request.FeedComposition.Any())
                 throw new ArgumentException("Feed composition is required.");
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             _logger?.LogInformation("Starting Rigorous PT Flash at P={P}, T={T}", request.Pressure, request.Temperature);
 
@@ -34,8 +40,8 @@ namespace Beep.OilandGas.FlashCalculations.Services
 
             try
             {
-                // Convert list to base type if needed, but they are FlashCalculations.Components which inherit
                 var components = request.FeedComposition.Cast<FLASH_COMPONENT>().ToList();
+                cancellationToken.ThrowIfCancellationRequested();
 
                 // 1. Solve Rachford-Rice
                 int iterations;
@@ -77,28 +83,26 @@ namespace Beep.OilandGas.FlashCalculations.Services
 
                 foreach (var phaseRes in phaseResults)
                 {
-                    result.VaporComposition.Add(new FlashComponentFraction 
-                    { 
-                        ComponentName = phaseRes.Name, 
-                        MoleFraction = phaseRes.yi 
+                    cancellationToken.ThrowIfCancellationRequested();
+                    result.VaporComposition.Add(new FlashComponentFraction
+                    {
+                        ComponentName = phaseRes.Name,
+                        MoleFraction = phaseRes.yi
                     });
-                    
-                    result.LiquidComposition.Add(new FlashComponentFraction 
-                    { 
-                        ComponentName = phaseRes.Name, 
-                        MoleFraction = phaseRes.xi 
+
+                    result.LiquidComposition.Add(new FlashComponentFraction
+                    {
+                        ComponentName = phaseRes.Name,
+                        MoleFraction = phaseRes.xi
                     });
-                    
-                    result.KValues.Add(new FlashComponentKValue 
-                    { 
-                        ComponentName = phaseRes.Name, 
-                        KValue = phaseRes.K 
+
+                    result.KValues.Add(new FlashComponentKValue
+                    {
+                        ComponentName = phaseRes.Name,
+                        KValue = phaseRes.K
                     });
                 }
 
-                // serialize JSONs for storage if needed
-                // result.VaporCompositionJson = ...
-                
                 result.Status = converged ? "SUCCESS" : "CONVERGENCE_FAILED";
             }
             catch (Exception ex)

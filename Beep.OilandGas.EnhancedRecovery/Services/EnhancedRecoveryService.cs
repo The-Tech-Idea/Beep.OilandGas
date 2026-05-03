@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.EnhancedRecovery.Constants;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Editor.UOW;
@@ -17,17 +18,54 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
     /// Service for managing enhanced recovery operations.
     /// Uses UnitOfWork directly for data access.
     /// </summary>
-    public partial class EnhancedRecoveryService : IEnhancedRecoveryService, Beep.OilandGas.Models.Core.Interfaces.IEnhancedRecoveryService
+    public partial class EnhancedRecoveryService : IEnhancedRecoveryOperationsService, Beep.OilandGas.Models.Core.Interfaces.IEnhancedRecoveryService
     {
         private readonly IDMEEditor _editor;
         private readonly string _connectionName;
         private readonly ILogger<EnhancedRecoveryService> _logger;
 
         public EnhancedRecoveryService(IDMEEditor editor, string connectionName = "PPDM39")
+            : this(editor, Microsoft.Extensions.Logging.Abstractions.NullLogger<EnhancedRecoveryService>.Instance, connectionName)
+        {
+        }
+
+        public EnhancedRecoveryService(IDMEEditor editor, ILogger<EnhancedRecoveryService> logger, string connectionName = "PPDM39")
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _connectionName = connectionName;
-            _logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<EnhancedRecoveryService>.Instance;
+        }
+
+        /// <summary>
+        /// Returns a **screening-level** incremental recovery factor (% OOIP) by EOR class when volumetric history is not integrated.
+        /// Not a decline-curve or material-balance recovery factor.
+        /// </summary>
+        public static decimal GetScreeningRecoveryFactorPercent(string? eorType)
+        {
+            if (string.IsNullOrWhiteSpace(eorType))
+                return 20m;
+
+            var t = eorType.Trim();
+            if (t.Contains("WATER", StringComparison.OrdinalIgnoreCase)
+                || t.Contains("FLOOD", StringComparison.OrdinalIgnoreCase))
+                return 25m;
+            if (t.Contains("CO2", StringComparison.OrdinalIgnoreCase))
+                return 20m;
+            if (t.Contains("MISCIBLE", StringComparison.OrdinalIgnoreCase)
+                || t.Contains("GAS_INJECTION", StringComparison.OrdinalIgnoreCase)
+                || (t.Contains("GAS", StringComparison.OrdinalIgnoreCase) && t.Contains("INJECT", StringComparison.OrdinalIgnoreCase)))
+                return 18m;
+            if (t.Contains("POLYMER", StringComparison.OrdinalIgnoreCase)
+                || t.Contains("ASP", StringComparison.OrdinalIgnoreCase)
+                || t.Contains("CHEMICAL", StringComparison.OrdinalIgnoreCase))
+                return 22m;
+            if (t.Contains("STEAM", StringComparison.OrdinalIgnoreCase)
+                || t.Contains("THERMAL", StringComparison.OrdinalIgnoreCase))
+                return 30m;
+            if (t.Equals("INJECTION", StringComparison.OrdinalIgnoreCase))
+                return 15m;
+
+            return 20m;
         }
 
         private List<T> ConvertToList<T>(object units) where T : class
@@ -174,7 +212,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             {
                 PDEN_ID = pden.PDEN_ID ?? string.Empty,
                 PDEN_SUBTYPE = pden.PDEN_SUBTYPE ?? string.Empty,
-                PDEN_SOURCE = string.IsNullOrWhiteSpace(pden.SOURCE) ? "ENHANCED_RECOVERY" : pden.SOURCE,
+                PDEN_SOURCE = string.IsNullOrWhiteSpace(pden.SOURCE) ? EnhancedRecoveryConstants.PdenSourceEnhancedRecovery : pden.SOURCE,
                 PRODUCT_TYPE = productType,
                 AMENDMENT_SEQ_NO = 0,
                 PERIOD_TYPE = "INSTANT",
@@ -341,7 +379,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                 PDEN_ID = Guid.NewGuid().ToString(),
                 PDEN_SUBTYPE = recoveryType,
                 ENHANCED_RECOVERY_TYPE = recoveryType,
-                SOURCE = "ENHANCED_RECOVERY",
+                SOURCE = EnhancedRecoveryConstants.PdenSourceEnhancedRecovery,
                 ACTIVE_IND = "Y",
                 AREA_ID = createDto.FieldId,
                 AREA_TYPE = string.IsNullOrWhiteSpace(createDto.FieldId) ? string.Empty : "FIELD",

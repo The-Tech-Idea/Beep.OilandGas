@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Calculations;
@@ -82,6 +83,10 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
 
                 return await Task.FromResult(result);
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error performing Monte Carlo simulation");
@@ -158,6 +163,10 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                     result.TotalOptionValue, result.FlexibilityPremium);
 
                 return await Task.FromResult(result);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -237,6 +246,10 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
 
                 return await Task.FromResult(result);
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error performing decision tree analysis");
@@ -300,6 +313,10 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                     result.PreTaxNPV, result.AfterTaxNPV, result.TaxShield);
 
                 return await Task.FromResult(result);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -371,6 +388,10 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
 
                 return await Task.FromResult(result);
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error calculating enterprise value");
@@ -434,6 +455,10 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                     result.BuyNPV, result.LeaseNPV, result.Recommendation);
 
                 return await Task.FromResult(result);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -510,6 +535,10 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
 
                 return await Task.FromResult(result);
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error analyzing capital structure");
@@ -580,6 +609,10 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                     result.BreakevenPrice);
 
                 return await Task.FromResult(result);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {

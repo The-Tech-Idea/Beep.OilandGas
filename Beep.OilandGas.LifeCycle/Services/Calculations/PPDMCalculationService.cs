@@ -49,7 +49,8 @@ using Beep.OilandGas.Models.Data.ChokeAnalysis;
 using Beep.OilandGas.Models.Data.Pumps;
 using Beep.OilandGas.Models.Data.ProductionForecasting;
 using Beep.OilandGas.Models.Data.PlungerLift;
-using Beep.OilandGas.Models.Data.CompressorAnalysis;
+using Beep.OilandGas.CompressorAnalysis.Core.Interfaces;
+using Beep.OilandGas.CompressorAnalysis.Data;
 using Beep.OilandGas.Models.Data.HydraulicPumps;
 using Beep.OilandGas.Models.Data.PipelineAnalysis;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
@@ -71,6 +72,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly IFieldMappingService _fieldMappingService;
+        private readonly IChokeAnalysisService _chokeAnalysisService;
+        private readonly ICompressorAnalysisService _compressorAnalysisService;
         private readonly string _connectionName;
         private readonly ILogger<PPDMCalculationService>? _logger;
 
@@ -80,6 +83,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             IFieldMappingService fieldMappingService,
+            IChokeAnalysisService chokeAnalysisService,
+            ICompressorAnalysisService compressorAnalysisService,
             string connectionName = "PPDM39",
             ILogger<PPDMCalculationService>? logger = null)
         {
@@ -88,6 +93,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _fieldMappingService = fieldMappingService ?? throw new ArgumentNullException(nameof(fieldMappingService));
+            _chokeAnalysisService = chokeAnalysisService ?? throw new ArgumentNullException(nameof(chokeAnalysisService));
+            _compressorAnalysisService = compressorAnalysisService ?? throw new ArgumentNullException(nameof(compressorAnalysisService));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _logger = logger;
         }

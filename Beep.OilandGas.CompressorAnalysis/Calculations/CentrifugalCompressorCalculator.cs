@@ -1,5 +1,5 @@
 ﻿using System;
-using Beep.OilandGas.Models.Data.CompressorAnalysis;
+using Beep.OilandGas.CompressorAnalysis.Data;
 using Beep.OilandGas.GasProperties.Calculations;
 
 namespace Beep.OilandGas.CompressorAnalysis.Calculations

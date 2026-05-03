@@ -74,7 +74,7 @@
     @* ─── Revenue by Month *@
     <MudPaper Elevation="2" Class="pa-4">
         <MudText Typo="Typo.h6" Class="mb-3">Monthly Revenue Trend</MudText>
-        <MudChart ChartType="ChartType.Line"
+        <MudChart T="double" ChartType="ChartType.Line"
                   @* TODO: Wire to actual chart data when MudBlazor chart data binding is available *@
                   InputData="@_monthlyRevenueData"
                   XAxisLabels="@_monthLabels"

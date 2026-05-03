@@ -17,9 +17,11 @@ namespace Beep.OilandGas.NodalAnalysis.Services
             
             _logger?.LogInformation("Starting Nodal Analysis for Well {WellId}", request.WellUWI);
 
+            var analysisId = _defaults.FormatIdForTable("NODAL_ANALYSIS", Guid.NewGuid().ToString());
             var result = new NODAL_ANALYSIS_RESULT
             {
-                ANALYSIS_ID = Guid.NewGuid().ToString(),
+                NODAL_ANALYSIS_RESULT_ID = analysisId,
+                ANALYSIS_ID = analysisId,
                 WELL_UWI = request.WellUWI,
                 ANALYSIS_DATE = DateTime.UtcNow,
                 STATUS = "RUNNING"

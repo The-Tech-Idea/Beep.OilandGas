@@ -4,6 +4,10 @@
 
 This document outlines common patterns and best practices for using the PPDM39 Data Access Framework.
 
+### New tables in Beep.OilandGas (extension / feature-owned)
+
+Use **`ModuleSetupBase`** / **`IModuleSetup.EntityTypes`** in the feature project and **migration / `CreateSchemaFromEntitiesAsync`** for physical tables — **not** new `.sql` under `Beep.OilandGas.Models/Scripts/**`. See root **`CLAUDE.md`** (*Schema for extension tables*).
+
 ## Repository Patterns
 
 ### 1. Use Generic Repository for Most Operations

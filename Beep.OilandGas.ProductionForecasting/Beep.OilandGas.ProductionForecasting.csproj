@@ -12,7 +12,7 @@
 		<PackageIcon>SimpleODM.png</PackageIcon>
 		<RepositoryUrl>https://github.com/The-Tech-Idea/</RepositoryUrl>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<NoWarn>$(NoWarn);CS8632</NoWarn>
+		<NoWarn>$(NoWarn);CS8632;CS0618</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
 		<None Include="..\..\InstallationScripts\LogoGFx\128\SimpleODM.png">
@@ -25,9 +25,9 @@
 	  <PackageReference Include="SkiaSharp" Version="3.119.2" />
 	  <PackageReference Include="SkiaSharp.Extended" Version="3.0.0" />
 	  <PackageReference Include="SkiaSharp.Svg" Version="1.60.0" />
+	  <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.7" />
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\Beep.OilandGas.DCA\Beep.OilandGas.DCA.csproj" />
 	  <ProjectReference Include="..\Beep.OilandGas.GasProperties\Beep.OilandGas.GasProperties.csproj" />
 	  <ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />
 	  <ProjectReference Include="..\Beep.OilandGas.PPDM39.DataManagement\Beep.OilandGas.PPDM39.DataManagement.csproj" />

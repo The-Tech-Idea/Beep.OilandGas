@@ -6,8 +6,10 @@ using Beep.OilandGas.CompressorAnalysis.Calculations;
 using Beep.OilandGas.CompressorAnalysis.Constants;
 using Beep.OilandGas.CompressorAnalysis.Exceptions;
 using Beep.OilandGas.CompressorAnalysis.Validation;
-using Beep.OilandGas.Models.Data.CompressorAnalysis;
+using Beep.OilandGas.CompressorAnalysis.Core.Interfaces;
+using Beep.OilandGas.CompressorAnalysis.Data;
 using Beep.OilandGas.Models.Data.Calculations;
+using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.CompressorAnalysis.Services
@@ -17,17 +19,22 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
     /// Provides design, performance analysis, efficiency analysis, maintenance prediction,
     /// pressure-flow analysis, and power analysis for both centrifugal and reciprocating compressors.
     /// </summary>
-    public partial class CompressorAnalysisService
+    public partial class CompressorAnalysisService : ICompressorAnalysisService
     {
         private readonly ILogger<CompressorAnalysisService>? _logger;
+        private readonly IPPDM39DefaultsRepository? _defaults;
 
         /// <summary>
         /// Initializes a new instance of the CompressorAnalysisService.
         /// </summary>
         /// <param name="logger">Optional logger for diagnostic information.</param>
-        public CompressorAnalysisService(ILogger<CompressorAnalysisService>? logger = null)
+        /// <param name="defaults">Optional defaults repository for <see cref="FormatIdForTable"/> when persisting PPDM IDs.</param>
+        public CompressorAnalysisService(
+            ILogger<CompressorAnalysisService>? logger = null,
+            IPPDM39DefaultsRepository? defaults = null)
         {
             _logger = logger;
+            _defaults = defaults;
         }
 
         /// <summary>
@@ -623,11 +630,14 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
         }
 
         /// <summary>
-        /// Helper method to format IDs (simplified implementation).
+        /// Formats IDs for projection labels; uses <see cref="IPPDM39DefaultsRepository.FormatIdForTable"/> when defaults are injected (ApiService).
         /// </summary>
         private string FormatIdForTable(string tableName, string id)
         {
-            var shortId = id.Substring(0, Math.Min(8, id.Length)).ToUpper();
+            if (_defaults != null)
+                return _defaults.FormatIdForTable(tableName, id);
+
+            var shortId = id.Substring(0, Math.Min(8, id.Length)).ToUpperInvariant();
             return $"{tableName}-{shortId}";
         }
     }

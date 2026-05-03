@@ -111,7 +111,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<WellAbandonmentResponse>> AbandonWell(
             [FromQuery] string wellId,
             [FromBody] WellAbandonmentRequest abandonmentData,
-            [FromQuery] string userId)
+            [FromQuery] string? userId)
         {
             try
             {
@@ -126,13 +126,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Well ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(userId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
+                var resolvedUserId = userId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
 
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
-                var abandonment = await decommissioningService.AbandonWellForFieldAsync(currentFieldId, wellId, abandonmentData, userId);
+                var abandonment = await decommissioningService.AbandonWellForFieldAsync(currentFieldId, wellId, abandonmentData, resolvedUserId);
                 return Ok(abandonment);
             }
             catch (InvalidOperationException)
@@ -218,7 +215,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<FacilityDecommissioningResponse>> DecommissionFacility(
             string facilityId,
             [FromBody] FacilityDecommissioningRequest decommissionData,
-            [FromQuery] string userId)
+            [FromQuery] string? userId)
         {
             if (string.IsNullOrWhiteSpace(facilityId)) return BadRequest(new { error = "Facility ID is required." });
             try
@@ -229,13 +226,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "No active field selected." });
                 }
 
-                if (string.IsNullOrWhiteSpace(userId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
+                var resolvedUserId = userId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
 
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
-                var decommissioning = await decommissioningService.DecommissionFacilityForFieldAsync(currentFieldId, facilityId, decommissionData, userId);
+                var decommissioning = await decommissioningService.DecommissionFacilityForFieldAsync(currentFieldId, facilityId, decommissionData, resolvedUserId);
                 return Ok(decommissioning);
             }
             catch (InvalidOperationException)
@@ -284,7 +278,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("environmental-activities")]
         public async Task<ActionResult<EnvironmentalRestorationResponse>> CreateEnvironmentalRestoration(
             [FromBody] EnvironmentalRestorationRequest restorationData,
-            [FromQuery] string userId)
+            [FromQuery] string? userId)
         {
             try
             {
@@ -294,13 +288,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "No active field selected." });
                 }
 
-                if (string.IsNullOrWhiteSpace(userId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
+                var resolvedUserId = userId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
 
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
-                var restoration = await decommissioningService.CreateEnvironmentalRestorationForFieldAsync(currentFieldId, restorationData, userId);
+                var restoration = await decommissioningService.CreateEnvironmentalRestorationForFieldAsync(currentFieldId, restorationData, resolvedUserId);
                 return Ok(restoration);
             }
             catch (InvalidOperationException)

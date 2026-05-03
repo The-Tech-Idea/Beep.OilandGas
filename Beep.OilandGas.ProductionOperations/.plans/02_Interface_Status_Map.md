@@ -3,7 +3,8 @@
 ## Canonical Intent
 
 - Keep `Beep.OilandGas.Models.Core.Interfaces.IProductionOperationsService` as the API-facing core interface for currently live operations.
-- Treat `Beep.OilandGas.ProductionOperations.Services.IProductionOperationsService` as a legacy/expanded local surface that contains both live and staged members.
+- Keep `Beep.OilandGas.ProductionOperations.Services.IProductionOperationsService` as the canonical local surface for live members only.
+- Isolate staged methods under `Beep.OilandGas.ProductionOperations.Services.IProductionOperationsAdvancedService`.
 - Use `IProductionManagementService` and `IFacilityManagementService` for specialized workflows that are not represented in the core interface.
 
 ## Method Status Classification
@@ -17,7 +18,7 @@
 - `UpdateOperationAsync` -> `implemented`
 - `OptimizeProductionAsync` -> `implemented` (heuristic recommendation engine)
 
-## B) `ProductionOperations.Services.IProductionOperationsService` (expanded/local)
+## B) `ProductionOperations.Services.IProductionOperationsService` (canonical local)
 
 ### Implemented
 
@@ -39,7 +40,9 @@
 - `GetOperationStatusAsync`
 - `UpdateOperationAsync`
 
-### Placeholder / staged (keep out of active API promotion)
+## C) `ProductionOperations.Services.IProductionOperationsAdvancedService` (staged)
+
+### Placeholder / staged (not in canonical API promotion)
 
 - `CalculateEquipmentReliabilityAsync`
 - `RecordOperationalCostsAsync`
@@ -63,5 +66,17 @@
 
 - Every method in both interfaces has one of: `implemented`, `placeholder`, `deferred`.
 - Trackers reference this map as the source-of-truth for endpoint exposure decisions.
-- No new controller action is added for a `placeholder` method without an explicit staged marker.
+- No new controller action is added for a staged method without explicit staged marker + `IProductionOperationsAdvancedService` usage.
+
+## PPDM-First Mapping Matrix
+
+- Canonical PPDM entities:
+  - `PDEN`, `PDEN_FACILITY`, `PDEN_VOL_SUMMARY`
+  - `FACILITY`, `FACILITY_STATUS`, `FACILITY_COMPONENT`, `FACILITY_RATE`
+  - `FACILITY_EQUIPMENT`, `FACILITY_MAINTAIN`, `FACILITY_LICENSE`
+  - `WORK_ORDER`, `WORK_ORDER_COMPONENT`, `CAT_EQUIPMENT`, `PRODUCTION_COSTS`
+- Module extension entities:
+  - `FACILITY_MEASUREMENT`, `FACILITY_EQUIPMENT_ACTIVITY`, `R_FACILITY_MONITORING_CODE`
+- Compatibility adapter surface:
+  - `IProductionManagementService` and legacy/compatibility controller routes.
 

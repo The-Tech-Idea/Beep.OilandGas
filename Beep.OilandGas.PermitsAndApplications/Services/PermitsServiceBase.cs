@@ -38,7 +38,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
         protected async Task<PPDMGenericRepository> CreateRepositoryAsync<T>(string tableName)
         {
             var metadata = await Metadata.GetTableMetadataAsync(tableName);
-            Type entityType = null;
+            Type? entityType = null;
             if (!string.IsNullOrWhiteSpace(metadata?.EntityTypeName))
             {
                 entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}");

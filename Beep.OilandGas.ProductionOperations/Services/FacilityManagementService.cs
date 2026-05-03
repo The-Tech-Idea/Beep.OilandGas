@@ -131,6 +131,10 @@ public sealed partial class FacilityManagementService : IFacilityManagementServi
         {
             await linkRepo.InsertAsync(link, userId);
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger?.LogWarning(ex, "FACILITY_FIELD link insert skipped for facility {Id}", created.FACILITY_ID);

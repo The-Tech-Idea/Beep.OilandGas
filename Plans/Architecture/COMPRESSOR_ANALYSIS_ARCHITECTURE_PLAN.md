@@ -4,7 +4,7 @@
 
 **Goal**: Provide a PPDM-aligned compressor analysis platform for evaluating compressor performance, efficiency, and operational constraints.
 
-**Key Principle**: Use **Data Classes Only** in `Beep.OilandGas.Models.Data.CompressorAnalysis` as the system of record; services orchestrate analysis runs and store results with full metadata.
+**Key Principle**: **PPDM-style table entities** (`COMPRESSOR_*`, **`R_COMPRESSOR_ANALYSIS_REFERENCE_CODE`**) live in **`Beep.OilandGas.CompressorAnalysis.Data`**; **cross-layer wire types** (`CompressorAnalysisRequest` / **`CompressorAnalysisResult`**) stay in **`Beep.OilandGas.Models.Data.Calculations`**. Services orchestrate runs and persist with full metadata.
 
 **Scope**: Compressor performance and optimization for production facilities.
 
@@ -29,106 +29,69 @@
 
 ---
 
-## Target Project Structure
+## Repository layout (shipped)
+
+High-level layout under **`Beep.OilandGas.CompressorAnalysis`**:
 
 ```
 Beep.OilandGas.CompressorAnalysis/
-├── Services/
-│   ├── CompressorAnalysisService.cs (orchestrator)
-│   ├── TestService.cs
-│   └── OptimizationService.cs
-├── Calculations/
-│   ├── CompressorMapCalculator.cs
-│   ├── EfficiencyCalculator.cs
-│   └── SurgeMarginCalculator.cs
-├── Validation/
-│   ├── TestValidator.cs
-│   └── OperatingWindowValidator.cs
-└── Exceptions/
-    ├── CompressorAnalysisException.cs
-    └── OperatingWindowException.cs
+├── Core/Interfaces/          # ICompressorAnalysisService
+├── Data/Tables/              # COMPRESSOR_* extension entities (scalar table shapes)
+├── Data/Constants/         # Seed + numeric constants (namespace …CompressorAnalysis.Constants)
+├── Modules/                  # CompressorAnalysisModule (EntityTypes, SeedAsync)
+├── Services/                 # CompressorAnalysisService (+ partials)
+├── Calculations/             # Centrifugal / reciprocating / pressure calculators
+├── Validation/               # CompressorValidator
+└── Exceptions/               # CompressorException and domain errors
 ```
 
----
-
-## Data Model Requirements (PPDM-Aligned)
-
-Create/verify these entities in `Beep.OilandGas.Models.Data.CompressorAnalysis`:
-
-### Core Compressor Analysis
-- COMPRESSOR_TEST
-- COMPRESSOR_ANALYSIS_RUN
-- COMPRESSOR_ANALYSIS_RESULT
-- COMPRESSOR_PERFORMANCE_CURVE
-
-### Performance + Constraints
-- SURGE_MARGIN
-- OPERATING_WINDOW
-- ENERGY_CONSUMPTION
-- EFFICIENCY_RESULT
+Executable detail and phased backlog: **`Beep.OilandGas.CompressorAnalysis/.plans/README.md`**.
 
 ---
 
-## Service Interface Standards
+## Data model — shipped vs backlog
 
-```csharp
-public interface ICompressorAnalysisService
-{
-    Task<COMPRESSOR_TEST> RecordTestAsync(COMPRESSOR_TEST test, string userId);
-    Task<COMPRESSOR_ANALYSIS_RUN> RunAnalysisAsync(string testId, string userId);
-    Task<COMPRESSOR_ANALYSIS_RESULT> GetResultAsync(string runId);
-    Task<OPERATING_WINDOW> RecommendOperatingWindowAsync(string runId, string userId);
-}
-```
+**Registered on `CompressorAnalysisModule.EntityTypes` today** (under **`Data/Tables`**):
 
----
+- **`COMPRESSOR_OPERATING_CONDITIONS`**, **`CENTRIFUGAL_COMPRESSOR_PROPERTIES`**, **`RECIPROCATING_COMPRESSOR_PROPERTIES`**
+- **`COMPRESSOR_POWER_RESULT`**, **`COMPRESSOR_PRESSURE_RESULT`**
+- **`R_COMPRESSOR_ANALYSIS_REFERENCE_CODE`** (LOV seed via **`CompressorAnalysisReferenceCodeSeed`**)
 
-## Implementation Phases
+**Wire DTOs** (shared across API / LifeCycle / client): **`CompressorAnalysisRequest`**, **`CompressorAnalysisResult`**, **`CompressorAnalysisWellKnown`** in **`Beep.OilandGas.Models.Data.Calculations`**.
 
-### Phase 1: Data Model + Core Services (Week 1)
-- Implement compressor test and analysis entities.
-- Create CompressorAnalysisService and validators.
-
-### Phase 2: Calculations + Constraints (Weeks 2-3)
-- Compressor map, efficiency, and surge calculations.
-
-### Phase 3: Integration (Week 4)
-- Integrate with ProductionOperations and PipelineAnalysis.
+**Backlog / not modeled** until added as extension tables and wired into **`EntityTypes`**: scenario/run tables such as **`COMPRESSOR_TEST`**, **`COMPRESSOR_ANALYSIS_RUN`**, performance curve storage, surge/operating-window persistence, etc.
 
 ---
 
-## Best Practices Embedded
+## Service interface
 
-- **Efficiency visibility**: performance curves and energy use captured.
-- **Operating safety**: surge margin tracked and enforced.
-- **Auditability**: inputs and outputs preserved with run metadata.
+The DI surface is **`Beep.OilandGas.CompressorAnalysis.Core.Interfaces.ICompressorAnalysisService`**: **`CalculateCentrifugalPowerAsync`**, **`CalculateReciprocatingPowerAsync`**, **`CalculateRequiredPressureAsync`** using **`COMPRESSOR_*`** types in **`Beep.OilandGas.CompressorAnalysis.Data`**.
 
 ---
 
-## API Endpoint Sketch
+## HTTP surface (`CompressorController`)
 
-```
-/api/compressor/
-├── /tests
-│   ├── POST
-│   └── GET /{facilityId}
-├── /runs
-│   ├── POST /run/{testId}
-│   └── GET /{id}
-└── /operating-window
-    └── POST /recommend/{runId}
-```
+Base route **`[Route("api/[controller]")]`** → **`/api/compressor`** (authorize). Representative actions:
 
----
+| Method | Route | Purpose |
+|--------|-------|---------|
+| POST | **`/api/compressor/analyze`** | Default centrifugal path from operating conditions |
+| POST | **`/api/compressor/power`** | Same physics as analyze (explicit power entry) |
+| POST | **`/api/compressor/design/centrifugal`** | Full **`CENTRIFUGAL_COMPRESSOR_PROPERTIES`** body |
+| POST | **`/api/compressor/design/reciprocating`** | Full **`RECIPROCATING_COMPRESSOR_PROPERTIES`** body |
 
-## Success Criteria
-
-- PPDM-aligned compressor entities persist all analysis data.
-- Results are reproducible with audit trails.
-- Integration with operations and pipeline analysis is reliable.
+Required discharge pressure / packaged facility flows use **`ICalculationService.PerformCompressorAnalysisAsync`** (LifeCycle) and **`POST /api/calculations/compressor`** — not necessarily duplicate routes on **`CompressorController`**.
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: February 2026  
-**Status**: Draft (Phase 1 ready)
+## Success criteria (current product)
+
+- Extension compressor tables are discoverable via **`CompressorAnalysisModule`** and consistent with PPDM metadata tooling.
+- **`ICompressorAnalysisService`** is the single domain entry used by **`CompressorController`** and packaged **`PerformCompressorAnalysisAsync`** branches.
+- **`CompressorAnalysis.Tests`** and ApiService tests guard orchestration and controller behavior.
+
+---
+
+**Document Version**: 1.1  
+**Last Updated**: April 2026  
+**Status**: Aligned with shipped **`Beep.OilandGas.CompressorAnalysis`**

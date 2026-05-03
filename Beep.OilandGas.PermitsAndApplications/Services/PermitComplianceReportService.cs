@@ -19,14 +19,14 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
     /// </summary>
     public class PermitComplianceReportService : PermitsServiceBase, IPermitComplianceReportService
     {
-        private readonly ILogger<PermitComplianceReportService> _logger;
+        private readonly ILogger<PermitComplianceReportService>? _logger;
 
         public PermitComplianceReportService(
             IDMEEditor editor,
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILogger<PermitComplianceReportService> logger = null,
+            ILogger<PermitComplianceReportService>? logger = null,
             string connectionName = "PPDM39")
             : base(editor, commonColumnHandler, defaults, metadata, logger, connectionName)
         {
@@ -49,8 +49,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
             var results = await repo.GetAsync(filters);
             return results
-                .Select(r => r as PERMIT_APPLICATION)
-                .Where(r => r != null)
+                .OfType<PERMIT_APPLICATION>()
                 .Select(r => new ExpiringPermitRecord
                 {
                     PermitApplicationId = r.PERMIT_APPLICATION_ID ?? string.Empty,
@@ -96,7 +95,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             };
 
             var results = await repo.GetAsync(filters);
-            var applications = results.Select(r => r as PERMIT_APPLICATION).Where(r => r != null).ToList();
+            var applications = results.OfType<PERMIT_APPLICATION>().ToList();
 
             return applications
                 .GroupBy(a => a.STATUS)

@@ -38,9 +38,10 @@ namespace Beep.OilandGas.Models.Data.ChokeAnalysis
         /// <summary>
         /// Flow regime at this condition.
         /// </summary>
-        private FlowRegime FlowRegimeValue;
+        private string FlowRegimeValue = string.Empty;
 
-        public FlowRegime FlowRegime
+        /// <summary>Regime code string (e.g. SONIC, SUBSONIC) from choke calculators.</summary>
+        public string FlowRegime
 
         {
 

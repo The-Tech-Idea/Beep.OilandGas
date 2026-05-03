@@ -62,15 +62,15 @@
             <MudSpacer />
             <MudSelect T="string" Value="@_selectedStatus" Label="Status" Dense="true" Style="width: 150px;"
                        ValueChanged="@(async (string s) => { _selectedStatus = s; await LoadAsync(); })">
-                <MudSelectItem Value="">All</MudSelectItem>
-                <MudSelectItem Value="Open">Open</MudSelectItem>
-                <MudSelectItem Value="Paid">Paid</MudSelectItem>
-                <MudSelectItem Value="Overdue">Overdue</MudSelectItem>
-                <MudSelectItem Value="Disputed">Disputed</MudSelectItem>
+                <MudSelectItem Value="@string.Empty">All</MudSelectItem>
+                <MudSelectItem Value="@("Open")">Open</MudSelectItem>
+                <MudSelectItem Value="@("Paid")">Paid</MudSelectItem>
+                <MudSelectItem Value="@("Overdue")">Overdue</MudSelectItem>
+                <MudSelectItem Value="@("Disputed")">Disputed</MudSelectItem>
             </MudSelect>
             <MudTextField T="string" @bind-Value="_searchTerm" Label="Search" Dense="true" Style="width: 200px;"
                           Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                          OnInput="@(async (ChangeEventArgs e) => { _searchTerm = e.Value?.ToString(); await LoadAsync(); })" />
+                          OnInput="@(async (ChangeEventArgs e) => { _searchTerm = e.Value?.ToString() ?? string.Empty; await LoadAsync(); })" />
         </MudStack>
 
         @if (_loading)

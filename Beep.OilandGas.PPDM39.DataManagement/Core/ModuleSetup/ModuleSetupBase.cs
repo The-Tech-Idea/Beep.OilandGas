@@ -14,6 +14,19 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup
     /// Provides factory helpers for <see cref="PPDMGenericRepository"/> and
     /// idiomatic per-row insert/skip utilities so modules stay concise.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>EntityTypes</b> on a feature module should list <b>project-specific or extension</b> tables that the app must
+    /// create or register in metadata alongside PPDM (for example <c>CHOKE_*</c> tables that are not standard PPDM 3.9).
+    /// Do <b>not</b> list standard PPDM 3.9 core tables (for example <c>EQUIPMENT</c>, <c>WELL_EQUIPMENT</c>) here — those
+    /// already exist in the PPDM model and are handled by the main PPDM schema / database-creation path, not as per-feature
+    /// “project tables to create.”
+    /// </para>
+    /// <para>
+    /// Physical DDL for extension tables is expected from <b>Beep/PPDM tooling</b> (migration, schema-from-entities, setup orchestration)
+    /// driven by these entity types — not from maintaining hand-written <c>.sql</c> files per feature in source control.
+    /// </para>
+    /// </remarks>
     public abstract class ModuleSetupBase : IModuleSetup
     {
         protected readonly ModuleSetupContext _ctx;

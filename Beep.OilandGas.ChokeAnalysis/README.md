@@ -31,42 +31,49 @@ This library provides industry-standard methods for calculating gas flow through
 dotnet add package Beep.OilandGas.ChokeAnalysis
 ```
 
+## Testing
+
+```bash
+dotnet test Beep.OilandGas.ChokeAnalysis.Tests/Beep.OilandGas.ChokeAnalysis.Tests.csproj
+```
+
+`GasChokeCalculator` uses **`CHOKE_PROPERTIES.CHOKE_AREA`** (in²). If **`CHOKE_AREA`** is zero or unset, it is **derived from `CHOKE_DIAMETER`** as \(A = \pi D^2 / 4\) (same as `ChokeAreaSquareInchesFromDiameter`).
+
 ## Quick Start
 
 ### Calculate Downhole Choke Flow
 
 ```csharp
-using Beep.OilandGas.ChokeAnalysis.Models;
 using Beep.OilandGas.ChokeAnalysis.Calculations;
 using Beep.OilandGas.ChokeAnalysis.Validation;
+using Beep.OilandGas.Models.Data.ChokeAnalysis;
 
-// Define choke properties
-var choke = new ChokeProperties
+var choke = new CHOKE_PROPERTIES
 {
-    ChokeDiameter = 0.5m, // inches
-    ChokeType = ChokeType.Bean,
-    DischargeCoefficient = 0.85m
+    CHOKE_DIAMETER = 0.5m,
+    CHOKE_TYPE = "BEAN",
+    DISCHARGE_COEFFICIENT = 0.85m
 };
 
-// Define gas properties
-var gasProperties = new GasChokeProperties
+var gasProperties = new GAS_CHOKE_PROPERTIES
 {
-    UpstreamPressure = 2000m, // psia
-    DownstreamPressure = 500m, // psia
-    Temperature = 580m, // Rankine
-    GasSpecificGravity = 0.65m
+    UPSTREAM_PRESSURE = 2000m,
+    DOWNSTREAM_PRESSURE = 500m,
+    TEMPERATURE = 580m,
+    GAS_SPECIFIC_GRAVITY = 0.65m,
+    Z_FACTOR = 0.92m
 };
 
-// Validate inputs
 ChokeValidator.ValidateCalculationParameters(choke, gasProperties);
 
-// Calculate flow rate
 var result = GasChokeCalculator.CalculateDownholeChokeFlow(choke, gasProperties);
 
-Console.WriteLine($"Flow Rate: {result.FlowRate:F2} Mscf/day");
-Console.WriteLine($"Flow Regime: {result.FlowRegime}");
-Console.WriteLine($"Pressure Ratio: {result.PressureRatio:F4}");
+Console.WriteLine($"Flow Rate: {result.FLOW_RATE:F2} Mscf/day");
+Console.WriteLine($"Flow Regime: {result.FLOW_REGIME}");
+Console.WriteLine($"Pressure ratio: {result.PRESSURE_RATIO:F4}");
 ```
+
+For gas choke results, `FLOW_REGIME` stores reference codes (`SONIC`, `SUBSONIC`) aligned with `R_CHOKE_ANALYSIS_REFERENCE_CODE`.
 
 ### Calculate Required Choke Size
 

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.Models.Data.ProductionForecasting;
 using Beep.OilandGas.ProductionForecasting.Calculations;
+using Beep.OilandGas.ProductionForecasting.Constants;
 
 namespace Beep.OilandGas.ProductionForecasting.Services
 {
@@ -35,7 +36,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
                 DeclineRate = di,
                 InitialRate = qi,
                 EstimatedReserves = pf.TOTAL_CUMULATIVE_PRODUCTION,
-                Status = "OK",
+                Status = ProductionForecastingReferenceCodes.RunStatusOk,
                 HistoricalData = new List<ForecastProductionDataPoint>()
             };
 
@@ -83,29 +84,14 @@ namespace Beep.OilandGas.ProductionForecasting.Services
                 pf = DeclineForecast.GenerateExponentialDeclineForecast(qi, di, forecastDurationDays, forecastPeriod);
             }
 
-            var dto = new ProductionForecastResult
-            {
-                ForecastId = _defaults.FormatIdForTable("PRODUCTION_FORECAST", Guid.NewGuid().ToString()),
-                WellUWI = wellUWI,
-                FieldId = null,
-                ForecastDate = DateTime.UtcNow,
-                ForecastMethod = ForecastType.Decline,
-                ForecastPoints = new List<ProductionForecastPoint>(),
-                EstimatedReserves = pf.TOTAL_CUMULATIVE_PRODUCTION,
-                Status = "Generated"
-            };
-
-            var start = endDate;
-            foreach (var p in pf.FORECAST_POINTS)
-            {
-                var date = start.AddDays((double)p.TIME);
-                dto.ForecastPoints.Add(new ProductionForecastPoint
-                {
-                    Date = date,
-                    OilRate = p.PRODUCTION_RATE,
-                    CumulativeOil = p.CUMULATIVE_PRODUCTION
-                });
-            }
+            var dto = ProductionForecastResultMapper.FromDeclineForecast(
+                _defaults,
+                pf,
+                wellUWI,
+                null,
+                declineType,
+                endDate,
+                ProductionForecastingReferenceCodes.RunStatusGenerated);
 
             await Task.CompletedTask;
             return dto;

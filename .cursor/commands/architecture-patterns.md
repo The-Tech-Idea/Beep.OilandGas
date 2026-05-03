@@ -35,6 +35,12 @@ This document outlines architectural patterns for the Beep.OilandGas system, inc
 └─────────────────────────────────────────────────────────────┘
 ```
 
+## Extension tables (feature-owned) vs core PPDM
+
+- **Feature extension** tables (new domains such as choke/nodal calculators, app-specific `R_*` reference lists): implement **`ModelEntityBase`** table classes, register types on the owning feature’s **`IModuleSetup` (`ModuleSetupBase.EntityTypes`)**, seed with **`SeedAsync`** when required, and rely on **entity-driven schema tooling** — **not** new `.sql` files under `Beep.OilandGas.Models/Scripts/**`. **Every** `Beep.OilandGas.{Domain}` project that adds extension tables or domain LOV seed data should ship **`Modules/{Domain}Module.cs`** (see **EnhancedRecovery**, **CompressorAnalysis**, **ChokeAnalysis**). Pure utility libraries with no DB surface are exempt — document in README.
+- **Standard PPDM 3.9** entities and packaged script deployments remain the core database path.
+- Authoritative policy: root **`CLAUDE.md`** → *Schema for extension tables — entities + ModuleSetup, not hand-written SQL*.
+
 ## Service Layer Patterns
 
 ### Service Interface Pattern

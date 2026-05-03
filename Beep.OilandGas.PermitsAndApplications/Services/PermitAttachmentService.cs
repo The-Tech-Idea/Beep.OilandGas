@@ -19,14 +19,14 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
     /// </summary>
     public class PermitAttachmentService : PermitsServiceBase, IPermitAttachmentService
     {
-        private readonly ILogger<PermitAttachmentService> _logger;
+        private readonly ILogger<PermitAttachmentService>? _logger;
 
         public PermitAttachmentService(
             IDMEEditor editor,
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILogger<PermitAttachmentService> logger = null,
+            ILogger<PermitAttachmentService>? logger = null,
             string connectionName = "PPDM39")
             : base(editor, commonColumnHandler, defaults, metadata, logger, connectionName)
         {
@@ -74,10 +74,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             };
 
             var results = await repo.GetAsync(filters);
-            return results
-                .Select(r => r as APPLICATION_ATTACHMENT)
-                .Where(r => r != null)
-                .ToList();
+            return results.OfType<APPLICATION_ATTACHMENT>().ToList();
         }
 
         public async Task RemoveAttachmentAsync(string attachmentId, string userId)

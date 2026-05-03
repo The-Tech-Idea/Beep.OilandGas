@@ -24,7 +24,8 @@ using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using Beep.OilandGas.Models.Data.PipelineAnalysis;
-using Beep.OilandGas.Models.Data.CompressorAnalysis;
+using Beep.OilandGas.Models.Data.Calculations;
+using Beep.OilandGas.CompressorAnalysis.Data;
 using Beep.OilandGas.PPDM.Models;
 using Beep.OilandGas.Models.Data.LifeCycle;
 using Beep.OilandGas.Models.Data.Drilling;
@@ -1362,7 +1363,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         public async Task<COMPRESSOR_POWER_RESULT> AnalyzeCompressorPowerAsync(
             string fieldId,
             string facilityId,
-            string compressorType = "CENTRIFUGAL", // CENTRIFUGAL or RECIPROCATING
+            string compressorType = CompressorAnalysisWellKnown.CompressorType.Centrifugal,
             decimal? suctionPressure = null,
             decimal? dischargePressure = null,
             decimal? gasFlowRate = null,
@@ -1380,7 +1381,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     fieldId, facilityId, suctionPressure, dischargePressure, gasFlowRate, gasSpecificGravity);
 
                 COMPRESSOR_POWER_RESULT result;
-                if (compressorType.ToUpper() == "RECIPROCATING")
+                if (string.Equals(compressorType, CompressorAnalysisWellKnown.CompressorType.Reciprocating, StringComparison.OrdinalIgnoreCase))
                 {
                     // Reciprocating compressor
                     var compressorProperties = await GetReciprocatingCompressorPropertiesAsync(

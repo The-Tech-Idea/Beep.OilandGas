@@ -34,6 +34,7 @@ using Beep.OilandGas.HydraulicPumps.Services;
 using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.UserManagement.Services;
+using Beep.OilandGas.DevelopmentPlanning.Services;
 using System.Reflection;
 
 // Configure Serilog
@@ -369,6 +370,24 @@ builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.Development.Process
         processService, developmentService, processLogger);
 });
 
+// Canonical DevelopmentPlanning service
+builder.Services.AddScoped<IDevelopmentPlanService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<DevelopmentPlanService>();
+    return new DevelopmentPlanService(
+        editor,
+        commonColumnHandler,
+        defaults,
+        metadata,
+        connectionName,
+        logger);
+});
+
 // Production Process Service
 builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.Production.Processes.ProductionProcessService>(sp =>
 {
@@ -426,7 +445,10 @@ builder.Services.AddScoped<ICalculationService>(sp =>
     var logger = loggerFactory.CreateLogger<Beep.OilandGas.LifeCycle.Services.Calculations.PPDMCalculationService>();
     var fieldMappingService = sp.GetRequiredService<Beep.OilandGas.PPDM39.Repositories.IFieldMappingService>();
     return new Beep.OilandGas.LifeCycle.Services.Calculations.PPDMCalculationService(
-        editor, commonColumnHandler, defaults, metadata, fieldMappingService, connectionName, logger);
+        editor, commonColumnHandler, defaults, metadata, fieldMappingService,
+        sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IChokeAnalysisService>(),
+        sp.GetRequiredService<Beep.OilandGas.CompressorAnalysis.Core.Interfaces.ICompressorAnalysisService>(),
+        connectionName, logger);
 });
 
 // Accounting Service
@@ -1463,6 +1485,22 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IHeatMapService
         editor, commonColumnHandler, defaults, metadata, connectionName, logger);
 });
 
+// Choke Analysis Service (single-phase gas choke math; used by ICalculationService choke path)
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IChokeAnalysisService>(sp =>
+{
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.ChokeAnalysis.Services.ChokeAnalysisService>();
+    return new Beep.OilandGas.ChokeAnalysis.Services.ChokeAnalysisService(logger);
+});
+
+builder.Services.AddScoped<Beep.OilandGas.CompressorAnalysis.Core.Interfaces.ICompressorAnalysisService>(sp =>
+{
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.CompressorAnalysis.Services.CompressorAnalysisService>();
+    var defaults = sp.GetRequiredService<Beep.OilandGas.PPDM39.Repositories.IPPDM39DefaultsRepository>();
+    return new Beep.OilandGas.CompressorAnalysis.Services.CompressorAnalysisService(logger, defaults);
+});
+
 // Nodal Analysis Service
 builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.INodalAnalysisService>(sp =>
 {
@@ -1515,7 +1553,7 @@ builder.Services.AddScoped<IFacilityManagementService>(sp =>
 });
 
 // Production Operations Service
-builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IProductionOperationsService>(sp =>
+builder.Services.AddScoped<ProductionOperationsService>(sp =>
 {
     var editor = sp.GetRequiredService<IDMEEditor>();
     var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
@@ -1527,6 +1565,10 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IProductionOper
     return new ProductionOperationsService(
         editor, commonColumnHandler, defaults, metadata, facilityManagement, connectionName, logger);
 });
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IProductionOperationsService>(sp =>
+    sp.GetRequiredService<ProductionOperationsService>());
+builder.Services.AddScoped<IProductionOperationsAdvancedService>(sp =>
+    sp.GetRequiredService<ProductionOperationsService>());
 
 builder.Services.AddScoped<IProductionManagementService>(sp =>
 {
@@ -1595,11 +1637,13 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IEconomicAnalys
 builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IEnhancedRecoveryService>(sp =>
 {
     var editor = sp.GetRequiredService<IDMEEditor>();
-    return new Beep.OilandGas.EnhancedRecovery.Services.EnhancedRecoveryService(editor, connectionName);
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.EnhancedRecovery.Services.EnhancedRecoveryService>();
+    return new Beep.OilandGas.EnhancedRecovery.Services.EnhancedRecoveryService(editor, logger, connectionName);
 });
 
-// Lease Acquisition Service
-builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.ILeaseAcquisitionService>(sp =>
+// Lease Acquisition Service (single implementation, canonical + advanced interfaces)
+builder.Services.AddScoped<Beep.OilandGas.LeaseAcquisition.Services.LeaseAcquisitionService>(sp =>
 {
     var editor = sp.GetRequiredService<IDMEEditor>();
     var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
@@ -1610,6 +1654,10 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.ILeaseAcquisiti
     return new LeaseAcquisitionService(
         editor, commonColumnHandler, defaults, metadata, connectionName, logger);
 });
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.ILeaseAcquisitionService>(sp =>
+    sp.GetRequiredService<Beep.OilandGas.LeaseAcquisition.Services.LeaseAcquisitionService>());
+builder.Services.AddScoped<Beep.OilandGas.LeaseAcquisition.Services.ILeaseAcquisitionAdvancedService>(sp =>
+    sp.GetRequiredService<Beep.OilandGas.LeaseAcquisition.Services.LeaseAcquisitionService>());
 
 // Drilling Operation Service
 builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IDrillingOperationService>(sp =>

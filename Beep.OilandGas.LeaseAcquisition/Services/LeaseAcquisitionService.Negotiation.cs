@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.LeaseAcquisition.Services;
+using Beep.OilandGas.LeaseAcquisition.Data.Lease.Projections;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.LeaseAcquisition.Services

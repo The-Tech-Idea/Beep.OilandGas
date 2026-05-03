@@ -219,16 +219,6 @@ Data/Common/R_RISK_LEVEL.cs
 Data/Common/R_TRAP_TYPE.cs
 Data/Common/R_WORKFLOW_STAGE.cs
 Data/Common/UNPROVED_PROPERTY.cs
-Data/CompressorAnalysis/CENTRIFUGAL_COMPRESSOR_PROPERTIES.cs
-Data/CompressorAnalysis/COMPRESSOR_OPERATING_CONDITIONS.cs
-Data/CompressorAnalysis/COMPRESSOR_POWER_RESULT.cs
-Data/CompressorAnalysis/COMPRESSOR_PRESSURE_RESULT.cs
-Data/CompressorAnalysis/CentrifugalCompressorProperties.cs
-Data/CompressorAnalysis/CompressorOperatingConditions.cs
-Data/CompressorAnalysis/CompressorPowerResult.cs
-Data/CompressorAnalysis/CompressorPressureResult.cs
-Data/CompressorAnalysis/RECIPROCATING_COMPRESSOR_PROPERTIES.cs
-Data/CompressorAnalysis/ReciprocatingCompressorProperties.cs
 Data/DCA/DCAFitResultEnhanced.cs
 Data/DCA/DCAProductionDataPoint.cs
 Data/DCA/DCA_FIT_RESULT.cs

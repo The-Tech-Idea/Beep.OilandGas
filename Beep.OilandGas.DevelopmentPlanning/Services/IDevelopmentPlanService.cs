@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
 using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
+using Beep.OilandGas.Models.Data.DevelopmentPlanning;
+using Beep.OilandGas.PPDM39.Models;
 
 namespace Beep.OilandGas.DevelopmentPlanning.Services
 {
@@ -50,6 +52,21 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
         /// Gets permit applications for a development plan.
         /// </summary>
         Task<List<PERMIT_APPLICATION>> GetPermitApplicationsAsync(string planId);
+
+        /// <summary>
+        /// Gets well activities linked to a development plan.
+        /// </summary>
+        Task<List<WELL_ACTIVITY>> GetWellActivitiesAsync(string planId, string? wellUwi = null);
+
+        /// <summary>
+        /// Schedules a maintenance plan for a well.
+        /// </summary>
+        Task<WELL_MAINTENANCE_PLAN> CreateWellMaintenancePlanAsync(CreateWellMaintenancePlan createDto, string userId);
+
+        /// <summary>
+        /// Schedules a service-company job for a well.
+        /// </summary>
+        Task<WELL_SERVICE_JOB> CreateWellServiceJobAsync(CreateWellServiceJob createDto, string userId);
     }
 }
 

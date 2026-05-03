@@ -28,7 +28,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref EquipmentIdValue, value); }
 
         } // FACILITY_EQUIPMENT ROW_ID
-        private string CompressorTypeValue = "CENTRIFUGAL";
+        private string CompressorTypeValue = CompressorAnalysisWellKnown.CompressorType.Centrifugal;
 
         public string CompressorType
 
@@ -39,7 +39,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref CompressorTypeValue, value); }
 
         } // CENTRIFUGAL, RECIPROCATING
-        private string AnalysisTypeValue = "POWER";
+        private string AnalysisTypeValue = CompressorAnalysisWellKnown.AnalysisType.Power;
 
         public string AnalysisType
 

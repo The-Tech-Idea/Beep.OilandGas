@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.LeaseAcquisition.Services;
+using Beep.OilandGas.LeaseAcquisition.Data.Lease.Projections;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.LeaseAcquisition.Services
@@ -31,16 +31,16 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                 var management = new MineralRightsManagement
                 {
                     LeaseId = leaseId,
-                    Rights = new List<MineralRight>
+                    Rights = new List<MineralRightEntry>
                     {
-                        new MineralRight
+                        new MineralRightEntry
                         {
                             MineralName = "Oil",
                             Owner = "Landowner",
                             OwnershipPercentage = 1.0m,
                             IsActive = true
                         },
-                        new MineralRight
+                        new MineralRightEntry
                         {
                             MineralName = "Natural Gas",
                             Owner = "Landowner",

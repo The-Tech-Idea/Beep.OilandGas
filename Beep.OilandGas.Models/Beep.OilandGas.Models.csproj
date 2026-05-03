@@ -17,8 +17,10 @@
 		<Version>1.0.2</Version>
 		<Nullable>enable</Nullable>
 	    <NoWarn>$(NoWarn);CS0169;CS8618;CS8601</NoWarn>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 </PropertyGroup>
 	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\" />
 		<None Include="..\..\InstallationScripts\LogoGFx\128\SimpleODM.png">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>

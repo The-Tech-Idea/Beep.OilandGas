@@ -19,14 +19,14 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
     /// </summary>
     public class PermitComplianceCheckService : PermitsServiceBase, IPermitComplianceCheckService
     {
-        private readonly ILogger<PermitComplianceCheckService> _logger;
+        private readonly ILogger<PermitComplianceCheckService>? _logger;
 
         public PermitComplianceCheckService(
             IDMEEditor editor,
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILogger<PermitComplianceCheckService> logger = null,
+            ILogger<PermitComplianceCheckService>? logger = null,
             string connectionName = "PPDM39")
             : base(editor, commonColumnHandler, defaults, metadata, logger, connectionName)
         {
@@ -52,7 +52,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             var drilling = await GetDrillingApplicationAsync(application.PERMIT_APPLICATION_ID);
             var environmental = await GetEnvironmentalApplicationAsync(application.PERMIT_APPLICATION_ID);
             var injection = await GetInjectionApplicationAsync(application.PERMIT_APPLICATION_ID);
-            var mitResults = await GetMitResultsAsync(injection?.PERMIT_APPLICATION_ID);
+            var mitResults = await GetMitResultsAsync(injection?.PERMIT_APPLICATION_ID ?? string.Empty);
 
             ValidateCoreFields(application, result);
             ValidateTypeSpecific(application, drilling, environmental, injection, mitResults, result);
@@ -401,10 +401,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             };
 
             var results = await repo.GetAsync(filters);
-            return results
-                .Select(r => r as MIT_RESULT)
-                .Where(r => r != null)
-                .ToList();
+            return results.OfType<MIT_RESULT>().ToList();
         }
 
     }

@@ -6,12 +6,10 @@ using Beep.OilandGas.PPDM39.Models;
 namespace Beep.OilandGas.ProductionOperations.Services
 {
     /// <summary>
-    /// Production operations service interface.
-    /// Manages well production monitoring, equipment reliability, facility operations, and cost analysis.
+    /// Canonical production operations service interface.
+    /// Manages active well production monitoring, equipment reliability, and facility operations.
     /// HSE concerns (safety incidents, environmental compliance) are owned by the HSE project.
     /// Pipeline lifecycle management is owned by the PipelineManagement project.
-    /// NOTE: This local expanded interface includes both active and staged members.
-    /// For API-facing contract governance, use the method status map in `.plans/02_Interface_Status_Map.md`.
     /// </summary>
     public interface IProductionOperationsService
     {
@@ -97,77 +95,6 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
         #endregion
 
-        #region Cost Analysis & Reporting (staged)
-
-        /// <summary>
-        /// STAGED: Records operational costs.
-        /// Current implementation is a placeholder and does not persist rows yet.
-        /// </summary>
-        Task RecordOperationalCostsAsync(OperationalCosts costs, string userId);
-
-        /// <summary>
-        /// STAGED: Gets operational cost data.
-        /// Current implementation returns placeholder/default values.
-        /// </summary>
-        Task<List<OperationalCosts>> GetOperationalCostsAsync(DateTime startDate, DateTime endDate, string? wellUWI = null, string? facilityId = null);
-
-        /// <summary>
-        /// STAGED: Calculates cost per barrel/boe.
-        /// Current implementation returns placeholder/default values.
-        /// </summary>
-        Task<CostAnalysis> CalculateCostAnalysisAsync(string wellUWI, DateTime startDate, DateTime endDate);
-
-        /// <summary>
-        /// STAGED: Generates operations report.
-        /// Current implementation returns a scaffold/default report payload.
-        /// </summary>
-        Task<OperationsReport> GenerateOperationsReportAsync(DateTime startDate, DateTime endDate, string? wellUWI = null, string? facilityId = null);
-
-        #endregion
-
-        #region Production Optimization (partially staged)
-
-        /// <summary>
-        /// STAGED: Identifies production optimization opportunities.
-        /// Current implementation returns placeholder/default values.
-        /// </summary>
-        Task<List<OptimizationOpportunity>> IdentifyOptimizationOpportunitiesAsync(string wellUWI);
-
-        /// <summary>
-        /// STAGED: Implements production optimization recommendation.
-        /// Current implementation does not persist optimization execution state.
-        /// </summary>
-        Task ImplementOptimizationAsync(string opportunityId, string userId);
-
-        /// <summary>
-        /// STAGED: Monitors optimization effectiveness.
-        /// Current implementation returns synthetic/default metrics.
-        /// </summary>
-        Task<OptimizationEffectiveness> MonitorOptimizationEffectivenessAsync(string opportunityId);
-
-        #endregion
-
-        #region Data Management (staged)
-
-        /// <summary>
-        /// STAGED: Gets production operations summary.
-        /// Current implementation returns placeholder/default values.
-        /// </summary>
-        Task<ProductionOperationsSummary> GetProductionOperationsSummaryAsync(DateTime startDate, DateTime endDate);
-
-        /// <summary>
-        /// STAGED: Exports operations data to specified format.
-        /// Current implementation returns an empty payload.
-        /// </summary>
-        Task<byte[]> ExportOperationsDataAsync(string dataType, DateTime startDate, DateTime endDate, string format = "CSV");
-
-        /// <summary>
-        /// STAGED: Validates operations data integrity.
-        /// Current implementation returns optimistic/default validation results.
-        /// </summary>
-        Task<DataValidationResult> ValidateOperationsDataAsync(string dataType, DateTime startDate, DateTime endDate);
-
-        #endregion
     }
 
     #region Production Operations DTOs

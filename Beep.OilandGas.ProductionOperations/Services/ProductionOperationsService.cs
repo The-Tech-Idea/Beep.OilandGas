@@ -15,6 +15,7 @@ using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
 using System.Text.Json;
+using Beep.OilandGas.ProductionOperations.Constants;
 
 namespace Beep.OilandGas.ProductionOperations.Services
 {
@@ -23,7 +24,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// API-facing production operations surface using PPDMGenericRepository for persistence.
     /// This is the canonical pattern for active production/facility paths in Phase 2.
     /// </summary>
-    public partial class ProductionOperationsService : IProductionOperationsService, Beep.OilandGas.Models.Core.Interfaces.IProductionOperationsService
+    public partial class ProductionOperationsService : IProductionOperationsService, IProductionOperationsAdvancedService, Beep.OilandGas.Models.Core.Interfaces.IProductionOperationsService
     {
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
@@ -408,9 +409,27 @@ namespace Beep.OilandGas.ProductionOperations.Services
             if (existing == null)
                 throw new InvalidOperationException($"Well {wellUWI} not found");
 
-            // Well parameters update — FINAL_TD and DRILL_TD are depth fields, not pressure
-            // Pressure data should be stored in WELL_TEST_PRESSURE or WELL_PRESSURE tables
-            _logger?.LogWarning("Well parameter update via FINAL_TD/DRILL_TD is deprecated. Use WELL_TEST_PRESSURE for pressure data.");
+            var hasSupportedFieldUpdates =
+                !string.IsNullOrWhiteSpace(parameters.ArtificialLiftMethod) ||
+                !string.IsNullOrWhiteSpace(parameters.ChokeSize) ||
+                parameters.TargetRate.HasValue;
+            if (!hasSupportedFieldUpdates)
+            {
+                throw new InvalidOperationException(
+                    "No supported WELL fields were supplied. Provide TargetRate, ArtificialLiftMethod, or ChokeSize. " +
+                    "Pressure limits must be written to pressure-specific PPDM tables.");
+            }
+
+            // Keep WELL mutation constrained to supported metadata fields and preserve unsupported values as context.
+            var patch = new Dictionary<string, object?>
+            {
+                ["TargetRate"] = parameters.TargetRate,
+                ["ArtificialLiftMethod"] = parameters.ArtificialLiftMethod,
+                ["ChokeSize"] = parameters.ChokeSize,
+                ["MaxAllowablePressure"] = parameters.MaxAllowablePressure,
+                ["MinAllowablePressure"] = parameters.MinAllowablePressure
+            };
+            existing.REMARK = JsonSerializer.Serialize(patch);
 
             await repo.UpdateAsync(existing, userId);
             _logger?.LogInformation("Updated well parameters for {WellUWI}", wellUWI);
@@ -481,7 +500,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             {
                 EQUIPMENT_ID = schedule.EquipmentId,
                 MAINT_TYPE = schedule.MaintenanceType ?? "PREVENTIVE",
-                REMARK = "PLANNED",
+                REMARK = ProductionOperationsReferenceDefaults.PlannedMaintenanceStatus,
                 ACTIVE_IND = "Y"
             };
 
@@ -501,7 +520,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "MAINT_STATUS", Operator = "=", FilterValue = "PLANNED" },
+                new AppFilter { FieldName = "REMARK", Operator = "=", FilterValue = ProductionOperationsReferenceDefaults.PlannedMaintenanceStatus },
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
             };
 
@@ -633,20 +652,20 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
         // HSE methods removed — safety incidents and environmental compliance are owned by the HSE project
 
-        public async Task RecordOperationalCostsAsync(OperationalCosts costs, string userId)
+        async Task IProductionOperationsAdvancedService.RecordOperationalCostsAsync(OperationalCosts costs, string userId)
         {
             if (costs == null) throw new ArgumentNullException(nameof(costs));
             _logger?.LogInformation("Recording operational costs");
             await Task.CompletedTask;
         }
 
-        public async Task<List<OperationalCosts>> GetOperationalCostsAsync(DateTime startDate, DateTime endDate, string? wellUWI = null, string? facilityId = null)
+        async Task<List<OperationalCosts>> IProductionOperationsAdvancedService.GetOperationalCostsAsync(DateTime startDate, DateTime endDate, string? wellUWI, string? facilityId)
         {
             _logger?.LogInformation("Getting operational costs");
             return await Task.FromResult(new List<OperationalCosts>());
         }
 
-        public async Task<CostAnalysis> CalculateCostAnalysisAsync(string wellUWI, DateTime startDate, DateTime endDate)
+        async Task<CostAnalysis> IProductionOperationsAdvancedService.CalculateCostAnalysisAsync(string wellUWI, DateTime startDate, DateTime endDate)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
             _logger?.LogInformation("Calculating cost analysis for {WellUWI}", wellUWI);
@@ -662,7 +681,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             });
         }
 
-        public async Task<OperationsReport> GenerateOperationsReportAsync(DateTime startDate, DateTime endDate, string? wellUWI = null, string? facilityId = null)
+        async Task<OperationsReport> IProductionOperationsAdvancedService.GenerateOperationsReportAsync(DateTime startDate, DateTime endDate, string? wellUWI, string? facilityId)
         {
             _logger?.LogInformation("Generating operations report for {StartDate}-{EndDate}", startDate, endDate);
             return await Task.FromResult(new OperationsReport
@@ -694,14 +713,14 @@ namespace Beep.OilandGas.ProductionOperations.Services
             });
         }
 
-        public async Task<List<OptimizationOpportunity>> IdentifyOptimizationOpportunitiesAsync(string wellUWI)
+        async Task<List<OptimizationOpportunity>> IProductionOperationsAdvancedService.IdentifyOptimizationOpportunitiesAsync(string wellUWI)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
             _logger?.LogInformation("Identifying optimization opportunities for {WellUWI}", wellUWI);
             return await Task.FromResult(new List<OptimizationOpportunity>());
         }
 
-        public async Task ImplementOptimizationAsync(string opportunityId, string userId)
+        async Task IProductionOperationsAdvancedService.ImplementOptimizationAsync(string opportunityId, string userId)
         {
             if (string.IsNullOrWhiteSpace(opportunityId)) throw new ArgumentException("Opportunity ID required", nameof(opportunityId));
             if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID required", nameof(userId));
@@ -709,7 +728,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             await Task.CompletedTask;
         }
 
-        public async Task<OptimizationEffectiveness> MonitorOptimizationEffectivenessAsync(string opportunityId)
+        async Task<OptimizationEffectiveness> IProductionOperationsAdvancedService.MonitorOptimizationEffectivenessAsync(string opportunityId)
         {
             if (string.IsNullOrWhiteSpace(opportunityId)) throw new ArgumentException("Opportunity ID required", nameof(opportunityId));
             _logger?.LogInformation("Monitoring optimization effectiveness for opportunity {OpportunityId}", opportunityId);
@@ -727,7 +746,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             });
         }
 
-        public async Task<ProductionOperationsSummary> GetProductionOperationsSummaryAsync(DateTime startDate, DateTime endDate)
+        async Task<ProductionOperationsSummary> IProductionOperationsAdvancedService.GetProductionOperationsSummaryAsync(DateTime startDate, DateTime endDate)
         {
             _logger?.LogInformation("Getting production operations summary");
             return await Task.FromResult(new ProductionOperationsSummary
@@ -746,14 +765,14 @@ namespace Beep.OilandGas.ProductionOperations.Services
             });
         }
 
-        public async Task<byte[]> ExportOperationsDataAsync(string dataType, DateTime startDate, DateTime endDate, string format)
+        async Task<byte[]> IProductionOperationsAdvancedService.ExportOperationsDataAsync(string dataType, DateTime startDate, DateTime endDate, string format)
         {
             if (string.IsNullOrWhiteSpace(dataType)) throw new ArgumentException("Data type required", nameof(dataType));
             _logger?.LogInformation("Exporting {DataType} data from {StartDate} to {EndDate} as {Format}", dataType, startDate, endDate, format);
             return await Task.FromResult(Array.Empty<byte>());
         }
 
-        public async Task<DataValidationResult> ValidateOperationsDataAsync(string dataType, DateTime startDate, DateTime endDate)
+        async Task<DataValidationResult> IProductionOperationsAdvancedService.ValidateOperationsDataAsync(string dataType, DateTime startDate, DateTime endDate)
         {
             if (string.IsNullOrWhiteSpace(dataType)) throw new ArgumentException("Data type required", nameof(dataType));
             _logger?.LogInformation("Validating {DataType} data from {StartDate} to {EndDate}", dataType, startDate, endDate);

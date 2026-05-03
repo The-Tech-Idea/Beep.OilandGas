@@ -147,6 +147,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                     typeof(WELL_ABANDONMENT), _connectionName, "WELL_ABANDONMENT");
 
                 var result = await repo.InsertAsync(abandonmentEntity, userId);
+
+                await UpsertWellStatusAsync(
+                    wellId: wellId,
+                    statusType: "DECOMMISSIONING",
+                    statusCode: "P_AND_A_PLANNED",
+                    statusId: "P_AND_A_PLANNED",
+                    userId: userId,
+                    remark: "Well abandonment planned");
                 
                 // Convert PPDM model back to DTO
                 return (WellAbandonmentResponse)_mappingService.ConvertPPDMModelToDTORuntime(result, typeof(WellAbandonmentResponse), typeof(WELL_ABANDONMENT));
@@ -639,6 +647,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                     await activityRepo.InsertAsync(activity, userId);
                 }
 
+                await UpsertWellStatusAsync(
+                    wellId: wellId,
+                    statusType: "DECOMMISSIONING",
+                    statusCode: "P_AND_A_EXECUTING",
+                    statusId: "P_AND_A_EXECUTING",
+                    userId: userId,
+                    remark: $"Abandonment {abandonmentId} execution started");
+
                 return new WellAbandonmentResponse
                 {
                     AbandonmentId = abandonmentId,
@@ -693,6 +709,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                     await activityRepo.InsertAsync(activity, userId);
                 }
 
+                await UpsertWellStatusAsync(
+                    wellId: wellId,
+                    statusType: "DECOMMISSIONING",
+                    statusCode: passed ? "P_AND_A_VERIFIED" : "P_AND_A_FAILED",
+                    statusId: passed ? "P_AND_A_VERIFIED" : "P_AND_A_FAILED",
+                    userId: userId,
+                    remark: $"Abandonment {abandonmentId} verification by {verifiedBy}");
+
                 return new WellAbandonmentResponse
                 {
                     AbandonmentId = abandonmentId,
@@ -712,6 +736,65 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
         #endregion
 
         #region Private Fallback Helpers
+
+        private async Task UpsertWellStatusAsync(
+            string wellId,
+            string statusType,
+            string statusCode,
+            string statusId,
+            string userId,
+            string remark)
+        {
+            var formattedWellId = _defaults.FormatIdForTable("WELL_STATUS", wellId);
+            await ValidateWellStatusReferencesAsync(statusType, statusCode);
+
+            var wsRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(WELL_STATUS), _connectionName, "WELL_STATUS", null);
+
+            var now = DateTime.UtcNow;
+            var statusRow = new WELL_STATUS
+            {
+                UWI = formattedWellId,
+                STATUS_TYPE = statusType,
+                STATUS = statusCode,
+                STATUS_ID = statusId,
+                EFFECTIVE_DATE = now,
+                STATUS_DATE = now,
+                START_TIME = now,
+                ACTIVE_IND = "Y",
+                SOURCE = "LIFECYCLE",
+                REMARK = remark,
+                PPDM_GUID = Guid.NewGuid().ToString()
+            };
+            if (statusRow is IPPDMEntity e)
+                _commonColumnHandler.PrepareForInsert(e, userId);
+
+            await wsRepo.InsertAsync(statusRow, userId);
+        }
+
+        private async Task ValidateWellStatusReferencesAsync(string statusType, string statusCode)
+        {
+            var typeRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(R_WELL_STATUS_TYPE), _connectionName, "R_WELL_STATUS_TYPE", null);
+            var statusTypeRows = await typeRepo.GetAsync(new List<AppFilter>
+            {
+                new AppFilter { FieldName = "STATUS_TYPE", Operator = "=", FilterValue = statusType },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            });
+            if (!statusTypeRows.OfType<R_WELL_STATUS_TYPE>().Any())
+                throw new InvalidOperationException($"Invalid WELL_STATUS.STATUS_TYPE '{statusType}'.");
+
+            var statusRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(R_WELL_STATUS), _connectionName, "R_WELL_STATUS", null);
+            var statusRows = await statusRepo.GetAsync(new List<AppFilter>
+            {
+                new AppFilter { FieldName = "STATUS_TYPE", Operator = "=", FilterValue = statusType },
+                new AppFilter { FieldName = "STATUS", Operator = "=", FilterValue = statusCode },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            });
+            if (!statusRows.OfType<R_WELL_STATUS>().Any())
+                throw new InvalidOperationException($"Invalid WELL_STATUS code '{statusCode}' for type '{statusType}'.");
+        }
 
         private async Task<List<WellAbandonmentResponse>> GetAbandonedWellsFromActivityAsync(string fieldId, List<AppFilter>? additionalFilters)
         {

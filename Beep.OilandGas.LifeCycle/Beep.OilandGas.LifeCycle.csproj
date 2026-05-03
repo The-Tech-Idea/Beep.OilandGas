@@ -17,7 +17,6 @@
     <ProjectReference Include="..\Beep.OilandGas.HydraulicPumps\Beep.OilandGas.HydraulicPumps.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.LeaseAcquisition\Beep.OilandGas.LeaseAcquisition.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.DCA\Beep.OilandGas.DCA.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.OilProperties\Beep.OilandGas.OilProperties.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.PlungerLift\Beep.OilandGas.PlungerLift.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.PPDM39.DataManagement\Beep.OilandGas.PPDM39.DataManagement.csproj" />

@@ -2,6 +2,10 @@
 
 A comprehensive library for compressor analysis and design in oil and gas operations, supporting both centrifugal and reciprocating compressors.
 
+## Engineering plans
+
+Phased roadmap, PPDM/module notes, and verification checklists: **[.plans/README.md](.plans/README.md)** — summary rollup **[MASTER-TODO-TRACKER.md](MASTER-TODO-TRACKER.md)**.
+
 ## Overview
 
 `Beep.OilandGas.CompressorAnalysis` provides calculations for:
@@ -33,7 +37,9 @@ A comprehensive library for compressor analysis and design in oil and gas operat
 - Feasibility analysis
 
 ### ✅ Integration
-- Integration with `Beep.OilandGas.Properties` for gas calculations
+- **`Beep.OilandGas.CompressorAnalysis.Data`** — PPDM-style extension **table** entities (`COMPRESSOR_*`, **`R_COMPRESSOR_ANALYSIS_REFERENCE_CODE`**) under `Data/Tables/`
+- **`Beep.OilandGas.Models.Data.Calculations`** — packaged **`CompressorAnalysisRequest`** / **`CompressorAnalysisResult`** / **`CompressorAnalysisWellKnown`** for API and LifeCycle
+- **`Beep.OilandGas.GasProperties`** — gas calculations where applicable
 - Z-factor calculations
 - Gas property support
 - SI and US field units support

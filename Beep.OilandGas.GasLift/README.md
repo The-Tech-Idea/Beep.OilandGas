@@ -2,6 +2,23 @@
 
 A comprehensive library for gas lift analysis and design in oil and gas operations.
 
+## Module setup (`IModuleSetup`)
+
+**`GasLiftModule`** (`Beep.OilandGas.GasLift.Modules`) inherits **`ModuleSetupBase`**, **`ModuleId`** **`GAS_LIFT`**, **`Order`** **74** (after **`FLASH_CALCULATIONS`** / flash PVT, before **`ProductionForecasting`**). **`EntityTypes`** includes the extension table **`R_GAS_LIFT_REFERENCE_CODE`** (`Beep.OilandGas.GasLift.Data`).
+
+**`SeedAsync`** loads LOVs for:
+
+- **Port sizes (in.)** (`GAS_LIFT_PORT_SIZE_IN`) — codes aligned with **`GasLiftConstants.StandardPortSizes`**
+- **Operating mode** (`GAS_LIFT_OPERATING_MODE`): CONTINUOUS, INTERMITTENT, PLUNGER_COMPATIBLE
+- **Design / spacing policy** (`GAS_LIFT_DESIGN_METHOD`): UNIFORM_SPACING, EQUAL_PRESSURE_DROP, GRADIENT_BASED
+- **Valve service** (`GAS_LIFT_VALVE_SERVICE`): UNLOADING, INTERMEDIATE, OPERATING
+- **Injection gas source** (`GAS_LIFT_INJECTION_SOURCE`): FACILITY_MANIFOLD, DEDICATED_COMPRESSOR, WELLHEAD_RECYCLE
+- **Design limit keys** (`GAS_LIFT_DESIGN_LIMIT`): labels aligned with **`GasLiftConstants`** guardrails (min/max injection, valve count, depth, spacing)
+
+DDL for **`R_GAS_LIFT_REFERENCE_CODE`** is driven by entity/metadata tooling — see root **`CLAUDE.md`**. Definitions live in **`Data/Constants/GasLiftReferenceSets.cs`** and **`GasLiftReferenceCodeSeed.cs`**.
+
+---
+
 ## Overview
 
 `Beep.OilandGas.GasLift` provides calculations for:
@@ -32,9 +49,9 @@ A comprehensive library for gas lift analysis and design in oil and gas operatio
 - Temperature and pressure corrections
 
 ### ✅ Integration
-- Integration with `Beep.OilandGas.Properties` for gas calculations
-- Z-factor calculations
-- Gas property support
+- **`Beep.OilandGas.GasProperties`** for gas property correlations where used by lift calculations
+- **`Beep.OilandGas.Models`** — **`IGasLiftService`** and **`GAS_LIFT_*`** wire types
+- **`Beep.OilandGas.PPDM39.DataManagement`** — **`ModuleSetupBase`**, **`GasLiftModule`** seeding
 
 ## Installation
 
@@ -177,8 +194,18 @@ var equalDepthSpacing = GasLiftValveSpacingCalculator.CalculateEqualDepthSpacing
 
 ## Dependencies
 
-- `Beep.OilandGas.Properties` - Gas property calculations
-- `SkiaSharp` - Graphics rendering (for future visualization)
+- **`Beep.OilandGas.Models`** — **`IGasLiftService`**, **`GAS_LIFT_*`** entities
+- **`Beep.OilandGas.GasProperties`** — gas correlations
+- **`Beep.OilandGas.PPDM39.DataManagement`** — module setup / **`PPDMGenericRepository`** patterns for **`SeedAsync`**
+- **`SkiaSharp`** — optional future visualization
+
+## Documentation & planning
+
+| Resource | Purpose |
+|----------|---------|
+| **[`.plans/README.md`](.plans/README.md)** | Phased enhancement index |
+| **[`MASTER-TODO-TRACKER.md`](MASTER-TODO-TRACKER.md)** | Status rollup |
+| **[`IMPLEMENTATION_SUMMARY.md`](IMPLEMENTATION_SUMMARY.md)** | Project layout and build commands |
 
 ## Source Files
 

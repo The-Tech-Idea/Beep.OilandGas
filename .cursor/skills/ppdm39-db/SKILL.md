@@ -22,6 +22,12 @@ This registers: metadata, defaults, validation, quality, audit, versioning, LOV 
 
 ## Architecture
 
+### Boundary (read first)
+
+- **`Beep.OilandGas.PPDM39.DataManagement`** references **`Beep.OilandGas.Models`** and **`Beep.OilandGas.PPDM39`** only — **not** calculation/engine projects (ChokeAnalysis, NodalAnalysis, …).
+- Domain-specific enums, seed catalogs, and **`ModuleSetupBase`** implementations live in **each feature project**. **`EntityTypes`** must list only **extension / project-specific** tables (not standard PPDM 3.9 core tables already in the model). See **`CLAUDE.md`** → *Where code lives: Models, feature projects, and PPDM39.DataManagement*.
+- **No hand-written SQL for extension tables in this repo**: do **not** add or maintain `Beep.OilandGas.Models/Scripts/**` DDL for feature-owned tables. Define **entity classes**, register them on **`IModuleSetup.EntityTypes`**, seed via **`SeedAsync`** when needed, and let **migration / `CreateSchemaFromEntitiesAsync` / database-creation tooling** (see below) build the physical schema. Treat existing script folders as shipped or pipeline-generated, not per-feature agent output.
+
 ### PPDM39DataService Structure (Partial Classes + Helpers)
 
 | File | Purpose |
@@ -132,9 +138,13 @@ await repo.InsertAsync(entity, userId);
 await repo.UpdateAsync(entity, userId);
 ```
 
+## Feature modules (`ModuleSetupBase`)
+
+- Every **`Beep.OilandGas.{Domain}`** project that adds **extension tables** (`ModelEntityBase`) or **domain reference LOV seeds** should expose **`Modules/{Domain}Module.cs`** inheriting **`ModuleSetupBase`**: **`EntityTypes`** = extension entities only; **`SeedAsync`** = idempotent reference inserts (**skip-if-exists**). Registered automatically via **`AddDiscoveredModuleSetups()`** when the assembly is loaded (e.g. ApiService). Do **not** register domain modules inside **`PPDM39.DataManagement`** except shared infrastructure (**`SharedReferenceModule`**, **`WellReferenceModule`**, …).
+
 ## Naming Conventions
 
-- **Interfaces**: `I{ServiceName}` in `Beep.OilandGas.Models.Core.Interfaces`
+- **Interfaces**: `I{ServiceName}` in `Beep.OilandGas.Models.Core.Interfaces` for shared cross-library contracts; when the interface only uses **feature-local extension table types**, it may live in `{Feature}.Core.Interfaces` (see **`Beep.OilandGas.CompressorAnalysis.Core.Interfaces.ICompressorAnalysisService`**)
 - **Implementations**: `{ServiceName}Service` in `Beep.OilandGas.PPDM39.DataManagement.Services`
 - **Connection**: Default `PPDM39`; overridable via config or `AddPPDM39DataManagement(connectionName)`
 

@@ -56,8 +56,9 @@ namespace Beep.OilandGas.Models.Data.ChokeAnalysis
             set { SetProperty(ref PRESSURE_RATIOValue, value); }
         }
 
-        private FlowRegime FLOW_REGIMEValue;
-        public FlowRegime FLOW_REGIME
+        private String FLOW_REGIMEValue = string.Empty;
+        /// <summary>Flow regime code (e.g. SONIC, SUBSONIC) — align with <c>R_CHOKE_ANALYSIS_REFERENCE_CODE</c> / <c>ChokeAnalysisReferenceCodes</c> in ChokeAnalysis.</summary>
+        public String FLOW_REGIME
         {
             get { return this.FLOW_REGIMEValue; }
             set { SetProperty(ref FLOW_REGIMEValue, value); }

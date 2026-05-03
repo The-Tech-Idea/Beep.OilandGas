@@ -25,14 +25,14 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
     /// </summary>
     public class PermitApplicationWorkflowService : PermitsServiceBase, IPermitApplicationWorkflowService
     {
-        private readonly ILogger<PermitApplicationWorkflowService> _logger;
+        private readonly ILogger<PermitApplicationWorkflowService>? _logger;
 
         public PermitApplicationWorkflowService(
             IDMEEditor editor,
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILogger<PermitApplicationWorkflowService> logger = null,
+            ILogger<PermitApplicationWorkflowService>? logger = null,
             string connectionName = "PPDM39")
             : base(editor, commonColumnHandler, defaults, metadata, logger, connectionName)
         {
@@ -40,7 +40,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
         }
 
         // Explicit overload to satisfy interface which uses string parameters
-        public async Task<JURISDICTION_REQUIREMENTS> GetJurisdictionRequirementsAsync(
+        public async Task<JURISDICTION_REQUIREMENTS?> GetJurisdictionRequirementsAsync(
             string country,
             string stateProvince,
             string authority)
@@ -129,7 +129,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
         /// <summary>
         /// Retrieves a permit application by ID.
         /// </summary>
-        public async Task<PERMIT_APPLICATION> GetPermitApplicationAsync(string applicationId)
+        public async Task<PERMIT_APPLICATION?> GetPermitApplicationAsync(string applicationId)
         {
             try
             {
@@ -146,7 +146,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 var result = await repo.GetByIdAsync(applicationId);
 
                 _logger?.LogInformation("Permit application retrieved: {ApplicationId}", applicationId);
-                return result as PERMIT_APPLICATION;
+                return result is PERMIT_APPLICATION entity ? entity : null;
             }
             catch (Exception ex)
             {
@@ -173,7 +173,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 };
 
                 var results = await repo.GetAsync(filters);
-                var applications = results.Select(r => r as PERMIT_APPLICATION).ToList();
+                var applications = results.OfType<PERMIT_APPLICATION>().ToList();
 
                 _logger?.LogInformation("Retrieved {Count} permit applications with status: {Status}", applications.Count, status);
                 return applications;
@@ -203,7 +203,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 };
 
                 var results = await repo.GetAsync(filters);
-                var applications = results.Select(r => r as PERMIT_APPLICATION).ToList();
+                var applications = results.OfType<PERMIT_APPLICATION>().ToList();
 
                 _logger?.LogInformation("Retrieved {Count} permit applications for authority: {Authority}", applications.Count, authority);
                 return applications;
@@ -356,7 +356,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 };
 
                 var results = await repo.GetAsync(filters);
-                var attachments = results.Select(r => r as APPLICATION_ATTACHMENT).ToList();
+                var attachments = results.OfType<APPLICATION_ATTACHMENT>().ToList();
 
                 _logger?.LogInformation("Retrieved {Count} attachments for application: {ApplicationId}", attachments.Count, applicationId);
                 return attachments;
@@ -531,7 +531,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
         /// <summary>
         /// Retrieves jurisdiction requirements for a specific authority.
         /// </summary>
-        public async Task<JURISDICTION_REQUIREMENTS> GetJurisdictionRequirementsAsync(
+        public async Task<JURISDICTION_REQUIREMENTS?> GetJurisdictionRequirementsAsync(
             Country country,
             StateProvince stateProvince,
             RegulatoryAuthority authority)
@@ -552,7 +552,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 };
 
                 var results = await repo.GetAsync(filters);
-                var requirements = results.FirstOrDefault() as JURISDICTION_REQUIREMENTS;
+                var requirements = results.OfType<JURISDICTION_REQUIREMENTS>().FirstOrDefault();
 
                 _logger?.LogInformation("Jurisdiction requirements retrieved for {Country}, {State}, {Authority}",
                     country, stateProvince, authority);
@@ -876,7 +876,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 };
 
                 var results = await repo.GetAsync(filters);
-                return results.Select(result => result as APPLIC_BA).ToList();
+                return results.OfType<APPLIC_BA>().ToList();
             }
             catch (Exception ex)
             {
@@ -933,7 +933,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 };
 
                 var results = await repo.GetAsync(filters);
-                return results.Select(result => result as APPLIC_DESC).ToList();
+                return results.OfType<APPLIC_DESC>().ToList();
             }
             catch (Exception ex)
             {
@@ -990,7 +990,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 };
 
                 var results = await repo.GetAsync(filters);
-                return results.Select(result => result as APPLIC_REMARK).ToList();
+                return results.OfType<APPLIC_REMARK>().ToList();
             }
             catch (Exception ex)
             {
@@ -1006,7 +1006,8 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
         {
             try
             {
-                _logger?.LogInformation("Adding BA_PERMIT for business associate: {BusinessAssociateId}", permit?.BUSINESS_ASSOCIATE_ID);
+                ArgumentNullException.ThrowIfNull(permit);
+                _logger?.LogInformation("Adding BA_PERMIT for business associate: {BusinessAssociateId}", permit.BUSINESS_ASSOCIATE_ID);
 
                 permit.ACTIVE_IND = "Y";
                 SetAuditFields(permit, userId);
@@ -1038,7 +1039,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 };
 
                 var results = await repo.GetAsync(filters);
-                return results.Select(result => result as BA_PERMIT).ToList();
+                return results.OfType<BA_PERMIT>().ToList();
             }
             catch (Exception ex)
             {
@@ -1095,7 +1096,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 };
 
                 var results = await repo.GetAsync(filters);
-                return results.Select(result => result as FACILITY_LICENSE).ToList();
+                return results.OfType<FACILITY_LICENSE>().ToList();
             }
             catch (Exception ex)
             {
@@ -1111,7 +1112,8 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
         {
             try
             {
-                _logger?.LogInformation("Adding WELL_PERMIT_TYPE: {PermitType}", permitType?.PERMIT_TYPE);
+                ArgumentNullException.ThrowIfNull(permitType);
+                _logger?.LogInformation("Adding WELL_PERMIT_TYPE: {PermitType}", permitType.PERMIT_TYPE);
 
                 permitType.ACTIVE_IND = "Y";
                 SetAuditFields(permitType, userId);
@@ -1147,7 +1149,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 }
 
                 var results = await repo.GetAsync(filters);
-                return results.Select(result => result as WELL_PERMIT_TYPE).ToList();
+                return results.OfType<WELL_PERMIT_TYPE>().ToList();
             }
             catch (Exception ex)
             {
@@ -1249,10 +1251,11 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
         private async Task<List<REQUIRED_FORM>> GenerateFormsForApplicationTypeAsync(
             PERMIT_APPLICATION application,
-            JURISDICTION_REQUIREMENTS requirements,
+            JURISDICTION_REQUIREMENTS? requirements,
             string userId)
         {
             var forms = new List<REQUIRED_FORM>();
+            _ = requirements;
 
             var registry = new PermitFormTemplateRegistry();
             var normalizedAuthority = NormalizeAuthority(application.REGULATORY_AUTHORITY.ToString());

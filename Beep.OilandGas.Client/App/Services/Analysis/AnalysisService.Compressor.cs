@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.Data.CompressorAnalysis;
+using Beep.OilandGas.CompressorAnalysis.Data;
 
 namespace Beep.OilandGas.Client.App.Services.Analysis
 {

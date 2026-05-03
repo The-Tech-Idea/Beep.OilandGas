@@ -59,29 +59,31 @@ namespace Beep.OilandGas.FlashCalculations.Services
 
         public List<FlashResult> PerformMultiStageFlash(FLASH_CONDITIONS conditions, int stages)
         {
+            if (stages < 1)
+                throw new ArgumentOutOfRangeException(nameof(stages), stages, "At least one stage is required.");
+
             _logger?.LogInformation("Performing multi-stage flash calculation with {Stages} stages", stages);
             var results = new List<FlashResult>();
-            
+
+            var originalCatalog = conditions.FEED_COMPOSITION ?? new List<FLASH_COMPONENT>();
+
             // Perform first stage
             var previousStageResult = FlashCalculator.PerformIsothermalFlash(conditions);
             results.Add(previousStageResult);
 
-            // For subsequent stages, use liquid from previous stage as feed
+            // For subsequent stages, use liquid from previous stage as feed (preserve Tc, Pc, ω, MW from original feed)
             var currentFeed = conditions;
             for (int i = 1; i < stages; i++)
             {
-                // Create new conditions with liquid composition from previous stage
+                var nextFeedComposition = FlashFeedCatalogMerge.FromLiquidComposition(
+                    previousStageResult.LiquidComposition,
+                    originalCatalog);
+
                 var nextStageConditions = new FLASH_CONDITIONS
                 {
                     PRESSURE = currentFeed.PRESSURE,
                     TEMPERATURE = currentFeed.TEMPERATURE,
-                    FEED_COMPOSITION = previousStageResult.LiquidComposition.Select(component => 
-                        new FLASH_COMPONENT
-                        {
-                            NAME = component.ComponentName,
-                            COMPONENT_NAME = component.ComponentName,
-                            MOLE_FRACTION = component.Fraction
-                        }).ToList()
+                    FEED_COMPOSITION = nextFeedComposition
                 };
 
                 var stageResult = FlashCalculator.PerformIsothermalFlash(nextStageConditions);

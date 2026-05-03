@@ -20,12 +20,12 @@ else
             <MudSpacer />
             <MudSelect T="string" Value="@_selectedStatus" Label="Status" Dense="true" Style="width: 180px;"
                        ValueChanged="@(async (string s) => { _selectedStatus = s; await LoadAsync(); })">
-                <MudSelectItem Value="">All</MudSelectItem>
-                <MudSelectItem Value="Draft">Draft</MudSelectItem>
-                <MudSelectItem Value="Submitted">Submitted</MudSelectItem>
-                <MudSelectItem Value="Under Review">Under Review</MudSelectItem>
-                <MudSelectItem Value="Approved">Approved</MudSelectItem>
-                <MudSelectItem Value="Rejected">Rejected</MudSelectItem>
+                <MudSelectItem Value="@string.Empty">All</MudSelectItem>
+                <MudSelectItem Value="@("Draft")">Draft</MudSelectItem>
+                <MudSelectItem Value="@("Submitted")">Submitted</MudSelectItem>
+                <MudSelectItem Value="@("Under Review")">Under Review</MudSelectItem>
+                <MudSelectItem Value="@("Approved")">Approved</MudSelectItem>
+                <MudSelectItem Value="@("Rejected")">Rejected</MudSelectItem>
             </MudSelect>
             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
                        OnClick="NavigateToCreate">
@@ -49,7 +49,7 @@ else
                                  Size="Size.Small">
                             @context.Item.Status
                         </MudChip>
-                    </TemplateTemplate>
+                    </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Decision">
                     <CellTemplate>

@@ -228,6 +228,9 @@ namespace Beep.OilandGas.Models.Data.Calculations
         public CompressorAnalysisAdditionalResults? AdditionalResults { get; set; }
         private string? StatusValue;
 
+        /// <summary>
+        /// Orchestration outcome; prefer <see cref="CalculationRunStatus.Success"/> and <see cref="CalculationRunStatus.Failed"/> when assigning from facility/API flows.
+        /// </summary>
         public string? Status
 
         {
@@ -236,7 +239,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
 
             set { SetProperty(ref StatusValue, value); }
 
-        } // SUCCESS, FAILED
+        }
         private string? ErrorMessageValue;
 
         public string? ErrorMessage

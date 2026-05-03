@@ -651,8 +651,8 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
 
             try
             {
-                var compressorType = options?.CompressorType ?? "CENTRIFUGAL";
-                var analysisType = options?.AnalysisType ?? "POWER";
+                var compressorType = options?.CompressorType ?? CompressorAnalysisWellKnown.CompressorType.Centrifugal;
+                var analysisType = options?.AnalysisType ?? CompressorAnalysisWellKnown.AnalysisType.Power;
                 var additionalParameters = options;
 
                 _logger?.LogInformation("Running compressor analysis for facility: {FacilityId}, CompressorType: {CompressorType}", 

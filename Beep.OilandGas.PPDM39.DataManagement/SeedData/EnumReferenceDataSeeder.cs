@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Enums.Shared;
 using Beep.OilandGas.Models.Enums.WellTest;
-using Beep.OilandGas.Models.Enums.ChokeAnalysis;
 using Beep.OilandGas.Models.Enums.Compressor;
 using Beep.OilandGas.Models.Enums.Analytics;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -138,17 +137,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
 
 
             // ==========================================
-            // 3. EQUIPMENT SPECIFIC (Choke, Compressor)
+            // 3. EQUIPMENT SPECIFIC (Compressor)
             // ==========================================
-            totalSeeded += await SeedEnumAsync<R_CAT_EQUIP_TYPE>(typeof(ChokeType), "CAT_EQUIP_TYPE", "LONG_NAME", "REMARK", userId);
-            
             // Compressor 
             totalSeeded += await SeedEnumAsync<R_CAT_EQUIP_TYPE>(typeof(CompressorType), "CAT_EQUIP_TYPE", "LONG_NAME", "REMARK", userId);
             totalSeeded += await SeedEnumAsync<R_CAT_EQUIP_SPEC>(typeof(DriverType), "CAT_EQUIP_SPEC_ID", "LONG_NAME", "REMARK", userId);
-
-             // Choke Analysis
-            totalSeeded += await SeedEnumAsync<R_WELL_TEST_TYPE>(typeof(FlowRegime), "WELL_TEST_TYPE", "LONG_NAME", "REMARK", userId); // Mapping Flow Regime to Test Type for now
-
 
             // ==========================================
             // 4. ANALYTICS

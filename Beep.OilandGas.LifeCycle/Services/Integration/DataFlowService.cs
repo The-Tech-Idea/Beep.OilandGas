@@ -346,8 +346,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
             string facilityId,
             string userId = "system",
             string? equipmentId = null,
-            string compressorType = "CENTRIFUGAL",
-            string analysisType = "POWER",
+            string compressorType = CompressorAnalysisWellKnown.CompressorType.Centrifugal,
+            string analysisType = CompressorAnalysisWellKnown.AnalysisType.Power,
             CompressorAnalysisOptions? additionalParameters = null)
         {
             if (string.IsNullOrEmpty(facilityId))

@@ -34,10 +34,10 @@ namespace Beep.OilandGas.PermitsAndApplications.Data.PermitTables
         public DateTime? DECISION_DATE { get => _decisionDate; set => SetProperty(ref _decisionDate, value); }
 
         private DateTime? _effectiveDate;
-        public DateTime? EFFECTIVE_DATE { get => _effectiveDate; set => SetProperty(ref _effectiveDate, value); }
+        public new DateTime? EFFECTIVE_DATE { get => _effectiveDate; set => SetProperty(ref _effectiveDate, value); }
 
         private DateTime? _expiryDate;
-        public DateTime? EXPIRY_DATE { get => _expiryDate; set => SetProperty(ref _expiryDate, value); }
+        public new DateTime? EXPIRY_DATE { get => _expiryDate; set => SetProperty(ref _expiryDate, value); }
 
         private string? _decision;
         public string? DECISION { get => _decision; set => SetProperty(ref _decision, value); }

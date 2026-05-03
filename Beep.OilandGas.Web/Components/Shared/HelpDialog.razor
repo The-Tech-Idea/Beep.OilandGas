@@ -24,7 +24,7 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] public MudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter] public IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public PageHelp? HelpContent { get; set; }
 
     private void Cancel() => MudDialog.Cancel();

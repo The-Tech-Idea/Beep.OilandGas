@@ -1,5 +1,9 @@
 # PPDM39 Data Access Framework - Documentation Index
 
+## Beep.OilandGas project convention
+
+**Feature extension tables:** entity classes + **`IModuleSetup.EntityTypes`** + **`CreateSchemaFromEntitiesAsync`** / migration — **not** new hand-written `Beep.OilandGas.Models/Scripts/**`. See root **`CLAUDE.md`** (*Schema for extension tables*). [Database Creation](beep-dataaccess-database-creation.md) and [Script Execution](beep-dataaccess-script-execution.md) describe **tooling** over script directories (e.g. packaged PPDM deployment), not authoring per-feature DDL in-repo.
+
 ## Overview
 
 Welcome to the PPDM39 Data Access Framework documentation. This index provides navigation to all documentation files.

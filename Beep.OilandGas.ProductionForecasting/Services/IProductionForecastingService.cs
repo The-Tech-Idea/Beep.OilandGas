@@ -11,9 +11,14 @@ using Beep.OilandGas.Models.Data.ProductionForecasting;
 namespace Beep.OilandGas.ProductionForecasting.Services
 {
     /// <summary>
-    /// Comprehensive production forecasting service interface
-    /// Provides DCA, probabilistic forecasting, economic analysis, and risk assessment capabilities
+    /// Comprehensive production forecasting service interface for advanced and internal scenarios.
+    /// Provides DCA, probabilistic forecasting, economic analysis, and risk assessment capabilities.
     /// </summary>
+    /// <remarks>
+    /// For web API and dependency injection from <c>Beep.OilandGas.ApiService</c>, prefer
+    /// <see cref="Beep.OilandGas.Models.Core.Interfaces.IProductionForecastingService"/> to avoid namespace confusion
+    /// with this feature-local interface (same type name).
+    /// </remarks>
     public interface IProductionForecastingService
     {
         #region Core Forecasting Methods

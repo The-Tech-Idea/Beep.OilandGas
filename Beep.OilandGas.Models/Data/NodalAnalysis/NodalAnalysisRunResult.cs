@@ -105,5 +105,17 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref StatusValue, value); }
 
         }
+
+        private bool PersistCurveSnapshotsValue;
+
+        public bool PersistCurveSnapshots
+
+        {
+
+            get { return this.PersistCurveSnapshotsValue; }
+
+            set { SetProperty(ref PersistCurveSnapshotsValue, value); }
+
+        }
     }
 }

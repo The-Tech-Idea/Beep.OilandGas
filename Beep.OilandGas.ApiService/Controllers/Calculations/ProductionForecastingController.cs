@@ -1,7 +1,9 @@
-using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Calculations;
+using GenerateForecastRequest = Beep.OilandGas.Models.Data.ProductionForecasting.GenerateForecastRequest;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Calculations
@@ -24,16 +26,23 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("generate")]
-        public async Task<ActionResult<ProductionForecastResult>> GenerateForecast([FromBody] GenerateForecastRequest request)
+        public async Task<ActionResult<ProductionForecastResult>> GenerateForecast([FromBody] GenerateForecastRequest? request)
         {
+            if (request is null)
+                return BadRequest(new { error = "Request body is required." });
+
             try
             {
-                var result = await _service.GenerateForecastAsync(
-                    request.WellUWI,
-                    request.FieldId,
-                    request.ForecastMethod.ToString(),
-                    request.ForecastPeriod);
+                var result = await _service.GenerateForecastAsync(request);
                 return Ok(result);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
             }
             catch (Exception ex)
             {
@@ -43,8 +52,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("decline-curve")]
-        public async Task<ActionResult<DeclineCurveAnalysis>> PerformDeclineCurveAnalysis([FromBody] DeclineCurveAnalysisRequest request)
+        public async Task<ActionResult<DeclineCurveAnalysis>> PerformDeclineCurveAnalysis([FromBody] DeclineCurveAnalysisRequest? request)
         {
+            if (request is null)
+                return BadRequest(new { error = "Request body is required." });
+
             try
             {
                 var result = await _service.PerformDeclineCurveAnalysisAsync(
@@ -52,6 +64,14 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
                     request.StartDate,
                     request.EndDate);
                 return Ok(result);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
             }
             catch (Exception ex)
             {
@@ -61,12 +81,23 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("forecast")]
-        public async Task<ActionResult> SaveForecast([FromBody] ProductionForecastResult forecast, [FromQuery] string? userId = null)
+        public async Task<ActionResult> SaveForecast([FromBody] ProductionForecastResult? forecast, [FromQuery] string? userId = null)
         {
+            if (forecast is null)
+                return BadRequest(new { error = "Forecast body is required." });
+
             try
             {
                 await _service.SaveForecastAsync(forecast, userId ?? GetUserId());
                 return Ok(new { message = "Production forecast saved successfully", forecastId = forecast.ForecastId });
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
             }
             catch (Exception ex)
             {
@@ -75,7 +106,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             }
         }
 
-        private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
+        private string GetUserId() =>
+            User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst("sub")?.Value
+            ?? "SYSTEM";
     }
 }
-

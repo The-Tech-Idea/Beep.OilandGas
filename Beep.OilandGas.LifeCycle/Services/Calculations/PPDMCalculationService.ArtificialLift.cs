@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging;
 using Beep.OilandGas.GasLift.Calculations;
 using Beep.OilandGas.SuckerRodPumping.Calculations;
 using Beep.OilandGas.ChokeAnalysis.Calculations;
+using Beep.OilandGas.ChokeAnalysis.Constants;
 using Beep.OilandGas.PlungerLift.Calculations;
 using Beep.OilandGas.HydraulicPumps.Calculations;
 
@@ -97,26 +98,79 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
             try
             {
+                var correlation = request.AdditionalParameters?.CorrelationMethod;
+                var useMultiphaseOrchestration = ChokeAnalysisReferenceCodes.UseMultiphaseOrchestration(correlation);
+
+                var diameterInches = request.ChokeDiameter ?? 0.5m;
+
+                // Single-phase gas path (aligned with Beep.OilandGas.ChokeAnalysis / IChokeAnalysisService)
+                if (!useMultiphaseOrchestration &&
+                    request.UpstreamPressure is decimal pUp &&
+                    request.DownstreamPressure is decimal pDn &&
+                    pUp > 0m && pDn >= 0m && pDn < pUp)
+                {
+                    var chokeTypeStr = string.IsNullOrWhiteSpace(request.ChokeType) ? "BEAN" : request.ChokeType;
+                    if (string.Equals(chokeTypeStr, "FIXED", StringComparison.OrdinalIgnoreCase))
+                        chokeTypeStr = "BEAN";
+
+                    var choke = new CHOKE_PROPERTIES
+                    {
+                        CHOKE_DIAMETER = diameterInches,
+                        CHOKE_TYPE = chokeTypeStr,
+                        DISCHARGE_COEFFICIENT = request.DischargeCoefficient ?? 0.85m,
+                        CHOKE_AREA = 0m
+                    };
+
+                    var gas = new GAS_CHOKE_PROPERTIES
+                    {
+                        UPSTREAM_PRESSURE = pUp,
+                        DOWNSTREAM_PRESSURE = pDn,
+                        TEMPERATURE = request.Temperature ?? 520m,
+                        GAS_SPECIFIC_GRAVITY = request.GasSpecificGravity ?? 0.65m,
+                        Z_FACTOR = request.ZFactor ?? 0.9m
+                    };
+
+                    var chokeFlow = string.Equals(request.AnalysisType, "UPHOLE", StringComparison.OrdinalIgnoreCase)
+                        ? await _chokeAnalysisService.CalculateUpholeChokeFlowAsync(choke, gas).ConfigureAwait(false)
+                        : await _chokeAnalysisService.CalculateDownholeChokeFlowAsync(choke, gas).ConfigureAwait(false);
+
+                    result.ChokeDiameter = choke.CHOKE_DIAMETER;
+                    result.ChokeType = choke.CHOKE_TYPE;
+                    result.DischargeCoefficient = choke.DISCHARGE_COEFFICIENT;
+                    result.FlowRate = chokeFlow.FLOW_RATE;
+                    result.UpstreamPressure = chokeFlow.UPSTREAM_PRESSURE;
+                    result.DownstreamPressure = chokeFlow.DOWNSTREAM_PRESSURE;
+                    result.PressureRatio = chokeFlow.PRESSURE_RATIO;
+                    result.CriticalPressureRatio = chokeFlow.CRITICAL_PRESSURE_RATIO;
+                    result.FlowRegime = chokeFlow.FLOW_REGIME ?? string.Empty;
+                    return await Task.FromResult(result);
+                }
+
+                // Multiphase Gilbert-style fallback when correlation requests empirical path or full gas inputs unavailable
                 var liquidRate = request.FlowRate ?? 500m;
                 // Fall back to latest WELL_TEST GOR from PPDM; then use 500 scf/bbl industry default
                 var ppdmGorRaw = !string.IsNullOrEmpty(request.WellId)
                     ? await GetGasOilRatioForWellAsync(request.WellId)
                     : null;
                 var glr = ppdmGorRaw.HasValue ? (decimal)ppdmGorRaw.Value : 500m;
-                var diameterInches = request.ChokeDiameter ?? 0.5m;
 
                 var pressures = MultiphaseChokeCalculator.CalculatePressures(liquidRate, glr, diameterInches);
 
+                var estimatedUpstream =
+                    MultiphaseChokeCalculator.SelectCorrelationUpstreamPressure(pressures, correlation);
+
                 result.FlowRate = liquidRate;
-                result.UpstreamPressure = request.UpstreamPressure ?? pressures.GilbertPressure;
+                result.UpstreamPressure = request.UpstreamPressure ?? estimatedUpstream;
                 result.DownstreamPressure = request.DownstreamPressure ?? 0m;
                 result.PressureRatio = result.UpstreamPressure > 0
                     ? result.DownstreamPressure / result.UpstreamPressure
                     : 0m;
-                // Critical pressure ratio for gas flow ≈ 0.528 (ideal gas); above this is subcritical
-                result.CriticalPressureRatio = 0.528m;
-                result.FlowRegime = result.PressureRatio < result.CriticalPressureRatio
-                    ? "CRITICAL" : "SUBCRITICAL";
+                var criticalRatio = ResolveMultiphaseCriticalPressureRatio(request.AdditionalParameters?.CriticalPressureRatioOverride);
+                result.CriticalPressureRatio = criticalRatio;
+                // Same reference codes as single-phase gas / R_CHOKE_ANALYSIS_REFERENCE_CODE (simplified multiphase heuristic).
+                result.FlowRegime = result.PressureRatio < criticalRatio
+                    ? ChokeAnalysisReferenceCodes.RegimeSonic
+                    : ChokeAnalysisReferenceCodes.RegimeSubsonic;
             }
             catch (Exception ex)
             {
@@ -311,6 +365,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             }
 
             return await Task.FromResult(result);
+        }
+
+        /// <summary>
+        /// Critical pressure ratio for simplified multiphase regime labeling; optional override from <see cref="ChokeAnalysisOptions.CriticalPressureRatioOverride"/> when in (0,1).
+        /// </summary>
+        private static decimal ResolveMultiphaseCriticalPressureRatio(decimal? overrideValue)
+        {
+            if (overrideValue is decimal o && o > 0m && o < 1m)
+                return o;
+            return MultiphaseChokeCalculator.DefaultMultiphaseCriticalPressureRatio;
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using Beep.OilandGas.ChokeAnalysis.Constants;
 using Beep.OilandGas.Models.Data.Calculations;
 
 namespace Beep.OilandGas.ChokeAnalysis.Calculations
@@ -94,6 +95,31 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
                  BaxendellPressure = pBaxendell
              };
         }
+
+        /// <summary>
+        /// Picks the correlation-specific estimated upstream pressure (psia) when the caller did not supply absolute upstream pressure.
+        /// <c>PILEHVARI</c> and <c>SACHDEVA</c> fall back to Gilbert until dedicated mechanism models are wired.
+        /// </summary>
+        public static decimal SelectCorrelationUpstreamPressure(MultiphaseFlowResult pressures, string? correlationMethod)
+        {
+            if (pressures == null)
+                throw new ArgumentNullException(nameof(pressures));
+            if (string.IsNullOrWhiteSpace(correlationMethod))
+                return pressures.GilbertPressure;
+
+            var c = correlationMethod.Trim();
+            if (string.Equals(c, ChokeAnalysisReferenceCodes.CorrelationRos, StringComparison.OrdinalIgnoreCase))
+                return pressures.RosPressure;
+            if (string.Equals(c, ChokeAnalysisReferenceCodes.CorrelationAchong, StringComparison.OrdinalIgnoreCase))
+                return pressures.AchongPressure;
+            if (string.Equals(c, ChokeAnalysisReferenceCodes.CorrelationBaxendell, StringComparison.OrdinalIgnoreCase))
+                return pressures.BaxendellPressure;
+
+            return pressures.GilbertPressure;
+        }
+
+        /// <summary>Default critical pressure ratio (ideal gas, k≈1.28) for regime classification on the simplified multiphase orchestration path.</summary>
+        public const decimal DefaultMultiphaseCriticalPressureRatio = 0.528m;
         
         public static decimal EvaluatePilehvari(MultiphaseChokeAnalysis data, decimal diameter)
         {

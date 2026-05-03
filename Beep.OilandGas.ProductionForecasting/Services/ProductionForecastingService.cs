@@ -17,6 +17,7 @@ using Beep.OilandGas.PPDM.Models;
 using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.ProductionForecasting.Calculations;
 using Beep.OilandGas.Models.Data.ProspectIdentification;
+using Beep.OilandGas.ProductionForecasting.Constants;
 
 namespace Beep.OilandGas.ProductionForecasting.Services
 {
@@ -59,44 +60,18 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             _logger?.LogInformation("Generating {Method} forecast for {WellUWI}{FieldId} over {Period} months",
                 forecastMethod, wellUWI ?? string.Empty, fieldId ?? string.Empty, forecastPeriod);
 
-            var forecast = new ProductionForecastResult
+            var request = new GenerateForecastRequest
             {
-                ForecastId = _defaults.FormatIdForTable("PRODUCTION_FORECAST", Guid.NewGuid().ToString()),
                 WellUWI = wellUWI,
                 FieldId = fieldId,
-                ForecastDate = DateTime.UtcNow,
                 ForecastMethod = forecastMethod,
-                ForecastPoints = new List<ProductionForecastPoint>(),
-                EstimatedReserves = 0,
-                Status = "Generated"
+                ForecastPeriod = forecastPeriod
             };
-
-            // Generate forecast points
-            for (int i = 0; i < forecastPeriod; i++)
-            {
-                forecast.ForecastPoints.Add(new ProductionForecastPoint
-                {
-                    Date = DateTime.UtcNow.AddMonths(i + 1),
-                    OilRate = 1000 - (i * 10), // Simplified decline
-                    GasRate = 500 - (i * 5),
-                    WaterRate = 100 + (i * 2)
-                });
-            }
-
-            _logger?.LogWarning("GenerateForecastAsync not fully implemented - requires forecast calculation logic");
-
-            await Task.CompletedTask;
-            return forecast;
+            return await GenerateForecastAsync(request);
         }
 
         // Decline-curve analysis implementation moved to ProductionForecastingService.DCA.cs (partial)
-
-        // Interface-compatible overloads / stubs
-        public async Task<ProductionForecastResult> GenerateForecastAsync(GenerateForecastRequest request)
-        {
-            if (request == null) throw new ArgumentNullException(nameof(request));
-            return await GenerateForecastAsync(request.WellUWI, request.FieldId, request.ForecastMethod, request.ForecastPeriod);
-        }
+        // Full request-based forecast orchestration: ProductionForecastingService.ForecastGeneration.cs (partial)
 
         // DCA forecast implementation moved to ProductionForecastingService.DCA.cs (partial)
 
@@ -118,7 +93,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
                 CommercialSuccessProbability = 0,
                 RiskFactors = new List<RiskFactor>(),
                 MitigationStrategies = new List<string>(),
-                RiskRating = "Unknown"
+                RiskRating = ProductionForecastingReferenceCodes.RiskUnknown
             };
             await Task.CompletedTask;
             return result;
@@ -163,7 +138,9 @@ namespace Beep.OilandGas.ProductionForecasting.Services
                 ForecastMethod = pf.FORECAST_TYPE,
                 ForecastPoints = new List<ProductionForecastPoint>(),
                 EstimatedReserves = 0m,
-                Status = pf.ACTIVE_IND == _defaults.GetActiveIndicatorYes() ? "Active" : "Inactive",
+                Status = pf.ACTIVE_IND == _defaults.GetActiveIndicatorYes()
+                    ? ProductionForecastingReferenceCodes.RunStatusActive
+                    : ProductionForecastingReferenceCodes.RunStatusInactive,
                 Notes = null
             };
 

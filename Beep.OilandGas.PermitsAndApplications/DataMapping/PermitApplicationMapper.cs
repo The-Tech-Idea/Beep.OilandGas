@@ -49,7 +49,7 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
 
             var data = existing ?? new PERMIT_APPLICATION();
 
-            data.PERMIT_APPLICATION_ID = application.APPLICATION_ID;
+            data.PERMIT_APPLICATION_ID = application.APPLICATION_ID ?? string.Empty;
             data.APPLICATION_TYPE = application.APPLICATION_TYPE;
             data.STATUS = application.STATUS;
             data.COUNTRY = application.COUNTRY;

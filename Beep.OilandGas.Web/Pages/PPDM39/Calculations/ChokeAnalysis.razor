@@ -4,6 +4,7 @@
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.Calculations
 @using Beep.OilandGas.PPDM39.Models
+@using Beep.OilandGas.ChokeAnalysis.Constants
 @inject ApiClient ApiClient
 @inject ICalculationServiceClient CalculationService
 @inject IDevelopmentServiceClient DevelopmentClient
@@ -98,6 +99,21 @@
                         <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.ChokeDiameter" Label="Choke Diameter (in)" Variant="Variant.Outlined" Min="0.05m" /></MudItem>
                         <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.DischargeCoefficient" Label="Discharge Coefficient" Variant="Variant.Outlined" Min="0.1m" Max="1.5m" /></MudItem>
                         <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.FlowRate" Label="Flow Rate (Mscf/day)" Variant="Variant.Outlined" Min="1m" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudSelect T="string" Label="Correlation method" Variant="Variant.Outlined"
+                                       @bind-Value="_correlationMethodSelection"
+                                       HelperText="Default uses single-phase gas when both pressures are set. GILBERT/ROS/… use the empirical multiphase orchestration path.">
+                                <MudSelectItem Value="@string.Empty">Default (auto)</MudSelectItem>
+                                <MudSelectItem Value="@ChokeAnalysisReferenceCodes.CorrelationGasSinglePhase">@ChokeAnalysisReferenceCodes.CorrelationGasSinglePhase</MudSelectItem>
+                                <MudSelectItem Value="@ChokeAnalysisReferenceCodes.CorrelationMultiphase">@ChokeAnalysisReferenceCodes.CorrelationMultiphase</MudSelectItem>
+                                <MudSelectItem Value="@ChokeAnalysisReferenceCodes.CorrelationGilbert">@ChokeAnalysisReferenceCodes.CorrelationGilbert</MudSelectItem>
+                                <MudSelectItem Value="@ChokeAnalysisReferenceCodes.CorrelationRos">@ChokeAnalysisReferenceCodes.CorrelationRos</MudSelectItem>
+                                <MudSelectItem Value="@ChokeAnalysisReferenceCodes.CorrelationAchong">@ChokeAnalysisReferenceCodes.CorrelationAchong</MudSelectItem>
+                                <MudSelectItem Value="@ChokeAnalysisReferenceCodes.CorrelationBaxendell">@ChokeAnalysisReferenceCodes.CorrelationBaxendell</MudSelectItem>
+                                <MudSelectItem Value="@ChokeAnalysisReferenceCodes.CorrelationPilehvari">@ChokeAnalysisReferenceCodes.CorrelationPilehvari</MudSelectItem>
+                                <MudSelectItem Value="@ChokeAnalysisReferenceCodes.CorrelationSachdeva">@ChokeAnalysisReferenceCodes.CorrelationSachdeva</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
 
                         <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.UpstreamPressure" Label="Upstream Pressure (psia)" Variant="Variant.Outlined" Min="1m" /></MudItem>
                         <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal?" @bind-Value="@_request.DownstreamPressure" Label="Downstream Pressure (psia)" Variant="Variant.Outlined" Min="0m" /></MudItem>
@@ -170,6 +186,7 @@
     private bool _isRunning;
 
     private ChokeAnalysisRequest _request = CreateDefaultRequest();
+    private string _correlationMethodSelection = string.Empty;
     private ChokeAnalysisResult? _currentResult;
     private WellOptionDto? _selectedWell;
     private List<WellOptionDto> _wells = new();
@@ -315,6 +332,7 @@
 
         _isRunning = true;
         _request.WellId = _selectedWellId;
+        ApplyCorrelationSelectionToRequest();
 
         try
         {
@@ -350,7 +368,22 @@
             Temperature = 540m,
             GasSpecificGravity = 0.65m,
             ZFactor = 0.9m,
-            FlowRate = 500m
+            FlowRate = 500m,
+            AdditionalParameters = null
+        };
+    }
+
+    private void ApplyCorrelationSelectionToRequest()
+    {
+        if (string.IsNullOrWhiteSpace(_correlationMethodSelection))
+        {
+            _request.AdditionalParameters = null;
+            return;
+        }
+
+        _request.AdditionalParameters = new ChokeAnalysisOptions
+        {
+            CorrelationMethod = _correlationMethodSelection.Trim()
         };
     }
 
@@ -408,6 +441,7 @@
         return new CalculationFactItem[]
         {
             new() { Label = "Requested Analysis", Value = _request.AnalysisType ?? "N/A" },
+            new() { Label = "Correlation method", Value = string.IsNullOrWhiteSpace(_correlationMethodSelection) ? "Default (auto)" : _correlationMethodSelection.Trim() },
             new() { Label = "Requested Choke Type", Value = _request.ChokeType ?? "N/A" },
             new() { Label = "Field", Value = _fieldName },
             new() { Label = "Requested Flow", Value = $"{FormatNullableDecimal(_request.FlowRate, 2)} Mscf/day" },

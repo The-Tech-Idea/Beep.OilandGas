@@ -1,3 +1,28 @@
+# PermitsAndApplications Master Tracker
+
+## Phase Rollup
+- [x] Phase 0 - Planning baseline and governance docs
+- [x] Phase 1 - Canonical model and contract reconciliation
+- [x] Phase 2 - Data access canonicalization
+- [x] Phase 3 - Reference catalog and idempotent seeding
+- [x] Phase 4 - Service architecture cleanup
+- [x] Phase 5 - API + lifecycle integration alignment
+- [x] Phase 6 - Tests and hardening
+- [x] Phase 7 - Rollout and exit reconciliation
+
+## Active TODOs
+- [x] Create module-local `.plans` and tracker artifacts.
+- [x] Define PPDM-first matrix and model shape boundaries.
+- [x] Keep single canonical permit lifecycle persistence path active.
+- [x] Add idempotent reference seed catalog.
+- [x] Add focused API/module tests for status/seeding behavior.
+
+## Verification Criteria
+- Permits services compile and use consistent model contracts.
+- Module seeding is idempotent (no duplicate `(REFERENCE_SET, REFERENCE_CODE)` keys).
+- API and lifecycle permit paths are explicitly aligned/documented.
+- Focused tests pass for permits controller and seed integrity.
+- Full solution gate is green (`dotnet build Beep.OilandGas.sln`).
 # MASTER-TODO-TRACKER — Beep.OilandGas.PermitsAndApplications
 
 Single checklist for **restructure** work and **enhancement** work (oil & gas regulatory workflows). Detailed narrative: `.plans/permit_applications_restructure/ENHANCEMENT_PLAN.md`. Phase playbooks: same folder, `phase*.md`.

@@ -20,7 +20,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
     /// </summary>
     public class PermitApplicationLifecycleService : PermitsServiceBase, IPermitApplicationLifecycleService
     {
-        private readonly ILogger<PermitApplicationLifecycleService> _logger;
+        private readonly ILogger<PermitApplicationLifecycleService>? _logger;
         private readonly DataMapping.PermitApplicationMapper _mapper = new();
 
         public PermitApplicationLifecycleService(
@@ -28,7 +28,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILogger<PermitApplicationLifecycleService> logger = null,
+            ILogger<PermitApplicationLifecycleService>? logger = null,
             string connectionName = "PPDM39")
             : base(editor, commonColumnHandler, defaults, metadata, logger, connectionName)
         {
@@ -103,8 +103,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
             var results = await repo.GetAsync(filters);
             return results
-                .Select(r => r as PERMIT_APPLICATION)
-                .Where(r => r != null)
+                .OfType<PERMIT_APPLICATION>()
                 .Select(r => _mapper.MapToDomain(r))
                 .ToList();
         }

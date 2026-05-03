@@ -88,14 +88,14 @@ namespace Beep.OilandGas.PermitsAndApplications.Data.PermitTables
         }
 
         private DateTime? _effectiveDate;
-        public DateTime? EFFECTIVE_DATE
+        public new DateTime? EFFECTIVE_DATE
         {
             get => _effectiveDate;
             set => SetProperty(ref _effectiveDate, value);
         }
 
         private DateTime? _expiryDate;
-        public DateTime? EXPIRY_DATE
+        public new DateTime? EXPIRY_DATE
         {
             get => _expiryDate;
             set => SetProperty(ref _expiryDate, value);

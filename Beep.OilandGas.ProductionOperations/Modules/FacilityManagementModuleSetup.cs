@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Beep.OilandGas.ProductionOperations.Constants;
 using Beep.OilandGas.Models.Data.ProductionOperations;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
@@ -47,7 +48,9 @@ namespace Beep.OilandGas.ProductionOperations.Modules
             var result = NewResult();
             await SeedEquipmentCatalogAsync(connectionName, userId, result, cancellationToken);
             await SeedFacilityMonitoringReferenceCodesAsync(connectionName, userId, result, cancellationToken);
-            result.Success = true;
+            result.Success = result.Errors.Count == 0;
+            if (result.Success && result.RecordsInserted == 0)
+                result.SkipReason = "Facility management reference rows already seeded.";
             return result;
         }
 
@@ -144,42 +147,26 @@ namespace Beep.OilandGas.ProductionOperations.Modules
             string connectionName, string userId, ModuleSetupResult result, CancellationToken ct)
         {
             var repo = GetRepo<R_FACILITY_MONITORING_CODE>("R_FACILITY_MONITORING_CODE", connectionName);
-            var rows = new (string Set, string Code, string LongName, string ShortName)[]
-            {
-                ("EQUIPMENT_ACTIVITY_TYPE", "INSTALL", "Equipment Installed", "INSTALL"),
-                ("EQUIPMENT_ACTIVITY_TYPE", "UNINSTALL", "Equipment Uninstalled", "UNINSTALL"),
-                ("EQUIPMENT_ACTIVITY_TYPE", "MOVE", "Equipment Moved", "MOVE"),
-                ("EQUIPMENT_ACTIVITY_TYPE", "REPLACE", "Equipment Replaced", "REPLACE"),
-
-                ("MEASUREMENT_TYPE", "TANK_LEVEL", "Tank Level", "TANK_LEVEL"),
-                ("MEASUREMENT_TYPE", "FLOW_RATE", "Flow Rate", "FLOW_RATE"),
-                ("MEASUREMENT_TYPE", "PRESSURE", "Pressure", "PRESSURE"),
-                ("MEASUREMENT_TYPE", "TEMPERATURE", "Temperature", "TEMPERATURE"),
-                ("MEASUREMENT_TYPE", "VIBRATION", "Vibration", "VIBRATION"),
-                ("MEASUREMENT_TYPE", "POWER_DRAW", "Power Draw", "POWER_DRAW"),
-
-                ("MEASUREMENT_QUALITY", "MEASURED", "Directly Measured", "MEASURED"),
-                ("MEASUREMENT_QUALITY", "ESTIMATED", "Estimated", "ESTIMATED"),
-                ("MEASUREMENT_QUALITY", "IMPUTED", "Imputed", "IMPUTED"),
-
-                ("MEASUREMENT_UOM", "PERCENT", "Percent", "%"),
-                ("MEASUREMENT_UOM", "M", "Meter", "M"),
-                ("MEASUREMENT_UOM", "FT", "Foot", "FT"),
-                ("MEASUREMENT_UOM", "PSI", "Pressure (PSI)", "PSI"),
-                ("MEASUREMENT_UOM", "DEG_C", "Degrees Celsius", "C"),
-                ("MEASUREMENT_UOM", "DEG_F", "Degrees Fahrenheit", "F"),
-            };
-
-            foreach (var (setName, code, longName, shortName) in rows)
+            foreach (var row in ProductionOperationsReferenceCodeSeed.GetMonitoringReferenceRows())
             {
                 ct.ThrowIfCancellationRequested();
                 try
                 {
-                    await UpsertFacilityMonitoringReferenceCodeIfMissingAsync(repo, setName, code, longName, shortName, userId);
+                    await UpsertFacilityMonitoringReferenceCodeIfMissingAsync(
+                        repo,
+                        row.ReferenceSet,
+                        row.ReferenceCode,
+                        row.LongName,
+                        row.ShortName,
+                        userId);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
                 }
                 catch (Exception ex)
                 {
-                    result.Errors.Add($"MonitoringRef:{setName}:{code}: {ex.Message}");
+                    result.Errors.Add($"MonitoringRef:{row.ReferenceSet}:{row.ReferenceCode}: {ex.Message}");
                 }
             }
         }

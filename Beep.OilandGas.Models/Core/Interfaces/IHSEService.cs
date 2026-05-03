@@ -2,6 +2,11 @@ using Beep.OilandGas.Models.Data.HSE;
 
 namespace Beep.OilandGas.Models.Core.Interfaces;
 
+/// <summary>
+/// Canonical HSE domain service over PPDM-backed incident storage.
+/// This interface is intentionally field-agnostic; field scoping is enforced by
+/// <see cref="IFieldHSEService"/> through lifecycle orchestration.
+/// </summary>
 public interface IHSEService
 {
     Task<HSEIncidentRecord>       ReportIncidentAsync(ReportIncidentRequest request, string userId);

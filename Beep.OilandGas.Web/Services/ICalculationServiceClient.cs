@@ -8,6 +8,8 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.Models.Data.FlashCalculations;
 using Beep.OilandGas.Models.Data.GasProperties;
+using Beep.OilandGas.Models.Data.NodalAnalysis;
+using Beep.OilandGas.Models.Data.ProductionForecasting;
 using Beep.OilandGas.Models.Data.PumpPerformance;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
 
@@ -71,10 +73,26 @@ namespace Beep.OilandGas.Web.Services
         Task<GAS_LIFT_PERFORMANCE> GetGasLiftPerformanceAsync(string wellUWI);
 
         // Nodal Analysis Operations
+        /// <summary>Nodal analyze — <see cref="NodalAnalysisHttpRoutes.Analyze"/>.</summary>
         Task<NodalAnalysisRunResult> PerformNodalAnalysisAsync(string wellUWI, NodalAnalysisParameters analysisParameters);
+        /// <summary>Nodal optimize — <see cref="NodalAnalysisHttpRoutes.Optimize"/>.</summary>
         Task<OptimizationResult> OptimizeSystemAsync(string wellUWI, OptimizationGoals optimizationGoals);
+        /// <summary>Save nodal result — <see cref="NodalAnalysisHttpRoutes.Result"/>.</summary>
         Task<bool> SaveNodalAnalysisResultAsync(NodalAnalysisRunResult result, string? userId = null);
+        /// <summary>Nodal history — GET <see cref="NodalAnalysisHttpRoutes.Prefix"/>/history/{{wellUWI}}.</summary>
         Task<List<NodalAnalysisRunResult>> GetNodalAnalysisHistoryAsync(string wellUWI);
+        /// <summary>Performance matching — <see cref="NodalAnalysisHttpRoutes.PerformanceMatching"/>.</summary>
+        Task<PerformanceMatchingAnalysis> AnalyzePerformanceMatchingAsync(PerformNodalAnalysisRequest request);
+        /// <summary>Sensitivity — <see cref="NodalAnalysisHttpRoutes.Sensitivity"/>.</summary>
+        Task<EconomicSensitivityAnalysisResult> PerformSensitivityAnalysisAsync(NodalSensitivityAnalysisRequest request);
+        /// <summary>Artificial lift — <see cref="NodalAnalysisHttpRoutes.ArtificialLift"/>.</summary>
+        Task<ArtificialLiftRecommendation> RecommendArtificialLiftAsync(NodalArtificialLiftRequest request);
+        /// <summary>Diagnostics — <see cref="NodalAnalysisHttpRoutes.Diagnostics"/>.</summary>
+        Task<WellDiagnosticsResult> DiagnoseWellPerformanceAsync(NodalWellDiagnosticsRequest request);
+        /// <summary>Nodal decline screening forecast — <see cref="NodalAnalysisHttpRoutes.ProductionForecast"/>.</summary>
+        Task<PRODUCTION_FORECAST> ForecastNodalProductionAsync(NodalProductionForecastRequest request);
+        /// <summary>Pressure maintenance screening — <see cref="NodalAnalysisHttpRoutes.PressureMaintenance"/>.</summary>
+        Task<PressureMaintenanceStrategy> AnalyzePressureMaintenanceAsync(NodalPressureMaintenanceRequest request);
 
         // Production Forecasting Operations
         Task<ProductionForecastResult> GenerateForecastAsync(string? wellUWI, string? fieldId, string forecastMethod, int forecastPeriod);

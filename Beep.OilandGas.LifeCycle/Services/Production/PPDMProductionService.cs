@@ -14,6 +14,7 @@ using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.ChokeAnalysis;
 using Beep.OilandGas.ChokeAnalysis.Calculations;
+using Beep.OilandGas.ChokeAnalysis.Constants;
 
 using Beep.OilandGas.SuckerRodPumping.Calculations;
 
@@ -30,6 +31,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
     /// <summary>
     /// Service for Production & Reserves data management
     /// Implements both IPPDMProductionService and IFieldProductionService
+    /// Compatibility boundary: ProductionOperations module owns canonical production-operations
+    /// API contracts, while this service keeps lifecycle orchestration and PPDM process flows.
     /// </summary>
     public class PPDMProductionService : IPPDMProductionService, IFieldProductionService
     {
@@ -1211,7 +1214,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                         UpstreamPressure = result.UPSTREAM_PRESSURE,
                         DownstreamPressure = result.DOWNSTREAM_PRESSURE,
                         PressureRatio = result.PRESSURE_RATIO,
-                        FlowRegime = result.FLOW_REGIME.ToString(),
+                        FlowRegime = result.FLOW_REGIME,
                         CriticalPressureRatio = result.CRITICAL_PRESSURE_RATIO,
                         AnalysisDate = DateTime.UtcNow
                     })

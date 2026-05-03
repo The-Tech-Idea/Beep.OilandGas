@@ -21,6 +21,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
 {
     /// <summary>
     /// Service for managing permits and applications throughout the oil and gas lifecycle
+    /// Compatibility boundary: canonical permit lifecycle persistence is owned by
+    /// Beep.OilandGas.PermitsAndApplications services and API interfaces.
     /// </summary>
     public class PermitManagementService
     {

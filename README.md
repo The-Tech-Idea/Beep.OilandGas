@@ -61,7 +61,7 @@ The solution follows a **three-layer architecture**:
 | `Beep.OilandGas.ProductionOperations` | Production — well operations, optimization, work orders |
 | `Beep.OilandGas.ProductionAccounting` | Accounting — allocation, royalties, run tickets, reserves |
 | `Beep.OilandGas.ProductionForecasting` | Forecasting — decline curves, production predictions |
-| `Beep.OilandGas.NodalAnalysis` | Nodal analysis — well performance, IPR/VLP |
+| `Beep.OilandGas.NodalAnalysis` | Nodal analysis — well performance, IPR/VLP ([full docs](Beep.OilandGas.NodalAnalysis/README.md)) |
 | `Beep.OilandGas.Reservoir` | Reservoir engineering — material balance, simulation |
 | `Beep.OilandGas.EconomicAnalysis` | Economics — NPV, IRR, scenario analysis |
 | `Beep.OilandGas.HSE` | Health, Safety & Environment — incidents, HAZOP, barriers |
@@ -241,13 +241,14 @@ public class MyController : ControllerBase
 | Business Processes | `Plans/BusinessProcessesPlan/PetroleumEngineerBusinessProcesses.md` |
 | MudBlazor Docs | `Beep.OilandGas.Web/MudBlazor_Docs/README.md` |
 
-## Database Scripts
+## Database / schema
 
-Scripts are organized by database type under `Scripts/`:
+- **New feature or extension tables** (domain-specific, not standard PPDM 3.9): define **entity classes** in `Beep.OilandGas.Models`, register them on the feature project’s **`IModuleSetup.EntityTypes`**, and let **PPDM / migration tooling** (e.g. `CreateSchemaFromEntitiesAsync`, setup orchestration) build the physical schema. **Do not** add new hand-written SQL under `Beep.OilandGas.Models/Scripts/**` for those tables — see **`CLAUDE.md`** (*Schema for extension tables — entities + ModuleSetup, not hand-written SQL*).
+- **Packaged PPDM script trees** used by database creation still organize scripts by database type (TAB/PK/FK patterns); those paths support core schema deployment and tooling — separate from the extension-table workflow above.
 
 ```
-Scripts/
-├── SqlServer/    (TAB, PK, FK subdirectories)
+Scripts/   (per dialect — packaging / discovery layout used by creation tooling)
+├── SqlServer/
 ├── PostgreSQL/
 ├── SQLite/
 ├── Oracle/

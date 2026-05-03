@@ -78,10 +78,10 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
 
             var ppdmApplication = existingApplication ?? new APPLICATION();
 
-            ppdmApplication.APPLICATION_ID = application.APPLICATION_ID;
+            ppdmApplication.APPLICATION_ID = application.APPLICATION_ID ?? string.Empty;
             ppdmApplication.APPLICATION_TYPE = MapApplicationTypeToString(application.APPLICATION_TYPE);
             ppdmApplication.CURRENT_STATUS = MapApplicationStatusToString(application.STATUS);
-            ppdmApplication.SUBMITTED_TO = MapRegulatoryAuthorityToString(application.REGULATORY_AUTHORITY);
+            ppdmApplication.SUBMITTED_TO = MapRegulatoryAuthorityToString(application.REGULATORY_AUTHORITY) ?? string.Empty;
             
             // Store jurisdiction information in REMARK or use a component
             var jurisdictionInfo = $"{application.COUNTRY}|{application.STATE_PROVINCE}";
@@ -89,17 +89,17 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
                 ? $"Jurisdiction: {jurisdictionInfo}" 
                 : $"{application.REMARKS}\nJurisdiction: {jurisdictionInfo}";
             
-            ppdmApplication.SUBMITTED_DATE = (DateTime)application.SUBMITTED_DATE;
-            ppdmApplication.RECEIVED_DATE = (DateTime)application.RECEIVED_DATE;
-            ppdmApplication.DECISION_DATE = (DateTime)application.DECISION_DATE;
-            ppdmApplication.EFFECTIVE_DATE = (DateTime)application.EFFECTIVE_DATE;
-            ppdmApplication.EXPIRY_DATE = (DateTime)application.EXPIRY_DATE;
-            ppdmApplication.DECISION = application.DECISION;
-            ppdmApplication.REFERENCE_NUM = application.REFERENCE_NUMBER;
-            ppdmApplication.FEES_DESC = application.FEES_DESCRIPTION;
+            ppdmApplication.SUBMITTED_DATE = application.SUBMITTED_DATE.GetValueOrDefault();
+            ppdmApplication.RECEIVED_DATE = application.RECEIVED_DATE.GetValueOrDefault();
+            ppdmApplication.DECISION_DATE = application.DECISION_DATE.GetValueOrDefault();
+            ppdmApplication.EFFECTIVE_DATE = application.EFFECTIVE_DATE.GetValueOrDefault();
+            ppdmApplication.EXPIRY_DATE = application.EXPIRY_DATE.GetValueOrDefault();
+            ppdmApplication.DECISION = application.DECISION ?? string.Empty;
+            ppdmApplication.REFERENCE_NUM = application.REFERENCE_NUMBER ?? string.Empty;
+            ppdmApplication.FEES_DESC = application.FEES_DESCRIPTION ?? string.Empty;
             ppdmApplication.FEES_PAID_IND = application.FEES_PAID ? "Y" : "N";
             ppdmApplication.SUBMISSION_COMPLETE_IND = application.SUBMISSION_COMPLETE ? "Y" : "N";
-            ppdmApplication.SUBMISSION_DESC = application.SUBMISSION_DESCRIPTION;
+            ppdmApplication.SUBMISSION_DESC = application.SUBMISSION_DESCRIPTION ?? string.Empty;
             ppdmApplication.ACTIVE_IND = application.STATUS != PermitApplicationStatus.Expired ? "Y" : "N";
 
             return ppdmApplication;

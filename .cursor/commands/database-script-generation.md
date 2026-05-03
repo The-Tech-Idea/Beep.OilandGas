@@ -1,5 +1,11 @@
 # Database Script Generation
 
+## Beep.OilandGas — agent scope (read first)
+
+**Do not** use this document to add or edit `Beep.OilandGas.Models/Scripts/**` for **extension / feature-owned** tables. In this project, those tables are defined as **entity classes** and registered on **`IModuleSetup.EntityTypes`**; **ModuleSetup** and **PPDM/migration tooling** (e.g. `CreateSchemaFromEntitiesAsync`, orchestrated schema plans) materialize the database. See **`CLAUDE.md`** → *Schema for extension tables — entities + ModuleSetup, not hand-written SQL*.
+
+The patterns below are **reference** (e.g. for external script generators, legacy assets, or non-agent pipelines) — not the default workflow for Cursor agents extending the app model.
+
 ## Overview
 
 This document outlines patterns for generating database scripts (TAB, PK, FK) for all entity classes across 6 database types: SQL Server, SQLite, PostgreSQL, Oracle, MySQL, and MariaDB.

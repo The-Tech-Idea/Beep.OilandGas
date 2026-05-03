@@ -43,6 +43,8 @@ Enable process/workflow orchestration and entity lifecycle state management for 
 - Process workflow schema: `Beep.OilandGas.LifeCycle/Scripts/ProcessWorkflowTables.sql`.
 - PPDM entity status schema: `Beep.OilandGas.PPDM39/Scripts/Sqlserver/` plus matching model classes.
 
+These paths are **packaged lifecycle / core PPDM** assets. That is separate from **new feature extension** tables elsewhere in the solution: those use **entity classes + `IModuleSetup.EntityTypes` + tooling** — **not** hand-written `Beep.OilandGas.Models/Scripts/**` per domain table (see root **`CLAUDE.md`** → *Schema for extension tables*).
+
 ## Resources
 
 ### references/

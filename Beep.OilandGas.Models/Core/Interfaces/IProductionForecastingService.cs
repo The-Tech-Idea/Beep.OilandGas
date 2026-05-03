@@ -10,6 +10,18 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// Service interface for production forecasting operations.
     /// Provides production forecasting, decline curve analysis, and reserve estimation.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is the <strong>HTTP/API-facing</strong> contract: register and inject this interface from the API layer
+    /// (<c>Beep.OilandGas.ApiService</c>) and use it in controllers. Extended capabilities (DCA variants, economics,
+    /// exports, etc.) live on the feature-local interface
+    /// <c>Beep.OilandGas.ProductionForecasting.Services.IProductionForecastingService</c> (same type name, different namespace).
+    /// </para>
+    /// <para>
+    /// <see cref="GenerateForecastAsync(string?, string?, string, int)"/> accepts a string method name; the implementation
+    /// maps it to <c>ForecastType</c> (see <c>ProductionForecastingService.ModelsCoreImpl</c> in the ProductionForecasting project).
+    /// </para>
+    /// </remarks>
     public interface IProductionForecastingService
     {
         /// <summary>
@@ -21,6 +33,13 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="forecastPeriod">Forecast period in months</param>
         /// <returns>Production forecast result</returns>
         Task<Calc.ProductionForecastResult> GenerateForecastAsync(string? wellUWI, string? fieldId, string forecastMethod, int forecastPeriod);
+
+        /// <summary>
+        /// Generates production forecast using full request payload with optional decline parameters and history-fit controls.
+        /// </summary>
+        /// <param name="request">Forecast request payload.</param>
+        /// <returns>Production forecast result.</returns>
+        Task<Calc.ProductionForecastResult> GenerateForecastAsync(GenerateForecastRequest request);
 
         /// <summary>
         /// Performs decline curve analysis.

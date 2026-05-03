@@ -83,5 +83,16 @@ namespace Beep.OilandGas.Models.Data
              set { SetProperty(ref InjectionVolumeRequiredValue, value); }
 
          }
+         private string ApiContractVersionValue = "NODAL_DIAGNOSTICS_V1";
+
+         public string ApiContractVersion
+
+         {
+
+             get { return this.ApiContractVersionValue; }
+
+             set { SetProperty(ref ApiContractVersionValue, value); }
+
+         }
      }
 }

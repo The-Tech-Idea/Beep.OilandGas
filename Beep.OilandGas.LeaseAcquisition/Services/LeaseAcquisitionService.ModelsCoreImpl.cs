@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Beep.OilandGas.LeaseAcquisition.Constants;
+using Beep.OilandGas.LeaseAcquisition.Data.Lease.Projections;
 using Beep.OilandGas.Models.Data.Lease;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Models;
@@ -11,6 +13,10 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
 {
     public partial class LeaseAcquisitionService
     {
+        // Canonical (Option A): models-core create/update uses LAND_RIGHT, LAND_AGREEMENT, LAND_STATUS only.
+        // Module tables LEASE_ACQUISITION / FEE_MINERAL_LEASE / GOVERNMENT_LEASE / NET_PROFIT_LEASE are not
+        // dual-written here; add Option B only if first-class LEASE_ACQUISITION reporting requires it.
+
         // Explicit implementations of Models.Core.Interfaces.ILeaseAcquisitionService
 
         async Task<LeaseSummary> Beep.OilandGas.Models.Core.Interfaces.ILeaseAcquisitionService.EvaluateLeaseAsync(
@@ -95,7 +101,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                 LAND_RIGHT_SUBTYPE = LeaseRecordSubtype,
                 LAND_RIGHT_ID = leaseId,
                 STATUS_TYPE = OperationalStatusType,
-                LAND_RIGHT_STATUS = ActiveStatus,
+                LAND_RIGHT_STATUS = LeaseReferenceCodes.Active,
                 STATUS_SEQ_NO = 1m,
                 ACTIVE_IND = ActiveIndicator,
                 EFFECTIVE_DATE = effectiveDate,
@@ -123,7 +129,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                 throw new ArgumentNullException(nameof(userId));
 
             var normalizedStatus = NormalizeLeaseStatus(status);
-            var activeIndicator = normalizedStatus == ActiveStatus ? ActiveIndicator : InactiveIndicator;
+            var activeIndicator = normalizedStatus == LeaseReferenceCodes.Active ? ActiveIndicator : InactiveIndicator;
             var landRightRepo = CreateLandRightRepository();
             var landAgreementRepo = CreateLandAgreementRepository();
             var landStatusRepo = CreateLandStatusRepository();
@@ -182,7 +188,6 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         private const string OperationalStatusType = "OPERATIONAL";
         private const string ActiveIndicator = "Y";
         private const string InactiveIndicator = "N";
-        private const string ActiveStatus = "ACTIVE";
         private const string FieldAreaType = "FIELD";
         private const string MonthsOuom = "MONTH";
 
@@ -382,10 +387,10 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             if (string.Equals(landRight.ACTIVE_IND, ActiveIndicator, StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(agreement?.ACTIVE_IND, ActiveIndicator, StringComparison.OrdinalIgnoreCase))
             {
-                return ActiveStatus;
+                return LeaseReferenceCodes.Active;
             }
 
-            return "INACTIVE";
+            return LeaseReferenceCodes.Inactive;
         }
 
         private static int? ResolvePrimaryTermMonths(IEnumerable<LAND_STATUS>? statusHistory)
@@ -428,7 +433,30 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         private static string NormalizeLeaseType(string? leaseType)
             => string.IsNullOrWhiteSpace(leaseType) ? LeaseRecordSubtype : leaseType.Trim();
 
+        /// <summary>
+        /// Maps API / UI input to seeded <see cref="LeaseReferenceSets.LandRightOperationalStatus"/> codes.
+        /// </summary>
         private static string NormalizeLeaseStatus(string status)
-            => status.Trim().ToUpperInvariant();
+        {
+            if (string.IsNullOrWhiteSpace(status))
+                throw new ArgumentException("Status is required.", nameof(status));
+
+            var trimmed = status.Trim();
+            var upper = trimmed.ToUpperInvariant();
+
+            if (upper is "Y" or "YES" or "1" or "ON" or "LIVE" or "OPEN")
+                return LeaseReferenceCodes.Active;
+            if (upper is "N" or "NO" or "0" or "OFF" or "CLOSED")
+                return LeaseReferenceCodes.Inactive;
+            if (upper is "PEND" or "PENDING" or "AWAITING")
+                return LeaseReferenceCodes.Pending;
+            if (upper is "TERM" or "TERMINATED" or "EXPIRED" or "CANCELLED" or "CANCELED")
+                return LeaseReferenceCodes.Terminated;
+
+            if (LeaseReferenceCodes.IsDefinedLandRightOperationalStatus(upper))
+                return upper;
+
+            throw new ArgumentException($"Status '{status}' is not a recognized land-right operational status.", nameof(status));
+        }
     }
 }

@@ -21,9 +21,11 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             if (vlpCurve == null || vlpCurve.Count == 0)
                 throw new ArgumentException("VLP curve cannot be null or empty.", nameof(vlpCurve));
 
-            // Find intersection by checking where IPR pressure >= VLP pressure changes
-            var sortedIPR = iprCurve.OrderBy(p => p.FlowRate).ToList();
-            var sortedVLP = vlpCurve.OrderBy(p => p.FlowRate).ToList();
+            var sortedIPR = SanitizeAndSortIprCurve(iprCurve);
+            var sortedVLP = SanitizeAndSortVlpCurve(vlpCurve);
+
+            if (sortedIPR.Count < 2 || sortedVLP.Count < 2)
+                throw new ArgumentException("IPR and VLP curves must contain at least two valid points each.");
 
             // Find overlapping flow rate range
             double minFlow = Math.Max(sortedIPR[0].FlowRate, sortedVLP[0].FlowRate);
@@ -32,13 +34,24 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             if (minFlow >= maxFlow)
                 throw new ArgumentException("IPR and VLP curves do not overlap in flow rate range.");
 
-            // Search for intersection
+            var overlap = maxFlow - minFlow;
+            var sampleCount = Math.Clamp((sortedIPR.Count + sortedVLP.Count) * 30, 200, 4000);
+            var step = overlap / sampleCount;
+            if (step <= 0 || double.IsNaN(step) || double.IsInfinity(step))
+                throw new ArgumentException("Invalid overlap range between IPR and VLP curves.");
+
             double bestFlowRate = minFlow;
             double bestPressure = 0;
             double minDifference = double.MaxValue;
+            var previousFlow = minFlow;
+            var previousDiffSigned = InterpolateIPR(sortedIPR, minFlow) - InterpolateVLP(sortedVLP, minFlow);
 
-            for (double flowRate = minFlow; flowRate <= maxFlow; flowRate += (maxFlow - minFlow) / 1000.0)
+            for (var i = 1; i <= sampleCount; i++)
             {
+                var flowRate = minFlow + (i * step);
+                if (flowRate > maxFlow)
+                    flowRate = maxFlow;
+
                 double iprPressure = InterpolateIPR(sortedIPR, flowRate);
                 double vlpPressure = InterpolateVLP(sortedVLP, flowRate);
 
@@ -51,15 +64,55 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
                     bestPressure = (iprPressure + vlpPressure) / 2.0;
                 }
 
-                // If curves cross, we found intersection
-                if (difference < 1.0) // Within 1 psi
+                var signedDiff = iprPressure - vlpPressure;
+                if ((previousDiffSigned > 0 && signedDiff < 0) || (previousDiffSigned < 0 && signedDiff > 0))
                 {
-                    return new OperatingPoint(flowRate, bestPressure);
+                    // Linear interpolation to approximate crossing point more precisely.
+                    var denom = signedDiff - previousDiffSigned;
+                    if (Math.Abs(denom) > 1e-12)
+                    {
+                        var t = -previousDiffSigned / denom;
+                        var crossFlow = previousFlow + t * (flowRate - previousFlow);
+                        var crossIpr = InterpolateIPR(sortedIPR, crossFlow);
+                        var crossVlp = InterpolateVLP(sortedVLP, crossFlow);
+                        return new OperatingPoint(crossFlow, (crossIpr + crossVlp) / 2.0);
+                    }
                 }
+
+                previousFlow = flowRate;
+                previousDiffSigned = signedDiff;
             }
 
             // Return best match
             return new OperatingPoint(bestFlowRate, bestPressure);
+        }
+
+        private static List<IPRPoint> SanitizeAndSortIprCurve(IEnumerable<IPRPoint> source)
+        {
+            return source
+                .Where(p => p != null &&
+                            !double.IsNaN(p.FlowRate) &&
+                            !double.IsInfinity(p.FlowRate) &&
+                            !double.IsNaN(p.FlowingBottomholePressure) &&
+                            !double.IsInfinity(p.FlowingBottomholePressure))
+                .GroupBy(p => p.FlowRate)
+                .Select(g => new IPRPoint(g.Key, g.Average(x => x.FlowingBottomholePressure)))
+                .OrderBy(p => p.FlowRate)
+                .ToList();
+        }
+
+        private static List<VLPPoint> SanitizeAndSortVlpCurve(IEnumerable<VLPPoint> source)
+        {
+            return source
+                .Where(p => p != null &&
+                            !double.IsNaN(p.FlowRate) &&
+                            !double.IsInfinity(p.FlowRate) &&
+                            !double.IsNaN(p.RequiredBottomholePressure) &&
+                            !double.IsInfinity(p.RequiredBottomholePressure))
+                .GroupBy(p => p.FlowRate)
+                .Select(g => new VLPPoint(g.Key, g.Average(x => x.RequiredBottomholePressure)))
+                .OrderBy(p => p.FlowRate)
+                .ToList();
         }
 
         /// <summary>

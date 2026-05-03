@@ -1,9 +1,9 @@
 using System;
-using Beep.OilandGas.CompressorAnalysis.Calculations;
+using System.Threading.Tasks;
 using Beep.OilandGas.CompressorAnalysis.Constants;
 using Beep.OilandGas.CompressorAnalysis.Exceptions;
-using Beep.OilandGas.CompressorAnalysis.Validation;
-using Beep.OilandGas.Models.Data.CompressorAnalysis;
+using Beep.OilandGas.CompressorAnalysis.Core.Interfaces;
+using Beep.OilandGas.CompressorAnalysis.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -16,77 +16,79 @@ namespace Beep.OilandGas.ApiService.Controllers
     public class CompressorController : ControllerBase
     {
         private readonly ILogger<CompressorController> _logger;
+        private readonly ICompressorAnalysisService _compressorAnalysis;
 
-        public CompressorController(ILogger<CompressorController> logger)
+        public CompressorController(
+            ILogger<CompressorController> logger,
+            ICompressorAnalysisService compressorAnalysis)
         {
             _logger = logger;
+            _compressorAnalysis = compressorAnalysis;
         }
 
         [HttpPost("analyze")]
-        public ActionResult<COMPRESSOR_POWER_RESULT> Analyze([FromBody] COMPRESSOR_OPERATING_CONDITIONS request)
-        {
-            return ExecuteWithHandling("analyze", () =>
+        public Task<ActionResult<COMPRESSOR_POWER_RESULT>> Analyze([FromBody] COMPRESSOR_OPERATING_CONDITIONS request) =>
+            ExecuteWithHandlingAsync("analyze", async () =>
             {
                 var conditions = NormalizeOperatingConditions(request, CompressorConstants.StandardPolytropicEfficiency);
                 var properties = BuildDefaultCentrifugalProperties(conditions);
-                CompressorValidator.ValidateCentrifugalCompressorProperties(properties);
-                return StampResult(CentrifugalCompressorCalculator.CalculatePower(properties), conditions);
+                var raw = await _compressorAnalysis.CalculateCentrifugalPowerAsync(properties);
+                return StampResult(raw, conditions);
             });
-        }
 
         [HttpPost("power")]
-        public ActionResult<COMPRESSOR_POWER_RESULT> CalculatePower([FromBody] COMPRESSOR_OPERATING_CONDITIONS request)
-        {
-            return ExecuteWithHandling("power", () =>
+        public Task<ActionResult<COMPRESSOR_POWER_RESULT>> CalculatePower([FromBody] COMPRESSOR_OPERATING_CONDITIONS request) =>
+            ExecuteWithHandlingAsync("power", async () =>
             {
                 var conditions = NormalizeOperatingConditions(request, CompressorConstants.StandardPolytropicEfficiency);
                 var properties = BuildDefaultCentrifugalProperties(conditions);
-                CompressorValidator.ValidateCentrifugalCompressorProperties(properties);
-                return StampResult(CentrifugalCompressorCalculator.CalculatePower(properties), conditions);
+                var raw = await _compressorAnalysis.CalculateCentrifugalPowerAsync(properties);
+                return StampResult(raw, conditions);
             });
-        }
 
         [HttpPost("design/centrifugal")]
-        public ActionResult<COMPRESSOR_POWER_RESULT> DesignCentrifugal([FromBody] CENTRIFUGAL_COMPRESSOR_PROPERTIES request)
-        {
-            return ExecuteWithHandling("design/centrifugal", () =>
+        public Task<ActionResult<COMPRESSOR_POWER_RESULT>> DesignCentrifugal([FromBody] CENTRIFUGAL_COMPRESSOR_PROPERTIES request) =>
+            ExecuteWithHandlingAsync("design/centrifugal", async () =>
             {
                 var properties = NormalizeCentrifugalProperties(request);
-                CompressorValidator.ValidateCentrifugalCompressorProperties(properties);
-                return StampResult(CentrifugalCompressorCalculator.CalculatePower(properties), properties.OPERATING_CONDITIONS);
+                var raw = await _compressorAnalysis.CalculateCentrifugalPowerAsync(properties);
+                return StampResult(raw, properties.OPERATING_CONDITIONS);
             });
-        }
 
         [HttpPost("design/reciprocating")]
-        public ActionResult<COMPRESSOR_POWER_RESULT> DesignReciprocating([FromBody] RECIPROCATING_COMPRESSOR_PROPERTIES request)
-        {
-            return ExecuteWithHandling("design/reciprocating", () =>
+        public Task<ActionResult<COMPRESSOR_POWER_RESULT>> DesignReciprocating([FromBody] RECIPROCATING_COMPRESSOR_PROPERTIES request) =>
+            ExecuteWithHandlingAsync("design/reciprocating", async () =>
             {
                 var properties = NormalizeReciprocatingProperties(request);
-                CompressorValidator.ValidateReciprocatingCompressorProperties(properties);
-                return StampResult(ReciprocatingCompressorCalculator.CalculatePower(properties), properties.OPERATING_CONDITIONS);
+                var raw = await _compressorAnalysis.CalculateReciprocatingPowerAsync(properties);
+                return StampResult(raw, properties.OPERATING_CONDITIONS);
             });
-        }
 
-        private ActionResult<COMPRESSOR_POWER_RESULT> ExecuteWithHandling(string operation, Func<COMPRESSOR_POWER_RESULT> action)
+        private async Task<ActionResult<COMPRESSOR_POWER_RESULT>> ExecuteWithHandlingAsync(
+            string operation,
+            Func<Task<COMPRESSOR_POWER_RESULT>> action)
         {
             try
             {
-                return Ok(action());
+                return Ok(await action());
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (CompressorException ex)
             {
-                _logger.LogWarning(ex, "Legacy compressor compatibility route {Operation} rejected invalid input", operation);
+                _logger.LogWarning(ex, "Compressor route {Operation} rejected invalid input", operation);
                 return BadRequest(ex.Message);
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Legacy compressor compatibility route {Operation} received invalid arguments", operation);
+                _logger.LogWarning(ex, "Compressor route {Operation} received invalid arguments", operation);
                 return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Legacy compressor compatibility route {Operation} failed", operation);
+                _logger.LogError(ex, "Compressor route {Operation} failed", operation);
                 return StatusCode(500, "Compressor calculation failed");
             }
         }

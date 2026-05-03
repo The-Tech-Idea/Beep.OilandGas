@@ -45,7 +45,16 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
 
             var operation = await GetEnhancedRecoveryOperationAsync(operationId);
             if (operation != null)
+            {
+                var pct = GetScreeningRecoveryFactorPercent(operation.EORType);
+                operation.Efficiency = pct;
+                var note =
+                    $"Screening incremental RF ~{pct:F1}% OOIP (EOR-class heuristic; not decline/material-balance/volumetric RF).";
+                operation.Remarks = string.IsNullOrWhiteSpace(operation.Remarks)
+                    ? note
+                    : $"{operation.Remarks.Trim()} [{note}]";
                 return operation;
+            }
 
             throw new InvalidOperationException($"Enhanced recovery operation {operationId} was not found.");
         }

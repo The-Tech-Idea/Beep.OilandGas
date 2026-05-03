@@ -1,3 +1,5 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.FlashCalculations;
@@ -22,6 +24,30 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         {
             _service = service;
             _logger = logger;
+        }
+
+        /// <summary>PT flash returning <see cref="FlashCalculationResult"/> (Wilson K + Rachford–Rice).</summary>
+        [HttpPost("rigorous")]
+        public async Task<ActionResult<FlashCalculationResult>> RunRigorousFlashAsync(
+            [FromBody] FlashCalculationRequest request,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (request == null)
+                    return BadRequest(new { error = "Request body is required." });
+                var result = await _service.RunRigorousFlashAsync(request, cancellationToken);
+                return Ok(result);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, new { error = "Request was cancelled." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during rigorous PT flash");
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
         }
 
         [HttpPost("isothermal")]

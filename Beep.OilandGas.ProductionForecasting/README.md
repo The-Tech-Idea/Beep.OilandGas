@@ -1,231 +1,313 @@
 # Beep.OilandGas.ProductionForecasting
 
-A comprehensive library for production forecasting in oil and gas engineering applications.
+Production forecasting engine for Beep.OilandGas, including decline-curve analysis (DCA), deterministic forecasts, history-based parameter fitting from PPDM, and PPDM persistence for forecast runs and points.
 
-## Overview
+## What This Library Covers
 
-This library provides industry-standard methods for forecasting production rates and cumulative production based on reservoir properties and operating conditions.
+- Decline-based forecasting (exponential, harmonic, hyperbolic, modified-hyperbolic).
+- Additional forecasting calculations (pseudo-steady-state, transient, gas well).
+- API/service orchestration (`ProductionForecastingService`) with:
+  - request-driven forecast generation,
+  - optional history fit from PPDM tables,
+  - algorithm guardrails (`b` bounds, `q_econ`, `Dlim`).
+- Forecast persistence into PPDM forecast tables.
 
-## Features
+---
 
-### Production Forecasting Methods
+## Architecture At A Glance
 
-- **Pseudo-Steady State (Single-Phase)** - For oil wells above bubble point
-- **Pseudo-Steady State (Two-Phase)** - For oil wells below bubble point
-- **Transient Flow** - Early-time production forecasting
-- **Gas Well Forecasting** - Specialized gas well production forecasting
+### Core calculation classes
 
-### Key Capabilities
+- `Calculations/DeclineForecast.cs`
+- `Calculations/PseudoSteadyStateForecast.cs`
+- `Calculations/TransientForecast.cs`
+- `Calculations/GasWellForecast.cs`
 
-- Production rate forecasting
-- Cumulative production forecasting
-- Reservoir pressure decline
-- Multiple forecast types
-- Integration with gas properties
+### Forecast orchestration service
 
-## Installation
+- `Services/ProductionForecastingService.cs`
+- `Services/ProductionForecastingService.ForecastGeneration.cs`
+- `Services/ProductionForecastingService.DCA.cs`
+
+### DCA engine (merged into this project)
+
+- `DCA/*`
+- includes `DCAManager`, `DCAAnalysisService`, Arps methods, nonlinear regression, advanced methods.
+
+### PPDM integration helpers
+
+- `Services/ProductionHistoryLoader.cs` (history read path)
+- `Services/ProductionForecastResultMapper.cs` (calculation model -> API result mapping)
+
+---
+
+## PPDM Tables Used (Current Implementation)
+
+## 1) History-fit input tables
+
+- `PDEN_WELL`
+  - Join anchor by `PRIMARY_UWI` to locate PDEN entities for a well.
+- `PDEN_VOL_SUMMARY`
+  - Uses `OIL_VOLUME` over time to build production-rate series for fitting.
+  - Time alignment uses `EFFECTIVE_DATE` (fallback `EXPIRY_DATE`).
+
+The service path for this is:
+
+- `ProductionHistoryLoader.TryLoadOilHistoryAsync(...)`
+- called from `ProductionForecastingService.ForecastGeneration`.
+
+## 2) Forecast persistence tables
+
+- `PRODUCTION_FORECAST`
+- `PRODUCTION_FORECAST_POINT`
+
+Used by `ProductionForecastingService.SaveForecastAsync(...)`.
+
+## 3) Are new PPDM entity classes or custom mapping layers being created?
+
+No new PPDM table classes are created in this pass.
+
+- We use existing PPDM model classes and `PPDMGenericRepository`.
+- We added orchestration/mapping helpers only:
+  - `ProductionHistoryLoader`
+  - `ProductionForecastResultMapper`
+
+---
+
+## Install
 
 ```bash
 dotnet add package Beep.OilandGas.ProductionForecasting
 ```
 
-## Quick Start
+---
 
-### Single-Phase Pseudo-Steady State Forecast
+## Quick Start: Decline Calculations (Direct)
+
+## Exponential decline
 
 ```csharp
-using Beep.OilandGas.ProductionForecasting.Models;
 using Beep.OilandGas.ProductionForecasting.Calculations;
-using Beep.OilandGas.ProductionForecasting.Validation;
 
-// Define reservoir properties
-var reservoir = new ReservoirForecastProperties
-{
-    InitialPressure = 3000m, // psia
-    Permeability = 100m, // md
-    Thickness = 50m, // feet
-    DrainageRadius = 1000m, // feet
-    WellboreRadius = 0.25m, // feet
-    FormationVolumeFactor = 1.2m, // RB/STB
-    OilViscosity = 1.5m, // cp
-    TotalCompressibility = 0.00001m, // 1/psi
-    Porosity = 0.2m,
-    SkinFactor = 0m,
-    Temperature = 580m // Rankine
-};
-
-// Validate inputs
-ForecastValidator.ValidateForecastParameters(
-    reservoir, bottomHolePressure: 1500m, forecastDuration: 365m, timeSteps: 100);
-
-// Generate forecast
-var forecast = PseudoSteadyStateForecast.GenerateSinglePhaseForecast(
-    reservoir,
-    bottomHolePressure: 1500m,
-    forecastDuration: 365m, // 1 year
-    timeSteps: 100);
-
-// Access results
-Console.WriteLine($"Initial Rate: {forecast.InitialProductionRate:F2} bbl/day");
-Console.WriteLine($"Final Rate: {forecast.FinalProductionRate:F2} bbl/day");
-Console.WriteLine($"Total Cumulative: {forecast.TotalCumulativeProduction:F2} bbl");
+var exp = DeclineForecast.GenerateExponentialDeclineForecast(
+    qi: 1000m,
+    di: 0.015m,
+    forecastDuration: 365m, // days
+    timeSteps: 24);
 ```
 
-### Two-Phase Forecast
+## Harmonic decline with economic limit
 
 ```csharp
-var forecast = PseudoSteadyStateForecast.GenerateTwoPhaseForecast(
-    reservoir,
-    bottomHolePressure: 1500m,
-    bubblePointPressure: 2000m,
-    forecastDuration: 365m,
-    timeSteps: 100);
+var harmonic = DeclineForecast.GenerateHarmonicDeclineForecast(
+    qi: 1000m,
+    di: 0.02m,
+    forecastDuration: 3650m,
+    economicLimit: 25m,
+    timeSteps: 120);
 ```
 
-### Transient Forecast
+## Hyperbolic decline
 
 ```csharp
-var forecast = TransientForecast.GenerateTransientForecast(
-    reservoir,
-    bottomHolePressure: 1500m,
-    forecastDuration: 365m,
-    timeSteps: 100);
+var hyp = DeclineForecast.GenerateHyperbolicDeclineForecast(
+    qi: 1200m,
+    di: 0.01m,
+    b: 0.6m,
+    forecastDuration: 3650m,
+    economicLimit: 20m,
+    timeSteps: 120);
 ```
 
-### Gas Well Forecast
+## Modified hyperbolic (Dlim crossover)
 
 ```csharp
-var reservoir = new ReservoirForecastProperties
-{
-    // ... same properties as above ...
-    GasSpecificGravity = 0.65m
-};
-
-var forecast = GasWellForecast.GenerateGasWellForecast(
-    reservoir,
-    bottomHolePressure: 1000m,
-    forecastDuration: 365m,
-    timeSteps: 100);
-
-// Gas rates are in Mscf/day
-Console.WriteLine($"Initial Rate: {forecast.InitialProductionRate:F2} Mscf/day");
+var modified = DeclineForecast.GenerateModifiedHyperbolicDeclineForecast(
+    qi: 1000m,
+    di: 0.01m,
+    b: 0.5m,
+    forecastDuration: 400m,
+    terminalDi: 0.005m, // Dlim
+    economicLimit: null,
+    timeSteps: 4);      // t = 0,100,200,300,400
 ```
 
-## Forecast Types
+Deterministic crossover vector for this example:
 
-### Pseudo-Steady State (Single-Phase)
-
-- **Use Case:** Oil wells producing above bubble point pressure
-- **Method:** Material balance with constant productivity index
-- **Output:** Production rate and cumulative production over time
-
-### Pseudo-Steady State (Two-Phase)
-
-- **Use Case:** Oil wells producing below bubble point pressure
-- **Method:** Material balance with Vogel equation for two-phase flow
-- **Output:** Production rate and cumulative production accounting for gas evolution
-
-### Transient Flow
-
-- **Use Case:** Early-time production or new wells
-- **Method:** Transient flow equations with exponential integral
-- **Output:** Production rate during transient period
-
-### Gas Well
-
-- **Use Case:** Gas well production forecasting
-- **Method:** Gas deliverability equations with Z-factor calculations
-- **Output:** Gas production rate in Mscf/day
-
-## Units
-
-### Pressure
-- **Input/Output:** psia (pounds per square inch absolute)
-
-### Flow Rate
-- **Oil:** bbl/day (barrels per day)
-- **Gas:** Mscf/day (thousand standard cubic feet per day)
-
-### Time
-- **Input/Output:** days
-
-### Reservoir Properties
-- **Permeability:** md (millidarcies)
-- **Thickness:** feet
-- **Radius:** feet
-- **Viscosity:** cp (centipoise)
-- **Temperature:** Rankine (°R)
-
-## Validation
-
-All forecast methods include comprehensive validation:
-
-```csharp
-try
-{
-    ForecastValidator.ValidateForecastParameters(
-        reservoir, bottomHolePressure, forecastDuration, timeSteps);
-    
-    // Generate forecast
-}
-catch (InvalidReservoirPropertiesException ex)
-{
-    Console.WriteLine($"Invalid reservoir: {ex.Message}");
-}
-catch (ForecastParameterOutOfRangeException ex)
-{
-    Console.WriteLine($"Invalid parameter {ex.ParameterName}: {ex.Message}");
-}
-```
-
-## Integration
-
-### With Beep.OilandGas.Properties
-
-- ✅ Z-factor calculations for gas wells
-- ✅ Gas property support
-- ✅ Temperature and pressure conversions
-
-### With Other Projects
-
-- ✅ Works with `Beep.OilandGas.ProductionAccounting`
-- ✅ Compatible with `Beep.NodalAnalysis`
-- ✅ Can integrate with `Beep.DCA` for decline curve analysis
-
-## Best Practices
-
-1. **Validate inputs** before generating forecasts
-2. **Choose appropriate forecast type** for your well
-3. **Use sufficient time steps** for accuracy (100+ recommended)
-4. **Consider bubble point** for oil wells
-5. **Account for skin factor** in productivity calculations
-
-## Error Handling
-
-The library provides specific exceptions:
-
-- `ForecastException` - Base exception
-- `InvalidReservoirPropertiesException` - Invalid reservoir data
-- `ForecastParameterOutOfRangeException` - Parameter validation
-- `ForecastConvergenceException` - Calculation convergence failures
-
-## References
-
-- Pseudo-steady state flow equations
-- Transient flow theory
-- Gas well deliverability equations
-- Material balance principles
-- Vogel two-phase flow equation
-
-## License
-
-MIT License - See LICENSE file for details.
-
-## Contributing
-
-Contributions are welcome! Please follow the project's coding standards and include tests for new features.
+- `t_switch = (Di / Dlim - 1) / (b * Di) = 200`
+- `q_switch = qi / (1 + b*Di*t_switch)^(1/b) = 250`
+- post-switch tail point:
+  - `q(300) = q_switch * exp(-Dlim*(300-200)) = 151.6327`
 
 ---
 
-**Status:** Production Ready ✅
+## Service Usage (Recommended API Path)
+
+`ProductionForecastingService` is the high-level route used by API.
+
+```csharp
+using Beep.OilandGas.Models.Data.ProductionForecasting;
+using Beep.OilandGas.ProductionForecasting.Services;
+
+var request = new GenerateForecastRequest
+{
+    WellUWI = "UWI-12345",
+    ForecastMethod = ForecastType.Hyperbolic,
+    ForecastPeriod = 24,              // months
+
+    // Optional manual parameters
+    InitialOilRateQi = 1400m,
+    InitialDeclineDi = 0.012m,
+    DeclineExponentB = 0.65m,
+
+    // Guardrails / tail handling
+    UseModifiedHyperbolic = true,
+    TerminalDeclineDi = 0.0002m,      // Dlim
+    EconomicLimitOilRate = 25m,       // q_econ
+
+    // If false and WellUWI exists, service tries PPDM history fit
+    SkipHistoryFit = false
+};
+
+var result = await forecastingService.GenerateForecastAsync(request);
+```
+
+### Request behavior summary
+
+- If `SkipHistoryFit == false` and `WellUWI` is provided, service tries PPDM history-fit.
+- If sufficient history exists, service fits and uses fitted parameters.
+- If history is insufficient and required manual parameters are missing, service throws an argument error.
+- If `EconomicLimitOilRate` is invalid (`<= 0` or `>= qi`), service rejects request.
+
+---
+
+## PPDM History Read Example
+
+This is the practical pattern used for fitting:
+
+```csharp
+// 1) Lookup PDEN entities connected to well UWI
+var pdenWellRepo = new PPDMGenericRepository(
+    editor, commonColumnHandler, defaults, metadata,
+    typeof(PDEN_WELL), connectionName, "PDEN_WELL", null);
+
+var links = await pdenWellRepo.GetAsync(new List<AppFilter>
+{
+    new AppFilter { FieldName = "PRIMARY_UWI", Operator = "=", FilterValue = wellUwi },
+    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = defaults.GetActiveIndicatorYes() }
+});
+
+var pdenIds = links.OfType<PDEN_WELL>()
+    .Select(x => x.PDEN_ID)
+    .Where(id => !string.IsNullOrWhiteSpace(id))
+    .Distinct()
+    .ToList();
+
+// 2) Read production volumes by PDEN_ID
+var volRepo = new PPDMGenericRepository(
+    editor, commonColumnHandler, defaults, metadata,
+    typeof(PDEN_VOL_SUMMARY), connectionName, "PDEN_VOL_SUMMARY", null);
+
+// 3) Convert OIL_VOLUME to daily-equivalent rate and fit decline
+```
+
+---
+
+## Forecast Save Example (PPDM Persistence)
+
+```csharp
+using Beep.OilandGas.Models.Data.Calculations;
+
+var forecast = new ProductionForecastResult
+{
+    ForecastId = "FC-001",
+    WellUWI = "UWI-12345",
+    ForecastMethod = ForecastType.Hyperbolic,
+    ForecastDate = DateTime.UtcNow,
+    ForecastPoints = new List<ProductionForecastPoint>
+    {
+        new() { Date = DateTime.UtcNow.Date.AddDays(30), OilRate = 980m, GasRate = 0m, WaterRate = 0m },
+        new() { Date = DateTime.UtcNow.Date.AddDays(60), OilRate = 960m, GasRate = 0m, WaterRate = 0m }
+    }
+};
+
+await forecastingService.SaveForecastAsync(forecast, userId: "SYSTEM");
+```
+
+This persists to:
+
+- `PRODUCTION_FORECAST`
+- `PRODUCTION_FORECAST_POINT`
+
+---
+
+## Deterministic Numerical Regression Vectors
+
+Current regression coverage includes:
+
+- very short forecast periods,
+- ultra-low decline rates,
+- extreme `b` edges (`b=0`, `b~1`),
+- modified hyperbolic transition vector (`t_switch`, `q_switch`, tail continuity).
+
+Primary test file:
+
+- `Beep.OilandGas.ApiService.Tests/ProductionForecastingNumericalEdgeCaseRegressionTests.cs`
+
+---
+
+## Other Forecast Methods (Non-Decline)
+
+You can also call:
+
+- `PseudoSteadyStateForecast.GenerateSinglePhaseForecast(...)`
+- `PseudoSteadyStateForecast.GenerateTwoPhaseForecast(...)`
+- `TransientForecast.GenerateTransientForecast(...)`
+- `GasWellForecast.GenerateGasWellForecast(...)`
+
+Use these where reservoir-mechanics assumptions are preferred over decline-curve fitting.
+
+---
+
+## Guardrails and Defaults
+
+Key policy constants live in:
+
+- `Constants/ForecastAlgorithmConstants.cs`
+
+Includes:
+
+- minimum history points for fit,
+- Arps `b` bounds,
+- default `qi`, `Di`, `b`,
+- default terminal decline (`Dlim`),
+- month-to-day conversion constant.
+
+---
+
+## Validation and Error Handling
+
+Typical validation failures:
+
+- missing `WellUWI` and `FieldId`,
+- `ForecastMethod == None`,
+- `ForecastPeriod < 1`,
+- invalid `EconomicLimitOilRate`,
+- insufficient PPDM history with no manual fallback parameters.
+
+Handle `ArgumentException` for request issues and domain-specific forecast exceptions for lower-level calculation errors.
+
+---
+
+## Integration Notes
+
+- API controller path: `Beep.OilandGas.ApiService/Controllers/Calculations/ProductionForecastingController.cs`
+- Canonical interface: `Beep.OilandGas.Models.Core.Interfaces.IProductionForecastingService`
+- DCA engine is merged into this project under `DCA/` (no separate DCA project dependency required).
+
+---
+
+## License
+
+MIT License - see repository license.
 

@@ -20,14 +20,14 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
     /// </summary>
     public class PermitStatusHistoryService : PermitsServiceBase, IPermitStatusHistoryService
     {
-        private readonly ILogger<PermitStatusHistoryService> _logger;
+        private readonly ILogger<PermitStatusHistoryService>? _logger;
 
         public PermitStatusHistoryService(
             IDMEEditor editor,
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILogger<PermitStatusHistoryService> logger = null,
+            ILogger<PermitStatusHistoryService>? logger = null,
             string connectionName = "PPDM39")
             : base(editor, commonColumnHandler, defaults, metadata, logger, connectionName)
         {
@@ -57,8 +57,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
             var results = await repo.GetAsync(filters);
             return results
-                .Select(r => r as PERMIT_STATUS_HISTORY)
-                .Where(r => r != null)
+                .OfType<PERMIT_STATUS_HISTORY>()
                 .OrderByDescending(r => r.STATUS_DATE)
                 .ToList();
         }

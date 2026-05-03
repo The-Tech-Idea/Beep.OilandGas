@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ChokeAnalysis;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.ChokeAnalysis.Calculations;
+using Beep.OilandGas.ChokeAnalysis.Constants;
 using Beep.OilandGas.ChokeAnalysis.Validation;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.PPDM39.Models;
@@ -341,11 +342,11 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                     // Flow regime specific recommendations
                     var flowResult = GasChokeCalculator.CalculateDownholeChokeFlow(choke, gasProperties);
                     
-                    if (flowResult.FLOW_REGIME == FlowRegime.Sonic)
+                    if (string.Equals(flowResult.FLOW_REGIME, ChokeAnalysisReferenceCodes.RegimeSonic, StringComparison.OrdinalIgnoreCase))
                     {
                         recommendations.Add("Choke is in critical flow. Consider monitoring for erosion and wear.");
                     }
-                    else
+                    else if (string.Equals(flowResult.FLOW_REGIME, ChokeAnalysisReferenceCodes.RegimeSubsonic, StringComparison.OrdinalIgnoreCase))
                     {
                         recommendations.Add("Subsonic flow detected. Downstream pressure changes will affect flow rate.");
                     }

@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.Models.Data.FlashCalculations;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
@@ -39,6 +41,16 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="componentId">Component identifier (optional)</param>
         /// <returns>List of flash calculation results</returns>
         Task<List<FlashResult>> GetFlashHistoryAsync(string? componentId = null);
+
+        /// <summary>
+        /// Runs PT flash using the same Wilson + Rachford–Rice path as the calculator, returning a persisted-style
+        /// <see cref="FlashCalculationResult"/> envelope.
+        /// </summary>
+        /// <param name="request">Pressure, temperature, and feed composition.</param>
+        /// <param name="cancellationToken">Cancellation token (honored before heavy steps).</param>
+        Task<FlashCalculationResult> RunRigorousFlashAsync(
+            FlashCalculationRequest request,
+            CancellationToken cancellationToken = default);
     }
 }
 

@@ -148,7 +148,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
 
             set { SetProperty(ref FlowRegimeValue, value); }
 
-        } // Sonic, Subsonic
+        } // Reference codes: SONIC, SUBSONIC — align with R_CHOKE_ANALYSIS_REFERENCE_CODE
         private decimal EfficiencyValue;
 
         public decimal Efficiency

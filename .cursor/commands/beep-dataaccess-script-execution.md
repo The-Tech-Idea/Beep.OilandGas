@@ -1,5 +1,9 @@
 # Script Execution Services
 
+## Beep.OilandGas — scope
+
+These services **execute** scripts from a configured directory (discovery, ordering, engine). They do **not** define the workflow for **new feature extension** tables — use **entities + `IModuleSetup` + entity-driven schema creation** instead of adding DDL under `Beep.OilandGas.Models/Scripts/**`. See **`CLAUDE.md`** and [Database Creation](beep-dataaccess-database-creation.md).
+
 ## Overview
 
 The script execution services provide comprehensive script management including discovery, categorization, execution ordering, and execution engine capabilities.

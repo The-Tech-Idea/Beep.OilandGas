@@ -195,6 +195,8 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<CompressorAnalysisResult> PerformCompressorAnalysisAsync(CompressorAnalysisRequest request)
         {
+            ArgumentNullException.ThrowIfNull(request);
+
             try
             {
                 var result = await _apiClient.PostAsync<CompressorAnalysisRequest, CompressorAnalysisResult>(
@@ -586,6 +588,10 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<NodalAnalysisRunResult> PerformNodalAnalysisAsync(string wellUWI, NodalAnalysisParameters analysisParameters)
         {
+            if (string.IsNullOrWhiteSpace(wellUWI))
+                throw new ArgumentException("Well UWI is required", nameof(wellUWI));
+            if (analysisParameters == null)
+                throw new ArgumentNullException(nameof(analysisParameters));
             try
             {
                 var request = new
@@ -594,8 +600,12 @@ namespace Beep.OilandGas.Web.Services
                     AnalysisParameters = analysisParameters
                 };
                 var result = await _apiClient.PostAsync<object, NodalAnalysisRunResult>(
-                    "/api/nodalanalysis/analyze", request);
+                    NodalAnalysisHttpRoutes.Analyze, request);
                 return result ?? throw new InvalidOperationException("Failed to perform nodal analysis");
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -606,6 +616,10 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<OptimizationResult> OptimizeSystemAsync(string wellUWI, OptimizationGoals optimizationGoals)
         {
+            if (string.IsNullOrWhiteSpace(wellUWI))
+                throw new ArgumentException("Well UWI is required", nameof(wellUWI));
+            if (optimizationGoals == null)
+                throw new ArgumentNullException(nameof(optimizationGoals));
             try
             {
                 var request = new
@@ -614,8 +628,12 @@ namespace Beep.OilandGas.Web.Services
                     OptimizationGoals = optimizationGoals
                 };
                 var result = await _apiClient.PostAsync<object, OptimizationResult>(
-                    "/api/nodalanalysis/optimize", request);
+                    NodalAnalysisHttpRoutes.Optimize, request);
                 return result ?? throw new InvalidOperationException("Failed to optimize system");
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -626,14 +644,20 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<bool> SaveNodalAnalysisResultAsync(NodalAnalysisRunResult result, string? userId = null)
         {
+            if (result == null)
+                throw new ArgumentNullException(nameof(result));
             try
             {
-                var endpoint = "/api/nodalanalysis/result";
+                var endpoint = NodalAnalysisHttpRoutes.Result;
                 if (!string.IsNullOrEmpty(userId))
                 {
                     endpoint += $"?userId={Uri.EscapeDataString(userId)}";
                 }
                 return await _apiClient.PostAsync(endpoint, result);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -644,16 +668,144 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<List<NodalAnalysisRunResult>> GetNodalAnalysisHistoryAsync(string wellUWI)
         {
+            if (string.IsNullOrWhiteSpace(wellUWI))
+                throw new ArgumentException("Well UWI is required", nameof(wellUWI));
             try
             {
                 var result = await _apiClient.GetAsync<List<NodalAnalysisRunResult>>(
-                    $"/api/nodalanalysis/history/{Uri.EscapeDataString(wellUWI)}");
+                    NodalAnalysisHttpRoutes.History(wellUWI));
                 return result ?? new List<NodalAnalysisRunResult>();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting nodal analysis history for well {WellUWI}", wellUWI);
                 return new List<NodalAnalysisRunResult>();
+            }
+        }
+
+        public async Task<PerformanceMatchingAnalysis> AnalyzePerformanceMatchingAsync(PerformNodalAnalysisRequest request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            try
+            {
+                var result = await _apiClient.PostAsync<PerformNodalAnalysisRequest, PerformanceMatchingAnalysis>(
+                    NodalAnalysisHttpRoutes.PerformanceMatching, request);
+                return result ?? throw new InvalidOperationException("Failed to run performance matching");
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in nodal performance matching");
+                throw;
+            }
+        }
+
+        public async Task<EconomicSensitivityAnalysisResult> PerformSensitivityAnalysisAsync(NodalSensitivityAnalysisRequest request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            try
+            {
+                var result = await _apiClient.PostAsync<NodalSensitivityAnalysisRequest, EconomicSensitivityAnalysisResult>(
+                    NodalAnalysisHttpRoutes.Sensitivity, request);
+                return result ?? throw new InvalidOperationException("Failed to run sensitivity analysis");
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in nodal sensitivity analysis");
+                throw;
+            }
+        }
+
+        public async Task<ArtificialLiftRecommendation> RecommendArtificialLiftAsync(NodalArtificialLiftRequest request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            try
+            {
+                var result = await _apiClient.PostAsync<NodalArtificialLiftRequest, ArtificialLiftRecommendation>(
+                    NodalAnalysisHttpRoutes.ArtificialLift, request);
+                return result ?? throw new InvalidOperationException("Failed to get artificial lift recommendation");
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in nodal artificial lift recommendation");
+                throw;
+            }
+        }
+
+        public async Task<WellDiagnosticsResult> DiagnoseWellPerformanceAsync(NodalWellDiagnosticsRequest request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            try
+            {
+                var result = await _apiClient.PostAsync<NodalWellDiagnosticsRequest, WellDiagnosticsResult>(
+                    NodalAnalysisHttpRoutes.Diagnostics, request);
+                return result ?? throw new InvalidOperationException("Failed to diagnose well performance");
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in nodal well diagnostics");
+                throw;
+            }
+        }
+
+        public async Task<PRODUCTION_FORECAST> ForecastNodalProductionAsync(NodalProductionForecastRequest request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            try
+            {
+                var result = await _apiClient.PostAsync<NodalProductionForecastRequest, PRODUCTION_FORECAST>(
+                    NodalAnalysisHttpRoutes.ProductionForecast, request);
+                return result ?? throw new InvalidOperationException("Failed to forecast production");
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in nodal production forecast");
+                throw;
+            }
+        }
+
+        public async Task<PressureMaintenanceStrategy> AnalyzePressureMaintenanceAsync(NodalPressureMaintenanceRequest request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            try
+            {
+                var result = await _apiClient.PostAsync<NodalPressureMaintenanceRequest, PressureMaintenanceStrategy>(
+                    NodalAnalysisHttpRoutes.PressureMaintenance, request);
+                return result ?? throw new InvalidOperationException("Failed to analyze pressure maintenance");
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in nodal pressure maintenance analysis");
+                throw;
             }
         }
 

@@ -580,7 +580,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                         Temperature = temp,
                         FlowRate = flowResult.FLOW_RATE,
                         PressureDrop = upstreamPressure - downstreamPressure,
-                        DischargeCoefficient = flowResult.PRESSURE_RATIO,
+                        DischargeCoefficient = choke.DISCHARGE_COEFFICIENT,
                         Efficiency = efficiency
                     });
                 }

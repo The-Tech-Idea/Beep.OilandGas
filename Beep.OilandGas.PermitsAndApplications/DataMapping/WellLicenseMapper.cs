@@ -33,8 +33,8 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
             var ppdm = existing ?? new WELL_LICENSE();
 
             ppdm.LICENSE_ID = license.LicenseId;
-            ppdm.APPLICATION_ID = license.ApplicationId;
-            ppdm.UWI = license.Uwi;
+            ppdm.APPLICATION_ID = license.ApplicationId ?? string.Empty;
+            ppdm.UWI = license.Uwi ?? string.Empty;
             ppdm.LICENSE_DATE = license.GrantedDate;
             ppdm.EFFECTIVE_DATE = license.GrantedDate;
             ppdm.EXPIRY_DATE = license.ExpiryDate;

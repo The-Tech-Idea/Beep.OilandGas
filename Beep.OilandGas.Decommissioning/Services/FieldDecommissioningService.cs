@@ -24,8 +24,8 @@ namespace Beep.OilandGas.Decommissioning.Services
     ///   WELL_ABANDONMENT  — abandonment records per well
     ///   WELL              — parent well (FIELD_ID join)
     ///   FACILITY          — facility parent (PRIMARY_FIELD_ID)
-    ///   PROJECT           — env. restoration + cost tracking (PROJECT_TYPE discriminator)
-    ///   PROJECT_STEP      — activity steps within a decommissioning project
+    ///   ENVIRONMENTAL_RESTORATION — restoration scope and execution
+    ///   DECOMMISSIONING_COST      — cost tracking records
     /// </summary>
     public partial class FieldDecommissioningService : IFieldDecommissioningService
     {
@@ -330,7 +330,7 @@ namespace Beep.OilandGas.Decommissioning.Services
         }
 
         // ---------------------------------------------------------------------------
-        // ENVIRONMENTAL RESTORATION  (PROJECT with PROJECT_TYPE = 'ENV_RESTORATION')
+        // ENVIRONMENTAL RESTORATION
         // ---------------------------------------------------------------------------
 
         public async Task<List<EnvironmentalRestorationResponse>> GetEnvironmentalRestorationsForFieldAsync(
@@ -341,15 +341,14 @@ namespace Beep.OilandGas.Decommissioning.Services
 
             try
             {
-                var meta = await GetTableMetaAndTypeAsync("PROJECT");
+                var meta = await GetTableMetaAndTypeAsync("ENVIRONMENTAL_RESTORATION");
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    meta.EntityType, _connectionName, "PROJECT");
+                    meta.EntityType, _connectionName, "ENVIRONMENTAL_RESTORATION");
 
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "FIELD_ID", FilterValue = _defaults.FormatIdForTable("PROJECT", fieldId), Operator = "=" },
-                    new AppFilter { FieldName = "PROJECT_TYPE", FilterValue = "ENV_RESTORATION", Operator = "=" },
+                    new AppFilter { FieldName = "FIELD_ID", FilterValue = _defaults.FormatIdForTable("ENVIRONMENTAL_RESTORATION", fieldId), Operator = "=" },
                     new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
                 };
                 if (additionalFilters != null) filters.AddRange(additionalFilters);
@@ -376,18 +375,16 @@ namespace Beep.OilandGas.Decommissioning.Services
             _logger?.LogInformation("Creating environmental restoration project for field {FieldId}", fieldId);
             try
             {
-                var meta = await GetTableMetaAndTypeAsync("PROJECT");
+                var meta = await GetTableMetaAndTypeAsync("ENVIRONMENTAL_RESTORATION");
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    meta.EntityType, _connectionName, "PROJECT");
+                    meta.EntityType, _connectionName, "ENVIRONMENTAL_RESTORATION");
 
                 var entity = _mappingService.ConvertDTOToPPDMModelRuntime(
                     restorationData, typeof(EnvironmentalRestorationRequest), meta.EntityType);
 
                 SetPropertyViaReflection(entity, meta.EntityType, "FIELD_ID",
-                    _defaults.FormatIdForTable("PROJECT", fieldId));
-                SetPropertyViaReflection(entity, meta.EntityType, "PROJECT_TYPE", "ENV_RESTORATION");
-                SetPropertyViaReflection(entity, meta.EntityType, "PROJECT_STATUS", "PLANNED");
+                    _defaults.FormatIdForTable("ENVIRONMENTAL_RESTORATION", fieldId));
                 SetPropertyViaReflection(entity, meta.EntityType, "ACTIVE_IND", "Y");
 
                 var inserted = await repo.InsertAsync(entity, userId);
@@ -405,7 +402,7 @@ namespace Beep.OilandGas.Decommissioning.Services
         }
 
         // ---------------------------------------------------------------------------
-        // DECOMMISSIONING COSTS  (PROJECT with PROJECT_TYPE = 'DECOM_COST')
+        // DECOMMISSIONING COSTS
         // ---------------------------------------------------------------------------
 
         public async Task<List<DecommissioningCostResponse>> GetDecommissioningCostsForFieldAsync(
@@ -416,15 +413,14 @@ namespace Beep.OilandGas.Decommissioning.Services
 
             try
             {
-                var meta = await GetTableMetaAndTypeAsync("PROJECT");
+                var meta = await GetTableMetaAndTypeAsync("DECOMMISSIONING_COST");
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    meta.EntityType, _connectionName, "PROJECT");
+                    meta.EntityType, _connectionName, "DECOMMISSIONING_COST");
 
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "FIELD_ID", FilterValue = _defaults.FormatIdForTable("PROJECT", fieldId), Operator = "=" },
-                    new AppFilter { FieldName = "PROJECT_TYPE", FilterValue = "DECOM_COST", Operator = "=" },
+                    new AppFilter { FieldName = "FIELD_ID", FilterValue = _defaults.FormatIdForTable("DECOMMISSIONING_COST", fieldId), Operator = "=" },
                     new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
                 };
                 if (additionalFilters != null) filters.AddRange(additionalFilters);

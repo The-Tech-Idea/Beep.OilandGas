@@ -1,154 +1,45 @@
-# Beep.OilandGas.ChokeAnalysis - Implementation Summary
+# Beep.OilandGas.ChokeAnalysis — implementation summary
 
-## ✅ Implementation Complete!
+## Role in the solution
 
-### Project Overview
+Library for **gas choke flow** calculations and related helpers (performance curves, validation, multiphase/advanced extensions). Shared entity types (`CHOKE_PROPERTIES`, `GAS_CHOKE_PROPERTIES`, `CHOKE_FLOW_RESULT`, …) live in **`Beep.OilandGas.Models`** under `Data/ChokeAnalysis/` (`FLOW_REGIME` is stored as **string** codes such as `SONIC` / `SUBSONIC`, aligned with **`ChokeAnalysisReferenceCodes`** in this project). **`ChokePerformanceCurveCalculator`** gas CPC points (`CpcPoint.Regime`) use the same codes; multiphase CPC curve labels remain descriptive strings (for example Gilbert correlation labels). Domain enums/constants (`ChokeFlowRegime`, `ChokeType`, reference seed rows) live under **`Beep.OilandGas.ChokeAnalysis.Constants`**. The HTTP contract for packaged choke runs is **`ChokeAnalysisRequest` / `ChokeAnalysisResult`** (`Models/Data/Calculations/`), orchestrated by **`ICalculationService.PerformChokeAnalysisAsync`** in **LifeCycle** (`PPDMCalculationService`) — when **both** absolute pressures are supplied, it delegates to **`IChokeAnalysisService`** (same physics as `GasChokeCalculator`) **unless** **`ChokeAnalysisOptions.CorrelationMethod`** is one of the empirical multiphase methods (`GILBERT`, `ROS`, `ACHONG`, `PILEHVARI`, `SACHDEVA`, or the **`MULTIPHASE`** alias), as determined by **`ChokeAnalysisReferenceCodes.UseMultiphaseOrchestration`**. That multiphase path uses the Gilbert-style `MultiphaseChokeCalculator` estimate and still populates **`ChokeAnalysisResult.FlowRegime`** with **`SONIC`** / **`SUBSONIC`**. Omitting the correlation or using **`GAS_SINGLE_PHASE`** keeps the single-phase gas path when pressures are present. Unknown correlation strings do not switch to multiphase (they follow single-phase gas when valid pressures are set). When upstream pressure is omitted on the multiphase path, **`MultiphaseChokeCalculator.SelectCorrelationUpstreamPressure`** picks Gilbert vs Ros vs Achong vs Baxendell estimates from **`CalculatePressures`**; **`ChokeAnalysisOptions.CriticalPressureRatioOverride`** (when in (0,1)) replaces the default **0.528** critical ratio for **`FlowRegime`** labeling on that path only.
 
-**Beep.OilandGas.ChokeAnalysis** is a comprehensive library for gas choke flow calculations in oil and gas engineering applications. This library provides industry-standard methods based on the Petroleum Engineer XLS calculations.
+## Web integration
 
----
+**`Beep.OilandGas.Web`** [`Pages/PPDM39/Calculations/ChokeAnalysis.razor`](../Beep.OilandGas.Web/Pages/PPDM39/Calculations/ChokeAnalysis.razor) project-references this library and binds a **Correlation method** `MudSelect` to **`ChokeAnalysisRequest.AdditionalParameters.CorrelationMethod`** using **`ChokeAnalysisReferenceCodes`**, so Blazor users can select single-phase gas vs empirical multiphase orchestration without hard-coded strings in the page.
 
-## 📦 What Was Implemented
+## Canonical service interface
 
-### 1. Core Models ✅
+**`IChokeAnalysisService`** (`Beep.OilandGas.Models.Core.Interfaces`) defines the cross-library choke API:
 
-**File:** `Models/ChokeModels.cs`
+- Downhole / uphole flow (`CHOKE_PROPERTIES` + `GAS_CHOKE_PROPERTIES`)
+- Downstream pressure and required choke size
+- Validation and performance curves
 
-- ✅ `ChokeProperties` - Choke physical properties
-- ✅ `GasChokeProperties` - Gas properties for choke calculations
-- ✅ `ChokeFlowResult` - Calculation results
-- ✅ `ChokeType` - Choke type enumeration
-- ✅ `FlowRegime` - Flow regime enumeration (Sonic/Subsonic)
+**`ChokeAnalysisService`** implements this interface. Additional **extended** methods (erosion, bean design, nodal-with-choke, sand risk, etc.) exist on the **concrete class** only — see [.plans/09_Interface_Surface_Canonical_vs_Extended.md](.plans/09_Interface_Surface_Canonical_vs_Extended.md).
 
-### 2. Choke Flow Calculations ✅
+## Project layout (high level)
 
-**File:** `Calculations/GasChokeCalculator.cs`
+| Area | Purpose |
+|------|---------|
+| `Calculations/` | `GasChokeCalculator`, multiphase, performance curve, erosion/sizing, discharge coefficient |
+| `Services/` | `ChokeAnalysisService` (+ `Advanced`, `Multiphase` partials) |
+| `Validation/` | `ChokeValidator` |
+| `Constants/` | Physical constants, `ChokeFlowRegime` / `ChokeType`, reference codes + seed rows (`ChokeAnalysisReferenceCodeSeed`) |
+| `Modules/` | `ChokeAnalysisModule` — registers **extension** choke tables only (`CHOKE_*`, `R_CHOKE_ANALYSIS_REFERENCE_CODE`); physical schema from entity-driven tooling / ModuleSetup, **not** hand-authored `.sql` in this workflow |
+| `Models/ChokeModels.cs` | Migration note only — entities moved to **Models** |
 
-- ✅ **Downhole Choke Flow** - Gas flow through downhole chokes
-- ✅ **Uphole Choke Flow** - Gas flow through uphole chokes
-- ✅ **Sonic Flow Calculations** - Critical flow rate
-- ✅ **Subsonic Flow Calculations** - Subcritical flow rate
-- ✅ **Downstream Pressure Calculation** - Iterative solution
-- ✅ **Choke Sizing** - Calculate required choke size
+## Dependencies
 
-### 3. Infrastructure ✅
+- **`Beep.OilandGas.GasProperties`** — gas property support (project reference)
+- **`Beep.OilandGas.PPDM39`** — PPDM entity types when mapping from `WELL` / tests
 
-- ✅ **Validation** - Comprehensive parameter validation
-- ✅ **Constants** - Choke constants and conversion factors
-- ✅ **Exceptions** - Custom exceptions for error handling
-- ✅ **Documentation** - Complete README with examples
+## Packaging
 
-### 4. Integration ✅
+NuGet packaging uses **`README.md`** via `PackageReadmeFile` (see `.csproj`). Build should remain **warning-free** with **nullable** enabled.
 
-- ✅ Reference to `Beep.OilandGas.Properties`
-- ✅ Z-factor calculations for gas
-- ✅ Gas property support
+## Further reading
 
----
-
-## 📊 Statistics
-
-- **Total Files:** 6 files
-- **Total Lines of Code:** ~500+ lines
-- **Calculation Methods:** 6+ methods
-- **Build Status:** ✅ Build Succeeded
-- **Project Status:** Production Ready
-
----
-
-## 🎯 Key Features
-
-### Industry-Standard Calculations
-
-All calculations are based on industry-standard methods:
-- Isentropic flow equations
-- Critical flow theory
-- Gas flow through restrictions
-- Choke performance equations
-
-### Flow Regime Detection
-
-- Automatic detection of sonic vs subsonic flow
-- Critical pressure ratio calculations
-- Appropriate equation selection
-
-### Comprehensive Calculations
-
-- Flow rate calculations
-- Pressure drop calculations
-- Choke sizing
-- Downstream pressure determination
-
-### Integration
-
-- Uses `Beep.OilandGas.Properties` for Z-factor
-- Compatible with other Beep.OilandGas projects
-- Well-documented API
-
----
-
-## 🔗 Integration Points
-
-### With Beep.OilandGas.Properties
-
-- ✅ Z-factor calculations (Brill-Beggs)
-- ✅ Gas property support
-- ✅ Temperature and pressure handling
-
-### With Other Projects
-
-- ✅ `Beep.NodalAnalysis` - Well performance analysis
-- ✅ `Beep.OilandGas.ProductionForecasting` - Production forecasting
-- ✅ Production systems integration
-
----
-
-## 📝 Usage Examples
-
-### Downhole Choke Flow
-
-```csharp
-var result = GasChokeCalculator.CalculateDownholeChokeFlow(choke, gasProperties);
-Console.WriteLine($"Flow Rate: {result.FlowRate:F2} Mscf/day");
-Console.WriteLine($"Flow Regime: {result.FlowRegime}");
-```
-
-### Choke Sizing
-
-```csharp
-decimal chokeSize = GasChokeCalculator.CalculateRequiredChokeSize(
-    gasProperties, flowRate: 5000m);
-```
-
-### Downstream Pressure
-
-```csharp
-decimal downstreamPressure = GasChokeCalculator.CalculateDownstreamPressure(
-    choke, gasProperties, flowRate: 3000m);
-```
-
----
-
-## ✅ Next Steps
-
-1. **Add SkiaSharp Visualization** - Choke performance curves
-2. **Oil Choke Calculations** - Extend to oil flow
-3. **Multi-Phase Flow** - Two-phase flow through chokes
-4. **Performance Optimization** - Caching and optimization
-5. **Unit Tests** - Comprehensive test coverage
-
----
-
-## 🚀 Status
-
-**Implementation:** Complete ✅  
-**Build:** Successful ✅  
-**Documentation:** Complete ✅  
-**Ready for:** Production Use ✅
-
----
-
-**Created:** Based on Petroleum Engineer XLS analysis  
-**Integration:** Beep.OilandGas.Properties ✅  
-**Naming Convention:** Beep.OilandGas.ChokeAnalysis ✅
-
+- [README.md](README.md) — usage and examples
+- [.plans/README.md](.plans/README.md) — phased engineering and test plans
+- [MASTER-TODO-TRACKER.md](MASTER-TODO-TRACKER.md) — status rollup

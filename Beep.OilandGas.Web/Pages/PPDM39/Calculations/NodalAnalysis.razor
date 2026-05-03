@@ -3,10 +3,11 @@
 @using Beep.OilandGas.Models.Data.NodalAnalysis
 @using Beep.OilandGas.PPDM39.Models
 @using System.Security.Claims
+@using Microsoft.Extensions.Logging
 @inject ISnackbar Snackbar
+@inject ILogger<NodalAnalysis> Logger
 @inject ICalculationServiceClient CalculationService
 @inject AuthenticationStateProvider AuthStateProvider
-@inject ApiClient ApiClient
 @inject IDevelopmentServiceClient DevelopmentClient
 @inject ILifeCycleService LifeCycleService
 
@@ -26,8 +27,34 @@
         </MudStack>
         <MudButton Variant="Variant.Filled" Color="Color.Primary"
                    StartIcon="@Icons.Material.Filled.PlayArrow"
+                   Disabled="@(!_initializationFinished || _wells.Count == 0)"
                    OnClick="OpenAnalysisDialog">Perform Analysis</MudButton>
     </MudStack>
+
+    @if (_initializationFinished && _wells.Count == 0 && !_isLoading)
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="mb-4">
+            No wells with a valid UWI were returned for this field. Nodal analysis requires a well identifier.
+        </MudAlert>
+    }
+
+    @if (_wells.Count > 0)
+    {
+        <MudSelect T="string"
+                   Label="Well"
+                   Variant="Variant.Outlined"
+                   Dense="true"
+                   Class="mb-4"
+                   Value="@_selectedWellUWI"
+                   ValueChanged="OnWellUwiChangedAsync"
+                   AnchorOrigin="Origin.BottomCenter">
+            @foreach (var w in _wells)
+            {
+                var label = string.IsNullOrWhiteSpace(w.WellName) ? w.UWI : $"{w.WellName} ({w.UWI})";
+                <MudSelectItem Value="@w.UWI">@label</MudSelectItem>
+            }
+        </MudSelect>
+    }
 
     @if (_isLoading)
     {
@@ -86,6 +113,7 @@
                     <MudText Typo="Typo.body2" Color="Color.Secondary">Perform an analysis to see inflow/outflow results here.</MudText>
                     <MudButton Variant="Variant.Filled" Color="Color.Primary"
                                StartIcon="@Icons.Material.Filled.PlayArrow"
+                               Disabled="@(!_initializationFinished || _wells.Count == 0)"
                                OnClick="OpenAnalysisDialog" Class="mt-2">Perform Analysis</MudButton>
                 </MudStack>
             }
@@ -98,6 +126,7 @@
     private string _fieldName = string.Empty;
     private List<NodalAnalysisRunResult>? _analysisHistory;
     private bool _isLoading = false;
+    private bool _initializationFinished;
     private string? _currentUserId;
     private string? _selectedWellUWI;
     private List<WellOptionDto> _wells = new();
@@ -121,24 +150,44 @@
     {
         try
         {
-            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
-            if (summary != null)
-                _fieldName = summary.FieldName ?? _fieldName;
-        }
-        catch { /* field name is non-critical */ }
+            try
+            {
+                var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
+                if (summary != null)
+                    _fieldName = summary.FieldName ?? _fieldName;
+            }
+            catch (OperationCanceledException)
+            {
+                // Navigation or token cancellation during header load.
+            }
+            catch (Exception ex)
+            {
+                Logger.LogDebug(ex, "Field lifecycle summary unavailable for nodal analysis header");
+            }
 
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
-        try
-        {
-            _wells = (await DevelopmentClient.GetWellsAsync()).Select(MapWell).ToList();
-            _selectedWellUWI = _wells.FirstOrDefault()?.UWI;
-            if (!string.IsNullOrEmpty(_selectedWellUWI))
-                _analysisHistory = await CalculationService.GetNodalAnalysisHistoryAsync(_selectedWellUWI);
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+            try
+            {
+                _wells = (await DevelopmentClient.GetWellsAsync()).Select(MapWell)
+                    .Where(w => !string.IsNullOrWhiteSpace(w.UWI))
+                    .ToList();
+                _selectedWellUWI = _wells.FirstOrDefault()?.UWI;
+                await ReloadHistoryForSelectedWellAsync();
+            }
+            catch (OperationCanceledException)
+            {
+                // Navigation or token cancellation during well/history load.
+            }
+            catch (Exception ex)
+            {
+                Logger.LogDebug(ex, "Failed to load wells for nodal analysis page");
+                Snackbar.Add("Failed to load wells.", Severity.Warning);
+            }
         }
-        catch (Exception)
+        finally
         {
-            Snackbar.Add("Failed to load wells.", Severity.Warning);
+            _initializationFinished = true;
         }
     }
 
@@ -147,9 +196,50 @@
         await PerformAnalysis();
     }
 
+    private async Task OnWellUwiChangedAsync(string? uwi)
+    {
+        _selectedWellUWI = uwi;
+        await ReloadHistoryForSelectedWellAsync();
+    }
+
+    private async Task ReloadHistoryForSelectedWellAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedWellUWI))
+        {
+            _analysisHistory = null;
+            return;
+        }
+
+        _isLoading = true;
+        try
+        {
+            _analysisHistory = await CalculationService.GetNodalAnalysisHistoryAsync(_selectedWellUWI);
+        }
+        catch (ArgumentException ex)
+        {
+            Logger.LogWarning(ex, "Invalid request loading nodal history for well {WellUWI}", _selectedWellUWI);
+            Snackbar.Add(ex.Message, Severity.Warning);
+            _analysisHistory = null;
+        }
+        catch (OperationCanceledException)
+        {
+            // Navigation or token cancellation; avoid misleading warning snackbars.
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load nodal analysis history for well {WellUWI}", _selectedWellUWI);
+            Snackbar.Add("Failed to load analysis history.", Severity.Warning);
+            _analysisHistory = null;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
     private async Task PerformAnalysis()
     {
-        if (string.IsNullOrEmpty(_selectedWellUWI))
+        if (string.IsNullOrWhiteSpace(_selectedWellUWI))
         {
             Snackbar.Add("Please select a well", Severity.Warning);
             return;
@@ -161,17 +251,37 @@
             var parameters = new NodalAnalysisParameters();
 
             var result = await CalculationService.PerformNodalAnalysisAsync(_selectedWellUWI, parameters);
-            
-            // Save the result
-            await CalculationService.SaveNodalAnalysisResultAsync(result, _currentUserId);
-            
-            Snackbar.Add("Nodal analysis completed successfully", Severity.Success);
-            
-            // Reload history
-            _analysisHistory = await CalculationService.GetNodalAnalysisHistoryAsync(_selectedWellUWI);
+
+            var saved = await CalculationService.SaveNodalAnalysisResultAsync(result, _currentUserId);
+            if (!saved)
+            {
+                Logger.LogWarning("Nodal analysis finished but save returned false for well {WellUWI}", _selectedWellUWI);
+                Snackbar.Add("Analysis finished but saving results failed. Check connectivity and permissions.", Severity.Warning);
+            }
+            else
+            {
+                Snackbar.Add("Nodal analysis completed successfully", Severity.Success);
+            }
+
+            await ReloadHistoryForSelectedWellAsync();
         }
-        catch (Exception)
+        catch (ArgumentException ex)
         {
+            Logger.LogWarning(ex, "Nodal analysis request invalid for well {WellUWI}", _selectedWellUWI);
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+        catch (InvalidOperationException ex)
+        {
+            Logger.LogWarning(ex, "Nodal analysis operation failed for well {WellUWI}", _selectedWellUWI);
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+        catch (OperationCanceledException)
+        {
+            // Navigation or token cancellation; avoid error snackbars.
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Nodal analysis or save failed for well {WellUWI}", _selectedWellUWI);
             Snackbar.Add("Error performing nodal analysis.", Severity.Error);
         }
         finally

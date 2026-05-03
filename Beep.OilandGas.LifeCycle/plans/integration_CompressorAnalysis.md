@@ -1,178 +1,149 @@
-# Beep.OilandGas.CompressorAnalysis - LifeCycle Integration Guide
+# Beep.OilandGas.CompressorAnalysis — LifeCycle integration
 
 ## Overview
 
-**Beep.OilandGas.CompressorAnalysis** is a comprehensive library for compressor analysis and design in oil and gas operations, supporting both centrifugal and reciprocating compressors.
+**Beep.OilandGas.CompressorAnalysis** supports centrifugal and reciprocating compressor power and pressure calculations. **Table-shaped** entities (`COMPRESSOR_*`, **`R_COMPRESSOR_ANALYSIS_REFERENCE_CODE`**) live in **`Beep.OilandGas.CompressorAnalysis.Data`**. **Cross-layer wire** types (**`CompressorAnalysisRequest`**, **`CompressorAnalysisResult`**, **`CompressorAnalysisWellKnown`**) live in **`Beep.OilandGas.Models.Data.Calculations`**.
 
-### Key Capabilities
-- **Centrifugal Compressor Analysis**: Polytropic head, adiabatic head, power requirements
-- **Reciprocating Compressor Analysis**: Cylinder displacement, volumetric efficiency, power requirements
-- **Compressor Pressure Calculations**: Required discharge pressure, maximum flow rate
-- **System Efficiency Calculations**: Overall system efficiency
-- **Multi-stage Support**: Multi-stage compressor analysis
+### Key capabilities
 
-### Current Status
-⚠️ **Not Yet Integrated** - Should be integrated into `PPDMDevelopmentService` for facility management
+- Centrifugal: polytropic head, power (**`ICompressorAnalysisService.CalculateCentrifugalPowerAsync`**).
+- Reciprocating: displacement-based power (**`CalculateReciprocatingPowerAsync`**).
+- Pressure: required discharge / constraints (**`CalculateRequiredPressureAsync`** and static **`CompressorPressureCalculator`** where used internally).
+
+### Current status
+
+Integrated for packaged facility runs: **`PPDMCalculationService.PerformCompressorAnalysisAsync`** → **`Beep.OilandGas.CompressorAnalysis.Core.Interfaces.ICompressorAnalysisService`**; HTTP **`POST /api/calculations/compressor`**; **`DataFlowService.RunCompressorAnalysisAsync`** / **`FacilityManagementService.AnalyzeCompressorAsync`**. **`CompressorController`** (`**/api/compressor/**`) uses the **same** **`ICompressorAnalysisService`** for raw **`COMPRESSOR_*`** payloads.
 
 ---
 
-## Key Classes and Interfaces
+## Main types and entry points
 
-### Main Classes
+### `ICompressorAnalysisService`
 
-#### `CentrifugalCompressorCalculator`
-Centrifugal compressor calculations.
+**Namespace:** **`Beep.OilandGas.CompressorAnalysis.Core.Interfaces`**
 
-**Key Methods:**
+Orchestrates calculations on **`COMPRESSOR_*`** types from **`Beep.OilandGas.CompressorAnalysis.Data`**.
+
+### Static calculators (library internals)
+
+These remain useful for tests and direct calls; production HTTP and facility orchestration prefer **`ICompressorAnalysisService`**.
+
 ```csharp
+// Beep.OilandGas.CompressorAnalysis.Calculations — uses Data/* table shapes
 public static class CentrifugalCompressorCalculator
 {
-    public static CompressorPowerResult CalculatePower(
-        CentrifugalCompressorProperties compressorProperties,
+    public static COMPRESSOR_POWER_RESULT CalculatePower(
+        CENTRIFUGAL_COMPRESSOR_PROPERTIES compressorProperties,
         bool useSIUnits = false);
 }
-```
 
-#### `ReciprocatingCompressorCalculator`
-Reciprocating compressor calculations.
-
-**Key Methods:**
-```csharp
 public static class ReciprocatingCompressorCalculator
 {
-    public static CompressorPowerResult CalculatePower(
-        ReciprocatingCompressorProperties compressorProperties,
+    public static COMPRESSOR_POWER_RESULT CalculatePower(
+        RECIPROCATING_COMPRESSOR_PROPERTIES compressorProperties,
         bool useSIUnits = false);
 }
-```
 
-#### `CompressorPressureCalculator`
-Compressor pressure calculations.
-
-**Key Methods:**
-```csharp
 public static class CompressorPressureCalculator
 {
-    public static CompressorPressureResult CalculateRequiredPressure(
-        CompressorOperatingConditions operatingConditions,
+    public static COMPRESSOR_PRESSURE_RESULT CalculateRequiredPressure(
+        COMPRESSOR_OPERATING_CONDITIONS operatingConditions,
         decimal requiredFlowRate,
         decimal maxPower,
         decimal compressorEfficiency);
-    
-    public static decimal CalculateMaximumFlowRate(
-        CompressorOperatingConditions operatingConditions,
-        decimal compressionRatio,
-        decimal maxPower,
-        decimal compressorEfficiency);
 }
 ```
 
 ---
 
-## Integration with LifeCycle Services
+## Integration with LifeCycle services
 
-### Planned Integration
+### `PPDMDevelopmentService`
 
-**Service:** `PPDMDevelopmentService`  
-**Location:** `Beep.OilandGas.LifeCycle.Services.Development.PPDMDevelopmentService`
+**Namespace:** **`Beep.OilandGas.LifeCycle.Services.Development`**
 
-### Integration Points
-
-1. **Compressor Analysis Method**
-   - Method: `AnalyzeCompressorAsync(CompressorAnalysisRequest request)`
-   - Retrieves compressor/facility data from PPDM database
-   - Performs power or pressure analysis
-   - Stores results in `FACILITY_EQUIPMENT` or related table
+Optional future persistence/analysis orchestration; facility packaged flows already use **`PerformCompressorAnalysisAsync`** and **`DataFlowService`**.
 
 ---
 
-## Usage Examples
+## Usage examples
 
-### Example 1: Centrifugal Compressor Power
+### Example 1 — static calculator (tests / utilities)
 
 ```csharp
-using Beep.OilandGas.CompressorAnalysis.Models;
 using Beep.OilandGas.CompressorAnalysis.Calculations;
+using Beep.OilandGas.CompressorAnalysis.Data;
 
-var operatingConditions = new CompressorOperatingConditions
+var operatingConditions = new COMPRESSOR_OPERATING_CONDITIONS
 {
-    SuctionPressure = 100m,
-    DischargePressure = 500m,
-    SuctionTemperature = 520m,
-    DischargeTemperature = 600m,
-    GasFlowRate = 1000m,
-    GasSpecificGravity = 0.65m,
-    GasMolecularWeight = 18.8m,
-    CompressorEfficiency = 0.75m,
-    MechanicalEfficiency = 0.95m
+    COMPRESSOR_OPERATING_CONDITIONS_ID = Guid.NewGuid().ToString("N"),
+    SUCTION_PRESSURE = 100m,
+    DISCHARGE_PRESSURE = 500m,
+    SUCTION_TEMPERATURE = 520m,
+    DISCHARGE_TEMPERATURE = 600m,
+    GAS_FLOW_RATE = 1000m,
+    GAS_SPECIFIC_GRAVITY = 0.65m,
+    GAS_MOLECULAR_WEIGHT = 18.8m,
+    COMPRESSOR_EFFICIENCY = 0.75m,
+    MECHANICAL_EFFICIENCY = 0.95m
 };
 
-var compressorProperties = new CentrifugalCompressorProperties
+var compressorProperties = new CENTRIFUGAL_COMPRESSOR_PROPERTIES
 {
-    OperatingConditions = operatingConditions,
-    PolytropicEfficiency = 0.75m,
-    SpecificHeatRatio = 1.3m,
-    NumberOfStages = 1,
-    Speed = 3600m
+    CENTRIFUGAL_COMPRESSOR_PROPERTIES_ID = Guid.NewGuid().ToString("N"),
+    COMPRESSOR_OPERATING_CONDITIONS_ID = operatingConditions.COMPRESSOR_OPERATING_CONDITIONS_ID,
+    OPERATING_CONDITIONS = operatingConditions,
+    POLYTROPIC_EFFICIENCY = 0.75m,
+    SPECIFIC_HEAT_RATIO = 1.3m,
+    NUMBER_OF_STAGES = 1,
+    SPEED = 3600m
 };
 
-var result = CentrifugalCompressorCalculator.CalculatePower(
+COMPRESSOR_POWER_RESULT result = CentrifugalCompressorCalculator.CalculatePower(
     compressorProperties,
     useSIUnits: false);
-
-Console.WriteLine($"Brake Horsepower: {result.BrakeHorsepower:F2} HP");
-Console.WriteLine($"Compression Ratio: {result.CompressionRatio:F2}");
 ```
 
-### Example 2: Integration with LifeCycle Service (Planned)
+### Example 2 — facility analysis via `DataFlowService`
 
 ```csharp
-var developmentService = serviceProvider.GetRequiredService<IFieldDevelopmentService>();
+using Beep.OilandGas.LifeCycle.Services.Integration;
+using Beep.OilandGas.Models.Data.Calculations;
 
-var request = new CompressorAnalysisRequest
-{
-    FacilityId = "FACILITY-001",
-    CompressorType = "CENTRIFUGAL",
-    UserId = "user123"
-};
+var dataFlow = serviceProvider.GetRequiredService<DataFlowService>();
 
-var result = await developmentService.AnalyzeCompressorAsync(request);
+CompressorAnalysisResult result = await dataFlow.RunCompressorAnalysisAsync(
+    facilityId: "FACILITY-001",
+    userId: "user123",
+    equipmentId: null,
+    compressorType: CompressorAnalysisWellKnown.CompressorType.Centrifugal,
+    analysisType: CompressorAnalysisWellKnown.AnalysisType.Power,
+    additionalParameters: null);
 ```
+
+Alternatively inject **`FacilityManagementService`** and call **`AnalyzeCompressorAsync`**.
 
 ---
 
-## Data Storage
+## Data storage
 
-### PPDM Tables
+### Extension tables
 
-#### Existing Table: `FACILITY_EQUIPMENT`
+Owned by **`CompressorAnalysisModule`** — see **`Beep.OilandGas.CompressorAnalysis/Modules/CompressorAnalysisModule.cs`** for **`EntityTypes`** and reference seeding.
 
-**Status:** ✅ **Existing PPDM Table** - Already exists in PPDM39, can be used for compressor data.
+### Facility linkage
 
-**Usage:**
-- Store compressor properties and specifications
-- Store compressor analysis results (power, pressure, etc.)
-- Link to `FACILITY` via `FACILITY_ID`
-
-**Note:** If additional compressor-specific fields are needed beyond what `FACILITY_EQUIPMENT` provides, consider:
-- Using `FACILITY_EQUIPMENT` with extended attributes/JSON fields
-- Or creating `COMPRESSOR_ANALYSIS` table if following PPDM extension patterns
-
-### Relationships
-
-- `FACILITY_EQUIPMENT.FACILITY_ID` → `FACILITY.FACILITY_ID`
+**`FACILITY`** / **`FACILITY_EQUIPMENT`** remain standard PPDM paths for tying equipment to facilities; compressor-specific extension rows use the **`COMPRESSOR_*`** entities above.
 
 ---
 
 ## References
 
-- **Project Location:** `Beep.OilandGas.CompressorAnalysis`
-- **Service Integration:** `Beep.OilandGas.LifeCycle.Services.Development.PPDMDevelopmentService` (planned)
-- **Documentation:** `Beep.OilandGas.CompressorAnalysis/README.md`
-- **PPDM Table:** `FACILITY_EQUIPMENT`
+- **Project:** `Beep.OilandGas.CompressorAnalysis`
+- **Architecture:** `Plans/Architecture/COMPRESSOR_ANALYSIS_ARCHITECTURE_PLAN.md`
+- **Phased plans:** `Beep.OilandGas.CompressorAnalysis/.plans/README.md`
 
 ---
 
-**Last Updated:** 2024  
-**Status:** ⚠️ Not Yet Integrated (Should be integrated)
-
+**Last updated:** April 2026  
+**Status:** Integrated for packaged calculations and **`CompressorController`**; extend **`CompressorAnalysisModule`** when new persisted scenarios are added.

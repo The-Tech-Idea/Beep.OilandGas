@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.LeaseAcquisition.Services;
+using Beep.OilandGas.LeaseAcquisition.Data.Lease.Projections;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.LeaseAcquisition.Services
@@ -226,7 +226,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 40: Saves lease acquisition data
         /// </summary>
-        public async Task SaveLeaseAcquisitionAsync(LeaseAcquisition acquisition, string userId)
+        public async Task SaveLeaseAcquisitionAsync(LeaseAcquisitionDetail acquisition, string userId)
         {
             if (acquisition == null)
                 throw new ArgumentNullException(nameof(acquisition));
@@ -252,7 +252,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 41: Retrieves lease acquisition data
         /// </summary>
-        public async Task<LeaseAcquisition?> GetLeaseAcquisitionAsync(string leaseId)
+        public async Task<LeaseAcquisitionDetail?> GetLeaseAcquisitionAsync(string leaseId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -261,7 +261,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Retrieving lease acquisition {LeaseId}", leaseId);
 
-                var acquisition = new LeaseAcquisition
+                var acquisition = new LeaseAcquisitionDetail
                 {
                     LeaseId = leaseId,
                     LeaseName = "Sample Lease",
@@ -290,7 +290,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 42: Updates lease acquisition data
         /// </summary>
-        public async Task UpdateLeaseAcquisitionAsync(LeaseAcquisition acquisition, string userId)
+        public async Task UpdateLeaseAcquisitionAsync(LeaseAcquisitionDetail acquisition, string userId)
         {
             if (acquisition == null)
                 throw new ArgumentNullException(nameof(acquisition));

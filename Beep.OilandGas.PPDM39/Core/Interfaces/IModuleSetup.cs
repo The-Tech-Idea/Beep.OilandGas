@@ -37,6 +37,7 @@ namespace Beep.OilandGas.PPDM39.Core.Interfaces
         /// These are collected by the orchestrator and passed to the migration manager
         /// to build the schema DDL plan. Must not contain types already declared by
         /// a lower-order module.
+        /// Extension-table DDL is driven from these types via tooling — not by checking in per-feature SQL scripts (see project CLAUDE.md).
         /// </summary>
         IReadOnlyList<Type> EntityTypes { get; }
 

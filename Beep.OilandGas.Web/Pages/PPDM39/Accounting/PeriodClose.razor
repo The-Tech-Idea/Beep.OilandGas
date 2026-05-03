@@ -1,5 +1,6 @@
 @page "/ppdm39/accounting/period-close"
 @using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.Models.Data.Accounting
 @inject IAccountingServiceClient AccountingClient
 @inject ISnackbar Snackbar
 
@@ -30,7 +31,7 @@
             </MudItem>
             <MudItem xs="12" sm="4" Class="d-flex align-end">
                 <MudButton Variant="Variant.Filled" Color="Color.Error" FullWidth="true"
-                           OnClick="ExecutePeriodClose" Disabled="@_closing || !_periodEnd.HasValue"
+                           OnClick="ExecutePeriodClose" Disabled="@(_closing || !_periodEnd.HasValue)"
                            StartIcon="@Icons.Material.Filled.Lock">
                     @(_closing ? "Closing..." : "Execute Period Close")
                 </MudButton>
@@ -41,10 +42,10 @@
     @* ─── Pre-Close Checklist *@
     <MudPaper Elevation="2" Class="pa-4 mb-4">
         <MudText Typo="Typo.h6" Class="mb-3">Pre-Close Checklist</MudText>
-        <MudList Dense="true">
+        <MudList T="ChecklistItem" Dense="true">
             @foreach (var item in _checklist)
             {
-                <MudListItem>
+                <MudListItem T="ChecklistItem">
                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                         <MudCheckBox T="bool" @bind-Value="item.Completed" Disabled="true" />
                         <MudText>@item.Description</MudText>
@@ -119,8 +120,7 @@
         {
             var request = new CloseAccountingPeriodRequest
             {
-                PeriodEnd = _periodEnd.Value,
-                Notes = _closingNotes
+                PeriodEnd = _periodEnd.Value
             };
             var success = await AccountingClient.ClosePeriodAsync(request);
             if (success)

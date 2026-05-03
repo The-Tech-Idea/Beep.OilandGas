@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Beep.OilandGas.ChokeAnalysis.Constants;
 using Beep.OilandGas.Models.Data.ChokeAnalysis;
 using Beep.OilandGas.Models.Data.Calculations;
 
@@ -59,7 +60,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
             /// <summary>Flow rate (Mscfd for gas; STB/d for multiphase liquid).</summary>
             public double FlowRate { get; set; }
 
-            /// <summary>Flow regime at this point.</summary>
+            /// <summary>Flow regime: gas CPC uses <c>SONIC</c>/<c>SUBSONIC</c> (R_CHOKE_ANALYSIS_REFERENCE_CODE); multiphase uses descriptive labels.</summary>
             public string Regime { get; set; } = string.Empty;
 
             /// <summary>Pressure ratio P₂/P₁.</summary>
@@ -148,7 +149,8 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
             double dIn  = (double)choke.CHOKE_DIAMETER;          // in
             double cd   = (double)(choke.DISCHARGE_COEFFICIENT > 0 ? choke.DISCHARGE_COEFFICIENT : 0.85m);
             double p1   = (double)gasProps.UPSTREAM_PRESSURE;    // psia
-            double tR   = (double)gasProps.TEMPERATURE + 459.67; // °R
+            // GAS_CHOKE_PROPERTIES.TEMPERATURE is Rankine (°R) — same as GasChokeCalculator / ChokeValidator
+            double tR   = (double)gasProps.TEMPERATURE;
             double sg   = (double)gasProps.GAS_SPECIFIC_GRAVITY;
 
             double area   = Math.PI * (dIn / 12.0) * (dIn / 12.0) / 4.0;  // ft²
@@ -188,7 +190,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
                 if (r <= rCrit)
                 {
                     q = qSonicMscfd;
-                    regime = "Sonic";
+                    regime = ChokeAnalysisReferenceCodes.RegimeSonic;
                 }
                 else
                 {
@@ -199,7 +201,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
                         : 0;
                     qFt3s = Math.Abs(qFt3s);
                     q = qFt3s * pFactor * 86400.0 / 1000.0;
-                    regime = "Subsonic";
+                    regime = ChokeAnalysisReferenceCodes.RegimeSubsonic;
                 }
 
                 result.Points.Add(new CpcPoint

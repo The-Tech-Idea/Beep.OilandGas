@@ -20,10 +20,12 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<EnhancedRecoveryOperation> AnalyzeEORPotentialAsync(string fieldId, string eorMethod);
 
         /// <summary>
-        /// Calculates recovery factor for EOR project.
+        /// Returns the EOR operation with a **screening-level** incremental recovery factor estimate (% OOIP)
+        /// stored on <see cref="EnhancedRecoveryOperation.Efficiency"/> and explained in <see cref="EnhancedRecoveryOperation.Remarks"/>.
+        /// This is a method-class heuristic until volumetric OOIP and production history are integrated — not a decline-curve RF.
         /// </summary>
         /// <param name="operationId">EOR operation identifier</param>
-        /// <returns>Recovery factor calculation result</returns>
+        /// <returns>Operation snapshot with screening RF metadata</returns>
         Task<EnhancedRecoveryOperation> CalculateRecoveryFactorAsync(string operationId);
 
         /// <summary>

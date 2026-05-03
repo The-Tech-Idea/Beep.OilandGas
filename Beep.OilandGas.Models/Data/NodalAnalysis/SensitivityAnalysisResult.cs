@@ -52,8 +52,22 @@ namespace Beep.OilandGas.Models.Data
 
          }
 
-        public List<double> PriceVariation { get; set; }
-        public List<double> VolumeVariation { get; set; }
-        public List<double> CostVariation { get; set; }
+        public List<double> PriceVariation { get; set; } = new();
+        public List<double> VolumeVariation { get; set; } = new();
+        public List<double> CostVariation { get; set; } = new();
+        public List<string> SweepDefinition { get; set; } = new();
+        public List<string> ScenarioOrder { get; set; } = new();
+        public List<SensitivityScenarioResult> ScenarioResults { get; set; } = new();
+        private string ApiContractVersionValue = "NODAL_DIAGNOSTICS_V1";
+
+        public string ApiContractVersion
+
+        {
+
+            get { return this.ApiContractVersionValue; }
+
+            set { SetProperty(ref ApiContractVersionValue, value); }
+
+        }
     }
 }

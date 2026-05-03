@@ -16,5 +16,11 @@ namespace Beep.OilandGas.ProductionForecasting.Services
                 : ForecastType.Decline;
             return await GenerateForecastAsync(wellUWI, fieldId, ft, forecastPeriod);
         }
+
+        async Task<ProductionForecastResult> Beep.OilandGas.Models.Core.Interfaces.IProductionForecastingService.GenerateForecastAsync(
+            GenerateForecastRequest request)
+        {
+            return await GenerateForecastAsync(request);
+        }
     }
 }

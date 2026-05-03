@@ -4,6 +4,10 @@
 
 The `Beep.OilandGas.PPDM39.DataManagement` project provides a comprehensive data access framework for working with PPDM39 (Petroleum Public Data Model version 3.9) databases. It offers metadata-driven, database-agnostic data access patterns that work with any data source through the Beep Data Management Engine.
 
+## Beep.OilandGas — extension tables
+
+For **new feature-owned** tables, each owning **`Beep.OilandGas.{Domain}`** assembly should expose **`ModuleSetupBase`** (`Modules/{Domain}Module.cs`): **`EntityTypes`** for extension **`ModelEntityBase`** tables, **`SeedAsync`** for **`R_*`** / reference rows (idempotent). Create schema via **`CreateSchemaFromEntitiesAsync`** / migration / orchestrated setup — **do not** maintain hand-written DDL under `Beep.OilandGas.Models/Scripts/**` for those tables. See root **`CLAUDE.md`** (*Schema for extension tables*). **Database Creator** and **script execution** services apply to **discovered script directories** (packaged PPDM trees, deployments), not per-feature agent-authored TAB/PK/FK files.
+
 ## Key Features
 
 ### Core Components

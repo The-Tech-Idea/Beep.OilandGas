@@ -45,8 +45,8 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// Retrieves a permit application by ID.
         /// </summary>
         /// <param name="applicationId">The application ID.</param>
-        /// <returns>The permit application.</returns>
-        Task<PERMIT_APPLICATION> GetPermitApplicationAsync(string applicationId);
+        /// <returns>The permit application, or null if not found.</returns>
+        Task<PERMIT_APPLICATION?> GetPermitApplicationAsync(string applicationId);
 
         /// <summary>
         /// Retrieves permit applications by status.
@@ -149,8 +149,8 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="country">The country.</param>
         /// <param name="stateProvince">The state or province.</param>
         /// <param name="authority">The regulatory authority.</param>
-        /// <returns>The jurisdiction requirements.</returns>
-        Task<JURISDICTION_REQUIREMENTS> GetJurisdictionRequirementsAsync(
+        /// <returns>The jurisdiction requirements, or null if none are configured.</returns>
+        Task<JURISDICTION_REQUIREMENTS?> GetJurisdictionRequirementsAsync(
             string country,
             string stateProvince,
             string authority);

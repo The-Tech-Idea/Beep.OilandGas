@@ -2,9 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Beep.OilandGas.EconomicAnalysis.Constants;
+using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using Beep.OilandGas.PPDM39.DataManagement.SeedData;
+using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.EconomicAnalysis.Modules
 {
@@ -19,6 +22,9 @@ namespace Beep.OilandGas.EconomicAnalysis.Modules
     {
         private static readonly IReadOnlyList<Type> _entityTypes = new List<Type>
         {
+            typeof(R_ECONOMIC_METRIC),
+            typeof(R_ECONOMIC_SCENARIO),
+            typeof(R_ECONOMIC_SCHEDULE)
         };
 
         private readonly PPDMReferenceDataSeeder _referenceSeeder;
@@ -59,6 +65,13 @@ namespace Beep.OilandGas.EconomicAnalysis.Modules
 
                 if (seed.Errors != null)
                     result.Errors.AddRange(seed.Errors);
+
+                await SeedEconomicReferenceDataAsync(connectionName, userId, result, cancellationToken);
+                result.Success = result.Errors.Count == 0;
+                if (result.Success && result.RecordsInserted == 0 && result.TablesSeeded == 0)
+                    result.SkipReason = "Economic reference rows already seeded.";
+                else if (result.Success && result.RecordsInserted == 0 && string.IsNullOrWhiteSpace(result.SkipReason))
+                    result.SkipReason = "Seed completed with no additional economic inserts.";
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -67,6 +80,82 @@ namespace Beep.OilandGas.EconomicAnalysis.Modules
             }
 
             return result;
+        }
+
+        private async Task SeedEconomicReferenceDataAsync(
+            string connectionName,
+            string userId,
+            ModuleSetupResult result,
+            CancellationToken cancellationToken)
+        {
+            var metricRepo = GetRepo<R_ECONOMIC_METRIC>("R_ECONOMIC_METRIC", connectionName);
+            var scenarioRepo = GetRepo<R_ECONOMIC_SCENARIO>("R_ECONOMIC_SCENARIO", connectionName);
+            var scheduleRepo = GetRepo<R_ECONOMIC_SCHEDULE>("R_ECONOMIC_SCHEDULE", connectionName);
+
+            foreach (var row in EconomicAnalysisReferenceCodeSeed.GetMetricRows())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var existing = await metricRepo.GetAsync(new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "ECONOMIC_METRIC", Operator = "=", FilterValue = row.Metric }
+                });
+                var hasExisting = false;
+                foreach (var _ in existing) { hasExisting = true; break; }
+                if (hasExisting) continue;
+
+                var entity = new R_ECONOMIC_METRIC
+                {
+                    ECONOMIC_METRIC = row.Metric,
+                    ABBREVIATION = row.Abbreviation,
+                    LONG_NAME = row.LongName,
+                    SHORT_NAME = row.ShortName
+                };
+                await TryInsertAsync(metricRepo, entity, userId, result, $"R_ECONOMIC_METRIC/{row.Metric}");
+            }
+
+            foreach (var row in EconomicAnalysisReferenceCodeSeed.GetScenarioRows())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var existing = await scenarioRepo.GetAsync(new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "ECONOMIC_SCENARIO", Operator = "=", FilterValue = row.Scenario }
+                });
+                var hasExisting = false;
+                foreach (var _ in existing) { hasExisting = true; break; }
+                if (hasExisting) continue;
+
+                var entity = new R_ECONOMIC_SCENARIO
+                {
+                    ECONOMIC_SCENARIO = row.Scenario,
+                    ABBREVIATION = row.Abbreviation,
+                    LONG_NAME = row.LongName,
+                    SHORT_NAME = row.ShortName,
+                    ACTIVE_IND = row.ActiveInd
+                };
+                await TryInsertAsync(scenarioRepo, entity, userId, result, $"R_ECONOMIC_SCENARIO/{row.Scenario}");
+            }
+
+            foreach (var row in EconomicAnalysisReferenceCodeSeed.GetScheduleRows())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var existing = await scheduleRepo.GetAsync(new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "ECONOMIC_SCHEDULE", Operator = "=", FilterValue = row.Schedule }
+                });
+                var hasExisting = false;
+                foreach (var _ in existing) { hasExisting = true; break; }
+                if (hasExisting) continue;
+
+                var entity = new R_ECONOMIC_SCHEDULE
+                {
+                    ECONOMIC_SCHEDULE = row.Schedule,
+                    ABBREVIATION = row.Abbreviation,
+                    LONG_NAME = row.LongName,
+                    SHORT_NAME = row.ShortName,
+                    ACTIVE_IND = row.ActiveInd
+                };
+                await TryInsertAsync(scheduleRepo, entity, userId, result, $"R_ECONOMIC_SCHEDULE/{row.Schedule}");
+            }
         }
     }
 }

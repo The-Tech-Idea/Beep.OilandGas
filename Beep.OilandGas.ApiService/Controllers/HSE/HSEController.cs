@@ -4,6 +4,7 @@ using Beep.OilandGas.ApiService.Attributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.HSE;
 
@@ -14,10 +15,12 @@ namespace Beep.OilandGas.ApiService.Controllers.HSE;
 public class HSEController : ControllerBase
 {
     private readonly IFieldOrchestrator _fieldOrchestrator;
+    private readonly ILogger<HSEController> _logger;
 
-    public HSEController(IFieldOrchestrator fieldOrchestrator)
+    public HSEController(IFieldOrchestrator fieldOrchestrator, ILogger<HSEController> logger)
     {
         _fieldOrchestrator = fieldOrchestrator;
+        _logger = logger;
     }
 
     private string UserId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
@@ -34,24 +37,73 @@ public class HSEController : ControllerBase
             : null;
 
         if (string.IsNullOrWhiteSpace(_fieldOrchestrator.CurrentFieldId)) return BadRequest(new { error = "Current field is required." });
-        return Ok(await Hse.GetIncidentsAsync(range));
+        try
+        {
+            return Ok(await Hse.GetIncidentsAsync(range));
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving HSE incidents for current field.");
+            return StatusCode(500, new { error = "An internal error occurred." });
+        }
     }
 
     [HttpGet("incidents/{incidentId}")]
     public async Task<ActionResult<HSEIncidentRecord>> GetIncidentAsync(string incidentId)
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        var result = await Hse.GetIncidentAsync(incidentId);
-        if (result is null) return NotFound(new { error = $"Incident {incidentId} not found." });
-        return Ok(result);
+        try
+        {
+            var result = await Hse.GetIncidentAsync(incidentId);
+            if (result is null) return NotFound(new { error = $"Incident {incidentId} not found." });
+            return Ok(result);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving HSE incident {IncidentId}.", incidentId);
+            return StatusCode(500, new { error = "An internal error occurred." });
+        }
     }
 
     [HttpPost("incidents")]
     public async Task<ActionResult<HSEIncidentRecord>> ReportAsync(
         [FromBody] ReportIncidentRequest request)
     {
-        var result = await Hse.ReportIncidentAsync(request, UserId);
-        return CreatedAtAction(nameof(GetIncidentAsync), new { incidentId = result.IncidentId }, result);
+        if (request is null) return BadRequest(new { error = "Request body is required." });
+        try
+        {
+            var result = await Hse.ReportIncidentAsync(request, UserId);
+            return CreatedAtAction(nameof(GetIncidentAsync), new { incidentId = result.IncidentId }, result);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error reporting HSE incident.");
+            return StatusCode(500, new { error = "An internal error occurred." });
+        }
     }
 
     [HttpPost("incidents/{incidentId}/transition")]
@@ -59,8 +111,29 @@ public class HSEController : ControllerBase
         string incidentId, [FromBody] TransitionIncidentRequest request)
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        var ok = await Hse.TransitionAsync(incidentId, request.Trigger, request.Reason, UserId);
-        return ok ? NoContent() : BadRequest(new { error = "Invalid transition." });
+        if (request is null) return BadRequest(new { error = "Request body is required." });
+        try
+        {
+            var ok = await Hse.TransitionAsync(incidentId, request.Trigger, request.Reason, UserId);
+            return ok ? NoContent() : BadRequest(new { error = "Invalid transition." });
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error transitioning HSE incident {IncidentId}.", incidentId);
+            return StatusCode(500, new { error = "An internal error occurred." });
+        }
     }
 
     [HttpPut("incidents/{incidentId}/tier")]
@@ -68,8 +141,28 @@ public class HSEController : ControllerBase
         string incidentId, [FromQuery] int tier)
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        await Hse.UpdateTierAsync(incidentId, tier, UserId);
-        return NoContent();
+        try
+        {
+            await Hse.UpdateTierAsync(incidentId, tier, UserId);
+            return NoContent();
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating tier for HSE incident {IncidentId}.", incidentId);
+            return StatusCode(500, new { error = "An internal error occurred." });
+        }
     }
 
     [HttpPut("incidents/{incidentId}/investigator")]
@@ -78,8 +171,28 @@ public class HSEController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
         if (string.IsNullOrWhiteSpace(baId)) return BadRequest(new { error = "Business associate ID is required." });
-        await Hse.AssignInvestigatorAsync(incidentId, baId, UserId);
-        return NoContent();
+        try
+        {
+            await Hse.AssignInvestigatorAsync(incidentId, baId, UserId);
+            return NoContent();
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error assigning investigator for HSE incident {IncidentId}.", incidentId);
+            return StatusCode(500, new { error = "An internal error occurred." });
+        }
     }
 
     // ── RCA ────────────────────────────────────────────────────────────────────

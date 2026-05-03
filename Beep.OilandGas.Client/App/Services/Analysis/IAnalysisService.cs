@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ChokeAnalysis;
-using Beep.OilandGas.Models.Data.CompressorAnalysis;
+using Beep.OilandGas.CompressorAnalysis.Data;
 using Beep.OilandGas.Models.Data.PipelineAnalysis;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Beep.OilandGas.Models.Data.GasLift;

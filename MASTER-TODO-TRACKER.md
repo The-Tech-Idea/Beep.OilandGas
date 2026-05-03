@@ -13,3 +13,12 @@ Single tracker for facility management and ProductionOperations service alignmen
 
 - Phase 1: **Mostly complete** — services, DI order, docs, and `Beep.OilandGas.ProductionOperations` build are done.
 - Phase 2: **Controllers done** — facility HTTP surface is in `ApiService/Controllers/Facility/`. **Full ApiService build** still blocked on `Beep.OilandGas.PermitsAndApplications` compile errors; integration tests pending after Permits is green.
+
+## Related feature trackers
+
+| Feature | Tracker |
+|---------|---------|
+| Compressor analysis (extension tables, LOV seed, API/orchestration) | [Beep.OilandGas.CompressorAnalysis/MASTER-TODO-TRACKER.md](Beep.OilandGas.CompressorAnalysis/MASTER-TODO-TRACKER.md) |
+| Enhanced oil recovery (PDEN, screening analytics, API/Web) | [Beep.OilandGas.EnhancedRecovery/MASTER-TODO-TRACKER.md](Beep.OilandGas.EnhancedRecovery/MASTER-TODO-TRACKER.md) |
+| Flash / PVT (EOS LOVs, `R_FLASH_CALCULATION_REFERENCE_CODE`, module) | [Beep.OilandGas.FlashCalculations/MASTER-TODO-TRACKER.md](Beep.OilandGas.FlashCalculations/MASTER-TODO-TRACKER.md) |
+| Gas lift (reference LOVs, `R_GAS_LIFT_REFERENCE_CODE`, module) | [Beep.OilandGas.GasLift/MASTER-TODO-TRACKER.md](Beep.OilandGas.GasLift/MASTER-TODO-TRACKER.md) |

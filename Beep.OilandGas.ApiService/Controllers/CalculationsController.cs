@@ -170,6 +170,8 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpPost("choke")]
         public async Task<ActionResult<ChokeAnalysisResult>> PerformChokeAnalysis([FromBody] ChokeAnalysisRequest request, [FromQuery] string? userId = null)
         {
+            if (request == null)
+                return BadRequest(new { error = "Request body is required." });
             try
             {
                 if (!string.IsNullOrWhiteSpace(userId))
@@ -179,6 +181,10 @@ namespace Beep.OilandGas.ApiService.Controllers
 
                 var result = await _calculationService.PerformChokeAnalysisAsync(request);
                 return Ok(result);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (ArgumentException ex)
             {
@@ -197,11 +203,16 @@ namespace Beep.OilandGas.ApiService.Controllers
         #region Compressor Analysis
 
         /// <summary>
-        /// Perform Compressor Analysis.
+        /// Perform packaged compressor analysis for a facility (orchestrated centrifugal/recip pressure vs power paths).
+        /// Calculation failures are returned as HTTP 200 with <see cref="CompressorAnalysisResult.Status"/> set to
+        /// <see cref="CalculationRunStatus.Failed"/> and <see cref="CompressorAnalysisResult.ErrorMessage"/> populated (same pattern as other packaged calculators).
         /// </summary>
         [HttpPost("compressor")]
         public async Task<ActionResult<CompressorAnalysisResult>> PerformCompressorAnalysis([FromBody] CompressorAnalysisRequest request, [FromQuery] string? userId = null)
         {
+            if (request == null)
+                return BadRequest(new { error = "Request body is required." });
+
             try
             {
                 if (!string.IsNullOrWhiteSpace(userId))
@@ -211,6 +222,10 @@ namespace Beep.OilandGas.ApiService.Controllers
 
                 var result = await _calculationService.PerformCompressorAnalysisAsync(request);
                 return Ok(result);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (ArgumentException ex)
             {
@@ -323,11 +338,16 @@ namespace Beep.OilandGas.ApiService.Controllers
         #region Nodal Analysis
 
         /// <summary>
-        /// Perform Nodal Analysis
+        /// Perform Nodal Analysis (legacy calculation-integration entry).
         /// </summary>
+        /// <remarks>
+        /// Prefer <c>/api/nodalanalysis/*</c> (<see cref="NodalAnalysisHttpRoutes"/>) for <c>NodalAnalysisRunResult</c> workflows (analyze, save, history, diagnostics).
+        /// </remarks>
         [HttpPost("nodal")]
         public async Task<ActionResult<NodalAnalysisResult>> PerformNodalAnalysis([FromBody] NodalAnalysisRequest request, [FromQuery] string? userId = null)
         {
+            if (request == null)
+                return BadRequest(new { error = "Request body is required." });
             try
             {
                 // Set field context if available
@@ -344,10 +364,14 @@ namespace Beep.OilandGas.ApiService.Controllers
                 var result = await _calculationService.PerformNodalAnalysisAsync(request);
                 return Ok(result);
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Invalid Nodal Analysis request");
-                return BadRequest(new { error = "An internal error occurred." });
+                return BadRequest(new { error = ex.Message });
             }
             catch (Exception ex)
             {
@@ -357,8 +381,11 @@ namespace Beep.OilandGas.ApiService.Controllers
         }
 
         /// <summary>
-        /// Get Nodal Analysis calculation result by ID
+        /// Get Nodal Analysis calculation result by ID (legacy calculation store).
         /// </summary>
+        /// <remarks>
+        /// For well-scoped <c>NodalAnalysisRunResult</c> history from PPDM, use <c>GET /api/nodalanalysis/history/{{wellUWI}}</c> (<see cref="NodalAnalysisHttpRoutes"/>).
+        /// </remarks>
         [HttpGet("nodal/{calculationId}")]
         public async Task<ActionResult<NodalAnalysisResult>> GetNodalAnalysisResult(string calculationId)
         {
@@ -378,6 +405,10 @@ namespace Beep.OilandGas.ApiService.Controllers
 
                 return Ok(result);
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting Nodal Analysis result");
@@ -386,8 +417,11 @@ namespace Beep.OilandGas.ApiService.Controllers
         }
 
         /// <summary>
-        /// Get Nodal Analysis calculation results for a well, pool, or field
+        /// Get Nodal Analysis calculation results for a well, pool, or field (legacy calculation store).
         /// </summary>
+        /// <remarks>
+        /// Prefer <c>/api/nodalanalysis/*</c> (<see cref="NodalAnalysisHttpRoutes"/>) for dedicated nodal workflows.
+        /// </remarks>
         [HttpGet("nodal")]
         public async Task<ActionResult<List<NodalAnalysisResult>>> GetNodalAnalysisResults(
             [FromQuery] string? wellId = null,
@@ -404,6 +438,10 @@ namespace Beep.OilandGas.ApiService.Controllers
 
                 var results = await _calculationService.GetCalculationResultsAsync(wellId, null, fieldId, "NODAL");
                 return Ok(results.NodalResults);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {

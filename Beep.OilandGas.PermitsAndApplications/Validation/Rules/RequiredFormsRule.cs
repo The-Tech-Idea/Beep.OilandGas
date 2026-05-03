@@ -29,6 +29,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Validation.Rules
                 if (!IsFormSatisfied(form.FORM_CODE, form.FORM_NAME, attachments))
                 {
                     var label = string.IsNullOrWhiteSpace(form.FORM_NAME) ? form.FORM_CODE : form.FORM_NAME;
+                    label ??= string.Empty;
                     missingForms.Add(label);
                     result.Issues.Add(new PermitValidationIssue(
                         "MISSING_FORM",

@@ -94,5 +94,38 @@ namespace Beep.OilandGas.Models.Data
              set { SetProperty(ref RiskFactorsValue, value); }
 
          }
+         private Dictionary<string, decimal> CandidateScoresValue = new();
+
+         public Dictionary<string, decimal> CandidateScores
+
+         {
+
+             get { return this.CandidateScoresValue; }
+
+             set { SetProperty(ref CandidateScoresValue, value); }
+
+         }
+         private List<string> ScoreBreakdownValue = new();
+
+         public List<string> ScoreBreakdown
+
+         {
+
+             get { return this.ScoreBreakdownValue; }
+
+             set { SetProperty(ref ScoreBreakdownValue, value); }
+
+         }
+         private string ApiContractVersionValue = "NODAL_DIAGNOSTICS_V1";
+
+         public string ApiContractVersion
+
+         {
+
+             get { return this.ApiContractVersionValue; }
+
+             set { SetProperty(ref ApiContractVersionValue, value); }
+
+         }
      }
 }

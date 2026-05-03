@@ -15,7 +15,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         public async Task<MultiphaseChokeAnalysis> CalculateMultiphaseFlowAsync(
             MultiphaseChokeAnalysis input, 
             decimal chokeDiameter, 
-            string correlation = "Gilbert")
+            string correlation = ChokeAnalysisReferenceCodes.CorrelationGilbert)
         {
             if (input == null) throw new ArgumentNullException(nameof(input));
             if (chokeDiameter <= 0) throw new ArgumentException("Choke diameter must be positive");
@@ -26,24 +26,17 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             decimal glr = (liquidRate > 0) ? (input.GasFlowRate * 1000m) / liquidRate : 0;
 
             var results = MultiphaseChokeCalculator.CalculatePressures(liquidRate, glr, chokeDiameter);
-            decimal calcP = 0;
 
-            switch (correlation.ToLower())
-            {
-                case "ros":
-                    calcP = results.RosPressure;
-                    break;
-                case "achong":
-                    calcP = results.AchongPressure;
-                    break;
-                case "baxendell":
-                    calcP = results.BaxendellPressure;
-                    break;
-                case "gilbert":
-                default:
-                    calcP = results.GilbertPressure;
-                    break;
-            }
+            var c = correlation.Trim();
+            decimal calcP;
+            if (string.Equals(c, ChokeAnalysisReferenceCodes.CorrelationRos, StringComparison.OrdinalIgnoreCase))
+                calcP = results.RosPressure;
+            else if (string.Equals(c, ChokeAnalysisReferenceCodes.CorrelationAchong, StringComparison.OrdinalIgnoreCase))
+                calcP = results.AchongPressure;
+            else if (string.Equals(c, ChokeAnalysisReferenceCodes.CorrelationBaxendell, StringComparison.OrdinalIgnoreCase))
+                calcP = results.BaxendellPressure;
+            else
+                calcP = results.GilbertPressure;
 
             // Populate result
             input.TotalPressureDrop = Math.Max(0, calcP - input.DownstreamPressure);

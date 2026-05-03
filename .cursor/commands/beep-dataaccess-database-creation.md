@@ -1,5 +1,9 @@
 # Database Creation Service
 
+## Beep.OilandGas — extension tables
+
+**Feature extension** tables are not maintained as hand-written SQL in the repo. Define **ModelEntityBase** table classes, list them on the feature **`IModuleSetup.EntityTypes`**, and use **entity-driven** creation (`IPPDM39DataService.CreateSchemaFromEntitiesAsync` / migration) or your deployment pipeline. Script-based `PPDMDatabaseCreatorService` runs apply to **packaged PPDM script trees** and similar — not per-feature agent-authored DDL. See **`CLAUDE.md`**.
+
 ## Overview
 
 The `PPDMDatabaseCreatorService` provides automated database creation by executing PPDM39 scripts in the correct order. It includes script discovery, categorization, execution ordering, and progress tracking.

@@ -458,7 +458,12 @@ The `CommonColumnHandler` auto-sets these on every entity:
 
 ## Database Scripts & Creation
 
-**Script Organization by Database Type:**
+**Beep.OilandGas — new feature / extension tables (read first):**  
+Do **not** add or maintain hand-written `Beep.OilandGas.Models/Scripts/**` DDL for **feature-owned** extension tables. Define **ModelEntityBase** table classes, register them on the domain **`IModuleSetup.EntityTypes`**, implement **`SeedAsync`** for reference rows when needed, and use **entity-driven schema creation** (`IPPDM39DataService.CreateSchemaFromEntitiesAsync` / migration / your setup pipeline).  
+Script trees under **PPDM39** (and similar) are **packaged or pipeline** assets for the core PPDM model — not the place to hand-author new per-feature table scripts. See root **`CLAUDE.md`** → *Schema for extension tables — entities + ModuleSetup, not hand-written SQL*.
+
+**Script organization (core PPDM / database creation tooling):**  
+The engine can execute discovered scripts by database type, for example:
 ```
 Scripts/
 ├── SqlServer/

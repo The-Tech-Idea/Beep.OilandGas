@@ -37,7 +37,8 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<ChokeAnalysisResult> PerformChokeAnalysisAsync(ChokeAnalysisRequest request);
 
         /// <summary>
-        /// Performs compressor analysis.
+        /// Performs packaged facility compressor analysis (pressure vs power paths by <see cref="CompressorAnalysisRequest.AnalysisType"/>).
+        /// Typical calculation faults return <see cref="CompressorAnalysisResult"/> with failed status rather than throwing.
         /// </summary>
         Task<CompressorAnalysisResult> PerformCompressorAnalysisAsync(CompressorAnalysisRequest request);
 

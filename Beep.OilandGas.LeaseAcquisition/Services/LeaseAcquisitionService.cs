@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Beep.OilandGas.LeaseAcquisition.Data.Lease.Projections;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
@@ -13,7 +14,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
     /// Comprehensive lease acquisition service implementation - Main file
     /// Handles lease acquisition, negotiation, rights management, and lifecycle operations
     /// </summary>
-    public partial class LeaseAcquisitionService : ILeaseAcquisitionService, Beep.OilandGas.Models.Core.Interfaces.ILeaseAcquisitionService
+    public partial class LeaseAcquisitionService : ILeaseAcquisitionAdvancedService, Beep.OilandGas.Models.Core.Interfaces.ILeaseAcquisitionService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -44,7 +45,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 1: Initiates new lease acquisition process
         /// </summary>
-        public async Task<LeaseAcquisition> InitiateLeaseAcquisitionAsync(LeaseAcquisitionRequest request, string userId)
+        public async Task<LeaseAcquisitionDetail> InitiateLeaseAcquisitionAsync(LeaseAcquisitionRequest request, string userId)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -58,7 +59,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
 
                 var leaseId = _defaults.FormatIdForTable("LEASE", Guid.NewGuid().ToString().Substring(0, 12));
 
-                var acquisition = new LeaseAcquisition
+                var acquisition = new LeaseAcquisitionDetail
                 {
                     LeaseId = leaseId,
                     LeaseName = request.LeaseName,

@@ -2,6 +2,10 @@ using Beep.OilandGas.Models.Data.HSE;
 
 namespace Beep.OilandGas.Models.Core.Interfaces;
 
+/// <summary>
+/// Field-scoped HSE facade used by API/lifecycle orchestration.
+/// Wraps canonical PPDM-backed HSE services while enforcing current-field boundaries.
+/// </summary>
 public interface IFieldHSEService
 {
     Task<List<HSEIncidentRecord>> GetIncidentsAsync(DateRangeFilter? range);

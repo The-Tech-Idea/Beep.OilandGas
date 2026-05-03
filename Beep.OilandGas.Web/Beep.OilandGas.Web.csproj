@@ -4,8 +4,8 @@
      <TargetFrameworks>net10.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <!-- Suppress MUD0002 warnings - these are false positives from MudBlazor analyzer -->
-    <NoWarn>$(NoWarn);MUD0002</NoWarn>
+    <!-- Suppress known analyzer/generated-code noise that is non-actionable in source -->
+    <NoWarn>$(NoWarn);MUD0002;CS8669</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,6 +34,7 @@
     <ProjectReference Include="..\Beep.OilandGas.Client\Beep.OilandGas.Client.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.PPDM39\Beep.OilandGas.PPDM39.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.Branchs\Beep.OilandGas.Branchs.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.ChokeAnalysis\Beep.OilandGas.ChokeAnalysis.csproj" />
   </ItemGroup>
 
 </Project>

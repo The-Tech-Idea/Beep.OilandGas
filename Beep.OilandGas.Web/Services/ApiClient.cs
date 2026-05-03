@@ -26,6 +26,8 @@ namespace Beep.OilandGas.Web.Services
             {
                 _logger.LogDebug("GET {Endpoint}", endpoint);
                 var response = await _httpClient.GetAsync(endpoint, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                    _logger.LogWarning("GET {Endpoint} returned status {StatusCode}", endpoint, (int)response.StatusCode);
                 response.EnsureSuccessStatusCode();
                 
                 var content = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -50,6 +52,8 @@ namespace Beep.OilandGas.Web.Services
                 var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
                 
                 var response = await _httpClient.PostAsync(endpoint, content, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                    _logger.LogWarning("POST {Endpoint} returned status {StatusCode}", endpoint, (int)response.StatusCode);
                 response.EnsureSuccessStatusCode();
                 
                 var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -74,6 +78,8 @@ namespace Beep.OilandGas.Web.Services
                 var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
                 
                 var response = await _httpClient.PostAsync(endpoint, content, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                    _logger.LogWarning("POST {Endpoint} returned status {StatusCode}", endpoint, (int)response.StatusCode);
                 return response.IsSuccessStatusCode;
             }
             catch (HttpRequestException ex)
@@ -95,6 +101,8 @@ namespace Beep.OilandGas.Web.Services
                 var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
                 
                 var response = await _httpClient.PutAsync(endpoint, content, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                    _logger.LogWarning("PUT {Endpoint} returned status {StatusCode}", endpoint, (int)response.StatusCode);
                 response.EnsureSuccessStatusCode();
                 
                 var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -119,6 +127,8 @@ namespace Beep.OilandGas.Web.Services
                 var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
                 
                 var response = await _httpClient.PutAsync(endpoint, content, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                    _logger.LogWarning("PUT {Endpoint} returned status {StatusCode}", endpoint, (int)response.StatusCode);
                 return response.IsSuccessStatusCode;
             }
             catch (HttpRequestException ex)
@@ -140,6 +150,8 @@ namespace Beep.OilandGas.Web.Services
                 var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
                 var request = new HttpRequestMessage(HttpMethod.Patch, endpoint) { Content = content };
                 var response = await _httpClient.SendAsync(request, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                    _logger.LogWarning("PATCH {Endpoint} returned status {StatusCode}", endpoint, (int)response.StatusCode);
                 response.EnsureSuccessStatusCode();
                 var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
                 return System.Text.Json.JsonSerializer.Deserialize<TResponse>(responseContent, JsonOptions);
@@ -163,6 +175,8 @@ namespace Beep.OilandGas.Web.Services
                 var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
                 var request = new HttpRequestMessage(HttpMethod.Patch, endpoint) { Content = content };
                 var response = await _httpClient.SendAsync(request, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                    _logger.LogWarning("PATCH {Endpoint} returned status {StatusCode}", endpoint, (int)response.StatusCode);
                 return response.IsSuccessStatusCode;
             }
             catch (HttpRequestException ex)
@@ -178,6 +192,8 @@ namespace Beep.OilandGas.Web.Services
             {
                 _logger.LogDebug("DELETE {Endpoint}", endpoint);
                 var response = await _httpClient.DeleteAsync(endpoint, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                    _logger.LogWarning("DELETE {Endpoint} returned status {StatusCode}", endpoint, (int)response.StatusCode);
                 return response.IsSuccessStatusCode;
             }
             catch (HttpRequestException ex)
@@ -193,6 +209,8 @@ namespace Beep.OilandGas.Web.Services
             {
                 _logger.LogDebug("DELETE {Endpoint}", endpoint);
                 var response = await _httpClient.DeleteAsync(endpoint, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                    _logger.LogWarning("DELETE {Endpoint} returned status {StatusCode}", endpoint, (int)response.StatusCode);
                 response.EnsureSuccessStatusCode();
                 
                 var content = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -217,6 +235,8 @@ namespace Beep.OilandGas.Web.Services
             {
                 _logger.LogDebug("POST {Endpoint} (multipart)", endpoint);
                 var response = await _httpClient.PostAsync(endpoint, content, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                    _logger.LogWarning("POST {Endpoint} (multipart) returned status {StatusCode}", endpoint, (int)response.StatusCode);
                 response.EnsureSuccessStatusCode();
                 
                 var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -244,6 +264,8 @@ namespace Beep.OilandGas.Web.Services
                 var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
                 
                 var response = await _httpClient.PostAsync(endpoint, content, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                    _logger.LogWarning("POST {Endpoint} (stream response) returned status {StatusCode}", endpoint, (int)response.StatusCode);
                 response.EnsureSuccessStatusCode();
                 
                 return await response.Content.ReadAsStreamAsync(cancellationToken);

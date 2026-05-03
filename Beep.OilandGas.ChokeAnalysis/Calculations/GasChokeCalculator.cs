@@ -13,6 +13,26 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
     public static class GasChokeCalculator
     {
         /// <summary>
+        /// Returns choke throat area in square inches from bean diameter (circular orifice).
+        /// </summary>
+        public static decimal ChokeAreaSquareInchesFromDiameter(decimal diameterInches)
+        {
+            return (decimal)Math.PI * diameterInches * diameterInches / 4m;
+        }
+
+        /// <summary>
+        /// Sets <see cref="CHOKE_PROPERTIES.CHOKE_AREA"/> from <see cref="CHOKE_PROPERTIES.CHOKE_DIAMETER"/> when area is missing or non-positive.
+        /// Matches how field data often supplies diameter without a separate area column.
+        /// </summary>
+        public static void EnsureChokeThroatArea(CHOKE_PROPERTIES choke)
+        {
+            if (choke == null)
+                throw new ArgumentNullException(nameof(choke));
+            if (choke.CHOKE_AREA <= 0m && choke.CHOKE_DIAMETER > 0m)
+                choke.CHOKE_AREA = ChokeAreaSquareInchesFromDiameter(choke.CHOKE_DIAMETER);
+        }
+
+        /// <summary>
         /// Calculates gas flow rate through a downhole choke using industry-standard petroleum engineering methods.
         /// </summary>
         /// <param name="choke">Choke properties.</param>
@@ -28,6 +48,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
             if (gasProperties == null)
                 throw new ArgumentNullException(nameof(gasProperties));
 
+            EnsureChokeThroatArea(choke);
             ValidateInputs(choke, gasProperties);
 
             // Calculate improved Z-factor with multiple methods and corrections
@@ -40,14 +61,14 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
             decimal criticalPressureRatio = CalculateCriticalPressureRatioFromHeatRatio(specificHeatRatio);
             decimal pressureRatio = gasProperties.DOWNSTREAM_PRESSURE / gasProperties.UPSTREAM_PRESSURE;
 
-            FlowRegime flowRegime = pressureRatio < criticalPressureRatio
-                ? FlowRegime.Sonic
-                : FlowRegime.Subsonic;
+            ChokeFlowRegime flowRegime = pressureRatio < criticalPressureRatio
+                ? ChokeFlowRegime.Sonic
+                : ChokeFlowRegime.Subsonic;
 
             decimal flowRate;
             decimal adjustedDischargeCoefficient = choke.DISCHARGE_COEFFICIENT;
 
-            if (flowRegime == FlowRegime.Sonic)
+            if (flowRegime == ChokeFlowRegime.Sonic)
             {
                 // Sonic (critical) flow with improved discharge coefficient
                 adjustedDischargeCoefficient = AdjustDischargeCoefficientForFlow(
@@ -68,7 +89,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
                 DOWNSTREAM_PRESSURE = gasProperties.DOWNSTREAM_PRESSURE,
                 UPSTREAM_PRESSURE = gasProperties.UPSTREAM_PRESSURE,
                 PRESSURE_RATIO = pressureRatio,
-                FLOW_REGIME = flowRegime,
+                FLOW_REGIME = ToStoredFlowRegimeCode(flowRegime),
                 CRITICAL_PRESSURE_RATIO = criticalPressureRatio
             };
         }
@@ -104,6 +125,8 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
 
             if (gasProperties == null)
                 throw new ArgumentNullException(nameof(gasProperties));
+
+            EnsureChokeThroatArea(choke);
 
             // Calculate Z-factor
             decimal zFactor = gasProperties.Z_FACTOR;
@@ -249,9 +272,14 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
             return 1.25m + (gasSpecificGravity - 0.55m) * 0.2m;
         }
 
+        private static string ToStoredFlowRegimeCode(ChokeFlowRegime regime) =>
+            regime == ChokeFlowRegime.Sonic
+                ? ChokeAnalysisReferenceCodes.RegimeSonic
+                : ChokeAnalysisReferenceCodes.RegimeSubsonic;
+
         private static decimal AdjustDischargeCoefficientForFlow(
             decimal baseDischargeCoeff, 
-            FlowRegime flowRegime, 
+            ChokeFlowRegime flowRegime, 
             decimal upstreamPressure)
         {
             // Adjust discharge coefficient based on flow conditions and industry experience
@@ -264,7 +292,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
             }
 
             // Flow regime adjustment
-            if (flowRegime == FlowRegime.Sonic)
+            if (flowRegime == ChokeFlowRegime.Sonic)
             {
                 adjustment *= 0.99m; // 1% reduction for critical flow
             }
@@ -372,8 +400,10 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
                 {
                     CHOKE_DIAMETER = choke.CHOKE_DIAMETER,
                     CHOKE_TYPE = choke.CHOKE_TYPE,
-                    DISCHARGE_COEFFICIENT = dischargeCoefficient
+                    DISCHARGE_COEFFICIENT = dischargeCoefficient,
+                    CHOKE_AREA = choke.CHOKE_AREA
                 };
+                EnsureChokeThroatArea(testChoke);
                 var result = CalculateDownholeChokeFlow(testChoke, testProperties);
                 decimal calculatedFlowRate = result.FLOW_RATE;
 

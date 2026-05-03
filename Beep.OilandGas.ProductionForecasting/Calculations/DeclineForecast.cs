@@ -304,6 +304,104 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         }
 
         /// <summary>
+        /// Modified hyperbolic decline: hyperbolic until instantaneous decline reaches <paramref name="terminalDi"/>,
+        /// then exponential decline at <paramref name="terminalDi"/> (common reserves / EUR practice).
+        /// </summary>
+        public static PRODUCTION_FORECAST GenerateModifiedHyperbolicDeclineForecast(
+            decimal qi,
+            decimal di,
+            decimal b,
+            decimal forecastDuration,
+            decimal terminalDi,
+            decimal? economicLimit = null,
+            int timeSteps = 100)
+        {
+            ValidateForecastInputs(qi, di, forecastDuration, timeSteps);
+            if (b < 0 || b > 1)
+                throw new ArgumentException("Decline exponent b must be between 0 and 1.", nameof(b));
+            if (terminalDi <= 0 || terminalDi > di)
+                throw new ArgumentException("Terminal decline Dlim must be positive and less than initial Di.", nameof(terminalDi));
+
+            var forecast = new PRODUCTION_FORECAST
+            {
+                FORECAST_TYPE = ForecastType.Hyperbolic,
+                FORECAST_DURATION = forecastDuration
+            };
+
+            decimal timeStep = forecastDuration / timeSteps;
+            decimal maxTime = forecastDuration;
+
+            double diD = (double)di;
+            double bD = (double)b;
+            double terminal = (double)terminalDi;
+
+            // Instantaneous decline D(t)=Di/(1+b*Di*t); switch when D == terminal
+            double tSwitchDays = 0;
+            if (bD > 1e-9 && terminal < diD - 1e-12)
+            {
+                tSwitchDays = (diD / terminal - 1.0) / (bD * diD);
+                if (tSwitchDays < 0 || double.IsInfinity(tSwitchDays) || double.IsNaN(tSwitchDays))
+                    tSwitchDays = 0;
+            }
+
+            double qSwitch = ArpsDeclineMethods.HyperbolicDecline((double)qi, diD, tSwitchDays, bD);
+            double cum = 0;
+            double prevT = 0;
+            double prevQ = ArpsDeclineMethods.HyperbolicDecline((double)qi, diD, 0, bD);
+
+            for (int i = 0; i <= timeSteps; i++)
+            {
+                decimal tDec = i * timeStep;
+                double t = (double)tDec;
+                double q;
+
+                if (t <= tSwitchDays)
+                    q = ArpsDeclineMethods.HyperbolicDecline((double)qi, diD, t, bD);
+                else
+                    q = qSwitch * Math.Exp(-terminal * (t - tSwitchDays));
+
+                if (economicLimit.HasValue && economicLimit > 0 && economicLimit < qi)
+                {
+                    if (q < (double)economicLimit.Value)
+                    {
+                        q = 0;
+                        maxTime = tDec;
+                    }
+                }
+
+                if (i > 0)
+                    cum += 0.5 * (prevQ + q) * (t - prevT);
+
+                forecast.FORECAST_POINTS.Add(new FORECAST_POINT
+                {
+                    TIME = tDec,
+                    PRODUCTION_RATE = (decimal)Math.Max(0, q),
+                    CUMULATIVE_PRODUCTION = (decimal)Math.Max(0, cum),
+                    DECLINE_EXPONENT = b,
+                    FORECAST_METHOD = ForecastType.Hyperbolic
+                });
+
+                if (i == 0)
+                    forecast.INITIAL_PRODUCTION_RATE = (decimal)q;
+
+                prevT = t;
+                prevQ = q;
+
+                if (q <= 0)
+                    break;
+            }
+
+            if (forecast.FORECAST_POINTS.Count > 0)
+            {
+                forecast.FINAL_PRODUCTION_RATE = forecast.FORECAST_POINTS.Last().PRODUCTION_RATE;
+                forecast.TOTAL_CUMULATIVE_PRODUCTION = forecast.FORECAST_POINTS.Last().CUMULATIVE_PRODUCTION;
+                forecast.FORECAST_DURATION = maxTime;
+            }
+
+            return forecast;
+        }
+
+        /// <summary>
         /// Generates production forecast using best-fit decline method selected automatically.
         /// Analyzes flow regime indicators to select optimal decline exponent.
         /// </summary>

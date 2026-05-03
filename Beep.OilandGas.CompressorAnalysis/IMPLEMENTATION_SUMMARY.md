@@ -1,198 +1,51 @@
-# Beep.OilandGas.CompressorAnalysis - Implementation Summary
+# Beep.OilandGas.CompressorAnalysis — implementation summary
 
-## ✅ Implementation Complete!
+## Role in the solution
 
-### Overview
+Library for **centrifugal and reciprocating** compressor power, head, temperature, and pressure-flow calculations.
 
-Successfully created `Beep.OilandGas.CompressorAnalysis` library with comprehensive compressor analysis and design capabilities for both centrifugal and reciprocating compressors, based on Petroleum Engineer XLS files.
+- **Table-shaped extension entities** (`COMPRESSOR_OPERATING_CONDITIONS`, `CENTRIFUGAL_COMPRESSOR_PROPERTIES`, `RECIPROCATING_COMPRESSOR_PROPERTIES`, `COMPRESSOR_POWER_RESULT`, `COMPRESSOR_PRESSURE_RESULT`, **`R_COMPRESSOR_ANALYSIS_REFERENCE_CODE`**) live in **`Beep.OilandGas.CompressorAnalysis.Data`** (`Data/Tables/`).
+- **Wire / orchestration types** (`CompressorAnalysisRequest`, **`CompressorAnalysisResult`**, **`CompressorAnalysisWellKnown`**) stay in **`Beep.OilandGas.Models.Data.Calculations`** for cross-layer use.
 
----
+Domain logic is in **`Calculations/`**, **`Validation/CompressorValidator`**, and **`Services/CompressorAnalysisService`** (+ **`CompressorAnalysisService.Advanced`** partial).
 
-## 📦 What Was Created
+Packaged facility-level runs use **`ICalculationService.PerformCompressorAnalysisAsync`** in **LifeCycle** (`PPDMCalculationService.Facilities`), which delegates to **`ICompressorAnalysisService`** (`CalculateRequiredPressureAsync` / power paths — same physics as **`CompressorPressureCalculator`** where applicable).
 
-### 1. Project Structure ✅
+## API and client
 
-- ✅ Project file: `Beep.OilandGas.CompressorAnalysis.csproj`
-- ✅ Added to solution
-- ✅ Multi-target framework support (net6.0, net7.0, net8.0, net9.0)
-- ✅ References: `Beep.OilandGas.Properties`, `SkiaSharp`
+- **`Beep.OilandGas.ApiService/Controllers/CompressorController.cs`** — REST endpoints delegate to **`ICompressorAnalysisService`** (after normalization).
+- **`CalculationsController`** — POST **`/api/calculations/compressor`** through **`ICalculationService`** (facility-oriented **`CompressorAnalysisRequest`**).
+- **`Beep.OilandGas.Client`** — `AnalysisService.Compressor.cs` maps to **`/api/compressor/*`** routes.
 
-### 2. Models ✅
+## Canonical service interface
 
-**File:** `Models/CompressorModels.cs`
+**`ICompressorAnalysisService`** — **`Beep.OilandGas.CompressorAnalysis.Core.Interfaces`** — **`CalculateCentrifugalPowerAsync`**, **`CalculateReciprocatingPowerAsync`**, **`CalculateRequiredPressureAsync`**. Implemented by **`CompressorAnalysisService`** (`Services/CompressorAnalysisService.Contract.cs`). Extended helpers remain on concrete partials only.
 
-- ✅ `CompressorOperatingConditions` - Operating conditions
-- ✅ `CentrifugalCompressorProperties` - Centrifugal compressor properties
-- ✅ `ReciprocatingCompressorProperties` - Reciprocating compressor properties
-- ✅ `CompressorPowerResult` - Power calculation results
-- ✅ `CompressorPressureResult` - Pressure calculation results
+## Project layout (high level)
 
-### 3. Calculations ✅
+| Area | Purpose |
+|------|---------|
+| `Data/Tables/` | **`COMPRESSOR_*`**, **`R_COMPRESSOR_ANALYSIS_REFERENCE_CODE`** |
+| `Data/Constants/` | **`CompressorConstants`**, **`CompressorAnalysisReferenceSets`**, **`CompressorAnalysisReferenceCodeSeed`** |
+| `Core/Interfaces/` | **`ICompressorAnalysisService`** |
+| `Calculations/` | Core calculators, pressure, multistage, optimization helpers |
+| `Services/` | **`CompressorAnalysisService`**, **`CompressorAnalysisService.Advanced`** |
+| `Validation/` | **`CompressorValidator`** |
+| `Exceptions/` | **`CompressorException`** hierarchy |
+| `Modules/` | **`CompressorAnalysisModule`** — **`EntityTypes`** ×6, **`SeedAsync`** for **`R_COMPRESSOR_ANALYSIS_REFERENCE_CODE`** |
 
-**File:** `Calculations/CentrifugalCompressorCalculator.cs`
+## Dependencies
 
-- ✅ `CalculatePower` - Complete centrifugal compressor power analysis
-- ✅ `CalculatePolytropicHead` - Polytropic head calculation
-- ✅ `CalculateAdiabaticHead` - Adiabatic head calculation
-- ✅ `CalculateTheoreticalPower` - Theoretical power calculation
-- ✅ `CalculateDischargeTemperature` - Discharge temperature calculation
+- **`Beep.OilandGas.Models`** — shared **`ModelEntityBase`**, **`CompressorAnalysisRequest`** / result types under **`Data/Calculations`**
+- **`Beep.OilandGas.GasProperties`** — gas properties / Z-factor where applicable
+- **`Beep.OilandGas.PPDM39`** / **`Beep.OilandGas.PPDM39.DataManagement`** — module setup patterns; **no** domain coupling to DataManagement implementation required for pure math paths
 
-**File:** `Calculations/ReciprocatingCompressorCalculator.cs`
+## Packaging
 
-- ✅ `CalculatePower` - Complete reciprocating compressor power analysis
-- ✅ `CalculateAdiabaticHead` - Adiabatic head calculation
-- ✅ `CalculateTheoreticalPower` - Theoretical power calculation
-- ✅ `CalculateDischargeTemperature` - Discharge temperature calculation
+**`README.md`** is included in the NuGet package via **`PackageReadmeFile`**. **Nullable** reference types are enabled.
 
-**File:** `Calculations/CompressorPressureCalculator.cs`
+## Further reading
 
-- ✅ `CalculateRequiredPressure` - Required discharge pressure calculation
-- ✅ `CalculateMaximumFlowRate` - Maximum flow rate calculation
-
-### 4. Constants ✅
-
-**File:** `Constants/CompressorConstants.cs`
-
-- ✅ Gas constant and standard values
-- ✅ Conversion factors
-- ✅ Standard efficiency values
-- ✅ Compression ratio limits
-
-### 5. Exceptions ✅
-
-**File:** `Exceptions/CompressorException.cs`
-
-- ✅ `CompressorException` - Base exception
-- ✅ `InvalidOperatingConditionsException` - Invalid operating conditions
-- ✅ `InvalidCompressorPropertiesException` - Invalid compressor properties
-- ✅ `CompressorParameterOutOfRangeException` - Parameter validation
-- ✅ `CompressorNotFeasibleException` - Operation not feasible
-
-### 6. Validation ✅
-
-**File:** `Validation/CompressorValidator.cs`
-
-- ✅ `ValidateOperatingConditions` - Operating conditions validation
-- ✅ `ValidateCentrifugalCompressorProperties` - Centrifugal compressor validation
-- ✅ `ValidateReciprocatingCompressorProperties` - Reciprocating compressor validation
-
-### 7. Documentation ✅
-
-- ✅ `README.md` - Complete usage guide
-- ✅ `IMPLEMENTATION_SUMMARY.md` - This file
-
----
-
-## 📊 Statistics
-
-- **Files Created:** 8 files
-- **Lines of Code:** ~1,000+ lines
-- **Calculation Methods:** 12+ methods
-- **Models:** 5 classes
-- **Build Status:** ✅ Build Succeeded
-- **Integration:** ✅ With Beep.OilandGas.Properties
-
----
-
-## 🎯 Key Features
-
-### Centrifugal Compressor Analysis
-
-- Polytropic head calculations
-- Adiabatic head calculations
-- Power requirements (theoretical, brake, motor)
-- Discharge temperature calculations
-- Multi-stage support
-- SI and US field units support
-
-### Reciprocating Compressor Analysis
-
-- Cylinder displacement calculations
-- Volumetric efficiency
-- Power requirements
-- Discharge temperature calculations
-- Multi-cylinder support
-- Clearance factor support
-
-### Compressor Pressure Calculations
-
-- Required discharge pressure
-- Maximum flow rate calculations
-- Feasibility analysis
-- Power optimization
-
----
-
-## 🔧 Technical Details
-
-### Centrifugal Compressor Calculations
-
-- **Polytropic Head** - Based on polytropic efficiency and compression ratio
-- **Adiabatic Head** - Based on specific heat ratio
-- **Power** - Based on weight flow rate and head
-- **Discharge Temperature** - Based on polytropic exponent
-
-### Reciprocating Compressor Calculations
-
-- **Displacement** - Based on cylinder dimensions and SPEED
-- **Volumetric Efficiency** - Accounts for clearance and compression ratio
-- **Power** - Based on compression work
-- **Discharge Temperature** - Based on adiabatic compression
-
-### Pressure Calculations
-
-- **Required Pressure** - Iterative solution for maximum compression ratio
-- **Maximum Flow Rate** - Based on available power and compression ratio
-
----
-
-## 🔗 Integration Points
-
-### With Beep.OilandGas.Properties
-
-- ✅ Z-factor calculations (Brill-Beggs)
-- ✅ Gas property support
-- ✅ Temperature and pressure handling
-
-### Future Integration
-
-- SkiaSharp visualization (performance curves, compressor diagrams)
-- Integration with pipeline analysis
-- Production accounting integration
-
----
-
-## 📝 Source Files Implemented
-
-Based on Petroleum Engineer XLS files:
-
-1. ✅ `CentrifugalCompressorPower-*.xls` → `CentrifugalCompressorCalculator`
-2. ✅ `ReciprocatingCompressorPower-*.xls` → `ReciprocatingCompressorCalculator`
-3. ✅ `CompressorPressure.xls` → `CompressorPressureCalculator`
-
----
-
-## ✅ Next Steps
-
-1. **SkiaSharp Visualization** - Performance curves and compressor diagrams
-2. **Enhanced Calculations** - More sophisticated models
-3. **Unit Tests** - Comprehensive test coverage
-4. **Documentation** - API documentation
-5. **Examples** - More usage examples
-
----
-
-## 🚀 Status
-
-**Implementation:** Complete ✅  
-**Build:** Successful ✅  
-**Integration:** Complete ✅  
-**Documentation:** Complete ✅  
-**Ready for:** Production Use ✅
-
----
-
-**Created:** Based on Petroleum Engineer XLS analysis  
-**Naming Convention:** Beep.OilandGas.CompressorAnalysis ✅  
-**Integration:** Beep.OilandGas.Properties ✅
-
+- [README.md](README.md)
+- [.plans/README.md](.plans/README.md)
+- [MASTER-TODO-TRACKER.md](MASTER-TODO-TRACKER.md)
