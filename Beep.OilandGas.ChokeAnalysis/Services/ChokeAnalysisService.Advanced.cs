@@ -363,16 +363,16 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                 decimal currentBP = CalculateSimpleBackPressure(currentChokeSize, gasFlowRate, 520m);
                 decimal currentEff = CalculateLiftEfficiency(liftSystemType, currentBP);
 
-                decimal optimalChoke = currentChokeSize * (currentEff < 80m ? 1.1m : 0.95m);
-                optimalChoke = Math.Max(0.2m, Math.Min(1.5m, optimalChoke));
+                decimal optimalChoke = currentChokeSize * (currentEff < ChokeConstants.ChokeAdjustmentEfficiencyThreshold ? ChokeConstants.ChokeAdjustmentIncrease : ChokeConstants.ChokeAdjustmentDecrease);
+                optimalChoke = Math.Max(ChokeConstants.ChokeOptimizationMinSize, Math.Min(ChokeConstants.ChokeOptimizationMaxSize, optimalChoke));
                 decimal optimalBP = CalculateSimpleBackPressure(optimalChoke, gasFlowRate, 520m);
                 decimal optimalEff = CalculateLiftEfficiency(liftSystemType, optimalBP);
 
                 var constraints = new List<string>();
-                if (liftSystemType.Contains("ESP"))
+                if (ChokeConstants.IsESP(liftSystemType))
                 {
-                    constraints.Add("Maintain discharge pressure < 5000 psi");
-                    constraints.Add("Keep inlet GOR < 3000 scf/bbl");
+                    constraints.Add($"Maintain discharge pressure < {ChokeConstants.ESPMaxDischargePressure} psi");
+                    constraints.Add($"Keep inlet GOR < {ChokeConstants.ESPMaxInletGOR} scf/bbl");
                 }
 
                 var result = new LiftSystemChokeInteraction
@@ -633,19 +633,21 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         {
             decimal area = (decimal)Math.PI * chokeDiameter * chokeDiameter / 4m;
             decimal velocity = (gasFlowRate * 1000m / 1440m) / area;
-            return velocity * velocity * 0.7m / 500m;
+            return velocity * velocity * ChokeConstants.ErosionVelocityFactor / ChokeConstants.ErosionDenominatorFactor;
         }
 
         private decimal CalculateLiftEfficiency(string liftType, decimal backPressure)
         {
-            decimal base_eff = liftType.Contains("ESP") ? 70m : liftType.Contains("GasLift") ? 60m : 50m;
-            decimal penalty = (backPressure / 1000m) * 5m;
-            return Math.Max(20m, Math.Min(90m, base_eff - penalty));
+            decimal base_eff = ChokeConstants.IsESP(liftType) ? ChokeConstants.LiftEfficiencyESP
+                : ChokeConstants.IsGasLift(liftType) ? ChokeConstants.LiftEfficiencyGasLift
+                : ChokeConstants.LiftEfficiencyDefault;
+            decimal penalty = (backPressure / 1000m) * ChokeConstants.LiftEfficiencyBackpressurePenalty;
+            return Math.Max(ChokeConstants.LiftEfficiencyMin, Math.Min(ChokeConstants.LiftEfficiencyMax, base_eff - penalty));
         }
 
         private decimal CalculateSettlingVelocity(decimal particleSize)
         {
-            return (particleSize * particleSize * 0.0001m) / 100m;
+            return (particleSize * particleSize * ChokeConstants.SettlingVelocityNumerator) / ChokeConstants.SettlingVelocityDenominator;
         }
 
         private string GetNodalRecommendation(string constraint, decimal backPressure, decimal chokeSize)

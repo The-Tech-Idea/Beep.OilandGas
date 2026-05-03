@@ -30,8 +30,8 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
 
         }
         /// <summary>
-        /// <c>BUILDUP</c> or <c>DRAWDOWN</c>. When null or empty, the host calculation service infers classification from PPDM <c>WELL_TEST.TEST_TYPE</c>
-        /// when loading pressure data from the database, or defaults to build-up for manual <c>PressureTimeData</c>.
+        /// <see cref="WellTestAnalysisWellKnown.AnalysisClassification"/> wire tokens. When null or empty, the host calculation service infers classification from PPDM <c>WELL_TEST.TEST_TYPE</c>
+        /// (see <c>R_WELL_TEST_TYPE</c> / <see cref="WellTestType"/>) when loading pressure data from the database, or defaults to build-up for manual <c>PressureTimeData</c>.
         /// </summary>
         private string? AnalysisTypeValue;
 

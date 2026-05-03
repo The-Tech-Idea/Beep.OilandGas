@@ -38,7 +38,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
 
             var result = new WELL_TEST_ANALYSIS_RESULT
             {
-                ANALYSIS_METHOD = "Gas Pseudo-Pressure (Horner)"
+                ANALYSIS_METHOD = WellTestAnalysisWellKnown.ResultAnalysisMethodLabel.GasPseudoPressureHorner
             };
 
             // 1. Convert Pressure to Pseudo-Pressure m(p)

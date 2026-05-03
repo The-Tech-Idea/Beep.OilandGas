@@ -36,18 +36,9 @@ namespace Beep.OilandGas.PlungerLift.Calculations
         // In liquid: 50-150 ft/min (0.8-2.5 ft/s)
         public static decimal EstimateFallVelocity(string plungerType, bool inLiquid)
         {
-             // Simple lookup
-             if (inLiquid) return 1.5m; // ft/s
+             if (inLiquid) return PlungerLiftConstants.FallVelocityLiquid;
              
-             // In Gas
-             return plungerType?.ToUpper() switch
-             {
-                 "BAR" => 15.0m, // ft/s
-                 "PAD" => 8.0m,
-                 "BRUSH" => 10.0m,
-                 "CONTINUOUS" => 12.0m,
-                 _ => 10.0m
-             };
+             return PlungerLiftConstants.GetFallVelocityGas(plungerType);
         }
 
         // 3. Estimate Rise Velocity
@@ -57,7 +48,7 @@ namespace Beep.OilandGas.PlungerLift.Calculations
         {
              // Heuristic: V ~ C * dP
              // For now return typical target 750 ft/min = 12.5 ft/s
-             return 12.5m; 
+             return PlungerLiftConstants.RiseVelocityDefault; 
         }
 
         // 4. Gas Required Per Cycle

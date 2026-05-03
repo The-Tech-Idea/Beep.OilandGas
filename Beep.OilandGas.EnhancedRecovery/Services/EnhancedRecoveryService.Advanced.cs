@@ -709,55 +709,37 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         private double CalculateInterfacialTensionReduction(string chemicalType, double salinity)
         {
             // IFT reduction factor (multiplier on original IFT)
-            return chemicalType.ToUpper() switch
-            {
-                "SURFACTANT" => 0.001, // 1000x reduction
-                "POLYMER" => 0.5, // Slight reduction
-                "ALKALI" => 0.01, // 100x reduction
-                _ => 0.1 // Default
-            };
+            return ChemicalTypeConstants.GetIftReduction(chemicalType);
         }
 
         private double EstimateChemicalRecoveryIncrement(string chemicalType, double iftReduction)
         {
             // Recovery increment based on IFT reduction
-            double baseRecovery = chemicalType.ToUpper() switch
-            {
-                "SURFACTANT" => 0.20, // 20%
-                "POLYMER" => 0.10, // 10%
-                "ALKALI" => 0.15, // 15%
-                _ => 0.08 // 8%
-            };
+            double baseRecovery = ChemicalTypeConstants.GetRecoveryIncrement(chemicalType);
             return baseRecovery * (1 + (1 - iftReduction) * 2);
         }
 
         private double EstimateChemicalCost(string chemicalType, double recoveryIncrement)
         {
             // Cost per barrel recovered (economics)
-            double basePrice = chemicalType.ToUpper() switch
-            {
-                "SURFACTANT" => 15.0, // $/bbl
-                "POLYMER" => 8.0,
-                "ALKALI" => 5.0,
-                _ => 10.0
-            };
+            double basePrice = ChemicalTypeConstants.GetCost(chemicalType);
             return basePrice / Math.Max(0.01, recoveryIncrement);
         }
 
         private List<string> IdentifyChemicalConcerns(string chemicalType)
         {
             var concerns = new List<string>();
-            switch (chemicalType.ToUpper())
+            switch (chemicalType.ToUpperInvariant())
             {
-                case "SURFACTANT":
+                case ChemicalTypeConstants.Surfactant:
                     concerns.Add("Potential biodegradation");
                     concerns.Add("Adsorption loss");
                     break;
-                case "POLYMER":
+                case ChemicalTypeConstants.Polymer:
                     concerns.Add("Mechanical degradation");
                     concerns.Add("Shear thinning");
                     break;
-                case "ALKALI":
+                case ChemicalTypeConstants.Alkali:
                     concerns.Add("Corrosion potential");
                     concerns.Add("Rock/chemical interaction");
                     break;

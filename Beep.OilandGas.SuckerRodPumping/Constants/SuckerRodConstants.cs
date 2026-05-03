@@ -5,6 +5,125 @@ namespace Beep.OilandGas.SuckerRodPumping.Constants
     /// </summary>
     public static class SuckerRodConstants
     {
+        // ─────────────────────────────────────────────────────────────────
+        // API Rod Material Grades
+        // Per API Spec 11B — sucker rod material grades
+        // ─────────────────────────────────────────────────────────────────
+
+        /// <summary>Grade C — standard carbon steel, lowest strength (90,000 psi tensile).</summary>
+        public const string RodGradeC = "C";
+
+        /// <summary>Grade D — medium carbon steel, standard duty (115,000 psi tensile).</summary>
+        public const string RodGradeD = "D";
+
+        /// <summary>Grade HL — high-strength low-alloy steel (140,000 psi tensile).</summary>
+        public const string RodGradeHL = "HL";
+
+        /// <summary>Grade HY — high-strength alloy steel, highest grade (160,000 psi tensile).</summary>
+        public const string RodGradeHY = "HY";
+
+        /// <summary>Auto-select grade — system chooses optimal grade based on load conditions.</summary>
+        public const string RodGradeAuto = "AUTO";
+
+        /// <summary>Default rod grade when not specified.</summary>
+        public const string RodGradeDefault = RodGradeD;
+
+        // ─────────────────────────────────────────────────────────────────
+        // Rod Grade Properties
+        // Tensile strength (Su), endurance limit (Se), cost (USD/lb)
+        // ─────────────────────────────────────────────────────────────────
+
+        /// <summary>Tensile strength for Grade C rods (psi).</summary>
+        public const double TensileStrengthC = 90_000;
+
+        /// <summary>Endurance limit for Grade C rods (psi).</summary>
+        public const double EnduranceLimitC = 23_000;
+
+        /// <summary>Cost for Grade C rods (USD/lb).</summary>
+        public const double CostPerLbC = 0.50;
+
+        /// <summary>Tensile strength for Grade D rods (psi).</summary>
+        public const double TensileStrengthD = 115_000;
+
+        /// <summary>Endurance limit for Grade D rods (psi).</summary>
+        public const double EnduranceLimitD = 29_750;
+
+        /// <summary>Cost for Grade D rods (USD/lb).</summary>
+        public const double CostPerLbD = 0.60;
+
+        /// <summary>Tensile strength for Grade HL rods (psi).</summary>
+        public const double TensileStrengthHL = 140_000;
+
+        /// <summary>Endurance limit for Grade HL rods (psi).</summary>
+        public const double EnduranceLimitHL = 35_000;
+
+        /// <summary>Cost for Grade HL rods (USD/lb).</summary>
+        public const double CostPerLbHL = 0.75;
+
+        /// <summary>Tensile strength for Grade HY rods (psi).</summary>
+        public const double TensileStrengthHY = 160_000;
+
+        /// <summary>Endurance limit for Grade HY rods (psi).</summary>
+        public const double EnduranceLimitHY = 40_000;
+
+        /// <summary>Cost for Grade HY rods (USD/lb).</summary>
+        public const double CostPerLbHY = 0.90;
+
+        /// <summary>
+        /// Gets the tensile strength for a given rod grade.
+        /// </summary>
+        /// <param name="grade">Rod grade identifier.</param>
+        /// <returns>Tensile strength in psi.</returns>
+        public static double GetTensileStrength(string grade)
+        {
+            return grade.ToUpperInvariant() switch
+            {
+                RodGradeC => TensileStrengthC,
+                RodGradeD => TensileStrengthD,
+                RodGradeHL => TensileStrengthHL,
+                RodGradeHY => TensileStrengthHY,
+                _ => TensileStrengthD,
+            };
+        }
+
+        /// <summary>
+        /// Gets the endurance limit for a given rod grade.
+        /// </summary>
+        /// <param name="grade">Rod grade identifier.</param>
+        /// <returns>Endurance limit in psi.</returns>
+        public static double GetEnduranceLimit(string grade)
+        {
+            return grade.ToUpperInvariant() switch
+            {
+                RodGradeC => EnduranceLimitC,
+                RodGradeD => EnduranceLimitD,
+                RodGradeHL => EnduranceLimitHL,
+                RodGradeHY => EnduranceLimitHY,
+                _ => EnduranceLimitD,
+            };
+        }
+
+        /// <summary>
+        /// Gets the cost per pound for a given rod grade.
+        /// </summary>
+        /// <param name="grade">Rod grade identifier.</param>
+        /// <returns>Cost in USD/lb.</returns>
+        public static double GetCostPerLb(string grade)
+        {
+            return grade.ToUpperInvariant() switch
+            {
+                RodGradeC => CostPerLbC,
+                RodGradeD => CostPerLbD,
+                RodGradeHL => CostPerLbHL,
+                RodGradeHY => CostPerLbHY,
+                _ => CostPerLbD,
+            };
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // Standard Diameters and Sizes
+        // ─────────────────────────────────────────────────────────────────
+
         /// <summary>
         /// Standard sucker rod diameters in inches.
         /// </summary>

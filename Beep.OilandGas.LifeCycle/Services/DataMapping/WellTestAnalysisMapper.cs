@@ -160,11 +160,15 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
             if (string.IsNullOrWhiteSpace(wellTest.TEST_TYPE))
                 throw new InvalidOperationException("Test type not available. Provide getTestType function or ensure WELL_TEST.TEST_TYPE is set.");
 
-            var testType = wellTest.TEST_TYPE.ToUpper();
-            if (testType.Contains("BUILD") || testType.Contains("BU") || testType.Contains("SHUTIN"))
+            var testType = wellTest.TEST_TYPE.ToUpperInvariant();
+            if (testType.Contains(WellTestAnalysisWellKnown.PpdmTestTypeFragmentUpper.Build, StringComparison.Ordinal)
+                || testType.Contains(WellTestAnalysisWellKnown.PpdmTestTypeFragmentUpper.Bu, StringComparison.Ordinal)
+                || testType.Contains(WellTestAnalysisWellKnown.PpdmTestTypeFragmentUpper.ShutIn, StringComparison.Ordinal))
                 return WellTestType.BuildUp;
-            
-            if (testType.Contains("DRAWDOWN") || testType.Contains("DD") || testType.Contains("FLOW"))
+
+            if (testType.Contains(WellTestAnalysisWellKnown.PpdmTestTypeFragmentUpper.DrawDown, StringComparison.Ordinal)
+                || testType.Contains(WellTestAnalysisWellKnown.PpdmTestTypeFragmentUpper.Dd, StringComparison.Ordinal)
+                || testType.Contains(WellTestAnalysisWellKnown.PpdmTestTypeFragmentUpper.Flow, StringComparison.Ordinal))
                 return WellTestType.Drawdown;
             
             throw new InvalidOperationException($"Unknown test type: {wellTest.TEST_TYPE}. Provide getTestType function.");

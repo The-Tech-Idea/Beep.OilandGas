@@ -65,14 +65,14 @@
             <MudItem xs="12" sm="6" md="2">
                 <MudSelect T="string" Label="Analysis Type" Variant="Variant.Outlined"
                            Value="@_analysisType" ValueChanged="OnAnalysisTypeChanged">
-                    <MudSelectItem Value="@("BUILDUP")">Build-up</MudSelectItem>
-                    <MudSelectItem Value="@("DRAWDOWN")" Disabled="@_isGasWell">Drawdown (oil)</MudSelectItem>
+                    <MudSelectItem Value="@WellTestAnalysisWellKnown.AnalysisClassification.BuildUp">Build-up</MudSelectItem>
+                    <MudSelectItem Value="@WellTestAnalysisWellKnown.AnalysisClassification.DrawDown" Disabled="@_isGasWell">Drawdown (oil)</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" sm="6" md="2">
                 <MudSelect T="string" Label="Method" Variant="Variant.Outlined" @bind-Value="@_analysisMethod">
-                    <MudSelectItem Value="@("HORNER")">Horner</MudSelectItem>
-                    <MudSelectItem Value="@("MDH")" Disabled="@_isGasWell">MDH (oil)</MudSelectItem>
+                    <MudSelectItem Value="@WellTestAnalysisWellKnown.AnalysisMethod.Horner">Horner</MudSelectItem>
+                    <MudSelectItem Value="@WellTestAnalysisWellKnown.AnalysisMethod.Mdh" Disabled="@_isGasWell">MDH (oil)</MudSelectItem>
                 </MudSelect>
             </MudItem>
 
@@ -378,8 +378,8 @@
     private bool _isGasWell;
     private bool _isLoading = true;
     private bool _isRunning;
-    private string _analysisType = "BUILDUP";
-    private string _analysisMethod = "HORNER";
+    private string _analysisType = WellTestAnalysisWellKnown.AnalysisClassification.BuildUp;
+    private string _analysisMethod = WellTestAnalysisWellKnown.AnalysisMethod.Horner;
 
     private decimal _flowRate = 500m;
     private decimal _productionTime = 24m;
@@ -531,7 +531,7 @@
 
     private Task OnAnalysisTypeChanged(string? value)
     {
-        _analysisType = string.IsNullOrWhiteSpace(value) ? "BUILDUP" : value;
+        _analysisType = string.IsNullOrWhiteSpace(value) ? WellTestAnalysisWellKnown.AnalysisClassification.BuildUp : value;
         CoerceAnalysisMethodForOilDrawdown();
         return Task.CompletedTask;
     }
@@ -539,9 +539,9 @@
     /// <summary>MDH is build-up only; align method when switching to drawdown (oil).</summary>
     private void CoerceAnalysisMethodForOilDrawdown()
     {
-        if (string.Equals(_analysisType, "DRAWDOWN", StringComparison.OrdinalIgnoreCase)
-            && string.Equals(_analysisMethod, "MDH", StringComparison.OrdinalIgnoreCase))
-            _analysisMethod = "HORNER";
+        if (WellTestAnalysisWellKnown.ClassificationEqualsDrawDown(_analysisType)
+            && WellTestAnalysisWellKnown.MethodEqualsMdh(_analysisMethod))
+            _analysisMethod = WellTestAnalysisWellKnown.AnalysisMethod.Horner;
     }
 
     private Task OnIsGasWellChangedAsync(bool value)
@@ -567,10 +567,10 @@
         if (!_isGasWell)
             return;
 
-        if (string.Equals(_analysisType, "DRAWDOWN", StringComparison.OrdinalIgnoreCase))
-            _analysisType = "BUILDUP";
-        if (string.Equals(_analysisMethod, "MDH", StringComparison.OrdinalIgnoreCase))
-            _analysisMethod = "HORNER";
+        if (WellTestAnalysisWellKnown.ClassificationEqualsDrawDown(_analysisType))
+            _analysisType = WellTestAnalysisWellKnown.AnalysisClassification.BuildUp;
+        if (WellTestAnalysisWellKnown.MethodEqualsMdh(_analysisMethod))
+            _analysisMethod = WellTestAnalysisWellKnown.AnalysisMethod.Horner;
     }
 
     private void ApplySelectedTestDefaults()
@@ -581,7 +581,9 @@
 
         if (!string.IsNullOrWhiteSpace(test.TestType))
         {
-            _analysisType = test.TestType.Contains("DRAW", StringComparison.OrdinalIgnoreCase) ? "DRAWDOWN" : "BUILDUP";
+            _analysisType = test.TestType.Contains(WellTestAnalysisWellKnown.TestTypeToken.Draw, StringComparison.OrdinalIgnoreCase)
+                ? WellTestAnalysisWellKnown.AnalysisClassification.DrawDown
+                : WellTestAnalysisWellKnown.AnalysisClassification.BuildUp;
             CoerceAnalysisMethodForOilDrawdown();
         }
 
@@ -653,7 +655,7 @@
             return false;
         }
 
-        if (_isGasWell && string.Equals(_analysisType, "BUILDUP", StringComparison.OrdinalIgnoreCase)
+        if (_isGasWell && WellTestAnalysisWellKnown.ClassificationEqualsBuildUp(_analysisType)
             && (_gasSpecificGravity < 0.05m || _gasSpecificGravity > 3m))
         {
             Snackbar.Add("Gas specific gravity must be between 0.05 and 3.0 (air = 1.0).", Severity.Warning);
@@ -668,7 +670,7 @@
                 return false;
             }
 
-            if (string.Equals(_analysisType, "BUILDUP", StringComparison.OrdinalIgnoreCase))
+            if (WellTestAnalysisWellKnown.ClassificationEqualsBuildUp(_analysisType))
             {
                 var hasDurationFromTest = _selectedTestSummary?.TestDuration is { } d && d > 0m;
                 if (_productionTime <= 0m && !hasDurationFromTest)
@@ -681,7 +683,7 @@
             return true;
         }
 
-        if (string.Equals(_analysisType, "BUILDUP", StringComparison.OrdinalIgnoreCase) && _productionTime <= 0)
+        if (WellTestAnalysisWellKnown.ClassificationEqualsBuildUp(_analysisType) && _productionTime <= 0)
         {
             Snackbar.Add("Production time (hours of flow prior to shut-in) must be greater than zero for build-up analysis.", Severity.Warning);
             return false;

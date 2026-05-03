@@ -42,30 +42,20 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         /// </summary>
         public static decimal GetScreeningRecoveryFactorPercent(string? eorType)
         {
-            if (string.IsNullOrWhiteSpace(eorType))
-                return 20m;
+            if (EorMethodConstants.IsWaterFlood(eorType))
+                return EnhancedRecoveryConstants.RecoveryFactorWaterFlood;
+            if (EorMethodConstants.IsCO2Miscible(eorType))
+                return EnhancedRecoveryConstants.RecoveryFactorCO2Miscible;
+            if (EorMethodConstants.IsGasInjection(eorType))
+                return EnhancedRecoveryConstants.RecoveryFactorGasInjection;
+            if (EorMethodConstants.IsChemicalEor(eorType))
+                return EnhancedRecoveryConstants.RecoveryFactorChemical;
+            if (EorMethodConstants.IsThermal(eorType))
+                return EnhancedRecoveryConstants.RecoveryFactorThermal;
+            if (EorMethodConstants.IsInjection(eorType))
+                return EnhancedRecoveryConstants.RecoveryFactorInjection;
 
-            var t = eorType.Trim();
-            if (t.Contains("WATER", StringComparison.OrdinalIgnoreCase)
-                || t.Contains("FLOOD", StringComparison.OrdinalIgnoreCase))
-                return 25m;
-            if (t.Contains("CO2", StringComparison.OrdinalIgnoreCase))
-                return 20m;
-            if (t.Contains("MISCIBLE", StringComparison.OrdinalIgnoreCase)
-                || t.Contains("GAS_INJECTION", StringComparison.OrdinalIgnoreCase)
-                || (t.Contains("GAS", StringComparison.OrdinalIgnoreCase) && t.Contains("INJECT", StringComparison.OrdinalIgnoreCase)))
-                return 18m;
-            if (t.Contains("POLYMER", StringComparison.OrdinalIgnoreCase)
-                || t.Contains("ASP", StringComparison.OrdinalIgnoreCase)
-                || t.Contains("CHEMICAL", StringComparison.OrdinalIgnoreCase))
-                return 22m;
-            if (t.Contains("STEAM", StringComparison.OrdinalIgnoreCase)
-                || t.Contains("THERMAL", StringComparison.OrdinalIgnoreCase))
-                return 30m;
-            if (t.Equals("INJECTION", StringComparison.OrdinalIgnoreCase))
-                return 15m;
-
-            return 20m;
+            return EnhancedRecoveryConstants.RecoveryFactorDefault;
         }
 
         private List<T> ConvertToList<T>(object units) where T : class
@@ -120,14 +110,14 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
 
         private static bool IsInjectionOperation(PDEN pden)
         {
-            return string.Equals(ResolveEnhancedRecoveryType(pden), "INJECTION", StringComparison.OrdinalIgnoreCase);
+            return string.Equals(ResolveEnhancedRecoveryType(pden), EorMethodConstants.Injection, StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsEnhancedRecoveryOperation(PDEN pden)
         {
             var recoveryType = ResolveEnhancedRecoveryType(pden);
             return !string.IsNullOrWhiteSpace(recoveryType)
-                && !string.Equals(recoveryType, "INJECTION", StringComparison.OrdinalIgnoreCase);
+                && !string.Equals(recoveryType, EorMethodConstants.Injection, StringComparison.OrdinalIgnoreCase);
         }
 
         private static string ResolveOperationStatus(PDEN pden)
@@ -174,7 +164,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                 ?? measurements.FirstOrDefault();
         }
 
-        private async Task UpsertFlowMeasurementAsync(PDEN pden, decimal flowRate, string? flowRateUnit, string productType = "WATER")
+        private async Task UpsertFlowMeasurementAsync(PDEN pden, decimal flowRate, string? flowRateUnit, string productType = EnhancedRecoveryConstants.ProductTypeWater)
         {
             if (string.IsNullOrWhiteSpace(pden.PDEN_ID))
                 throw new InvalidOperationException("Cannot persist a flow measurement without a PDEN ID.");
@@ -292,9 +282,9 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             var pden = new PDEN
             {
                 PDEN_ID = Guid.NewGuid().ToString(),
-                PDEN_SUBTYPE = "INJECTION",
-                ENHANCED_RECOVERY_TYPE = "INJECTION",
-                SOURCE = "ENHANCED_RECOVERY",
+                PDEN_SUBTYPE = EorMethodConstants.Injection,
+                ENHANCED_RECOVERY_TYPE = EorMethodConstants.Injection,
+                SOURCE = EnhancedRecoveryConstants.PdenSourceEnhancedRecovery,
                 ACTIVE_IND = "Y",
                 AREA_ID = fieldId,
                 AREA_TYPE = string.IsNullOrWhiteSpace(fieldId) ? string.Empty : "FIELD",
@@ -404,7 +394,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
 
             await pdenUow.Commit();
 
-            if (string.Equals(recoveryType, "INJECTION", StringComparison.OrdinalIgnoreCase)
+            if (string.Equals(recoveryType, EorMethodConstants.Injection, StringComparison.OrdinalIgnoreCase)
                 && createDto.PlannedInjectionRate.HasValue)
             {
                 pden.ON_INJECTION_DATE = startDate;
@@ -450,7 +440,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             var pdenUow = GetPDENUnitOfWork();
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "PDEN_SUBTYPE", FilterValue = "WATER_FLOOD", Operator = "=" },
+                new AppFilter { FieldName = "PDEN_SUBTYPE", FilterValue = EnhancedRecoveryConstants.PdenSubtypeWaterFlood, Operator = "=" },
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
             };
 
@@ -476,7 +466,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             var pdenUow = GetPDENUnitOfWork();
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "PDEN_SUBTYPE", FilterValue = "GAS_INJECTION", Operator = "=" },
+                new AppFilter { FieldName = "PDEN_SUBTYPE", FilterValue = EnhancedRecoveryConstants.PdenSubtypeGasInjection, Operator = "=" },
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
             };
 

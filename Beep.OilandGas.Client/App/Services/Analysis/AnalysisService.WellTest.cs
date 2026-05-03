@@ -16,7 +16,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
             if (AccessMode == ServiceAccessMode.Remote)
                 return await PostAsync<WellTestAnalysisCalculationRequest, WELL_TEST_ANALYSIS_RESULT>(
                     "/api/calculations/well-test",
-                    MapWellTestCalculationRequest(request, "BUILDUP"),
+                    MapWellTestCalculationRequest(request, WellTestAnalysisWellKnown.AnalysisClassification.BuildUp),
                     cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
@@ -27,7 +27,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
             if (AccessMode == ServiceAccessMode.Remote)
                 return await PostAsync<WellTestAnalysisCalculationRequest, WELL_TEST_ANALYSIS_RESULT>(
                     "/api/calculations/well-test",
-                    MapWellTestCalculationRequest(request, "DRAWDOWN"),
+                    MapWellTestCalculationRequest(request, WellTestAnalysisWellKnown.AnalysisClassification.DrawDown),
                     cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
@@ -154,13 +154,13 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         private static string ResolveAnalysisMethodForLegacyRequest(WELL_TEST_DATA request, string analysisType)
         {
             if (request.IS_GAS_WELL is true)
-                return "HORNER";
-            if (string.Equals(analysisType, "DRAWDOWN", StringComparison.OrdinalIgnoreCase))
-                return "HORNER";
+                return WellTestAnalysisWellKnown.AnalysisMethod.Horner;
+            if (WellTestAnalysisWellKnown.ClassificationEqualsDrawDown(analysisType))
+                return WellTestAnalysisWellKnown.AnalysisMethod.Horner;
             if (!string.IsNullOrWhiteSpace(request.TEST_TYPE)
-                && request.TEST_TYPE.IndexOf("MDH", StringComparison.OrdinalIgnoreCase) >= 0)
-                return "MDH";
-            return "HORNER";
+                && request.TEST_TYPE.IndexOf(WellTestAnalysisWellKnown.TestTypeToken.Mdh, StringComparison.OrdinalIgnoreCase) >= 0)
+                return WellTestAnalysisWellKnown.AnalysisMethod.Mdh;
+            return WellTestAnalysisWellKnown.AnalysisMethod.Horner;
         }
 
         private static List<WellTestDataPoint>? BuildPressureTimeData(WELL_TEST_DATA request)
@@ -185,9 +185,9 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
 
         private static string ResolveLegacyAnalysisType(WELL_TEST_DATA request)
         {
-            return request.TEST_TYPE is { } tt && tt.IndexOf("DRAW", StringComparison.OrdinalIgnoreCase) >= 0
-                ? "DRAWDOWN"
-                : "BUILDUP";
+            return request.TEST_TYPE is { } tt && tt.IndexOf(WellTestAnalysisWellKnown.TestTypeToken.Draw, StringComparison.OrdinalIgnoreCase) >= 0
+                ? WellTestAnalysisWellKnown.AnalysisClassification.DrawDown
+                : WellTestAnalysisWellKnown.AnalysisClassification.BuildUp;
         }
     }
 }

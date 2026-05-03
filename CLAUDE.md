@@ -167,6 +167,13 @@ builder.Services.AddScoped<IMyService>(sp =>
 - **Files**: `I{ServiceName}Service.cs` for interfaces; `{ServiceName}Service.cs` for implementations
 - **DB IDs**: All string-based; use `_defaults.FormatIdForTable("TABLE_NAME", id)` to format
 
+## Domain constants and reference values
+
+- Do **not** embed ad hoc domain strings (for example `"BUILDUP"`, `"DRAWDOWN"`, `"HORNER"`, compressor mode codes) or unexplained numeric literals in services, APIs, Blazor, or clients.
+- Do **centralize** wire tokens and stable codes in a `*WellKnown` static type under `Beep.OilandGas.Models` (see `CompressorAnalysisWellKnown`, `WellTestAnalysisWellKnown`) or in a feature `Constants` class for engineering-only numbers.
+- When a value corresponds to a **PPDM reference / LOV** row (`R_*`, enum-backed seeding such as `EnumReferenceDataSeeder`), document that relationship on the constant type and keep persisted/API values aligned with the reference set.
+- Workspace rule: `.cursor/rules/constants-and-reference-values.mdc`.
+
 ## Common Mistakes to Avoid
 
 1. Registering service before `IDMEEditor` is available -> startup null refs.
@@ -181,6 +188,7 @@ builder.Services.AddScoped<IMyService>(sp =>
 10. Adding `List<T>`, `Dictionary<K,V>`, or nested object properties to a **table class** (one passed to `InsertAsync`/`UpdateAsync`) -> data layer cannot serialize collections to columns; remove them and use a projection class instead.
 11. On Windows, creating both `PROSPECT.cs` and `Prospect.cs` in the same folder -> filesystem collision; use `PROSPECT.Table.cs` for the table class filename.
 12. Authoring new **`Scripts/**/*.sql`** for extension/feature tables instead of **entity types + `ModuleSetupBase.EntityTypes` + tooling-driven schema creation** -> wrong workflow for this repo; see *Schema for extension tables* above.
+13. Scattering **magic strings or unexplained numeric literals** for domain classifications, analysis modes, or reference codes instead of **`WellTestAnalysisWellKnown` / `CompressorAnalysisWellKnown`** (or a documented `Constants` type) -> use named constants and align with **`R_*`** seed data where applicable.
 
 ## Quick Verification Steps
 
@@ -210,6 +218,7 @@ Always use `typeof(X)` + `.OfType<X>()` for these — never use `GetType().GetPr
 - `.cursor/commands/naming-conventions.md` - Project, namespace, and file naming rules
 - `.cursor/commands/data-access-patterns.md` - Data access best practices
 - `.cursor/commands/best-practices.md` - FASB compliance, revenue recognition, accounting patterns
+- `.cursor/rules/constants-and-reference-values.mdc` - Named constants for domain strings and numbers; align with `R_*` reference data
 
 ## Web Layer Patterns (Critical)
 

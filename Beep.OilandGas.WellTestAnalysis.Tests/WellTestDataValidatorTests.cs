@@ -32,7 +32,7 @@ public class WellTestDataValidatorTests
 
     [Theory]
     [InlineData("BuildUp")]
-    [InlineData("BUILDUP")]
+    [InlineData(WellTestAnalysisWellKnown.AnalysisClassification.BuildUp)]
     [InlineData("buildup")]
     public void Validate_accepts_case_insensitive_build_up_test_type_for_production_time_rule(string testType)
     {

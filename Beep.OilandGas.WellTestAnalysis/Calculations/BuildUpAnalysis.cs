@@ -31,7 +31,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
 
             var result = new WELL_TEST_ANALYSIS_RESULT
             {
-                ANALYSIS_METHOD = "Horner"
+                ANALYSIS_METHOD = WellTestAnalysisWellKnown.ResultAnalysisMethodLabel.Horner
             };
 
             // Calculate Horner time: (tp + Î”t) / Î”t
@@ -125,7 +125,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
 
             var result = new WELL_TEST_ANALYSIS_RESULT
             {
-                ANALYSIS_METHOD = "MDH"
+                ANALYSIS_METHOD = WellTestAnalysisWellKnown.ResultAnalysisMethodLabel.Mdh
             };
 
             // MDH uses log(Î”t) vs P

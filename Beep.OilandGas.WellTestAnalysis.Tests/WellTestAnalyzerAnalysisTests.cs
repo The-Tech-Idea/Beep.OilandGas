@@ -85,7 +85,7 @@ public class WellTestAnalyzerAnalysisTests
         var times = new List<double> { 0.2, 0.4, 0.7, 1, 1.5, 2.5, 4, 7, 12, 20, 35, 60, 100, 160 };
         var pressures = new List<double> { 4200, 4150, 4100, 4050, 3980, 3900, 3820, 3720, 3600, 3450, 3280, 3100, 2920, 2750 };
 
-        var data = BaseOilTestData("BUILDUP", (decimal)tp);
+        var data = BaseOilTestData(WellTestAnalysisWellKnown.AnalysisClassification.BuildUp, (decimal)tp);
         data.Time = times;
         data.Pressure = pressures;
         data.FLOW_RATE = 2500m;
@@ -96,6 +96,6 @@ public class WellTestAnalyzerAnalysisTests
         var result = WellTestAnalyzer.AnalyzeGasBuildUp(data, gasGravity, reservoirTempRankine);
 
         Assert.True(result.PERMEABILITY > 0.01m);
-        Assert.Equal("Gas Pseudo-Pressure (Horner)", result.ANALYSIS_METHOD);
+        Assert.Equal(WellTestAnalysisWellKnown.ResultAnalysisMethodLabel.GasPseudoPressureHorner, result.ANALYSIS_METHOD);
     }
 }

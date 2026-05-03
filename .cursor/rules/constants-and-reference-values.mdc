@@ -1,0 +1,19 @@
+---
+description: Use named constants for domain strings and numbers; align with PPDM R_* reference data where applicable.
+globs: "**/*.cs,**/*.razor"
+alwaysApply: true
+---
+
+# Constants and reference-backed values
+
+When introducing or editing **domain classification strings**, **analysis/wire tokens**, **status codes**, or **numeric literals** that carry business meaning:
+
+1. **Do not** scatter raw strings like `"BUILDUP"`, `"DRAWDOWN"`, `"HORNER"`, or magic numbers across services, controllers, Blazor, or clients.
+2. **Do** define a single source of truth:
+   - **Cross-cutting API / DTO wire values** → `Beep.OilandGas.Models` static well-known class (pattern: `*WellKnown` with nested static classes for grouping), e.g. `WellTestAnalysisWellKnown.AnalysisClassification.BuildUp`.
+   - **Feature-only engineering constants** → that feature’s `Constants/` folder (e.g. `WellTestConstants` for physics thresholds).
+3. **PPDM alignment**: when a value corresponds to a **reference / LOV table** (`R_*`, enum-backed seeders such as `EnumReferenceDataSeeder`), document that link in the constant type’s XML summary and keep the **wire token** or **stored code** consistent with what persistence and APIs expect.
+4. **Comparisons**: prefer `string.Equals(value, WellTestAnalysisWellKnown.AnalysisClassification.BuildUp, StringComparison.OrdinalIgnoreCase)` or the helper methods on the same `*WellKnown` type (e.g. `WellTestAnalysisWellKnown.ClassificationEqualsBuildUp`).
+5. **Blazor / JSON**: bind `MudSelectItem` values and query parameters to the **named constants**, not inline literals, so UI and API stay in sync when codes change.
+
+When adding a new vertical (compressor, choke, well test, etc.), follow existing patterns such as `CompressorAnalysisWellKnown` and `WellTestAnalysisWellKnown` rather than inventing ad hoc string copies.

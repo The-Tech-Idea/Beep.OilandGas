@@ -29,7 +29,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
 
             var result = new WELL_TEST_ANALYSIS_RESULT
             {
-                ANALYSIS_METHOD = "Drawdown (Semi-Log)"
+                ANALYSIS_METHOD = WellTestAnalysisWellKnown.ResultAnalysisMethodLabel.DrawdownSemiLog
             };
 
             // Drawdown Plot: Pwf vs log(t)

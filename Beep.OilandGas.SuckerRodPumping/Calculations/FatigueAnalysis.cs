@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.SuckerRodPumping;
+using Beep.OilandGas.SuckerRodPumping.Constants;
 
 namespace Beep.OilandGas.SuckerRodPumping.Calculations
 {
@@ -63,11 +64,11 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
         public static readonly IReadOnlyDictionary<string, RodMaterial> Materials =
             new Dictionary<string, RodMaterial>(StringComparer.OrdinalIgnoreCase)
             {
-                ["C"]  = new RodMaterial("C",   90_000, 60_000, 23_000),
-                ["D"]  = new RodMaterial("D",  115_000, 80_000, 29_750),
+                [SuckerRodConstants.RodGradeC]  = new RodMaterial(SuckerRodConstants.RodGradeC,   (int)SuckerRodConstants.TensileStrengthC, 60_000, (int)SuckerRodConstants.EnduranceLimitC),
+                [SuckerRodConstants.RodGradeD]  = new RodMaterial(SuckerRodConstants.RodGradeD,  (int)SuckerRodConstants.TensileStrengthD, 80_000, (int)SuckerRodConstants.EnduranceLimitD),
                 ["K"]  = new RodMaterial("K",  115_000, 80_000, 29_750),
-                ["HL"] = new RodMaterial("HL", 140_000, 120_000, 35_000),
-                ["HY"] = new RodMaterial("HY", 160_000, 140_000, 40_000),
+                [SuckerRodConstants.RodGradeHL] = new RodMaterial(SuckerRodConstants.RodGradeHL, (int)SuckerRodConstants.TensileStrengthHL, 120_000, (int)SuckerRodConstants.EnduranceLimitHL),
+                [SuckerRodConstants.RodGradeHY] = new RodMaterial(SuckerRodConstants.RodGradeHY, (int)SuckerRodConstants.TensileStrengthHY, 140_000, (int)SuckerRodConstants.EnduranceLimitHY),
                 ["KD"] = new RodMaterial("KD", 150_000, 130_000, 37_500),
             };
 
@@ -175,8 +176,8 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
         {
             if (loadResult == null) throw new ArgumentNullException(nameof(loadResult));
             if (rodString?.SECTIONS == null) throw new ArgumentNullException(nameof(rodString));
-            if (!Materials.TryGetValue(materialGrade ?? "D", out var mat))
-                mat = Materials["D"];
+            if (!Materials.TryGetValue(materialGrade ?? SuckerRodConstants.RodGradeD, out var mat))
+                mat = Materials[SuckerRodConstants.RodGradeD];
 
             double pprl = (double)loadResult.PEAK_LOAD;
             double mprl = (double)loadResult.MINIMUM_LOAD;
@@ -326,7 +327,7 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
                 string materialGrade,
                 double[] candidateDiametersIn)
         {
-            if (!Materials.TryGetValue(materialGrade ?? "D", out var mat)) mat = Materials["D"];
+            if (!Materials.TryGetValue(materialGrade ?? SuckerRodConstants.RodGradeD, out var mat)) mat = Materials[SuckerRodConstants.RodGradeD];
             double steelDensityLbIn3 = 0.2833;
 
             double pprl = (double)loadResult.PEAK_LOAD;

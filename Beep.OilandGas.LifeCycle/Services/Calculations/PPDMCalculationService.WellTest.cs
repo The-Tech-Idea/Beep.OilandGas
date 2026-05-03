@@ -44,11 +44,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     ? null
                     : request.AnalysisType.Trim();
                 if (explicitAnalysisType != null
-                    && !string.Equals(explicitAnalysisType, "BUILDUP", StringComparison.OrdinalIgnoreCase)
-                    && !string.Equals(explicitAnalysisType, "DRAWDOWN", StringComparison.OrdinalIgnoreCase))
+                    && !WellTestAnalysisWellKnown.ClassificationEqualsBuildUp(explicitAnalysisType)
+                    && !WellTestAnalysisWellKnown.ClassificationEqualsDrawDown(explicitAnalysisType))
                 {
                     throw new ArgumentException(
-                        "AnalysisType must be BUILDUP, DRAWDOWN, or omitted so it can be inferred from PPDM WELL_TEST.TEST_TYPE.");
+                        $"AnalysisType must be {WellTestAnalysisWellKnown.AnalysisClassification.BuildUp}, {WellTestAnalysisWellKnown.AnalysisClassification.DrawDown}, or omitted so it can be inferred from PPDM WELL_TEST.TEST_TYPE.");
                 }
 
                 var usePpdmPressureSeries = request.PressureTimeData == null || request.PressureTimeData.Count == 0;
@@ -95,7 +95,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                             : null,
                         RESERVOIR_TEMPERATURE = request.ReservoirTemperature ?? 150.0m,
                         INITIAL_RESERVOIR_PRESSURE = request.InitialReservoirPressure ?? 0.0m,
-                        TEST_TYPE = string.Equals(explicitAnalysisType, "DRAWDOWN", StringComparison.OrdinalIgnoreCase)
+                        TEST_TYPE = WellTestAnalysisWellKnown.ClassificationEqualsDrawDown(explicitAnalysisType)
                             ? WellTestType.Drawdown.ToString()
                             : WellTestType.BuildUp.ToString()
                     };
@@ -111,31 +111,32 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 effectiveAnalysisType = explicitAnalysisType ?? InferAnalysisTypeFromWellTestData(WELL_TEST_DATA);
                 if (string.IsNullOrWhiteSpace(effectiveAnalysisType))
-                    effectiveAnalysisType = "BUILDUP";
-                if (!string.Equals(effectiveAnalysisType, "BUILDUP", StringComparison.OrdinalIgnoreCase)
-                    && !string.Equals(effectiveAnalysisType, "DRAWDOWN", StringComparison.OrdinalIgnoreCase))
+                    effectiveAnalysisType = WellTestAnalysisWellKnown.AnalysisClassification.BuildUp;
+                if (!WellTestAnalysisWellKnown.ClassificationEqualsBuildUp(effectiveAnalysisType)
+                    && !WellTestAnalysisWellKnown.ClassificationEqualsDrawDown(effectiveAnalysisType))
                 {
                     throw new ArgumentException(
-                        "Could not resolve well test analysis type as BUILDUP or DRAWDOWN. Set WellTestAnalysisCalculationRequest.AnalysisType explicitly.");
+                        $"Could not resolve well test analysis type as {WellTestAnalysisWellKnown.AnalysisClassification.BuildUp} or {WellTestAnalysisWellKnown.AnalysisClassification.DrawDown}. Set {nameof(WellTestAnalysisCalculationRequest.AnalysisType)} explicitly.");
                 }
 
                 SyncWellTestDataTestTypeFromEffectiveAnalysis(WELL_TEST_DATA, effectiveAnalysisType);
 
                 var methodUpper = request.AnalysisMethod?.Trim().ToUpperInvariant();
                 if (!string.IsNullOrEmpty(methodUpper)
-                    && string.Equals(effectiveAnalysisType, "BUILDUP", StringComparison.OrdinalIgnoreCase)
+                    && WellTestAnalysisWellKnown.ClassificationEqualsBuildUp(effectiveAnalysisType)
                     && request.IsGasWell is not true
-                    && methodUpper != "HORNER"
-                    && methodUpper != "MDH")
-                {
-                    throw new ArgumentException("AnalysisMethod must be HORNER or MDH for oil build-up.");
-                }
-
-                if (string.Equals(effectiveAnalysisType, "DRAWDOWN", StringComparison.OrdinalIgnoreCase)
-                    && methodUpper == "MDH")
+                    && methodUpper != WellTestAnalysisWellKnown.AnalysisMethod.Horner
+                    && methodUpper != WellTestAnalysisWellKnown.AnalysisMethod.Mdh)
                 {
                     throw new ArgumentException(
-                        "MDH (Miller-Dyes-Hutchinson) applies to build-up tests only. Use AnalysisType BUILDUP for MDH, or set AnalysisMethod to HORNER for drawdown.");
+                        $"AnalysisMethod must be {WellTestAnalysisWellKnown.AnalysisMethod.Horner} or {WellTestAnalysisWellKnown.AnalysisMethod.Mdh} for oil build-up.");
+                }
+
+                if (WellTestAnalysisWellKnown.ClassificationEqualsDrawDown(effectiveAnalysisType)
+                    && methodUpper == WellTestAnalysisWellKnown.AnalysisMethod.Mdh)
+                {
+                    throw new ArgumentException(
+                        $"MDH (Miller-Dyes-Hutchinson) applies to build-up tests only. Use AnalysisType {WellTestAnalysisWellKnown.AnalysisClassification.BuildUp} for MDH, or set AnalysisMethod to {WellTestAnalysisWellKnown.AnalysisMethod.Horner} for drawdown.");
                 }
 
                 if (string.Equals(WELL_TEST_DATA.TEST_TYPE, WellTestType.BuildUp.ToString(), StringComparison.OrdinalIgnoreCase)
@@ -162,7 +163,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 // Step 2: Perform well test analysis
                 WELL_TEST_ANALYSIS_RESULT analysisResult;
 
-                if (string.Equals(effectiveAnalysisType, "BUILDUP", StringComparison.OrdinalIgnoreCase))
+                if (WellTestAnalysisWellKnown.ClassificationEqualsBuildUp(effectiveAnalysisType))
                 {
                     if (WELL_TEST_DATA.IS_GAS_WELL is true)
                     {
@@ -179,7 +180,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                                 "Gas specific gravity must be between 0.05 and 3.0 (air = 1.0) for pseudo-pressure m(p) build-up.");
                         }
 
-                        if (string.Equals(request.AnalysisMethod?.Trim(), "MDH", StringComparison.OrdinalIgnoreCase))
+                        if (WellTestAnalysisWellKnown.MethodEqualsMdh(request.AnalysisMethod?.Trim()))
                         {
                             _logger?.LogInformation(
                                 "Gas build-up uses pseudo-pressure Horner; MDH selection ignored for WellId {WellId}, TestId {TestId}.",
@@ -195,8 +196,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     }
                     else
                     {
-                        var analysisMethod = (request.AnalysisMethod ?? "HORNER").Trim().ToUpperInvariant();
-                        analysisResult = analysisMethod == "MDH"
+                        var analysisMethod = (request.AnalysisMethod ?? WellTestAnalysisWellKnown.AnalysisMethod.Horner).Trim().ToUpperInvariant();
+                        analysisResult = analysisMethod == WellTestAnalysisWellKnown.AnalysisMethod.Mdh
                             ? WellTestAnalyzer.AnalyzeBuildUpMDH(WELL_TEST_DATA)
                             : WellTestAnalyzer.AnalyzeBuildUp(WELL_TEST_DATA);
                     }
@@ -273,7 +274,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                         var analysisTypeForError = effectiveAnalysisType
                             ?? (string.IsNullOrWhiteSpace(request.AnalysisType) ? null : request.AnalysisType.Trim())
                             ?? (assembledWellTestData != null ? InferAnalysisTypeFromWellTestData(assembledWellTestData) : null)
-                            ?? "BUILDUP";
+                            ?? WellTestAnalysisWellKnown.AnalysisClassification.BuildUp;
                         var errorResult = new WELL_TEST_ANALYSIS_RESULT
                         {
                             CALCULATION_ID = Guid.NewGuid().ToString(),
@@ -320,7 +321,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 FORMATION_THICKNESS = 50m,
                 WELLBORE_RADIUS = 0.25m,
                 RESERVOIR_TEMPERATURE = 150m,
-                TEST_TYPE = "BUILDUP"
+                TEST_TYPE = WellTestType.BuildUp.ToString()
             };
 
             try
@@ -347,7 +348,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                         data.FLOW_RATE = testRecord.MAX_OIL_FLOW_RATE > 0 ? testRecord.MAX_OIL_FLOW_RATE
                             : testRecord.MAX_GAS_FLOW_RATE > 0 ? testRecord.MAX_GAS_FLOW_RATE : 0m;
                         data.RESERVOIR_TEMPERATURE = testRecord.FLOW_TEMPERATURE > 0 ? testRecord.FLOW_TEMPERATURE : 150m;
-                        data.TEST_TYPE = testRecord.TEST_TYPE ?? "BUILDUP";
+                        data.TEST_TYPE = testRecord.TEST_TYPE ?? WellTestType.BuildUp.ToString();
 
                         var durationHours = ConvertWellTestDurationToHours(testRecord.TEST_DURATION, testRecord.TEST_DURATION_OUOM);
                         if (durationHours.HasValue && durationHours.Value > 0)
@@ -430,7 +431,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 WELL_ID = request.WellId,
                 FIELD_ID = string.IsNullOrWhiteSpace(request.FieldId) ? null : request.FieldId.Trim(),
                 TEST_ID = request.TestId,
-                ANALYSIS_TYPE = NormalizeAnalysisTypeForStorage(effectiveAnalysisType) ?? "BUILDUP",
+                ANALYSIS_TYPE = NormalizeAnalysisTypeForStorage(effectiveAnalysisType) ?? WellTestAnalysisWellKnown.AnalysisClassification.BuildUp,
                 ANALYSIS_METHOD = resolvedAnalysisMethod,
                 CALCULATION_DATE = DateTime.UtcNow,
                 STATUS = "SUCCESS",
@@ -612,7 +613,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         {
             if (string.IsNullOrWhiteSpace(request.AnalysisType))
                 return;
-            data.TEST_TYPE = string.Equals(request.AnalysisType, "DRAWDOWN", StringComparison.OrdinalIgnoreCase)
+            data.TEST_TYPE = WellTestAnalysisWellKnown.ClassificationEqualsDrawDown(request.AnalysisType)
                 ? WellTestType.Drawdown.ToString()
                 : WellTestType.BuildUp.ToString();
         }
@@ -622,36 +623,38 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// </summary>
         private static void SyncWellTestDataTestTypeFromEffectiveAnalysis(WELL_TEST_DATA data, string effectiveAnalysisType)
         {
-            data.TEST_TYPE = string.Equals(effectiveAnalysisType, "DRAWDOWN", StringComparison.OrdinalIgnoreCase)
+            data.TEST_TYPE = WellTestAnalysisWellKnown.ClassificationEqualsDrawDown(effectiveAnalysisType)
                 ? WellTestType.Drawdown.ToString()
                 : WellTestType.BuildUp.ToString();
         }
 
         /// <summary>
-        /// Maps assembled <see cref="WELL_TEST_DATA.TEST_TYPE"/> (from PPDM or manual payload) to <c>BUILDUP</c> or <c>DRAWDOWN</c> for routing.
+        /// Maps assembled <see cref="WELL_TEST_DATA.TEST_TYPE"/> (from PPDM or manual payload) to API classification tokens for routing.
         /// </summary>
         private static string? InferAnalysisTypeFromWellTestData(WELL_TEST_DATA data)
         {
             if (data?.TEST_TYPE == null)
                 return null;
             if (Enum.TryParse<WellTestType>(data.TEST_TYPE, ignoreCase: true, out var testType))
-                return testType == WellTestType.Drawdown ? "DRAWDOWN" : "BUILDUP";
-            if (data.TEST_TYPE.Contains("DRAW", StringComparison.OrdinalIgnoreCase))
-                return "DRAWDOWN";
-            return "BUILDUP";
+                return testType == WellTestType.Drawdown
+                    ? WellTestAnalysisWellKnown.AnalysisClassification.DrawDown
+                    : WellTestAnalysisWellKnown.AnalysisClassification.BuildUp;
+            if (data.TEST_TYPE.Contains(WellTestAnalysisWellKnown.TestTypeToken.Draw, StringComparison.OrdinalIgnoreCase))
+                return WellTestAnalysisWellKnown.AnalysisClassification.DrawDown;
+            return WellTestAnalysisWellKnown.AnalysisClassification.BuildUp;
         }
 
         /// <summary>
-        /// Canonical <c>BUILDUP</c> / <c>DRAWDOWN</c> for persistence and API responses; leaves null/whitespace unchanged for error rows when validation never ran.
+        /// Canonical tokens for persistence and API responses; leaves null/whitespace unchanged for error rows when validation never ran.
         /// </summary>
         private static string? NormalizeAnalysisTypeForStorage(string? analysisType)
         {
             if (string.IsNullOrWhiteSpace(analysisType))
                 return analysisType;
-            if (string.Equals(analysisType, "DRAWDOWN", StringComparison.OrdinalIgnoreCase))
-                return "DRAWDOWN";
-            if (string.Equals(analysisType, "BUILDUP", StringComparison.OrdinalIgnoreCase))
-                return "BUILDUP";
+            if (WellTestAnalysisWellKnown.ClassificationEqualsDrawDown(analysisType))
+                return WellTestAnalysisWellKnown.AnalysisClassification.DrawDown;
+            if (WellTestAnalysisWellKnown.ClassificationEqualsBuildUp(analysisType))
+                return WellTestAnalysisWellKnown.AnalysisClassification.BuildUp;
             return analysisType.Trim().ToUpperInvariant();
         }
 
@@ -668,11 +671,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 return analysisResult.ANALYSIS_METHOD.Trim();
 
             if (dataUsed.IS_GAS_WELL is true
-                && string.Equals(effectiveAnalysisType, "BUILDUP", StringComparison.OrdinalIgnoreCase))
-                return "HORNER";
+                && WellTestAnalysisWellKnown.ClassificationEqualsBuildUp(effectiveAnalysisType))
+                return WellTestAnalysisWellKnown.AnalysisMethod.Horner;
 
             return string.IsNullOrWhiteSpace(request.AnalysisMethod)
-                ? "HORNER"
+                ? WellTestAnalysisWellKnown.AnalysisMethod.Horner
                 : request.AnalysisMethod.Trim().ToUpperInvariant();
         }
 
@@ -684,15 +687,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             WELL_TEST_DATA? assembledData,
             string? resolvedAnalysisType = null)
         {
-            var analysisKind = resolvedAnalysisType ?? request.AnalysisType ?? "BUILDUP";
-            var isGasBuildUp = string.Equals(analysisKind, "BUILDUP", StringComparison.OrdinalIgnoreCase)
+            var analysisKind = resolvedAnalysisType ?? request.AnalysisType ?? WellTestAnalysisWellKnown.AnalysisClassification.BuildUp;
+            var isGasBuildUp = WellTestAnalysisWellKnown.ClassificationEqualsBuildUp(analysisKind)
                 && ((assembledData?.IS_GAS_WELL ?? request.IsGasWell) is true);
             if (isGasBuildUp)
-                return "HORNER";
+                return WellTestAnalysisWellKnown.AnalysisMethod.Horner;
 
             var trimmed = request.AnalysisMethod?.Trim();
             if (string.IsNullOrEmpty(trimmed))
-                return "HORNER";
+                return WellTestAnalysisWellKnown.AnalysisMethod.Horner;
             return trimmed.ToUpperInvariant();
         }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.SuckerRodPumping;
+using Beep.OilandGas.SuckerRodPumping.Constants;
 
 namespace Beep.OilandGas.SuckerRodPumping.Calculations
 {
@@ -54,10 +55,10 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
         private static readonly IReadOnlyDictionary<string, RodMaterial> Materials =
             new Dictionary<string, RodMaterial>(StringComparer.OrdinalIgnoreCase)
             {
-                ["C"]  = new RodMaterial("C",   90_000, 23_000, 0.50),
-                ["D"]  = new RodMaterial("D",  115_000, 29_750, 0.60),
-                ["HL"] = new RodMaterial("HL", 140_000, 35_000, 0.75),
-                ["HY"] = new RodMaterial("HY", 160_000, 40_000, 0.90),
+                [SuckerRodConstants.RodGradeC]  = new RodMaterial(SuckerRodConstants.RodGradeC,   (int)SuckerRodConstants.TensileStrengthC, (int)SuckerRodConstants.EnduranceLimitC, SuckerRodConstants.CostPerLbC),
+                [SuckerRodConstants.RodGradeD]  = new RodMaterial(SuckerRodConstants.RodGradeD,  (int)SuckerRodConstants.TensileStrengthD, (int)SuckerRodConstants.EnduranceLimitD, SuckerRodConstants.CostPerLbD),
+                [SuckerRodConstants.RodGradeHL] = new RodMaterial(SuckerRodConstants.RodGradeHL, (int)SuckerRodConstants.TensileStrengthHL, (int)SuckerRodConstants.EnduranceLimitHL, SuckerRodConstants.CostPerLbHL),
+                [SuckerRodConstants.RodGradeHY] = new RodMaterial(SuckerRodConstants.RodGradeHY, (int)SuckerRodConstants.TensileStrengthHY, (int)SuckerRodConstants.EnduranceLimitHY, SuckerRodConstants.CostPerLbHY),
             };
 
         private const double SteelDensityLbPerFt3 = 490.0;
@@ -91,14 +92,14 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
             double strokeLengthInches,
             double fluidDensityLbFt3 = 55.0,
             int numberOfTapers = 3,
-            string gradePreference = "AUTO")
+            string gradePreference = SuckerRodConstants.RodGradeAuto)
         {
             if (totalDepth <= 0) throw new ArgumentOutOfRangeException(nameof(totalDepth));
             if (pumpLoadLbs <= 0) throw new ArgumentOutOfRangeException(nameof(pumpLoadLbs));
             numberOfTapers = Math.Max(1, Math.Min(numberOfTapers, 4));
 
             // Select candidate diameters (smallest required up-to standard sizes)
-            double minArea    = pumpLoadLbs / GetAllowableStress(gradePreference == "AUTO" ? "D" : gradePreference);
+            double minArea    = pumpLoadLbs / GetAllowableStress(gradePreference == SuckerRodConstants.RodGradeAuto ? SuckerRodConstants.RodGradeD : gradePreference);
             double minDiameter = Math.Sqrt(4.0 * minArea / Math.PI);
             var candidateDiameters = StandardRodDiameters
                 .Where(d => d >= minDiameter)
@@ -108,12 +109,12 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
             if (candidateDiameters.Length == 0)
                 candidateDiameters = new[] { StandardRodDiameters.Last() };
 
-            string materialGrade = gradePreference == "AUTO"
+            string materialGrade = gradePreference == SuckerRodConstants.RodGradeAuto
                 ? SelectOptimalGrade(pumpLoadLbs, totalDepth, candidateDiameters.First())
                 : gradePreference;
 
             if (!Materials.TryGetValue(materialGrade, out var material))
-                material = Materials["D"];
+                material = Materials[SuckerRodConstants.RodGradeD];
 
             // Distribute section lengths using equal-stress taper fractions
             // API taper fraction (percent of depth) for typical well depths:
@@ -235,7 +236,7 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
                 double Sm = (sigmaMax + sigmaMin) / 2.0;
 
                 // Assume Grade D if not specified
-                var mat = Materials["D"];
+                var mat = Materials[SuckerRodConstants.RodGradeD];
                 double utilization = Sa / mat.EnduranceLimit + Sm / mat.UltimateTensileStrength;
 
                 string recommendation = utilization > 1.0
@@ -285,7 +286,7 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
                 if (approxSigma < kv.Value.EnduranceLimit * 0.80)
                     return kv.Key;
             }
-            return "HY";
+            return SuckerRodConstants.RodGradeHY;
         }
 
         // ─────────────────────────────────────────────────────────────────
