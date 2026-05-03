@@ -874,13 +874,16 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
         }
 
         /// <summary>
-        /// Runs well test analysis for a well using DataFlowService
+        /// Runs well test analysis for a well using DataFlowService (PPDM stored pressure — requires test number).
         /// </summary>
+        /// <param name="testId">PPDM <c>WELL_TEST.TEST_NUM</c>; required by <see cref="DataFlowService.RunWellTestAnalysisAsync"/>.</param>
+        /// <param name="fieldId">Optional PPDM field id for persisted well-test results.</param>
         public async Task<WELL_TEST_ANALYSIS_RESULT> RunWellTestAnalysisAsync(
             string wellId,
             string? testId = null,
             string userId = "system",
-            WellTestAnalysisOptions? additionalParameters = null)
+            WellTestAnalysisOptions? additionalParameters = null,
+            string? fieldId = null)
         {
             if (_dataFlowService == null)
             {
@@ -889,9 +892,9 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
 
             try
             {
-                _logger?.LogInformation("Running well test analysis for well: {WellId}, TestId: {TestId}", wellId, testId);
+                _logger?.LogInformation("Running well test analysis for well: {WellId}, TestId: {TestId}, FieldId: {FieldId}", wellId, testId, fieldId);
                 var testOptions = additionalParameters;
-                return await _dataFlowService.RunWellTestAnalysisAsync(wellId, testId, userId, testOptions);
+                return await _dataFlowService.RunWellTestAnalysisAsync(wellId, testId, userId, testOptions, fieldId);
             }
             catch (Exception ex)
             {

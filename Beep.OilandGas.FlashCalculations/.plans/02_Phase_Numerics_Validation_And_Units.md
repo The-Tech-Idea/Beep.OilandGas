@@ -18,9 +18,9 @@
 
 ## TODO checklist
 
-- [ ] Single **units** table in **README** (P, T, R, Z).
-- [ ] Regression tests: trivial binary flash, near-critical behavior (smoke).
-- [ ] Avoid silent **`NaN`** — **`FlashValidator`** on inputs.
+- [x] Single **units** table in **README** (P, T, R, Z) — see **README** *Units (screening defaults)*.
+- [x] Regression tests: trivial binary flash — **`FlashIsothermalFlashGoldenVectorTests`** (Wilson + RR vs external reference); existing Rachford–Rice / interior tests remain.
+- [x] Avoid silent non-finite numerics — **`FlashValidator`** **`AssertFinite`** on P, T, mole-fraction sums, and component scalars (double overflow to infinity).
 
 ## Verification
 

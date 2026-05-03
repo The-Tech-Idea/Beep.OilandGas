@@ -44,8 +44,9 @@ namespace Beep.OilandGas.PumpPerformance.SystemAnalysis
     }
 
     /// <summary>
-    /// Represents an operating point for a single pump.
+    /// Operating point for multi-pump system-curve analysis (flow, head, power, curve efficiency).
     /// </summary>
+    /// <remarks>For service-layer BHP/SG analysis, use <see cref="Beep.OilandGas.PumpPerformance.Services.PumpOperatingPoint"/>.</remarks>
     public class PumpOperatingPoint
     {
         /// <summary>
@@ -71,7 +72,7 @@ namespace Beep.OilandGas.PumpPerformance.SystemAnalysis
         /// <summary>
         /// Gets or sets the efficiency.
         /// </summary>
-        public double  EFFICIENCY { get; set; }
+        public double EFFICIENCY { get; set; }
     }
 
     /// <summary>
@@ -135,7 +136,7 @@ namespace Beep.OilandGas.PumpPerformance.SystemAnalysis
                 if (curvePoint != null)
                 {
                     point.Power = curvePoint.Power;
-                    point. EFFICIENCY = curvePoint.EFFICIENCY;
+                    point.EFFICIENCY = curvePoint.EFFICIENCY;
                     result.TotalPower += curvePoint.Power;
                 }
 
@@ -212,7 +213,7 @@ namespace Beep.OilandGas.PumpPerformance.SystemAnalysis
                 if (curvePoint != null)
                 {
                     point.Power = curvePoint.Power;
-                    point. EFFICIENCY = curvePoint.EFFICIENCY;
+                    point.EFFICIENCY = curvePoint.EFFICIENCY;
                     result.TotalPower += curvePoint.Power;
                 }
 

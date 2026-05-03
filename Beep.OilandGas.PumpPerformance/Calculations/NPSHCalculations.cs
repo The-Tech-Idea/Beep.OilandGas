@@ -116,12 +116,12 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         /// </summary>
         /// <param name="npsha">NPSH Available in feet.</param>
         /// <param name="npshr">NPSH Required in feet.</param>
-        /// <param name="safetyMargin">Required safety margin in feet (default: 2.0 feet).</param>
+        /// <param name="safetyMargin">Required safety margin in feet (default: same as <c>PumpConstants.DefaultNpshSafetyMarginFeet</c>).</param>
         /// <returns>True if cavitation is likely, false otherwise.</returns>
         public static bool IsCavitationLikely(
             double npsha,
             double npshr,
-            double safetyMargin = 2.0)
+            double safetyMargin = DefaultNpshSafetyMarginFeet)
         {
             double margin = CalculateNPSHMargin(npsha, npshr);
             return margin < safetyMargin;
@@ -142,7 +142,7 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
             double atmosphericPressure = StandardAtmosphericPressure,
             double vaporPressure = WaterVaporPressureAt60F,
             double frictionLoss = 0,
-            double safetyMargin = 2.0,
+            double safetyMargin = DefaultNpshSafetyMarginFeet,
             double specificGravity = WaterSpecificGravity)
         {
             PumpDataValidator.ValidateSpecificGravity(specificGravity, nameof(specificGravity));

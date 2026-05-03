@@ -54,7 +54,12 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         Task<Beep.OilandGas.Models.Data.WellTestAnalysis.WELL_TEST_ANALYSIS_RESULT> AnalyzeDrawdownAsync(WELL_TEST_DATA request, CancellationToken cancellationToken = default);
         Task<WELL_TEST_ANALYSIS_RESULT> GetDerivativeAnalysisAsync(WELL_TEST_DATA request, CancellationToken cancellationToken = default);
         Task<WELL_TEST_ANALYSIS_RESULT> InterpretWellTestAsync(WELL_TEST_DATA request, CancellationToken cancellationToken = default);
-        Task<List<WELL_TEST_DATA>> GetWellTestHistoryAsync(string wellId, CancellationToken cancellationToken = default);
+        /// <summary>Loads saved PTA results from <c>GET /api/calculations/well-test</c> (not raw <c>WELL_TEST_DATA</c> rows). Optional <paramref name="fieldId"/> scopes results to <c>FIELD_ID</c>.</summary>
+        Task<List<WELL_TEST_ANALYSIS_RESULT>> GetWellTestAnalysisHistoryAsync(
+            string wellId,
+            string? testId = null,
+            string? fieldId = null,
+            CancellationToken cancellationToken = default);
 
         #endregion
 

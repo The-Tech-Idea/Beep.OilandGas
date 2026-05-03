@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.Models.Data;
@@ -63,14 +64,16 @@ namespace Beep.OilandGas.Web.Services
             GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal minGasInjectionRate,
             decimal maxGasInjectionRate,
-            int numberOfPoints = 50);
+            int numberOfPoints = 50,
+            CancellationToken cancellationToken = default);
         Task<GAS_LIFT_VALVE_DESIGN_RESULT> DesignGasLiftValvesAsync(
             GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal gasInjectionPressure,
             int numberOfValves,
-            bool useSIUnits = false);
-        Task<bool> SaveGasLiftDesignAsync(GAS_LIFT_DESIGN design, string? userId = null);
-        Task<GAS_LIFT_PERFORMANCE> GetGasLiftPerformanceAsync(string wellUWI);
+            bool useSIUnits = false,
+            CancellationToken cancellationToken = default);
+        Task<bool> SaveGasLiftDesignAsync(GAS_LIFT_DESIGN design, string? userId = null, CancellationToken cancellationToken = default);
+        Task<GAS_LIFT_PERFORMANCE> GetGasLiftPerformanceAsync(string wellUWI, CancellationToken cancellationToken = default);
 
         // Nodal Analysis Operations
         /// <summary>Nodal analyze — <see cref="NodalAnalysisHttpRoutes.Analyze"/>.</summary>

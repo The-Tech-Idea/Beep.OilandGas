@@ -24,73 +24,52 @@ namespace Beep.OilandGas.PumpPerformance.Services
 
         public async Task<double[]> CalculateHQCurveAsync(double[] flowRates, double[] heads, double[] power, double specificGravity = 1.0)
         {
-            if (flowRates == null || flowRates.Length == 0)
-                throw new ArgumentException("Flow rates cannot be null or empty", nameof(flowRates));
-            if (heads == null || heads.Length == 0)
-                throw new ArgumentException("Heads cannot be null or empty", nameof(heads));
-            if (power == null || power.Length == 0)
-                throw new ArgumentException("Power cannot be null or empty", nameof(power));
-            if (flowRates.Length != heads.Length || flowRates.Length != power.Length)
-                throw new ArgumentException("Flow rates, heads, and power arrays must have the same length");
-
-            _logger?.LogInformation("Calculating H-Q curve with {DataPoints} points", flowRates.Length);
-
+            _logger?.LogInformation("Calculating H-Q curve with {DataPoints} points", flowRates?.Length ?? 0);
             await Task.CompletedTask;
             return EfficiencyCalculations.CalculateOverallEfficiency(flowRates, heads, power, specificGravity);
         }
 
         public async Task<double> CalculateCFactorAsync(double motorInputPower, double flowRate, double head)
         {
-            if (motorInputPower <= 0)
-                throw new ArgumentException("Motor input power must be positive", nameof(motorInputPower));
-            if (flowRate <= 0)
-                throw new ArgumentException("Flow rate must be positive", nameof(flowRate));
-            if (head <= 0)
-                throw new ArgumentException("Head must be positive", nameof(head));
+            PumpDataValidator.ValidateStrictlyPositivePower(motorInputPower, nameof(motorInputPower));
+            PumpDataValidator.ValidateStrictlyPositiveFlowRate(flowRate, nameof(flowRate));
+            PumpDataValidator.ValidateStrictlyPositiveHead(head, nameof(head));
 
             _logger?.LogInformation("Calculating C-Factor for motor power {Power}, flow {Flow}, head {Head}", motorInputPower, flowRate, head);
 
             await Task.CompletedTask;
-            // C = MotorInputPower / Q₀³
-            double cFactor = motorInputPower / Math.Pow(flowRate, 3);
-            return cFactor;
+            return motorInputPower / Math.Pow(flowRate, 3);
         }
 
         public async Task<PumpPerformanceCurve> GeneratePerformanceCurveAsync(
             string pumpId,
             double baseFlowRate,
             double baseHead,
-            double motorInputPower)
+            double motorInputPower,
+            double specificGravity = 1.0)
         {
             if (string.IsNullOrWhiteSpace(pumpId))
                 throw new ArgumentException("Pump ID is required", nameof(pumpId));
-            if (baseFlowRate <= 0)
-                throw new ArgumentException("Base flow rate must be positive", nameof(baseFlowRate));
-            if (baseHead <= 0)
-                throw new ArgumentException("Base head must be positive", nameof(baseHead));
-            if (motorInputPower <= 0)
-                throw new ArgumentException("Motor input power must be positive", nameof(motorInputPower));
+            PumpDataValidator.ValidateStrictlyPositiveFlowRate(baseFlowRate, nameof(baseFlowRate));
+            PumpDataValidator.ValidateStrictlyPositiveHead(baseHead, nameof(baseHead));
+            PumpDataValidator.ValidateStrictlyPositivePower(motorInputPower, nameof(motorInputPower));
+            PumpDataValidator.ValidateSpecificGravity(specificGravity, nameof(specificGravity));
 
             _logger?.LogInformation("Generating performance curve for pump {PumpId}", pumpId);
 
-            // Generate flow rate points (80% to 120% of base)
             double[] flowRates = new double[9];
             for (int i = 0; i < 9; i++)
             {
                 flowRates[i] = baseFlowRate * (0.8 + (i * 0.05));
             }
 
-            // Calculate C-Factor
             double cFactor = await CalculateCFactorAsync(motorInputPower, baseFlowRate, baseHead);
 
-            // Calculate heads using H = H₀ * (Q/Q₀)²
             double[] heads = flowRates.Select(q => baseHead * Math.Pow(q / baseFlowRate, 2)).ToArray();
 
-            // Calculate powers using Power = C * Q³
             double[] powers = flowRates.Select(q => cFactor * Math.Pow(q, 3)).ToArray();
 
-            // Calculate efficiencies
-            double[] efficiencies = await CalculateHQCurveAsync(flowRates, heads, powers);
+            double[] efficiencies = await CalculateHQCurveAsync(flowRates, heads, powers, specificGravity);
 
             _logger?.LogInformation("Performance curve generated with {Points} data points", flowRates.Length);
 
@@ -103,6 +82,7 @@ namespace Beep.OilandGas.PumpPerformance.Services
                 Efficiencies = efficiencies,
                 RequiredPower = powers,
                 CFactor = cFactor,
+                SpecificGravity = specificGravity,
                 CurveType = "HQ"
             };
         }
@@ -114,15 +94,18 @@ namespace Beep.OilandGas.PumpPerformance.Services
             if (string.IsNullOrWhiteSpace(operatingPoint.PumpId))
                 throw new ArgumentException("Pump ID is required", nameof(operatingPoint));
 
-            _logger?.LogInformation("Analyzing performance for pump {PumpId} at Q={Flow} GPM, H={Head} ft", 
+            PumpDataValidator.ValidateStrictlyPositiveFlowRate(operatingPoint.FlowRate, nameof(operatingPoint.FlowRate));
+            PumpDataValidator.ValidateStrictlyPositiveHead(operatingPoint.Head, nameof(operatingPoint.Head));
+            PumpDataValidator.ValidateStrictlyPositivePower(operatingPoint.BrakeHorsepower, nameof(operatingPoint.BrakeHorsepower));
+            PumpDataValidator.ValidateSpecificGravity(operatingPoint.SpecificGravity, nameof(operatingPoint.SpecificGravity));
+
+            _logger?.LogInformation("Analyzing performance for pump {PumpId} at Q={Flow} GPM, H={Head} ft",
                 operatingPoint.PumpId, operatingPoint.FlowRate, operatingPoint.Head);
 
-            // Calculate actual efficiency
-            double actualEfficiency = (operatingPoint.FlowRate * operatingPoint.Head * operatingPoint.SpecificGravity) 
-                / (3960 * operatingPoint.BrakeHorsepower);
+            double actualEfficiency = (operatingPoint.FlowRate * operatingPoint.Head * operatingPoint.SpecificGravity)
+                / (HorsepowerConversionFactor * operatingPoint.BrakeHorsepower);
 
-            // Theoretical efficiency (assume 85% as baseline for centrifugal)
-            double theoreticalEfficiency = 0.85;
+            double theoreticalEfficiency = DefaultCentrifugalTheoreticalEfficiency;
             double deviation = theoreticalEfficiency - actualEfficiency;
 
             string status = "Normal";
@@ -139,7 +122,7 @@ namespace Beep.OilandGas.PumpPerformance.Services
             if (deviation > 0.15)
             {
                 status = "Warning";
-                warnings.Add(" EFFICIENCY deviation from theoretical is significant");
+                warnings.Add("Efficiency deviation from theoretical is significant");
                 recommendations.Add("Inspect pump for wear or mechanical issues");
             }
 
@@ -163,15 +146,13 @@ namespace Beep.OilandGas.PumpPerformance.Services
         {
             if (requirements == null)
                 throw new ArgumentNullException(nameof(requirements));
-            if (requirements.DesiredFlowRate <= 0)
-                throw new ArgumentException("Desired flow rate must be positive", nameof(requirements));
-            if (requirements.SystemHead <= 0)
-                throw new ArgumentException("System head must be positive", nameof(requirements));
+            PumpDataValidator.ValidateStrictlyPositiveFlowRate(requirements.DesiredFlowRate, nameof(requirements.DesiredFlowRate));
+            PumpDataValidator.ValidateStrictlyPositiveHead(requirements.SystemHead, nameof(requirements.SystemHead));
+            PumpDataValidator.ValidateSpecificGravity(requirements.SpecificGravity, nameof(requirements.SpecificGravity));
 
-            _logger?.LogInformation("Optimizing pump performance for well {WellId}, desired flow {Flow} GPM", 
+            _logger?.LogInformation("Optimizing pump performance for well {WellId}, desired flow {Flow} GPM",
                 requirements.WellId, requirements.DesiredFlowRate);
 
-            // Calculate power requirement at desired operating point
             double requiredPower = await CalculatePowerRequirementAsync(
                 requirements.DesiredFlowRate,
                 requirements.SystemHead,
@@ -179,8 +160,8 @@ namespace Beep.OilandGas.PumpPerformance.Services
                 0.75);
 
             string recommendedPumpType = requirements.PumpType;
-            double efficiencyImprovement = 0.05; // 5% expected improvement
-            double powerReduction = requiredPower * 0.10; // 10% power reduction
+            double efficiencyImprovement = 0.05;
+            double powerReduction = requiredPower * 0.10;
 
             if (requirements.AvailablePower < requiredPower)
             {
@@ -211,19 +192,16 @@ namespace Beep.OilandGas.PumpPerformance.Services
             };
         }
 
-        public async Task<double> GetEfficiencyAsync(double flowRate, double head, double power)
+        public async Task<double> GetEfficiencyAsync(double flowRate, double head, double power, double specificGravity = 1.0)
         {
-            if (flowRate <= 0)
-                throw new ArgumentException("Flow rate must be positive", nameof(flowRate));
-            if (head <= 0)
-                throw new ArgumentException("Head must be positive", nameof(head));
-            if (power <= 0)
-                throw new ArgumentException("Power must be positive", nameof(power));
+            PumpDataValidator.ValidateStrictlyPositiveFlowRate(flowRate, nameof(flowRate));
+            PumpDataValidator.ValidateStrictlyPositiveHead(head, nameof(head));
+            PumpDataValidator.ValidateStrictlyPositivePower(power, nameof(power));
+            PumpDataValidator.ValidateSpecificGravity(specificGravity, nameof(specificGravity));
 
             _logger?.LogInformation("Getting efficiency for Q={Flow}, H={Head}, BHP={Power}", flowRate, head, power);
 
-            // η = (Q * H * SG) / (3960 * BHP)
-            double efficiency = (flowRate * head * WaterSpecificGravity) / (3960 * power);
+            double efficiency = (flowRate * head * specificGravity) / (HorsepowerConversionFactor * power);
 
             await Task.CompletedTask;
             return Math.Max(0, Math.Min(1, efficiency));
@@ -231,20 +209,15 @@ namespace Beep.OilandGas.PumpPerformance.Services
 
         public async Task<double> CalculatePowerRequirementAsync(double flowRate, double head, double specificGravity = 1.0, double efficiency = 0.75)
         {
-            if (flowRate <= 0)
-                throw new ArgumentException("Flow rate must be positive", nameof(flowRate));
-            if (head <= 0)
-                throw new ArgumentException("Head must be positive", nameof(head));
-            if (specificGravity <= 0)
-                throw new ArgumentException("Specific gravity must be positive", nameof(specificGravity));
-            if (efficiency <= 0 || efficiency > 1)
-                throw new ArgumentException(" EFFICIENCY must be between 0 and 1", nameof(efficiency));
+            PumpDataValidator.ValidateStrictlyPositiveFlowRate(flowRate, nameof(flowRate));
+            PumpDataValidator.ValidateStrictlyPositiveHead(head, nameof(head));
+            PumpDataValidator.ValidateSpecificGravity(specificGravity, nameof(specificGravity));
+            PumpDataValidator.ValidateEfficiency(efficiency, nameof(efficiency));
 
-            _logger?.LogInformation("Calculating power requirement for Q={Flow}, H={Head}, SG={SG}, η={Efficiency}", 
+            _logger?.LogInformation("Calculating power requirement for Q={Flow}, H={Head}, SG={SG}, η={Efficiency}",
                 flowRate, head, specificGravity, efficiency);
 
-            // BHP = (Q * H * SG) / (3960 * η)
-            double bhp = (flowRate * head * specificGravity) / (3960 * efficiency);
+            double bhp = (flowRate * head * specificGravity) / (HorsepowerConversionFactor * efficiency);
 
             await Task.CompletedTask;
             return bhp;

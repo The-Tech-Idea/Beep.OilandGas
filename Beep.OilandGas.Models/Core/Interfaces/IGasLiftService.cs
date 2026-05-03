@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.GasLift;
@@ -19,7 +20,10 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="minGasInjectionRate">Minimum gas injection rate</param>
         /// <param name="maxGasInjectionRate">Maximum gas injection rate</param>
         /// <param name="numberOfPoints">Number of analysis points</param>
-        /// <returns>Gas lift potential result</returns>
+        /// <returns>
+        /// Screening curve on <see cref="GAS_LIFT_WELL_PROPERTIES"/> (calculator staging points on PERFORMANCE_POINTS).
+        /// For API wire type <see cref="GAS_LIFT_POTENTIAL_RESULT"/>, call <see cref="AnalyzeGasLiftPotentialAsync"/>.
+        /// </returns>
         GAS_LIFT_WELL_PROPERTIES AnalyzeGasLiftPotential(
             GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal minGasInjectionRate,
@@ -39,6 +43,26 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             decimal gasInjectionPressure,
             int numberOfValves,
             bool useSIUnits = false);
+
+        /// <summary>
+        /// Analyzes gas lift potential and returns API wire type <see cref="GAS_LIFT_POTENTIAL_RESULT"/> (honors <paramref name="cancellationToken"/> during sweep).
+        /// </summary>
+        Task<GAS_LIFT_POTENTIAL_RESULT> AnalyzeGasLiftPotentialAsync(
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
+            decimal minGasInjectionRate,
+            decimal maxGasInjectionRate,
+            int numberOfPoints = 50,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Designs gas lift valves (honors <paramref name="cancellationToken"/> before/after heavy work).
+        /// </summary>
+        Task<GAS_LIFT_VALVE_DESIGN_RESULT> DesignValvesAsync(
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
+            decimal gasInjectionPressure,
+            int numberOfValves,
+            bool useSIUnits = false,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Saves gas lift design to database.

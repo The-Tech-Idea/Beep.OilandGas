@@ -1,6 +1,7 @@
 @page "/ppdm39/calculations/well-test-analysis"
 @page "/analysis/well-test"
 @using System.Linq
+@using System.Net.Http
 @using System.Security.Claims
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.WellTestAnalysis
@@ -62,23 +63,24 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" sm="6" md="2">
-                <MudSelect T="string" Label="Analysis Type" Variant="Variant.Outlined" @bind-Value="@_analysisType">
+                <MudSelect T="string" Label="Analysis Type" Variant="Variant.Outlined"
+                           Value="@_analysisType" ValueChanged="OnAnalysisTypeChanged">
                     <MudSelectItem Value="@("BUILDUP")">Build-up</MudSelectItem>
-                    <MudSelectItem Value="@("DRAWDOWN")">Drawdown</MudSelectItem>
+                    <MudSelectItem Value="@("DRAWDOWN")" Disabled="@_isGasWell">Drawdown (oil)</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" sm="6" md="2">
                 <MudSelect T="string" Label="Method" Variant="Variant.Outlined" @bind-Value="@_analysisMethod">
                     <MudSelectItem Value="@("HORNER")">Horner</MudSelectItem>
-                    <MudSelectItem Value="@("MDH")">MDH</MudSelectItem>
+                    <MudSelectItem Value="@("MDH")" Disabled="@_isGasWell">MDH (oil)</MudSelectItem>
                 </MudSelect>
             </MudItem>
 
             <MudItem xs="12" sm="6" md="3">
-                <MudSwitch @bind-Value="@_useStoredTestData" Color="Color.Primary">Use stored PPDM test data</MudSwitch>
+                <MudSwitch T="bool" Value="@_useStoredTestData" ValueChanged="OnUseStoredTestDataChangedAsync" Color="Color.Primary">Use stored PPDM test data</MudSwitch>
             </MudItem>
             <MudItem xs="12" sm="6" md="2">
-                <MudSwitch @bind-Value="@_isGasWell" Color="Color.Info">Gas well</MudSwitch>
+                <MudSwitch T="bool" Value="@_isGasWell" ValueChanged="OnIsGasWellChangedAsync" Color="Color.Info">Gas well (m(p) build-up)</MudSwitch>
             </MudItem>
             <MudItem xs="12" md="7">
                 <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd">
@@ -117,7 +119,7 @@
                 </MudCardHeader>
                 <MudCardContent>
                     <MudGrid Spacing="2">
-                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_flowRate" Label="Flow Rate" Variant="Variant.Outlined" Min="0" /></MudItem>
+                        <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_flowRate" Label="Flow Rate" Variant="Variant.Outlined" Min="0.1m" HelperText="BPD or Mscf/d; minimum 0.1 per model" /></MudItem>
                         <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_productionTime" Label="Production Time (hr)" Variant="Variant.Outlined" Min="0" /></MudItem>
                         <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_wellboreRadius" Label="Wellbore Radius (ft)" Variant="Variant.Outlined" Min="0.01m" /></MudItem>
 
@@ -130,7 +132,7 @@
                         <MudItem xs="12" sm="6" md="4"><MudNumericField T="decimal" @bind-Value="@_reservoirTemperature" Label="Reservoir Temp (F)" Variant="Variant.Outlined" Min="1" /></MudItem>
 
                         <MudItem xs="12" sm="6" md="6"><MudNumericField T="decimal" @bind-Value="@_initialReservoirPressure" Label="Initial Reservoir Pressure (psi)" Variant="Variant.Outlined" Min="0" /></MudItem>
-                        <MudItem xs="12" sm="6" md="6"><MudNumericField T="decimal" @bind-Value="@_gasSpecificGravity" Label="Gas Specific Gravity" Variant="Variant.Outlined" Min="0.1m" Disabled="@(!_isGasWell)" /></MudItem>
+                        <MudItem xs="12" sm="6" md="6"><MudNumericField T="decimal" @bind-Value="@_gasSpecificGravity" Label="Gas Specific Gravity" Variant="Variant.Outlined" Min="0.05m" Max="3m" Disabled="@(!_isGasWell)" HelperText="Air = 1.0; range 0.05–3" /></MudItem>
                     </MudGrid>
                 </MudCardContent>
             </MudCard>
@@ -368,6 +370,7 @@
 
 @code {
     private string _fieldName = string.Empty;
+    private string? _fieldId;
     private string? _currentUserId;
     private string? _selectedWellId;
     private string? _selectedTestId;
@@ -400,6 +403,15 @@
     private List<WellTestDataPoint> _manualPoints = new List<WellTestDataPoint>();
 
     private WellTestResponse? _selectedTestSummary => _availableTests.FirstOrDefault(test => string.Equals(test.TestId, _selectedTestId, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Prefer lifecycle field id when loaded; otherwise use the selected well's <c>ASSIGNED_FIELD</c> so persistence and history stay field-scoped.</summary>
+    private string? ResolveEffectiveFieldId()
+    {
+        if (!string.IsNullOrWhiteSpace(_fieldId))
+            return _fieldId.Trim();
+        var well = _wells.FirstOrDefault(w => string.Equals(w.UWI, _selectedWellId, StringComparison.OrdinalIgnoreCase));
+        return string.IsNullOrWhiteSpace(well?.ASSIGNED_FIELD) ? null : well.ASSIGNED_FIELD.Trim();
+    }
 
     private sealed class WellOptionDto
     {
@@ -443,6 +455,7 @@
             if (summary != null)
             {
                 _fieldName = summary.FieldName ?? _fieldName;
+                _fieldId = string.IsNullOrWhiteSpace(summary.FieldId) ? null : summary.FieldId.Trim();
             }
         }
         catch
@@ -516,6 +529,50 @@
         return Task.CompletedTask;
     }
 
+    private Task OnAnalysisTypeChanged(string? value)
+    {
+        _analysisType = string.IsNullOrWhiteSpace(value) ? "BUILDUP" : value;
+        CoerceAnalysisMethodForOilDrawdown();
+        return Task.CompletedTask;
+    }
+
+    /// <summary>MDH is build-up only; align method when switching to drawdown (oil).</summary>
+    private void CoerceAnalysisMethodForOilDrawdown()
+    {
+        if (string.Equals(_analysisType, "DRAWDOWN", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(_analysisMethod, "MDH", StringComparison.OrdinalIgnoreCase))
+            _analysisMethod = "HORNER";
+    }
+
+    private Task OnIsGasWellChangedAsync(bool value)
+    {
+        _isGasWell = value;
+        CoerceAnalysisOptionsForGasWell();
+        return Task.CompletedTask;
+    }
+
+    private async Task OnUseStoredTestDataChangedAsync(bool value)
+    {
+        _useStoredTestData = value;
+        _currentResult = null;
+        CoerceAnalysisOptionsForGasWell();
+        if (value && !string.IsNullOrWhiteSpace(_selectedWellId))
+            await LoadAvailableTestsAsync();
+        await ReloadHistoryAsync();
+    }
+
+    /// <summary>Gas m(p) build-up only supports Horner-style treatment; align type/method when Gas well is on.</summary>
+    private void CoerceAnalysisOptionsForGasWell()
+    {
+        if (!_isGasWell)
+            return;
+
+        if (string.Equals(_analysisType, "DRAWDOWN", StringComparison.OrdinalIgnoreCase))
+            _analysisType = "BUILDUP";
+        if (string.Equals(_analysisMethod, "MDH", StringComparison.OrdinalIgnoreCase))
+            _analysisMethod = "HORNER";
+    }
+
     private void ApplySelectedTestDefaults()
     {
         var test = _selectedTestSummary;
@@ -525,12 +582,15 @@
         if (!string.IsNullOrWhiteSpace(test.TestType))
         {
             _analysisType = test.TestType.Contains("DRAW", StringComparison.OrdinalIgnoreCase) ? "DRAWDOWN" : "BUILDUP";
+            CoerceAnalysisMethodForOilDrawdown();
         }
 
         if (test.TestDuration.HasValue && test.TestDuration.Value > 0)
         {
             _productionTime = test.TestDuration.Value;
         }
+
+        CoerceAnalysisOptionsForGasWell();
     }
 
     private async Task RunAnalysisAsync()
@@ -547,6 +607,18 @@
             _currentResult = await CalculationService.PerformWellTestAnalysisAsync(request);
             await ReloadHistoryAsync();
             Snackbar.Add("Well test analysis completed.", Severity.Success);
+        }
+        catch (ArgumentException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        catch (InvalidOperationException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
         }
         catch (Exception)
         {
@@ -566,6 +638,28 @@
             return false;
         }
 
+        CoerceAnalysisOptionsForGasWell();
+        CoerceAnalysisMethodForOilDrawdown();
+
+        if (_flowRate < 0.1m)
+        {
+            Snackbar.Add("Flow rate must be at least 0.1 (BPD or Mscf/d per the analyzer limits).", Severity.Warning);
+            return false;
+        }
+
+        if (_flowRate > 100000m)
+        {
+            Snackbar.Add("Flow rate cannot exceed 100,000 (BPD or Mscf/d per the analyzer limits).", Severity.Warning);
+            return false;
+        }
+
+        if (_isGasWell && string.Equals(_analysisType, "BUILDUP", StringComparison.OrdinalIgnoreCase)
+            && (_gasSpecificGravity < 0.05m || _gasSpecificGravity > 3m))
+        {
+            Snackbar.Add("Gas specific gravity must be between 0.05 and 3.0 (air = 1.0).", Severity.Warning);
+            return false;
+        }
+
         if (_useStoredTestData)
         {
             if (string.IsNullOrWhiteSpace(_selectedTestId))
@@ -574,7 +668,23 @@
                 return false;
             }
 
+            if (string.Equals(_analysisType, "BUILDUP", StringComparison.OrdinalIgnoreCase))
+            {
+                var hasDurationFromTest = _selectedTestSummary?.TestDuration is { } d && d > 0m;
+                if (_productionTime <= 0m && !hasDurationFromTest)
+                {
+                    Snackbar.Add("For build-up, enter production time (hours before shut-in) or choose a test that includes a duration in PPDM.", Severity.Warning);
+                    return false;
+                }
+            }
+
             return true;
+        }
+
+        if (string.Equals(_analysisType, "BUILDUP", StringComparison.OrdinalIgnoreCase) && _productionTime <= 0)
+        {
+            Snackbar.Add("Production time (hours of flow prior to shut-in) must be greater than zero for build-up analysis.", Severity.Warning);
+            return false;
         }
 
         if (_manualPoints.Count < 3)
@@ -588,6 +698,7 @@
 
     private WellTestAnalysisCalculationRequest BuildRequest()
     {
+        CoerceAnalysisMethodForOilDrawdown();
         return new WellTestAnalysisCalculationRequest
         {
             WellId = _selectedWellId,
@@ -607,7 +718,8 @@
             GasSpecificGravity = _isGasWell ? _gasSpecificGravity : null,
             ReservoirTemperature = _reservoirTemperature,
             InitialReservoirPressure = _initialReservoirPressure,
-            UserId = _currentUserId
+            UserId = _currentUserId,
+            FieldId = ResolveEffectiveFieldId()
         };
     }
 
@@ -619,7 +731,9 @@
             return;
         }
 
-        _history = await CalculationService.GetWellTestAnalysisHistoryAsync(_selectedWellId, _selectedTestId, null);
+        // Manual runs typically have null TEST_ID; only filter by stored test when using PPDM series.
+        var historyTestId = _useStoredTestData ? _selectedTestId : null;
+        _history = await CalculationService.GetWellTestAnalysisHistoryAsync(_selectedWellId, historyTestId, ResolveEffectiveFieldId());
         _history = _history
             .OrderByDescending(result => result.CALCULATION_DATE)
             .ToList();

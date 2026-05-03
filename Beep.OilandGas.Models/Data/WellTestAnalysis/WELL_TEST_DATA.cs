@@ -108,7 +108,8 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
 
         // Standard PPDM columns
 
-        // Optional PPDM properties
+        // Optional PPDM properties — AREA_ID / AREA_TYPE reference PPDM AREA (see scripts FK_WELL_TEST_DATA_AREA), not WELL.UWI.
+        // Use partial-class CalculationWellUwi for in-memory/API UWI wiring when this row is not persisted with a real AREA key.
         private String AREA_IDValue;
         public String AREA_ID
         {

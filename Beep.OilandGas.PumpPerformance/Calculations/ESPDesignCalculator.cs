@@ -243,7 +243,7 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         /// </summary>
         private static decimal CalculatePumpEfficiency(decimal flowRate, decimal designFlowRate)
         {
-            //  EFFICIENCY curve: peak at design flow rate
+            // Efficiency curve: peak at design flow rate
             decimal flowRatio = flowRate / designFlowRate;
             decimal efficiency = 0.7m * (1.0m - (decimal)Math.Pow((double)(flowRatio - 1.0m), 2.0));
 

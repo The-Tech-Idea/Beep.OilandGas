@@ -24,7 +24,7 @@
 ## TODO checklist
 
 - [x] **`SeedAsync`** idempotent by **`REFERENCE_SET` + `REFERENCE_CODE`**.
-- [ ] UI/API: bind picklists to **`R_FLASH_CALCULATION_REFERENCE_CODE`** where appropriate.
+- [x] API / LifeCycle: EOS wire strings normalized to **`FLASH_EOS_MODEL`** codes via **`FlashEquationOfStateMapping`**; **`FlashCalculationResult.AdditionalResults.EosModelReferenceCode`** carries the LOV token for clients (full Mud picklists to **`R_FLASH_CALCULATION_REFERENCE_CODE`** remain a Web-layer follow-up).
 - [ ] Optional: add **binary interaction** default reference set when EOS BIPs are modeled.
 
 ## Verification

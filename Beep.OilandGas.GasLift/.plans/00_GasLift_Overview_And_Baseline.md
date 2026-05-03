@@ -27,4 +27,4 @@
 ## Exit criteria
 
 - [x] **`GasLiftModule`** + **`R_GAS_LIFT_REFERENCE_CODE`** documented and seeded (idempotent).
-- [ ] Golden regression tests for at least one design path (phase 2).
+- [x] Golden / regression tests for spacing + design path — **`GasLiftSpacingAndDesignRegressionTests`** (phase 2).

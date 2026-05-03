@@ -14,18 +14,12 @@ Successfully created `Beep.OilandGas.HydraulicPumps` library with comprehensive 
 
 - ✅ Project file: `Beep.OilandGas.HydraulicPumps.csproj`
 - ✅ Added to solution
-- ✅ Multi-target framework support (net6.0, net7.0, net8.0, net9.0)
-- ✅ References: `Beep.OilandGas.Properties`, `SkiaSharp`
+- ✅ Target framework **net10.0**; references **`Beep.OilandGas.GasProperties`**, **`Beep.OilandGas.Models`**, **`Beep.OilandGas.PPDM39.DataManagement`**, **`SkiaSharp`**
+- ✅ Tests: **`Beep.OilandGas.HydraulicPumps.Tests`** (calculator regression + validator)
 
-### 2. Models ✅
+### 2. Models (shared) ✅
 
-**File:** `Models/HydraulicPumpModels.cs`
-
-- ✅ `HydraulicPumpWellProperties` - Well properties
-- ✅ `HydraulicJetPumpProperties` - Jet pump properties
-- ✅ `HydraulicPistonPumpProperties` - Piston pump properties
-- ✅ `HydraulicJetPumpResult` - Jet pump performance results
-- ✅ `HydraulicPistonPumpResult` - Piston pump performance results
+Table and wire types live in **`Beep.OilandGas.Models.Data.HydraulicPumps`** (e.g. **`HYDRAULIC_PUMP_WELL_PROPERTIES`**, **`HYDRAULIC_JET_PUMP_PROPERTIES`**, **`HYDRAULIC_JET_PUMP_RESULT`**, **`HYDRAULIC_PISTON_PUMP_PROPERTIES`**, **`HYDRAULIC_PISTON_PUMP_RESULT`**). DDL scripts: **`Beep.OilandGas.Models/Scripts/**/Hydraulicpumps/`**.
 
 ### 3. Calculations ✅
 

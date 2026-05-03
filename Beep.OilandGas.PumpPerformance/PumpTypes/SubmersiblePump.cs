@@ -56,7 +56,7 @@ namespace Beep.OilandGas.PumpPerformance.PumpTypes
 
         /// <summary>
         /// Calculates motor power requirement for ESP.
-        /// Formula: P_motor = (Q * H * SG) / (3960 * η_pump * η_motor)
+        /// Formula: P_motor = (Q * H * SG) / (<see cref="Beep.OilandGas.PumpPerformance.Constants.PumpConstants.HorsepowerConversionFactor"/> × η_pump × η_motor)
         /// </summary>
         /// <param name="flowRate">Flow rate in GPM.</param>
         /// <param name="totalHead">Total head in feet.</param>
@@ -115,7 +115,7 @@ namespace Beep.OilandGas.PumpPerformance.PumpTypes
 
         /// <summary>
         /// Calculates production rate for ESP system.
-        /// Formula: Q = (P_motor * η_pump * η_motor * 3960) / (H * SG)
+        /// Formula: Q = (P_motor × η_pump × η_motor × <see cref="Beep.OilandGas.PumpPerformance.Constants.PumpConstants.HorsepowerConversionFactor"/>) / (H × SG)
         /// </summary>
         /// <param name="motorPower">Motor power in horsepower.</param>
         /// <param name="totalHead">Total head in feet.</param>

@@ -93,7 +93,7 @@ All endpoints follow: `/api/{controller}/{action}`
 var request = new { WellUWI = "12345", ... };
 var response = await httpClient.PostAsJsonAsync(
     "/api/gaslift/analyze-potential", request);
-var result = await response.Content.ReadFromJsonAsync<GasLiftPotentialResult>();
+var result = await response.Content.ReadFromJsonAsync<GAS_LIFT_POTENTIAL_RESULT>();
 ```
 
 ## Error Handling

@@ -23,12 +23,37 @@ namespace Beep.OilandGas.WellTestAnalysis.Validation
             ValidatePressureData(data.Pressure, nameof(data.Pressure));
             ValidateMatchingLengths(data.Time, data.Pressure, nameof(data.Time), nameof(data.Pressure));
             ValidateFlowRate((double)data.FLOW_RATE, nameof(data.FLOW_RATE));
-            ValidateWellboreRadius((double)data.WELLBORE_RADIUS, nameof(data.WELLBORE_RADIUS));
+
+            if (!data.WELLBORE_RADIUS.HasValue)
+                throw new InvalidWellTestDataException(nameof(data.WELLBORE_RADIUS), "Wellbore radius is required.");
+            ValidateWellboreRadius((double)data.WELLBORE_RADIUS.Value, nameof(data.WELLBORE_RADIUS));
+
             ValidateFormationThickness((double)data.FORMATION_THICKNESS, nameof(data.FORMATION_THICKNESS));
-            ValidatePorosity((double)data.POROSITY, nameof(data.POROSITY));
-            ValidateCompressibility((double)data.TOTAL_COMPRESSIBILITY, nameof(data.TOTAL_COMPRESSIBILITY));
-            ValidateViscosity((double)data.OIL_VISCOSITY, nameof(data.OIL_VISCOSITY));
-            ValidateFormationVolumeFactor((double)data.OIL_FORMATION_VOLUME_FACTOR, nameof(data.OIL_FORMATION_VOLUME_FACTOR));
+
+            if (!data.POROSITY.HasValue)
+                throw new InvalidWellTestDataException(nameof(data.POROSITY), "Porosity is required.");
+            ValidatePorosity((double)data.POROSITY.Value, nameof(data.POROSITY));
+
+            if (!data.TOTAL_COMPRESSIBILITY.HasValue)
+                throw new InvalidWellTestDataException(nameof(data.TOTAL_COMPRESSIBILITY), "Total compressibility is required.");
+            ValidateCompressibility((double)data.TOTAL_COMPRESSIBILITY.Value, nameof(data.TOTAL_COMPRESSIBILITY));
+
+            if (!data.OIL_VISCOSITY.HasValue)
+                throw new InvalidWellTestDataException(nameof(data.OIL_VISCOSITY), "Oil viscosity is required.");
+            ValidateViscosity((double)data.OIL_VISCOSITY.Value, nameof(data.OIL_VISCOSITY));
+
+            if (!data.OIL_FORMATION_VOLUME_FACTOR.HasValue)
+                throw new InvalidWellTestDataException(nameof(data.OIL_FORMATION_VOLUME_FACTOR), "Oil formation volume factor is required.");
+            ValidateFormationVolumeFactor((double)data.OIL_FORMATION_VOLUME_FACTOR.Value, nameof(data.OIL_FORMATION_VOLUME_FACTOR));
+
+            if (!string.IsNullOrWhiteSpace(data.TEST_TYPE) &&
+                Enum.TryParse<WellTestType>(data.TEST_TYPE, ignoreCase: true, out var testType) &&
+                testType == WellTestType.BuildUp)
+            {
+                if (!data.PRODUCTION_TIME.HasValue || data.PRODUCTION_TIME.Value <= 0)
+                    throw new InvalidWellTestDataException(nameof(data.PRODUCTION_TIME),
+                        "Production time must be positive for build-up (Horner / MDH) analysis.");
+            }
         }
 
         /// <summary>

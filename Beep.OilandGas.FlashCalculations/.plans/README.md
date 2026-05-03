@@ -7,6 +7,7 @@ Phased enhancement for **phase equilibrium**, **isothermal / multi-stage flash**
 - **Three layers**; shared contract **`Beep.OilandGas.Models.Core.Interfaces.IFlashCalculationService`**; wire types in **`Beep.OilandGas.Models.Data.Calculations`** / **`Models.Data.FlashCalculations`**.
 - **Table vs projection**: persist only **scalar** **`ModelEntityBase`** tables; **`FlashResult`**, **`FlashCalculationRequest`** remain projections for API/orchestration.
 - **Extension schema**: **`FlashCalculationsModule`** + **`R_FLASH_CALCULATION_REFERENCE_CODE`** + entity-driven tooling — **not** hand-written **`Models/Scripts`** DDL per [CLAUDE.md](../../CLAUDE.md).
+- **EOS wire strings**: normalize with **`FlashEquationOfStateMapping`** so **`FlashCalculationOptions.EquationOfState`** matches **`FLASH_EOS_MODEL`** seed codes (**PR**, **SRK**, **SRK_MODIFIED**, **IDEAL_K**).
 - **DI**: **`Beep.OilandGas.ApiService/Program.cs`** factory registration; **`AddBeepServices`** before **`IDMEEditor`** consumers.
 - **`PPDM39.DataManagement`** does **not** reference feature projects for domain logic; **FlashCalculations** hosts **`ModuleSetupBase`**.
 

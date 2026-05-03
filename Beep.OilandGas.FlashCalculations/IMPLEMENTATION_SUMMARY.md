@@ -5,7 +5,7 @@ This file is a **short inventory**. Authoritative usage, units, and screening vs
 ## Project
 
 - **Target:** `net10.0` (`Beep.OilandGas.FlashCalculations.csproj`)
-- **References:** `Beep.OilandGas.Models`, `Beep.OilandGas.GasProperties`, `Beep.OilandGas.PPDM39.DataManagement`, `SkiaSharp` (+ extended/svg), package `Beep.OilandGas.PPDM.Models`
+- **References:** `Beep.OilandGas.Models`, `Beep.OilandGas.GasProperties`, `Beep.OilandGas.PPDM39.DataManagement`, `SkiaSharp` (+ extended/svg), project `Beep.OilandGas.PPDM.Models` (same repo)
 - **Package:** `README.md` packed via **`PackageReadmeFile`**
 
 ## Code layout

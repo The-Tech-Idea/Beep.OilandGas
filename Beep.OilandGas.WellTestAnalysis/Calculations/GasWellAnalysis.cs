@@ -33,7 +33,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
         {
             WellTestDataValidator.Validate(data);
 
-            if (!Enum.TryParse<WellTestType>(data.TEST_TYPE, out var testType) || testType != WellTestType.BuildUp)
+            if (!Enum.TryParse<WellTestType>(data.TEST_TYPE, ignoreCase: true, out var testType) || testType != WellTestType.BuildUp)
                 throw new InvalidWellTestDataException(nameof(data.TEST_TYPE), "Gas build-up analysis requires build-up test data.");
 
             var result = new WELL_TEST_ANALYSIS_RESULT

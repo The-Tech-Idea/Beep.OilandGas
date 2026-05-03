@@ -223,7 +223,7 @@ namespace Beep.OilandGas.PumpPerformance.SystemAnalysis
         /// Calculates cost-effectiveness ratio (efficiency per unit cost).
         /// </summary>
         /// <param name="candidate">Pump candidate.</param>
-        /// <param name="operatingEfficiency"> EFFICIENCY at operating point.</param>
+        /// <param name="operatingEfficiency">Efficiency at operating point.</param>
         /// <returns>Cost-effectiveness ratio (higher is better).</returns>
         public static double CalculateCostEffectiveness(
             PumpCandidate candidate,

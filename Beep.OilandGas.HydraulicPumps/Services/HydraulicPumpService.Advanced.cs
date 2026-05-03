@@ -28,10 +28,11 @@ namespace Beep.OilandGas.HydraulicPumps.Services
                 powerFluidSurfacePressure);
 
             input.OverallEfficiency = eff;
-            input.RecommendedNozzleSize = 0; // Logic to map R to nozzle size requires OD info. Leaving 0 implies need look up.
-            
-            // 2. Calc HHP
-            input.PowerRequired = HydraulicPumpCalculator.CalculateHydraulicHorsepower(input.PowerFluidRate, powerFluidSurfacePressure);
+            input.RecommendedNozzleSize = 0; // Map R to nozzle OD in a future sizing pass; 0 = not sized here.
+
+            // 2. Hydraulic HP on produced lift (Q x delta-P), screening formula consistent with calculators.
+            decimal liftPsi = Math.Max(0m, input.DischargePressure - input.SuctionPressure);
+            input.PowerRequired = HydraulicPumpCalculator.CalculateHydraulicHorsepower(input.ProductionRate, liftPsi);
 
             // 3. Cavitation Check
             // Assume some standard NPSH required if not known, e.g., 50 psi
@@ -59,16 +60,8 @@ namespace Beep.OilandGas.HydraulicPumps.Services
                  PumpType = "JET", // Defaulting to Jet for this logic
                  PumpDepth = pumpDepth,
                  OperatingPressure = operatingPressure,
-                 FlowRate = targetRate
+                 FlowRate = targetRate // Target production (bbl/day); RecommendPowerFluidRate available for sizing UI.
              };
-
-             // 1. Recommend Power Fluid Rate
-             // Assume target M=0.5 (Qp = 2 * Qs)
-             design.FlowRate = HydraulicPumpCalculator.RecommendPowerFluidRate(targetRate, 0.3m); // returning recommended power fluid rate? Or storing Q_produced?
-             // Model says FlowRate... ambiguous. Let's assume it's the Total Flow or Produced?
-             // Usually Design.FlowRate means target production.
-             // We'll leave Design.FlowRate as target.
-             design.FlowRate = targetRate;
 
              // 2. Rec Efficiency
              design.Efficiency = 0.30m; // Target for Jet Pump

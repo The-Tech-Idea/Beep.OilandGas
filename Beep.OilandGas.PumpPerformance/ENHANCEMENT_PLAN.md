@@ -1,7 +1,7 @@
-# Beep.PumpPerformance - Enhancement Plan
+# Beep.OilandGas.PumpPerformance - Enhancement Plan
 
 ## Project Overview
-Beep.PumpPerformance provides pump performance calculations for oil and gas operations, including H-Q (Head-Quantity) curve calculations and C-Factor calculations for pump sizing and performance prediction.
+Beep.OilandGas.PumpPerformance provides pump performance calculations for oil and gas operations, including H-Q (Head-Quantity) curve calculations and C-Factor calculations for pump sizing and performance prediction.
 
 ## Current State Analysis
 
@@ -29,14 +29,14 @@ Beep.PumpPerformance provides pump performance calculations for oil and gas oper
    - Variable speed pump calculations
    - System curve calculations
    - Operating point determination
-   - Best  EFFICIENCY Point (BEP) calculation
+   - Best-efficiency point (BEP) calculation
 
-2. **Comprehensive  EFFICIENCY Calculations**
+2. **Comprehensive efficiency calculations**
    - Hydraulic efficiency
    - Mechanical efficiency
    - Volumetric efficiency
    - Overall efficiency
-   -  EFFICIENCY curves generation
+   - Efficiency curves generation
 
 3. **Power Calculations**
    - Brake horsepower (BHP) calculations
@@ -115,7 +115,7 @@ Beep.PumpPerformance provides pump performance calculations for oil and gas oper
 2. **Performance Reports**
    - Generate detailed performance reports
    - Comparison reports
-   -  EFFICIENCY analysis reports
+   - Efficiency analysis reports
    - Export to PDF/Excel
 
 3. **Interactive Charts**
@@ -135,7 +135,7 @@ Beep.PumpPerformance provides pump performance calculations for oil and gas oper
 2. **Performance Monitoring**
    - Performance degradation tracking
    - Predictive maintenance indicators
-   -  EFFICIENCY trending
+   - Efficiency trending
    - Alert generation
 
 3. **Data Import/Export**

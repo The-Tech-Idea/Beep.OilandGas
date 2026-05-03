@@ -1,24 +1,24 @@
-# Beep.PumpPerformance - ESP Design Implementation
+# Beep.OilandGas.PumpPerformance — ESP design implementation
 
 ## ✅ ESP Design Enhancement Complete!
 
 ### Overview
 
-Enhanced `Beep.PumpPerformance` with comprehensive ESP (Electric Submersible Pump) design calculations based on the Petroleum Engineer XLS files (`ESPdesign-SI Units.xls` and `ESPdesign-US Field Units.xls`).
+Enhanced **`Beep.OilandGas.PumpPerformance`** with ESP (Electric Submersible Pump) design calculations based on the Petroleum Engineer XLS files (`ESPdesign-SI Units.xls` and `ESPdesign-US Field Units.xls`).
 
 ---
 
 ## 📦 What Was Added
 
-### 1. ESP Design Models ✅
+### 1. ESP design models ✅
 
-**File:** `Models/ESPDesignModels.cs`
+**Assembly:** `Beep.OilandGas.Models` — `Data/PumpPerformance/`
 
-- ✅ `ESPDesignProperties` - Well and production requirements
-- ✅ `ESPDesignResult` - Complete ESP design results
-- ✅ `ESPPumpPoint` - Pump performance curve points
-- ✅ `ESPMotorProperties` - Motor specifications
-- ✅ `ESPCableProperties` - Cable specifications
+- ✅ `ESP_DESIGN_PROPERTIES` — well and production requirements
+- ✅ `ESP_DESIGN_RESULT` — complete ESP design results
+- ✅ `ESP_PUMP_POINT` — pump performance curve points
+- ✅ `ESP_MOTOR_PROPERTIES` — motor specifications
+- ✅ `ESP_CABLE_PROPERTIES` — cable specifications
 
 ### 2. ESP Design Calculator ✅
 
@@ -36,8 +36,7 @@ Enhanced `Beep.PumpPerformance` with comprehensive ESP (Electric Submersible Pum
 
 ### 3. Integration ✅
 
-- ✅ Reference to `Beep.OilandGas.Properties` for Z-factor
-- ✅ Gas property calculations
+- ✅ Reference to **`Beep.OilandGas.GasProperties`** for gas calculations used in ESP fluid properties
 - ✅ Integration with existing pump calculations
 
 ---
@@ -48,7 +47,7 @@ Enhanced `Beep.PumpPerformance` with comprehensive ESP (Electric Submersible Pum
 - **New Methods:** 15+ methods
 - **Lines of Code:** ~600+ lines
 - **Build Status:** ✅ Build Succeeded
-- **Integration:** ✅ With Beep.OilandGas.Properties
+- **Integration:** ✅ With **Beep.OilandGas.GasProperties** and **Beep.OilandGas.Models**
 
 ---
 
@@ -85,47 +84,39 @@ The ESP design calculator provides:
 ### Complete ESP Design
 
 ```csharp
-using Beep.PumpPerformance.Models;
-using Beep.PumpPerformance.Calculations;
-using Beep.PumpPerformance.Validation;
+using Beep.OilandGas.Models.Data.PumpPerformance;
+using Beep.OilandGas.PumpPerformance.Calculations;
 
-// Define ESP design requirements
-var designProperties = new ESPDesignProperties
+var designProperties = new ESP_DESIGN_PROPERTIES
 {
-    DesiredFlowRate = 2000m, // bbl/day
-    WellDepth = 10000m, // feet
-    CasingDiameter = 7.0m, // inches
-    TubingDiameter = 2.875m, // inches
-    OilGravity = 35m, // API
-    WaterCut = 0.3m, // 30%
-    GasOilRatio = 500m, // scf/bbl
-    WellheadPressure = 100m, // psia
-    BottomHoleTemperature = 580m, // Rankine
-    GasSpecificGravity = 0.65m,
-    PumpSettingDepth = 9500m // feet
+    DESIRED_FLOW_RATE = 2000m, // bbl/day
+    WELL_DEPTH = 10000m, // ft
+    CASING_DIAMETER = 7.0m, // in
+    TUBING_DIAMETER = 2.875m, // in
+    OIL_GRAVITY = 35m, // °API
+    WATER_CUT = 0.3m,
+    GAS_OIL_RATIO = 500m, // scf/bbl
+    WELLHEAD_PRESSURE = 100m, // psia
+    BOTTOM_HOLE_TEMPERATURE = 580m, // °R
+    GAS_SPECIFIC_GRAVITY = 0.65m,
+    PUMP_SETTING_DEPTH = 9500m, // ft
+    TOTAL_DYNAMIC_HEAD = 8000m // ft (set from nodal / hydraulic model in real workflows)
 };
 
-// Calculate total dynamic head (simplified - would use full calculation)
-designProperties.TotalDynamicHead = 8000m; // feet
+var designResult = ESPDesignCalculator.DesignESP(designProperties, useSIUnits: false);
 
-// Design ESP system
-var designResult = ESPDesignCalculator.DesignESP(
-    designProperties,
-    useSIUnits: false); // US field units
-
-// Access results
-Console.WriteLine($"Pump Stages: {designResult.PumpStages}");
-Console.WriteLine($"Motor HP: {designResult.MotorHorsepower}");
-Console.WriteLine($"Motor Voltage: {designResult.MotorVoltage} V");
-Console.WriteLine($"Cable Size: {designResult.CableSize} AWG");
-Console.WriteLine($"System Efficiency: {designResult.SystemEfficiency:P2}");
-Console.WriteLine($"Power Consumption: {designResult.PowerConsumption:F2} HP");
+Console.WriteLine($"Pump stages: {designResult.PUMP_STAGES}");
+Console.WriteLine($"Motor HP: {designResult.MOTOR_HORSEPOWER}");
+Console.WriteLine($"Motor voltage: {designResult.MOTOR_VOLTAGE} V");
+Console.WriteLine($"Cable AWG: {designResult.CABLE_SIZE}");
+Console.WriteLine($"System efficiency: {designResult.SYSTEM_EFFICIENCY:P2}");
+Console.WriteLine($"Power: {designResult.POWER_CONSUMPTION:F2} HP");
 ```
 
 ### Using Existing SubmersiblePump Methods
 
 ```csharp
-using Beep.PumpPerformance.PumpTypes;
+using Beep.OilandGas.PumpPerformance.PumpTypes;
 
 // Calculate total head
 double totalHead = SubmersiblePump.CalculateTotalHead(
@@ -170,7 +161,7 @@ double motorPower = SubmersiblePump.CalculateMotorPower(
 ### Pump Performance
 
 - H-Q curve generation
--  EFFICIENCY curve calculation
+- Efficiency curve calculation
 - Operating point determination
 - Stage selection optimization
 
@@ -185,11 +176,10 @@ double motorPower = SubmersiblePump.CalculateMotorPower(
 
 ## 🔗 Integration Points
 
-### With Beep.OilandGas.Properties
+### With Beep.OilandGas.GasProperties
 
-- ✅ Z-factor calculations for gas effects
-- ✅ Gas property support
-- ✅ Temperature and pressure handling
+- ✅ Gas calculations referenced from **`ESPDesignCalculator`**
+- ✅ Temperature and pressure handling in design inputs
 
 ### With Existing PumpPerformance
 
@@ -220,6 +210,6 @@ double motorPower = SubmersiblePump.CalculateMotorPower(
 
 **Created:** Based on Petroleum Engineer XLS analysis  
 **Source Files:** `ESPdesign-SI Units.xls`, `ESPdesign-US Field Units.xls`  
-**Integration:** Beep.OilandGas.Properties ✅  
-**Naming Convention:** Beep.PumpPerformance ✅
+**Integration:** **Beep.OilandGas.GasProperties** / **Beep.OilandGas.Models** ✅  
+**Naming convention:** **Beep.OilandGas.PumpPerformance** ✅
 

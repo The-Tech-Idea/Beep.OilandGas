@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.FlashCalculations.Calculations;
+using Beep.OilandGas.FlashCalculations.Constants;
+using Beep.OilandGas.FlashCalculations.Validation;
 using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.Models.Data.FlashCalculations;
 using Microsoft.Extensions.Logging;
@@ -27,20 +29,34 @@ namespace Beep.OilandGas.FlashCalculations.Services
 
             _logger?.LogInformation("Starting Rigorous PT Flash at P={P}, T={T}", request.Pressure, request.Temperature);
 
+            var eosRef = FlashEquationOfStateMapping.ToReferenceCode(request.AdditionalParameters?.EquationOfState);
             var result = new FlashCalculationResult
             {
-                CalculationId = Guid.NewGuid().ToString(),
+                CalculationId = _defaults.FormatIdForTable("FLASH_CALCULATION", Guid.NewGuid().ToString()),
                 CalculationDate = DateTime.UtcNow,
                 CalculationType = "PT_FLASH_RIGOROUS",
                 Pressure = request.Pressure,
                 Temperature = request.Temperature,
                 FeedComposition = request.FeedComposition,
-                IsSuccessful = true
+                IsSuccessful = true,
+                AdditionalResults = new FlashCalculationAdditionalResults
+                {
+                    Pressure = request.Pressure,
+                    Temperature = request.Temperature,
+                    ComponentCount = request.FeedComposition.Count,
+                    EosModelReferenceCode = eosRef
+                }
             };
 
             try
             {
                 var components = request.FeedComposition.Cast<FLASH_COMPONENT>().ToList();
+                FlashValidator.ValidateFlashConditions(new FLASH_CONDITIONS
+                {
+                    PRESSURE = request.Pressure!.Value,
+                    TEMPERATURE = request.Temperature!.Value,
+                    FEED_COMPOSITION = components
+                });
                 cancellationToken.ThrowIfCancellationRequested();
 
                 // 1. Solve Rachford-Rice
@@ -68,15 +84,6 @@ namespace Beep.OilandGas.FlashCalculations.Services
                     out var phaseResults
                 );
 
-                // 3. Populate Result Lists
-                // Needed DTOs: FlashComponentFraction, FlashComponentKValue.
-                // Assuming they are simple DTOs in result namespace or Data.
-                
-                // Let's create DTOs if they don't map directly, checking definition implies they exist in FlashCalculations model namespace?
-                // The Result model has `List<FlashComponentFraction>`.
-                // I need to find where `FlashComponentFraction` is defined or just instantiate it.
-                // It's likely a class in `Beep.OilandGas.Models.Data.FlashCalculations`.
-                
                 result.VaporComposition = new List<FlashComponentFraction>();
                 result.LiquidComposition = new List<FlashComponentFraction>();
                 result.KValues = new List<FlashComponentKValue>();
@@ -104,6 +111,10 @@ namespace Beep.OilandGas.FlashCalculations.Services
                 }
 
                 result.Status = converged ? "SUCCESS" : "CONVERGENCE_FAILED";
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {

@@ -1,13 +1,18 @@
 ﻿using System;
+using Beep.OilandGas.OilProperties.Constants;
 
 namespace Beep.OilandGas.OilProperties.Calculations
 {
     /// <summary>
-    /// Provides rigorous Black Oil property correlations.
-    /// Methods: Bubble Point (Standing), Solution GOR (Standing), FVF (Standing), Viscosity (Vasquez-Beggs).
+    /// Black-oil property correlations (Standing bubble point / Rs / Bo; Beggs–Robinson dead and saturated oil viscosity).
+    /// Temperature arguments are <b>Fahrenheit</b> unless noted; convert from °R via <see cref="OilPropertyUnits.RankineToFahrenheit"/>.
     /// </summary>
     public static class OilPropertyCalculator
     {
+        /// <summary>Oil specific gravity from API gravity.</summary>
+        public static decimal OilSpecificGravityFromApi(decimal apiGravity) =>
+            OilPropertyConstants.ApiGravityConstant / (OilPropertyConstants.ApiGravityOffset + apiGravity);
+
         // 1. Bubble Point Pressure (Standing 1947)
         // Pb = 18.2 * [ (Rs/Gg)^0.83 * 10^(0.00091*T - 0.0125*API) - 1.4 ]
         // T in Fahrenheit, Rs in scf/stb
@@ -55,10 +60,9 @@ namespace Beep.OilandGas.OilProperties.Calculations
         {
              double Rs = (double)rs;
              double Gg = (double)gasGravity;
-             double API = (double)api;
              double T = (double)tempF;
              
-             double Go = 141.5 / (API + 131.5);
+             double Go = (double)OilSpecificGravityFromApi(api);
              
              double termInside = Rs * Math.Sqrt(Gg / Go) + 1.25 * T;
              double bo = 0.9759 + 0.00012 * Math.Pow(termInside, 1.2);
@@ -73,7 +77,8 @@ namespace Beep.OilandGas.OilProperties.Calculations
         public static decimal CalculateDeadOilViscosity_BeggsRobinson(decimal api, decimal tempF)
         {
             double API = (double)api;
-            double T = (double)tempF;
+            // Correlation uses T in °F in denominator; avoid non-finite / huge values at T → 0.
+            double T = Math.Max((double)tempF, 1e-3);
             
             double x = Math.Pow(10, (3.0324 - 0.02023 * API)) * Math.Pow(T, -1.163);
             double mu_od = Math.Pow(10, x) - 1.0;
@@ -87,6 +92,9 @@ namespace Beep.OilandGas.OilProperties.Calculations
         // B = 5.44*(Rs+150)^-0.338
         public static decimal CalculateSaturatedViscosity_BeggsRobinson(decimal deadVisc, decimal rs)
         {
+            if (rs <= 0m)
+                return Math.Max(0m, deadVisc);
+
             double mu_od = (double)deadVisc;
             double Rs = (double)rs;
             

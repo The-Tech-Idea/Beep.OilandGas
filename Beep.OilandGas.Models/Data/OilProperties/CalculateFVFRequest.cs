@@ -77,6 +77,15 @@ namespace Beep.OilandGas.Models.Data
 
         }
 
+        private decimal GasSpecificGravityValue = 0.65m;
+
+        /// <summary>Gas specific gravity (γg, air = 1). Omit or use 0 to default to 0.65 in the API layer.</summary>
+        public decimal GasSpecificGravity
+        {
+            get { return this.GasSpecificGravityValue; }
+            set { SetProperty(ref GasSpecificGravityValue, value); }
+        }
+
         private string CorrelationValue = "Standing";
 
 

@@ -26,10 +26,10 @@ This document describes the SkiaSharp-based rendering system for pump performanc
    - Overlaid on H-Q plot
    - Separate color and styling
 
-3. ** EFFICIENCY Curves**
-   -  EFFICIENCY vs. flow rate
+3. **Efficiency curves**
+   - Efficiency vs. flow rate
    - Secondary axis support
-   - Best  EFFICIENCY Point (BEP) highlighting
+   - Best-efficiency point (BEP) highlighting
 
 4. **System Curves**
    - System resistance curves
@@ -58,7 +58,7 @@ This document describes the SkiaSharp-based rendering system for pump performanc
   - Label showing flow rate and head
   - Configurable size and style
 
-- **Best  EFFICIENCY Point (BEP)**
+- **Best-efficiency point (BEP)**
   - Special marker
   - Label with efficiency percentage
   - Automatic detection and display
@@ -81,9 +81,9 @@ This document describes the SkiaSharp-based rendering system for pump performanc
 ## Usage Example
 
 ```csharp
-using Beep.PumpPerformance.Rendering;
-using Beep.PumpPerformance.Calculations;
-using Beep.PumpPerformance.Interaction;
+using Beep.OilandGas.PumpPerformance.Rendering;
+using Beep.OilandGas.PumpPerformance.Calculations;
+using Beep.OilandGas.PumpPerformance.Interaction;
 using SkiaSharp;
 
 // Create configuration
@@ -226,7 +226,7 @@ renderer.SetNPSHCurves(npshRequired, npshAvailable);
 ### Colors
 - `HQCurveColor` - H-Q curve color
 - `PQCurveColor` - P-Q curve color
-- `EfficiencyCurveColor` -  EFFICIENCY curve color
+- `EfficiencyCurveColor` - efficiency curve color
 - `SystemCurveColor` - System curve color
 - `OperatingPointColor` - Operating point color
 - `BEPPointColor` - BEP point color

@@ -20,7 +20,7 @@
 - [x] Entity **`R_GAS_LIFT_REFERENCE_CODE`** under **`Data/Tables/`**.
 - [x] **`GasLiftReferenceSets`** + **`GasLiftReferenceCodeSeed`**.
 - [x] **`GasLiftModule`** — **`ModuleId` GAS_LIFT**, **`Order` 74**, **`EntityTypes`**, **`SeedAsync`**.
-- [ ] Optional: map **`GAS_LIFT_DESIGN_LIMIT`** codes to UI validation messages reading numeric limits from **`GasLiftConstants`**.
+- [x] Optional: map **`GAS_LIFT_DESIGN_LIMIT`** codes to UI validation messages — **`Constants/GasLiftDesignLimitMessages`** (+ **`GasLiftDesignLimitMessagesTests`**).
 
 ## Verification
 

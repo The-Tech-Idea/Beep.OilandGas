@@ -208,7 +208,7 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
                 double newFlowRate = point.FlowRate * speedRatio;
                 double newHead = point.Head * Math.Pow(speedRatio, 2);
                 double newPower = point.Power * Math.Pow(speedRatio, 3);
-                double newEfficiency = point.EFFICIENCY; //  EFFICIENCY typically remains constant
+                double newEfficiency = point.EFFICIENCY; // efficiency often modeled as unchanged with speed for screening
 
                 scaledCurve.Add(new HeadQuantityPoint(newFlowRate, newHead, newEfficiency, newPower));
             }
@@ -264,7 +264,7 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
                  
                  // Recalculate Eff
                  double eff2 = 0;
-                 if (P2 > 0) eff2 = (Q2 * H2 * specificGravity) / (3960 * P2);
+                 if (P2 > 0) eff2 = (Q2 * H2 * specificGravity) / (HorsepowerConversionFactor * P2);
 
                  scaledPoints.Add(new HeadQuantityPoint(Q2, H2, eff2, P2));
              }

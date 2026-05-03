@@ -21,8 +21,9 @@ namespace Beep.OilandGas.GasLift.Validation
             if (wellProperties.WELL_DEPTH <= 0)
                 throw new InvalidWellPropertiesException("Well depth must be greater than zero.");
 
-            if (wellProperties.TUBING_DIAMETER <= 0)
-                throw new InvalidWellPropertiesException("Tubing diameter must be greater than zero.");
+            // Tubing diameter is optional for several calculators; validate only when supplied.
+            if (wellProperties.TUBING_DIAMETER < 0)
+                throw new InvalidWellPropertiesException("Tubing diameter cannot be negative.");
 
             if (wellProperties.WELLHEAD_PRESSURE <= 0)
                 throw new InvalidWellPropertiesException("Wellhead pressure must be greater than zero.");

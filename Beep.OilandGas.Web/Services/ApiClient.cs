@@ -1,3 +1,6 @@
+using System.Net.Http;
+using System.Text.Json;
+
 namespace Beep.OilandGas.Web.Services
 {
     /// <summary>
@@ -27,9 +30,12 @@ namespace Beep.OilandGas.Web.Services
                 _logger.LogDebug("GET {Endpoint}", endpoint);
                 var response = await _httpClient.GetAsync(endpoint, cancellationToken);
                 if (!response.IsSuccessStatusCode)
-                    _logger.LogWarning("GET {Endpoint} returned status {StatusCode}", endpoint, (int)response.StatusCode);
-                response.EnsureSuccessStatusCode();
-                
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                    _logger.LogWarning("GET {Endpoint} returned status {StatusCode}. Body: {Body}", endpoint, (int)response.StatusCode, errorBody);
+                    throw new HttpRequestException(BuildHttpErrorMessage(response, errorBody, endpoint));
+                }
+
                 var content = await response.Content.ReadAsStringAsync(cancellationToken);
                 return System.Text.Json.JsonSerializer.Deserialize<T>(content, JsonOptions);
             }
@@ -53,9 +59,12 @@ namespace Beep.OilandGas.Web.Services
                 
                 var response = await _httpClient.PostAsync(endpoint, content, cancellationToken);
                 if (!response.IsSuccessStatusCode)
-                    _logger.LogWarning("POST {Endpoint} returned status {StatusCode}", endpoint, (int)response.StatusCode);
-                response.EnsureSuccessStatusCode();
-                
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                    _logger.LogWarning("POST {Endpoint} returned status {StatusCode}. Body: {Body}", endpoint, (int)response.StatusCode, errorBody);
+                    throw new HttpRequestException(BuildHttpErrorMessage(response, errorBody, endpoint));
+                }
+
                 var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
                 return System.Text.Json.JsonSerializer.Deserialize<TResponse>(responseContent, JsonOptions);
             }
@@ -102,9 +111,12 @@ namespace Beep.OilandGas.Web.Services
                 
                 var response = await _httpClient.PutAsync(endpoint, content, cancellationToken);
                 if (!response.IsSuccessStatusCode)
-                    _logger.LogWarning("PUT {Endpoint} returned status {StatusCode}", endpoint, (int)response.StatusCode);
-                response.EnsureSuccessStatusCode();
-                
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                    _logger.LogWarning("PUT {Endpoint} returned status {StatusCode}. Body: {Body}", endpoint, (int)response.StatusCode, errorBody);
+                    throw new HttpRequestException(BuildHttpErrorMessage(response, errorBody, endpoint));
+                }
+
                 var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
                 return System.Text.Json.JsonSerializer.Deserialize<TResponse>(responseContent, JsonOptions);
             }
@@ -151,8 +163,12 @@ namespace Beep.OilandGas.Web.Services
                 var request = new HttpRequestMessage(HttpMethod.Patch, endpoint) { Content = content };
                 var response = await _httpClient.SendAsync(request, cancellationToken);
                 if (!response.IsSuccessStatusCode)
-                    _logger.LogWarning("PATCH {Endpoint} returned status {StatusCode}", endpoint, (int)response.StatusCode);
-                response.EnsureSuccessStatusCode();
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                    _logger.LogWarning("PATCH {Endpoint} returned status {StatusCode}. Body: {Body}", endpoint, (int)response.StatusCode, errorBody);
+                    throw new HttpRequestException(BuildHttpErrorMessage(response, errorBody, endpoint));
+                }
+
                 var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
                 return System.Text.Json.JsonSerializer.Deserialize<TResponse>(responseContent, JsonOptions);
             }
@@ -210,9 +226,12 @@ namespace Beep.OilandGas.Web.Services
                 _logger.LogDebug("DELETE {Endpoint}", endpoint);
                 var response = await _httpClient.DeleteAsync(endpoint, cancellationToken);
                 if (!response.IsSuccessStatusCode)
-                    _logger.LogWarning("DELETE {Endpoint} returned status {StatusCode}", endpoint, (int)response.StatusCode);
-                response.EnsureSuccessStatusCode();
-                
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                    _logger.LogWarning("DELETE {Endpoint} returned status {StatusCode}. Body: {Body}", endpoint, (int)response.StatusCode, errorBody);
+                    throw new HttpRequestException(BuildHttpErrorMessage(response, errorBody, endpoint));
+                }
+
                 var content = await response.Content.ReadAsStringAsync(cancellationToken);
                 return System.Text.Json.JsonSerializer.Deserialize<TResult>(content, JsonOptions);
             }
@@ -236,9 +255,12 @@ namespace Beep.OilandGas.Web.Services
                 _logger.LogDebug("POST {Endpoint} (multipart)", endpoint);
                 var response = await _httpClient.PostAsync(endpoint, content, cancellationToken);
                 if (!response.IsSuccessStatusCode)
-                    _logger.LogWarning("POST {Endpoint} (multipart) returned status {StatusCode}", endpoint, (int)response.StatusCode);
-                response.EnsureSuccessStatusCode();
-                
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                    _logger.LogWarning("POST {Endpoint} (multipart) returned status {StatusCode}. Body: {Body}", endpoint, (int)response.StatusCode, errorBody);
+                    throw new HttpRequestException(BuildHttpErrorMessage(response, errorBody, endpoint));
+                }
+
                 var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
                 return System.Text.Json.JsonSerializer.Deserialize<TResponse>(responseContent, JsonOptions);
             }
@@ -265,15 +287,56 @@ namespace Beep.OilandGas.Web.Services
                 
                 var response = await _httpClient.PostAsync(endpoint, content, cancellationToken);
                 if (!response.IsSuccessStatusCode)
-                    _logger.LogWarning("POST {Endpoint} (stream response) returned status {StatusCode}", endpoint, (int)response.StatusCode);
-                response.EnsureSuccessStatusCode();
-                
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                    _logger.LogWarning("POST {Endpoint} (stream response) returned status {StatusCode}. Body: {Body}", endpoint, (int)response.StatusCode, errorBody);
+                    throw new HttpRequestException(BuildHttpErrorMessage(response, errorBody, endpoint));
+                }
+
                 return await response.Content.ReadAsStreamAsync(cancellationToken);
             }
             catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "HTTP error on POST {Endpoint}", endpoint);
                 throw;
+            }
+        }
+
+        private static string BuildHttpErrorMessage(HttpResponseMessage response, string? responseBody, string endpoint)
+        {
+            var parsed = TryParseApiErrorMessage(responseBody);
+            if (!string.IsNullOrWhiteSpace(parsed))
+                return parsed;
+
+            return $"HTTP {(int)response.StatusCode} {response.ReasonPhrase} for {endpoint}.";
+        }
+
+        private static string? TryParseApiErrorMessage(string? body)
+        {
+            if (string.IsNullOrWhiteSpace(body))
+                return null;
+
+            try
+            {
+                using var doc = JsonDocument.Parse(body);
+                var root = doc.RootElement;
+                if (root.ValueKind != JsonValueKind.Object)
+                    return null;
+
+                if (root.TryGetProperty("error", out var err) && err.ValueKind == JsonValueKind.String)
+                    return err.GetString();
+
+                if (root.TryGetProperty("title", out var title) && title.ValueKind == JsonValueKind.String)
+                    return title.GetString();
+
+                if (root.TryGetProperty("detail", out var detail) && detail.ValueKind == JsonValueKind.String)
+                    return detail.GetString();
+
+                return null;
+            }
+            catch (JsonException)
+            {
+                return body.Length > 400 ? body.Substring(0, 400) + "..." : body;
             }
         }
     }

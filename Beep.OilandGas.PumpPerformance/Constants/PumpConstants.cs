@@ -14,6 +14,12 @@ namespace Beep.OilandGas.PumpPerformance.Constants
         public const double HorsepowerConversionFactor = 3960.0;
 
         /// <summary>
+        /// US customary factor for hydraulic horsepower when flow is in GPM and differential pressure is in psi:
+        /// HP = (Q × ΔP) / k (positive-displacement screening).
+        /// </summary>
+        public const double HorsepowerFromGpmPsiFactor = 1714.0;
+
+        /// <summary>
         /// Specific gravity of water at standard conditions.
         /// </summary>
         public const double WaterSpecificGravity = 1.0;
@@ -142,6 +148,16 @@ namespace Beep.OilandGas.PumpPerformance.Constants
         /// Density of water at 60°F in lbm/ft³.
         /// </summary>
         public const double WaterDensityAt60F = 62.37;
+
+        /// <summary>
+        /// Default theoretical efficiency used for screening centrifugal pumps when no vendor curve is available.
+        /// </summary>
+        public const double DefaultCentrifugalTheoreticalEfficiency = 0.85;
+
+        /// <summary>
+        /// Default NPSH margin (ft) used in screening when comparing NPSHa to NPSHr.
+        /// </summary>
+        public const double DefaultNpshSafetyMarginFeet = 2.0;
     }
 }
 

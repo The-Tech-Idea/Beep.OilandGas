@@ -6,7 +6,7 @@
 
 ## TODO checklist
 
-- [x] Module + extension table + dependencies + planning links in **`README.md`**.
+- [x] Module + extension table + dependencies + planning links + **Automated tests** section in **`README.md`**.
 - [x] Add **`PackageReadmeFile`** + pack **`README.md`** (NuGet package readme).
 
 ## Verification

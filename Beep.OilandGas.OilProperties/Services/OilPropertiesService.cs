@@ -4,7 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.OilProperties.Calculations;
+using Beep.OilandGas.OilProperties.Constants;
+using Beep.OilandGas.OilProperties.Exceptions;
+using Beep.OilandGas.OilProperties.Validation;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -46,29 +49,51 @@ namespace Beep.OilandGas.OilProperties.Services
             _logger = logger;
         }
 
-        public decimal CalculateFormationVolumeFactor(decimal pressure, decimal temperature, decimal gasOilRatio, decimal oilGravity, string correlation = "Standing")
+        public decimal CalculateFormationVolumeFactor(decimal pressure, decimal temperature, decimal gasOilRatio, decimal oilGravity, string correlation = "Standing", decimal gasSpecificGravity = 0.65m)
         {
-            _logger?.LogDebug("Calculating oil formation volume factor: Pressure={Pressure}, Temperature={Temperature}, GOR={GOR}, API={API}, Correlation={Correlation}",
-                pressure, temperature, gasOilRatio, oilGravity, correlation);
+            _logger?.LogDebug("Calculating oil formation volume factor: Pressure={Pressure}, Temperature={Temperature}, GOR={GOR}, API={API}, Correlation={Correlation}, GasSg={GasSg}",
+                pressure, temperature, gasOilRatio, oilGravity, correlation, gasSpecificGravity);
 
-            // Standing correlation for oil FVF
-            const decimal gasGravity = 0.65m;
-            var oilSpecificGravity = 141.5m / (131.5m + oilGravity);
-            var rs = gasOilRatio;
-            var tempF = temperature - 459.67m;
-            
-            var fvf = 0.9759m + 0.00012m * (decimal)Math.Pow((double)(rs * (decimal)Math.Sqrt((double)(gasGravity / oilSpecificGravity)) + 1.25m * tempF), 1.2);
+            OilPropertyValidator.ValidateSimpleScreeningInputs(pressure, temperature, oilGravity);
+            if (gasOilRatio < 0m)
+            {
+                throw new OilPropertyParameterOutOfRangeException(
+                    nameof(gasOilRatio),
+                    "Gas-oil ratio cannot be negative.");
+            }
 
-            _logger?.LogDebug("Oil formation volume factor calculated: {FVF}", fvf);
-            return fvf;
+            if (gasSpecificGravity <= 0m)
+                gasSpecificGravity = OilPropertyConstants.DefaultGasSpecificGravity;
+
+            if (string.IsNullOrWhiteSpace(correlation))
+                correlation = "Standing";
+
+            decimal tempF = OilPropertyUnits.RankineToFahrenheit(temperature);
+            if (!correlation.Equals("Standing", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger?.LogWarning("Oil FVF correlation '{Correlation}' is not implemented; using Standing.", correlation);
+            }
+
+            decimal fvfStanding = OilPropertyCalculator.CalculateOilFVF_Standing(gasOilRatio, gasSpecificGravity, oilGravity, tempF);
+            _logger?.LogDebug("Oil formation volume factor calculated: {FVF}", fvfStanding);
+            return fvfStanding;
         }
 
         public decimal CalculateOilDensity(decimal pressure, decimal temperature, decimal oilGravity, decimal gasOilRatio)
         {
             _logger?.LogDebug("Calculating oil density");
-            
-            var oilSpecificGravity = 141.5m / (131.5m + oilGravity);
-            var density = 62.4m * oilSpecificGravity;
+
+            OilPropertyValidator.ValidateSimpleScreeningInputs(pressure, temperature, oilGravity);
+            if (gasOilRatio < 0m)
+            {
+                throw new OilPropertyParameterOutOfRangeException(
+                    nameof(gasOilRatio),
+                    "Gas-oil ratio cannot be negative.");
+            }
+
+            _ = gasOilRatio;
+            var oilSpecificGravity = OilPropertyCalculator.OilSpecificGravityFromApi(oilGravity);
+            var density = OilPropertyConstants.WaterDensity * oilSpecificGravity;
             
             _logger?.LogDebug("Oil density calculated: {Density}", density);
             return density;
@@ -77,10 +102,18 @@ namespace Beep.OilandGas.OilProperties.Services
         public decimal CalculateOilViscosity(decimal pressure, decimal temperature, decimal oilGravity, decimal gasOilRatio)
         {
             _logger?.LogDebug("Calculating oil viscosity");
-            
-            var tempF = temperature - 459.67m;
-            var x = (decimal)(Math.Pow(10.0, (double)(3.0324m - 0.02023m * oilGravity)) * Math.Pow((double)tempF, -1.163));
-            var deadOilViscosity = (decimal)Math.Pow(10.0, (double)x) - 1.0m;
+
+            OilPropertyValidator.ValidateSimpleScreeningInputs(pressure, temperature, oilGravity);
+            if (gasOilRatio < 0m)
+            {
+                throw new OilPropertyParameterOutOfRangeException(
+                    nameof(gasOilRatio),
+                    "Gas-oil ratio cannot be negative.");
+            }
+
+            _ = gasOilRatio;
+            var tempF = OilPropertyUnits.RankineToFahrenheit(temperature);
+            var deadOilViscosity = OilPropertyCalculator.CalculateDeadOilViscosity_BeggsRobinson(oilGravity, tempF);
             
             _logger?.LogDebug("Oil viscosity calculated: {Viscosity}", deadOilViscosity);
             return deadOilViscosity;
@@ -93,9 +126,24 @@ namespace Beep.OilandGas.OilProperties.Services
 
             _logger?.LogInformation("Calculating oil properties for composition {CompositionId}", composition.CompositionId);
 
-            var fvf = CalculateFormationVolumeFactor(pressure, temperature, composition.GasOilRatio, composition.OilGravity);
-            var density = CalculateOilDensity(pressure, temperature, composition.OilGravity, composition.GasOilRatio);
-            var viscosity = CalculateOilViscosity(pressure, temperature, composition.OilGravity, composition.GasOilRatio);
+            OilPropertyValidator.ValidateSimpleScreeningInputs(pressure, temperature, composition.OilGravity);
+            if (composition.GasOilRatio < 0m)
+            {
+                throw new OilPropertyParameterOutOfRangeException(
+                    nameof(composition.GasOilRatio),
+                    "Gas-oil ratio cannot be negative.");
+            }
+
+            decimal gasSg = OilPropertyConstants.DefaultGasSpecificGravity;
+            decimal tempF = OilPropertyUnits.RankineToFahrenheit(temperature);
+            decimal? bubble = composition.BubblePointPressure > 0m ? composition.BubblePointPressure : null;
+            decimal? gor = composition.GasOilRatio > 0m ? composition.GasOilRatio : null;
+            var (_, rsAtP) = BlackOilScreening.GetPbAndRsAtPressure(pressure, tempF, composition.OilGravity, gasSg, bubble, gor);
+
+            var fvf = OilPropertyCalculator.CalculateOilFVF_Standing(rsAtP, gasSg, composition.OilGravity, tempF);
+            var density = OilPropertyConstants.WaterDensity * OilPropertyCalculator.OilSpecificGravityFromApi(composition.OilGravity);
+            var deadVisc = OilPropertyCalculator.CalculateDeadOilViscosity_BeggsRobinson(composition.OilGravity, tempF);
+            var viscosity = OilPropertyCalculator.CalculateSaturatedViscosity_BeggsRobinson(deadVisc, rsAtP);
 
             var result = new OilPropertyResult
             {
@@ -106,7 +154,10 @@ namespace Beep.OilandGas.OilProperties.Services
                 FormationVolumeFactor = fvf,
                 Density = density,
                 Viscosity = viscosity,
-                CalculationDate = DateTime.UtcNow
+                CalculationDate = DateTime.UtcNow,
+                ApiGravity = composition.OilGravity,
+                SolutionGasOilRatio = rsAtP,
+                CorrelationMethod = "STANDING_BEGGS"
             };
 
             _logger?.LogInformation("Oil properties calculated: FVF={FVF}, Density={Density}, Viscosity={Viscosity}", fvf, density, viscosity);
@@ -316,8 +367,8 @@ namespace Beep.OilandGas.OilProperties.Services
 
             _logger?.LogInformation("Analyzing phase diagram for composition {CompositionId}", composition.CompositionId);
 
-            // Calculate critical properties using correlation methods
-            var oilSpecificGravity = 141.5m / (131.5m + composition.OilGravity);
+            // Calculate critical properties using correlation methods (screening placeholders).
+            var oilSpecificGravity = OilPropertyCalculator.OilSpecificGravityFromApi(composition.OilGravity);
             var criticalTemp = 369.8m + 59.3m * composition.OilGravity;  // Rankine
             var criticalPress = 3648m + (0.5m - composition.OilGravity) * 10m;  // psia
 
@@ -344,7 +395,8 @@ namespace Beep.OilandGas.OilProperties.Services
                 {
                     var reducedPressure = p / criticalPress;
                     var reducedTemp = t / criticalTemp;
-                    var density = oilSpecificGravity * 62.4m * (1m - 0.0005m * (t - 459.67m));
+                    var tempF = OilPropertyUnits.RankineToFahrenheit(t);
+                    var density = oilSpecificGravity * OilPropertyConstants.WaterDensity * (1m - 0.0005m * tempF);
 
                     string phase = DeterminePhase(reducedPressure, reducedTemp);
                     result.PhasePoints.Add(new PhasePoint
@@ -372,8 +424,8 @@ namespace Beep.OilandGas.OilProperties.Services
 
             _logger?.LogInformation("Calculating compressibility factor for composition {CompositionId} at P={Pressure}, T={Temperature}", composition.CompositionId, pressure, temperature);
 
-            // Calculate critical properties
-            var oilSpecificGravity = 141.5m / (131.5m + composition.OilGravity);
+            // Calculate critical properties (screening placeholders).
+            var oilSpecificGravity = OilPropertyCalculator.OilSpecificGravityFromApi(composition.OilGravity);
             var criticalTemp = 369.8m + 59.3m * composition.OilGravity;
             var criticalPress = 3648m + (0.5m - composition.OilGravity) * 10m;
 
@@ -420,8 +472,9 @@ namespace Beep.OilandGas.OilProperties.Services
 
             // Parachor method for interfacial tension
             var oilDensity = CalculateOilDensity(pressure, temperature, composition.OilGravity, composition.GasOilRatio);
-            var gasGravity = 0.65m; // Standard gas gravity
-            var gasDensity = (gasGravity * 28.97m * pressure) / (10.732m * (temperature - 459.67m));
+            var gasGravity = OilPropertyConstants.DefaultGasSpecificGravity;
+            // Ideal gas density (lb/ft³): use absolute temperature in Rankine in the denominator.
+            var gasDensity = (gasGravity * 28.97m * pressure) / (10.732m * temperature);
 
             // Parachor correlations for typical crude oil
             var parachor = 75m + (0.5m * composition.OilGravity * 10m);
@@ -429,7 +482,8 @@ namespace Beep.OilandGas.OilProperties.Services
 
             // Temperature dependence (linear approximation)
             var tempCoeff = -0.05m;
-            var adjustedSurfaceTension = surfaceTension * (1m + tempCoeff * (temperature - 60m) / 100m);
+            var tempF = OilPropertyUnits.RankineToFahrenheit(temperature);
+            var adjustedSurfaceTension = surfaceTension * (1m + tempCoeff * (tempF - 60m) / 100m);
 
             var result = new InterfacialTensionAnalysis
             {
@@ -491,6 +545,8 @@ namespace Beep.OilandGas.OilProperties.Services
 
             _logger?.LogInformation("Generating property correlation matrix for composition {CompositionId}", composition.CompositionId);
 
+            OilPropertyValidator.ValidateCompositionForPvtSweeps(composition, minPressure, maxPressure, minTemperature, maxTemperature);
+
             var result = new PropertyCorrelationMatrix
             {
                 MatrixId = _defaults.FormatIdForTable("PROPERTY_MATRIX", Guid.NewGuid().ToString()),
@@ -507,10 +563,10 @@ namespace Beep.OilandGas.OilProperties.Services
 
             for (decimal p = minPressure; p <= maxPressure; p += pressureStep)
             {
-                var fvf = CalculateFormationVolumeFactor(p, avgTemp, composition.GasOilRatio, composition.OilGravity);
+                var fvf = CompositionFormationVolumeFactor(p, avgTemp, composition);
                 var density = CalculateOilDensity(p, avgTemp, composition.OilGravity, composition.GasOilRatio);
-                var viscosity = CalculateOilViscosity(p, avgTemp, composition.OilGravity, composition.GasOilRatio);
-                var compressibility = (fvf - CalculateFormationVolumeFactor(p + 100m, avgTemp, composition.GasOilRatio, composition.OilGravity)) / (100m * fvf);
+                var viscosity = CompositionSaturatedOilViscosity(p, avgTemp, composition);
+                var compressibility = (fvf - CompositionFormationVolumeFactor(p + 100m, avgTemp, composition)) / (100m * fvf);
 
                 result.PropertyByPressure.Add(new PressureRangeProperty
                 {
@@ -529,10 +585,10 @@ namespace Beep.OilandGas.OilProperties.Services
 
             for (decimal t = minTemperature; t <= maxTemperature; t += tempStep)
             {
-                var fvf = CalculateFormationVolumeFactor(avgPress, t, composition.GasOilRatio, composition.OilGravity);
+                var fvf = CompositionFormationVolumeFactor(avgPress, t, composition);
                 var density = CalculateOilDensity(avgPress, t, composition.OilGravity, composition.GasOilRatio);
-                var viscosity = CalculateOilViscosity(avgPress, t, composition.OilGravity, composition.GasOilRatio);
-                var compressibility = (fvf - CalculateFormationVolumeFactor(avgPress, t + 5m, composition.GasOilRatio, composition.OilGravity)) / (5m * fvf);
+                var viscosity = CompositionSaturatedOilViscosity(avgPress, t, composition);
+                var compressibility = (fvf - CompositionFormationVolumeFactor(avgPress, t + 5m, composition)) / (5m * fvf);
 
                 result.PropertyByTemperature.Add(new TemperatureRangeProperty
                 {
@@ -565,14 +621,15 @@ namespace Beep.OilandGas.OilProperties.Services
 
             _logger?.LogInformation("Predicting surface properties for composition {CompositionId}", composition.CompositionId);
 
-            // Calculate separator efficiency
-            var separationRatio = composition.GasOilRatio / (composition.GasOilRatio * 0.85m);
+            // Separator efficiency placeholder (avoid divide-by-zero when GOR is zero).
+            var separationRatio = composition.GasOilRatio > 0m ? 1m / 0.85m : 1m;
             var pressureRatio = separatorPressure / reservoirPressure;
             var tempRatio = separatorTemperature / reservoirTemperature;
 
-            var residualGasGravity = 0.65m + (0.05m * Math.Min(pressureRatio, 1m));
+            var residualGasGravity = OilPropertyConstants.DefaultGasSpecificGravity + (0.05m * Math.Min(pressureRatio, 1m));
             var stockTankDensity = CalculateOilDensity(separatorPressure, separatorTemperature, composition.OilGravity, composition.GasOilRatio * pressureRatio);
-            var stockTankGravity = (stockTankDensity / 62.4m - 1m) * 141.5m - 131.5m;
+            var oilSg = stockTankDensity / OilPropertyConstants.WaterDensity;
+            var stockTankGravity = OilPropertyConstants.ApiGravityConstant / oilSg - OilPropertyConstants.ApiGravityOffset;
 
             var result = new PVTSurfaceProperty
             {
@@ -604,6 +661,8 @@ namespace Beep.OilandGas.OilProperties.Services
 
             _logger?.LogInformation("Analyzing {PropertyName} trend for composition {CompositionId}", propertyName, composition.CompositionId);
 
+            OilPropertyValidator.ValidateCompositionForPressureTrend(composition, minPressure, maxPressure, temperature);
+
             var pressureRange = new List<decimal>();
             var propertyValues = new List<decimal>();
 
@@ -616,9 +675,9 @@ namespace Beep.OilandGas.OilProperties.Services
 
                 decimal value = propertyName.ToLower() switch
                 {
-                    "viscosity" => CalculateOilViscosity(p, temperature, composition.OilGravity, composition.GasOilRatio),
+                    "viscosity" => CompositionSaturatedOilViscosity(p, temperature, composition),
                     "density" => CalculateOilDensity(p, temperature, composition.OilGravity, composition.GasOilRatio),
-                    "fvf" => CalculateFormationVolumeFactor(p, temperature, composition.GasOilRatio, composition.OilGravity),
+                    "fvf" => CompositionFormationVolumeFactor(p, temperature, composition),
                     _ => 0m
                 };
                 propertyValues.Add(Math.Max(value, 0m));

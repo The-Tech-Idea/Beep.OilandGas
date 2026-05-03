@@ -16,7 +16,8 @@
 | Extension LOV table | **`Data/Tables/R_FLASH_CALCULATION_REFERENCE_CODE`** |
 | Reference seed | **`Data/Constants/FlashReferenceSets.cs`**, **`FlashReferenceCodeSeed.cs`** |
 | Module | **`Modules/FlashCalculationsModule.cs`** (**`Order` 73**) |
-| LifeCycle | **`PPDMCalculationService`**, **`FlashCalculationsMapper`** |
+| LifeCycle | **`PPDMCalculationService`**, **`FlashCalculationsMapper`** (+ **`FlashCalculationsMapper.EquationOfState`**) |
+| EOS wire → LOV | **`Constants/FlashEquationOfStateMapping.cs`** |
 
 ## Baseline gaps
 
@@ -29,4 +30,4 @@
 ## Exit criteria
 
 - [x] **`FlashCalculationsModule`** + **`R_FLASH_CALCULATION_REFERENCE_CODE`** documented and seeded.
-- [ ] Golden regression tests for core flash path (phase 5).
+- [x] Golden regression test for core isothermal flash path (binary vector) — phase 5.

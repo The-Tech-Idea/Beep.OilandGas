@@ -12,9 +12,9 @@ Single physics path: **HTTP** (if dedicated flash controller exists) and **`PPDM
 
 ## TODO checklist
 
-- [ ] Map **`FlashCalculationOptions.EquationOfState`** to **`FLASH_EOS_MODEL`** codes in **`R_FLASH_CALCULATION_REFERENCE_CODE`**.
-- [ ] Rethrow **`OperationCanceledException`** on packaged runs.
-- [ ] Align **`FlashReferenceSets`** literals with any **`FlashCalculationWellKnown`**-style wire enums in **Models**.
+- [x] Map **`FlashCalculationOptions.EquationOfState`** → **`FLASH_EOS_MODEL`** via **`FlashEquationOfStateMapping.ToReferenceCode`** (seeded **`PR` / `SRK` / `SRK_MODIFIED` / `IDEAL_K`**); surfaced on **`FlashCalculationAdditionalResults.EosModelReferenceCode`** for **`RunRigorousFlashAsync`** and **`PerformFlashCalculationAsync`**.
+- [x] Rethrow **`OperationCanceledException`** in **`RunRigorousFlashAsync`** and **`PerformFlashCalculationAsync`**.
+- [x] **`FlashReferenceSets`** / **`FlashReferenceCodeSeed`** documented against **`FlashCalculationOptions.EquationOfState`** + **`FlashEquationOfStateMapping`** (no separate **`FlashCalculationWellKnown`** enum required).
 
 ## Verification
 

@@ -29,9 +29,13 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
             set { SetProperty(ref TestIdValue, value); }
 
         }
-        private string AnalysisTypeValue = "BUILDUP";
+        /// <summary>
+        /// <c>BUILDUP</c> or <c>DRAWDOWN</c>. When null or empty, the host calculation service infers classification from PPDM <c>WELL_TEST.TEST_TYPE</c>
+        /// when loading pressure data from the database, or defaults to build-up for manual <c>PressureTimeData</c>.
+        /// </summary>
+        private string? AnalysisTypeValue;
 
-        public string AnalysisType
+        public string? AnalysisType
 
         {
 
@@ -210,6 +214,19 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
             get { return this.UserIdValue; }
 
             set { SetProperty(ref UserIdValue, value); }
+
+        }
+
+        private string? FieldIdValue;
+
+        /// <summary>Optional PPDM field scope for stored results and history queries (<c>WELL_TEST_ANALYSIS_RESULT.FIELD_ID</c>).</summary>
+        public string? FieldId
+
+        {
+
+            get { return this.FieldIdValue; }
+
+            set { SetProperty(ref FieldIdValue, value); }
 
         }
     }

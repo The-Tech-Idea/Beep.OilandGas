@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.21" />
+    <ProjectReference Include="..\Beep.OilandGas.PPDM.Models\Beep.OilandGas.PPDM.Models.csproj" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.7" />
   </ItemGroup>
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.Models.Data;
@@ -501,7 +502,8 @@ namespace Beep.OilandGas.Web.Services
             GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal minGasInjectionRate,
             decimal maxGasInjectionRate,
-            int numberOfPoints = 50)
+            int numberOfPoints = 50,
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -513,7 +515,7 @@ namespace Beep.OilandGas.Web.Services
                     NumberOfPoints = numberOfPoints
                 };
                 var result = await _apiClient.PostAsync<object, GAS_LIFT_POTENTIAL_RESULT>(
-                    "/api/gaslift/analyze-potential", request);
+                    "/api/gaslift/analyze-potential", request, cancellationToken);
                 return result ?? throw new InvalidOperationException("Failed to analyze gas lift potential");
             }
             catch (Exception ex)
@@ -527,7 +529,8 @@ namespace Beep.OilandGas.Web.Services
             GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal gasInjectionPressure,
             int numberOfValves,
-            bool useSIUnits = false)
+            bool useSIUnits = false,
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -539,7 +542,7 @@ namespace Beep.OilandGas.Web.Services
                     UseSIUnits = useSIUnits
                 };
                 var result = await _apiClient.PostAsync<object, GAS_LIFT_VALVE_DESIGN_RESULT>(
-                    "/api/gaslift/design-valves", request);
+                    "/api/gaslift/design-valves", request, cancellationToken);
                 return result ?? throw new InvalidOperationException("Failed to design gas lift valves");
             }
             catch (Exception ex)
@@ -549,7 +552,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveGasLiftDesignAsync(GAS_LIFT_DESIGN design, string? userId = null)
+        public async Task<bool> SaveGasLiftDesignAsync(GAS_LIFT_DESIGN design, string? userId = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -558,7 +561,7 @@ namespace Beep.OilandGas.Web.Services
                 {
                     endpoint += $"?userId={Uri.EscapeDataString(userId)}";
                 }
-                return await _apiClient.PostAsync(endpoint, design);
+                return await _apiClient.PostAsync(endpoint, design, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -567,12 +570,12 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<GAS_LIFT_PERFORMANCE> GetGasLiftPerformanceAsync(string wellUWI)
+        public async Task<GAS_LIFT_PERFORMANCE> GetGasLiftPerformanceAsync(string wellUWI, CancellationToken cancellationToken = default)
         {
             try
             {
                 var result = await _apiClient.GetAsync<GAS_LIFT_PERFORMANCE>(
-                    $"/api/gaslift/performance/{Uri.EscapeDataString(wellUWI)}");
+                    $"/api/gaslift/performance/{Uri.EscapeDataString(wellUWI)}", cancellationToken);
                 return result ?? new GAS_LIFT_PERFORMANCE { WELL_UWI = wellUWI };
             }
             catch (Exception ex)

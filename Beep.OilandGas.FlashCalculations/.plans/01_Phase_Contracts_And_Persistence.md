@@ -12,9 +12,9 @@ Keep **`IFlashCalculationService`** stable for ApiService/LifeCycle; align **`Fl
 
 ## TODO checklist
 
-- [ ] Audit **`FLASH_CONDITIONS`** / result types: confirm **projection vs table** usage per **CLAUDE.md**.
-- [ ] When saving runs: use **`FormatIdForTable`** for new IDs; audit columns from **`ICommonColumnHandler`**.
-- [ ] **`OperationCanceledException`** — propagate from long-running orchestrated flashes.
+- [x] Audit **`FLASH_CONDITIONS`** / result types: confirm **projection vs table** usage per **CLAUDE.md** (feed + conditions are projections; **`FLASH_CALCULATION_RESULT`** is the persisted table path via **`FlashCalculationService.SaveFlashResultAsync`** / LifeCycle insert mapping).
+- [x] When saving runs: use **`FormatIdForTable`** for new IDs — **`PerformFlashCalculationAsync`** / **`MapFlashResultToDTO`** and **`RunRigorousFlashAsync`** use **`FormatIdForTable("FLASH_CALCULATION", …)`** for **`CalculationId`** (aligned with existing **`SaveFlashResultAsync`** pattern).
+- [x] **`OperationCanceledException`** — **`RunRigorousFlashAsync`** and **`PerformFlashCalculationAsync`** rethrow before generic logging paths.
 
 ## Verification
 

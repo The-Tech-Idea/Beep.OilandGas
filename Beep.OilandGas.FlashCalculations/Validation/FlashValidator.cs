@@ -11,6 +11,13 @@ namespace Beep.OilandGas.FlashCalculations.Validation
     /// </summary>
     public static class FlashValidator
     {
+        private static void AssertFinite(string name, decimal value)
+        {
+            var d = (double)value;
+            if (double.IsNaN(d) || double.IsInfinity(d))
+                throw new InvalidFlashConditionsException($"{name} must be a finite numeric value.");
+        }
+
         /// <summary>
         /// Validates flash conditions.
         /// </summary>
@@ -18,6 +25,9 @@ namespace Beep.OilandGas.FlashCalculations.Validation
         {
             if (conditions == null)
                 throw new ArgumentNullException(nameof(conditions));
+
+            AssertFinite(nameof(conditions.PRESSURE), conditions.PRESSURE);
+            AssertFinite(nameof(conditions.TEMPERATURE), conditions.TEMPERATURE);
 
             if (conditions.PRESSURE <= 0)
                 throw new InvalidFlashConditionsException("Pressure must be greater than zero.");
@@ -36,6 +46,7 @@ namespace Beep.OilandGas.FlashCalculations.Validation
 
             // Validate mole fractions sum to approximately 1.0
             decimal totalMoleFraction = conditions.FEED_COMPOSITION .Sum(c => c.MOLE_FRACTION);
+            AssertFinite("Sum of mole fractions", totalMoleFraction);
             if (Math.Abs(totalMoleFraction - 1.0m) > 0.1m)
             {
                 throw new InvalidFlashConditionsException(
@@ -56,6 +67,11 @@ namespace Beep.OilandGas.FlashCalculations.Validation
 
             if (component.MOLE_FRACTION < 0 || component.MOLE_FRACTION > 1)
                 throw new InvalidComponentException($"Component {component.NAME}: Mole fraction must be between 0 and 1.");
+
+            AssertFinite($"{component.NAME} mole fraction", component.MOLE_FRACTION);
+            AssertFinite($"{component.NAME} critical temperature", component.CRITICAL_TEMPERATURE);
+            AssertFinite($"{component.NAME} critical pressure", component.CRITICAL_PRESSURE);
+            AssertFinite($"{component.NAME} molecular weight", component.MOLECULAR_WEIGHT);
 
             if (component.CRITICAL_TEMPERATURE <= 0)
                 throw new InvalidComponentException($"Component {component.NAME}: Critical temperature must be greater than zero.");
@@ -80,6 +96,11 @@ namespace Beep.OilandGas.FlashCalculations.Validation
 
             if (component.MOLE_FRACTION < 0 || component.MOLE_FRACTION > 1)
                 throw new InvalidComponentException($"Component {component.NAME}: Mole fraction must be between 0 and 1.");
+
+            AssertFinite($"{component.NAME} mole fraction", component.MOLE_FRACTION);
+            AssertFinite($"{component.NAME} critical temperature", component.CRITICAL_TEMPERATURE);
+            AssertFinite($"{component.NAME} critical pressure", component.CRITICAL_PRESSURE);
+            AssertFinite($"{component.NAME} molecular weight", component.MOLECULAR_WEIGHT);
 
             if (component.CRITICAL_TEMPERATURE <= 0)
                 throw new InvalidComponentException($"Component {component.NAME}: Critical temperature must be greater than zero.");

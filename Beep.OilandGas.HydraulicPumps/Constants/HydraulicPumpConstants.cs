@@ -61,6 +61,21 @@ namespace Beep.OilandGas.HydraulicPumps.Constants
         public const decimal MaximumVolumetricEfficiency = 0.95m;
 
         /// <summary>
+        /// Fresh water density at standard conditions (lb/ft3).
+        /// </summary>
+        public const decimal WaterDensityLbPerFt3 = 62.4m;
+
+        /// <summary>
+        /// Seconds per day (86400).
+        /// </summary>
+        public const decimal SecondsPerDay = 86400m;
+
+        /// <summary>
+        /// Square inches per square foot (144).
+        /// </summary>
+        public const decimal SquareInchesPerSquareFoot = 144m;
+
+        /// <summary>
         /// Conversion factor: bbl to ft³.
         /// </summary>
         public const decimal BarrelToCubicFeet = 5.615m;

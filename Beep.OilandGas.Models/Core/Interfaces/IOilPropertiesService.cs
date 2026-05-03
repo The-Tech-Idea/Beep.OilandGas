@@ -18,9 +18,10 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="temperature">Temperature (Rankine)</param>
         /// <param name="gasOilRatio">Gas-oil ratio (scf/stb)</param>
         /// <param name="oilGravity">Oil gravity (API)</param>
-        /// <param name="correlation">Correlation method to use</param>
+        /// <param name="correlation">Correlation name; only Standing oil FVF is implemented—other values are accepted but treated as Standing (see implementation).</param>
+        /// <param name="gasSpecificGravity">Gas specific gravity (air = 1); used when correlation requires dissolved gas properties (default 0.65).</param>
         /// <returns>Formation volume factor (rb/stb)</returns>
-        decimal CalculateFormationVolumeFactor(decimal pressure, decimal temperature, decimal gasOilRatio, decimal oilGravity, string correlation = "Standing");
+        decimal CalculateFormationVolumeFactor(decimal pressure, decimal temperature, decimal gasOilRatio, decimal oilGravity, string correlation = "Standing", decimal gasSpecificGravity = 0.65m);
 
         /// <summary>
         /// Calculates oil density.

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.WellTestAnalysis.Constants;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
+using static Beep.OilandGas.WellTestAnalysis.Constants.WellTestConstants;
 
 namespace Beep.OilandGas.WellTestAnalysis.Calculations
 {
@@ -36,7 +37,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
                     if (i == 0)
                     {
                         double dt = (double)(((sortedData[i + 1].TIME ?? 0.0) - (sortedData[i].TIME ?? 0.0)));
-                        if (Math.Abs(dt) < 1e-12) dt = 1e-12;
+                        if (Math.Abs(dt) < DerivativeMinimumDeltaTime) dt = DerivativeMinimumDeltaTime;
                         double dp = (double)(((sortedData[i + 1].PRESSURE ?? 0.0) - (sortedData[i].PRESSURE ?? 0.0)));
                         double deriv = dp / dt * (double)(sortedData[i].TIME ?? 0.0);
                         point.PRESSURE_DERIVATIVE = deriv;
@@ -44,7 +45,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
                     else
                     {
                         double dt = (double)(((sortedData[i].TIME ?? 0.0) - (sortedData[i - 1].TIME ?? 0.0)));
-                        if (Math.Abs(dt) < 1e-12) dt = 1e-12;
+                        if (Math.Abs(dt) < DerivativeMinimumDeltaTime) dt = DerivativeMinimumDeltaTime;
                         double dp = (double)(((sortedData[i].PRESSURE ?? 0.0) - (sortedData[i - 1].PRESSURE ?? 0.0)));
                         double deriv = (dp / dt) * (double)(sortedData[i].TIME ?? 0.0);
                         point.PRESSURE_DERIVATIVE = deriv;
@@ -55,8 +56,8 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
                     // Central difference with smoothing
                     double dt1 = (double)(((sortedData[i].TIME ?? 0.0) - (sortedData[i - 1].TIME ?? 0.0)));
                     double dt2 = (double)(((sortedData[i + 1].TIME ?? 0.0) - (sortedData[i].TIME ?? 0.0)));
-                    if (Math.Abs(dt1) < 1e-12) dt1 = 1e-12;
-                    if (Math.Abs(dt2) < 1e-12) dt2 = 1e-12;
+                    if (Math.Abs(dt1) < DerivativeMinimumDeltaTime) dt1 = DerivativeMinimumDeltaTime;
+                    if (Math.Abs(dt2) < DerivativeMinimumDeltaTime) dt2 = DerivativeMinimumDeltaTime;
                     double dp1 = (double)(((sortedData[i].PRESSURE ?? 0.0) - (sortedData[i - 1].PRESSURE ?? 0.0)));
                     double dp2 = (double)(((sortedData[i + 1].PRESSURE ?? 0.0) - (sortedData[i].PRESSURE ?? 0.0)));
 
@@ -109,9 +110,9 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
                 else
                 {
                     // Moving average smoothing
-                    double avg = (data[i - 1].PRESSURE_DERIVATIVE ?? 0.0) * 0.25 +
-                                (data[i].PRESSURE_DERIVATIVE ?? 0.0) * 0.5 +
-                                (data[i + 1].PRESSURE_DERIVATIVE ?? 0.0) * 0.25;
+                    double avg = (data[i - 1].PRESSURE_DERIVATIVE ?? 0.0) * DerivativeSmoothingMovingAverageOuterWeight +
+                                (data[i].PRESSURE_DERIVATIVE ?? 0.0) * DerivativeSmoothingMovingAverageCenterWeight +
+                                (data[i + 1].PRESSURE_DERIVATIVE ?? 0.0) * DerivativeSmoothingMovingAverageOuterWeight;
                     point.PRESSURE_DERIVATIVE = avg;
                 }
 
@@ -152,7 +153,10 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             double stdDev = Math.Sqrt(middleDerivatives.Sum(d => Math.Pow((double)d - avgDerivative, 2)) / middleDerivatives.Count);
 
             // If derivative is relatively constant, infinite acting
-            if (stdDev / avgDerivative < 0.1)
+            if (Math.Abs(avgDerivative) < Epsilon)
+                return ReservoirModel.InfiniteActing;
+
+            if (stdDev / Math.Abs(avgDerivative) < DerivativeIdentifyInfiniteActingRelativeStdDev)
             {
                 // Check late time for boundaries
                 int lateStart = sorted.Count * 2 / 3;
@@ -167,9 +171,9 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
                     double lateAvg = (double)lateDerivatives.Average();
                     double lateTrend = (double)lateDerivatives.Last() - (double)lateDerivatives.First();
 
-                    if (lateTrend > avgDerivative * 0.2)
+                    if (lateTrend > avgDerivative * DerivativeIdentifyLateTrendVsMiddleAverage)
                         return ReservoirModel.ClosedBoundary;
-                    else if (lateTrend < -avgDerivative * 0.2)
+                    else if (lateTrend < -avgDerivative * DerivativeIdentifyLateTrendVsMiddleAverage)
                         return ReservoirModel.ConstantPressureBoundary;
                 }
 
@@ -190,7 +194,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
                     if (minIndex < allDerivatives.Count - 2)
                     {
                         double recovery = (double)allDerivatives.Skip(minIndex + 1).Take(3).Average() - (double)allDerivatives[minIndex];
-                        if (recovery > (double)allDerivatives[minIndex] * 0.3)
+                        if (recovery > (double)allDerivatives[minIndex] * DerivativeIdentifyDualPorosityRecoveryRatio)
                             return ReservoirModel.DualPorosity;
                     }
                 }
@@ -239,13 +243,13 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
 
             // Build log-log arrays for slope detection
             var logT = sorted.Select(p => Math.Log10((double)p.TIME)).ToArray();
-            var logD = sorted.Select(p => Math.Log10(Math.Max(Math.Abs((double)p.PRESSURE_DERIVATIVE.Value), 1e-10))).ToArray();
+            var logD = sorted.Select(p => Math.Log10(Math.Max(Math.Abs((double)p.PRESSURE_DERIVATIVE.Value), Epsilon))).ToArray();
             int n = logT.Length;
 
             int seq = 0;
 
             // ── 1. Detect unit-slope region (wellbore storage) ──────────────
-            int storageEnd = FindRegimeEnd(logT, logD, targetSlope: 1.0, tolerance: 0.15, minPoints: 3);
+            int storageEnd = FindRegimeEnd(logT, logD, targetSlope: FlowRegimeWellboreStorageLogLogSlope, tolerance: FlowRegimeWellboreStorageSlopeTolerance, minPoints: 3);
             if (storageEnd > 0)
             {
                 LinearRegression1D(logT, logD, 0, storageEnd, out double s1, out double i1);
@@ -265,7 +269,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
 
             // ── 2. Detect flat region (IARF) — slope ≈ 0 ───────────────────
             int iarfStart = storageEnd + 1;
-            int iarfEnd = FindRegimeEnd(logT, logD, targetSlope: 0.0, tolerance: 0.1,
+            int iarfEnd = FindRegimeEnd(logT, logD, targetSlope: FlowRegimeIarfLogLogSlope, tolerance: FlowRegimeIarfSlopeTolerance,
                 minPoints: 3, searchStart: iarfStart);
             if (iarfEnd > iarfStart)
             {
@@ -281,7 +285,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
                     Slope = s2,
                     Intercept = i2,
                     RSquared = CalcR2LogLog(logT, logD, iarfStart, iarfEnd, s2, i2),
-                    ConfidenceLevel = Math.Abs(s2) < 0.05 ? "High" : "Medium",
+                    ConfidenceLevel = Math.Abs(s2) < FlowRegimeIarfHighConfidenceSlopeAbsMax ? "High" : "Medium",
                     Interpretation = $"Infinite Acting Radial Flow. Derivative ≈ {avgDeriv:F1} psi. " +
                                      "Use semi-log straight line to compute permeability and skin."
                 });
@@ -289,7 +293,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
 
             // ── 3. Detect half-slope region (linear flow from fracture) ─────
             int linStart = iarfEnd + 1;
-            int linEnd = FindRegimeEnd(logT, logD, targetSlope: 0.5, tolerance: 0.12,
+            int linEnd = FindRegimeEnd(logT, logD, targetSlope: FlowRegimeLinearFlowLogLogSlope, tolerance: FlowRegimeLinearFlowSlopeTolerance,
                 minPoints: 3, searchStart: linStart);
             if (linEnd > linStart)
             {
@@ -311,7 +315,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             // ── 4. Detect quarter-slope region (bilinear flow) ───────────────
             int bilStart = iarfEnd + 1;
             if (linEnd <= linStart) bilStart = iarfEnd + 1;  // only if no linear flow found
-            int bilEnd = FindRegimeEnd(logT, logD, targetSlope: 0.25, tolerance: 0.08,
+            int bilEnd = FindRegimeEnd(logT, logD, targetSlope: FlowRegimeBilinearFlowLogLogSlope, tolerance: FlowRegimeBilinearFlowSlopeTolerance,
                 minPoints: 3, searchStart: bilStart);
             if (bilEnd > bilStart)
             {
@@ -332,7 +336,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
 
             // ── 5. Detect late unit-slope (pseudo-steady state) ──────────────
             int pssStart = Math.Max(iarfEnd + 1, n * 2 / 3);
-            int pssEnd = FindRegimeEnd(logT, logD, targetSlope: 1.0, tolerance: 0.15,
+            int pssEnd = FindRegimeEnd(logT, logD, targetSlope: FlowRegimePssLogLogSlope, tolerance: FlowRegimePssSlopeTolerance,
                 minPoints: 3, searchStart: pssStart);
             if (pssEnd > pssStart)
             {
@@ -356,7 +360,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
                 if (n >= 3)
                 {
                     double lateTrend = logD[n - 1] - logD[n - 3];
-                    if (lateTrend < -0.3)
+                    if (lateTrend < -FlowRegimeSteadyStateLateLogDerivativeDecline)
                     {
                         regimes.Add(new FlowRegimeIndicator
                         {
@@ -386,10 +390,10 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
         /// Reference: Bourdet, D. et al. (1989) SPE Formation Evaluation.
         /// </summary>
         /// <param name="data">Pressure-time data (sorted or unsorted; sorted internally).</param>
-        /// <param name="L">Log-time smoothing window (default 0.1).</param>
+        /// <param name="L">Log-time smoothing window; default matches <see cref="WellTestConstants.DefaultDerivativeSmoothing"/>.</param>
         /// <returns>List of <see cref="PRESSURE_TIME_POINT"/> with PRESSURE_DERIVATIVE set to t·dp/dlnt.</returns>
         public static List<PRESSURE_TIME_POINT> CalculateBourdetDerivative(
-            List<PRESSURE_TIME_POINT> data, double L = 0.1)
+            List<PRESSURE_TIME_POINT> data, double L = DefaultDerivativeSmoothing)
         {
             if (data == null || data.Count < 3)
                 return new List<PRESSURE_TIME_POINT>();
@@ -438,7 +442,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
                     double wLeft = lnTR - lnT0;
                     double wRight = lnT0 - lnTL;
                     double wTotal = lnTR - lnTL;
-                    deriv = wTotal > 1e-12
+                    deriv = wTotal > DerivativeMinimumDeltaTime
                         ? (dLeft * wLeft + dRight * wRight) / wTotal
                         : (dLeft + dRight) / 2.0;
                 }
@@ -447,7 +451,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
                     double tL = (double)sorted[iLeft].TIME.Value;
                     double pL = (double)sorted[iLeft].PRESSURE.Value;
                     double lnTL = Math.Log(tL);
-                    deriv = Math.Abs(lnT0 - lnTL) > 1e-12
+                    deriv = Math.Abs(lnT0 - lnTL) > DerivativeMinimumDeltaTime
                         ? (p0 - pL) / (lnT0 - lnTL)
                         : 0;
                 }
@@ -456,7 +460,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
                     double tR = (double)sorted[iRight].TIME.Value;
                     double pR = (double)sorted[iRight].PRESSURE.Value;
                     double lnTR = Math.Log(tR);
-                    deriv = Math.Abs(lnTR - lnT0) > 1e-12
+                    deriv = Math.Abs(lnTR - lnT0) > DerivativeMinimumDeltaTime
                         ? (pR - p0) / (lnTR - lnT0)
                         : 0;
                 }
@@ -493,7 +497,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             for (int i = Math.Max(1, searchStart); i < logT.Length; i++)
             {
                 double dt = logT[i] - logT[i - 1];
-                if (Math.Abs(dt) < 1e-10) continue;
+                if (Math.Abs(dt) < Epsilon) continue;
                 double localSlope = (logD[i] - logD[i - 1]) / dt;
 
                 if (Math.Abs(localSlope - targetSlope) <= tolerance)
@@ -527,7 +531,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             }
 
             double denom = n * sumX2 - sumX * sumX;
-            if (Math.Abs(denom) < 1e-12) { slope = 0; intercept = sumY / n; return; }
+            if (Math.Abs(denom) < DerivativeMinimumDeltaTime) { slope = 0; intercept = sumY / n; return; }
 
             slope = (n * sumXY - sumX * sumY) / denom;
             intercept = (sumY - slope * sumX) / n;
@@ -550,7 +554,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
                 ssRes += Math.Pow(logD[i] - (slope * logT[i] + intercept), 2);
             }
 
-            return ssTotal < 1e-12 ? 1.0 : 1.0 - ssRes / ssTotal;
+            return ssTotal < DerivativeMinimumDeltaTime ? 1.0 : 1.0 - ssRes / ssTotal;
         }
 
         private static int FindMiddleTimeRegion(double[] logTime, double[] pressures)

@@ -23,6 +23,18 @@ namespace Beep.OilandGas.HydraulicPumps.Validation
             if (wellProperties.TUBING_DIAMETER <= 0)
                 throw new InvalidWellPropertiesException("Tubing diameter must be greater than zero.");
 
+            if (wellProperties.CASING_DIAMETER <= 0)
+                throw new InvalidWellPropertiesException("Casing diameter must be greater than zero.");
+
+            if (wellProperties.OIL_GRAVITY < 4m || wellProperties.OIL_GRAVITY > 75m)
+                throw new InvalidWellPropertiesException("Oil gravity (API) must be between 4 and 75 for screening correlations.");
+
+            if (wellProperties.GAS_OIL_RATIO < 0)
+                throw new InvalidWellPropertiesException("Gas-oil ratio cannot be negative.");
+
+            if (wellProperties.WELLHEAD_TEMPERATURE <= 0m || wellProperties.BOTTOM_HOLE_TEMPERATURE <= 0m)
+                throw new InvalidWellPropertiesException("Wellhead and bottom-hole temperatures must be greater than zero (Rankine).");
+
             if (wellProperties.WELLHEAD_PRESSURE < 0)
                 throw new InvalidWellPropertiesException("Wellhead pressure cannot be negative.");
 

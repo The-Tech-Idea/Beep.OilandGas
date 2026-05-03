@@ -10,7 +10,7 @@ namespace Beep.OilandGas.PumpPerformance.Validation
     /// <summary>
     /// Provides validation methods for pump performance calculation inputs.
     /// </summary>
-    public static class PumpDataValidator
+    public static partial class PumpDataValidator
     {
         /// <summary>
         /// Validates flow rate values.
@@ -210,22 +210,22 @@ namespace Beep.OilandGas.PumpPerformance.Validation
         /// <summary>
         /// Validates efficiency value.
         /// </summary>
-        /// <param name="efficiency"> EFFICIENCY value (0 to 1, or slightly above for theoretical).</param>
+        /// <param name="efficiency">Efficiency (0 to 1, or slightly above for theoretical).</param>
         /// <param name="paramName">Name of the parameter.</param>
         /// <exception cref="InvalidInputException">Thrown when efficiency is invalid.</exception>
         public static void ValidateEfficiency(double efficiency, string paramName)
         {
             if (double.IsNaN(efficiency) || double.IsInfinity(efficiency))
                 throw new InvalidInputException(paramName, 
-                    $" EFFICIENCY must be a valid number. Value: {efficiency}.");
+                    $"Efficiency must be a valid number. Value: {efficiency}.");
 
             if (efficiency < MinEfficiency)
                 throw new InvalidInputException(paramName, 
-                    $" EFFICIENCY must be non-negative. Value: {efficiency}.");
+                    $"Efficiency must be non-negative. Value: {efficiency}.");
 
             if (efficiency > MaxEfficiency)
                 throw new InvalidInputException(paramName, 
-                    $" EFFICIENCY exceeds maximum reasonable value ({MaxEfficiency}). Value: {efficiency}.");
+                    $"Efficiency exceeds maximum reasonable value ({MaxEfficiency}). Value: {efficiency}.");
         }
     }
 }

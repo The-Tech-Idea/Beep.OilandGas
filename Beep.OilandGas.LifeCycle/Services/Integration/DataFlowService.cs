@@ -110,26 +110,33 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
         /// Runs well test analysis for a well.
         /// </summary>
         /// <param name="wellId">The well ID.</param>
-        /// <param name="testId">Optional test ID.</param>
+        /// <param name="testId">PPDM <c>WELL_TEST.TEST_NUM</c> (required — this path does not send manual pressure-time points).</param>
         /// <param name="userId">The user ID performing the analysis.</param>
         /// <param name="additionalParameters">Optional additional parameters for the analysis.</param>
+        /// <param name="fieldId">Optional PPDM field id for <c>WELL_TEST_ANALYSIS_RESULT.FIELD_ID</c> when results are persisted.</param>
         /// <returns>The well test analysis results.</returns>
         public async Task<WELL_TEST_ANALYSIS_RESULT> RunWellTestAnalysisAsync(
             string wellId,
             string? testId = null,
             string userId = "system",
-            WellTestAnalysisOptions? additionalParameters = null)
+            WellTestAnalysisOptions? additionalParameters = null,
+            string? fieldId = null)
         {
-            if (string.IsNullOrEmpty(wellId))
+            if (string.IsNullOrWhiteSpace(wellId))
                 throw new ArgumentException("Well ID cannot be null or empty.", nameof(wellId));
+            if (string.IsNullOrWhiteSpace(testId))
+                throw new ArgumentException(
+                    "PPDM test number (TEST_NUM) is required for RunWellTestAnalysisAsync. Provide testId, or call the calculation API with manual PressureTimeData.",
+                    nameof(testId));
 
-            _logger?.LogInformation("Running well test analysis for well: {WellId}, TestId: {TestId}", wellId, testId);
+            _logger?.LogInformation("Running well test analysis for well: {WellId}, TestId: {TestId}, FieldId: {FieldId}", wellId, testId, fieldId);
 
             var request = new WellTestAnalysisCalculationRequest
             {
                 WellId = wellId,
                 TestId = testId,
                 UserId = userId,
+                FieldId = string.IsNullOrWhiteSpace(fieldId) ? null : fieldId.Trim(),
                 AdditionalParameters = additionalParameters
             };
 

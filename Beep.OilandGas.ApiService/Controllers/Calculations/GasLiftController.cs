@@ -1,3 +1,7 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Beep.OilandGas.GasLift.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.GasLift;
@@ -26,16 +30,40 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("analyze-potential")]
-        public ActionResult<GAS_LIFT_POTENTIAL_RESULT> AnalyzePotential([FromBody] AnalyzeGasLiftPotentialRequest request)
+        public async Task<ActionResult<GAS_LIFT_POTENTIAL_RESULT>> AnalyzePotential(
+            [FromBody] AnalyzeGasLiftPotentialRequest request,
+            CancellationToken cancellationToken)
         {
             try
             {
-                var result = _service.AnalyzeGasLiftPotential(
+                if (request == null)
+                    return BadRequest(new { error = "Request body is required." });
+                if (request.WellProperties == null)
+                    return BadRequest(new { error = "WellProperties is required." });
+                if (request.MinGasInjectionRate > request.MaxGasInjectionRate)
+                    return BadRequest(new { error = "MinGasInjectionRate must not exceed MaxGasInjectionRate." });
+
+                var result = await _service.AnalyzeGasLiftPotentialAsync(
                     request.WellProperties,
                     request.MinGasInjectionRate,
                     request.MaxGasInjectionRate,
-                    request.NumberOfPoints);
+                    request.NumberOfPoints,
+                    cancellationToken);
                 return Ok(result);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, new { error = "Request was cancelled." });
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid gas lift potential request");
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (GasLiftException ex)
+            {
+                _logger.LogWarning(ex, "Gas lift potential request rejected");
+                return BadRequest(new { error = ex.Message });
             }
             catch (Exception ex)
             {
@@ -45,16 +73,38 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("design-valves")]
-        public ActionResult<GAS_LIFT_VALVE_DESIGN_RESULT> DesignValves([FromBody] DesignValvesRequest request)
+        public async Task<ActionResult<GAS_LIFT_VALVE_DESIGN_RESULT>> DesignValves(
+            [FromBody] DesignValvesRequest request,
+            CancellationToken cancellationToken)
         {
             try
             {
-                var result = _service.DesignValves(
+                if (request == null)
+                    return BadRequest(new { error = "Request body is required." });
+                if (request.WellProperties == null)
+                    return BadRequest(new { error = "WellProperties is required." });
+
+                var result = await _service.DesignValvesAsync(
                     request.WellProperties,
                     request.GAS_INJECTION_PRESSURE,
                     request.NUMBER_OF_VALVES,
-                    request.UseSIUnits);
+                    request.UseSIUnits,
+                    cancellationToken);
                 return Ok(result);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, new { error = "Request was cancelled." });
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid gas lift valve design request");
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (GasLiftException ex)
+            {
+                _logger.LogWarning(ex, "Gas lift valve design rejected");
+                return BadRequest(new { error = ex.Message });
             }
             catch (Exception ex)
             {
@@ -64,12 +114,32 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("design")]
-        public async Task<ActionResult> SaveDesign([FromBody] GAS_LIFT_DESIGN design, [FromQuery] string? userId = null)
+        public async Task<ActionResult> SaveDesign(
+            [FromBody] GAS_LIFT_DESIGN design,
+            [FromQuery] string? userId = null,
+            CancellationToken cancellationToken = default)
         {
             try
             {
+                if (design == null)
+                    return BadRequest(new { error = "Design payload is required." });
+                cancellationToken.ThrowIfCancellationRequested();
                 await _service.SaveGasLiftDesignAsync(design, userId ?? GetUserId());
                 return Ok(new { message = "Gas lift design saved successfully", designId = design.DESIGN_ID });
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, new { error = "Request was cancelled." });
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid gas lift design save request");
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (GasLiftException ex)
+            {
+                _logger.LogWarning(ex, "Gas lift design save rejected");
+                return BadRequest(new { error = ex.Message });
             }
             catch (Exception ex)
             {
@@ -79,13 +149,30 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpGet("performance/{wellUWI}")]
-        public async Task<ActionResult<GAS_LIFT_PERFORMANCE>> GetPerformance(string wellUWI)
+        public async Task<ActionResult<GAS_LIFT_PERFORMANCE>> GetPerformance(
+            string wellUWI,
+            CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) return BadRequest(new { error = "Well UWI is required." });
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var result = await _service.GetGasLiftPerformanceAsync(wellUWI);
                 return Ok(result);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, new { error = "Request was cancelled." });
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid gas lift performance request for {WellUWI}", wellUWI);
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (GasLiftException ex)
+            {
+                _logger.LogWarning(ex, "Gas lift performance request rejected for {WellUWI}", wellUWI);
+                return BadRequest(new { error = ex.Message });
             }
             catch (Exception ex)
             {

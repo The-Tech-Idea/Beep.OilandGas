@@ -1,7 +1,7 @@
-# Beep.PumpPerformance Phase 1 & 2 Implementation Summary
+# Beep.OilandGas.PumpPerformance Phase 1 & 2 Implementation Summary
 
 ## Overview
-This document summarizes the Phase 1 and Phase 2 enhancements implemented for Beep.PumpPerformance, focusing on code quality, core functionality expansion, and advanced pump analysis.
+This document summarizes the Phase 1 and Phase 2 enhancements implemented for Beep.OilandGas.PumpPerformance, focusing on code quality, core functionality expansion, and advanced pump analysis.
 
 ## Implemented Features
 
@@ -31,7 +31,7 @@ This document summarizes the Phase 1 and Phase 2 enhancements implemented for Be
 **HeadQuantityCalculations** (`Calculations/HeadQuantityCalculations.cs`):
 - Generate complete H-Q curves from data points
 - Interpolate head at specific flow rates
-- Find Best  EFFICIENCY Point (BEP)
+- Find best-efficiency point (BEP)
 - Calculate shutoff head (head at zero flow)
 - Support for efficiency and power data
 
@@ -52,15 +52,15 @@ Console.WriteLine($"BEP: {bep.FlowRate} GPM at {bep.Head} ft, Efficiency: {bep.E
 double headAt250 = HeadQuantityCalculations.InterpolateHead(curve, 250);
 ```
 
-#### 3. Comprehensive  EFFICIENCY Calculations ✅
+#### 3. Comprehensive efficiency calculations ✅
 
 **EfficiencyCalculations** (`Calculations/EfficiencyCalculations.cs`):
 - **Overall Efficiency**: η = (Q * H * SG) / (3960 * BHP)
 - **Hydraulic Efficiency**: η_h = Actual Head / Theoretical Head
 - **Mechanical Efficiency**: η_m = (BHP - Losses) / BHP
 - **Volumetric Efficiency**: η_v = Actual Flow / Theoretical Flow
-- **Best  EFFICIENCY Point (BEP)**: Find maximum efficiency
-- ** EFFICIENCY Curves**: Generate efficiency vs flow rate curves
+- **Best-efficiency point (BEP)**: Find maximum efficiency
+- **Efficiency curves**: Generate efficiency vs flow rate curves
 
 **Usage:**
 ```csharp
@@ -191,9 +191,9 @@ double maxLift = NPSHCalculations.CalculateMaxAllowableSuctionLift(
 ## File Structure
 
 ```
-Beep.PumpPerformance/
+Beep.OilandGas.PumpPerformance/
 ├── Calculations/
-│   ├── EfficiencyCalculations.cs      #  EFFICIENCY calculations
+│   ├── EfficiencyCalculations.cs      # Efficiency calculations
 │   ├── PowerCalculations.cs           # Power and energy calculations
 │   ├── HeadQuantityCalculations.cs    # H-Q curve generation
 │   ├── SystemCurveCalculations.cs     # System resistance curves
@@ -224,8 +224,8 @@ Beep.PumpPerformance/
 ### Complete Workflow
 
 ```csharp
-using Beep.PumpPerformance;
-using Beep.PumpPerformance.Calculations;
+using Beep.OilandGas.PumpPerformance;
+using Beep.OilandGas.PumpPerformance.Calculations;
 
 // 1. Generate H-Q curve
 var flowRates = new double[] { 100, 200, 300, 400, 500 };

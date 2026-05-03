@@ -28,8 +28,16 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         {
             try
             {
+                decimal gasSg = request.GasSpecificGravity is > 0m and <= 2.5m
+                    ? request.GasSpecificGravity
+                    : 0.65m;
                 var result = _service.CalculateFormationVolumeFactor(
-                    request.Pressure, request.Temperature, request.GasOilRatio, request.OilGravity, request.Correlation);
+                    request.Pressure,
+                    request.Temperature,
+                    request.GasOilRatio,
+                    request.OilGravity,
+                    request.Correlation,
+                    gasSg);
                 return Ok(result);
             }
             catch (Exception ex)

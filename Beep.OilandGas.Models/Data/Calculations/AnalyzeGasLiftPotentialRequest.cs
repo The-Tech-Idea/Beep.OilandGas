@@ -28,7 +28,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         private decimal MinGasInjectionRateValue;
 
         [Required]
-        [Range(0, double.MaxValue, ErrorMessage = "MinGasInjectionRate must be greater than or equal to 0")]
+        [Range(typeof(decimal), "50", "10000", ErrorMessage = "MinGasInjectionRate must be between 50 and 10000 Mscf/day (API limits).")]
         public decimal MinGasInjectionRate
 
         {
@@ -45,7 +45,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         private decimal MaxGasInjectionRateValue;
 
         [Required]
-        [Range(0, double.MaxValue, ErrorMessage = "MaxGasInjectionRate must be greater than or equal to 0")]
+        [Range(typeof(decimal), "50", "10000", ErrorMessage = "MaxGasInjectionRate must be between 50 and 10000 Mscf/day (API limits).")]
         public decimal MaxGasInjectionRate
 
         {

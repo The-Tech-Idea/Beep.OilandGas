@@ -10,6 +10,13 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// Service interface for well test analysis operations.
     /// Provides methods for pressure transient analysis, reservoir characterization, and well performance evaluation.
     /// </summary>
+    /// <remarks>
+    /// The default implementation in <c>Beep.OilandGas.WellTestAnalysis.Services.WellTestAnalysisService</c> runs
+    /// Horner/MDH/drawdown analysis, derivatives, reservoir-model identification, and test-data validation.
+    /// Type-curve matching, multi-rate/deconvolution, boundary detection, persistence (save/load/update), reporting,
+    /// exports, and plot generation throw <see cref="System.NotImplementedException"/> until a host-specific
+    /// implementation replaces or extends that service.
+    /// </remarks>
     public interface IWellTestAnalysisService
     {
         #region Build-up Analysis Methods
@@ -56,7 +63,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="pressureData">Time-pressure data points</param>
         /// <param name="smoothingFactor">Smoothing factor for derivative calculation (optional)</param>
         /// <returns>List of pressure-time points with calculated derivatives</returns>
-        Task<List<PRESSURE_TIME_POINT>> CalculateDerivativeAsync(string wellUWI, List<PRESSURE_TIME_POINT> pressureData, double smoothingFactor = 0.05);
+        Task<List<PRESSURE_TIME_POINT>> CalculateDerivativeAsync(string wellUWI, List<PRESSURE_TIME_POINT> pressureData, double smoothingFactor = 0.1);
 
         /// <summary>
         /// Identifies reservoir model from derivative signature.

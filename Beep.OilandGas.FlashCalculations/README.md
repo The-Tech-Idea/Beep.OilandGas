@@ -28,6 +28,19 @@ Seeded **`FLASH_EOS_MODEL`** codes (**PR**, **SRK**, **SRK_MODIFIED**, **IDEAL_K
 
 Use **`FLASH_SOLVER_PRESET`** (**`FAST`** vs **`DEFAULT`** / **`STRICT`**) and EOS picklists per **[`.plans/07_PVT_Best_Practices_And_Reference.md`](.plans/07_PVT_Best_Practices_And_Reference.md)**. Examples below assume **psia** and **Rankine** for **`PRESSURE`** and **`TEMPERATURE`**.
 
+### Units (screening defaults)
+
+| Quantity | Unit | Notes |
+|----------|------|--------|
+| **Pressure** (`PRESSURE`, requests) | **psia** | Absolute pressure unless your integration layer documents gauge + offset. |
+| **Temperature** (`TEMPERATURE`, requests) | **°R** (Rankine) | \(T_\text{°R} = T_\text{°F} + 459.67\). |
+| **Critical temperature** (`CRITICAL_TEMPERATURE`) | **°R** | Matches Wilson K closure in **`FlashCalculator`**. |
+| **Critical pressure** (`CRITICAL_PRESSURE`) | **psia** | With pressure in psia for dimensionless \(P_r, T_r\) style ratios. |
+| **Molecular weight** | **lb/lbmol** | Used in simplified vapor/liquid property estimates. |
+| **Compressibility Z** (EOS helpers) | — | Dimensionless; **PR/SRK** \(\alpha(T)\) assumptions are screening-grade — see **`.plans/07_PVT_Best_Practices_And_Reference.md`**. |
+
+Wire **`FlashCalculationOptions.EquationOfState`** is normalized to **`FLASH_EOS_MODEL`** codes (**PR**, **SRK**, **SRK_MODIFIED**, **IDEAL_K**) via **`FlashEquationOfStateMapping`** (same vocabulary as **`R_FLASH_CALCULATION_REFERENCE_CODE`** seeds). The Wilson + Rachford–Rice isothermal path behaves as **IDEAL_K** until a dedicated cubic flash loop consumes **PR/SRK** options end-to-end.
+
 ---
 
 ## Overview

@@ -102,6 +102,12 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 
             var WELL_TEST_DATA = new WELL_TEST_DATA
             {
+                WELL_TEST_DATA_ID = Guid.NewGuid().ToString(),
+                CalculationWellUwi = string.IsNullOrWhiteSpace(wellTest.UWI) ? null : wellTest.UWI.Trim(),
+                CalculationPpdmTestNumber = string.IsNullOrWhiteSpace(wellTest.TEST_NUM) ? null : wellTest.TEST_NUM.Trim(),
+                CalculationFieldId = well != null && !string.IsNullOrWhiteSpace(well.ASSIGNED_FIELD)
+                    ? well.ASSIGNED_FIELD.Trim()
+                    : null,
                 TEST_TYPE = getTestType(wellTest).ToString(),
                 FLOW_RATE = (decimal)getFlowRate(flowData),
                 WELLBORE_RADIUS = well != null ? (decimal)getWellboreRadius(well, tubular) : throw new ArgumentNullException(nameof(well), "WELL entity is required for wellbore radius."),
@@ -116,6 +122,14 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
                 RESERVOIR_TEMPERATURE = well != null ? (decimal)getReservoirTemperature(well) : 200.0m,
                 INITIAL_RESERVOIR_PRESSURE = (decimal)getInitialReservoirPressure(pressureData)
             };
+
+            if (well != null)
+            {
+                if (!string.IsNullOrWhiteSpace(well.AREA_ID))
+                    WELL_TEST_DATA.AREA_ID = well.AREA_ID.Trim();
+                if (!string.IsNullOrWhiteSpace(well.AREA_TYPE))
+                    WELL_TEST_DATA.AREA_TYPE = well.AREA_TYPE.Trim();
+            }
 
             // Map pressure and time data from WELL_TEST_PRESSURE
             if (pressureData != null && pressureData.Any())

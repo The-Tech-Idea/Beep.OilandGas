@@ -1,7 +1,7 @@
-# Beep.PumpPerformance Phase 3 Implementation Summary
+# Beep.OilandGas.PumpPerformance Phase 3 Implementation Summary
 
 ## Overview
-This document summarizes the Phase 3 implementation for Beep.PumpPerformance, focusing on specialized calculations for different pump types: Centrifugal, Positive Displacement, Submersible (ESP), and Jet Pumps.
+This document summarizes the Phase 3 implementation for Beep.OilandGas.PumpPerformance, focusing on specialized calculations for different pump types: Centrifugal, Positive Displacement, Submersible (ESP), and Jet Pumps.
 
 ## Implemented Features
 
@@ -19,7 +19,7 @@ This document summarizes the Phase 3 implementation for Beep.PumpPerformance, fo
 
 **Usage:**
 ```csharp
-using Beep.PumpPerformance.PumpTypes;
+using Beep.OilandGas.PumpPerformance.PumpTypes;
 
 // Calculate specific speed
 double specificSpeed = CentrifugalPump.CalculateSpecificSpeed(
@@ -56,7 +56,7 @@ double degradation = CentrifugalPump.CalculatePerformanceDegradation(
 
 **Usage:**
 ```csharp
-using Beep.PumpPerformance.PumpTypes;
+using Beep.OilandGas.PumpPerformance.PumpTypes;
 
 // Calculate theoretical flow rate
 double theoreticalFlow = PositiveDisplacementPump.CalculateTheoreticalFlowRate(
@@ -97,7 +97,7 @@ double displacement = PositiveDisplacementPump.CalculateDisplacementPerRevolutio
 
 **Usage:**
 ```csharp
-using Beep.PumpPerformance.PumpTypes;
+using Beep.OilandGas.PumpPerformance.PumpTypes;
 
 // Calculate total head
 double totalHead = SubmersiblePump.CalculateTotalHead(
@@ -138,7 +138,7 @@ double dailyEnergy = SubmersiblePump.CalculateDailyEnergyConsumption(motorPower,
 
 **Usage:**
 ```csharp
-using Beep.PumpPerformance.PumpTypes;
+using Beep.OilandGas.PumpPerformance.PumpTypes;
 
 // Calculate production flow rate
 double productionFlow = JetPump.CalculateProductionFlowRate(
@@ -169,7 +169,7 @@ double efficiency = JetPump.CalculateJetEfficiency(
 ## File Structure
 
 ```
-Beep.PumpPerformance/
+Beep.OilandGas.PumpPerformance/
 ├── PumpTypes/
 │   ├── CentrifugalPump.cs          # Centrifugal pump calculations
 │   ├── PositiveDisplacementPump.cs  # Positive displacement pump calculations
@@ -193,9 +193,9 @@ Beep.PumpPerformance/
 ## Integration Example
 
 ```csharp
-using Beep.PumpPerformance;
-using Beep.PumpPerformance.Calculations;
-using Beep.PumpPerformance.PumpTypes;
+using Beep.OilandGas.PumpPerformance;
+using Beep.OilandGas.PumpPerformance.Calculations;
+using Beep.OilandGas.PumpPerformance.PumpTypes;
 
 // Example: Complete ESP system analysis
 double requiredHead = 500;

@@ -17,15 +17,28 @@ namespace Beep.OilandGas.GasProperties.Services
             decimal step,
             decimal constantTemperature)
         {
-            if (specificGravity <= 0) throw new ArgumentException(nameof(specificGravity));
-            
+            if (specificGravity <= 0)
+                throw new ArgumentOutOfRangeException(nameof(specificGravity), specificGravity, "Specific gravity must be greater than zero.");
+
+            if (step <= 0)
+                throw new ArgumentOutOfRangeException(nameof(step), step, "Pressure step must be greater than zero.");
+
+            if (variablePressureEnd < variablePressureStart)
+                throw new ArgumentException("End pressure must be greater than or equal to start pressure.", nameof(variablePressureEnd));
+
+            if (constantTemperature <= 0)
+                throw new ArgumentOutOfRangeException(nameof(constantTemperature), constantTemperature, "Temperature must be greater than zero Rankine.");
+
             var results = new List<GAS_PROPERTIES>();
-            
+
             // 1. Calc Pseudocriticals
             var (tpc, ppc) = GasPropertyCalculator.CalculatePseudocriticalProperties(specificGravity);
-            
+
             for (decimal p = variablePressureStart; p <= variablePressureEnd; p += step)
             {
+                if (p <= 0)
+                    continue;
+
                 // 2. Calc Z
                 var z = GasPropertyCalculator.CalculateZFactor(p, constantTemperature, tpc, ppc);
                 

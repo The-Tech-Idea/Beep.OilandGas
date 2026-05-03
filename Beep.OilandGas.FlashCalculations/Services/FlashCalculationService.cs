@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.FlashCalculations.Calculations;
+using Beep.OilandGas.FlashCalculations.Validation;
 using Beep.OilandGas.Models.Data.FlashCalculations;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
@@ -50,6 +51,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
 
         public FlashResult PerformIsothermalFlash(FLASH_CONDITIONS conditions)
         {
+            FlashValidator.ValidateFlashConditions(conditions);
             _logger?.LogInformation("Performing isothermal flash calculation");
             var result = FlashCalculator.PerformIsothermalFlash(conditions);
             _logger?.LogInformation("Flash calculation completed: VaporFraction={VaporFraction}, Converged={Converged}", 
@@ -61,6 +63,8 @@ namespace Beep.OilandGas.FlashCalculations.Services
         {
             if (stages < 1)
                 throw new ArgumentOutOfRangeException(nameof(stages), stages, "At least one stage is required.");
+
+            FlashValidator.ValidateFlashConditions(conditions);
 
             _logger?.LogInformation("Performing multi-stage flash calculation with {Stages} stages", stages);
             var results = new List<FlashResult>();

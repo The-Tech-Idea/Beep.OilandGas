@@ -1,4 +1,5 @@
 using System;
+using static Beep.OilandGas.PumpPerformance.Constants.PumpConstants;
 
 namespace Beep.OilandGas.PumpPerformance.Calculations
 {
@@ -125,12 +126,12 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
             // Eff_vis = Eff_water * C_eta
             double Eff_vis = Eff_water * C_eta;
 
-            // BHP_vis = (Q_vis * H_vis * SG) / (3960 * Eff_vis)
+            // BHP_vis = (Q_vis * H_vis * SG) / (k * Eff_vis), k = HorsepowerConversionFactor
             // Note: BHP viscous is often HIGHER than water despite lower head/flow because Efficiency drops drastically.
             double BHP_vis = 0;
             if (Eff_vis > 0)
             {
-                BHP_vis = (Q_vis * H_vis * specificGravity) / (3960 * Eff_vis);
+                BHP_vis = (Q_vis * H_vis * specificGravity) / (HorsepowerConversionFactor * Eff_vis);
             }
 
             return (Q_vis, H_vis, Eff_vis, BHP_vis);

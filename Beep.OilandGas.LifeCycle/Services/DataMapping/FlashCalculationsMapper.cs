@@ -10,7 +10,7 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
     /// <summary>
     /// Maps PPDM39 entities to FlashCalculations models.
     /// </summary>
-    public class FlashCalculationsMapper
+    public partial class FlashCalculationsMapper
     {
         private readonly Func<WELL, WELL_PRESSURE?, decimal>? _getPressure;
         private readonly Func<WELL, WELL_PRESSURE?, decimal>? _getTemperature;

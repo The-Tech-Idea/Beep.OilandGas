@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.GasLift.Calculations;
+using Beep.OilandGas.GasLift.Validation;
 using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -14,7 +15,6 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
-using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.GasLift.Services
@@ -62,12 +62,20 @@ namespace Beep.OilandGas.GasLift.Services
         {
             if (wellProperties == null)
                 throw new ArgumentNullException(nameof(wellProperties));
+            if (numberOfPoints < 2)
+                throw new ArgumentOutOfRangeException(nameof(numberOfPoints), numberOfPoints, "Number of analysis points must be at least 2.");
+            if (minGasInjectionRate > maxGasInjectionRate)
+                throw new ArgumentException("Minimum gas injection rate must not exceed maximum.", nameof(minGasInjectionRate));
+
+            GasLiftValidator.ValidateWellProperties(wellProperties);
+            GasLiftValidator.ValidateGasInjectionRate(minGasInjectionRate);
+            GasLiftValidator.ValidateGasInjectionRate(maxGasInjectionRate);
 
             _logger?.LogInformation("Analyzing gas lift potential for well {WellUWI}: Range {MinRate}-{MaxRate} Mscf/day", 
                 wellProperties.WELL_UWI, minGasInjectionRate, maxGasInjectionRate);
             
             var result = GasLiftPotentialCalculator.AnalyzeGasLiftPotential(
-                wellProperties, minGasInjectionRate, maxGasInjectionRate, numberOfPoints);
+                wellProperties, minGasInjectionRate, maxGasInjectionRate, numberOfPoints, CancellationToken.None);
             
             _logger?.LogInformation("Gas lift potential analysis completed: OptimalGasInjectionRate={Rate} Mscf/day, MaximumProductionRate={Production} BPD", 
                 result.OPTIMAL_GAS_INJECTION_RATE, result.MAXIMUM_PRODUCTION_RATE);
@@ -101,7 +109,7 @@ namespace Beep.OilandGas.GasLift.Services
             };
 
             // Calculate NPV for each performance point
-            foreach (var point in potentialResult.PERFORMANCE_POINTS)
+            foreach (var point in potentialResult.PERFORMANCE_POINTS ?? Enumerable.Empty<GAS_LIFT_PERFORMANCE_POINT>())
             {
                 decimal dailyRevenue = point.PRODUCTION_RATE * oilPricePerBarrel;
                 decimal dailyCost = point.GAS_INJECTION_RATE * gasInjectionCostPerMscf;
@@ -267,6 +275,8 @@ namespace Beep.OilandGas.GasLift.Services
             if (wellProperties == null)
                 throw new ArgumentNullException(nameof(wellProperties));
 
+            GasLiftValidator.ValidateCalculationParameters(wellProperties, gasInjectionPressure, numberOfValves);
+
             _logger?.LogInformation("Designing gas lift valves for well {WellUWI}: {ValveCount} valves, Injection Pressure={Pressure} psia", 
                 wellProperties.WELL_UWI, numberOfValves, gasInjectionPressure);
             
@@ -292,7 +302,8 @@ namespace Beep.OilandGas.GasLift.Services
         public async Task<List<GasLiftValveOptimizationResult>> OptimizeValveSpacingAsync(
             GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal gasInjectionPressure,
-            string userId)
+            string userId,
+            CancellationToken cancellationToken = default)
         {
             if (wellProperties == null)
                 throw new ArgumentNullException(nameof(wellProperties));
@@ -306,6 +317,7 @@ namespace Beep.OilandGas.GasLift.Services
             // Test different valve counts (3-10 valves)
             for (int numValves = 3; numValves <= 10; numValves++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
                     var valveDesign = DesignValves(wellProperties, gasInjectionPressure, numValves);

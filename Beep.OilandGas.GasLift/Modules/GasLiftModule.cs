@@ -11,9 +11,27 @@ using TheTechIdea.Beep.Report;
 namespace Beep.OilandGas.GasLift.Modules;
 
 /// <summary>
-/// Registers extension gas lift reference data (<see cref="R_GAS_LIFT_REFERENCE_CODE"/>).
-/// Physical DDL follows entity-driven tooling — see root <c>CLAUDE.md</c>.
+/// Feature module setup for gas lift: registers the extension LOV table and seeds reference rows.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <b>Why only one <see cref="EntityTypes"/> entry?</b>
+/// The only gas-lift <b>extension</b> table class owned in this assembly is
+/// <see cref="R_GAS_LIFT_REFERENCE_CODE"/> (<c>Beep.OilandGas.GasLift.Data</c> / <c>Data/Tables</c>).
+/// It is <b>not</b> part of standard PPDM 3.9 core, so it belongs on <see cref="ModuleSetupBase.EntityTypes"/> for
+/// metadata/schema tooling. Transactional wire types such as <c>GAS_LIFT_DESIGN</c>, <c>GAS_LIFT_WELL_PROPERTIES</c>,
+/// <c>GAS_LIFT_POTENTIAL_RESULT</c>, etc. live in <c>Beep.OilandGas.Models</c> with the shared PPDM39 schema path;
+/// they are intentionally <b>not</b> duplicated here (same pattern as other domains: module lists feature-specific
+/// <c>R_*</c> / extension tables only — see root <c>CLAUDE.md</c>).
+/// </para>
+/// <para>
+/// <b><see cref="SeedAsync"/></b> idempotently inserts rows from <see cref="GasLiftReferenceCodeSeed"/> into
+/// <c>R_GAS_LIFT_REFERENCE_CODE</c>: standard port sizes (from <see cref="GasLiftConstants"/>), operating mode,
+/// design method, valve service, injection gas source, and design-limit keys (aligned with
+/// <c>GasLiftDesignLimitMessages</c> / validators). Skip when <c>REFERENCE_SET</c> + <c>REFERENCE_CODE</c> already exist.
+/// </para>
+/// <para>Physical DDL for <c>R_GAS_LIFT_REFERENCE_CODE</c> follows entity-driven tooling, not hand-written feature SQL.</para>
+/// </remarks>
 public sealed class GasLiftModule : ModuleSetupBase
 {
     private static readonly IReadOnlyList<Type> _entityTypes = new List<Type>

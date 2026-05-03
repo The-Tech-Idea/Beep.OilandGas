@@ -1,7 +1,10 @@
-# Beep.WellTestAnalysis - Enhancement Plan
+# Beep.OilandGas.WellTestAnalysis — enhancement plan
 
-## Project Overview
-Beep.WellTestAnalysis provides pressure transient analysis (PTA) and well test interpretation capabilities for oil and gas operations.
+> **Note:** This document predates the **`Beep.OilandGas.WellTestAnalysis`** / **`WELL_TEST_DATA`** split. Treat roadmap items as intent; concrete types and namespaces are in **[`README.md`](README.md)** and **[`.plans/`](.plans/README.md)**.
+
+## Project overview
+
+**Beep.OilandGas.WellTestAnalysis** provides pressure transient analysis (PTA) and well test interpretation capabilities for oil and gas operations.
 
 ## Implementation Roadmap
 
@@ -24,9 +27,9 @@ Beep.WellTestAnalysis provides pressure transient analysis (PTA) and well test i
    - Late time analysis
 
 3. **Data Models**
-   - WellTestData model
-   - PressureTimePoint model
-   - AnalysisResult model
+   - **`WELL_TEST_DATA`** (PPDM-oriented + **`Time`** / **`Pressure`** lists)
+   - **`PRESSURE_TIME_POINT`**
+   - **`WELL_TEST_ANALYSIS_RESULT`**
    - ReservoirProperties model
 
 ### Phase 2: Advanced Analysis (Priority: High)

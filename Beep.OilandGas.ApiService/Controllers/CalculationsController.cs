@@ -7,6 +7,7 @@ using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.WellTestAnalysis.Exceptions;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
 
@@ -462,6 +463,11 @@ namespace Beep.OilandGas.ApiService.Controllers
         {
             try
             {
+                if (request == null)
+                {
+                    return BadRequest(new { error = "Well test analysis request body is required." });
+                }
+
                 if (!string.IsNullOrWhiteSpace(userId))
                 {
                     request.UserId = userId;
@@ -473,7 +479,17 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Invalid Well Test Analysis request");
-                return BadRequest(new { error = "An internal error occurred." });
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Well Test Analysis could not load PPDM inputs");
+                return NotFound(new { error = ex.Message });
+            }
+            catch (WellTestException ex)
+            {
+                _logger.LogWarning(ex, "Well Test Analysis validation or convergence failed");
+                return BadRequest(new { error = ex.Message });
             }
             catch (Exception ex)
             {

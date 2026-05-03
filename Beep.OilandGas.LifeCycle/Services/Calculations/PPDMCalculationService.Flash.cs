@@ -12,6 +12,8 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.FlashCalculations.Calculations;
+using Beep.OilandGas.FlashCalculations.Constants;
+using Beep.OilandGas.FlashCalculations.Validation;
 using Beep.OilandGas.Models.Data.FlashCalculations;
 using Beep.OilandGas.Models.Data.Calculations;
 
@@ -60,6 +62,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                         FEED_COMPOSITION = request.FeedComposition.Select(c => new Beep.OilandGas.Models.Data.FlashCalculations.FLASH_COMPONENT
                         {
                             NAME = c.NAME,
+                            COMPONENT_NAME = string.IsNullOrWhiteSpace(c.COMPONENT_NAME) ? c.NAME : c.COMPONENT_NAME,
                             MOLE_FRACTION = (decimal)c.MOLE_FRACTION,
                             CRITICAL_TEMPERATURE = (decimal)c.CRITICAL_TEMPERATURE,
                             CRITICAL_PRESSURE = (decimal)c.CRITICAL_PRESSURE,
@@ -74,6 +77,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     FLASH_CONDITIONS = await GetFlashConditionsFromPPDMAsync(request.WellId ?? string.Empty, request.FacilityId ?? string.Empty);
                 }
 
+                if (FLASH_CONDITIONS.FEED_COMPOSITION == null || FLASH_CONDITIONS.FEED_COMPOSITION.Count == 0)
+                {
+                    throw new InvalidOperationException(
+                        "Flash requires a non-empty feed composition. Supply FeedComposition on the request, or extend GetFlashConditionsFromPPDMAsync to load composition from PPDM.");
+                }
+
+                FlashValidator.ValidateFlashConditions(FLASH_CONDITIONS);
+
                 // Step 2: Perform flash calculation
                 var flashResult = FlashCalculator.PerformIsothermalFlash(FLASH_CONDITIONS);
 
@@ -82,7 +93,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 var liquidProperties = FlashCalculator.CalculateLiquidProperties(flashResult, FLASH_CONDITIONS);
 
                 // Step 4: Map to DTO
-                var result = MapFlashResultToDTO(flashResult, request, vaporProperties, liquidProperties);
+                var eosRef = FlashEquationOfStateMapping.ToReferenceCode(request.AdditionalParameters?.EquationOfState);
+                var result = MapFlashResultToDTO(flashResult, request, vaporProperties, liquidProperties, eosRef);
 
                 // Step 5: Store result in PPDM database
                 try
@@ -107,6 +119,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 return result;
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error performing Flash Calculation for WellId: {WellId}, FacilityId: {FacilityId}",
@@ -118,12 +134,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     var repository = await GetFlashResultRepositoryAsync();
                     var errorResult = new FlashCalculationResult
                     {
-                        CalculationId = Guid.NewGuid().ToString(),
+                        CalculationId = _defaults.FormatIdForTable("FLASH_CALCULATION", Guid.NewGuid().ToString()),
                         WellId = request.WellId,
                         FacilityId = request.FacilityId,
                         CalculationDate = DateTime.UtcNow,
                         Status = "FAILED",
-                        ErrorMessage = ex.Message
+                        ErrorMessage = ex.Message,
+                        AdditionalResults = new FlashCalculationAdditionalResults
+                        {
+                            EosModelReferenceCode = FlashEquationOfStateMapping.ToReferenceCode(request.AdditionalParameters?.EquationOfState)
+                        }
                     };
                     await InsertAnalysisResultAsync(repository, errorResult, request.UserId);
                 }
@@ -147,8 +167,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         {
             var conditions = new FLASH_CONDITIONS
             {
-                PRESSURE = 1000m,        // default 1000 psi
-                TEMPERATURE = 150m,      // default 150 °F
+                PRESSURE = DefaultFlashPressurePsia,
+                TEMPERATURE = DefaultFlashTemperatureRankine, // ~150 °F as Rankine; matches FlashCalculator / README
                 FEED_COMPOSITION = new List<Beep.OilandGas.Models.Data.FlashCalculations.FLASH_COMPONENT>()
             };
 
@@ -172,12 +192,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                         if (bhRecord != null)
                         {
                             if (bhRecord.WELL_HEAD_PRESSURE > 0) conditions.PRESSURE = bhRecord.WELL_HEAD_PRESSURE;
-                            if (bhRecord.RUN_DEPTH_TEMPERATURE > 0) conditions.TEMPERATURE = bhRecord.RUN_DEPTH_TEMPERATURE;
+                            if (bhRecord.RUN_DEPTH_TEMPERATURE > 0)
+                                conditions.TEMPERATURE = ToRankineFromPpdm(bhRecord.RUN_DEPTH_TEMPERATURE, bhRecord.RUN_DEPTH_TEMPERATURE_OUOM);
                         }
                     }
 
                     // Fall back to WELL_TEST for temperature/pressure if BH data missing
-                    if (conditions.PRESSURE == 1000m || conditions.TEMPERATURE == 150m)
+                    if (conditions.PRESSURE == DefaultFlashPressurePsia || conditions.TEMPERATURE == DefaultFlashTemperatureRankine)
                     {
                         var wtMeta = await _metadata.GetTableMetadataAsync("WELL_TEST");
                         if (wtMeta != null)
@@ -193,8 +214,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                             var wtRecord = wtResults?.OfType<WELL_TEST>().OrderByDescending(t => t.TEST_DATE).FirstOrDefault();
                             if (wtRecord != null)
                             {
-                                if (conditions.PRESSURE == 1000m && wtRecord.FLOW_PRESSURE > 0) conditions.PRESSURE = wtRecord.FLOW_PRESSURE;
-                                if (conditions.TEMPERATURE == 150m && wtRecord.FLOW_TEMPERATURE > 0) conditions.TEMPERATURE = wtRecord.FLOW_TEMPERATURE;
+                                if (conditions.PRESSURE == DefaultFlashPressurePsia && wtRecord.FLOW_PRESSURE > 0)
+                                    conditions.PRESSURE = wtRecord.FLOW_PRESSURE;
+                                if (conditions.TEMPERATURE == DefaultFlashTemperatureRankine && wtRecord.FLOW_TEMPERATURE > 0)
+                                    conditions.TEMPERATURE = ToRankineFromPpdm(wtRecord.FLOW_TEMPERATURE, wtRecord.FLOW_TEMPERATURE_OUOM);
                             }
                         }
                     }
@@ -217,11 +240,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             FlashResult flashResult,
             FlashCalculationRequest request,
             PhasePropertiesData vaporProperties,
-            PhasePropertiesData liquidProperties)
+            PhasePropertiesData liquidProperties,
+            string eosModelReferenceCode)
         {
             var result = new FlashCalculationResult
             {
-                CalculationId = Guid.NewGuid().ToString(),
+                CalculationId = _defaults.FormatIdForTable("FLASH_CALCULATION", Guid.NewGuid().ToString()),
                 WellId = request.WellId,
                 FacilityId = request.FacilityId,
                 CalculationType = request.CalculationType,
@@ -257,6 +281,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             result.AdditionalResults.Pressure = request.Pressure ?? 0.0m;
             result.AdditionalResults.Temperature = request.Temperature ?? 0.0m;
             result.AdditionalResults.ComponentCount = request.FeedComposition?.Count ?? 0;
+            result.AdditionalResults.EosModelReferenceCode = eosModelReferenceCode;
 
             return result;
         }

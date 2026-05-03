@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.WellTestAnalysis.Constants;
 using Beep.OilandGas.WellTestAnalysis.Exceptions;
+using static Beep.OilandGas.WellTestAnalysis.Constants.WellTestConstants;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Beep.OilandGas.WellTestAnalysis.Validation;
 
@@ -23,7 +24,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
         {
             WellTestDataValidator.Validate(data);
 
-            if (!Enum.TryParse<WellTestType>(data.TEST_TYPE, out var testType) || testType != WellTestType.Drawdown)
+            if (!Enum.TryParse<WellTestType>(data.TEST_TYPE, ignoreCase: true, out var testType) || testType != WellTestType.Drawdown)
                 throw new InvalidWellTestDataException(nameof(data.TEST_TYPE), "Drawdown analysis requires drawdown test data.");
 
             var result = new WELL_TEST_ANALYSIS_RESULT
@@ -356,7 +357,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             // Pore volume from closed-boundary late-time slope:
             //   Vp = q * B / (24 * ct * |m_lss|)
             double vp = double.NaN;
-            if (Math.Abs(mLSS) > 1e-10)
+            if (Math.Abs(mLSS) > Epsilon)
                 vp = (q * bFactor) / (24.0 * ct * Math.Abs(mLSS));
 
             result.ProductivityIndex = double.IsNaN(vp) ? null : (double?)vp;  // Vp proxy via PI field
@@ -371,9 +372,9 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             double avgDeriv = lateDeriv.Skip(1).Average();
             double trendDeriv = lateDeriv.Length > 2 ? lateDeriv[^1] - lateDeriv[1] : 0;
 
-            if (Math.Abs(mLSS) < 1e-6)
+            if (Math.Abs(mLSS) < DrawdownPseudoSteadySlopeAbsFloor)
                 result.FlowRegime = "Constant Pressure Boundary (pressure stabilised)";
-            else if (trendDeriv < -Math.Abs(avgDeriv) * 0.1)
+            else if (trendDeriv < -Math.Abs(avgDeriv) * DrawdownBoundaryDerivativeTrendVersusAverage)
                 result.FlowRegime = "Constant Pressure Boundary (pressure declining slower)";
             else
                 result.FlowRegime = "Closed Boundary (pseudo-steady state)";
@@ -394,15 +395,14 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
         // ──────────────────────────────────────────────────────────────────────
         private static int FindUnitSlopeEnd(double[] logT, double[] logDP)
         {
-            const double unitSlopeTolerance = 0.15;  // allow ±0.15 deviation from slope = 1
             int lastUnitSlope = -1;
 
             for (int i = 1; i < logT.Length; i++)
             {
                 double dt = logT[i] - logT[i - 1];
-                if (Math.Abs(dt) < 1e-10) continue;
+                if (Math.Abs(dt) < Epsilon) continue;
                 double localSlope = (logDP[i] - logDP[i - 1]) / dt;
-                if (Math.Abs(localSlope - 1.0) <= unitSlopeTolerance)
+                if (Math.Abs(localSlope - FlowRegimeWellboreStorageLogLogSlope) <= FlowRegimeWellboreStorageSlopeTolerance)
                     lastUnitSlope = i;
                 else if (lastUnitSlope >= 0)
                     break;  // exited unit-slope region
@@ -445,7 +445,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             double sumX2 = x.Sum(xi => xi * xi);
 
             double denominator = n * sumX2 - sumX * sumX;
-            if (Math.Abs(denominator) < 1e-10)
+            if (Math.Abs(denominator) < Epsilon)
             {
                 slope = 0;
                 intercept = sumY / n;
@@ -462,7 +462,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             double ssTotal = y.Sum(yi => Math.Pow(yi - yMean, 2));
             double ssResidual = x.Zip(y, (xi, yi) => Math.Pow(yi - (slope * xi + intercept), 2)).Sum();
 
-            if (ssTotal < 1e-10) return 1.0;
+            if (ssTotal < Epsilon) return 1.0;
             return 1.0 - (ssResidual / ssTotal);
         }
     }

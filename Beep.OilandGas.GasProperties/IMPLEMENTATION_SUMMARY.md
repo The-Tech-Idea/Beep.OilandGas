@@ -10,14 +10,9 @@
 
 ## 📦 What Was Implemented
 
-### 1. Core Models ✅
+### 1. Core models (shared) ✅
 
-**File:** `Models/GasProperties.cs`
-
-- ✅ `GasComposition` - Represents gas composition with mole fractions
-- ✅ `GasProperties` - Represents gas properties at specific conditions
-- ✅ `AverageGasProperties` - Represents average properties over a range
-- ✅ `PseudoPressureResult` - Represents pseudo-pressure calculation results
+Wire types and PPDM-shaped entities live in **`Beep.OilandGas.Models`**, namespace **`Beep.OilandGas.Models.Data.GasProperties`** (for example **`GasComposition`**, **`AVERAGE_GAS_PROPERTIES`**, and related table/DTO types). This library references **`Beep.OilandGas.Models`** and implements calculations plus **`GasPropertiesService`** / **`IGasPropertiesService`**.
 
 ### 2. Z-Factor Calculations ✅
 
@@ -53,14 +48,10 @@
 
 ### 6. Validation ✅
 
-**File:** `Validation/GasPropertiesValidator.cs`
+**Files:** `Validation/GasPropertiesValidator.cs`, `Validation/GasPropertiesValidator.Applicability.cs`
 
-- ✅ Pressure validation
-- ✅ Temperature validation
-- ✅ Specific gravity validation
-- ✅ Z-factor validation
-- ✅ Gas composition validation
-- ✅ Comprehensive parameter validation
+- ✅ Hard range validation (pressure, temperature, specific gravity, Z, composition)
+- ✅ Optional applicability hints via **`GetApplicabilityWarnings`** (pseudo-reduced limits, γg-only vs composition, sour-gas heuristic)
 
 ### 7. Constants ✅
 
@@ -90,11 +81,10 @@
 
 ## 📊 Statistics
 
-- **Total Files:** 9 files
-- **Total Lines of Code:** ~1,200+ lines
-- **Calculation Methods:** 10+ methods
-- **Build Status:** ✅ Build Succeeded
-- **Project Status:** Production Ready
+- **Library:** calculations, validation, **`GasPropertiesService`** (partial), constants, exceptions
+- **Tests:** **`Beep.OilandGas.GasProperties.Tests`** (xUnit + Moq for DI-only service smoke tests)
+- **Build:** `dotnet build Beep.OilandGas.GasProperties/Beep.OilandGas.GasProperties.csproj`
+- **Tests:** `dotnet test Beep.OilandGas.GasProperties.Tests/Beep.OilandGas.GasProperties.Tests.csproj`
 
 ---
 
@@ -168,22 +158,18 @@ decimal pseudoPressure = PseudoPressureCalculator.CalculatePseudoPressure(
 
 ---
 
-## ✅ Next Steps
+## ✅ Next steps
 
-1. **Add Unit Tests** - Comprehensive test coverage
-2. **Add SkiaSharp Visualization** - Property curves and charts
-3. **Additional Correlations** - More Z-factor and viscosity methods
-4. **Performance Optimization** - Caching and parallel processing
-5. **Integration** - Integrate with other Beep.OilandGas projects
+See **`MASTER-TODO-TRACKER.md`** and **`.plans/`** (especially **04** industry scenarios). Ongoing themes: more regression vectors, persistence/API coverage for **`GasPropertiesService`**, and EOS boundary documentation vs **`Beep.OilandGas.FlashCalculations`**.
 
 ---
 
 ## 🚀 Status
 
-**Implementation:** Complete ✅  
-**Build:** Successful ✅  
-**Documentation:** Complete ✅  
-**Ready for:** Production Use ✅
+**Calculations & validation:** Implemented ✅  
+**Service:** Implemented (persistence paths require live Beep / PPDM wiring) ✅  
+**Unit tests:** Started — calculators, averages, applicability, DI smoke for pure calculation methods ✅  
+**NuGet package:** **`README.md`** included via **`PackageReadmeFile`** ✅
 
 ---
 

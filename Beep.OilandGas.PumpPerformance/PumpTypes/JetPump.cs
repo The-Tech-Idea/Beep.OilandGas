@@ -164,7 +164,7 @@ namespace Beep.OilandGas.PumpPerformance.PumpTypes
 
         /// <summary>
         /// Calculates power fluid power requirement.
-        /// Formula: P = (Q_power * H_power * SG) / (3960 * η_power_pump)
+        /// Delegates to <see cref="Beep.OilandGas.PumpPerformance.Calculations.PowerCalculations.CalculateBrakeHorsepower"/> (US field units, k = <see cref="Beep.OilandGas.PumpPerformance.Constants.PumpConstants.HorsepowerConversionFactor"/>).
         /// </summary>
         /// <param name="powerFluidFlowRate">Power fluid flow rate in GPM.</param>
         /// <param name="powerFluidHead">Power fluid head in feet.</param>

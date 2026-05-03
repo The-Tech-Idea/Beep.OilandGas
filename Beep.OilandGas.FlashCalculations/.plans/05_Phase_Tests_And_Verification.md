@@ -13,7 +13,7 @@ Guard **reference seed drift**, **module contract**, and **core flash numerics**
 - [x] Reference seed uniqueness + required **`REFERENCE_SET`** coverage (**`FlashReferenceSeedCatalogTests`**).
 - [x] **`FlashCalculationsModule`** **`ModuleId`**, **`Order`**, **`EntityTypes`** (**`FlashCalculationsModuleContractTests`**).
 - [x] Regression tests for **Rachford–Rice** (trivial all-liquid, two-phase interior) and **`PerformIsothermalFlash`** vs **`SolveRachfordRice`** (**`FlashCalculatorRachfordRiceTests`**).
-- [ ] Golden-vector tests for **isothermal flash** (binary system) vs spreadsheet tolerance.
+- [x] Golden-vector test for **isothermal flash** (binary C1/C2) vs external Wilson + RR reference — **`FlashIsothermalFlashGoldenVectorTests`**.
 - [ ] Optional **`ApiService.Tests`** for flash orchestration when HTTP surface expands.
 
 ## Verification

@@ -2,6 +2,10 @@
 
 A comprehensive library for calculating gas properties in oil and gas engineering applications.
 
+## Planning
+
+Phased work: **[`.plans/README.md`](.plans/README.md)**. Rollup: **[`MASTER-TODO-TRACKER.md`](MASTER-TODO-TRACKER.md)**. Industry scenarios (wells, facilities, reservoirs): **[`.plans/04_Industry_Scenarios_Wells_Facilities_Reservoirs.md`](.plans/04_Industry_Scenarios_Wells_Facilities_Reservoirs.md)**.
+
 ## Overview
 
 This library provides industry-standard methods for calculating gas properties including:
@@ -9,6 +13,12 @@ This library provides industry-standard methods for calculating gas properties i
 - **Gas Viscosity** - Carr-Kobayashi-Burrows and Lee-Gonzalez-Eakin correlations
 - **Pseudo-Pressure** - Numerical integration methods
 - **Average Properties** - Pressure-weighted and arithmetic averaging
+
+## Applicability and basis
+
+Correlations here (Brill–Beggs, Hall–Yarborough, Dranchuk–Abu–Kassem / Standing–Katz, Carr–Kobayashi–Burrows, etc.) are **fast, empirical sweet-gas and lean-gas approximations** suitable for screening, rate equations, and integrated engineering workflows. They are **not** a substitute for **equation-of-state (EOS) flash** or **multiphase compositional** models when you need phase splits, dense CO₂/N₂/H₂S, retrograde condensate, or export **custody-transfer**-grade properties. For that class of problem, use **`Beep.OilandGas.FlashCalculations`** (or another EOS-backed path) and treat this library as a **PVT prior** or **surrogate** only.
+
+After hard range checks (`GasPropertiesValidator.ValidateCalculationParameters`), you can collect **non-fatal** hints with `GasPropertiesValidator.GetApplicabilityWarnings(...)` (chart limits, γg-only vs composition, sour-gas heuristics). See **[`.plans/04_Industry_Scenarios_Wells_Facilities_Reservoirs.md`](.plans/04_Industry_Scenarios_Wells_Facilities_Reservoirs.md)** for well / facility / reservoir usage notes.
 
 ## Features
 
@@ -99,26 +109,26 @@ Console.WriteLine($"Pseudo-pressure: {pseudoPressure:F2} psia²/cp");
 
 ```csharp
 using Beep.OilandGas.GasProperties.Calculations;
-using Beep.OilandGas.GasProperties.Models;
+using Beep.OilandGas.Models.Data.GasProperties;
 
 // Calculate pressure-weighted average
 var pressures = new List<decimal> { 1000m, 1500m, 2000m };
 var temperatures = new List<decimal> { 560m, 570m, 580m };
 decimal specificGravity = 0.65m;
 
-AverageGasProperties avgProps = AveragePropertiesCalculator.CalculatePressureWeightedAverage(
+AVERAGE_GAS_PROPERTIES avgProps = AveragePropertiesCalculator.CalculatePressureWeightedAverage(
     pressures,
     temperatures,
     specificGravity,
     ZFactorCalculator.CalculateBrillBeggs);
 
-Console.WriteLine($"Average Z-factor: {avgProps.AverageZFactor:F4}");
+Console.WriteLine($"Average Z-factor: {avgProps.AVERAGE_Z_FACTOR:F4}");
 ```
 
 ### Gas Composition
 
 ```csharp
-using Beep.OilandGas.GasProperties.Models;
+using Beep.OilandGas.Models.Data.GasProperties;
 using Beep.OilandGas.GasProperties.Calculations;
 
 // Define gas composition

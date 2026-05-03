@@ -1,72 +1,72 @@
-# Beep.WellTestAnalysis - Pressure Transient Analysis Library
+# Beep.OilandGas.WellTestAnalysis — pressure transient / well test library
 
-A comprehensive .NET library for well test analysis and pressure transient analysis (PTA) in oil and gas operations.
+A .NET library for well test analysis and pressure transient analysis (PTA) in oil and gas operations.
+
+**Planning:** [`.plans/README.md`](.plans/README.md) · **Tracker:** [`MASTER-TODO-TRACKER.md`](MASTER-TODO-TRACKER.md) · **API:** [`API.md`](API.md)
+
+## `WellTestAnalysisService` (default)
+
+The in-library **`WellTestAnalysisService`** implements **`IWellTestAnalysisService`** for **Horner / MDH / drawdown**, **derivatives**, **`IdentifyReservoirModel`**, and **`ValidateTestDataAsync`**. It throws **`NotImplementedException`** for persistence, type-curve matching, multi-rate/deconvolution, exports, and plot bytes — register your own **`IWellTestAnalysisService`** in DI when you need those (see **`API.md`**).
 
 ## Features
 
-### Core Functionality
-- **Build-up Analysis**: Pressure build-up test interpretation
-- **Drawdown Analysis**: Pressure drawdown test interpretation
-- **Diagnostic Plots**: Log-log, semi-log, and derivative plots
-- **Reservoir Model Identification**: Automatic model recognition
-- **Permeability Calculation**: Formation permeability estimation
-- **Skin Factor Calculation**: Wellbore damage/improvement quantification
-- **Boundary Detection**: Reservoir boundaries and faults
-- **Multi-rate Analysis**: Variable rate test analysis
-- **Type Curve Matching**: Automated type curve matching
+### Core functionality
 
-### Analysis Methods
-- **Horner Method**: Semi-log analysis for build-up tests
-- **Miller-Dyes-Hutchinson (MDH)**: Alternative build-up analysis
-- **Agarwal Equivalent Time**: Rate normalization
-- **Derivative Analysis**: Pressure derivative for model identification
-- **Superposition**: Multi-rate superposition principle
-- **Deconvolution**: Rate normalization and deconvolution
+- **Build-up analysis** (Horner, MDH)
+- **Drawdown analysis** (constant-rate semi-log)
+- **Diagnostic plots** and **derivative** helpers (SkiaSharp rendering)
+- **Permeability**, **skin**, **reservoir pressure**, and related indicators on **`WELL_TEST_ANALYSIS_RESULT`**
 
 ### Visualization
-- SkiaSharp-based rendering
-- Interactive plots with zoom/pan
-- Multiple plot types (log-log, semi-log, derivative)
-- Export capabilities (PNG, SVG)
 
-## Quick Start
+- SkiaSharp-based plots, zoom/pan, PNG export (see **`WellTestRenderer`**)
+
+## Quick start
+
+Wire types live in **`Beep.OilandGas.Models.Data.WellTestAnalysis`**. Analysis entry points are under **`Beep.OilandGas.WellTestAnalysis`**.
 
 ```csharp
-using Beep.WellTestAnalysis;
-using Beep.WellTestAnalysis.Analysis;
+using Beep.OilandGas.Models.Data.WellTestAnalysis;
+using Beep.OilandGas.WellTestAnalysis;
 
-// Load test data
-var testData = new WellTestData
+var testData = new WELL_TEST_DATA
 {
-    Time = new double[] { 0, 0.1, 0.5, 1, 2, 5, 10, 20, 50, 100 },
-    Pressure = new double[] { 3000, 2950, 2900, 2850, 2800, 2750, 2720, 2700, 2680, 2670 },
-    FlowRate = 1000, // BPD
-    WellboreRadius = 0.25, // feet
-    FormationThickness = 50, // feet
-    Porosity = 0.20,
-    TotalCompressibility = 1e-5, // psi^-1
-    OilViscosity = 1.5, // cp
-    OilFormationVolumeFactor = 1.2 // RB/STB
+    FLOW_RATE = 1000m,
+    WELLBORE_RADIUS = 0.25m,
+    FORMATION_THICKNESS = 50m,
+    POROSITY = 0.20m,
+    TOTAL_COMPRESSIBILITY = 1e-5m,
+    OIL_VISCOSITY = 1.5m,
+    OIL_FORMATION_VOLUME_FACTOR = 1.2m,
+    RESERVOIR_TEMPERATURE = 200m,
+    TEST_TYPE = WellTestType.BuildUp.ToString(),
+    PRODUCTION_TIME = 720m,
+    Time = [0.01, 0.1, 0.5, 1, 2, 5, 10, 20, 50, 100],
+    Pressure = [3000, 2990, 2980, 2970, 2960, 2950, 2940, 2930, 2920, 2910]
 };
 
-// Perform build-up analysis
-var analysis = WellTestAnalyzer.AnalyzeBuildUp(testData);
-Console.WriteLine($"Permeability: {analysis.Permeability} md");
-Console.WriteLine($"Skin Factor: {analysis.SkinFactor}");
-Console.WriteLine($"Reservoir Pressure: {analysis.ReservoirPressure} psi");
+var result = WellTestAnalyzer.AnalyzeBuildUp(testData);
+Console.WriteLine($"Permeability: {result.PERMEABILITY} md");
+Console.WriteLine($"Skin: {result.SKIN_FACTOR}");
+Console.WriteLine($"Reservoir pressure: {result.RESERVOIR_PRESSURE} psi");
 ```
+
+Build-up analysis requires **`TEST_TYPE`** parseable as **`WellTestType.BuildUp`** (case-insensitive, e.g. **`BUILDUP`**) and a positive **`PRODUCTION_TIME`** (hours). Use strictly increasing **`Time`** (hours) and matching **`Pressure`** (psi) lists.
 
 ## Installation
 
 ```bash
-dotnet add package Beep.WellTestAnalysis
+dotnet add package Beep.OilandGas.WellTestAnalysis
 ```
+
+*(Package id matches the project assembly name.)*
 
 ## Documentation
 
-See the [API Documentation](API.md) for detailed information about all classes and methods.
+- [`API.md`](API.md) — public surface overview  
+- [`USAGE_EXAMPLES.md`](USAGE_EXAMPLES.md) — Skia rendering and derivatives  
+- [`.plans/`](.plans/README.md) — phased engineering and test plans  
 
 ## License
 
 MIT License
-

@@ -8,7 +8,7 @@ namespace Beep.OilandGas.PumpPerformance.Rendering
 {
     /// <summary>
     /// Renders pump performance curves using SkiaSharp.
-    /// Supports H-Q, P-Q,  EFFICIENCY curves, system curves, operating points, and multi-pump configurations.
+    /// Supports H-Q, P-Q, efficiency curves, system curves, operating points, and multi-pump configurations.
     /// </summary>
     public class PumpPerformanceRenderer
     {
@@ -104,7 +104,7 @@ namespace Beep.OilandGas.PumpPerformance.Rendering
         }
 
         /// <summary>
-        /// Sets the Best  EFFICIENCY Point (BEP).
+        /// Sets the best-efficiency point (BEP).
         /// </summary>
         public void SetBEP(HeadQuantityPoint bep)
         {
@@ -951,7 +951,7 @@ namespace Beep.OilandGas.PumpPerformance.Rendering
         }
 
         /// <summary>
-        /// Draws the Best  EFFICIENCY Point (BEP).
+        /// Draws the best-efficiency point (BEP).
         /// </summary>
         private void DrawBEP(SKCanvas canvas)
         {

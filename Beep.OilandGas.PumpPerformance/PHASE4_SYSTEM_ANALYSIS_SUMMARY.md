@@ -1,7 +1,7 @@
-# Beep.PumpPerformance Phase 4: System Analysis Summary
+# Beep.OilandGas.PumpPerformance Phase 4: System Analysis Summary
 
 ## Overview
-This document summarizes the Phase 4 implementation for Beep.PumpPerformance, focusing on advanced system analysis features including multi-pump configurations and pump selection optimization.
+This document summarizes the Phase 4 implementation for Beep.OilandGas.PumpPerformance, focusing on advanced system analysis features including multi-pump configurations and pump selection optimization.
 
 ## Implemented Features
 
@@ -27,8 +27,8 @@ This document summarizes the Phase 4 implementation for Beep.PumpPerformance, fo
 
 **Usage:**
 ```csharp
-using Beep.PumpPerformance.SystemAnalysis;
-using Beep.PumpPerformance.Calculations;
+using Beep.OilandGas.PumpPerformance.SystemAnalysis;
+using Beep.OilandGas.PumpPerformance.Calculations;
 
 // Create pump curves
 var pump1Curve = HeadQuantityCalculations.GenerateHQCurve(flowRates1, heads1, powers1);
@@ -73,20 +73,20 @@ foreach (var point in series.PumpOperatingPoints)
 **PumpSelection** (`SystemAnalysis/PumpSelection.cs`):
 - **Best Pump Selection**: Select optimal pump from candidates
 - **Suitability Filtering**: Find pumps that meet requirements
-- ** EFFICIENCY Ranking**: Rank pumps by efficiency
+- **Efficiency ranking**: Rank pumps by efficiency
 - **Cost-Effectiveness**: Calculate efficiency per unit cost
 - **Selection Scoring**: Weighted scoring (efficiency vs cost)
 
 **Selection Criteria:**
 - Operating point matching
--  EFFICIENCY at operating point
+- Efficiency at operating point
 - Cost considerations
 - Configurable preference (efficiency vs cost)
 
 **Usage:**
 ```csharp
-using Beep.PumpPerformance.SystemAnalysis;
-using Beep.PumpPerformance.Calculations;
+using Beep.OilandGas.PumpPerformance.SystemAnalysis;
+using Beep.OilandGas.PumpPerformance.Calculations;
 
 // Create pump candidates
 var candidates = new List<PumpCandidate>
@@ -144,9 +144,9 @@ foreach (var candidate in candidates)
 ## Complete Workflow Example
 
 ```csharp
-using Beep.PumpPerformance;
-using Beep.PumpPerformance.Calculations;
-using Beep.PumpPerformance.SystemAnalysis;
+using Beep.OilandGas.PumpPerformance;
+using Beep.OilandGas.PumpPerformance.Calculations;
+using Beep.OilandGas.PumpPerformance.SystemAnalysis;
 
 // 1. Generate pump performance curves
 var flowRates = new double[] { 100, 200, 300, 400, 500 };
@@ -195,7 +195,7 @@ Console.WriteLine($"Best pump: {bestPump.SelectedPump.PumpId}");
 ## File Structure
 
 ```
-Beep.PumpPerformance/
+Beep.OilandGas.PumpPerformance/
 ├── SystemAnalysis/
 │   ├── MultiPumpConfiguration.cs    # Series/parallel configurations
 │   └── PumpSelection.cs             # Pump selection and optimization

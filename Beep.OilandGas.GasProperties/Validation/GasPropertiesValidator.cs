@@ -8,7 +8,7 @@ namespace Beep.OilandGas.GasProperties.Validation
     /// <summary>
     /// Provides validation for gas property calculations.
     /// </summary>
-    public static class GasPropertiesValidator
+    public static partial class GasPropertiesValidator
     {
         /// <summary>
         /// Validates pressure value.

@@ -1,4 +1,5 @@
 ﻿@page "/ppdm39/calculations/gaslift"
+@using System.Net.Http
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.GasLift
 @using Beep.OilandGas.PPDM39.Models
@@ -31,7 +32,7 @@
                     <MudTextField @bind-Value="@_wellUWI" Label="Well UWI" Variant="Variant.Outlined" />
                     <MudNumericField @bind-Value="@_minGasInjectionRate" Label="Min Gas Injection Rate (MCF/D)" Variant="Variant.Outlined" />
                     <MudNumericField @bind-Value="@_maxGasInjectionRate" Label="Max Gas Injection Rate (MCF/D)" Variant="Variant.Outlined" />
-                    <MudNumericField @bind-Value="@_numberOfPoints" Label="Number of Points" Variant="Variant.Outlined" />
+                    <MudNumericField @bind-Value="@_numberOfPoints" Label="Number of Points" Variant="Variant.Outlined" Min="2" Max="1000" />
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AnalyzePotential" Disabled="@_isAnalyzing">
                         Analyze Potential
                     </MudButton>
@@ -45,7 +46,7 @@
                 <MudStack Spacing="3">
                     <MudTextField @bind-Value="@_designWellUWI" Label="Well UWI" Variant="Variant.Outlined" />
                     <MudNumericField @bind-Value="@_gasInjectionPressure" Label="Gas Injection Pressure (PSI)" Variant="Variant.Outlined" />
-                    <MudNumericField @bind-Value="@_numberOfValves" Label="Number of Valves" Variant="Variant.Outlined" />
+                    <MudNumericField @bind-Value="@_numberOfValves" Label="Number of Valves" Variant="Variant.Outlined" Min="1" Max="50" />
                     <MudCheckBox @bind-Value="@_useSIUnits" Label="Use SI Units" />
                     <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="DesignValves" Disabled="@_isDesigning">
                         Design Valves
@@ -158,30 +159,42 @@
         }
     }
 
+    /// <summary>
+    /// Builds a screening payload that satisfies <c>GasLiftValidator.ValidateWellProperties</c> and the potential/valve calculators (depth, P/T, GOR, GLR inputs).
+    /// Values align with <c>Beep.OilandGas.GasLift.Constants.GasLiftConstants</c> injection bounds used by the API (50–10000 Mscf/day).
+    /// </summary>
+    private static GAS_LIFT_WELL_PROPERTIES CreateScreeningWellProperties(string wellUwi, decimal? measuredDepthFt)
+    {
+        var depth = measuredDepthFt is > 0 ? measuredDepthFt.Value : 5000m;
+        return new GAS_LIFT_WELL_PROPERTIES
+        {
+            WELL_UWI = wellUwi ?? string.Empty,
+            WELL_DEPTH = depth,
+            TUBING_DIAMETER = 3,
+            WELLHEAD_PRESSURE = 200m,
+            BOTTOM_HOLE_PRESSURE = 2500m,
+            WELLHEAD_TEMPERATURE = 560m,
+            BOTTOM_HOLE_TEMPERATURE = 660m,
+            GAS_OIL_RATIO = 500m,
+            DESIRED_PRODUCTION_RATE = 400m,
+            OIL_GRAVITY = 35m,
+            WATER_CUT = 0.1m,
+            GAS_SPECIFIC_GRAVITY = 0.65m,
+            TUBING_PRESSURE_RATING = 10_000m,
+            CASING_PRESSURE_RATING = 10_000m
+        };
+    }
+
     private async Task<GAS_LIFT_WELL_PROPERTIES> LoadWellPropertiesAsync(string uwi)
     {
         try
         {
             var well = MapWell(await DevelopmentClient.GetWellAsync(uwi));
-            return new GAS_LIFT_WELL_PROPERTIES
-            {
-                WELL_DEPTH = well?.FINAL_TD ?? 5000,
-                TUBING_DIAMETER = 3,
-                WELLHEAD_PRESSURE = 100,
-                BOTTOM_HOLE_PRESSURE = 2000,
-                GAS_OIL_RATIO = 500
-            };
+            return CreateScreeningWellProperties(uwi, well.FINAL_TD);
         }
         catch
         {
-            return new GAS_LIFT_WELL_PROPERTIES
-            {
-                WELL_DEPTH = 5000,
-                TUBING_DIAMETER = 3,
-                WELLHEAD_PRESSURE = 100,
-                BOTTOM_HOLE_PRESSURE = 2000,
-                GAS_OIL_RATIO = 500
-            };
+            return CreateScreeningWellProperties(uwi, null);
         }
     }
 
@@ -209,6 +222,27 @@
             return;
         }
 
+        if (_numberOfPoints < 2 || _numberOfPoints > 1000)
+        {
+            Snackbar.Add("Number of points must be between 2 and 1000.", Severity.Warning);
+            return;
+        }
+
+        if (_minGasInjectionRate > _maxGasInjectionRate)
+        {
+            Snackbar.Add("Minimum gas injection rate must not exceed maximum.", Severity.Warning);
+            return;
+        }
+
+        // Matches Beep.OilandGas.GasLift.Constants.GasLiftConstants injection limits enforced by the API.
+        const decimal minInjectionBound = 50m;
+        const decimal maxInjectionBound = 10000m;
+        if (_minGasInjectionRate < minInjectionBound || _maxGasInjectionRate > maxInjectionBound)
+        {
+            Snackbar.Add($"Gas injection sweep must stay within {minInjectionBound:N0}–{maxInjectionBound:N0} Mscf/day (API validation).", Severity.Warning);
+            return;
+        }
+
         _isAnalyzing = true;
         try
         {
@@ -218,6 +252,10 @@
                 wellProperties, _minGasInjectionRate, _maxGasInjectionRate, _numberOfPoints);
             _designWellUWI = _wellUWI;
             Snackbar.Add("Gas lift potential analysis completed", Severity.Success);
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(string.IsNullOrWhiteSpace(ex.Message) ? "Error analyzing gas lift potential." : ex.Message, Severity.Error);
         }
         catch (Exception)
         {
@@ -241,9 +279,19 @@
         try
         {
             var wellProperties = await LoadWellPropertiesAsync(_designWellUWI);
+            if (_gasInjectionPressure <= wellProperties.WELLHEAD_PRESSURE)
+            {
+                Snackbar.Add($"Gas injection pressure must be greater than wellhead pressure ({wellProperties.WELLHEAD_PRESSURE:N0} psia).", Severity.Warning);
+                return;
+            }
+
             _valveDesignResult = await CalculationService.DesignGasLiftValvesAsync(
                 wellProperties, _gasInjectionPressure, _numberOfValves, _useSIUnits);
             Snackbar.Add("Gas lift valve design completed", Severity.Success);
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add(string.IsNullOrWhiteSpace(ex.Message) ? "Error designing gas lift valves." : ex.Message, Severity.Error);
         }
         catch (Exception)
         {

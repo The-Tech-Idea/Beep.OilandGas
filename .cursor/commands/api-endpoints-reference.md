@@ -13,7 +13,7 @@ All endpoints are prefixed with `/api/`
 ## Calculation Services
 
 ### Gas Lift (`/api/gaslift`)
-- `POST /api/gaslift/analyze-potential` - Analyze gas lift potential
+- `POST /api/gaslift/analyze-potential` - Analyze gas lift potential (response: `GAS_LIFT_POTENTIAL_RESULT` with `PERFORMANCE_POINTS`)
 - `POST /api/gaslift/design-valves` - Design gas lift valves
 - `POST /api/gaslift/design` - Save gas lift design
 - `GET /api/gaslift/performance/{wellUWI}` - Get gas lift performance

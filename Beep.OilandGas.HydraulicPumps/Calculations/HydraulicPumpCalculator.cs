@@ -1,4 +1,5 @@
 using System;
+using Beep.OilandGas.HydraulicPumps.Constants;
 
 namespace Beep.OilandGas.HydraulicPumps.Calculations
 {
@@ -13,7 +14,7 @@ namespace Beep.OilandGas.HydraulicPumps.Calculations
         public static decimal CalculateHydraulicHorsepower(decimal flowRateBpd, decimal pressurePsi)
         {
             if (flowRateBpd <= 0 || pressurePsi <= 0) return 0;
-            return (flowRateBpd * pressurePsi) / 1714m;
+            return (flowRateBpd * pressurePsi) / HydraulicPumpConstants.HorsepowerConversionFactor;
         }
 
         // Jet Pump Nozzle/Throat Area Ratio (R)
@@ -35,6 +36,7 @@ namespace Beep.OilandGas.HydraulicPumps.Calculations
             decimal N = (p_discharge - p_suction) / (p_power_fluid_surface - p_discharge);
             
             decimal efficiency = M * N;
+            efficiency = Math.Max(0m, Math.Min(1m, efficiency));
 
             // Theoretical best Area Ratio R for given N can be approximated or looked up.
             // Simplified Cunningham correlation or similar? 

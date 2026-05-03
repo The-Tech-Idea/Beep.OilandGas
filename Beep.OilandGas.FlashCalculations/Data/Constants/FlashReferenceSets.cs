@@ -5,7 +5,7 @@ namespace Beep.OilandGas.FlashCalculations.Constants;
 /// </summary>
 public static class FlashReferenceSets
 {
-    /// <summary>Matches <see cref="Beep.OilandGas.Models.Data.Calculations.FlashCalculationOptions.EquationOfState"/> vocabulary.</summary>
+    /// <summary>Matches <see cref="Beep.OilandGas.Models.Data.Calculations.FlashCalculationOptions.EquationOfState"/> after <see cref="FlashEquationOfStateMapping.ToReferenceCode"/> normalization.</summary>
     public const string EosModel = "FLASH_EOS_MODEL";
 
     /// <summary>High-level flash / PVT calculation paths exposed by the library.</summary>

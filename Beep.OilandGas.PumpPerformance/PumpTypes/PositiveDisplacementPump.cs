@@ -104,7 +104,7 @@ namespace Beep.OilandGas.PumpPerformance.PumpTypes
 
         /// <summary>
         /// Calculates power for a positive displacement pump.
-        /// Formula: P = (Q * ΔP) / (1714 * η)
+        /// Formula: P = (Q * ΔP) / (<see cref="Beep.OilandGas.PumpPerformance.Constants.PumpConstants.HorsepowerFromGpmPsiFactor"/> * η)
         /// Where Q = flow rate (GPM), ΔP = pressure differential (psi), η = efficiency
         /// </summary>
         /// <param name="flowRate">Flow rate in GPM.</param>
@@ -126,9 +126,9 @@ namespace Beep.OilandGas.PumpPerformance.PumpTypes
 
             if (Math.Abs(efficiency) < Epsilon)
                 throw new InvalidInputException(nameof(efficiency), 
-                    " EFFICIENCY cannot be zero for power calculation.");
+                    "Efficiency cannot be zero for power calculation.");
 
-            return (flowRate * pressureDifferential) / (1714.0 * efficiency);
+            return (flowRate * pressureDifferential) / (HorsepowerFromGpmPsiFactor * efficiency);
         }
 
         /// <summary>

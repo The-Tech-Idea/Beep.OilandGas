@@ -26,6 +26,16 @@ namespace Beep.OilandGas.OilProperties.Constants
         public const decimal StandardTemperature = 520m;
 
         /// <summary>
+        /// Minimum temperature (°R) accepted for Beggs–Robinson / Standing screening (~0 °F). Values at or below 0 °F in correlation space are non-physical for typical dead-oil viscosity use.
+        /// </summary>
+        public const decimal MinimumTemperatureRankine = 459.68m;
+
+        /// <summary>
+        /// Default gas specific gravity (air = 1) when not supplied on <see cref="Beep.OilandGas.Models.Data.OilComposition"/>.
+        /// </summary>
+        public const decimal DefaultGasSpecificGravity = 0.65m;
+
+        /// <summary>
         /// Standard pressure in psia.
         /// </summary>
         public const decimal StandardPressure = 14.7m;

@@ -12,8 +12,11 @@ namespace Beep.OilandGas.HydraulicPumps.Services
 {
     /// <summary>
     /// Service for hydraulic pump operations.
-    /// Implements all required methods from IHydraulicPumpService interface.
     /// </summary>
+    /// <remarks>
+    /// Implements two contracts: the wide feature API <see cref="IHydraulicPumpService"/> (this assembly, same namespace)
+    /// and the narrow shared wire contract <see cref="Beep.OilandGas.Models.Core.Interfaces.IHydraulicPumpService"/> (explicit implementation in <c>HydraulicPumpService.ModelsCoreImpl.cs</c>).
+    /// </remarks>
     public partial class HydraulicPumpService : IHydraulicPumpService, Beep.OilandGas.Models.Core.Interfaces.IHydraulicPumpService
     {
         private readonly ICommonColumnHandler _commonColumnHandler;

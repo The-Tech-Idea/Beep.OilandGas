@@ -9,7 +9,7 @@ This document summarizes the completion of API controllers and Web service clien
 
 #### Calculations Controllers (5)
 1. ✅ **GasLiftController** (`Controllers/Calculations/GasLiftController.cs`)
-   - `POST /api/gaslift/analyze-potential` - Analyze gas lift potential
+   - `POST /api/gaslift/analyze-potential` - Analyze gas lift potential (returns `GAS_LIFT_POTENTIAL_RESULT`)
    - `POST /api/gaslift/design-valves` - Design gas lift valves
    - `POST /api/gaslift/design` - Save gas lift design
    - `GET /api/gaslift/performance/{wellUWI}` - Get gas lift performance

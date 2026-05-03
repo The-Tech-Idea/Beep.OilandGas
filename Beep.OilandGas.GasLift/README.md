@@ -13,9 +13,17 @@ A comprehensive library for gas lift analysis and design in oil and gas operatio
 - **Design / spacing policy** (`GAS_LIFT_DESIGN_METHOD`): UNIFORM_SPACING, EQUAL_PRESSURE_DROP, GRADIENT_BASED
 - **Valve service** (`GAS_LIFT_VALVE_SERVICE`): UNLOADING, INTERMEDIATE, OPERATING
 - **Injection gas source** (`GAS_LIFT_INJECTION_SOURCE`): FACILITY_MANIFOLD, DEDICATED_COMPRESSOR, WELLHEAD_RECYCLE
-- **Design limit keys** (`GAS_LIFT_DESIGN_LIMIT`): labels aligned with **`GasLiftConstants`** guardrails (min/max injection, valve count, depth, spacing)
+- **Design limit keys** (`GAS_LIFT_DESIGN_LIMIT`): labels aligned with **`GasLiftConstants`** guardrails (min/max injection, valve count, depth, spacing). User-facing copy for each seeded code is available from **`GasLiftDesignLimitMessages.GetMessage`** (for API/Mud validation text).
 
 DDL for **`R_GAS_LIFT_REFERENCE_CODE`** is driven by entity/metadata tooling — see root **`CLAUDE.md`**. Definitions live in **`Data/Constants/GasLiftReferenceSets.cs`** and **`GasLiftReferenceCodeSeed.cs`**.
+
+## Automated tests
+
+Project **`Beep.OilandGas.GasLift.Tests`**: reference seed / module contract (**`GasLiftReferenceSeedCatalogTests`**, **`GasLiftModuleContractTests`**), calculator regression (**`GasLiftSpacingAndDesignRegressionTests`**), design-limit copy (**`GasLiftDesignLimitMessagesTests`**), and validator smoke (**`GasLiftValidatorTests`**).
+
+```bash
+dotnet test Beep.OilandGas.GasLift.Tests/Beep.OilandGas.GasLift.Tests.csproj
+```
 
 ---
 

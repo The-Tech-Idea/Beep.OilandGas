@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.GasProperties.Calculations;
 using Beep.OilandGas.Models.Data.Calculations;
@@ -24,10 +25,15 @@ namespace Beep.OilandGas.GasLift.Calculations
             GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal minGasInjectionRate = 100m,
             decimal maxGasInjectionRate = 5000m,
-            int numberOfPoints = 50)
+            int numberOfPoints = 50,
+            CancellationToken cancellationToken = default)
         {
             if (wellProperties == null)
                 throw new ArgumentNullException(nameof(wellProperties));
+            if (numberOfPoints < 2)
+                throw new ArgumentOutOfRangeException(nameof(numberOfPoints), numberOfPoints, "Number of analysis points must be at least 2.");
+            if (minGasInjectionRate > maxGasInjectionRate)
+                throw new ArgumentException("Minimum gas injection rate must not exceed maximum.", nameof(minGasInjectionRate));
 
             var result = new GAS_LIFT_WELL_PROPERTIES();
 
@@ -35,6 +41,7 @@ namespace Beep.OilandGas.GasLift.Calculations
 
             for (int i = 0; i <= numberOfPoints; i++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 decimal gasInjectionRate = minGasInjectionRate + i * gasInjectionStep;
 
                 // Calculate production rate for this gas injection rate

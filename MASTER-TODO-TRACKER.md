@@ -22,3 +22,8 @@ Single tracker for facility management and ProductionOperations service alignmen
 | Enhanced oil recovery (PDEN, screening analytics, API/Web) | [Beep.OilandGas.EnhancedRecovery/MASTER-TODO-TRACKER.md](Beep.OilandGas.EnhancedRecovery/MASTER-TODO-TRACKER.md) |
 | Flash / PVT (EOS LOVs, `R_FLASH_CALCULATION_REFERENCE_CODE`, module) | [Beep.OilandGas.FlashCalculations/MASTER-TODO-TRACKER.md](Beep.OilandGas.FlashCalculations/MASTER-TODO-TRACKER.md) |
 | Gas lift (reference LOVs, `R_GAS_LIFT_REFERENCE_CODE`, module) | [Beep.OilandGas.GasLift/MASTER-TODO-TRACKER.md](Beep.OilandGas.GasLift/MASTER-TODO-TRACKER.md) |
+| Gas properties (Z-factor, viscosity, pseudo-pressure, `IGasPropertiesService`) | [Beep.OilandGas.GasProperties/MASTER-TODO-TRACKER.md](Beep.OilandGas.GasProperties/MASTER-TODO-TRACKER.md) |
+| Hydraulic pumps (jet/piston calculators, `IHydraulicPumpService`) | [Beep.OilandGas.HydraulicPumps/MASTER-TODO-TRACKER.md](Beep.OilandGas.HydraulicPumps/MASTER-TODO-TRACKER.md) |
+| Oil properties (black-oil correlations, `IOilPropertiesService`) | [Beep.OilandGas.OilProperties/MASTER-TODO-TRACKER.md](Beep.OilandGas.OilProperties/MASTER-TODO-TRACKER.md) |
+| Pump performance (H–Q, NPSH, ESP, `IPumpPerformanceService`) | [Beep.OilandGas.PumpPerformance/MASTER-TODO-TRACKER.md](Beep.OilandGas.PumpPerformance/MASTER-TODO-TRACKER.md) |
+| Well test / PTA (Horner, MDH, derivative, `IWellTestAnalysisService`) | [Beep.OilandGas.WellTestAnalysis/MASTER-TODO-TRACKER.md](Beep.OilandGas.WellTestAnalysis/MASTER-TODO-TRACKER.md) |

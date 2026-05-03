@@ -5,6 +5,7 @@ using Beep.OilandGas.WellTestAnalysis.Constants;
 using Beep.OilandGas.WellTestAnalysis.Exceptions;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Beep.OilandGas.WellTestAnalysis.Validation;
+using static Beep.OilandGas.WellTestAnalysis.Constants.WellTestConstants;
 
 namespace Beep.OilandGas.WellTestAnalysis.Calculations
 {
@@ -21,7 +22,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             WellTestDataValidator.Validate(data);
 
             // TEST_TYPE is stored as string in WELL_TEST_DATA; parse to enum
-            if (!Enum.TryParse<WellTestType>(data.TEST_TYPE, out var testType) || testType != WellTestType.BuildUp)
+            if (!Enum.TryParse<WellTestType>(data.TEST_TYPE, ignoreCase: true, out var testType) || testType != WellTestType.BuildUp)
                 throw new InvalidWellTestDataException(nameof(data.TEST_TYPE), "Horner analysis requires build-up test data.");
 
             double productionTime = (double)data.PRODUCTION_TIME;
@@ -68,7 +69,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             double mu = (double)(data.OIL_VISCOSITY == 0m ? 1m : data.OIL_VISCOSITY);
             double formationThickness = (double)(data.FORMATION_THICKNESS == 0m ? 1m : data.FORMATION_THICKNESS);
 
-            double permeability = (162.6 * flowRate * bFactor * mu) / (m * formationThickness);
+            double permeability = (HornerOilPermeabilityFactor * flowRate * bFactor * mu) / (m * formationThickness);
             result.PERMEABILITY = (decimal)permeability;
 
             // Calculate skin factor: s = 1.151 * [(P1hr - Pwf) / m - log(k / (Ï† * Î¼ * ct * rwÂ²)) - 3.23]
@@ -81,7 +82,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             double rw = (double)(data.WELLBORE_RADIUS == 0m ? 1m : data.WELLBORE_RADIUS);
 
             double logTerm = Math.Log10(permeability / (porosity * mu * totalCompressibility * Math.Pow(rw, 2)));
-            double skin = 1.151 * ((p1hr - pws) / m - logTerm - 3.23);
+            double skin = HornerSkinFactorMultiplier * ((p1hr - pws) / m - logTerm - HornerSkinEquationOffset);
             result.SKIN_FACTOR = (decimal)skin;
 
             // Extrapolate to infinite time (Horner time = 1) for reservoir pressure
@@ -93,7 +94,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             result.PRODUCTIVITY_INDEX = (decimal)pj;
 
             // Calculate flow efficiency
-            double deltaPs = skin * m / 1.151;
+            double deltaPs = skin * m / HornerSkinFactorMultiplier;
             double flowEfficiency = (reservoirPressure - pws - deltaPs) / (reservoirPressure - pws);
             result.FLOW_EFFICIENCY = (decimal)flowEfficiency;
 
@@ -119,7 +120,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             WellTestDataValidator.Validate(data);
 
             // TEST_TYPE stored as string; parse
-            if (!Enum.TryParse<WellTestType>(data.TEST_TYPE, out var mdhTestType) || mdhTestType != WellTestType.BuildUp)
+            if (!Enum.TryParse<WellTestType>(data.TEST_TYPE, ignoreCase: true, out var mdhTestType) || mdhTestType != WellTestType.BuildUp)
                 throw new InvalidWellTestDataException(nameof(data.TEST_TYPE), "MDH analysis requires build-up test data.");
 
             var result = new WELL_TEST_ANALYSIS_RESULT
@@ -156,7 +157,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             double mu2 = (double)(data.OIL_VISCOSITY == 0m ? 1m : data.OIL_VISCOSITY);
             double formationThickness2 = (double)(data.FORMATION_THICKNESS == 0m ? 1m : data.FORMATION_THICKNESS);
 
-            double permeability2 = (162.6 * flowRate2 * bFactor2 * mu2) / (m * formationThickness2);
+            double permeability2 = (HornerOilPermeabilityFactor * flowRate2 * bFactor2 * mu2) / (m * formationThickness2);
             result.PERMEABILITY = (decimal)permeability2;
 
             double p1hr2 = intercept + slope * Math.Log10(1.0);
@@ -167,7 +168,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             double rw2 = (double)(data.WELLBORE_RADIUS == 0m ? 1m : data.WELLBORE_RADIUS);
 
             double logTerm2 = Math.Log10(permeability2 / (porosity2 * mu2 * totalCompressibility2 * Math.Pow(rw2, 2)));
-            double skin2 = 1.151 * ((p1hr2 - pws2) / m - logTerm2 - 3.23);
+            double skin2 = HornerSkinFactorMultiplier * ((p1hr2 - pws2) / m - logTerm2 - HornerSkinEquationOffset);
             result.SKIN_FACTOR = (decimal)skin2;
 
             // Reservoir pressure extrapolation
@@ -178,7 +179,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             double pj2 = flowRate2 / (reservoirPressure2 - pws2);
             result.PRODUCTIVITY_INDEX = (decimal)pj2;
 
-            double deltaPs2 = skin2 * m / 1.151;
+            double deltaPs2 = skin2 * m / HornerSkinFactorMultiplier;
             double flowEfficiency2 = (reservoirPressure2 - pws2 - deltaPs2) / (reservoirPressure2 - pws2);
             result.FLOW_EFFICIENCY = (decimal)flowEfficiency2;
             result.DAMAGE_RATIO = (decimal)(1.0 / flowEfficiency2);
