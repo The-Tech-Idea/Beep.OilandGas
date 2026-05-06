@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data.Security;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using Beep.OilandGas.UserManagement.Contracts.Services;
-using Beep.OilandGas.UserManagement.Models.Identity;
 using Beep.OilandGas.UserManagement.Models.Profile;
 using Beep.OilandGas.UserManagement.Models.Scope;
 
@@ -14,7 +14,8 @@ namespace Beep.OilandGas.UserManagement.Modules
     /// <summary>
     /// Module order 40 — seeds the security bootstrap:
     /// BUSINESS_ASSOCIATE, BA_ORGANIZATION, USER, ROLE, PERMISSION,
-    /// USER_ROLE, and ROLE_PERMISSION.
+    /// USER_ROLE, ROLE_PERMISSION, PERSONA_DEFINITION, ORGANIZATION_SCOPE,
+    /// USER_SCOPE_ASSIGNMENT, and USER_ASSET_ACCESS.
     ///
     /// Lives in the UserManagement project because it depends on
     /// <see cref="IDefaultSecuritySeedService"/>.
@@ -24,12 +25,12 @@ namespace Beep.OilandGas.UserManagement.Modules
     {
         private static readonly IReadOnlyList<Type> _entityTypes = new List<Type>
         {
-            // ── Identity tables ───────────────────────────────────────────────
-            typeof(AppUser),
-            typeof(AppRole),
-            typeof(AppUserRole),
-            typeof(AppPermission),
-            typeof(AppRolePermission),
+            // ── Identity tables (PPDM security schema) ────────────────────────
+            typeof(USER),
+            typeof(ROLE),
+            typeof(USER_ROLE),
+            typeof(PERMISSION),
+            typeof(ROLE_PERMISSION),
             // ── Scope tables ─────────────────────────────────────────────────
             typeof(UserScopeAssignment),
             typeof(OrganizationScope),
@@ -38,6 +39,15 @@ namespace Beep.OilandGas.UserManagement.Modules
             typeof(PersonaDefinition),
             typeof(PersonaViewPreference),
             typeof(UserPersonaProfile),
+            // ── Audit tables ─────────────────────────────────────────────────
+            typeof(Beep.OilandGas.UserManagement.Models.Audit.UserProfileAuditEvent),
+            typeof(Beep.OilandGas.UserManagement.Models.Audit.UserAccessAuditEvent),
+            typeof(Beep.OilandGas.UserManagement.Models.Audit.SetupWizardLog),
+            typeof(Beep.OilandGas.UserManagement.Models.Audit.AuthorizationDecisionTrace),
+            // ── MFA, Password History, Session Management ────────────────────
+            typeof(Beep.OilandGas.UserManagement.Contracts.Services.UserMfaConfig),
+            typeof(Beep.OilandGas.UserManagement.Contracts.Services.PasswordHistory),
+            typeof(Beep.OilandGas.UserManagement.Contracts.Services.UserSession),
         };
 
         private readonly IDefaultSecuritySeedService _securitySeeder;
@@ -73,8 +83,12 @@ namespace Beep.OilandGas.UserManagement.Modules
                                        + secResult.RolesInserted
                                        + secResult.PermissionsInserted
                                        + secResult.RolePermissionsInserted
-                                       + secResult.UserRolesInserted;
-                result.TablesSeeded    = 7;
+                                       + secResult.UserRolesInserted
+                                       + secResult.PersonasInserted
+                                       + secResult.OrganizationScopesInserted
+                                       + secResult.UserScopeAssignmentsInserted
+                                       + secResult.UserAssetAccessInserted;
+                result.TablesSeeded    = 11;
 
                 foreach (var err in secResult.Errors)
                     result.Errors.Add(err);

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.Models.Data.Calculations;
+using Beep.OilandGas.EnhancedRecovery.Constants;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.EnhancedRecovery.Services

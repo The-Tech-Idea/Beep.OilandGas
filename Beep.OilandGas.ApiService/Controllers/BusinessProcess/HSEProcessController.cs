@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.HSE;
 using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.LifeCycle.Services.Processes;
@@ -104,7 +103,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
                     Action = "INCIDENT_REPORTED",
                     Notes = $"Type: {request.IncidentType} | Severity: {request.Severity} | Location: {request.LocationDescription} | {request.Description}",
                     PerformedBy = userId,
-                    Timestamp = request.IncidentDateTime,
+                    Timestamp = DateTime.UtcNow,
                     ActionData = new Dictionary<string, object>
                     {
                         ["IncidentType"] = request.IncidentType,
@@ -139,7 +138,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
                 var incidents = await Hse.GetIncidentsAsync(null);
                 var summaries = new List<ProcessInstanceSummary>();
 
-                foreach (var incident in incidents)
+                foreach (var incident in incidents ?? Enumerable.Empty<HSEIncidentRecord>())
                 {
                     if (!MatchesSeverity(incident, severity))
                     {

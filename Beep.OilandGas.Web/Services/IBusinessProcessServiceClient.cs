@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Analytics;
+using Beep.OilandGas.Models.Data.Process;
 
 namespace Beep.OilandGas.Web.Services;
 

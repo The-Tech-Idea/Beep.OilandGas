@@ -1657,7 +1657,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             string.Equals(moduleId, "PPDM_CORE", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(moduleId, "R_SHARED_REFERENCES", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(moduleId, "WELL_STATUS_FACETS", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(moduleId, "WELL_REFERENCES", StringComparison.OrdinalIgnoreCase);
+            string.Equals(moduleId, "WELL_REFERENCES", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(moduleId, "SECURITY", StringComparison.OrdinalIgnoreCase);
 
         private async Task<SeedingOperationResult> SeedRequiredModulesAsync(string connectionName, string userId)
         {

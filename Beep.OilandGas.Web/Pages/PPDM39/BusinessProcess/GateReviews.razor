@@ -88,6 +88,7 @@
 </MudContainer>
 
 @using Microsoft.AspNetCore.Authorization
+@using Beep.OilandGas.Models.Data.Process
 
 @code {
     private string _fieldName = string.Empty;
@@ -126,7 +127,7 @@
                     g.StartedBy,
                     g.StartedAt,
                     g.Status,
-                    (int)(today - g.StartedAt).TotalDays
+                    g.StartedAt.HasValue ? (int)(today - g.StartedAt.Value).TotalDays : 0
                 )).ToList();
             }
             else
@@ -142,5 +143,5 @@
 
     private record GateRow(
         string GateId, string GateName, string EntityId, string ProcessType,
-        string SubmittedBy, DateTime SubmittedAt, string Status, int DaysOverdue);
+        string SubmittedBy, DateTime? SubmittedAt, string Status, int DaysOverdue);
 }

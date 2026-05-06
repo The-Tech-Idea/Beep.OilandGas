@@ -1,4 +1,5 @@
 ﻿using System;
+using Beep.OilandGas.PlungerLift.Constants;
 
 namespace Beep.OilandGas.PlungerLift.Calculations
 {

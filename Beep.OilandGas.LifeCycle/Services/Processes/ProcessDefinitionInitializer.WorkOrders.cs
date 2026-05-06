@@ -52,7 +52,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 Transitions   = new Dictionary<string, ProcessTransition>(),
                 Configuration = new Dictionary<string, object>()
             };
-            await _processService.CreateProcessDefinitionAsync(definition, userId);
+            await CreateProcessDefinitionIfNotExistsAsync(definition, userId);
         }
 
         private async Task InitializeCorrectiveMaintenanceWOAsync(string userId)
@@ -77,7 +77,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 Transitions   = new Dictionary<string, ProcessTransition>(),
                 Configuration = new Dictionary<string, object>()
             };
-            await _processService.CreateProcessDefinitionAsync(definition, userId);
+            await CreateProcessDefinitionIfNotExistsAsync(definition, userId);
         }
 
         private async Task InitializeInspectionWOAsync(string userId)
@@ -102,7 +102,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 Transitions   = new Dictionary<string, ProcessTransition>(),
                 Configuration = new Dictionary<string, object>()
             };
-            await _processService.CreateProcessDefinitionAsync(definition, userId);
+            await CreateProcessDefinitionIfNotExistsAsync(definition, userId);
         }
 
         private async Task InitializeHotWorkPermitWOAsync(string userId)
@@ -127,7 +127,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 Transitions   = new Dictionary<string, ProcessTransition>(),
                 Configuration = new Dictionary<string, object>()
             };
-            await _processService.CreateProcessDefinitionAsync(definition, userId);
+            await CreateProcessDefinitionIfNotExistsAsync(definition, userId);
         }
 
         private async Task InitializeConfinedSpaceEntryWOAsync(string userId)
@@ -152,7 +152,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 Transitions   = new Dictionary<string, ProcessTransition>(),
                 Configuration = new Dictionary<string, object>()
             };
-            await _processService.CreateProcessDefinitionAsync(definition, userId);
+            await CreateProcessDefinitionIfNotExistsAsync(definition, userId);
         }
 
         private async Task InitializeModificationWOAsync(string userId)
@@ -178,7 +178,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 Transitions   = new Dictionary<string, ProcessTransition>(),
                 Configuration = new Dictionary<string, object>()
             };
-            await _processService.CreateProcessDefinitionAsync(definition, userId);
+            await CreateProcessDefinitionIfNotExistsAsync(definition, userId);
         }
 
         // ─────────────────────────────────────────────────────────────────
@@ -218,7 +218,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 Transitions   = new Dictionary<string, ProcessTransition>(),
                 Configuration = new Dictionary<string, object>()
             };
-            await _processService.CreateProcessDefinitionAsync(definition, userId);
+            await CreateProcessDefinitionIfNotExistsAsync(definition, userId);
         }
 
         private async Task InitializeDevelopmentFDPGateAsync(string userId)
@@ -243,7 +243,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 Transitions   = new Dictionary<string, ProcessTransition>(),
                 Configuration = new Dictionary<string, object>()
             };
-            await _processService.CreateProcessDefinitionAsync(definition, userId);
+            await CreateProcessDefinitionIfNotExistsAsync(definition, userId);
         }
 
         private async Task InitializeFinalInvestmentDecisionGateAsync(string userId)
@@ -268,7 +268,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 Transitions   = new Dictionary<string, ProcessTransition>(),
                 Configuration = new Dictionary<string, object>()
             };
-            await _processService.CreateProcessDefinitionAsync(definition, userId);
+            await CreateProcessDefinitionIfNotExistsAsync(definition, userId);
         }
 
         private async Task InitializeFirstOilGateAsync(string userId)
@@ -292,7 +292,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 Transitions   = new Dictionary<string, ProcessTransition>(),
                 Configuration = new Dictionary<string, object>()
             };
-            await _processService.CreateProcessDefinitionAsync(definition, userId);
+            await CreateProcessDefinitionIfNotExistsAsync(definition, userId);
         }
 
         private async Task InitializeAFEApprovalGateAsync(string userId)
@@ -316,7 +316,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 Transitions   = new Dictionary<string, ProcessTransition>(),
                 Configuration = new Dictionary<string, object>()
             };
-            await _processService.CreateProcessDefinitionAsync(definition, userId);
+            await CreateProcessDefinitionIfNotExistsAsync(definition, userId);
         }
 
         private async Task InitializeWellDesignApprovalGateAsync(string userId)
@@ -341,7 +341,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 Transitions   = new Dictionary<string, ProcessTransition>(),
                 Configuration = new Dictionary<string, object>()
             };
-            await _processService.CreateProcessDefinitionAsync(definition, userId);
+            await CreateProcessDefinitionIfNotExistsAsync(definition, userId);
         }
 
         private async Task InitializePipelineRouteApprovalGateAsync(string userId)
@@ -365,7 +365,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 Transitions   = new Dictionary<string, ProcessTransition>(),
                 Configuration = new Dictionary<string, object>()
             };
-            await _processService.CreateProcessDefinitionAsync(definition, userId);
+            await CreateProcessDefinitionIfNotExistsAsync(definition, userId);
         }
 
         private async Task InitializeAbandonmentApprovalGateAsync(string userId)
@@ -390,7 +390,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 Transitions   = new Dictionary<string, ProcessTransition>(),
                 Configuration = new Dictionary<string, object>()
             };
-            await _processService.CreateProcessDefinitionAsync(definition, userId);
+            await CreateProcessDefinitionIfNotExistsAsync(definition, userId);
         }
     }
 }

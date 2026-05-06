@@ -53,6 +53,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             }
 
             _transitions[transition.FromStateId].Add(transition);
+
+            // Also populate the state's AllowedTransitions for consistency
+            if (_states.TryGetValue(transition.FromStateId, out var fromState))
+            {
+                if (!fromState.AllowedTransitions.Contains(transition.ToStateId))
+                {
+                    fromState.AllowedTransitions.Add(transition.ToStateId);
+                }
+            }
+
             _logger?.LogDebug($"Registered transition: {transition.FromStateId} -> {transition.ToStateId}");
         }
 
@@ -87,16 +97,6 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             if (transition == null)
             {
                 return false;
-            }
-
-            // Check if from state allows this transition
-            if (_states.ContainsKey(fromStateId))
-            {
-                var fromState = _states[fromStateId];
-                if (!fromState.AllowedTransitions.Contains(toStateId))
-                {
-                    return false;
-                }
             }
 
             // Check transition condition

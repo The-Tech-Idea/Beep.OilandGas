@@ -8,6 +8,7 @@ using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.LifeCycle;
 using Beep.OilandGas.Models.Data.Production;
 using Beep.OilandGas.Models.Data.Development;
+using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.PPDM39.Models;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.ApiService.Attributes;
@@ -297,7 +298,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
                 var result = await _developmentProcessService.DelineatePoolAsync(
                     request.InstanceId, 
-                    request.DelineationData ?? new Dictionary<string, object>(), 
+                    new PROCESS_STEP_DATA { Data = request.DelineationData ?? new Dictionary<string, object>() }, 
                     request.UserId);
                 
                 return Ok(result);
@@ -329,7 +330,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
                 var result = await _developmentProcessService.AssignReservesAsync(
                     request.InstanceId, 
-                    request.ReserveData ?? new Dictionary<string, object>(), 
+                    new PROCESS_STEP_DATA { Data = request.ReserveData ?? new Dictionary<string, object>() }, 
                     request.UserId);
                 
                 return Ok(result);
@@ -639,14 +640,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
             try
             {
-                // Store rig assignment via well status update using the data service
-                var wells = await _developmentService.GetDevelopmentWellsForFieldAsync(fieldId);
-                var well  = wells?.FirstOrDefault(w => w.UWI == uwi);
-                    if (well == null) return NotFound(new { error = $"Well {uwi} not found in field {fieldId}." });
-
-                well.STATUS_TYPE    = $"RIG:{request.RigName}";
-                well.ROW_CHANGED_BY   = userId;
-                well.ROW_CHANGED_DATE = DateTime.UtcNow;
+                var success = await _developmentService.AssignRigToWellAsync(fieldId, uwi, request.RigName, userId);
+                if (!success)
+                    return NotFound(new { error = $"Well {uwi} not found in field {fieldId}." });
 
                 _logger.LogInformation("Rig {RigName} assigned to well {Uwi} by {UserId}", request.RigName, uwi, userId);
                 return NoContent();

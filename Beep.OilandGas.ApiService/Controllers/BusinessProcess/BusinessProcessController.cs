@@ -9,6 +9,7 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.LifeCycle.Services.Processes;
 using Beep.OilandGas.Models.Processes;
+using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.ApiService.Attributes;
 
 namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
@@ -200,23 +201,26 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 
             try
             {
-                // Return instances for the field entity itself
-                var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, "FIELD");
                 var summaries = new List<ProcessInstanceSummary>();
-                if (instances != null)
+                var entityTypes = new[] { "FIELD", "WELL", "FACILITY", "RESERVOIR", "PIPELINE", "GATE_REVIEW", "WORK_ORDER", "HSE", "COMPLIANCE" };
+                foreach (var entityType in entityTypes)
                 {
-                    foreach (var inst in instances)
+                    var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, entityType);
+                    if (instances != null)
                     {
-                        summaries.Add(new ProcessInstanceSummary
+                        foreach (var inst in instances)
                         {
-                            InstanceId = inst.InstanceId,
-                            ProcessId = inst.ProcessId,
-                            EntityId = inst.EntityId,
-                            EntityType = inst.EntityType,
-                            CurrentStepId = inst.CurrentStepId,
-                            Status = inst.Status.ToString(),
-                            StartedAt = inst.StartDate
-                        });
+                            summaries.Add(new ProcessInstanceSummary
+                            {
+                                InstanceId = inst.InstanceId,
+                                ProcessId = inst.ProcessId,
+                                EntityId = inst.EntityId,
+                                EntityType = inst.EntityType,
+                                CurrentStepId = inst.CurrentStepId,
+                                Status = inst.Status.ToString(),
+                                StartedAt = inst.StartDate
+                            });
+                        }
                     }
                 }
                 return Ok(summaries);
@@ -271,6 +275,9 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 
             try
             {
+                var instance = await _processService.GetProcessInstanceAsync(instanceId);
+                var actualFromState = instance?.CurrentState ?? request.FromStateId;
+
                 var canTransition = await _processService.CanTransitionAsync(instanceId, request.ToStateId);
                 if (!canTransition)
                     return UnprocessableEntity(new { error = $"Transition to '{request.ToStateId}' is not allowed from current state." });
@@ -281,7 +288,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
                     Success = success,
                     InstanceId = instanceId,
                     TransitionName = request.Trigger,
-                    FromState = request.FromStateId,
+                    FromState = actualFromState,
                     NewStepId = request.ToStateId,
                     Message = success ? "Transition completed successfully." : "Transition failed.",
                     TransitionedAt = DateTime.UtcNow
@@ -307,9 +314,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             try
             {
                 var history = await _processService.GetProcessHistoryAsync(instanceId);
-                if (history == null)
-                    return NotFound(new { error = $"Process instance '{instanceId}' not found." });
-                return Ok(history);
+                return Ok(history ?? new List<ProcessHistoryEntry>());
             }
             catch (Exception ex)
             {

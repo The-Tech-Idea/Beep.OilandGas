@@ -19,6 +19,7 @@ namespace Beep.OilandGas.Models.Processes
         public ProcessStatus Status { get; set; } = ProcessStatus.NOT_STARTED;
         public DateTime StartDate { get; set; } = DateTime.UtcNow;
         public DateTime? CompletionDate { get; set; }
+        public string? CompletedBy { get; set; }
         public string StartedBy { get; set; } = string.Empty;
         public PROCESS_DATA ProcessData { get; set; } = new PROCESS_DATA();
         public List<ProcessStepInstance> StepInstances { get; set; } = new List<ProcessStepInstance>();

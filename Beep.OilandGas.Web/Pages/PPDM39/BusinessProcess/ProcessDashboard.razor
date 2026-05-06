@@ -6,6 +6,7 @@
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.Process
 
 <PageTitle>Business Process Dashboard</PageTitle>
 
@@ -163,7 +164,7 @@
                             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
                                 <MudStack Spacing="0">
                                     <MudText Typo="Typo.body2">@inc.Description</MudText>
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@inc.Date.ToString("dd-MMM-yy")</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@(inc.Date?.ToString("dd-MMM-yy") ?? "N/A")</MudText>
                                 </MudStack>
                                 <HSEIncidentSeverityBadge Tier="@inc.Tier" />
                             </MudStack>
@@ -284,7 +285,7 @@
         }
     }
 
-    private record InstanceRow(string InstanceId, string ProcessName, string EntityId, string Status, DateTime StartedAt);
+    private record InstanceRow(string InstanceId, string ProcessName, string EntityId, string Status, DateTime? StartedAt);
     private record GateRow(string Name, string State);
-    private record IncidentRow(string Description, string Tier, DateTime Date);
+    private record IncidentRow(string Description, string Tier, DateTime? Date);
 }

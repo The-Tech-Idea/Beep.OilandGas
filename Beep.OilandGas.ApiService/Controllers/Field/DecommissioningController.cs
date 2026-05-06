@@ -7,6 +7,7 @@ using TheTechIdea.Beep.Report;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.LifeCycle;
+using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.ApiService.Attributes;
 using Microsoft.Extensions.Logging;
@@ -428,7 +429,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
                 var result = await _decommissioningProcessService.PlanAbandonmentAsync(
                     request.InstanceId, 
-                    request.PlanData ?? new Dictionary<string, object>(), 
+                    new PROCESS_STEP_DATA { Data = request.PlanData ?? new Dictionary<string, object>() }, 
                     request.UserId);
                 
                 return Ok(result);
@@ -488,7 +489,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
                 var result = await _decommissioningProcessService.PlugWellAsync(
                     request.InstanceId, 
-                    request.PluggingData ?? new Dictionary<string, object>(), 
+                    new PROCESS_STEP_DATA { Data = request.PluggingData ?? new Dictionary<string, object>() }, 
                     request.UserId);
                 
                 return Ok(result);
@@ -520,7 +521,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
                 var result = await _decommissioningProcessService.RestoreSiteAsync(
                     request.InstanceId, 
-                    request.RestorationData ?? new Dictionary<string, object>(), 
+                    new PROCESS_STEP_DATA { Data = request.RestorationData ?? new Dictionary<string, object>() }, 
                     request.UserId);
                 
                 return Ok(result);
@@ -623,7 +624,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
                 var result = await _decommissioningProcessService.PlanDecommissioningAsync(
                     request.InstanceId, 
-                    request.PlanData ?? new Dictionary<string, object>(), 
+                    new PROCESS_STEP_DATA { Data = request.PlanData ?? new Dictionary<string, object>() }, 
                     request.UserId);
                 
                 return Ok(result);
@@ -655,7 +656,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
                 var result = await _decommissioningProcessService.RemoveEquipmentAsync(
                     request.InstanceId, 
-                    request.RemovalData ?? new Dictionary<string, object>(), 
+                    new PROCESS_STEP_DATA { Data = request.RemovalData ?? new Dictionary<string, object>() }, 
                     request.UserId);
                 
                 return Ok(result);
@@ -687,7 +688,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
                 var result = await _decommissioningProcessService.CleanupSiteAsync(
                     request.InstanceId, 
-                    request.CleanupData ?? new Dictionary<string, object>(), 
+                    new PROCESS_STEP_DATA { Data = request.CleanupData ?? new Dictionary<string, object>() }, 
                     request.UserId);
                 
                 return Ok(result);

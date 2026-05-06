@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.LifeCycle.Services.Processes;
@@ -70,7 +71,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning.Processes
             var stepData = new PROCESS_STEP_DATA
             {
                 StepType = "REGULATORY_APPROVAL",
-                Status = "PENDING",
+                Data = { ["Status"] = JsonSerializer.SerializeToElement("PENDING") },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "REGULATORY_APPROVAL", stepData, userId);
@@ -151,7 +152,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning.Processes
             var stepData = new PROCESS_STEP_DATA
             {
                 StepType = "REGULATORY_CLOSURE",
-                Status = "PENDING",
+                Data = { ["Status"] = JsonSerializer.SerializeToElement("PENDING") },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "REGULATORY_CLOSURE", stepData, userId);

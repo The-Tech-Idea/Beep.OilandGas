@@ -42,6 +42,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             if (stepData.LastUpdated.HasValue)
                 dataDict["LastUpdated"] = stepData.LastUpdated.Value;
 
+            // Merge Data dictionary entries
+            foreach (var kvp in stepData.Data)
+                dataDict[kvp.Key] = kvp.Value;
+
             return await ValidateStepDataAsync(stepDefinition, dataDict);
         }
 
@@ -109,8 +113,33 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                         result = ValidateRange(rule, stepData);
                         break;
 
-                    case ValidationRuleType.Format :
+                    case ValidationRuleType.Format:
+                    case ValidationRuleType.Pattern:
                         result = ValidateFormat(rule, stepData);
+                        break;
+
+                    case ValidationRuleType.MaxLength:
+                        result = ValidateMaxLength(rule, stepData);
+                        break;
+
+                    case ValidationRuleType.MinLength:
+                        result = ValidateMinLength(rule, stepData);
+                        break;
+
+                    case ValidationRuleType.DateRange:
+                        result = await ValidateDateRangeAsync(rule, stepData);
+                        break;
+
+                    case ValidationRuleType.Unique:
+                        result = ValidateUnique(rule, stepData);
+                        break;
+
+                    case ValidationRuleType.ForeignKey:
+                        result = ValidateForeignKey(rule, stepData);
+                        break;
+
+                    case ValidationRuleType.Custom:
+                        result = await ValidateCustomAsync(rule, stepData);
                         break;
 
                     case ValidationRuleType.BusinessRule:
@@ -148,6 +177,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 result.IsValid = false;
                 result.ErrorMessage = rule.ErrorMessage ?? $"Field {rule.FieldName} is required";
             }
+            else if (stepData[rule.FieldName] is string strValue && string.IsNullOrWhiteSpace(strValue))
+            {
+                result.IsValid = false;
+                result.ErrorMessage = rule.ErrorMessage ?? $"Field {rule.FieldName} is required";
+            }
 
             return result;
         }
@@ -174,16 +208,51 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 return result;
             }
 
-            if (rule.RuleParameters.ContainsKey("Min") && rule.RuleParameters.ContainsKey("Max"))
+            decimal numValue;
+            if (value is decimal d) numValue = d;
+            else if (value is double db) numValue = (decimal)db;
+            else if (value is int i) numValue = i;
+            else if (value is long l) numValue = l;
+            else if (!decimal.TryParse(value.ToString(), out numValue))
             {
-                var min = Convert.ToDecimal(rule.RuleParameters["Min"]);
-                var max = Convert.ToDecimal(rule.RuleParameters["Max"]);
-                var numValue = Convert.ToDecimal(value);
+                result.IsValid = false;
+                result.ErrorMessage = rule.ErrorMessage ?? $"Field {rule.FieldName} is not a valid number";
+                return result;
+            }
 
+            var hasMin = rule.RuleParameters.ContainsKey("Min");
+            var hasMax = rule.RuleParameters.ContainsKey("Max");
+
+            if (hasMin && hasMax)
+            {
+                var minStr = rule.RuleParameters["Min"]?.ToString();
+                var maxStr = rule.RuleParameters["Max"]?.ToString();
+                if (!decimal.TryParse(minStr, out var min) || !decimal.TryParse(maxStr, out var max))
+                {
+                    return result;
+                }
                 if (numValue < min || numValue > max)
                 {
                     result.IsValid = false;
                     result.ErrorMessage = rule.ErrorMessage ?? $"Field {rule.FieldName} must be between {min} and {max}";
+                }
+            }
+            else if (hasMin)
+            {
+                var minStr = rule.RuleParameters["Min"]?.ToString();
+                if (decimal.TryParse(minStr, out var min) && numValue < min)
+                {
+                    result.IsValid = false;
+                    result.ErrorMessage = rule.ErrorMessage ?? $"Field {rule.FieldName} must be at least {min}";
+                }
+            }
+            else if (hasMax)
+            {
+                var maxStr = rule.RuleParameters["Max"]?.ToString();
+                if (decimal.TryParse(maxStr, out var max) && numValue > max)
+                {
+                    result.IsValid = false;
+                    result.ErrorMessage = rule.ErrorMessage ?? $"Field {rule.FieldName} must be at most {max}";
                 }
             }
 
@@ -217,8 +286,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 var pattern = rule.RuleParameters["Pattern"]?.ToString();
                 if (!string.IsNullOrEmpty(pattern))
                 {
-                    // Simple pattern matching (could use regex)
-                    if (!value.Contains(pattern))
+                    if (!System.Text.RegularExpressions.Regex.IsMatch(value, pattern))
                     {
                         result.IsValid = false;
                         result.ErrorMessage = rule.ErrorMessage ?? $"Field {rule.FieldName} does not match required format";
@@ -226,6 +294,98 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 }
             }
 
+            return result;
+        }
+
+        private ValidationResult ValidateMaxLength(ValidationRule rule, Dictionary<string, object> stepData)
+        {
+            var result = new ValidationResult { RuleId = rule.RuleId, IsValid = true };
+            if (!stepData.ContainsKey(rule.FieldName)) return result;
+            var value = stepData[rule.FieldName]?.ToString();
+            if (string.IsNullOrEmpty(value)) return result;
+            if (rule.RuleParameters.TryGetValue("Max", out var maxObj) && int.TryParse(maxObj?.ToString(), out var max))
+            {
+                if (value.Length > max)
+                {
+                    result.IsValid = false;
+                    result.ErrorMessage = rule.ErrorMessage ?? $"Field {rule.FieldName} exceeds maximum length of {max}";
+                }
+            }
+            return result;
+        }
+
+        private ValidationResult ValidateMinLength(ValidationRule rule, Dictionary<string, object> stepData)
+        {
+            var result = new ValidationResult { RuleId = rule.RuleId, IsValid = true };
+            if (!stepData.ContainsKey(rule.FieldName)) return result;
+            var value = stepData[rule.FieldName]?.ToString();
+            if (string.IsNullOrEmpty(value)) return result;
+            if (rule.RuleParameters.TryGetValue("Min", out var minObj) && int.TryParse(minObj?.ToString(), out var min))
+            {
+                if (value.Length < min)
+                {
+                    result.IsValid = false;
+                    result.ErrorMessage = rule.ErrorMessage ?? $"Field {rule.FieldName} must be at least {min} characters";
+                }
+            }
+            return result;
+        }
+
+        private async Task<ValidationResult> ValidateDateRangeAsync(ValidationRule rule, Dictionary<string, object> stepData)
+        {
+            var result = new ValidationResult { RuleId = rule.RuleId, IsValid = true };
+            if (!stepData.ContainsKey(rule.FieldName)) return result;
+            var value = stepData[rule.FieldName];
+            if (value == null) return result;
+
+            if (value is DateTime fieldDate)
+            {
+                if (rule.RuleParameters.TryGetValue("MinDate", out var minObj) && DateTime.TryParse(minObj?.ToString(), out var minDate) && fieldDate < minDate)
+                {
+                    result.IsValid = false;
+                    result.ErrorMessage = rule.ErrorMessage ?? $"Field {rule.FieldName} must be on or after {minDate:yyyy-MM-dd}";
+                }
+                if (rule.RuleParameters.TryGetValue("MaxDate", out var maxObj) && DateTime.TryParse(maxObj?.ToString(), out var maxDate) && fieldDate > maxDate)
+                {
+                    result.IsValid = false;
+                    result.ErrorMessage = rule.ErrorMessage ?? $"Field {rule.FieldName} must be on or before {maxDate:yyyy-MM-dd}";
+                }
+            }
+            await Task.CompletedTask;
+            return result;
+        }
+
+        private ValidationResult ValidateUnique(ValidationRule rule, Dictionary<string, object> stepData)
+        {
+            var result = new ValidationResult { RuleId = rule.RuleId, IsValid = true };
+            if (!stepData.ContainsKey(rule.FieldName) || stepData[rule.FieldName] == null) return result;
+            if (rule.RuleParameters.TryGetValue("Scope", out var scope))
+            {
+                _logger?.LogDebug("Unique validation for {Field} in scope {Scope} (requires data layer check)", rule.FieldName, scope);
+            }
+            return result;
+        }
+
+        private ValidationResult ValidateForeignKey(ValidationRule rule, Dictionary<string, object> stepData)
+        {
+            var result = new ValidationResult { RuleId = rule.RuleId, IsValid = true };
+            if (!stepData.ContainsKey(rule.FieldName) || stepData[rule.FieldName] == null) return result;
+            if (rule.RuleParameters.TryGetValue("ReferenceTable", out var refTable))
+            {
+                _logger?.LogDebug("Foreign key validation for {Field} referencing {Table} (requires data layer check)", rule.FieldName, refTable);
+            }
+            return result;
+        }
+
+        private async Task<ValidationResult> ValidateCustomAsync(ValidationRule rule, Dictionary<string, object> stepData)
+        {
+            var result = new ValidationResult { RuleId = rule.RuleId, IsValid = true };
+            if (!stepData.ContainsKey(rule.FieldName)) return result;
+            if (rule.RuleParameters.TryGetValue("Expression", out var expr))
+            {
+                _logger?.LogDebug("Custom validation expression for {Field}: {Expression}", rule.FieldName, expr);
+            }
+            await Task.CompletedTask;
             return result;
         }
 
@@ -459,16 +619,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 return false;
             }
 
-            // Check if all required steps are completed
+            // Check if all required steps are completed or skipped
             var requiredSteps = definition.Steps.Where(s => s.IsRequired).ToList();
-            var completedSteps = instance.StepInstances
-                .Where(s => s.Status == StepStatus.COMPLETED)
+            var satisfiedSteps = instance.StepInstances
+                .Where(s => s.Status == StepStatus.COMPLETED || s.Status == StepStatus.SKIPPED)
                 .Select(s => s.StepId)
                 .ToList();
 
             foreach (var requiredStep in requiredSteps)
             {
-                if (!completedSteps.Contains(requiredStep.StepId))
+                if (!satisfiedSteps.Contains(requiredStep.StepId))
                 {
                     _logger?.LogWarning($"Required step {requiredStep.StepId} is not completed");
                     return false;

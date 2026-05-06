@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.LifeCycle.Services.Processes;
@@ -125,7 +126,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development.Processes
             var stepData = new PROCESS_STEP_DATA
             {
                 StepType = "FACILITY_PERMITTING",
-                Status = "PENDING",
+                Data = { ["Status"] = JsonSerializer.SerializeToElement("PENDING") },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "FACILITY_PERMITTING", stepData, userId);
@@ -192,7 +193,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development.Processes
             var stepData = new PROCESS_STEP_DATA
             {
                 StepType = "DRILLING_PERMIT",
-                Status = "PENDING",
+                Data = { ["Status"] = JsonSerializer.SerializeToElement("PENDING") },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "DRILLING_PERMIT", stepData, userId);
@@ -266,7 +267,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development.Processes
             var stepData = new PROCESS_STEP_DATA
             {
                 StepType = "PIPELINE_PERMITTING",
-                Status = "PENDING",
+                Data = { ["Status"] = JsonSerializer.SerializeToElement("PENDING") },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "PIPELINE_PERMITTING", stepData, userId);

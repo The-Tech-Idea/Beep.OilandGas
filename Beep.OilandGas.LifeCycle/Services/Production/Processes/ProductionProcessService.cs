@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.LifeCycle.Services.Processes;
@@ -71,7 +72,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "PRODUCTION_TESTING",
-                WellTest = testData,
+                Data = { ["WellTest"] = JsonSerializer.SerializeToElement(testData) },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_TESTING", stepData, userId);
@@ -88,7 +89,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "PRODUCTION_START",
-                PRODUCTION_FORECAST = productionData, // Assuming PROCESS_STEP_DATA uses ProductionForecasting.PRODUCTION_FORECAST
+                Data = { ["PRODUCTION_FORECAST"] = JsonSerializer.SerializeToElement(productionData) },
                 LastUpdated = DateTime.UtcNow
             };
             var result = await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_START", stepData, userId);
@@ -140,7 +141,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "DAILY_PRODUCTION",
-                DailyOperations = productionData,
+                Data = { ["DailyOperations"] = JsonSerializer.SerializeToElement(productionData) },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "DAILY_PRODUCTION", stepData, userId);
@@ -163,7 +164,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "PERFORMANCE_ANALYSIS",
-                WellTest = analysisData,
+                Data = { ["WellTest"] = JsonSerializer.SerializeToElement(analysisData) },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "PERFORMANCE_ANALYSIS", stepData, userId);
@@ -175,7 +176,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "OPTIMIZATION_DECISION",
-                WorkOrderCreation = decisionData,
+                Data = { ["WorkOrderCreation"] = JsonSerializer.SerializeToElement(decisionData) },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "OPTIMIZATION_DECISION", stepData, userId);
@@ -187,7 +188,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "OPTIMIZATION_EXECUTION",
-                WorkOrderUpdate = optimizationData,
+                Data = { ["WorkOrderUpdate"] = JsonSerializer.SerializeToElement(optimizationData) },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "OPTIMIZATION_EXECUTION", stepData, userId);
@@ -240,7 +241,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "DCA_ANALYSIS",
-                DCA = dcaData,
+                Data = { ["DCA"] = JsonSerializer.SerializeToElement(dcaData) },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "DCA_ANALYSIS", stepData, userId);
@@ -252,7 +253,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "PRODUCTION_FORECAST",
-                DeclineCurveAnalysis = forecastData,
+                Data = { ["DeclineCurveAnalysis"] = JsonSerializer.SerializeToElement(forecastData) },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_FORECAST", stepData, userId);
@@ -264,7 +265,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "ECONOMIC_ANALYSIS",
-                EconomicAnalysis = economicData,
+                Data = { ["EconomicAnalysis"] = JsonSerializer.SerializeToElement(economicData) },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "ECONOMIC_ANALYSIS", stepData, userId);
@@ -276,7 +277,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "WORKOVER_DECISION",
-                WorkOrderCreation = decisionData,
+                Data = { ["WorkOrderCreation"] = JsonSerializer.SerializeToElement(decisionData) },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "WORKOVER_DECISION", stepData, userId);
@@ -318,7 +319,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "WORKOVER_PLANNING",
-                WorkOrderCreation = planData,
+                Data = { ["WorkOrderCreation"] = JsonSerializer.SerializeToElement(planData) },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "WORKOVER_PLANNING", stepData, userId);
@@ -335,7 +336,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "WORKOVER_EXECUTION",
-                WorkOrderUpdate = executionData,
+                Data = { ["WorkOrderUpdate"] = JsonSerializer.SerializeToElement(executionData) },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "WORKOVER_EXECUTION", stepData, userId);
@@ -347,7 +348,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "POST_WORKOVER_TESTING",
-                WellTest = testData,
+                Data = { ["WellTest"] = JsonSerializer.SerializeToElement(testData) },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "POST_WORKOVER_TESTING", stepData, userId);
@@ -359,7 +360,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "PRODUCTION_RESTART",
-                PRODUCTION_FORECAST = productionData,
+                Data = { ["PRODUCTION_FORECAST"] = JsonSerializer.SerializeToElement(productionData) },
                 LastUpdated = DateTime.UtcNow
             };
             var result = await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_RESTART", stepData, userId);

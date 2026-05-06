@@ -68,33 +68,48 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                     throw new InvalidOperationException($"Process definition is not active: {processId}");
                 }
 
+                var orderedSteps = processDef.Steps?.OrderBy(s => s.SequenceNumber).ToList() ?? new List<ProcessStepDefinition>();
+                if (orderedSteps.Count == 0)
+                {
+                    throw new InvalidOperationException($"Process definition '{processId}' has no steps defined");
+                }
+
+                var instanceId = GenerateInstanceId();
                 var instance = new ProcessInstance
                 {
-                    InstanceId = GenerateInstanceId(),
+                    InstanceId = instanceId,
                     ProcessId = processId,
                     EntityId = entityId,
                     EntityType = entityType,
                     FieldId = fieldId,
                     CurrentState = "INITIAL",
-                    CurrentStepId = processDef.Steps.OrderBy(s => s.SequenceNumber).FirstOrDefault()?.StepId ?? string.Empty,
+                    CurrentStepId = orderedSteps[0].StepId,
                     Status = ProcessStatus.IN_PROGRESS,
                     StartDate = DateTime.UtcNow,
                     StartedBy = userId,
-                    ProcessData = new PROCESS_DATA(),
+                    ProcessData = new PROCESS_DATA
+                    {
+                        InstanceId = instanceId,
+                        LastUpdated = DateTime.UtcNow
+                    },
                     StepInstances = new List<ProcessStepInstance>(),
                     History = new List<ProcessHistoryEntry>()
                 };
 
                 // Create initial step instances
-                foreach (var step in processDef.Steps.OrderBy(s => s.SequenceNumber))
+                for (int i = 0; i < orderedSteps.Count; i++)
                 {
+                    var step = orderedSteps[i];
                     instance.StepInstances.Add(new ProcessStepInstance
                     {
                         StepInstanceId = GenerateStepInstanceId(),
                         InstanceId = instance.InstanceId,
                         StepId = step.StepId,
+                        StepName = step.StepName,
                         SequenceNumber = step.SequenceNumber,
-                        Status = step.SequenceNumber == 1 ? StepStatus.PENDING : StepStatus.PENDING,
+                        Status = i == 0 ? StepStatus.PENDING : StepStatus.BLOCKED,
+                        RequiredRole = step.RequiredRoles.Count > 0 ? step.RequiredRoles[0] : null,
+                        ApprovalRequired = step.RequiresApproval,
                         StepData = new PROCESS_STEP_DATA(),
                         Approvals = new List<ApprovalRecord>(),
                         ValidationResults = new List<ValidationResult>()
@@ -164,7 +179,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 // Update step instance
                 stepInstance.Status = StepStatus.IN_PROGRESS;
                 stepInstance.StartDate = DateTime.UtcNow;
-                stepInstance.StepData = stepData ?? new PROCESS_STEP_DATA();
+                stepInstance.StepData ??= new PROCESS_STEP_DATA();
+                stepInstance.StepData.StepInstanceId = stepInstance.StepInstanceId;
+                if (stepData?.Data != null)
+                {
+                    foreach (var kvp in stepData.Data)
+                        stepInstance.StepData.Data[kvp.Key] = kvp.Value;
+                    if (!string.IsNullOrEmpty(stepData.StepType))
+                        stepInstance.StepData.StepType = stepData.StepType;
+                }
+                stepInstance.StepData.LastUpdated = DateTime.UtcNow;
                 stepInstance.ValidationResults.Add(validationResult);
 
                 // Update instance
@@ -210,9 +234,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                     throw new InvalidOperationException($"Step instance not found: {stepId}");
                 }
 
-                if (stepInstance.Status != StepStatus.IN_PROGRESS)
+                if (stepInstance.Status != StepStatus.IN_PROGRESS && stepInstance.Status != StepStatus.PENDING)
                 {
-                    throw new InvalidOperationException($"Step {stepId} is not in IN_PROGRESS status");
+                    throw new InvalidOperationException($"Step {stepId} is not in a completable status (PENDING or IN_PROGRESS)");
+                }
+
+                // If step was PENDING, mark start timestamps
+                if (stepInstance.Status == StepStatus.PENDING)
+                {
+                    stepInstance.StartDate = DateTime.UtcNow;
                 }
 
                 // Update step instance
@@ -221,25 +251,61 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 stepInstance.CompletedBy = userId;
                 stepInstance.Outcome = outcome;
 
-                // Determine next step
+                // Determine next step based on outcome and conditional branching
                 var processDef = await GetProcessDefinitionAsync(instance.ProcessId);
                 var currentStep = processDef?.Steps?.FirstOrDefault(s => s.StepId == stepId);
-                if (currentStep != null && !string.IsNullOrEmpty(currentStep.NextStepId))
+                string? nextStepId = null;
+
+                if (currentStep != null)
                 {
-                    var nextStep = instance.StepInstances.FirstOrDefault(s => s.StepId == currentStep.NextStepId);
-                    if (nextStep != null)
+                    // Check conditional next steps (stored as "outcome:stepId" pairs in StepConfiguration)
+                    if (currentStep.StepConfiguration?.TryGetValue("ConditionalNextSteps", out var condObj) == true)
                     {
-                        nextStep.Status = StepStatus.PENDING;
-                        instance.CurrentStepId = currentStep.NextStepId;
+                        var condStr = condObj?.ToString() ?? "";
+                        var pairs = condStr.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (var pair in pairs)
+                        {
+                            var parts = pair.Split(':');
+                            if (parts.Length == 2 && string.Equals(parts[0].Trim(), outcome, StringComparison.OrdinalIgnoreCase))
+                            {
+                                nextStepId = parts[1].Trim();
+                                break;
+                            }
+                        }
+                    }
+
+                    // Fall back to default next step
+                    if (string.IsNullOrEmpty(nextStepId) && !string.IsNullOrEmpty(currentStep.NextStepId))
+                    {
+                        nextStepId = currentStep.NextStepId;
                     }
                 }
 
+                if (!string.IsNullOrEmpty(nextStepId))
+                {
+                    var nextStep = instance.StepInstances.FirstOrDefault(s => s.StepId == nextStepId);
+                    if (nextStep != null)
+                    {
+                        nextStep.Status = StepStatus.PENDING;
+                        instance.CurrentStepId = nextStepId;
+                        instance.CurrentState = nextStepId;
+                    }
+                }
+                else
+                {
+                    instance.CurrentState = stepId;
+                }
+
                 // Check if process is complete
-                var allStepsCompleted = instance.StepInstances.All(s => s.Status == StepStatus.COMPLETED || s.Status == StepStatus.SKIPPED);
+                var allStepsCompleted = instance.StepInstances.All(s =>
+                    s.Status == StepStatus.COMPLETED ||
+                    s.Status == StepStatus.SKIPPED);
                 if (allStepsCompleted)
                 {
                     instance.Status = ProcessStatus.COMPLETED;
                     instance.CompletionDate = DateTime.UtcNow;
+                    instance.CompletedBy = userId;
+                    instance.CurrentState = "COMPLETED";
                 }
 
                 await SaveProcessInstanceAsync(instance);
@@ -313,10 +379,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         protected abstract Task SaveProcessInstanceAsync(ProcessInstance instance);
         protected abstract Task<ProcessInstance?> LoadProcessInstanceAsync(string instanceId);
 
-        protected string GenerateInstanceId() => $"PI_{Guid.NewGuid():N}";
-        protected string GenerateStepInstanceId() => $"PSI_{Guid.NewGuid():N}";
-        protected string GenerateHistoryId() => $"PH_{Guid.NewGuid():N}";
-        protected string GenerateApprovalId() => $"PA_{Guid.NewGuid():N}";
+        protected virtual string GenerateInstanceId() => $"PI_{Guid.NewGuid():N}";
+        protected virtual string GenerateStepInstanceId() => $"PSI_{Guid.NewGuid():N}";
+        protected virtual string GenerateHistoryId() => $"PH_{Guid.NewGuid():N}";
+        protected virtual string GenerateApprovalId() => $"PA_{Guid.NewGuid():N}";
     }
 }
 

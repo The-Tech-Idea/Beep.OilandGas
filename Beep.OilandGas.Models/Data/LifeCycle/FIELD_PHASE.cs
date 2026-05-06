@@ -77,9 +77,19 @@ namespace Beep.OilandGas.Models.Data.LifeCycle
             set { SetProperty(ref TRANSITION_REASONValue, value); }
         }
 
-        private System.String REMARKValue;
+        private System.String? DESCRIPTIONValue;
+        public System.String? DESCRIPTION
+        {
+            get => DESCRIPTIONValue;
+            set { SetProperty(ref DESCRIPTIONValue, value); }
+        }
 
-        private System.String SOURCEValue;
+        private System.String? STATUSValue;
+        public System.String? STATUS
+        {
+            get => STATUSValue;
+            set { SetProperty(ref STATUSValue, value); }
+        }
 
         public FIELD_PHASE() { }
     }

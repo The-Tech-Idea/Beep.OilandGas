@@ -245,6 +245,42 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
             }
         }
 
+        public async Task<bool> AssignRigToWellAsync(string fieldId, string uwi, string rigName, string userId)
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("WELL");
+                if (metadata == null)
+                {
+                    _logger?.LogWarning("WELL table metadata not found");
+                    return false;
+                }
+
+                var entityType = typeof(WELL);
+                var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, _connectionName, "WELL", null);
+
+                var well = await repo.GetByIdAsync(_defaults.FormatIdForTable("WELL", uwi));
+                if (well == null)
+                {
+                    return false;
+                }
+
+                var wellEntity = (WELL)well;
+                wellEntity.STATUS_TYPE = $"RIG:{rigName}";
+                wellEntity.ROW_CHANGED_BY = userId;
+                wellEntity.ROW_CHANGED_DATE = DateTime.UtcNow;
+
+                await repo.UpdateAsync(wellEntity, userId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, $"Error assigning rig to well {uwi}");
+                throw;
+            }
+        }
+
         public async Task<WELL> CreateDevelopmentWellForFieldAsync(string fieldId, DevelopmentWellRequest wellData, string userId)
         {
             try

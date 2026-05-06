@@ -11,8 +11,10 @@ using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Text.Json;
 using TheTechIdea.Beep.Report;
+using Beep.OilandGas.LifeCycle.Data.Tables;
 using ValidationResult = Beep.OilandGas.Models.Data.ValidationResult;
 using Beep.OilandGas.Models.Data.Process;
 
@@ -20,11 +22,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
 {
     /// <summary>
     /// Concrete implementation of process service that stores process data in database
-    /// Note: Process workflow tables are in application database, not PPDM
     /// </summary>
     public class PPDMProcessService : ProcessServiceBase
     {
-        private readonly string _applicationConnectionName; // Connection for application database (process tables)
+        private readonly ILoggerFactory? _loggerFactory;
         private PPDMGenericRepository? _processDefinitionRepository;
         private PPDMGenericRepository? _processInstanceRepository;
         private PPDMGenericRepository? _processStepInstanceRepository;
@@ -37,11 +38,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
-            string applicationConnectionName = "ApplicationDB",
-            ILogger<ProcessServiceBase>? logger = null)
+            ILogger<PPDMProcessService>? logger = null,
+            ILoggerFactory? loggerFactory = null)
             : base(editor, commonColumnHandler, defaults, metadata, connectionName, logger)
         {
-            _applicationConnectionName = applicationConnectionName ?? "ApplicationDB";
+            _loggerFactory = loggerFactory;
         }
 
         #region Process Definition Management
@@ -292,6 +293,17 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 stepInstance.CompletedBy = userId;
                 stepInstance.Notes = reason;
 
+                // Unblock the next step in sequence
+                var nextStep = instance.StepInstances
+                    .Where(s => s.SequenceNumber > stepInstance.SequenceNumber && (s.Status == StepStatus.BLOCKED || s.Status == StepStatus.PENDING))
+                    .OrderBy(s => s.SequenceNumber)
+                    .FirstOrDefault();
+                if (nextStep != null)
+                {
+                    nextStep.Status = StepStatus.PENDING;
+                    instance.CurrentStepId = nextStep.StepId;
+                }
+
                 await SaveProcessInstanceAsync(instance);
 
                 await AddHistoryEntryAsync(instanceId, new ProcessHistoryEntry
@@ -333,8 +345,22 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 stepInstance.Status = StepStatus.PENDING;
                 stepInstance.StartDate = null;
                 stepInstance.CompletionDate = null;
-                stepInstance.CompletedBy = string.Empty;
+                stepInstance.CompletedBy = null;
                 stepInstance.Notes = reason;
+
+                // Reset all subsequent steps (higher sequence number) to BLOCKED
+                foreach (var subsequentStep in instance.StepInstances.Where(s => s.SequenceNumber > stepInstance.SequenceNumber))
+                {
+                    if (subsequentStep.Status != StepStatus.SKIPPED)
+                    {
+                        subsequentStep.Status = StepStatus.BLOCKED;
+                        subsequentStep.StartDate = null;
+                        subsequentStep.CompletionDate = null;
+                        subsequentStep.CompletedBy = null;
+                    }
+                }
+
+                instance.CurrentStepId = stepInstance.StepId;
 
                 await SaveProcessInstanceAsync(instance);
 
@@ -369,6 +395,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 var instance = await LoadProcessInstanceAsync(instanceId);
                 if (instance == null)
                 {
+                    return false;
+                }
+
+                var canTransition = await CanTransitionAsync(instanceId, targetState);
+                if (!canTransition && targetState != "DEFERRED" && targetState != "SUSPENDED")
+                {
+                    _logger?.LogWarning("Transition from {From} to {To} is not allowed for instance {InstanceId}",
+                        instance.CurrentState, targetState, instanceId);
                     return false;
                 }
 
@@ -413,9 +447,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                     return new List<string>();
                 }
 
-                if (processDef.Transitions.ContainsKey(instance.CurrentState))
+                if (processDef.Transitions.TryGetValue(instance.CurrentState, out var transition))
                 {
-                    var transition = processDef.Transitions[instance.CurrentState];
                     return new List<string> { transition.ToStateId };
                 }
 
@@ -530,7 +563,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                     };
                 }
 
-                var validator = new ProcessValidator(null);
+                var validator = new ProcessValidator(_logger != null ? _loggerFactory?.CreateLogger<ProcessValidator>() : null);
                 // Note: Need to check if validator needs update too
                 return await validator.ValidateStepDataAsync(stepDef, stepData);
             }
@@ -561,7 +594,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                     return false;
                 }
 
-                var validator = new ProcessValidator(null);
+                var validator = new ProcessValidator(_logger != null ? _loggerFactory?.CreateLogger<ProcessValidator>() : null);
                 return validator.ValidateProcessCompletion(instance, processDef);
             }
             catch (Exception ex)
@@ -580,9 +613,25 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             try
             {
                 var repo = await GetProcessApprovalRepositoryAsync();
+
+                // Resolve the parent process instance ID from the step instance
+                string processInstanceId = string.Empty;
+                var stepRepo = await GetProcessStepInstanceRepositoryAsync();
+                var stepFilters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "PROCESS_STEP_INSTANCE_ID", Operator = "=", FilterValue = stepInstanceId }
+                };
+                var stepResults = await stepRepo.GetAsync(stepFilters);
+                var stepEntity = stepResults?.OfType<PROCESS_STEP_INSTANCE>().FirstOrDefault();
+                if (stepEntity != null)
+                {
+                    processInstanceId = stepEntity.PROCESS_INSTANCE_ID ?? string.Empty;
+                }
+
                 var entity = new PROCESS_APPROVAL
                 {
                     PROCESS_APPROVAL_ID = GenerateApprovalId(),
+                    PROCESS_INSTANCE_ID = processInstanceId,
                     PROCESS_STEP_INSTANCE_ID = stepInstanceId,
                     APPROVAL_TYPE = approvalType,
                     REQUESTED_DATE = DateTime.UtcNow,
@@ -619,7 +668,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                     return false;
                 }
                 entity.APPROVAL_STATUS = "APPROVED";
-                entity.APPROVED_DATE = DateTime.UtcNow;
+                entity.APPROVAL_DATE = DateTime.UtcNow;
                 entity.APPROVED_BY = approvedBy;
                 entity.APPROVAL_NOTES = notes;
                 entity.ROW_CHANGED_BY = userId;
@@ -652,7 +701,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                     return false;
                 }
                 entity.APPROVAL_STATUS = "REJECTED";
-                entity.APPROVED_DATE = DateTime.UtcNow;
+                entity.APPROVAL_DATE = DateTime.UtcNow;
                 entity.APPROVED_BY = rejectedBy;
                 entity.APPROVAL_NOTES = reason;
                 entity.ROW_CHANGED_BY = userId;
@@ -674,6 +723,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
 
         protected override async Task SaveProcessInstanceAsync(ProcessInstance instance)
         {
+            await SaveProcessInstanceAsync(instance, instance.StartedBy);
+        }
+
+        private async Task SaveProcessInstanceAsync(ProcessInstance instance, string userId)
+        {
             try
             {
                 var repo = await GetProcessInstanceRepositoryAsync();
@@ -682,15 +736,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 var existing = await repo.GetByIdAsync(instance.InstanceId);
                 if (existing == null)
                 {
-                    entity.ROW_CREATED_BY = instance.StartedBy;
+                    entity.ROW_CREATED_BY = userId;
                     entity.ROW_CREATED_DATE = DateTime.UtcNow;
-                    await repo.InsertAsync(entity, instance.StartedBy);
+                    await repo.InsertAsync(entity, userId);
                 }
                 else
                 {
-                    entity.ROW_CHANGED_BY = instance.StartedBy;
+                    entity.ROW_CHANGED_BY = userId;
                     entity.ROW_CHANGED_DATE = DateTime.UtcNow;
-                    await repo.UpdateAsync(entity, instance.StartedBy);
+                    await repo.UpdateAsync(entity, userId);
                 }
 
                 // Save step instances
@@ -702,15 +756,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                     
                     if (existingStep == null)
                     {
-                        stepEntity.ROW_CREATED_BY = stepInstance.CompletedBy ?? instance.StartedBy;
+                        stepEntity.ROW_CREATED_BY = userId;
                         stepEntity.ROW_CREATED_DATE = DateTime.UtcNow;
-                        await stepRepo.InsertAsync(stepEntity, stepInstance.CompletedBy ?? instance.StartedBy);
+                        await stepRepo.InsertAsync(stepEntity, userId);
                     }
                     else
                     {
-                        stepEntity.ROW_CHANGED_BY = stepInstance.CompletedBy ?? instance.StartedBy;
+                        stepEntity.ROW_CHANGED_BY = stepInstance.CompletedBy ?? userId;
                         stepEntity.ROW_CHANGED_DATE = DateTime.UtcNow;
-                        await stepRepo.UpdateAsync(stepEntity, stepInstance.CompletedBy ?? instance.StartedBy);
+                        await stepRepo.UpdateAsync(stepEntity, stepInstance.CompletedBy ?? userId);
                     }
                 }
             }
@@ -748,10 +802,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 };
 
                 var stepResults = await stepRepo.GetAsync(stepFilters);
-                instance.StepInstances = stepResults
+                instance.StepInstances = stepResults?
                     .Select(r => ConvertToProcessStepInstance(r))
                     .OrderBy(s => s.SequenceNumber)
-                    .ToList();
+                    .ToList() ?? new List<ProcessStepInstance>();
 
                 // Load history
                 instance.History = await GetProcessHistoryAsync(instanceId);
@@ -775,7 +829,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             {
                 _processDefinitionRepository = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PROCESS_DEFINITION), _applicationConnectionName, "PROCESS_DEFINITION");
+                    typeof(PROCESS_DEFINITION), _connectionName, "PROCESS_DEFINITION");
             }
             return _processDefinitionRepository;
         }
@@ -786,7 +840,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             {
                 _processInstanceRepository = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PROCESS_INSTANCE), _applicationConnectionName, "PROCESS_INSTANCE");
+                    typeof(PROCESS_INSTANCE), _connectionName, "PROCESS_INSTANCE");
             }
             return _processInstanceRepository;
         }
@@ -797,7 +851,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             {
                 _processStepInstanceRepository = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PROCESS_STEP_INSTANCE), _applicationConnectionName, "PROCESS_STEP_INSTANCE");
+                    typeof(PROCESS_STEP_INSTANCE), _connectionName, "PROCESS_STEP_INSTANCE");
             }
             return _processStepInstanceRepository;
         }
@@ -808,7 +862,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             {
                 _processHistoryRepository = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PROCESS_HISTORY), _applicationConnectionName, "PROCESS_HISTORY");
+                    typeof(PROCESS_HISTORY), _connectionName, "PROCESS_HISTORY");
             }
             return _processHistoryRepository;
         }
@@ -819,7 +873,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             {
                 _processApprovalRepository = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PROCESS_APPROVAL), _applicationConnectionName, "PROCESS_APPROVAL");
+                    typeof(PROCESS_APPROVAL), _connectionName, "PROCESS_APPROVAL");
             }
             return _processApprovalRepository;
         }
@@ -843,7 +897,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 ProcessType = processDef.PROCESS_TYPE ?? string.Empty,
                 EntityType = processDef.ENTITY_TYPE ?? string.Empty,
                 Description = processDef.DESCRIPTION ?? string.Empty,
-                IsActive = processDef.ACTIVE_IND == "Y",
+                IsActive = processDef.IS_ACTIVE == "Y",
                 CreatedDate = processDef.ROW_CREATED_DATE ?? DateTime.UtcNow,
                 CreatedBy = processDef.ROW_CREATED_BY ?? string.Empty,
                 Steps = new List<ProcessStepDefinition>(),
@@ -857,26 +911,19 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             {
                 try
                 {
-                    // Try to deserialize stored configuration as a dictionary
                     var config = JsonSerializer.Deserialize<Dictionary<string, object>>(configJson);
                     if (config != null)
                     {
                         definition.Configuration = config;
-                    }
-                    else
-                    {
-                        // Fallback: attempt to deserialize into PROCESS_CONFIGURATION and convert
-                        var legacy = JsonSerializer.Deserialize<PROCESS_CONFIGURATION>(configJson);
-                        if (legacy != null)
+                        if (config.TryGetValue("Steps", out var stepsElement) && stepsElement is JsonElement stepsJson)
                         {
-                            // Convert legacy PROCESS_CONFIGURATION to a dictionary via serialization
-                            var roundtrip = JsonSerializer.Serialize(legacy);
-                            var converted = JsonSerializer.Deserialize<Dictionary<string, object>>(roundtrip);
-                            if (converted != null)
-                                definition.Configuration = converted;
+                            definition.Steps = JsonSerializer.Deserialize<List<ProcessStepDefinition>>(stepsJson.GetRawText()) ?? new List<ProcessStepDefinition>();
+                        }
+                        if (config.TryGetValue("Transitions", out var transitionsElement) && transitionsElement is JsonElement transitionsJson)
+                        {
+                            definition.Transitions = JsonSerializer.Deserialize<Dictionary<string, ProcessTransition>>(transitionsJson.GetRawText()) ?? new Dictionary<string, ProcessTransition>();
                         }
                     }
-                    // Extract steps and transitions from config if needed
                 }
                 catch (Exception ex)
                 {
@@ -894,9 +941,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 PROCESS_DEFINITION_ID = definition.ProcessId,
                 PROCESS_NAME = definition.ProcessName,
                 PROCESS_TYPE = definition.ProcessType,
-                ENTITY_TYPE = definition.EntityType,
+                ENTITY_TYPE = definition.EntityType ?? string.Empty,
                 DESCRIPTION = definition.Description,
-                ACTIVE_IND = definition.IsActive ? "Y" : "N"
+                IS_ACTIVE = definition.IsActive ? "Y" : "N"
             };
 
             // Serialize steps, transitions, and configuration to JSON
@@ -927,13 +974,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 EntityId = processInst.ENTITY_ID ?? string.Empty,
                 EntityType = processInst.ENTITY_TYPE ?? string.Empty,
                 FieldId = processInst.FIELD_ID ?? string.Empty,
-                CurrentState = processInst.CURRENT_STATE ?? string.Empty,
+                CurrentState = !string.IsNullOrEmpty(processInst.CURRENT_STATE) ? processInst.CURRENT_STATE : "INITIAL",
                 CurrentStepId = processInst.CURRENT_STEP_ID ?? string.Empty,
                 Status = Enum.TryParse<ProcessStatus>(processInst.STATUS ?? "NOT_STARTED", out var status) ? status : ProcessStatus.NOT_STARTED,
-                StartDate = processInst.START_DATE ?? DateTime.UtcNow,
-                CompletionDate = processInst.COMPLETION_DATE,
-                StartedBy = processInst.STARTED_BY ?? string.Empty,
-                ProcessData = new PROCESS_DATA(),
+                StartDate = processInst.STARTED_DATE ?? DateTime.UtcNow,
+                CompletionDate = processInst.COMPLETED_DATE,
+                CompletedBy = string.IsNullOrEmpty(processInst.COMPLETED_BY) ? null : processInst.COMPLETED_BY,
+                StartedBy = processInst.ROW_CREATED_BY ?? string.Empty,
+                ProcessData = string.IsNullOrEmpty(processInst.INSTANCE_DATA_JSON)
+                    ? new PROCESS_DATA()
+                    : JsonSerializer.Deserialize<PROCESS_DATA>(processInst.INSTANCE_DATA_JSON) ?? new PROCESS_DATA(),
                 StepInstances = new List<ProcessStepInstance>(),
                 History = new List<ProcessHistoryEntry>()
             };
@@ -941,6 +991,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
 
         private PROCESS_INSTANCE ConvertToProcessInstanceEntity(ProcessInstance instance)
         {
+            var currentStep = instance.StepInstances.FirstOrDefault(s => s.StepId == instance.CurrentStepId);
             return new PROCESS_INSTANCE
             {
                 PROCESS_INSTANCE_ID = instance.InstanceId,
@@ -950,11 +1001,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 FIELD_ID = instance.FieldId,
                 CURRENT_STATE = instance.CurrentState,
                 CURRENT_STEP_ID = instance.CurrentStepId,
+                CURRENT_STEP_SEQUENCE = currentStep?.SequenceNumber ?? 0,
                 STATUS = instance.Status.ToString(),
-                START_DATE = instance.StartDate,
-                COMPLETION_DATE = instance.CompletionDate,
-                STARTED_BY = instance.StartedBy,
-                PROCESS_DATA_JSON = JsonSerializer.Serialize(instance.ProcessData)
+                STARTED_DATE = instance.StartDate,
+                COMPLETED_DATE = instance.CompletionDate,
+                COMPLETED_BY = string.IsNullOrEmpty(instance.CompletedBy) ? null : instance.CompletedBy,
+                ROW_CREATED_BY = instance.StartedBy,
+                INSTANCE_DATA_JSON = JsonSerializer.Serialize(instance.ProcessData)
             };
         }
 
@@ -971,14 +1024,21 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 StepInstanceId = stepInst.PROCESS_STEP_INSTANCE_ID ?? string.Empty,
                 InstanceId = stepInst.PROCESS_INSTANCE_ID ?? string.Empty,
                 StepId = stepInst.STEP_ID ?? string.Empty,
-                SequenceNumber = stepInst.SEQUENCE_NUMBER ?? 0,
+                StepName = stepInst.STEP_NAME ?? string.Empty,
+                SequenceNumber = stepInst.STEP_SEQUENCE,
                 Status = Enum.TryParse<StepStatus>(stepInst.STATUS ?? "PENDING", out var status) ? status : StepStatus.PENDING,
-                StartDate = stepInst.START_DATE,
+                AssignedTo = stepInst.ASSIGNED_TO,
+                StartDate = stepInst.STARTED_DATE,
                 CompletionDate = stepInst.COMPLETION_DATE,
-                CompletedBy = stepInst.COMPLETED_BY ?? string.Empty,
+                CompletedBy = stepInst.COMPLETED_BY,
                 Outcome = stepInst.OUTCOME ?? string.Empty,
                 Notes = stepInst.NOTES ?? string.Empty,
-                StepData = new PROCESS_STEP_DATA(),
+                RequiredRole = stepInst.REQUIRED_ROLE,
+                SlaHours = stepInst.SLA_HOURS,
+                ApprovalRequired = stepInst.APPROVAL_REQUIRED,
+                StepData = string.IsNullOrEmpty(stepInst.STEP_DATA_JSON)
+                    ? new PROCESS_STEP_DATA()
+                    : JsonSerializer.Deserialize<PROCESS_STEP_DATA>(stepInst.STEP_DATA_JSON) ?? new PROCESS_STEP_DATA(),
                 Approvals = new List<ApprovalRecord>(),
                 ValidationResults = new List<ValidationResult>()
             };
@@ -991,14 +1051,19 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 PROCESS_STEP_INSTANCE_ID = stepInstance.StepInstanceId,
                 PROCESS_INSTANCE_ID = stepInstance.InstanceId,
                 STEP_ID = stepInstance.StepId,
-                SEQUENCE_NUMBER = stepInstance.SequenceNumber,
+                STEP_NAME = stepInstance.StepName,
+                STEP_SEQUENCE = stepInstance.SequenceNumber,
                 STATUS = stepInstance.Status.ToString(),
-                START_DATE = stepInstance.StartDate,
+                ASSIGNED_TO = stepInstance.AssignedTo,
+                STARTED_DATE = stepInstance.StartDate,
                 COMPLETION_DATE = stepInstance.CompletionDate,
-                COMPLETED_BY = stepInstance.CompletedBy,
-                STEP_DATA_JSON = JsonSerializer.Serialize(stepInstance.StepData),
+                COMPLETED_BY = string.IsNullOrEmpty(stepInstance.CompletedBy) ? null : stepInstance.CompletedBy,
+                STEP_DATA_JSON = stepInstance.StepData != null ? JsonSerializer.Serialize(stepInstance.StepData) : null,
                 OUTCOME = stepInstance.Outcome,
-                NOTES = stepInstance.Notes
+                NOTES = stepInstance.Notes,
+                REQUIRED_ROLE = stepInstance.RequiredRole,
+                SLA_HOURS = stepInstance.SlaHours,
+                APPROVAL_REQUIRED = stepInstance.ApprovalRequired
             };
         }
 
@@ -1015,16 +1080,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 HistoryId = history.PROCESS_HISTORY_ID ?? string.Empty,
                 InstanceId = history.PROCESS_INSTANCE_ID ?? string.Empty,
                 StepInstanceId = history.PROCESS_STEP_INSTANCE_ID ?? string.Empty,
-                Action = history.ACTION ?? string.Empty,
-                PreviousState = history.PREVIOUS_STATE ?? string.Empty,
-                NewState = history.NEW_STATE ?? string.Empty,
-                Timestamp = history.ACTION_DATE ?? DateTime.UtcNow,
-                PerformedBy = history.PERFORMED_BY ?? string.Empty,
-                Notes = history.NOTES ?? string.Empty,
-                // Deserialize ACTION_DATA_JSON into a dictionary for ActionData
-                ActionData = string.IsNullOrEmpty(history.ACTION_DATA_JSON)
+                Action = history.EVENT_TYPE ?? string.Empty,
+                PreviousState = history.FROM_STATUS ?? string.Empty,
+                NewState = history.TO_STATUS ?? string.Empty,
+                Timestamp = history.EVENT_DATE ?? DateTime.UtcNow,
+                PerformedBy = history.USER_ID ?? string.Empty,
+                Notes = history.DETAILS ?? string.Empty,
+                ActionData = string.IsNullOrEmpty(history.EVENT_DATA_JSON)
                     ? new Dictionary<string, object>()
-                    : JsonSerializer.Deserialize<Dictionary<string, object>>(history.ACTION_DATA_JSON) ?? new Dictionary<string, object>()
+                    : JsonSerializer.Deserialize<Dictionary<string, object>>(history.EVENT_DATA_JSON) ?? new Dictionary<string, object>()
             };
         }
 
@@ -1035,13 +1099,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 PROCESS_HISTORY_ID = entry.HistoryId,
                 PROCESS_INSTANCE_ID = entry.InstanceId,
                 PROCESS_STEP_INSTANCE_ID = entry.StepInstanceId,
-                ACTION = entry.Action,
-                PREVIOUS_STATE = entry.PreviousState,
-                NEW_STATE = entry.NewState,
-                ACTION_DATE = entry.Timestamp,
-                PERFORMED_BY = entry.PerformedBy,
-                NOTES = entry.Notes,
-                ACTION_DATA_JSON = JsonSerializer.Serialize(entry.ActionData)
+                EVENT_TYPE = entry.Action,
+                FROM_STATUS = entry.PreviousState,
+                TO_STATUS = entry.NewState,
+                EVENT_DATE = entry.Timestamp,
+                USER_ID = entry.PerformedBy,
+                DETAILS = entry.Notes,
+                EVENT_DATA_JSON = JsonSerializer.Serialize(entry.ActionData)
             };
         }
 

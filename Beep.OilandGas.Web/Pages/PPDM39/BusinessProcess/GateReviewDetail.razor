@@ -17,7 +17,7 @@
             <MudText Typo="Typo.h5">@_gateName</MudText>
             <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
                 <StatusBadge Status="@_status" />
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Entity: @_entityId · Submitted by @_submittedBy on @_submittedAt.ToString("dd-MMM-yyyy")</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Entity: @_entityId · Submitted by @_submittedBy on @(_submittedAt?.ToString("dd-MMM-yyyy") ?? "N/A")</MudText>
             </MudStack>
         </MudStack>
     </MudStack>
@@ -90,6 +90,7 @@
 
 @using Microsoft.AspNetCore.Authorization
 @using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.Process
 
 @code {
     [Parameter] public string Id { get; set; } = string.Empty;
@@ -99,7 +100,7 @@
     private string   _entityId    = string.Empty;
     private string   _status      = "AWAITING APPROVAL";
     private string   _submittedBy = string.Empty;
-    private DateTime _submittedAt = DateTime.Today;
+    private DateTime? _submittedAt;
     private string   _comments    = string.Empty;
     private DateTime? _deferDate  = null;
 

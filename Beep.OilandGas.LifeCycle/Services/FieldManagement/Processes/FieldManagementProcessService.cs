@@ -9,13 +9,10 @@ using Beep.OilandGas.Models.Data.LifeCycle;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.Models.Data.Reporting;
+using System.Text.Json;
 
 namespace Beep.OilandGas.LifeCycle.Services.FieldManagement.Processes
 {
-    /// <summary>
-    /// Service for Field Management process orchestration
-    /// Handles Field Creation, Field Planning, and Field Operations workflows
-    /// </summary>
     public class FieldManagementProcessService
     {
         private readonly IProcessService _processService;
@@ -32,32 +29,14 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement.Processes
             _logger = logger;
         }
 
-        #region Field Creation Process
-
         public async Task<ProcessInstance> StartFieldCreationProcessAsync(string fieldId, string userId)
         {
-            try
-            {
-                var processDef = await _processService.GetProcessDefinitionsByTypeAsync("FIELD_MANAGEMENT");
-                var fieldCreationProcess = processDef.FirstOrDefault(p => p.ProcessName == "FieldCreation");
-                
-                if (fieldCreationProcess == null)
-                {
-                    throw new InvalidOperationException("FieldCreation process definition not found");
-                }
+            var processDef = await _processService.GetProcessDefinitionsByTypeAsync("FIELD_MANAGEMENT");
+            var fieldCreationProcess = processDef.FirstOrDefault(p => p.ProcessName == "FieldCreation");
+            if (fieldCreationProcess == null)
+                throw new InvalidOperationException("FieldCreation process definition not found");
 
-                return await _processService.StartProcessAsync(
-                    fieldCreationProcess.ProcessId,
-                    fieldId,
-                    "FIELD",
-                    fieldId,
-                    userId);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, $"Error starting Field Creation process for field: {fieldId}");
-                throw;
-            }
+            return await _processService.StartProcessAsync(fieldCreationProcess.ProcessId, fieldId, "FIELD", fieldId, userId);
         }
 
         public async Task<bool> ApproveFieldCreationAsync(string instanceId, string userId)
@@ -71,7 +50,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "FIELD_SETUP",
-                FieldCreation = setupData,
+                Data = { ["FieldCreation"] = JsonSerializer.SerializeToElement(setupData) },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "FIELD_SETUP", stepData, userId);
@@ -82,34 +61,14 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement.Processes
             return await _processService.CompleteStepAsync(instanceId, "FIELD_ACTIVATION", "ACTIVE", userId);
         }
 
-        #endregion
-
-        #region Field Planning Process
-
         public async Task<ProcessInstance> StartFieldPlanningProcessAsync(string fieldId, string planningType, string userId)
         {
-            try
-            {
-                var processDef = await _processService.GetProcessDefinitionsByTypeAsync("FIELD_MANAGEMENT");
-                var planningProcess = processDef.FirstOrDefault(p => p.ProcessName == "FieldPlanning");
-                
-                if (planningProcess == null)
-                {
-                    throw new InvalidOperationException("FieldPlanning process definition not found");
-                }
+            var processDef = await _processService.GetProcessDefinitionsByTypeAsync("FIELD_MANAGEMENT");
+            var planningProcess = processDef.FirstOrDefault(p => p.ProcessName == "FieldPlanning");
+            if (planningProcess == null)
+                throw new InvalidOperationException("FieldPlanning process definition not found");
 
-                return await _processService.StartProcessAsync(
-                    planningProcess.ProcessId,
-                    fieldId,
-                    "FIELD",
-                    fieldId,
-                    userId);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, $"Error starting Field Planning process for field: {fieldId}");
-                throw;
-            }
+            return await _processService.StartProcessAsync(planningProcess.ProcessId, fieldId, "FIELD", fieldId, userId);
         }
 
         public async Task<bool> DesignFieldPlanAsync(string instanceId, FieldPlanningRequest designData, string userId)
@@ -118,7 +77,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "FIELD_DESIGN",
-                FieldPlanning = designData,
+                Data = { ["FieldPlanning"] = JsonSerializer.SerializeToElement(designData) },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "FIELD_DESIGN", stepData, userId);
@@ -130,7 +89,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "FIELD_REVIEW",
-                FieldPlanning = reviewData,
+                Data = { ["FieldPlanning"] = JsonSerializer.SerializeToElement(reviewData) },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "FIELD_REVIEW", stepData, userId);
@@ -141,34 +100,14 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement.Processes
             return await _processService.CompleteStepAsync(instanceId, "PLAN_APPROVAL", "APPROVED", userId);
         }
 
-        #endregion
-
-        #region Field Operations Process
-
         public async Task<ProcessInstance> StartFieldOperationsProcessAsync(string fieldId, string userId)
         {
-            try
-            {
-                var processDef = await _processService.GetProcessDefinitionsByTypeAsync("FIELD_MANAGEMENT");
-                var operationsProcess = processDef.FirstOrDefault(p => p.ProcessName == "FieldOperations");
-                
-                if (operationsProcess == null)
-                {
-                    throw new InvalidOperationException("FieldOperations process definition not found");
-                }
+            var processDef = await _processService.GetProcessDefinitionsByTypeAsync("FIELD_MANAGEMENT");
+            var operationsProcess = processDef.FirstOrDefault(p => p.ProcessName == "FieldOperations");
+            if (operationsProcess == null)
+                throw new InvalidOperationException("FieldOperations process definition not found");
 
-                return await _processService.StartProcessAsync(
-                    operationsProcess.ProcessId,
-                    fieldId,
-                    "FIELD",
-                    fieldId,
-                    userId);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, $"Error starting Field Operations process for field: {fieldId}");
-                throw;
-            }
+            return await _processService.StartProcessAsync(operationsProcess.ProcessId, fieldId, "FIELD", fieldId, userId);
         }
 
         public async Task<bool> RecordDailyOperationsAsync(string instanceId, FieldOperationsRequest operationsData, string userId)
@@ -177,7 +116,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "DAILY_OPERATIONS",
-                FieldOperations = operationsData,
+                Data = { ["FieldOperations"] = JsonSerializer.SerializeToElement(operationsData) },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "DAILY_OPERATIONS", stepData, userId);
@@ -189,7 +128,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "FIELD_MONITORING",
-                FieldPerformance = monitoringData,
+                Data = { ["FieldPerformance"] = JsonSerializer.SerializeToElement(monitoringData) },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "FIELD_MONITORING", stepData, userId);
@@ -201,12 +140,10 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement.Processes
             {
                 StepInstanceId = instanceId,
                 StepType = "OPERATIONS_REPORTING",
-                GenerateOperationalReport = reportData,
+                Data = { ["GenerateOperationalReport"] = JsonSerializer.SerializeToElement(reportData) },
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "OPERATIONS_REPORTING", stepData, userId);
         }
-
-        #endregion
     }
 }

@@ -17,12 +17,17 @@ namespace Beep.OilandGas.Models.Processes
         public StepStatus Status { get; set; } = StepStatus.PENDING;
         public DateTime? StartDate { get; set; }
         public DateTime? CompletionDate { get; set; }
-        public string CompletedBy { get; set; } = string.Empty;
+        public string? CompletedBy { get; set; }
         public PROCESS_STEP_DATA StepData { get; set; } = new PROCESS_STEP_DATA();
         public List<ApprovalRecord> Approvals { get; set; } = new List<ApprovalRecord>();
         public List<ValidationResult> ValidationResults { get; set; } = new List<ValidationResult>();
         public string Outcome { get; set; } = string.Empty; // SUCCESS, FAILED, CONDITIONAL
         public string Notes { get; set; } = string.Empty;
+        public string StepName { get; set; } = string.Empty;
+        public string? AssignedTo { get; set; }
+        public string? RequiredRole { get; set; }
+        public double? SlaHours { get; set; }
+        public bool ApprovalRequired { get; set; }
     }
 
     /// <summary>

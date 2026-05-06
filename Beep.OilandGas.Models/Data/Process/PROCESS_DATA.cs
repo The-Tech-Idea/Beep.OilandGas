@@ -1,29 +1,16 @@
 using System;
-using Beep.OilandGas.Models.Data;
+using System.Collections.Generic;
 
 namespace Beep.OilandGas.Models.Data.Process
 {
-    public class PROCESS_DATA : ModelEntityBase
+    /// <summary>
+    /// Runtime data payload for a process instance.
+    /// </summary>
+    public class PROCESS_DATA
     {
-        private string InstanceIdValue = string.Empty;
-        public string InstanceId
-        {
-            get => InstanceIdValue;
-            set => SetProperty(ref InstanceIdValue, value);
-        }
-
-        private string DataJsonValue = string.Empty;
-        public string DataJson
-        {
-            get => DataJsonValue;
-            set => SetProperty(ref DataJsonValue, value);
-        }
-
-        private DateTime? LastUpdatedValue;
-        public DateTime? LastUpdated
-        {
-            get => LastUpdatedValue;
-            set => SetProperty(ref LastUpdatedValue, value);
-        }
+        public string InstanceId { get; set; } = string.Empty;
+        public Dictionary<string, object> Data { get; set; } = new();
+        public string? DataJson { get; set; }
+        public DateTime? LastUpdated { get; set; }
     }
 }

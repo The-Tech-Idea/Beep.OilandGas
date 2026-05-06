@@ -9,6 +9,7 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.LifeCycle.Services.Processes;
 using Beep.OilandGas.Models.Processes;
+using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.ApiService.Attributes;
 
 namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
@@ -52,7 +53,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 
             try
             {
-                var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, "COMPLIANCE");
+                var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, "COMPLIANCE_REPORT");
                 var summaries = new List<ComplianceObligationSummary>();
 
                 if (instances != null)
@@ -94,7 +95,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 
             try
             {
-                var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, "COMPLIANCE");
+                var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, "COMPLIANCE_REPORT");
                 var summaries = new List<ComplianceObligationSummary>();
 
                 if (instances != null)
@@ -109,7 +110,6 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
                     }
                 }
 
-                summaries.Sort((a, b) => a.DueDate.CompareTo(b.DueDate));
                 return Ok(summaries);
             }
             catch (Exception ex)

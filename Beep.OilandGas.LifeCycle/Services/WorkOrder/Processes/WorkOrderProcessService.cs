@@ -359,7 +359,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes
                         description: cost.Description);
                 }
 
-                var stepData = new PROCESS_STEP_DATA { StepType = "COST_RECORDING", Status = $"Recorded {costs.Count} costs", LastUpdated = DateTime.UtcNow };
+                var stepData = new PROCESS_STEP_DATA { StepType = "COST_RECORDING", Data = { ["Status"] = JsonSerializer.SerializeToElement($"Recorded {costs.Count} costs") }, LastUpdated = DateTime.UtcNow };
                 return await _processService.ExecuteStepAsync(instanceId, "COST_RECORDING", stepData, userId);
             }
             catch (Exception ex)
@@ -445,13 +445,12 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes
                 var stepData = new PROCESS_STEP_DATA
                 {
                     StepType = "WORK_ORDER_REPORTING",
-                    Status = $"Report generated for {workOrder.WorkOrderNumber}",
-                    LastUpdated = DateTime.UtcNow,
-                    WorkOrderUpdate = new WorkOrderUpdateRequest
+                    Data = { ["Status"] = JsonSerializer.SerializeToElement($"Report generated for {workOrder.WorkOrderNumber}"), ["WorkOrderUpdate"] = JsonSerializer.SerializeToElement(new WorkOrderUpdateRequest
                     {
                         WorkOrderId = workOrder.WorkOrderId,
                         Status = workOrder.Status
-                    }
+                    }) },
+                    LastUpdated = DateTime.UtcNow
                 };
 
                 return await _processService.ExecuteStepAsync(instanceId, "WORK_ORDER_REPORTING", stepData, userId);

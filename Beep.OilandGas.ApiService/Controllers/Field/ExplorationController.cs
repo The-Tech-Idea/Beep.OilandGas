@@ -426,7 +426,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
                 var result = await _explorationProcessService.EvaluateLeadAsync(
                     request.InstanceId,
-                    request.EvaluationData ?? new Dictionary<string, object>(),
+                    new PROCESS_STEP_DATA { Data = request.EvaluationData ?? new Dictionary<string, object>() },
                     request.UserId,
                     cancellationToken);
 
@@ -546,7 +546,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 if (scopeDenied != null)
                     return scopeDenied;
 
-                var stepData = request.ProspectData ?? new Dictionary<string, object>();
+                var stepData = new PROCESS_STEP_DATA { Data = request.ProspectData ?? new Dictionary<string, object>() };
                 var ok = await _explorationProcessService.PromoteLeadToProspectAsync(
                     request.InstanceId,
                     stepData,
@@ -867,7 +867,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 if (scopeDenied != null)
                     return scopeDenied;
 
-                PROCESS_STEP_DATA stepData = request.StepData ?? new Dictionary<string, object>();
+                PROCESS_STEP_DATA stepData = new PROCESS_STEP_DATA { Data = request.StepData ?? new Dictionary<string, object>() };
                 var ok = await execute(request.InstanceId, stepData, request.UserId, cancellationToken);
                 return Ok(ok);
             }

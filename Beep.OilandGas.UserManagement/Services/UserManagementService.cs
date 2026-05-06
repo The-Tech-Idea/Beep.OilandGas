@@ -118,40 +118,96 @@ namespace Beep.OilandGas.UserManagement.Services
         }
 
         // Roles
-        public async Task<bool> AddToRoleAsync(string userId, string rName)
+        public async Task<bool> AddToRoleAsync(string userId, string roleName)
         {
-           // 1. Get Role ID
-           var roleRepo = GetRepo<ROLE>("ROLE");
-           var role = (await roleRepo.GetAsync(new List<AppFilter> { new AppFilter { FieldName = "ROLE_NAME", Operator = "=", FilterValue = rName } }))
-                      .Cast<ROLE>().FirstOrDefault();
-           
-           if (role == null) return false; // Role doesn't exist
+            var roleRepo = GetRepo<ROLE>("ROLE");
+            var role = (await roleRepo.GetAsync(new List<AppFilter> 
+            { 
+                new AppFilter { FieldName = "ROLE_NAME", Operator = "=", FilterValue = roleName } 
+            })).Cast<ROLE>().FirstOrDefault();
+            
+            if (role == null)
+            {
+                _logger?.LogWarning("Role {RoleName} not found for user {UserId}", roleName, userId);
+                return false;
+            }
 
-           // 2. Assign
-           // Typically there's a USER_ROLE mapping table. USER_ASSET_ACCESS might be it or a separate table.
-           // Since models didn't show USER_ROLE, assuming we might need to create it or use USER_PROFILE or dynamically mapped.
-           // Checking file list earlier, I saw `ROLE.cs`, `PERMISSION.cs`, `ROLE_PERMISSION.cs`.
-           // I did NOT see `USER_ROLE.cs`. I saw `USER_ASSET_ACCESS`.
-           // If `USER_ROLE` is missing, I should create it or assume relation.
-           // For now, let's assume `USER_ASSET_ACCESS` or we need to add `USER_ROLE`. 
-           // I will implement a basic version that assumes we can link them, or I will create USER_ROLE model if I can.
-           
-           // PROPOSAL: Creating USER_ROLE model dynamically here if not strictly generated, 
-           // OR reusing PPDM approach. 
-           // Let's assume standard normalization: USER_ROLE.
-           
-           return true; // Placeholder until USER_ROLE is confirmed/created.
+            var userRoleRepo = GetRepo<USER_ROLE>("USER_ROLE");
+            var existing = (await userRoleRepo.GetAsync(new List<AppFilter>
+            {
+                new AppFilter { FieldName = "USER_ID", Operator = "=", FilterValue = userId },
+                new AppFilter { FieldName = "ROLE_ID", Operator = "=", FilterValue = role.ROLE_ID }
+            })).Cast<USER_ROLE>().FirstOrDefault();
+
+            if (existing != null)
+            {
+                _logger?.LogInformation("User {UserId} already has role {RoleName}", userId, roleName);
+                return true;
+            }
+
+            var userRole = new USER_ROLE
+            {
+                USER_ROLE_ID = Guid.NewGuid().ToString(),
+                USER_ID = userId,
+                ROLE_ID = role.ROLE_ID,
+                EFFECTIVE_DATE = DateTime.UtcNow,
+                ACTIVE_IND = "Y",
+                ROW_CREATED_BY = "system",
+                ROW_CREATED_DATE = DateTime.UtcNow,
+                ROW_CHANGED_BY = "system",
+                ROW_CHANGED_DATE = DateTime.UtcNow,
+                ROW_EFFECTIVE_DATE = DateTime.UtcNow
+            };
+
+            await userRoleRepo.InsertAsync(userRole, "system");
+            _logger?.LogInformation("Assigned role {RoleName} to user {UserId}", roleName, userId);
+            return true;
         }
 
         public async Task<bool> RemoveFromRoleAsync(string userId, string roleName)
         {
-             return true; // Placeholder
+            var roleRepo = GetRepo<ROLE>("ROLE");
+            var role = (await roleRepo.GetAsync(new List<AppFilter> 
+            { 
+                new AppFilter { FieldName = "ROLE_NAME", Operator = "=", FilterValue = roleName } 
+            })).Cast<ROLE>().FirstOrDefault();
+            
+            if (role == null) return false;
+
+            var userRoleRepo = GetRepo<USER_ROLE>("USER_ROLE");
+            var userRole = (await userRoleRepo.GetAsync(new List<AppFilter>
+            {
+                new AppFilter { FieldName = "USER_ID", Operator = "=", FilterValue = userId },
+                new AppFilter { FieldName = "ROLE_ID", Operator = "=", FilterValue = role.ROLE_ID }
+            })).Cast<USER_ROLE>().FirstOrDefault();
+
+            if (userRole == null) return true;
+
+            await userRoleRepo.SoftDeleteAsync(userRole.USER_ROLE_ID, "system");
+            _logger?.LogInformation("Removed role {RoleName} from user {UserId}", roleName, userId);
+            return true;
         }
 
         public async Task<IEnumerable<string>> GetRolesAsync(string userId)
         {
-            // Fetch from USER_ROLE
-            return new List<string>(); // Placeholder
+            var userRoleRepo = GetRepo<USER_ROLE>("USER_ROLE");
+            var roleRepo = GetRepo<ROLE>("ROLE");
+
+            var userRoles = (await userRoleRepo.GetAsync(new List<AppFilter>
+            {
+                new AppFilter { FieldName = "USER_ID", Operator = "=", FilterValue = userId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            })).Cast<USER_ROLE>().ToList();
+
+            if (!userRoles.Any()) return Enumerable.Empty<string>();
+
+            var roleIds = userRoles.Select(ur => ur.ROLE_ID).Distinct().ToList();
+            var roles = (await roleRepo.GetAsync(new List<AppFilter>
+            {
+                new AppFilter { FieldName = "ROLE_ID", Operator = "IN", FilterValue = string.Join(",", roleIds) }
+            })).Cast<ROLE>().ToList();
+
+            return roles.Select(r => r.ROLE_NAME).ToList();
         }
 
         // --- Permissions Logic ---

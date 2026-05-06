@@ -77,10 +77,6 @@ namespace Beep.OilandGas.Models.Data.Common
             set { SetProperty(ref NOTESValue, value); }
         }
 
-        private System.String REMARKValue;
-
-        private System.String SOURCEValue;
-
         public RESERVOIR_STATUS() { }
     }
 }

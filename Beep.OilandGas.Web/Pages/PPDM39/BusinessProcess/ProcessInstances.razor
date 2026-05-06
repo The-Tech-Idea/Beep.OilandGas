@@ -83,6 +83,8 @@
 
 </MudContainer>
 
+@using Beep.OilandGas.Models.Data.Process
+
 @code {
     private string _fieldName = string.Empty;
     private string _search        = string.Empty;
@@ -130,5 +132,5 @@
     private record InstanceRow(
         string InstanceId, string ProcessName, string ProcessType,
         string EntityId, string CurrentStepName, string Status,
-        DateTime StartedAt, string StartedBy);
+        DateTime? StartedAt, string StartedBy);
 }
