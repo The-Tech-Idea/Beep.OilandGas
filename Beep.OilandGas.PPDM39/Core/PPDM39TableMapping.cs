@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
-using Beep.OilandGas.Branchs.PPDM39;
 
-namespace Beep.OilandGas.Branchs;
+
+namespace Beep.OilandGas.Core;
 
 public static class PPDM39TableMapping
 {

@@ -1,0 +1,138 @@
+﻿$csPath  = "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Branchs\PPDM39TableMapping.cs"
+$csvPath = "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Branchs\Data\ppdm39TableRelations.csv"
+$outPath = "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Branchs\PPDM39\PPDM39TableRegistry.cs"
+
+# ── 1. Parse category map (order = declaration order in .cs) ──────────────────
+$cs     = [System.IO.File]::ReadAllText($csPath)
+$ordered = [System.Collections.Generic.List[object]]::new()
+$seen    = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+foreach ($m in [regex]::Matches($cs, '\{ "([A-Z][A-Z0-9_]*)",\s*(\d+) \}')) {
+    $name = $m.Groups[1].Value; $cat = [int]$m.Groups[2].Value
+    if ($name -match '^R_' -or $name -match '^RA_') { continue }
+    if (-not $seen.Add($name)) { continue }
+    $ordered.Add([PSCustomObject]@{ Name = $name; Cat = $cat })
+}
+
+# root = first table seen per category
+$rootByCat   = @{}
+$tablesByCat = @{}
+foreach ($e in $ordered) {
+    if (-not $tablesByCat.ContainsKey($e.Cat)) {
+        $tablesByCat[$e.Cat] = [System.Collections.Generic.List[string]]::new()
+        $rootByCat[$e.Cat]   = $e.Name
+    }
+    [void]$tablesByCat[$e.Cat].Add($e.Name)
+}
+
+# category of every table
+$catOf = @{}
+foreach ($e in $ordered) { $catOf[$e.Name] = $e.Cat }
+
+Write-Host "Categories: $($rootByCat.Count)  Tables: $($ordered.Count)"
+
+# ── 2. Load CSV: ParentTable,ParentPKColumn,ChildTable,ParentFKColumn,ChildFKColumn,ChildPKColumn ──
+# No header row. Values may be quoted.
+$fkChildren = @{}   # parentTable -> list of { Child, ParentFK, ChildFK, ChildPK }
+$pkOf       = @{}   # table -> PKColumn (from ChildPKColumn when it appears as child)
+
+function Parse-CsvField([string]$raw) { $raw.Trim().Trim('"') }
+
+foreach ($line in [System.IO.File]::ReadAllLines($csvPath)) {
+    if ([string]::IsNullOrWhiteSpace($line)) { continue }
+
+    # Split respecting quoted commas: simple state machine
+    $fields = [System.Collections.Generic.List[string]]::new()
+    $cur = [System.Text.StringBuilder]::new()
+    $inQ = $false
+    foreach ($ch in $line.ToCharArray()) {
+        if ($ch -eq '"') { $inQ = -not $inQ }
+        elseif ($ch -eq ',' -and -not $inQ) { [void]$fields.Add($cur.ToString()); $cur = [System.Text.StringBuilder]::new() }
+        else { [void]$cur.Append($ch) }
+    }
+    [void]$fields.Add($cur.ToString())
+    if ($fields.Count -lt 5) { continue }
+
+    $parentTbl  = $fields[0].Trim()
+    $parentPK   = $fields[1].Trim()
+    $childTbl   = $fields[2].Trim()
+    $parentFK   = $fields[3].Trim()
+    $childFK    = $fields[4].Trim()
+    $childPK    = if ($fields.Count -ge 6) { $fields[5].Trim() } else { "" }
+
+    # Exclude R_/RA_ tables
+    if ($parentTbl -match '^R_' -or $parentTbl -match '^RA_') { continue }
+    if ($childTbl  -match '^R_' -or $childTbl  -match '^RA_') { continue }
+
+    # Only include tables that exist in category map
+    if (-not $catOf.ContainsKey($parentTbl) -or -not $catOf.ContainsKey($childTbl)) { continue }
+
+    # Only within same category
+    if ($catOf[$parentTbl] -ne $catOf[$childTbl]) { continue }
+
+    if (-not $fkChildren.ContainsKey($parentTbl)) {
+        $fkChildren[$parentTbl] = [System.Collections.Generic.List[object]]::new()
+    }
+    $fkChildren[$parentTbl].Add([PSCustomObject]@{
+        Child     = $childTbl
+        ParentFK  = $parentFK
+        ChildFK   = $childFK
+        ChildPK   = $childPK
+    })
+
+    # Track PKs
+    if (-not $pkOf.ContainsKey($parentTbl)) { $pkOf[$parentTbl] = $parentPK }
+    if (-not $pkOf.ContainsKey($childTbl))  { $pkOf[$childTbl]  = $childPK  }
+}
+
+# ── 3. Recursive child builder ────────────────────────────────────────────────
+function Build-Children([string]$table, [System.Collections.Generic.HashSet[string]]$visited) {
+    $sb = [System.Text.StringBuilder]::new()
+    if (-not $fkChildren.ContainsKey($table)) { return $sb.ToString() }
+    foreach ($rel in $fkChildren[$table]) {
+        $child = $rel.Child
+        if (-not $visited.Add($child)) { continue }   # guard cycles
+        $grandChildren = Build-Children $child $visited
+        $kidsLiteral = if ($grandChildren -ne "") { "[$grandChildren]" } else { "[]" }
+        [void]$sb.Append("new PPDM38ChildRecord { ")
+        [void]$sb.Append("TableName = `"$child`", ")
+        [void]$sb.Append("ParentTableName = `"$table`", ")
+        [void]$sb.Append("ParentColumnID = `"$($rel.ParentFK)`", ")
+        [void]$sb.Append("ColumnID = `"$($rel.ChildFK)`", ")
+        [void]$sb.Append("Children = $kidsLiteral }, ")
+        [void]$visited.Remove($child)   # allow same table under different parents
+    }
+    return $sb.ToString().TrimEnd(', ')
+}
+
+# ── 4. Emit C# ────────────────────────────────────────────────────────────────
+$sb = [System.Text.StringBuilder]::new()
+[void]$sb.AppendLine("// <auto-generated/> Do not edit manually.")
+[void]$sb.AppendLine("using System.Collections.Generic;")
+[void]$sb.AppendLine("namespace Beep.OilandGas.Branchs.PPDM39")
+[void]$sb.AppendLine("{")
+[void]$sb.AppendLine("    public static class PPDM39TableRegistry")
+[void]$sb.AppendLine("    {")
+[void]$sb.AppendLine("        public static IReadOnlyDictionary<string, PPDM39TableEntry> All { get; } = Build();")
+[void]$sb.AppendLine("        private static Dictionary<string, PPDM39TableEntry> Build()")
+[void]$sb.AppendLine("        {")
+[void]$sb.AppendLine("            return new Dictionary<string, PPDM39TableEntry>(System.StringComparer.OrdinalIgnoreCase)")
+[void]$sb.AppendLine("            {")
+
+foreach ($cat in ($rootByCat.Keys | Sort-Object)) {
+    $root   = $rootByCat[$cat]
+    $rootPK = if ($pkOf.ContainsKey($root)) { $pkOf[$root] } else { "" }
+    $visited = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    [void]$visited.Add($root)
+    $kids = Build-Children $root $visited
+    $kidsLiteral = if ($kids -ne "") { "[$kids]" } else { "[]" }
+
+    [void]$sb.AppendLine("                { `"$root`", new PPDM39TableEntry { TableName = `"$root`", CategoryId = $cat, Parent = `"`", PKColumn = `"$rootPK`", IsRoot = true, Children = $kidsLiteral } },")
+}
+
+[void]$sb.AppendLine("            };")
+[void]$sb.AppendLine("        }")
+[void]$sb.AppendLine("    }")
+[void]$sb.AppendLine("}")
+
+[System.IO.File]::WriteAllText($outPath, $sb.ToString(), [System.Text.Encoding]::UTF8)
+Write-Host "Done: $($rootByCat.Count) root entries written to $outPath"

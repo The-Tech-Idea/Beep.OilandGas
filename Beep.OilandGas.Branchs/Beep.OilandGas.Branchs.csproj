@@ -10,8 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Data\ppdm39TableRelations.csv" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="Data\ppdm38tabledescr.json" />
     <EmbeddedResource Include="Data\PPDM39Metadata.json" />
+    <EmbeddedResource Include="Data\ppdm39TableRelations.csv" />
     <EmbeddedResource Include="Data\PPDM39TableToModuleMapping.json" />
     <EmbeddedResource Include="GFX\additives.svg" />
     <EmbeddedResource Include="GFX\applications.svg" />
@@ -85,7 +90,7 @@
 
   <ItemGroup>
     <PackageReference Include="TheTechIdea.Beep.TreeNodes" Version="1.0.16" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.96">
+    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.97">
       <ExcludeAssets>contentFiles</ExcludeAssets>
     </PackageReference>
     <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.1444" />
