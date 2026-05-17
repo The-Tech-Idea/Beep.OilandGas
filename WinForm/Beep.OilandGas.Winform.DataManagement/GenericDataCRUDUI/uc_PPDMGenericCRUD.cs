@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Beep.OilandGas.PPDM39.DataManagement.Core;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -15,10 +16,11 @@ namespace Beep.OilandGas.Winform.DataManagement.GenericDataCRUDUI
         {
             InitializeComponent();
         }
+        IPPDMGenericRepository _genericRepository;
         public uc_PPDMGenericCRUD(IServiceProvider services) : base(services)
         {
             InitializeComponent();
-
+            _genericRepository = services.GetService(typeof(IPPDMGenericRepository)) as IPPDMGenericRepository;
             Details.AddinName = "PPDM Generic CRUD";
 
         }
