@@ -7,6 +7,7 @@ using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.DataManagement.SeedData;
 using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.PPDM39.Core.ModuleSetup;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Modules
 {

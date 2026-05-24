@@ -119,7 +119,7 @@
             beepPanel1.ExternalDrawingLayer = TheTechIdea.Beep.Winform.Controls.Models.DrawingLayer.AfterAll;
             beepPanel1.FieldID = null;
             beepPanel1.FilledBackgroundColor = Color.FromArgb(20, 0, 0, 0);
-            beepPanel1.FloatingLabel = true;
+  
             beepPanel1.FocusBackColor = Color.LightYellow;
             beepPanel1.FocusBorderColor = Color.RoyalBlue;
             beepPanel1.FocusForeColor = Color.Black;
@@ -295,7 +295,7 @@
             SubmitbeepButton.ExternalDrawingLayer = TheTechIdea.Beep.Winform.Controls.Models.DrawingLayer.AfterAll;
             SubmitbeepButton.FieldID = null;
             SubmitbeepButton.FilledBackgroundColor = Color.FromArgb(20, 0, 0, 0);
-            SubmitbeepButton.FloatingLabel = true;
+
             SubmitbeepButton.FocusBackColor = Color.FromArgb(21, 101, 192);
             SubmitbeepButton.FocusBorderColor = Color.RoyalBlue;
             SubmitbeepButton.FocusForeColor = Color.White;
@@ -490,7 +490,7 @@
             TableNamebeepTextBox.ExternalDrawingLayer = TheTechIdea.Beep.Winform.Controls.Models.DrawingLayer.AfterAll;
             TableNamebeepTextBox.FieldID = null;
             TableNamebeepTextBox.FilledBackgroundColor = Color.FromArgb(20, 0, 0, 0);
-            TableNamebeepTextBox.FloatingLabel = true;
+
             TableNamebeepTextBox.FocusBackColor = Color.LightYellow;
             TableNamebeepTextBox.FocusBorderColor = Color.FromArgb(0, 120, 215);
             TableNamebeepTextBox.FocusForeColor = Color.Black;
@@ -693,7 +693,7 @@
             beepPanel2.ExternalDrawingLayer = TheTechIdea.Beep.Winform.Controls.Models.DrawingLayer.AfterAll;
             beepPanel2.FieldID = null;
             beepPanel2.FilledBackgroundColor = Color.FromArgb(20, 0, 0, 0);
-            beepPanel2.FloatingLabel = true;
+
             beepPanel2.FocusBackColor = Color.LightYellow;
             beepPanel2.FocusBorderColor = Color.RoyalBlue;
             beepPanel2.FocusForeColor = Color.Black;
@@ -1034,7 +1034,7 @@
             beepGridPro1.ExternalDrawingLayer = TheTechIdea.Beep.Winform.Controls.Models.DrawingLayer.AfterAll;
             beepGridPro1.FieldID = null;
             beepGridPro1.FilledBackgroundColor = Color.FromArgb(20, 0, 0, 0);
-            beepGridPro1.FloatingLabel = true;
+
             beepGridPro1.FocusBackColor = Color.LightYellow;
             beepGridPro1.FocusBorderColor = Color.RoyalBlue;
             beepGridPro1.FocusedCellBorderColor = Color.Empty;
@@ -1227,7 +1227,7 @@
             beepPanel3.ExternalDrawingLayer = TheTechIdea.Beep.Winform.Controls.Models.DrawingLayer.AfterAll;
             beepPanel3.FieldID = null;
             beepPanel3.FilledBackgroundColor = Color.FromArgb(20, 0, 0, 0);
-            beepPanel3.FloatingLabel = true;
+
             beepPanel3.FocusBackColor = Color.LightYellow;
             beepPanel3.FocusBorderColor = Color.RoyalBlue;
             beepPanel3.FocusForeColor = Color.Black;

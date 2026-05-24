@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Microsoft.Extensions.Logging;
 
-namespace Beep.OilandGas.PPDM39.DataManagement.Data
+namespace Beep.OilandGas.PPDM39.DataManagement.Core
 {
     /// <summary>
     /// Repository for demo database metadata storage

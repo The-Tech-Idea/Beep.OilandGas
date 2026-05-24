@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
+using Beep.OilandGas.PPDM39.Core.ModuleSetup;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup

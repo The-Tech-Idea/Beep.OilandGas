@@ -2,7 +2,6 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Integrations;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
-using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using TheTechIdea.Beep.Editor;

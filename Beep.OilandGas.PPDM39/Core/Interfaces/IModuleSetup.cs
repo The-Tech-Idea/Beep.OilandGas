@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
-using Beep.OilandGas.PPDM39.Repositories;
+
 using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.PPDM39.Core.Interfaces

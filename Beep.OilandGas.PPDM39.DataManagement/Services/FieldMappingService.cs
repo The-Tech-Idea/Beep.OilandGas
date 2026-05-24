@@ -2,9 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
-using static Beep.OilandGas.PPDM39.Repositories.IPPDM39DefaultsRepository;
+ 
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Services
 {

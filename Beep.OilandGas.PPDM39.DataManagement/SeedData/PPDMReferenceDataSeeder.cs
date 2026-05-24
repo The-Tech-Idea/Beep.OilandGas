@@ -11,7 +11,6 @@ using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
-using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.SeedData

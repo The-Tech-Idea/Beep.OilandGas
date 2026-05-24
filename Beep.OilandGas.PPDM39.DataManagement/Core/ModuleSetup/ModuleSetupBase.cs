@@ -7,7 +7,7 @@ using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
 
-namespace Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup
+namespace Beep.OilandGas.PPDM39.Core.ModuleSetup
 {
     /// <summary>
     /// Abstract base for <see cref="IModuleSetup"/> implementations.

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Beep.OilandGas.PPDM39.Repositories
+namespace Beep.OilandGas.PPDM39.Core
 {
     /// <summary>
     /// Repository for PPDM39 system-wide default values and reference data

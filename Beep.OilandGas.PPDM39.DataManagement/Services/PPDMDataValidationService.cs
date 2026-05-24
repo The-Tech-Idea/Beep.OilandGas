@@ -8,7 +8,6 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
-using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
 using ValidationSeverity = Beep.OilandGas.Models.Data.ValidationSeverity;
 

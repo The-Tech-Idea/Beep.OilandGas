@@ -32,8 +32,8 @@
   </Target>
   <ItemGroup>
     <ProjectReference Include="..\Beep.OilandGas.PPDM.Models\Beep.OilandGas.PPDM.Models.csproj" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.96" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.1444" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="3.0.0" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="3.0.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />

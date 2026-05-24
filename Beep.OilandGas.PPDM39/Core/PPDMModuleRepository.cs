@@ -4,11 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
-using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 
-namespace Beep.OilandGas.PPDM39.DataManagement.Core.Repositories
+namespace Beep.OilandGas.PPDM39.Core
 {
     /// <summary>
     /// Module-based repository for PPDM entities

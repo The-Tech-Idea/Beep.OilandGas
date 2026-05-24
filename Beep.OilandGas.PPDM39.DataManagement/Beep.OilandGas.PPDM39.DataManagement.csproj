@@ -23,15 +23,19 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Beep.OilandGas.PPDM.Models\Beep.OilandGas.PPDM.Models.csproj" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.7" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.7" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.7" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.7" />
-    <PackageReference Include="Microsoft.Extensions.Primitives" Version="10.0.7" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.96" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.1444" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Primitives" Version="10.0.8" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="3.0.0" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="3.0.0" />
     <PackageReference Include="TheTechIdea.Beep.DMLogger" Version="2.0.3" />
     <PackageReference Include="TheTechIdea.Beep.JsonLoader" Version="2.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Core\Common\" />
   </ItemGroup>
 
 </Project>

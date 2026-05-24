@@ -9,14 +9,13 @@ using System.Threading.Tasks;
 using System.Globalization;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
-using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Editor.UOW;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.Calculations;
 
-namespace Beep.OilandGas.PPDM39.DataManagement.Core
+namespace Beep.OilandGas.PPDM39.Core
 {
     /// <summary>
     /// Non-generic repository implementation for any PPDM entity

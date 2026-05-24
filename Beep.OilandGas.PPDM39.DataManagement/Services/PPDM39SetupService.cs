@@ -15,13 +15,13 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.SeedData;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
-using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Editor.Migration;
 using TheTechIdea.Beep.Report;
 using BeepDataSourceType = TheTechIdea.Beep.Utilities.DataSourceType;
+using Beep.OilandGas.PPDM39.Core;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Services
 {
