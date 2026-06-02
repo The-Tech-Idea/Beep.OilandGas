@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beep.OilandGas Documentation</title>
+    <link rel="stylesheet" href="sphinx-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>.content{margin-left:0!important}</style>
+</head>
+<body>
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><i class="bi bi-sun-fill" id="theme-icon"></i></button>
+
+    <div class="container">
+        <main class="content">
+            <div class="content-wrapper">
+
+                <div class="page-header">
+                    <h1>Beep.OilandGas Documentation</h1>
+                    <p class="page-subtitle">Comprehensive Oil &amp; Gas Engineering and Data Management Platform — built on PPDM 3.9, spanning exploration through decommissioning</p>
+                </div>
+
+                <section class="section">
+                    <h2>Overview</h2>
+                    <p>
+                        <strong>Beep.OilandGas</strong> is a comprehensive Oil &amp; Gas Engineering and Data Management Platform
+                        built on the <strong>PPDM 3.9</strong> data model. The system provides end-to-end lifecycle management
+                        for petroleum assets — from exploration and development through production, reservoir management,
+                        economics, HSE compliance, and decommissioning. All business operations are field-scoped via
+                        <code>IFieldOrchestrator</code> with metadata-driven data access through
+                        <code>PPDMGenericRepository</code>.
+                    </p>
+                </section>
+
+                <section class="section">
+                    <h2>Three-Layer Architecture</h2>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <div class="feature-card-icon"><i class="bi bi-window-stack"></i></div>
+                            <h3>Web Layer</h3>
+                            <p><strong>Blazor Server</strong> UI with MudBlazor components. Business process pages follow engineer workflows (not CRUD), with dark mode support and SVG icons throughout.</p>
+                            <p><code>Beep.OilandGas.Web</code></p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-card-icon"><i class="bi bi-hdd-rack"></i></div>
+                            <h3>API Layer</h3>
+                            <p><strong>ASP.NET Core</strong> REST API with JWT authentication, field-scoped endpoints, and <code>IFieldOrchestrator</code> for current field context management.</p>
+                            <p><code>Beep.OilandGas.ApiService</code></p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-card-icon"><i class="bi bi-database"></i></div>
+                            <h3>Data Layer</h3>
+                            <p><strong>PPDM 3.9</strong> schema with <code>PPDMGenericRepository</code> (metadata-driven CRUD) and <code>IDMEEditor</code> (database-agnostic). Single unified database for all lifecycle data.</p>
+                            <p><code>Beep.OilandGas.PPDM39</code></p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <h2>Core Projects</h2>
+                    <table>
+                        <thead><tr><th>Project</th><th>Purpose</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>Beep.OilandGas.ApiService</code></td><td>ASP.NET Core API — controllers, DI setup, JWT auth</td></tr>
+                            <tr><td><code>Beep.OilandGas.Web</code></td><td>Blazor Server UI — business process pages, data management</td></tr>
+                            <tr><td><code>Beep.OilandGas.PPDM39</code></td><td>PPDM 3.9 models, interfaces, DTOs (central hub)</td></tr>
+                            <tr><td><code>Beep.OilandGas.PPDM39.DataManagement</code></td><td>PPDM services, module setup, seed data, validation</td></tr>
+                            <tr><td><code>Beep.OilandGas.Models</code></td><td>Shared models, core interfaces, entity base classes</td></tr>
+                            <tr><td><code>Beep.OilandGas.LifeCycle</code></td><td>Field orchestrator, exploration services, phase coordination</td></tr>
+                            <tr><td><code>Beep.OilandGas.UserManagement</code></td><td>Identity, roles, user personas</td></tr>
+                            <tr><td><code>Beep.OilandGas.Client</code></td><td>HTTP client library for API consumption</td></tr>
+                            <tr><td><code>Beep.OilandGas.DataManager</code></td><td>Data management utilities</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section class="section">
+                    <h2>Oil &amp; Gas Lifecycle Domains</h2>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h3>Prospect Identification</h3>
+                            <p>Prospects, leads, plays, seismic interpretation, and risk assessment for exploration opportunities.</p>
+                            <p><code>Beep.OilandGas.ProspectIdentification</code></p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>Development Planning</h3>
+                            <p>Well planning, facility design, field development plans (FDP), and project scheduling.</p>
+                            <p><code>Beep.OilandGas.DevelopmentPlanning</code></p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>Drilling &amp; Construction</h3>
+                            <p>Well construction, drilling operations, casing design, cementing, and completion programs.</p>
+                            <p><code>Beep.OilandGas.DrillingAndConstruction</code></p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>Production Operations</h3>
+                            <p>Well operations, artificial lift, optimization, workover scheduling, and production monitoring.</p>
+                            <p><code>Beep.OilandGas.ProductionOperations</code></p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>Production Accounting</h3>
+                            <p>Allocation, royalties, run tickets, production balancing, and reserves reporting.</p>
+                            <p><code>Beep.OilandGas.ProductionAccounting</code></p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>Production Forecasting</h3>
+                            <p>Decline curve analysis (DCA), production predictions, and reserves estimation.</p>
+                            <p><code>Beep.OilandGas.ProductionForecasting</code></p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>Economic Analysis</h3>
+                            <p>NPV, IRR, PIR calculations, sensitivity analysis, and project economic evaluation.</p>
+                            <p><code>Beep.OilandGas.EconomicAnalysis</code></p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>HSE</h3>
+                            <p>Health, Safety &amp; Environment — incident tracking, HAZOP studies, barriers, and compliance.</p>
+                            <p><code>Beep.OilandGas.HSE</code></p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>Decommissioning</h3>
+                            <p>Well abandonment, facility decommissioning, cost estimation, and site restoration planning.</p>
+                            <p><code>Beep.OilandGas.Decommissioning</code></p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>Permits &amp; Applications</h3>
+                            <p>Regulatory permit applications, compliance tracking, and approval workflows.</p>
+                            <p><code>Beep.OilandGas.PermitsAndApplications</code></p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>Lease Acquisition</h3>
+                            <p>Land management, mineral rights, lease agreements, and payment tracking.</p>
+                            <p><code>Beep.OilandGas.LeaseAcquisition</code></p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>Nodal Analysis</h3>
+                            <p>Well performance analysis — IPR/VLP modeling, flow assurance, and system optimization.</p>
+                            <p><code>Beep.OilandGas.NodalAnalysis</code></p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <h2>Engineering Analysis Tools</h2>
+                    <table>
+                        <thead><tr><th>Project</th><th>Purpose</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>Beep.OilandGas.WellTestAnalysis</code></td><td>Well test interpretation (PBU, drawdown, IPR)</td></tr>
+                            <tr><td><code>Beep.OilandGas.GasLift</code></td><td>Gas lift design, valve spacing, and optimization</td></tr>
+                            <tr><td><code>Beep.OilandGas.SuckerRodPumping</code></td><td>SRP design, rod string analysis, pump diagnostics</td></tr>
+                            <tr><td><code>Beep.OilandGas.PlungerLift</code></td><td>Plunger lift modeling and cycle optimization</td></tr>
+                            <tr><td><code>Beep.OilandGas.PumpPerformance</code></td><td>Pump performance curves and evaluation</td></tr>
+                            <tr><td><code>Beep.OilandGas.HydraulicPumps</code></td><td>Hydraulic pumping system analysis</td></tr>
+                            <tr><td><code>Beep.OilandGas.PipelineAnalysis</code></td><td>Pipeline hydraulics, pressure drop, and flow assurance</td></tr>
+                            <tr><td><code>Beep.OilandGas.CompressorAnalysis</code></td><td>Compressor performance and sizing</td></tr>
+                            <tr><td><code>Beep.OilandGas.ChokeAnalysis</code></td><td>Choke performance and critical flow</td></tr>
+                            <tr><td><code>Beep.OilandGas.FlashCalculations</code></td><td>PVT phase behavior and flash calculations</td></tr>
+                            <tr><td><code>Beep.OilandGas.GasProperties</code></td><td>Gas property correlations and calculations</td></tr>
+                            <tr><td><code>Beep.OilandGas.OilProperties</code></td><td>Oil property correlations (black oil, volatile)</td></tr>
+                            <tr><td><code>Beep.OilandGas.EnhancedRecovery</code></td><td>EOR methods — waterflood, gas injection, chemical</td></tr>
+                            <tr><td><code>Beep.OilandGas.Drawing</code></td><td>Well schematic and diagram rendering</td></tr>
+                            <tr><td><code>Beep.OilandGas.HeatMap</code></td><td>Heat map visualization for reservoir and production data</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section class="section">
+                    <h2>Key Principles</h2>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h3>Single Database</h3>
+                            <p>All lifecycle data (Exploration → Development → Production → Decommissioning) stored in a unified PPDM39 schema.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>Field-Scoped Operations</h3>
+                            <p>All business operations scoped to a current field via <code>IFieldOrchestrator</code>.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>Metadata-Driven Data Access</h3>
+                            <p><code>PPDMGenericRepository</code> uses <code>IPPDMMetadataRepository</code> for table discovery and <code>AppFilter</code> for database-agnostic queries.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>No Mock Data</h3>
+                            <p>Every page loads from live API endpoints. No hardcoded lists or TODO stubs.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <h2>Data Access Pattern</h2>
+                    <div class="code-example">
+                        <h3>Canonical CRUD Operations</h3>
+                        <pre><code class="language-csharp">// Get metadata and entity type
+var metadata = await _metadata.GetTableMetadataAsync("TABLE_NAME");
+var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}");
+
+// Create repository
+var repo = new PPDMGenericRepository(
+    _editor, _commonColumnHandler, _defaults, _metadata,
+    entityType, _connectionName, "TABLE_NAME");
+
+// Build filters using AppFilter (database-agnostic)
+var filters = new List&lt;AppFilter&gt;
+{
+    new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId },
+    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+};
+
+// Execute
+var entities = await repo.GetAsync(filters);        // Query
+var single = await repo.GetByIdAsync(id);           // Get by ID
+await repo.InsertAsync(entity, userId);             // Insert
+await repo.UpdateAsync(entity, userId);             // Update
+await repo.SoftDeleteAsync(id, userId);             // Soft delete</code></pre>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <h2>Service Registration</h2>
+                    <div class="code-example">
+                        <h3>Factory Pattern in Program.cs</h3>
+                        <pre><code class="language-csharp">builder.Services.AddScoped&lt;IMyService&gt;(sp =>
+{
+    var editor = sp.GetRequiredService&lt;IDMEEditor&gt;();
+    var commonColumnHandler = sp.GetRequiredService&lt;ICommonColumnHandler&gt;();
+    var defaults = sp.GetRequiredService&lt;IPPDM39DefaultsRepository&gt;();
+    var metadata = sp.GetRequiredService&lt;IPPDMMetadataRepository&gt;();
+    var logger = sp.GetRequiredService&lt;ILoggerFactory&gt;().CreateLogger&lt;MyService&gt;();
+    
+    return new MyService(editor, commonColumnHandler, defaults, metadata, connectionName, logger);
+});</code></pre>
+                    </div>
+                    <p><strong>Registration order matters:</strong> <code>AddBeepServices</code> → metadata/defaults → domain services.</p>
+                </section>
+
+                <section class="section">
+                    <h2>Controller Pattern</h2>
+                    <div class="code-example">
+                        <h3>Field-Scoped API Endpoints</h3>
+                        <pre><code class="language-csharp">[ApiController]
+[Route("api/field/current")]
+[Authorize]
+public class MyController : ControllerBase
+{
+    private readonly IFieldOrchestrator _fieldOrchestrator;
+    private readonly IMyService _service;
+    
+    [HttpGet("{id}")]
+    public async Task&lt;ActionResult&lt;MyDto&gt;&gt; GetAsync(string id)
+    {
+        var fieldId = _fieldOrchestrator.CurrentFieldId;
+        var result = await _service.GetByIdAsync(fieldId, id);
+        return Ok(result);
+    }
+}</code></pre>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <h2>Quick Start</h2>
+                    <div class="code-example">
+                        <h3>Build</h3>
+                        <pre><code class="language-bash">dotnet build Beep.OilandGas.sln</code></pre>
+                    </div>
+                    <div class="code-example">
+                        <h3>Run API</h3>
+                        <pre><code class="language-bash">dotnet run --project Beep.OilandGas.ApiService</code></pre>
+                    </div>
+                    <div class="code-example">
+                        <h3>Run Web</h3>
+                        <pre><code class="language-bash">dotnet run --project Beep.OilandGas.Web</code></pre>
+                    </div>
+                    <p>Swagger UI: <code>http://localhost:5000/swagger</code></p>
+                </section>
+
+                <section class="section">
+                    <h2>UI/UX Conventions</h2>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h3>MudBlazor</h3>
+                            <p>Components use <code>Color.*</code> enum — no hardcoded colors. Consistent theme across all pages.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>Dark Mode</h3>
+                            <p>Full dark mode support via theme CSS variables and MudBlazor theme provider.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>SVG Icons</h3>
+                            <p>SVG icons only for all new assets. No PNG/JPG usage for icons or navigation elements.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>Engineer Workflows</h3>
+                            <p>Business process pages follow engineer workflows, not CRUD: Dashboard → Exploration → Development → Production → Reservoir → Economics → HSE → Data Management.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <h2>Source Layout</h2>
+                    <table>
+                        <thead><tr><th>Area</th><th>Path</th><th>Role</th></tr></thead>
+                        <tbody>
+                            <tr><td><strong>API Service</strong></td><td><code>Beep.OilandGas.ApiService/</code></td><td>REST API, controllers, DI, JWT auth</td></tr>
+                            <tr><td><strong>Web UI</strong></td><td><code>Beep.OilandGas.Web/</code></td><td>Blazor Server pages, MudBlazor components</td></tr>
+                            <tr><td><strong>PPDM 3.9 Core</strong></td><td><code>Beep.OilandGas.PPDM39/</code></td><td>Data models, interfaces, DTOs</td></tr>
+                            <tr><td><strong>PPDM Data Mgmt</strong></td><td><code>Beep.OilandGas.PPDM39.DataManagement/</code></td><td>Services, validation, seed data</td></tr>
+                            <tr><td><strong>Lifecycle</strong></td><td><code>Beep.OilandGas.LifeCycle/</code></td><td>Field orchestrator, exploration coordination</td></tr>
+                            <tr><td><strong>Domain Projects</strong></td><td><code>Beep.OilandGas.{Domain}/</code></td><td>13 oil &amp; gas lifecycle domain projects</td></tr>
+                            <tr><td><strong>Engineering Tools</strong></td><td><code>Beep.OilandGas.{Tool}/</code></td><td>15 analysis &amp; engineering tools</td></tr>
+                            <tr><td><strong>Infrastructure</strong></td><td><code>Beep.OilandGas.Client/</code>, <code>DataManager/</code>, <code>UserManagement/</code></td><td>HTTP client, data utilities, identity</td></tr>
+                            <tr><td><strong>Database Scripts</strong></td><td><code>Beep.OilandGas.Models/Scripts/</code></td><td>SQL scripts per dialect (SQL Server, PostgreSQL, SQLite, Oracle, MySQL, MariaDB)</td></tr>
+                            <tr><td><strong>Documentation</strong></td><td><code>help/</code></td><td>HTML help (this folder)</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <footer class="documentation-footer">
+                    <div class="footer-content">
+                        <div>
+                            <p>&copy; 2026 The Tech Idea — Beep.OilandGas Documentation</p>
+                            <p>Oil &amp; Gas Engineering &amp; Data Management Platform | PPDM 3.9 | .NET</p>
+                        </div>
+                        <div class="footer-links">
+                            <a href="#overview">Overview</a>
+                            <a href="#architecture">Architecture</a>
+                            <a href="#domains">Domains</a>
+                            <a href="#quick-start">Quick Start</a>
+                            <a href="https://github.com/The-Tech-Idea">GitHub</a>
+                        </div>
+                    </div>
+                </footer>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+
+    <script>
+        function toggleTheme() {
+            var body = document.body, icon = document.getElementById('theme-icon');
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme'); icon.className = 'bi bi-sun-fill';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark'); icon.className = 'bi bi-moon-fill';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+        function toggleSidebar() { document.getElementById('sidebar')?.classList.toggle('open'); }
+        (function() {
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+                document.getElementById('theme-icon').className = 'bi bi-moon-fill';
+            }
+        })();
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('pre code').forEach(function(block) {
+                var btn = document.createElement('button'); btn.textContent = 'Copy';
+                btn.style.cssText = 'position:absolute;top:8px;right:8px;background:var(--color-brand-primary);color:white;border:none;border-radius:4px;padding:4px 8px;font-size:12px;cursor:pointer;opacity:0;transition:opacity 0.3s ease';
+                var pre = block.parentElement; pre.style.position = 'relative'; pre.appendChild(btn);
+                pre.addEventListener('mouseenter', function() { btn.style.opacity = '1'; });
+                pre.addEventListener('mouseleave', function() { btn.style.opacity = '0'; });
+                btn.addEventListener('click', function() {
+                    navigator.clipboard.writeText(block.textContent).then(function() {
+                        btn.textContent = 'Copied!'; setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
