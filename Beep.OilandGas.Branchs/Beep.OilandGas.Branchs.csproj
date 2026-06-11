@@ -90,7 +90,7 @@
 
   <ItemGroup>
     <PackageReference Include="TheTechIdea.Beep.TreeNodes" Version="1.0.16" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="3.0.0">
+    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="3.0.1">
       <ExcludeAssets>contentFiles</ExcludeAssets>
     </PackageReference>
     <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="3.0.0" />
