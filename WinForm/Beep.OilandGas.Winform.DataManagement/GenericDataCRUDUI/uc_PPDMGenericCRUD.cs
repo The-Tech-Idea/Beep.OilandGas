@@ -9,6 +9,7 @@ using System.Text;
 using System.Windows.Forms;
 using TheTechIdea.Beep.Winform.Default.Views.Template;
 
+
 namespace Beep.OilandGas.Winform.DataManagement.GenericDataCRUDUI
 {
     public partial class uc_PPDMGenericCRUD : TemplateUserControl
