@@ -91,12 +91,27 @@ namespace Beep.OilandGas.OilProperties.Services
                     "Gas-oil ratio cannot be negative.");
             }
 
-            _ = gasOilRatio;
             var oilSpecificGravity = OilPropertyCalculator.OilSpecificGravityFromApi(oilGravity);
-            var density = OilPropertyConstants.WaterDensity * oilSpecificGravity;
-            
-            _logger?.LogDebug("Oil density calculated: {Density}", density);
-            return density;
+            var stockTankDensity = OilPropertyConstants.WaterDensity * oilSpecificGravity;
+
+            // When GOR is available, apply Standing correlation for saturated oil density.
+            // Solution gas reduces oil density (gas is lighter than oil).
+            if (gasOilRatio > 0)
+            {
+                // Standing Bo: Bo = 0.9759 + 0.00012 * [Rs*(Gg/Go)^0.5 + 1.25*T_F]^1.2
+                // Saturated density = stock-tank density / Bo
+                var gasSpecificGravity = OilPropertyConstants.DefaultGasSpecificGravity;
+                var tempF = OilPropertyUnits.RankineToFahrenheit(temperature);
+                var rsGasGravTerm = (double)(gasOilRatio * (decimal)Math.Sqrt((double)(gasSpecificGravity / oilSpecificGravity)));
+                var standingTerm = rsGasGravTerm + 1.25 * (double)tempF;
+                var bo = 0.9759m + 0.00012m * (decimal)Math.Pow(standingTerm, 1.2);
+                var saturatedDensity = stockTankDensity / Math.Max(bo, 0.5m);
+                _logger?.LogDebug("Saturated oil density (Rs={Rs}): {Density}", gasOilRatio, saturatedDensity);
+                return saturatedDensity;
+            }
+
+            _logger?.LogDebug("Stock-tank oil density: {Density}", stockTankDensity);
+            return stockTankDensity;
         }
 
         public decimal CalculateOilViscosity(decimal pressure, decimal temperature, decimal oilGravity, decimal gasOilRatio)
@@ -111,11 +126,20 @@ namespace Beep.OilandGas.OilProperties.Services
                     "Gas-oil ratio cannot be negative.");
             }
 
-            _ = gasOilRatio;
             var tempF = OilPropertyUnits.RankineToFahrenheit(temperature);
             var deadOilViscosity = OilPropertyCalculator.CalculateDeadOilViscosity_BeggsRobinson(oilGravity, tempF);
-            
-            _logger?.LogDebug("Oil viscosity calculated: {Viscosity}", deadOilViscosity);
+
+            // When GOR is available, apply Beggs-Robinson saturated viscosity correction.
+            // Solution gas reduces oil viscosity significantly.
+            if (gasOilRatio > 0)
+            {
+                var saturatedViscosity = OilPropertyCalculator.CalculateSaturatedViscosity_BeggsRobinson(
+                    deadOilViscosity, gasOilRatio);
+                _logger?.LogDebug("Saturated oil viscosity (Rs={Rs}): {Viscosity}", gasOilRatio, saturatedViscosity);
+                return saturatedViscosity;
+            }
+
+            _logger?.LogDebug("Dead oil viscosity: {Viscosity}", deadOilViscosity);
             return deadOilViscosity;
         }
 

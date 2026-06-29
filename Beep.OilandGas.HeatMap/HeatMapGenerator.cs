@@ -271,7 +271,7 @@ namespace Beep.OilandGas.HeatMap
         // Event handler for zooming (could be a button click, mouse wheel scroll, etc.)
         public void OnZoomIn()
         {
-            Zoom *= .01f; // Increase zoom level by 10%
+            Zoom *= 1.1f; // Increase zoom level by 10%
                           // Store the current center
              currentCenterX = (float)(-panOffset.X + (width / 2f) );
              currentCenterY = (float)(-panOffset.Y + (height / 2f) );
@@ -283,7 +283,7 @@ namespace Beep.OilandGas.HeatMap
 
         public void OnZoomOut()
         {
-            Zoom /= 1.1f; // Decrease zoom level by 10%
+            Zoom /= 1.1f; // Decrease zoom level by ~9%
             currentCenterX = (float)(-panOffset.X + (width / 2f) );
             currentCenterY = (float)(-panOffset.Y + (height / 2f) );
             // Adjust panOffset to keep the current center

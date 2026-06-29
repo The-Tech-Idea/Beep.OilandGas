@@ -394,7 +394,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
             var npvDistribution = new List<double>();
             for (int i = 0; i < simulationCount; i++)
             {
-                var variation = (new Random().NextDouble() - 0.5) * 0.4; // -20% to +20%
+                var variation = (Random.Shared.NextDouble() - 0.5) * 0.4; // -20% to +20%
                 var adjustedCashFlows = cashFlows.Select(cf => new CashFlow 
                 { 
                     Period = cf.Period, 

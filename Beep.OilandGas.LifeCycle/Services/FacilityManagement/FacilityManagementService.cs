@@ -692,7 +692,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                      {
                         pumpOptions = Newtonsoft.Json.JsonConvert.DeserializeObject<Beep.OilandGas.Models.Data.Pumps.PumpAnalysisOptions>(Newtonsoft.Json.JsonConvert.SerializeObject(options.AnalysisParameters));
                      }
-                     catch {}
+                     catch (Exception ex) { _logger?.LogWarning(ex, "Failed to deserialize pump analysis options for facility {FacilityId}", facilityId); }
                 }
 
                 _logger?.LogInformation("Running pump analysis for facility: {FacilityId}, PumpType: {PumpType}", 

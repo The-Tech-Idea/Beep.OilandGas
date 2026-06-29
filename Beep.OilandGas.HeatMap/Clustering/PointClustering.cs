@@ -273,7 +273,7 @@ namespace Beep.OilandGas.HeatMap.Clustering
                 k = Math.Max(1, Math.Min(k, dataPoints.Count));
 
             // Initialize centroids randomly
-            var random = new Random();
+            var random = Random.Shared;
             var centroids = new List<(double x, double y)>();
             var usedIndices = new HashSet<int>();
 

@@ -243,15 +243,14 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
 
         private decimal GenerateRandomLeakRate()
         {
-            var random = new Random();
-            return (decimal)(random.Next(1, 50)) + (decimal)random.NextDouble();
+            return (decimal)(Random.Shared.Next(1, 50)) + (decimal)Random.Shared.NextDouble();
         }
 
         private string DetermineAnomalyType(List<AnomalyLocation> locations)
         {
             if (locations.Count == 0) return "None";
             var maxDeviation = locations.Count > 0 ? locations[0].PressureDeviation : 0;
-            
+
             if (maxDeviation > 20) return "Severe pressure drop";
             if (maxDeviation > 10) return "Moderate pressure drop";
             return "Minor pressure variation";
@@ -259,14 +258,12 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
 
         private bool GenerateRandomBoolean(decimal probability)
         {
-            var random = new Random();
-            return random.NextDouble() < (double)probability;
+            return Random.Shared.NextDouble() < (double)probability;
         }
 
         private decimal GenerateRandomDecimal(decimal min, decimal max)
         {
-            var random = new Random();
-            return min + (decimal)(random.NextDouble() * (double)(max - min));
+            return min + (decimal)(Random.Shared.NextDouble() * (double)(max - min));
         }
 
         private DiagnosedIssue DiagnoseSymptom(string symptomCode)

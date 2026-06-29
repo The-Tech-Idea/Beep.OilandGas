@@ -11,7 +11,21 @@ using Microsoft.Extensions.Logging;
 namespace Beep.OilandGas.HydraulicPumps.Services
 {
     /// <summary>
-    /// Service for hydraulic pump operations.
+    /// Service for hydraulic pump operations (jet pump and piston pump).
+    ///
+    /// IMPLEMENTATION STATUS (H-4):
+    ///   ✅ Core calculations: HydraulicPumpCalculator, HydraulicJetPumpCalculator,
+    ///      HydraulicPistonPumpCalculator, HydraulicPumpSharedCalculations (4 static classes)
+    ///   ✅ Advanced: AnalyzeJetPumpPerformanceAsync (wired to calculator)
+    ///   ⬜ Stubs: ~40 methods return empty DTOs — design, monitoring, diagnostics,
+    ///      failure analysis, maintenance, fluid management, reporting, data management.
+    ///
+    /// IMPLEMENTATION PRIORITY:
+    ///   1. Design methods (DesignJetPumpSystem, DesignPistonPumpSystem) — wire to calculators
+    ///   2. Performance analysis (AnalyzeHydraulicPumpPerformance) — wire to calculators
+    ///   3. Diagnostics (DiagnoseJetPump, DiagnosePistonPump) — add diagnostic logic
+    ///   4. Data management (SaveDesign, GetDesignHistory) — wire to PPDM persistence
+    ///   5. Monitoring, maintenance, reporting — defer to Phase 2
     /// </summary>
     /// <remarks>
     /// Implements two contracts: the wide feature API <see cref="IHydraulicPumpService"/> (this assembly, same namespace)

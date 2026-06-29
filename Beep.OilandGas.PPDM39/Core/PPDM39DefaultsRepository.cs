@@ -24,30 +24,41 @@ namespace Beep.OilandGas.PPDM39.Core
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDMMetadataRepository _metadata;
         private PPDMGenericRepository _defaultValueRepository;
+        private TheTechIdea.Beep.Editor.Defaults.IDefaultsManager? _defaultsManager;
+
+        // Lazy-cached database override values to avoid repeated .GetAwaiter().GetResult() calls
+        private string? _cachedActiveIndYes;
+        private string? _cachedActiveIndNo;
+        private string? _cachedDefaultRowQuality;
 
         public PPDM39DefaultsRepository(
-            IDMEEditor editor = null, 
-            string connectionName = "PPDM39", 
+            IDMEEditor editor = null,
+            string connectionName = "PPDM39",
             IPPDMMetadataRepository metadata = null,
-            ICommonColumnHandler commonColumnHandler = null)
+            ICommonColumnHandler commonColumnHandler = null,
+            TheTechIdea.Beep.Editor.Defaults.IDefaultsManager? defaultsManager = null)
         {
             _editor = editor;
             _connectionName = connectionName;
             _metadata = metadata;
             _commonColumnHandler = commonColumnHandler;
-            
+            _defaultsManager = defaultsManager;
+
             // Initialize repository for PPDM_DEFAULT_VALUE if editor is available
             if (_editor != null && _commonColumnHandler != null && _metadata != null)
             {
                 _defaultValueRepository = new PPDMGenericRepository(
-                    _editor, 
-                    _commonColumnHandler, 
-                    this, 
+                    _editor,
+                    _commonColumnHandler,
+                    this,
                     _metadata,
-                    typeof(PPDM_DEFAULT_VALUE), 
-                    _connectionName, 
+                    typeof(PPDM_DEFAULT_VALUE),
+                    _connectionName,
                     "PPDM_DEFAULT_VALUE");
             }
+
+            // Initialize DefaultsManager if provided (Phase 2A: BeepDM integration)
+            _defaultsManager?.Initialize(_editor);
         }
         // Standard PPDM39 default values
         private const string ACTIVE_IND_YES = "Y";
@@ -81,58 +92,111 @@ namespace Beep.OilandGas.PPDM39.Core
         private const string WELLHEAD_STREAM_XREF_TYPE = "WELLHEAD_STREAM";
 
 
+        /// <summary>
+        /// Resolves a default value via the BeepDM DefaultsManager expression engine
+        /// before falling back to the DB override or hardcoded constant.
+        ///
+        /// Supports expression rules like :NOW, :USERNAME, :NEWGUID, :LOOKUP(...),
+        /// :IF(cond, a, b), and the dot-style DSL.
+        /// Phase 2A of BeepDM framework integration.
+        /// </summary>
+        /// <param name="rule">Expression rule string, e.g. ":NOW" or ":IF(:USERNAME, :USERNAME, 'SYSTEM')"</param>
+        /// <param name="fallback">Hardcoded fallback if the resolver is unavailable or fails.</param>
+        /// <returns>The resolved value, or the fallback.</returns>
+        public string ResolveDefaultWithRules(string rule, string fallback)
+        {
+            if (_defaultsManager != null && !string.IsNullOrWhiteSpace(rule))
+            {
+                try
+                {
+                    var value = TheTechIdea.Beep.Editor.Defaults.DefaultsManager.Resolve(_editor, rule);
+                    if (value is string s && !string.IsNullOrEmpty(s))
+                        return s;
+                    if (value != null)
+                        return value.ToString()!;
+                }
+                catch
+                {
+                    // Resolver failure is non-fatal — fall through to hardcoded constant
+                }
+            }
+            return fallback;
+        }
+
         public string GetActiveIndicatorYes()
         {
-            // Try to get from database if available, otherwise use hardcoded constant
+            // Return cached value if already resolved
+            if (_cachedActiveIndYes != null)
+                return _cachedActiveIndYes;
+
+            // Try database lookup once
             if (_defaultValueRepository != null && !string.IsNullOrEmpty(_connectionName))
             {
                 try
                 {
                     var dbValue = GetDefaultValueAsync("ACTIVE_IND_YES", _connectionName).GetAwaiter().GetResult();
                     if (!string.IsNullOrEmpty(dbValue))
+                    {
+                        _cachedActiveIndYes = dbValue;
                         return dbValue;
+                    }
                 }
                 catch
                 {
                     // Fall through to hardcoded value
                 }
             }
+            _cachedActiveIndYes = ACTIVE_IND_YES;
             return ACTIVE_IND_YES;
         }
 
         public string GetActiveIndicatorNo()
         {
+            if (_cachedActiveIndNo != null)
+                return _cachedActiveIndNo;
+
             if (_defaultValueRepository != null && !string.IsNullOrEmpty(_connectionName))
             {
                 try
                 {
                     var dbValue = GetDefaultValueAsync("ACTIVE_IND_NO", _connectionName).GetAwaiter().GetResult();
                     if (!string.IsNullOrEmpty(dbValue))
+                    {
+                        _cachedActiveIndNo = dbValue;
                         return dbValue;
+                    }
                 }
                 catch
                 {
                     // Fall through to hardcoded value
                 }
             }
+            _cachedActiveIndNo = ACTIVE_IND_NO;
             return ACTIVE_IND_NO;
         }
 
         public string GetDefaultRowQuality()
         {
+            if (_cachedDefaultRowQuality != null)
+                return _cachedDefaultRowQuality;
+
             if (_defaultValueRepository != null && !string.IsNullOrEmpty(_connectionName))
             {
                 try
                 {
                     var dbValue = GetDefaultValueAsync("DEFAULT_ROW_QUALITY", _connectionName).GetAwaiter().GetResult();
                     if (!string.IsNullOrEmpty(dbValue))
+                    {
+                        _cachedDefaultRowQuality = dbValue;
                         return dbValue;
+                    }
                 }
                 catch
                 {
                     // Fall through to hardcoded value
                 }
             }
+            _cachedDefaultRowQuality = DEFAULT_ROW_QUALITY;
             return DEFAULT_ROW_QUALITY;
         }
         public string GetDefaultPreferredIndicator() => DEFAULT_PREFERRED_IND;

@@ -47,8 +47,17 @@ Log.Logger = new LoggerConfiguration()
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Use Serilog
+// Use Serilog for existing Microsoft.Extensions.Logging consumers
 builder.Host.UseSerilog();
+
+// ── BeepDM Observability Pipeline (Phase 1) ────────────────────────────
+// ── BeepDM Framework Integration ─────────────────────────────────────────
+// NOTE: The full BeepDM Services pipeline (BeepLog, BeepAudit, redactors, budget
+// enforcement) requires TheTechIdea.Beep.DataManagementEngine >= 3.0.1.
+// Upgrade the NuGet package to v3.0.1 to enable:
+//   builder.Services.AddBeepLoggingForWeb(...)  — structured pipeline logging
+//   builder.Services.AddBeepAuditForWeb(...)    — tamper-evident hash-chain audit
+// Currently on v2.0.96 — Serilog handles logging; upgrade when available.
 
 // Add services to the container
 builder.Services.AddControllers();
@@ -181,7 +190,7 @@ Log.Information("Beep Service Configuration: {Summary}", BeepServiceRegistration
 // ============================================
 // REGISTER PPDM39 SERVICES
 // ============================================
-var connectionName = builder.Configuration["ConnectionStrings:PPDM39"] ?? "PPDM39";
+var connectionName = builder.Configuration["ConnectionStrings:PPDM39"] ?? Beep.OilandGas.Models.Constants.ConnectionNames.PPDM39;
 
 // Common Column Handler
 builder.Services.AddSingleton<ICommonColumnHandler, CommonColumnHandler>();
@@ -194,13 +203,23 @@ builder.Services.AddSingleton<IPPDMMetadataRepository>(sp =>
     return new Beep.OilandGas.PPDM39.DataManagement.Core.Metadata.PPDMMetadataService(logger);
 });
 
-// Defaults Repository
+// Defaults Repository — Phase 2A: integrated with BeepDM DefaultsManager for expression rules
+builder.Services.AddScoped<TheTechIdea.Beep.Editor.Defaults.IDefaultsManager>(sp =>
+{
+    var manager = new TheTechIdea.Beep.Editor.Defaults.DefaultsManager();
+    manager.Initialize(sp.GetRequiredService<IDMEEditor>());
+    // Register PPDM entity default profiles
+    Beep.OilandGas.PPDM39.DataManagement.Defaults.EntityDefaultsProfileRegistry.RegisterAll(manager);
+    return manager;
+});
+
 builder.Services.AddScoped<IPPDM39DefaultsRepository>(sp =>
 {
     var editor = sp.GetRequiredService<IDMEEditor>();
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var defaultsManager = sp.GetService<TheTechIdea.Beep.Editor.Defaults.IDefaultsManager>();
     Log.Debug("Creating PPDM39 Defaults Repository for connection: {ConnectionName}", connectionName);
-    return new PPDM39DefaultsRepository(editor, connectionName, metadata);
+    return new PPDM39DefaultsRepository(editor, connectionName, metadata, defaultsManager: defaultsManager);
 });
 
 // PPDM Mapping Service
@@ -1068,6 +1087,12 @@ builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.IAuthorizationObse
         connectionName);
 });
 
+// BeepDM Data Import Service — server-side ETL with quality rules, error replay, watermarking (Phase 4A)
+builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.DataImportService>();
+
+// BeepDM Sync Service — multi-instance PPDM synchronization with CDC, conflict resolution (Phase 5A)
+builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.BeepSyncService>();
+
 builder.Services.AddScoped<IAccessControlService>(sp =>
 {
     var editor = sp.GetRequiredService<IDMEEditor>();
@@ -1169,6 +1194,18 @@ builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.ModuleSetupCont
 builder.Services.AddDiscoveredModuleSetups();
 
 builder.Services.AddScoped<Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup.ModuleSetupOrchestrator>();
+
+// BeepDM SetupWizard adapter — wraps ModuleSetupOrchestrator modules as ISetupStep
+// with checkpoint/resume, dry-run, and SHA-256 reports (Phase 3A)
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.DataManagement.Setup.ModuleSetupWizardAdapter>(sp =>
+{
+    var modules = sp.GetServices<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup>();
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Beep.OilandGas.PPDM39.DataManagement.Setup.ModuleSetupWizardAdapter>>();
+    var connectionName = builder.Configuration.GetValue("BeepOg:DatabaseConnectionName", "PPDM39");
+    return new Beep.OilandGas.PPDM39.DataManagement.Setup.ModuleSetupWizardAdapter(
+        modules, editor, connectionName, logger);
+});
 
 // PPDM39 Setup Connection Service — focused service for connection lifecycle
 builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPPDM39SetupConnectionService>(sp =>
@@ -2518,10 +2555,56 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        // AllowAnyOrigin in Development only. Production origins configured via appsettings.
+        if (builder.Environment.IsDevelopment())
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else
+        {
+            var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+                ?? Array.Empty<string>();
+            if (allowedOrigins.Length > 0)
+            {
+                policy.WithOrigins(allowedOrigins)
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            }
+            else
+            {
+                // Fallback: allow only the Web project's URL
+                policy.WithOrigins(builder.Configuration["Web:BaseUrl"] ?? "https://localhost:7001")
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            }
+        }
     });
+});
+
+// Rate limiting — protects against abuse and accidental overuse.
+// Uses a fixed-window policy: 100 requests per 10 seconds per IP by default.
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("Fixed", config =>
+    {
+        config.PermitLimit = 100;
+        config.Window = TimeSpan.FromSeconds(10);
+        config.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+        config.QueueLimit = 10;
+    });
+
+    // Stricter limit for setup/database endpoints
+    options.AddFixedWindowLimiter("Setup", config =>
+    {
+        config.PermitLimit = 10;
+        config.Window = TimeSpan.FromSeconds(30);
+        config.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+        config.QueueLimit = 2;
+    });
+
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 
 var app = builder.Build();
@@ -2619,6 +2702,25 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// Seed process definitions on startup (non-fatal: app continues if seeding fails).
+try
+{
+    using (var seedScope = app.Services.CreateScope())
+    {
+        var initializer = seedScope.ServiceProvider
+            .GetService<Beep.OilandGas.LifeCycle.Services.Processes.ProcessDefinitionInitializer>();
+        if (initializer != null)
+        {
+            await initializer.InitializeDefaultProcessDefinitionsAsync("SYSTEM");
+            Log.Information("Process definitions initialized successfully");
+        }
+    }
+}
+catch (Exception ex)
+{
+    Log.Warning(ex, "Failed to seed process definitions on startup — process workflows may be unavailable");
+}
+
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
@@ -2628,6 +2730,12 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Beep Oil and Gas PPDM39 API v1");
     });
 }
+
+// Global exception handling — must be first to catch errors from all downstream middleware
+// Global exception handling — must be first to catch errors from all downstream middleware
+app.UseMiddleware<Beep.OilandGas.ApiService.Middleware.GlobalExceptionMiddleware>();
+
+app.UseRateLimiter();
 
 app.UseHttpsRedirection();
 app.UseCors();
@@ -2683,6 +2791,19 @@ app.MapGet("/api/auth-check", (HttpContext context) =>
     });
 })
 .WithName("AuthCheck");
+
+// Health check endpoint for load balancers and monitoring
+app.MapGet("/health", () =>
+{
+    return Results.Ok(new
+    {
+        Status = "Healthy",
+        Timestamp = DateTime.UtcNow,
+        Service = "Beep.OilandGas.ApiService"
+    });
+})
+.AllowAnonymous()
+.WithName("HealthCheck");
 
 Log.Information("Beep Oil and Gas PPDM39 API started successfully");
 

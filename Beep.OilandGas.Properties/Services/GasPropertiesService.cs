@@ -7,6 +7,15 @@ using Beep.OilandGas.GasProperties.Models;
 
 namespace Beep.OilandGas.Properties.Services
 {
+    /// <summary>
+    /// Standalone (non-PPDM) gas properties service using screening-level correlations.
+    /// Delegates to <see cref="Beep.OilandGas.GasProperties.Calculations"/> for core Z-factor
+    /// and viscosity calculations. For full PPDM-integrated gas properties, use
+    /// <see cref="Beep.OilandGas.GasProperties.Services.GasPropertiesService"/>.
+    ///
+    /// Methods use simplified pseudo-critical estimates and Papay Z-factor as fallbacks.
+    /// Suitable for screening and preliminary analysis only.
+    /// </summary>
     public class GasPropertiesService : IGasPropertiesService
     {
         public GasPropertiesService()

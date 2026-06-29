@@ -30,7 +30,7 @@ namespace Beep.OilandGas.Client.App
         /// <summary>
         /// Default connection name
         /// </summary>
-        public string DefaultConnectionName { get; set; } = "PPDM39";
+        public string DefaultConnectionName { get; set; } = Beep.OilandGas.Models.Constants.ConnectionNames.PPDM39;
 
         /// <summary>
         /// Use local services if available (for Auto mode)

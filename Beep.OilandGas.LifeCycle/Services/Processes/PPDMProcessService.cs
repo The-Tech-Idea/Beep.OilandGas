@@ -51,7 +51,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         {
             try
             {
-                var repo = await GetProcessDefinitionRepositoryAsync();
+                var repo = GetProcessDefinitionRepository();
                 var result = await repo.GetByIdAsync(processId);
                 
                 if (result == null)
@@ -72,7 +72,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         {
             try
             {
-                var repo = await GetProcessDefinitionRepositoryAsync();
+                var repo = GetProcessDefinitionRepository();
                 var filters = new List<AppFilter>
                 {
                     new AppFilter
@@ -103,7 +103,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         {
             try
             {
-                var repo = await GetProcessDefinitionRepositoryAsync();
+                var repo = GetProcessDefinitionRepository();
                 
                 var entity = ConvertToProcessDefinitionEntity(definition);
                 entity.PROCESS_DEFINITION_ID = definition.ProcessId ?? GenerateProcessDefinitionId();
@@ -124,7 +124,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         {
             try
             {
-                var repo = await GetProcessDefinitionRepositoryAsync();
+                var repo = GetProcessDefinitionRepository();
                 var entity = ConvertToProcessDefinitionEntity(definition);
                 entity.PROCESS_DEFINITION_ID = processId;
                 entity.ROW_CHANGED_BY = userId;
@@ -144,7 +144,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         {
             try
             {
-                var repo = await GetProcessDefinitionRepositoryAsync();
+                var repo = GetProcessDefinitionRepository();
                 return await repo.SoftDeleteAsync(processId, userId);
             }
             catch (Exception ex)
@@ -175,7 +175,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         {
             try
             {
-                var repo = await GetProcessInstanceRepositoryAsync();
+                var repo = GetProcessInstanceRepository();
                 var filters = new List<AppFilter>
                 {
                     new AppFilter
@@ -483,7 +483,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         {
             try
             {
-                var repo = await GetProcessHistoryRepositoryAsync();
+                var repo = GetProcessHistoryRepository();
                 var filters = new List<AppFilter>
                 {
                     new AppFilter
@@ -508,7 +508,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         {
             try
             {
-                var repo = await GetProcessHistoryRepositoryAsync();
+                var repo = GetProcessHistoryRepository();
                 var entity = ConvertToProcessHistoryEntity(entry);
                 entity.PROCESS_HISTORY_ID = entry.HistoryId ?? GenerateHistoryId();
                 entity.PROCESS_INSTANCE_ID = instanceId;
@@ -612,11 +612,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         {
             try
             {
-                var repo = await GetProcessApprovalRepositoryAsync();
+                var repo = GetProcessApprovalRepository();
 
                 // Resolve the parent process instance ID from the step instance
                 string processInstanceId = string.Empty;
-                var stepRepo = await GetProcessStepInstanceRepositoryAsync();
+                var stepRepo = GetProcessStepInstanceRepository();
                 var stepFilters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "PROCESS_STEP_INSTANCE_ID", Operator = "=", FilterValue = stepInstanceId }
@@ -655,7 +655,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         {
             try
             {
-                var repo = await GetProcessApprovalRepositoryAsync();
+                var repo = GetProcessApprovalRepository();
                 var approval = await repo.GetByIdAsync(approvalId);
                 if (approval == null)
                 {
@@ -688,7 +688,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         {
             try
             {
-                var repo = await GetProcessApprovalRepositoryAsync();
+                var repo = GetProcessApprovalRepository();
                 var approval = await repo.GetByIdAsync(approvalId);
                 if (approval == null)
                 {
@@ -730,7 +730,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         {
             try
             {
-                var repo = await GetProcessInstanceRepositoryAsync();
+                var repo = GetProcessInstanceRepository();
                 var entity = ConvertToProcessInstanceEntity(instance);
                 
                 var existing = await repo.GetByIdAsync(instance.InstanceId);
@@ -748,7 +748,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 }
 
                 // Save step instances
-                var stepRepo = await GetProcessStepInstanceRepositoryAsync();
+                var stepRepo = GetProcessStepInstanceRepository();
                 foreach (var stepInstance in instance.StepInstances)
                 {
                     var stepEntity = ConvertToProcessStepInstanceEntity(stepInstance);
@@ -779,7 +779,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         {
             try
             {
-                var repo = await GetProcessInstanceRepositoryAsync();
+                var repo = GetProcessInstanceRepository();
                 var result = await repo.GetByIdAsync(instanceId);
                 
                 if (result == null)
@@ -790,7 +790,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 var instance = ConvertToProcessInstance(result);
 
                 // Load step instances
-                var stepRepo = await GetProcessStepInstanceRepositoryAsync();
+                var stepRepo = GetProcessStepInstanceRepository();
                 var stepFilters = new List<AppFilter>
                 {
                     new AppFilter
@@ -823,59 +823,39 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
 
         #region Repository Helpers
 
-        private async Task<PPDMGenericRepository> GetProcessDefinitionRepositoryAsync()
+        private PPDMGenericRepository GetProcessDefinitionRepository()
         {
-            if (_processDefinitionRepository == null)
-            {
-                _processDefinitionRepository = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PROCESS_DEFINITION), _connectionName, "PROCESS_DEFINITION");
-            }
-            return _processDefinitionRepository;
+            return _processDefinitionRepository ??= new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(PROCESS_DEFINITION), _connectionName, "PROCESS_DEFINITION");
         }
 
-        private async Task<PPDMGenericRepository> GetProcessInstanceRepositoryAsync()
+        private PPDMGenericRepository GetProcessInstanceRepository()
         {
-            if (_processInstanceRepository == null)
-            {
-                _processInstanceRepository = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PROCESS_INSTANCE), _connectionName, "PROCESS_INSTANCE");
-            }
-            return _processInstanceRepository;
+            return _processInstanceRepository ??= new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(PROCESS_INSTANCE), _connectionName, "PROCESS_INSTANCE");
         }
 
-        private async Task<PPDMGenericRepository> GetProcessStepInstanceRepositoryAsync()
+        private PPDMGenericRepository GetProcessStepInstanceRepository()
         {
-            if (_processStepInstanceRepository == null)
-            {
-                _processStepInstanceRepository = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PROCESS_STEP_INSTANCE), _connectionName, "PROCESS_STEP_INSTANCE");
-            }
-            return _processStepInstanceRepository;
+            return _processStepInstanceRepository ??= new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(PROCESS_STEP_INSTANCE), _connectionName, "PROCESS_STEP_INSTANCE");
         }
 
-        private async Task<PPDMGenericRepository> GetProcessHistoryRepositoryAsync()
+        private PPDMGenericRepository GetProcessHistoryRepository()
         {
-            if (_processHistoryRepository == null)
-            {
-                _processHistoryRepository = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PROCESS_HISTORY), _connectionName, "PROCESS_HISTORY");
-            }
-            return _processHistoryRepository;
+            return _processHistoryRepository ??= new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(PROCESS_HISTORY), _connectionName, "PROCESS_HISTORY");
         }
 
-        private async Task<PPDMGenericRepository> GetProcessApprovalRepositoryAsync()
+        private PPDMGenericRepository GetProcessApprovalRepository()
         {
-            if (_processApprovalRepository == null)
-            {
-                _processApprovalRepository = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PROCESS_APPROVAL), _connectionName, "PROCESS_APPROVAL");
-            }
-            return _processApprovalRepository;
+            return _processApprovalRepository ??= new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(PROCESS_APPROVAL), _connectionName, "PROCESS_APPROVAL");
         }
 
         #endregion

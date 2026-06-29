@@ -45,7 +45,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (production == null)
                 throw new ArgumentNullException(nameof(production));
 
-            return production.OilVolume + (production.GasVolume / 6m);
+            return production.OilVolume + (production.GasVolume / BoeConversionFactors.StandardMcfPerOilBarrelEquivalent);
         }
 
         /// <summary>BOE rollup using <see cref="BoeConversionFactors.StandardMcfPerOilBarrelEquivalent"/> for the gas leg.</summary>

@@ -1,0 +1,291 @@
+@page "/ppdm39/sync"
+@using System.Net.Http.Json
+@using MudBlazor
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h4" GutterBottom="true">
+        <MudIcon Icon="@Icons.Material.Filled.Sync" Class="mr-2" />
+        Data Synchronization
+    </MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+        PPDM 3.9 multi-instance sync powered by BeepDM BeepSyncManager.
+        Full/C incremental sync with conflict resolution, data quality gates, and reconciliation.
+    </MudText>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Class="my-4" />
+    }
+    else
+    {
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Sync Schemas</MudText>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                                       OnClick="InitializeSchemas" Disabled="_syncing">
+                                Init Schemas
+                            </MudButton>
+                        </CardHeaderActions>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        @if (_schemas?.Count > 0)
+                        {
+                            <MudTable Items="@_schemas" Hover="true" Striped="true" Dense="true">
+                                <HeaderContent>
+                                    <MudTh>Entity</MudTh>
+                                    <MudTh>Mode</MudTh>
+                                    <MudTh>Enabled</MudTh>
+                                    <MudTh>Actions</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd>@context.SchemaName</MudTd>
+                                    <MudTd>@context.SyncMode</MudTd>
+                                    <MudTd><MudChip Color="@(context.IsEnabled ? Color.Success : Color.Default)" Size="Size.Small">@(context.IsEnabled ? "Yes" : "No")</MudChip></MudTd>
+                                    <MudTd>
+                                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary"
+                                                   OnClick="() => SyncEntity(context.SchemaId)" Disabled="_syncing">
+                                            Sync Now
+                                        </MudButton>
+                                    </MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Info">No sync schemas configured. Click "Init Schemas" to create the standard PPDM39 schemas.</MudAlert>
+                        }
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Reconciliation Report</MudText>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="LoadReconciliation">
+                                Refresh
+                            </MudButton>
+                        </CardHeaderActions>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        @if (_reconciliation != null)
+                        {
+                            <MudStack Row="true" Justify="Justify.SpaceAround" Class="mb-4">
+                                <div>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Source</MudText>
+                                    <MudText Typo="Typo.h5">@_reconciliation.SourceRows.ToString("N0")</MudText>
+                                </div>
+                                <div>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Destination</MudText>
+                                    <MudText Typo="Typo.h5">@_reconciliation.DestRows.ToString("N0")</MudText>
+                                </div>
+                                <div>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Rejects</MudText>
+                                    <MudText Typo="Typo.h5" Color="@(_reconciliation.Rejects > 0 ? Color.Error : Color.Default)">@_reconciliation.Rejects.ToString("N0")</MudText>
+                                </div>
+                                <div>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Conflicts</MudText>
+                                    <MudText Typo="Typo.h5" Color="@(_reconciliation.Conflicts > 0 ? Color.Warning : Color.Default)">@_reconciliation.Conflicts.ToString("N0")</MudText>
+                                </div>
+                            </MudStack>
+                            <MudText Typo="Typo.body2"><strong>Quality Band:</strong> @_reconciliation.MappingQualityBand</MudText>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Info">No reconciliation data available. Run a sync first.</MudAlert>
+                        }
+                    </MudCardContent>
+                </MudCard>
+
+                <MudCard Elevation="2" Class="mt-4">
+                    <MudCardHeader>
+                        <CardHeaderContent><MudText Typo="Typo.h6">SLO Status</MudText></CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        @if (_lastResult != null)
+                        {
+                            <MudStack Row="true" Justify="Justify.SpaceAround">
+                                <div>
+                                    <MudText Typo="Typo.caption">Records Read</MudText>
+                                    <MudText Typo="Typo.h6">@_lastResult.RecordsRead.ToString("N0")</MudText>
+                                </div>
+                                <div>
+                                    <MudText Typo="Typo.caption">Inserted</MudText>
+                                    <MudText Typo="Typo.h6" Color="Color.Success">@_lastResult.RecordsInserted.ToString("N0")</MudText>
+                                </div>
+                                <div>
+                                    <MudText Typo="Typo.caption">Failed</MudText>
+                                    <MudText Typo="Typo.h6" Color="@(_lastResult.RecordsFailed > 0 ? Color.Error : Color.Default)">@_lastResult.RecordsFailed.ToString("N0")</MudText>
+                                </div>
+                                <div>
+                                    <MudText Typo="Typo.caption">Duration</MudText>
+                                    <MudText Typo="Typo.h6">@_lastResult.Duration</MudText>
+                                </div>
+                                <div>
+                                    <MudText Typo="Typo.caption">SLO</MudText>
+                                    <MudChip Color="@SloColor(_lastResult.SloTier)" Size="Size.Small">@_lastResult.SloTier</MudChip>
+                                </div>
+                            </MudStack>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Info">Run a sync to see SLO metrics.</MudAlert>
+                        }
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+
+        if (_syncing)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4"
+                       OnClick="SyncAll" FullWidth="true" Disabled="true">
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                Syncing all schemas...
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4"
+                       OnClick="SyncAll" FullWidth="true">
+                Sync All Enabled Schemas
+            </MudButton>
+        }
+    }
+</MudContainer>
+
+@code {
+    private bool _loading = true;
+    private bool _syncing;
+    private List<SyncSchemaDto>? _schemas;
+    private SyncRunDto? _lastResult;
+    private ReconciliationDto? _reconciliation;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        _loading = false;
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            _schemas = await Http.GetFromJsonAsync<List<SyncSchemaDto>>("/api/sync/schemas");
+        }
+        catch { /* API may not be available yet */ }
+        await LoadReconciliation();
+    }
+
+    private async Task LoadReconciliation()
+    {
+        try
+        {
+            _reconciliation = await Http.GetFromJsonAsync<ReconciliationDto>("/api/sync/reconciliation");
+        }
+        catch { }
+    }
+
+    private async Task InitializeSchemas()
+    {
+        try
+        {
+            var response = await Http.PostAsync("/api/sync/init-schemas", null);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Schemas initialized", Severity.Success);
+                await LoadData();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task SyncEntity(string schemaId)
+    {
+        _syncing = true;
+        StateHasChanged();
+        try
+        {
+            var response = await Http.PostAsync($"/api/sync/run/{schemaId}", null);
+            if (response.IsSuccessStatusCode)
+            {
+                _lastResult = await response.Content.ReadFromJsonAsync<SyncRunDto>();
+                Snackbar.Add($"Synced {schemaId}: {_lastResult?.RecordsRead ?? 0:N0} records", Severity.Success);
+                await LoadReconciliation();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Sync failed: {ex.Message}", Severity.Error);
+        }
+        finally { _syncing = false; }
+    }
+
+    private async Task SyncAll()
+    {
+        _syncing = true;
+        StateHasChanged();
+        try
+        {
+            var response = await Http.PostAsync("/api/sync/run-all", null);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Sync-all completed", Severity.Success);
+                await LoadReconciliation();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Sync-all failed: {ex.Message}", Severity.Error);
+        }
+        finally { _syncing = false; }
+    }
+
+    private Color SloColor(string? tier) => tier switch
+    {
+        "Green" => Color.Success,
+        "Yellow" => Color.Warning,
+        "Red" => Color.Error,
+        _ => Color.Default
+    };
+
+    // DTOs for API deserialization
+    public class SyncSchemaDto
+    {
+        public string SchemaId { get; set; } = string.Empty;
+        public string SchemaName { get; set; } = string.Empty;
+        public string SyncMode { get; set; } = string.Empty;
+        public bool IsEnabled { get; set; }
+    }
+    public class SyncRunDto
+    {
+        public string SchemaId { get; set; } = string.Empty;
+        public int RecordsRead { get; set; }
+        public int RecordsInserted { get; set; }
+        public int RecordsFailed { get; set; }
+        public string Duration { get; set; } = string.Empty;
+        public string? SloTier { get; set; }
+    }
+    public class ReconciliationDto
+    {
+        public int SourceRows { get; set; }
+        public int DestRows { get; set; }
+        public int Rejects { get; set; }
+        public int Conflicts { get; set; }
+        public string? MappingQualityBand { get; set; }
+    }
+}

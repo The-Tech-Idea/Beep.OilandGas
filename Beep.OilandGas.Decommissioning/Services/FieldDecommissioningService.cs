@@ -468,21 +468,22 @@ namespace Beep.OilandGas.Decommissioning.Services
                     new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
                 });
 
-                const decimal WellAbandonmentRate    = 250_000m;
-                const decimal FacilityDecomRate      = 500_000m;
-                const decimal SiteRestorationRate    = 50_000m;
-                const decimal EnvironmentalBaseRate  = 100_000m;
-                const decimal ContingencyPercent     = 0.20m;
+                // Use centralized cost defaults — overridable via jurisdiction config in future.
+                var wellAbandonmentRate   = DecommissioningCostDefaults.WellAbandonmentRate;
+                var facilityDecomRate     = DecommissioningCostDefaults.FacilityDecommissioningRate;
+                var siteRestorationRate   = DecommissioningCostDefaults.SiteRestorationRate;
+                var environmentalBaseRate = DecommissioningCostDefaults.EnvironmentalBaseRate;
+                var contingencyPercent    = DecommissioningCostDefaults.ContingencyPercent;
 
                 int wellCount     = wells.Count();
                 int facilityCount = facilities.Count();
 
-                decimal wellAbandonmentCost     = wellCount     * WellAbandonmentRate;
-                decimal facilityCost            = facilityCount * FacilityDecomRate;
-                decimal restorationCost         = wellCount     * SiteRestorationRate;
-                decimal remediationCost         = EnvironmentalBaseRate * Math.Max(1, (wellCount + facilityCount) / 5);
+                decimal wellAbandonmentCost     = wellCount     * wellAbandonmentRate;
+                decimal facilityCost            = facilityCount * facilityDecomRate;
+                decimal restorationCost         = wellCount     * siteRestorationRate;
+                decimal remediationCost         = environmentalBaseRate * Math.Max(1, (wellCount + facilityCount) / 5);
                 decimal subtotal                = wellAbandonmentCost + facilityCost + restorationCost + remediationCost;
-                decimal contingency             = subtotal * ContingencyPercent;
+                decimal contingency             = subtotal * contingencyPercent;
 
                 _logger?.LogInformation(
                     "Cost estimate for field {FieldId}: {WellCount} wells, {FacilityCount} facilities, total={Total:C}",
@@ -500,7 +501,7 @@ namespace Beep.OilandGas.Decommissioning.Services
                     EstimatedWellsToAbandon              = wellCount,
                     EstimatedFacilitiesToDecommission    = facilityCount,
                     EstimationMethod                     = "PARAMETRIC",
-                    Notes                                = $"Parametric estimate: {wellCount} wells @ {WellAbandonmentRate:C}/well, {facilityCount} facilities @ {FacilityDecomRate:C}/facility. 20% contingency applied."
+                    Notes                                = $"Parametric estimate: {wellCount} wells @ {wellAbandonmentRate:C}/well, {facilityCount} facilities @ {facilityDecomRate:C}/facility. {contingencyPercent:P0} contingency applied."
                 };
             }
             catch (Exception ex)

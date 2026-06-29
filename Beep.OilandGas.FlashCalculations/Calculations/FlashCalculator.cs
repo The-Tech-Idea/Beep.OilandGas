@@ -24,14 +24,12 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
             double tr = (double)(component.CRITICAL_TEMPERATURE / temperature);
             double omega = (double)component.ACENTRIC_FACTOR;
 
-            double lnK = Math.Log(pr) + 5.37 * (1.0 + omega) * (1.0 - tr); // Wait, formula is K = ...
-            // Formula: K = (Pc/P) * EXP(...)
-            
-            double k = pr * Math.Exp(5.37 * (1.0 + omega) * (1.0 - (1.0/tr))); // Tci/T = 1/Tr? No, Tr = T/Tc.
-            // Formula is (1 - Tc/T). Yes.
-            // Let's recheck Wilson:
-            // ln K = ln(Pc/P) + 5.37(1+w)(1 - Tc/T)
-            
+            // Wilson's correlation (standard form):
+            // K_i = (Pc_i / P) * exp(5.37 * (1 + omega_i) * (1 - Tc_i / T))
+            // where tr = Tc/T, so (1 - tr) = (1 - Tc/T).
+            double lnK = Math.Log(pr) + 5.37 * (1.0 + omega) * (1.0 - tr);
+            double k = Math.Exp(lnK);
+
             return (decimal)k;
         }
 

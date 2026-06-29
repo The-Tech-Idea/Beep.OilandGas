@@ -14,7 +14,8 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<NoWarn>$(NoWarn);CS8632;CS0618</NoWarn>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-	</PropertyGroup>
+	    <Nullable>enable</Nullable>
+  </PropertyGroup>
 	<ItemGroup>
 		<None Include="README.md" Pack="true" PackagePath="\" />
 		<None Include="..\..\InstallationScripts\LogoGFx\128\SimpleODM.png">

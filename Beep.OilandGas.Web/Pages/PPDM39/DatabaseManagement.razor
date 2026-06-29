@@ -608,6 +608,8 @@
 
     private async void HandleProgressUpdate(ProgressUpdate progress)
     {
+        try
+        {
         if (progress.OperationId != _currentOperationId)
             return;
 
@@ -617,7 +619,7 @@
         if (progress.IsComplete)
         {
             _isCopying = false;
-            
+
             if (progress.HasError)
             {
                 Snackbar.Add($"Operation failed: {progress.ErrorMessage}", Severity.Error);
@@ -625,15 +627,13 @@
             else
             {
                 Snackbar.Add(progress.StatusMessage ?? "Operation completed successfully", Severity.Success);
-                
-                // Reset form on success
+
                 _copySourceConnection = null;
                 _copyTargetConnection = null;
                 _copySourceSchema = null;
                 _copyTargetSchema = null;
             }
 
-            // Clean up
             if (!string.IsNullOrEmpty(_currentOperationId))
             {
                 ProgressClient.OnProgressUpdate -= HandleProgressUpdate;
@@ -642,6 +642,11 @@
                 _currentProgress = null;
                 await InvokeAsync(StateHasChanged);
             }
+        }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Progress error: {ex.Message}", Severity.Error);
         }
     }
 

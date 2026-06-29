@@ -13,6 +13,7 @@
     <RepositoryUrl>https://github.com/The-Tech-Idea/</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <NoWarn>$(NoWarn);CS8632;CS0618</NoWarn>
+      <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

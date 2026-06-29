@@ -265,11 +265,10 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
                     for (int i = 0; i < n; i++) k[i] = WilsonK(p, temperature, components[i]);
                 }
 
+                // Dew point condition: Σ (z_i / K_i) = 1  →  f = Σ(z_i / K_i) - 1 = 0
                 double f = 0.0;
                 for (int i = 0; i < n; i++)
-                    f += k[i] > 1e-15 ? z[i] / k[i] - 1.0 / n : 0.0;
-                f = 0.0;
-                for (int i = 0; i < n; i++) f += (k[i] > 1e-15 ? z[i] / k[i] : 0.0);
+                    f += (k[i] > 1e-15 ? z[i] / k[i] : 0.0);
                 f -= 1.0;
 
                 if (Math.Abs(f) < tol) { converged = true; break; }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -37,6 +38,7 @@ namespace Beep.OilandGas.PPDM39.Core
         protected readonly ILogger<PPDMGenericRepository>? _logger;
         private readonly Dictionary<Type, IUnitOfWorkWrapper> _unitOfWorkCache = new Dictionary<Type, IUnitOfWorkWrapper>();
         private readonly object _unitOfWorkLock = new object();
+        private static readonly ConcurrentDictionary<string, string> _pkNameCache = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Gets the common column handler
@@ -161,21 +163,35 @@ namespace Beep.OilandGas.PPDM39.Core
         }
 
         /// <summary>
-        /// Gets the primary key name for a table
+        /// Gets the primary key name for a table.
+        /// Uses a static cache to avoid repeated async metadata lookups.
         /// </summary>
         protected virtual string GetPrimaryKeyName(string tableName)
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
 
-            // Get primary key from metadata synchronously
-            var metadata = _metadata.GetTableMetadataAsync(tableName).GetAwaiter().GetResult();
-            if (metadata == null)
-            {
-                throw new InvalidOperationException($"Table metadata not found for: {tableName}");
-            }
+            // Check static cache first — avoids async call after first lookup per table
+            if (_pkNameCache.TryGetValue(tableName, out var cachedPk))
+                return cachedPk;
 
-            return metadata.PrimaryKeyColumn;
+            // First lookup: resolve from metadata (synchronous via cache if available)
+            try
+            {
+                var metadata = _metadata.GetTableMetadataAsync(tableName).GetAwaiter().GetResult();
+                if (metadata == null)
+                    throw new InvalidOperationException($"Table metadata not found for: {tableName}");
+
+                var pkName = metadata.PrimaryKeyColumn;
+                _pkNameCache[tableName] = pkName;
+                return pkName;
+            }
+            catch (Exception ex) when (ex is not ArgumentException and not InvalidOperationException)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to resolve primary key for table '{tableName}'. " +
+                    $"Ensure PPDM metadata is loaded before constructing repositories.", ex);
+            }
         }
 
         /// <summary>

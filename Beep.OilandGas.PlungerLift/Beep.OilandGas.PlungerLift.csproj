@@ -13,7 +13,8 @@
 		<RepositoryUrl>https://github.com/The-Tech-Idea/</RepositoryUrl>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<NoWarn>$(NoWarn);CS8632</NoWarn>
-	</PropertyGroup>
+	    <Nullable>enable</Nullable>
+  </PropertyGroup>
 	<ItemGroup>
 		<None Include="..\..\InstallationScripts\LogoGFx\128\SimpleODM.png">
 			<Pack>True</Pack>

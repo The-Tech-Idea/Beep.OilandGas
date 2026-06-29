@@ -401,13 +401,10 @@ namespace Beep.OilandGas.GasProperties.Services
             _logger?.LogInformation("Analyzing gas viscosity for composition {CompositionId} at P={Pressure}, T={Temperature}", composition.CompositionId, pressure, temperature);
 
             var zFactor = CalculateZFactor(pressure, temperature, composition.SpecificGravity);
-            
-            // Lee-Gonzalez-Eakin correlation for gas viscosity
-            var molWeight = composition.MolecularWeight;
-            var reducedTemp = temperature / (9.67m + 23.8m * molWeight);
-            var viscosityAtSC = (0.0001m * (decimal)Math.Pow((double)molWeight, 0.5) * (decimal)Math.Pow(520.0, 1.67)) / (decimal)Math.Pow(38.4, 2.667);
-            
-            var viscosity = viscosityAtSC * (1m + 10.8m * (decimal)Math.Pow((double)(pressure / 1000m), 0.4));
+
+            // Carr-Kobayashi-Burrows correlation for gas viscosity (standard industry method)
+            var viscosity = GasViscosityCalculator.CalculateCarrKobayashiBurrows(
+                pressure, temperature, composition.SpecificGravity, zFactor);
 
             var result = new GasViscosityAnalysis
             {

@@ -43,25 +43,57 @@ namespace Beep.OilandGas.PlungerLift.Calculations
         }
 
         // 3. Estimate Rise Velocity
-        // Typically 500-1000 ft/min (8-16 ft/s)
-        // Max usually capped to avoid hitting lubricator too hard.
+        // Plunger rise velocity depends on differential pressure across the plunger.
+        // V_rise ∝ sqrt(dP / rho_g) — from force balance: dP × A = drag + slug weight.
+        // Typical range: 500–1000 ft/min (8–16 ft/s) at surface.
+        // Formula: V_rise = sqrt(2 × dP × 144 / (rho_g × Cd)) with Cd ≈ 1.0
+        // Simplified: V_rise (ft/min) = 60 × sqrt(2 × 144) × sqrt(dP/rho_g) ≈ 100 × sqrt(dP/rho_g)
+        // where dP is in psi and rho_g in lb/ft³.
         public static decimal EstimateRiseVelocity(decimal avgDifferentialPressure)
         {
-             // Heuristic: V ~ C * dP
-             // For now return typical target 750 ft/min = 12.5 ft/s
-             return PlungerLiftConstants.RiseVelocityDefault; 
+            if (avgDifferentialPressure <= 0)
+                return PlungerLiftConstants.RiseVelocityDefault;
+
+            // Assume average gas density ~ 2 lb/ft³ (typical wellbore gas)
+            const decimal rhoGas = 2.0m;
+            double dP = (double)avgDifferentialPressure;
+            double vFtPerMin = 100.0 * Math.Sqrt(dP / 2.0);
+            double vFtPerSec = vFtPerMin / 60.0;
+
+            // Clamp to realistic range: 5–20 ft/s (300–1200 ft/min)
+            return (decimal)Math.Max(5.0, Math.Min(20.0, vFtPerSec));
         }
 
         // 4. Gas Required Per Cycle
-        // V (scf) = Volume of Tubing * (P_avg / P_std) * (T_std / T_avg) * (1/Z) ... roughly
-        // Often approximations used per bbl lifted.
-        // Rule of thumb: 400 scf per bbl per 1000 ft?
+        // V_gas (scf) = tubing_volume × (P_avg / P_std) × (T_std / T_avg)
+        // where P_avg ≈ casing_pressure, T_avg ≈ 520 °R, P_std = 14.7 psia
+        // Tubing volume = π/4 × D² × depth / 144 (ft³)
+        // Plus 10% for gas slippage past plunger.
+        // Falls back to rule-of-thumb 400 scf/bbl/1000 ft when pressure unknown.
         public static decimal EstimateGasRequired(decimal depth, decimal liquidLoadBbl, decimal pressure)
         {
-             // Simple GLR rule of thumb based on depth and pressure
-             // GLR_req (scf/bbl) approx 400 * (Depth/1000)
-             decimal glr = 400m * (depth / 1000m);
-             return glr * liquidLoadBbl;
+            // Physical calculation: gas needed = tubing volume at average pressure
+            // Tubing ID typically 2.441 inches (2-3/8" tubing), cross-section = π/4 × D²
+            const decimal tubingIdInches = 2.441m;
+            const decimal pStd = 14.7m;   // psia
+            const decimal tStd = 520m;     // °R (60 °F)
+            const decimal tAvg = 560m;     // °R (100 °F — typical wellbore average)
+            const decimal slipFactor = 1.10m; // +10% for gas slippage past plunger
+
+            decimal tubingAreaFt2 = (decimal)(Math.PI / 4.0) * tubingIdInches * tubingIdInches / 144m;
+            decimal tubingVolumeFt3 = tubingAreaFt2 * depth;
+            decimal pAvg = pressure > 0 ? (pressure + 14.7m) / 2m : 100m; // average casing + atmosphere
+            decimal gasAtPressure = tubingVolumeFt3 * (pAvg / pStd) * (tStd / tAvg);
+            decimal gasRequired = gasAtPressure * slipFactor;
+
+            // Fallback to rule-of-thumb if pressure is unknown or result seems unreasonable
+            if (pressure <= 0 || gasRequired < 100)
+            {
+                decimal glr = 400m * (depth / 1000m);
+                return glr * liquidLoadBbl;
+            }
+
+            return gasRequired;
         }
     }
 }

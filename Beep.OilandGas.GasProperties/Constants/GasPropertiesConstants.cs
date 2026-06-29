@@ -30,9 +30,20 @@ namespace Beep.OilandGas.GasProperties.Constants
         /// </summary>
         public const decimal PsiaToAtm = 0.068046m;
 
+        /// <summary>Absolute zero in degrees Fahrenheit (0 °R = -459.67 °F).</summary>
+        public const decimal AbsoluteZeroFahrenheit = -459.67m;
+
         /// <summary>
-        /// Conversion factor: Rankine to Fahrenheit.
+        /// Converts a temperature from Rankine to Fahrenheit.
+        /// T(°F) = T(°R) - 459.67
         /// </summary>
+        public static decimal RankineToFahrenheitMethod(decimal rankine) => rankine + AbsoluteZeroFahrenheit;
+
+        /// <summary>
+        /// [Obsolete] Use <see cref="AbsoluteZeroFahrenheit"/> or <see cref="RankineToFahrenheitMethod"/> instead.
+        /// This constant name is misleading — it represents an offset, not a multiplicative conversion factor.
+        /// </summary>
+        [Obsolete("Use AbsoluteZeroFahrenheit or RankineToFahrenheitMethod(decimal) instead.")]
         public const decimal RankineToFahrenheit = -459.67m;
 
         /// <summary>

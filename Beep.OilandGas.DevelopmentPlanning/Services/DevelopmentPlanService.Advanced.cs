@@ -823,9 +823,9 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
 
         private int DeterminePhaseCount(double reserves)
         {
-            if (reserves > 1000) return 4;
-            if (reserves > 500) return 3;
-            if (reserves > 100) return 2;
+            if (reserves > DevelopmentPlanningDefaults.LargeReservesThresholdMmboe) return 4;
+            if (reserves > DevelopmentPlanningDefaults.MediumReservesThresholdMmboe) return 3;
+            if (reserves > DevelopmentPlanningDefaults.SmallReservesThresholdMmboe) return 2;
             return 1;
         }
 
@@ -982,7 +982,9 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
         {
             return new PipelineSpecification
             {
-                Diameter = production > 100000 ? 16 : 12,
+                Diameter = production > DevelopmentPlanningDefaults.LargeFacilityThresholdBblPerDay
+                    ? DevelopmentPlanningDefaults.LargeFacilityPipeDiameterInches
+                    : DevelopmentPlanningDefaults.StandardFacilityPipeDiameterInches,
                 Length = distance,
                 Pressure = type.Contains("Gas") ? 600 : 200,
                 Material = "Carbon Steel",
@@ -1125,7 +1127,9 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
 
         private double EstimateGHGEmissions(EnvironmentalImpactAssessmentResult assessment)
         {
-            return 10000;  // Typical emission level in tCO2e
+            // TODO: Calculate from equipment list, flaring volumes, and fuel gas consumption.
+            // Currently returns screening-level default per DevelopmentPlanningDefaults.
+            return DevelopmentPlanningDefaults.DefaultGHGEmissionsTCO2e;
         }
 
         private List<string> DevelopMitigationMeasures(EnvironmentalImpactAssessmentResult assessment)
@@ -1153,7 +1157,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
 
         private double CalculateMitigationCost(List<string> measures)
         {
-            return measures.Count * 2.5;  // $2.5M per measure
+            return measures.Count * DevelopmentPlanningDefaults.MitigationCostPerMeasureMillion;
         }
 
         private List<RiskItem> IdentifyTechnicalRisks()

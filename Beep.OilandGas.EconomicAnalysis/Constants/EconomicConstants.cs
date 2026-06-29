@@ -59,6 +59,19 @@ namespace Beep.OilandGas.EconomicAnalysis.Constants
         /// Epsilon for floating point comparisons.
         /// </summary>
         public const double Epsilon = 1e-10;
+
+        // ── Real Options Valuation Defaults ────────────────────────────────────
+        // TODO: Replace with Black-Scholes or binomial lattice models.
+        // These simplified percentages are screening-level placeholders.
+
+        /// <summary>Expansion option value as fraction of base NPV (screening default).</summary>
+        public const double ExpansionOptionFraction = 0.20;
+
+        /// <summary>Abandonment option value as fraction of base NPV (screening default).</summary>
+        public const double AbandonmentOptionFraction = 0.15;
+
+        /// <summary>Switching option value as fraction of base NPV (screening default).</summary>
+        public const double SwitchingOptionFraction = 0.10;
     }
 }
 

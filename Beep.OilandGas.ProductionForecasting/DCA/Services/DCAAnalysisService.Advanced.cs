@@ -736,7 +736,7 @@ namespace Beep.OilandGas.DCA.Services
                 historicalData[0], 0.1);
 
             // Add random variation to parameters (Monte Carlo)
-            var rnd = new Random();
+            var rnd = Random.Shared;
             double qiVariation = fit.Parameters[0] * (0.9 + 0.2 * rnd.NextDouble());
             double diVariation = fit.Parameters[1] * (0.8 + 0.4 * rnd.NextDouble());
             double bVariation = fit.Parameters.Length > 2 ? fit.Parameters[2] : 1.0;

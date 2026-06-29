@@ -148,7 +148,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                 var userId = GetUserIdFromRequest() ?? "SYSTEM";
 
                 var createdEntity = await repository.InsertAsync(entity, userId);
-                var recordId = GetRecordId(createdEntity, repository);
+                var recordId = await GetRecordIdAsync(createdEntity, repository);
                 return CreatedAtAction(nameof(GetTableRecord), new { tableName, id = recordId }, createdEntity);
             }
             catch (Exception ex)
@@ -722,13 +722,13 @@ namespace Beep.OilandGas.ApiService.Controllers
         }
 
         /// <summary>
-        /// Gets the record ID from an entity object
+        /// Gets the record ID from an entity object using metadata
         /// </summary>
-        private string? GetRecordId(object entity, PPDMGenericRepository repository)
+        private async Task<string?> GetRecordIdAsync(object entity, PPDMGenericRepository repository)
         {
             try
             {
-                var tableMetadata = _metadata.GetTableMetadataAsync(repository.TableName).GetAwaiter().GetResult();
+                var tableMetadata = await _metadata.GetTableMetadataAsync(repository.TableName);
                 if (tableMetadata?.PrimaryKeyColumn == null)
                     return null;
 
@@ -764,15 +764,11 @@ namespace Beep.OilandGas.ApiService.Controllers
         }
 
         /// <summary>
-        /// Gets user ID from request headers or claims
+        /// Gets user ID from validated JWT claims only. Never trusts request headers.
         /// </summary>
         private string? GetUserIdFromRequest()
         {
-            // Try to get from header
-            if (Request.Headers.TryGetValue("X-User-Id", out var userIdHeader))
-                return userIdHeader.ToString();
-
-            // Try to get from user claims (if authentication is enabled)
+            // Only extract user ID from validated JWT claims — never from request headers.
             if (User?.Identity?.IsAuthenticated == true)
             {
                 return User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ??

@@ -92,10 +92,13 @@ namespace Beep.OilandGas.UserManagement.Services
             return user;
         }
 
-        public async Task<bool> UpdateAsync(USER user)
+        public async Task<bool> UpdateAsync(USER user, string userId)
         {
+            if (user == null) throw new ArgumentNullException(nameof(user));
+            if (string.IsNullOrEmpty(userId)) throw new ArgumentException("User ID is required for audit.", nameof(userId));
+
             var repo = GetRepo<USER>("USER");
-            await repo.InsertAsync(user, "system");
+            await repo.UpdateAsync(user, userId);
             return true;
         }
 

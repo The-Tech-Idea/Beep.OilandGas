@@ -125,7 +125,7 @@ namespace Beep.OilandGas.HeatMap.Performance
             // If we still have too many points, randomly sample
             if (sampled.Count > targetCount)
             {
-                var random = new Random();
+                var random = Random.Shared;
                 sampled = sampled.OrderBy(x => random.Next()).Take(targetCount).ToList();
             }
 

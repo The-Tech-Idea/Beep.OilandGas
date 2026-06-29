@@ -173,7 +173,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             {
                 var metrics = await _qualityService.CalculateTableQualityMetricsAsync(tableName);
                 var currentDate = fromDate.Date;
-                var random = new Random();
+                var random = Random.Shared;
 
                 while (currentDate <= toDate.Date)
                 {

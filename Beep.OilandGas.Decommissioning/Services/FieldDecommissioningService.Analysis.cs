@@ -122,7 +122,7 @@ namespace Beep.OilandGas.Decommissioning.Services
                 result.WellheadRemovalPercentage   = result.WellheadRemovalCost / total * 100;
                 result.SiteRestorationPercentage   = result.SiteRestorationCost / total * 100;
 
-                result.ContingencyAmount           = result.TotalEstimatedCost * 0.20;
+                result.ContingencyAmount           = result.TotalEstimatedCost * (double)DecommissioningCostDefaults.ContingencyPercent;
                 result.TotalWithContingency        = result.TotalEstimatedCost + result.ContingencyAmount;
 
                 _logger?.LogInformation(
@@ -364,12 +364,17 @@ namespace Beep.OilandGas.Decommissioning.Services
 
         private double CalculateWellPluggingCost(double depth, string wellType)
         {
-            double baseRate = wellType?.ToUpperInvariant() == "GAS" ? 180 : 150; // $USD per foot
+            bool isDeep = depth > (double)DecommissioningCostDefaults.DeepWellDepthThreshold;
+            double baseRate = wellType?.ToUpperInvariant() == "GAS" || isDeep
+                ? (double)DecommissioningCostDefaults.PluggingCostPerFootDeep
+                : (double)DecommissioningCostDefaults.PluggingCostPerFoot;
             return depth * baseRate;
         }
 
         private double CalculateWellheadRemovalCost(string wellType)
-            => wellType?.ToUpperInvariant() == "OFFSHORE" ? 250_000 : 35_000;
+            => wellType?.ToUpperInvariant() == "OFFSHORE"
+                ? (double)DecommissioningCostDefaults.WellheadRemovalOffshore
+                : (double)DecommissioningCostDefaults.WellheadRemovalOnshore;
 
         private double CalculateSiteRestorationCost(string location, double depth)
         {

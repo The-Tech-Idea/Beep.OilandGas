@@ -248,7 +248,6 @@ namespace Beep.OilandGas.DataManager.Core.Registry
             modules["DataManagement"] = new DataManagementModuleData();
             modules["ChokeAnalysis"] = new ChokeAnalysisModuleData();
             modules["CompressorAnalysis"] = new CompressorAnalysisModuleData();
-            modules["PipelineAnalysis"] = new PipelineAnalysisModuleData();
             modules["PlungerLift"] = new PlungerLiftModuleData();
             modules["SuckerRodPumping"] = new SuckerRodPumpingModuleData();
             modules["HydraulicPumps"] = new HydraulicPumpsModuleData();
@@ -257,7 +256,9 @@ namespace Beep.OilandGas.DataManager.Core.Registry
             modules["OilProperties"] = new OilPropertiesModuleData();
             modules["DCA"] = new DCAModuleData();
             modules["PumpPerformance"] = new PumpPerformanceModuleData();
-            modules["ProductionForecasting"] = new ProductionForecastingModuleData();
+
+            // NOTE: PipelineAnalysis and ProductionForecasting already registered
+            // in the main block above — duplicates removed to prevent silent overwrite.
 
             return modules;
         }

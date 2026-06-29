@@ -1,0 +1,74 @@
+# Beep.OilandGas — EditorConfig
+# https://docs.microsoft.com/en-us/visualstudio/ide/create-portable-custom-editor-options
+
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+end_of_line = crlf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.cs]
+# Naming conventions
+dotnet_naming_rule.interface_should_be_prefixed_with_i.severity = warning
+dotnet_naming_rule.interface_should_be_prefixed_with_i.symbols = interface_types
+dotnet_naming_rule.interface_should_be_prefixed_with_i.style = i_prefix
+
+dotnet_naming_symbols.interface_types.applicable_kinds = interface
+dotnet_naming_symbols.interface_types.applicable_accessibilities = public, internal, protected
+dotnet_naming_style.i_prefix.capitalization = pascal_case
+dotnet_naming_style.i_prefix.required_prefix = I
+
+# Async methods should end with Async
+dotnet_naming_rule.async_methods_end_with_async.severity = suggestion
+dotnet_naming_rule.async_methods_end_with_async.symbols = async_methods
+dotnet_naming_rule.async_methods_end_with_async.style = async_suffix
+dotnet_naming_symbols.async_methods.applicable_kinds = method
+dotnet_naming_style.async_suffix.capitalization = pascal_case
+dotnet_naming_style.async_suffix.required_suffix = Async
+
+# Code style
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_constructors = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = when_on_single_line:suggestion
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_prefer_switch_expression = true:suggestion
+csharp_style_throw_expression = true:suggestion
+csharp_style_prefer_null_check_over_type_check = true:suggestion
+
+# Prefer modern language features
+csharp_style_prefer_extended_property_pattern = true:suggestion
+csharp_style_prefer_pattern_matching = true:suggestion
+
+# Nullable
+dotnet_diagnostic.CS8618.severity = suggestion
+dotnet_diagnostic.CS8602.severity = warning
+dotnet_diagnostic.CS8603.severity = warning
+
+# Unused variables (suppress for ModelEntityBase pattern)
+dotnet_diagnostic.CS0169.severity = suggestion
+
+# Async without await
+dotnet_diagnostic.CS1998.severity = warning
+
+# XML documentation (suggestion for public APIs)
+dotnet_diagnostic.CS1591.severity = suggestion
+
+[*.razor]
+indent_style = space
+indent_size = 4
+
+[*.json]
+indent_style = space
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.sln]
+indent_style = tab

@@ -6,6 +6,15 @@ using Beep.OilandGas.Properties.Calculations;
 
 namespace Beep.OilandGas.Properties.Services
 {
+    /// <summary>
+    /// Standalone (non-PPDM) oil properties service using screening-level correlations.
+    /// For rigorous black-oil PVT with PPDM persistence, use
+    /// <see cref="Beep.OilandGas.OilProperties.Services.OilPropertiesService"/> instead.
+    ///
+    /// Methods use simplified Wilson K-value flash, Standing/Beggs-Robinson correlations,
+    /// and estimated critical properties. Results are suitable for screening and
+    /// preliminary analysis only.
+    /// </summary>
     public class OilPropertiesService : IOilPropertiesService
     {
         public OilPropertiesService()

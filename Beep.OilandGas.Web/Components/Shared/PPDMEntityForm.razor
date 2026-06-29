@@ -336,48 +336,8 @@
     }
     
     private void SetPropertyValue(object obj, string propertyName, object? value)
-    {
-        if (obj == null) return;
-        
-        if (obj is Dictionary<string, object> dict)
-        {
-            dict[propertyName] = value ?? string.Empty;
-            return;
-        }
-        
-        var prop = obj.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-        if (prop != null && prop.CanWrite)
-        {
-            // Type conversion
-            if (value != null && value.GetType() != prop.PropertyType)
-            {
-                var convertedValue = ConvertValue(value, prop.PropertyType);
-                prop.SetValue(obj, convertedValue);
-            }
-            else
-            {
-                prop.SetValue(obj, value);
-            }
-        }
-    }
-    
+        => Services.ValueConverter.SetPropertyValue(obj, propertyName, value);
+
     private object? ConvertValue(object value, Type targetType)
-    {
-        var underlyingType = Nullable.GetUnderlyingType(targetType) ?? targetType;
-        
-        if (value.GetType() == underlyingType)
-            return value;
-        
-        if (underlyingType == typeof(string))
-            return value.ToString();
-        
-        try
-        {
-            return Convert.ChangeType(value, underlyingType);
-        }
-        catch
-        {
-            return value;
-        }
-    }
+        => Services.ValueConverter.ConvertValue(value, targetType);
 }

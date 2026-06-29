@@ -65,7 +65,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.DummyData
         /// </summary>
         /// <param name="seedOption">minimal | standard | full</param>
         /// <param name="userId">Audit user ID written to common columns.</param>
-        public async Task<DummyDataResult> GenerateAsync(string seedOption, string userId = "SYSTEM")
+        /// <param name="ct">Cancellation token forwarded to inner operations.</param>
+        public async Task<DummyDataResult> GenerateAsync(string seedOption, string userId = "SYSTEM", CancellationToken ct = default)
         {
             ApplyScale(seedOption);
 
@@ -76,30 +77,36 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.DummyData
                 _logger?.LogInformation("[DummyDataGenerator] Starting {Option} seed for {Connection}", seedOption, _connectionName);
 
                 // ── 1. Fields ────────────────────────────────────────────────────
+                ct.ThrowIfCancellationRequested();
                 await GenerateFieldsAsync(userId);
                 result.FieldsCreated = SeededFieldIds.Count;
 
                 // ── 2. Wells ─────────────────────────────────────────────────────
+                ct.ThrowIfCancellationRequested();
                 await GenerateWellsAsync(userId);
                 result.WellsCreated = SeededUwis.Count;
 
                 // ── 3. Production volumes (PDEN_VOL_SUMMARY) ──────────────────
+                ct.ThrowIfCancellationRequested();
                 var prodRecords = await GenerateProductionAsync(userId);
                 result.ProductionRecords = prodRecords;
 
                 // ── 4. Facilities ────────────────────────────────────────────────
+                ct.ThrowIfCancellationRequested();
                 if (_includeFacilities)
                 {
                     result.FacilitiesCreated = await GenerateFacilitiesAsync(userId);
                 }
 
                 // ── 5. Well tests ────────────────────────────────────────────────
+                ct.ThrowIfCancellationRequested();
                 if (_includeWellTests)
                 {
                     result.WellTestsCreated = await GenerateWellTestsAsync(userId);
                 }
 
                 // ── 6. Activities ────────────────────────────────────────────────
+                ct.ThrowIfCancellationRequested();
                 if (_includeActivities)
                 {
                     result.ActivitiesCreated = await GenerateActivitiesAsync(userId);

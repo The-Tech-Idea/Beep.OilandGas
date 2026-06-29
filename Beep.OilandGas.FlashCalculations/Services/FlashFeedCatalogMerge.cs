@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Beep.OilandGas.Models.Constants;
 using Beep.OilandGas.Models.Data.FlashCalculations;
 
 namespace Beep.OilandGas.FlashCalculations.Services
@@ -12,6 +13,33 @@ namespace Beep.OilandGas.FlashCalculations.Services
     /// </summary>
     public static class FlashFeedCatalogMerge
     {
+        /// <summary>
+        /// Enriches a FLASH_COMPONENT with standard critical properties from the
+        /// <see cref="ComponentDatabase"/> when Tc, Pc, ω, or MW are missing (≤ 0).
+        /// Returns the same component for method chaining.
+        /// </summary>
+        public static FLASH_COMPONENT EnrichFromDatabase(FLASH_COMPONENT component)
+        {
+            if (component == null) throw new ArgumentNullException(nameof(component));
+
+            if (ComponentDatabase.TryGet(component.COMPONENT_NAME ?? component.NAME ?? string.Empty, out var std))
+            {
+                if (component.CRITICAL_TEMPERATURE <= 0) component.CRITICAL_TEMPERATURE = std.CriticalTemperature;
+                if (component.CRITICAL_PRESSURE <= 0)    component.CRITICAL_PRESSURE = std.CriticalPressure;
+                if (component.ACENTRIC_FACTOR == 0)       component.ACENTRIC_FACTOR = std.AcentricFactor;
+                if (component.MOLECULAR_WEIGHT <= 0)      component.MOLECULAR_WEIGHT = std.MolecularWeight;
+            }
+            return component;
+        }
+
+        /// <summary>
+        /// Enriches all components in a list from the <see cref="ComponentDatabase"/>.
+        /// </summary>
+        public static List<FLASH_COMPONENT> EnrichAllFromDatabase(IEnumerable<FLASH_COMPONENT> components)
+        {
+            return components.Select(EnrichFromDatabase).ToList();
+        }
+
         /// <summary>
         /// Maps liquid-phase mole fractions to feed components, copying critical data from <paramref name="catalog"/>
         /// when <see cref="FlashComponentFraction.ComponentName"/> matches <see cref="FLASH_COMPONENT.NAME"/>

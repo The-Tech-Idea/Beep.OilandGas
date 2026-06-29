@@ -179,16 +179,12 @@
             WriteIndented = true
         });
 
-        // Create a blob and download
+        // Create a blob and download using secure JS interop
         var bytes = System.Text.Encoding.UTF8.GetBytes(json);
         var base64 = Convert.ToBase64String(bytes);
-        
-        await JS.InvokeVoidAsync("eval", $@"
-            var link = document.createElement('a');
-            link.download = 'PersonalData.json';
-            link.href = 'data:application/json;base64,{base64}';
-            link.click();
-        ");
+        var dataUrl = $"data:application/json;base64,{base64}";
+
+        await JS.InvokeVoidAsync("downloadFile", "PersonalData.json", dataUrl);
         
         Snackbar.Add("Personal data saved as JSON.", Severity.Success);
     }

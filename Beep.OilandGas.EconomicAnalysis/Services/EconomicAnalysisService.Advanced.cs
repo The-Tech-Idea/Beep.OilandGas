@@ -46,7 +46,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                     IRRDistribution = new List<double>()
                 };
 
-                var random = new Random();
+                var random = Random.Shared;
                 var baseNPV = CalculateNPV(baseCashFlows, discountRate);
 
                 for (int i = 0; i < simulationCount; i++)
@@ -631,19 +631,21 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
             return Math.Sqrt(variance);
         }
 
+        // TODO: Replace screening-level estimates with Black-Scholes or binomial lattice models.
+        // See: Trigeorgis, L. (1996) "Real Options", MIT Press.
         private double CalculateExpansionOptionValue(double baseNPV, double volatility, int projectLife, double discountRate)
         {
-            return baseNPV * 0.20;  // Simplified: 20% of base NPV
+            return baseNPV * EconomicConstants.ExpansionOptionFraction;
         }
 
         private double CalculateAbandonmentOptionValue(double baseNPV, double volatility, int projectLife, double discountRate)
         {
-            return baseNPV * 0.15;  // Simplified: 15% of base NPV
+            return baseNPV * EconomicConstants.AbandonmentOptionFraction;
         }
 
-         private double CalculateSwitchingOptionValue(double baseNPV, double volatility, int projectLife, double discountRate)
-         {
-             return baseNPV * 0.10;  // Simplified: 10% of base NPV
-         }
+        private double CalculateSwitchingOptionValue(double baseNPV, double volatility, int projectLife, double discountRate)
+        {
+            return baseNPV * EconomicConstants.SwitchingOptionFraction;
+        }
      }
 }

@@ -26,13 +26,11 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                     results.AnalysisId = _defaults.FormatIdForTable("PIPELINE_ANALYSIS", Guid.NewGuid().ToString());
                 }
 
-                // In a real implementation, use PPDMGenericRepository to persist results
-                // var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                //     typeof(PIPELINE_ANALYSIS_RESULT), _connectionName, "PIPELINE_ANALYSIS_RESULT");
-                // await repo.InsertAsync(...);
+                var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(PIPELINE_ANALYSIS_RESULT), _connectionName, "PIPELINE_ANALYSIS_RESULT");
+                await repo.InsertAsync(results, userId);
 
                 _logger?.LogInformation("Analysis results saved successfully: {AnalysisId}", results.AnalysisId);
-                await Task.CompletedTask;
             }
             catch (Exception ex)
             {
@@ -51,38 +49,35 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
 
             try
             {
-                var history = new List<PipelineAnalysisResult>();
+                var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(PIPELINE_ANALYSIS_RESULT), _connectionName, "PIPELINE_ANALYSIS_RESULT");
 
-                // In a real implementation, query from database with date range filter
-                // var repo = new PPDMGenericRepository(...);
-                // var filters = new List<AppFilter>
-                // {
-                //     new() { FieldName = "PIPELINE_ID", Operator = "=", FilterValue = pipelineId },
-                //     new() { FieldName = "ANALYSIS_DATE", Operator = ">=", FilterValue = startDate.ToString() },
-                //     new() { FieldName = "ANALYSIS_DATE", Operator = "<=", FilterValue = endDate.ToString() }
-                // };
-                // var results = await repo.GetAsync(filters);
-
-                // Generate sample history for demonstration
-                for (int i = 0; i < 3; i++)
+                var filters = new List<AppFilter>
                 {
-                    history.Add(new PipelineAnalysisResult
+                    new() { FieldName = "PIPELINE_ID", Operator = "=", FilterValue = pipelineId },
+                    new() { FieldName = "ANALYSIS_DATE", Operator = ">=", FilterValue = startDate.ToString("yyyy-MM-dd") },
+                    new() { FieldName = "ANALYSIS_DATE", Operator = "<=", FilterValue = endDate.ToString("yyyy-MM-dd") },
+                    new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+                };
+
+                var entities = await repo.GetAsync(filters);
+                var history = entities.Cast<PIPELINE_ANALYSIS_RESULT>()
+                    .Select(e => new PipelineAnalysisResult
                     {
-                        AnalysisId = _defaults.FormatIdForTable("PIPELINE_ANALYSIS", $"PA-{i:000}"),
-                        PipelineId = pipelineId,
-                        AnalysisDate = startDate.AddDays(i * 5),
-                        FlowRate = 950m + (i * 25m),
-                        InletPressure = 1950m - (i * 50m),
-                        OutletPressure = 1450m - (i * 50m),
-                        PressureDrop = 500m,
-                        Velocity = 8m + (i * 0.5m),
-                        FlowRegime = "Turbulent",
-                        Status = "Analyzed"
-                    });
-                }
+                        AnalysisId = e.ANALYSIS_ID,
+                        PipelineId = e.PIPELINE_ID,
+                        AnalysisDate = e.ANALYSIS_DATE.GetValueOrDefault(),
+                        FlowRate = e.FLOW_RATE.GetValueOrDefault(),
+                        InletPressure = e.INLET_PRESSURE.GetValueOrDefault(),
+                        OutletPressure = e.OUTLET_PRESSURE.GetValueOrDefault(),
+                        PressureDrop = e.PRESSURE_DROP.GetValueOrDefault(),
+                        Velocity = e.VELOCITY.GetValueOrDefault(),
+                        FlowRegime = e.FLOW_REGIME,
+                        Status = e.ANALYSIS_STATUS
+                    }).ToList();
 
                 _logger?.LogInformation("Analysis history retrieved: {Count} records found", history.Count);
-                return await Task.FromResult(history);
+                return history;
             }
             catch (Exception ex)
             {
@@ -102,17 +97,30 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
 
             try
             {
-                // In a real implementation, use PPDMGenericRepository to update the configuration
-                // var repo = new PPDMGenericRepository(...);
-                // var filter = new List<AppFilter>
-                // {
-                //     new() { FieldName = "PIPELINE_ID", Operator = "=", FilterValue = config.PipelineId }
-                // };
-                // var entity = await repo.GetAsync(filter);
-                // await repo.UpdateAsync(entity, userId);
+                var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(PIPELINE), _connectionName, "PIPELINE");
+
+                var filter = new List<AppFilter>
+                {
+                    new() { FieldName = "PIPELINE_ID", Operator = "=", FilterValue = config.PipelineId }
+                };
+                var entities = await repo.GetAsync(filter);
+                var entity = entities.Cast<PIPELINE>().FirstOrDefault();
+
+                if (entity != null)
+                {
+                    entity.DIAMETER = config.Diameter;
+                    entity.WALL_THICKNESS = config.WallThickness;
+                    entity.LENGTH = config.Length;
+                    entity.MATERIAL = config.Material;
+                    entity.DESIGN_PRESSURE = config.DesignPressure;
+                    entity.DESIGN_TEMPERATURE = config.DesignTemperature;
+                    entity.LAST_INSPECTION_DATE = config.LastInspectionDate;
+                    entity.MAX_ALLOWABLE_WORKING_PRESSURE = config.MaxAllowableWorkingPressure;
+                    await repo.UpdateAsync(entity, userId);
+                }
 
                 _logger?.LogInformation("Pipeline configuration updated successfully for {PipelineId}", config.PipelineId);
-                await Task.CompletedTask;
             }
             catch (Exception ex)
             {
@@ -130,30 +138,38 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
 
             try
             {
-                // In a real implementation, query from database
-                // var repo = new PPDMGenericRepository(...);
-                // var filter = new List<AppFilter>
-                // {
-                //     new() { FieldName = "PIPELINE_ID", Operator = "=", FilterValue = pipelineId }
-                // };
-                // return await repo.GetAsync(filter);
+                var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(PIPELINE), _connectionName, "PIPELINE");
 
-                // Return sample configuration for demonstration
+                var filter = new List<AppFilter>
+                {
+                    new() { FieldName = "PIPELINE_ID", Operator = "=", FilterValue = pipelineId },
+                    new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+                };
+                var entities = await repo.GetAsync(filter);
+                var entity = entities.Cast<PIPELINE>().FirstOrDefault();
+
+                if (entity == null)
+                {
+                    _logger?.LogInformation("No pipeline configuration found for {PipelineId}", pipelineId);
+                    return null;
+                }
+
                 var config = new PipelineConfiguration
                 {
-                    PipelineId = pipelineId,
-                    Diameter = 6m,
-                    WallThickness = 0.375m,
-                    Length = 100m,
-                    Material = "Carbon Steel",
-                    DesignPressure = 2000m,
-                    DesignTemperature = 250m,
-                    LastInspectionDate = DateTime.UtcNow.AddMonths(-6),
-                    MaxAllowableWorkingPressure = 1500m
+                    PipelineId = entity.PIPELINE_ID,
+                    Diameter = entity.DIAMETER.GetValueOrDefault(),
+                    WallThickness = entity.WALL_THICKNESS.GetValueOrDefault(),
+                    Length = entity.LENGTH.GetValueOrDefault(),
+                    Material = entity.MATERIAL,
+                    DesignPressure = entity.DESIGN_PRESSURE.GetValueOrDefault(),
+                    DesignTemperature = entity.DESIGN_TEMPERATURE.GetValueOrDefault(),
+                    LastInspectionDate = entity.LAST_INSPECTION_DATE.GetValueOrDefault(),
+                    MaxAllowableWorkingPressure = entity.MAX_ALLOWABLE_WORKING_PRESSURE.GetValueOrDefault()
                 };
 
                 _logger?.LogInformation("Pipeline configuration retrieved for {PipelineId}", pipelineId);
-                return await Task.FromResult(config);
+                return config;
             }
             catch (Exception ex)
             {

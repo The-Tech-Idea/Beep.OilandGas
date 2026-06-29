@@ -102,19 +102,26 @@ namespace Beep.OilandGas.UserManagement.Services
 
                 var filters = new List<string>();
 
+                // Sanitize each scope value by escaping single quotes to prevent SQL injection.
+                // Long-term fix: convert to AppFilter parameterized queries.
+                static string Sanitize(string value) => value.Replace("'", "''");
+
                 if (fieldScopes.Any())
                 {
-                    filters.Add($"FIELD_ID IN ({string.Join(",", fieldScopes.Select(f => $"'{f}'"))})");
+                    var sanitized = string.Join(",", fieldScopes.Select(f => $"'{Sanitize(f)}'"));
+                    filters.Add($"FIELD_ID IN ({sanitized})");
                 }
 
                 if (orgScopes.Any())
                 {
-                    filters.Add($"ORGANIZATION_ID IN ({string.Join(",", orgScopes.Select(o => $"'{o}'"))})");
+                    var sanitized = string.Join(",", orgScopes.Select(o => $"'{Sanitize(o)}'"));
+                    filters.Add($"ORGANIZATION_ID IN ({sanitized})");
                 }
 
                 if (assetScopes.Any())
                 {
-                    filters.Add($"ASSET_ID IN ({string.Join(",", assetScopes.Select(a => $"'{a}'"))})");
+                    var sanitized = string.Join(",", assetScopes.Select(a => $"'{Sanitize(a)}'"));
+                    filters.Add($"ASSET_ID IN ({sanitized})");
                 }
 
                 return new RowFilterResult

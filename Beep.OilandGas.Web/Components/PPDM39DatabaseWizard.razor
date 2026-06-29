@@ -741,6 +741,8 @@
 
     private async void HandleScriptProgressUpdate(ProgressUpdate progress)
     {
+        try
+        {
         if (progress.OperationId != _scriptExecutionOperationId)
             return;
 
@@ -769,6 +771,10 @@
                 _scriptExecutionProgress = null;
                 await InvokeAsync(StateHasChanged);
             }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Script progress error: {ex.Message}", Severity.Error);
         }
     }
 

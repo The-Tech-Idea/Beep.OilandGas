@@ -1092,10 +1092,35 @@ namespace Beep.OilandGas.PlungerLift.Services
 
         #region Helper Methods
 
+        /// <summary>
+        /// Calculates optimal plunger lift cycle time based on depth and reservoir pressure.
+        ///
+        /// Plunger fall velocity ≈ 1000 ft/min in gas, 150 ft/min in liquid (typical).
+        /// Rise velocity ≈ 750 ft/min (carrying liquid slug).
+        /// Pressure build-up time ∝ 1/reservoir_pressure (lower pressure needs more time).
+        ///
+        /// Cycle time = fall_time + rise_time + pressure_build_up
+        /// Min: 5 min, Max: 60 min (per PlungerLiftConstants).
+        /// </summary>
         private int CalculateOptimalCycleTime(decimal pressure, decimal depth)
         {
-            var baseCycleTime = 25;
-            return baseCycleTime;
+            const int fallVelocityFtPerMin = 1000;
+            const int riseVelocityFtPerMin = 750;
+            const int baseBuildUpMin = 15;
+
+            double depthFt = (double)depth;
+            double fallTimeMin = depthFt / fallVelocityFtPerMin;
+            double riseTimeMin = depthFt / riseVelocityFtPerMin;
+
+            // Pressure build-up: lower pressure needs more time
+            // At 2000 psi → ~5 min, at 200 psi → ~25 min
+            double pressurePsi = (double)pressure;
+            double buildUpMin = pressurePsi > 0
+                ? Math.Max(5.0, Math.Min(30.0, baseBuildUpMin * (1000.0 / Math.Max(pressurePsi, 100.0))))
+                : baseBuildUpMin;
+
+            double totalMin = fallTimeMin + riseTimeMin + buildUpMin;
+            return Math.Max(5, Math.Min(60, (int)Math.Round(totalMin)));
         }
 
         private int DeterminePlungerType(PLUNGER_LIFT_WELL_PROPERTIES wellProperties)

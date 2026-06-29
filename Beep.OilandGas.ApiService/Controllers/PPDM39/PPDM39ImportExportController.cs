@@ -151,7 +151,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                         // Clean up temp file
                         if (System.IO.File.Exists(tempFilePath))
                         {
-                            try { System.IO.File.Delete(tempFilePath); } catch { }
+                            try { System.IO.File.Delete(tempFilePath); } catch (Exception ex) { _logger.LogWarning(ex, "Failed to clean up temp file: {Path}", tempFilePath); }
                         }
                         
                         _progressTracking?.CompleteOperation(operationId!, false, errorMessage: "Import failed. See server logs for details.");

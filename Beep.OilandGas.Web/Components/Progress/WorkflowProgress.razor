@@ -158,11 +158,14 @@
 
     private async void HandleWorkflowProgress(ProgressUpdate progress)
     {
-        // Note: For full workflow progress details, we may need to poll the API
-        // or extend SignalR to send WorkflowProgress objects directly
-        // For now, this component will display progress based on the WorkflowProgress state
-        // which should be set via API calls or extended SignalR handlers
-        await InvokeAsync(StateHasChanged);
+        try
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            // async void handler — prevent circuit crash
+        }
     }
 
     private Color GetWorkflowColor(WorkflowStatus status)

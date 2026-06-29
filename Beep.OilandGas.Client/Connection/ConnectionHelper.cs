@@ -20,7 +20,7 @@ namespace Beep.OilandGas.Client.Connection
             return explicitConnection
                 ?? contextConnection
                 ?? defaultConnection
-                ?? "PPDM39";
+                ?? Beep.OilandGas.Models.Constants.ConnectionNames.PPDM39;
         }
     }
 }

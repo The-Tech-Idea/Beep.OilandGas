@@ -59,7 +59,7 @@ public class ProdmlAdapterService : IProdmlAdapter
     {
         try
         {
-            CheckCircuitBreaker();
+            await CheckCircuitBreakerAsync();
             using var client = MakeClient(prodmlEndpoint);
             var json = await client.GetStringAsync("wells");
             var doc  = JsonDocument.Parse(json);
@@ -88,7 +88,7 @@ public class ProdmlAdapterService : IProdmlAdapter
     {
         try
         {
-            CheckCircuitBreaker();
+            await CheckCircuitBreakerAsync();
 
             using var client = MakeClient(prodmlEndpoint);
             var json = await client.GetStringAsync(
@@ -131,7 +131,7 @@ public class ProdmlAdapterService : IProdmlAdapter
     {
         try
         {
-            CheckCircuitBreaker();
+            await CheckCircuitBreakerAsync();
 
             using var client = MakeClient(prodmlEndpoint);
             var json = await client.GetStringAsync(
@@ -169,9 +169,9 @@ public class ProdmlAdapterService : IProdmlAdapter
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
-    private void CheckCircuitBreaker()
+    private async Task CheckCircuitBreakerAsync()
     {
-        var s = _health.GetStatusAsync(AdapterName).GetAwaiter().GetResult();
+        var s = await _health.GetStatusAsync(AdapterName);
         if (s.State == CircuitBreakerState.Open)
             throw new IntegrationUnavailableException($"{AdapterName} circuit breaker is OPEN");
     }

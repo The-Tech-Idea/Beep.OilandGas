@@ -279,9 +279,8 @@ namespace Beep.OilandGas.LifeCycle.Services
             // Build comparison items for each well
             foreach (var well in wells)
             {
-                // Get primary key value using reflection
-                var wellId = GetPrimaryKeyValue(well);
-
+                // Get primary key value using metadata
+                var wellId = await GetPrimaryKeyValueAsync(well);
                 var item = new WellComparisonItem
                 {
                     WellIdentifier = well.UWI ?? wellId?.ToString() ?? string.Empty,
@@ -348,9 +347,8 @@ namespace Beep.OilandGas.LifeCycle.Services
             // Build comparison items for each well
             foreach (var (well, dataSource) in wells)
             {
-                // Get primary key value using reflection
-                var wellId = GetPrimaryKeyValue(well);
-
+                // Get primary key value using metadata
+                var wellId = await GetPrimaryKeyValueAsync(well);
                 var item = new WellComparisonItem
                 {
                     WellIdentifier = well.UWI ?? wellId?.ToString() ?? string.Empty,
@@ -442,25 +440,36 @@ namespace Beep.OilandGas.LifeCycle.Services
         }
 
         /// <summary>
-        /// Gets primary key value from well entity using metadata (synchronous version)
+        /// Gets primary key value from well entity using metadata.
+        /// Uses cached metadata or falls back to known WELL PK: UWI.
         /// </summary>
-        private object? GetPrimaryKeyValue(WELL well)
+        private async Task<object?> GetPrimaryKeyValueAsync(WELL well)
         {
-            var metadata = _metadata.GetTableMetadataAsync("WELL").GetAwaiter().GetResult();
-            if (metadata == null)
-                return null;
-
-            var pkColumns = metadata.PrimaryKeyColumn.Split(',').Select(c => c.Trim()).ToList();
-            if (pkColumns.Count == 0)
-                return null;
-
-            // Get first primary key column value
-            var firstPkColumn = pkColumns[0];
-            var property = typeof(WELL).GetProperty(firstPkColumn, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-            if (property != null)
+            // Known primary key for WELL is UWI (confirmed by PPDM 3.9 schema).
+            // Access via reflection for consistency with the dynamic comparison system.
+            try
             {
-                return property.GetValue(well);
+                var metadata = await _metadata.GetTableMetadataAsync("WELL").ConfigureAwait(false);
+                if (metadata == null)
+                    return typeof(WELL).GetProperty("UWI")?.GetValue(well);
+
+                var pkColumns = metadata.PrimaryKeyColumn.Split(',').Select(c => c.Trim()).ToList();
+                if (pkColumns.Count == 0)
+                    return null;
+
+                var firstPkColumn = pkColumns[0];
+                var property = typeof(WELL).GetProperty(firstPkColumn, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                if (property != null)
+                    return property.GetValue(well);
+
+                return null;
             }
+            catch
+            {
+                // Ultimate fallback: try UWI directly
+                return typeof(WELL).GetProperty("UWI")?.GetValue(well);
+            }
+        }
 
             return null;
         }

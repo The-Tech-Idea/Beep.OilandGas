@@ -1,3 +1,20 @@
+// =============================================================================
+// COMPATIBILITY LAYER — ProductionAccounting ControllerFacade (1,384 lines)
+// =============================================================================
+// This file provides backward-compatible sync-over-async wrappers for legacy
+// consumers. It uses ConcurrentDictionary in-memory caches and .GetAwaiter()
+// .GetResult() patterns that risk deadlocks under ASP.NET Core SynchronizationContext.
+//
+// MIGRATION STRATEGY (C-10):
+//   Phase 1: Identify all callers of RunSyncCompatibility() and map to async equivalents.
+//   Phase 2: Add async overloads to all public methods. Mark sync wrappers [Obsolete].
+//   Phase 3: Migrate callers one-by-one to async overloads. Remove ConcurrentDictionary
+//            caches in favor of PPDM database queries.
+//   Phase 4: Delete sync wrappers and this file once all consumers are async.
+//
+//   Target: Reduce from 1,384 lines → 0 within 3 sprints.
+// =============================================================================
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

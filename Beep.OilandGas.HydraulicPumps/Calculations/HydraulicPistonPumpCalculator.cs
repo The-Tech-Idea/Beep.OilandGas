@@ -102,7 +102,8 @@ namespace Beep.OilandGas.HydraulicPumps.Calculations
             HYDRAULIC_PISTON_PUMP_PROPERTIES pumpProperties,
             decimal productionRate)
         {
-            _ = pumpProperties; // reserved for slip / rod-volume models
+            // TODO: Use pumpProperties.SLIP_FACTOR and rod-volume model to compute actual efficiency.
+            // Currently falls back to StandardPistonPumpEfficiency (0.85) regardless of pump configuration.
             decimal efficiency = HydraulicPumpConstants.StandardPistonPumpEfficiency;
             decimal powerFluidConsumption = productionRate / efficiency;
             return Math.Max(productionRate, powerFluidConsumption);

@@ -69,31 +69,26 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
         public async Task SetFieldMappingAsync(string mappingKey, FieldMappingConfig config)
         {
-            await Task.CompletedTask; // Async signature for future database persistence
-            
             if (string.IsNullOrEmpty(mappingKey))
                 throw new ArgumentException("Mapping key cannot be null or empty", nameof(mappingKey));
-            
+
             if (config == null)
                 throw new ArgumentNullException(nameof(config));
 
-            lock (_mappingsLock)
-            {
-                config.MappingKey = mappingKey;
-                _fieldMappings[mappingKey] = config;
+            config.MappingKey = mappingKey;
+            _fieldMappings[mappingKey] = config;
 
-                // Optionally persist to database if defaults repository is available
-                if (_defaults != null && !string.IsNullOrEmpty(_connectionName))
+            // Optionally persist to database if defaults repository is available
+            if (_defaults != null && !string.IsNullOrEmpty(_connectionName))
+            {
+                try
                 {
-                    try
-                    {
-                        var json = System.Text.Json.JsonSerializer.Serialize(config);
-                        _defaults.SetDefaultValueAsync($"FIELD_MAPPING.{mappingKey}", json, _connectionName, null, "FieldMapping", "JSON", config.Description).GetAwaiter().GetResult();
-                    }
-                    catch
-                    {
-                        // Silently fail - in-memory storage will still work
-                    }
+                    var json = System.Text.Json.JsonSerializer.Serialize(config);
+                    await _defaults.SetDefaultValueAsync($"FIELD_MAPPING.{mappingKey}", json, _connectionName, null, "FieldMapping", "JSON", config.Description);
+                }
+                catch
+                {
+                    // Silently fail - in-memory storage will still work
                 }
             }
         }

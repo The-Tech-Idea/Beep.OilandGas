@@ -440,10 +440,15 @@ namespace Beep.OilandGas.HeatMap.Configuration
         public string CONFIGURATION_NAME { get; internal set; }
         public string ACTIVE_IND { get; internal set; }
 
-        // UPPERCASE aliases used by HeatMapRenderer and HeatMapInteraction
+        // UPPERCASE aliases for backward compatibility with HeatMapRenderer and HeatMapInteraction.
+        // Prefer the PascalCase properties directly. These aliases will be removed in a future version.
+        [Obsolete("Use UseInterpolation instead.")]
         public bool USE_INTERPOLATION { get => UseInterpolation; set => UseInterpolation = value; }
+        [Obsolete("Use InterpolationMethod instead.")]
         public Interpolation.InterpolationMethodType INTERPOLATION_METHOD { get => InterpolationMethod; set => InterpolationMethod = value; }
+        [Obsolete("Use InterpolationCellSize instead.")]
         public double INTERPOLATION_CELL_SIZE { get => InterpolationCellSize; set => InterpolationCellSize = value; }
+        [Obsolete("Use ShowLegend instead.")]
         public bool SHOW_LEGEND { get => ShowLegend; set => ShowLegend = value; }
 
         /// <summary>

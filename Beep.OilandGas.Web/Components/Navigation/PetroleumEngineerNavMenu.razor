@@ -76,4 +76,17 @@
             </MudMenuItem>
         </ChildContent>
     </MudMenu>
+
+    <!-- Data Operations Menu (Phase 4A/5A: BeepDM Integration) -->
+    <MudMenu Label="Data Ops" Icon="@Icons.Material.Filled.Storage" Color="Color.Secondary"
+             AnchorOrigin="Origin.BottomCenter" TransformOrigin="TransformOrigin.TopCenter">
+        <ChildContent>
+            <MudMenuItem Href="/ppdm39/data-import">
+                <MudIcon Icon="@Icons.Material.Filled.Upload" Class="mr-2" /> Data Import (CSV)
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/sync">
+                <MudIcon Icon="@Icons.Material.Filled.Sync" Class="mr-2" /> Sync Dashboard
+            </MudMenuItem>
+        </ChildContent>
+    </MudMenu>
 </MudStack>

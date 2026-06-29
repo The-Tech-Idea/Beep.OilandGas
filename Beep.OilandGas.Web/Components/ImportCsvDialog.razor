@@ -447,31 +447,7 @@
     }
 
     private object? ConvertValue(string value, Type targetType)
-    {
-        if (string.IsNullOrEmpty(value))
-        {
-            if (targetType.IsValueType && Nullable.GetUnderlyingType(targetType) == null)
-                return Activator.CreateInstance(targetType);
-            return null;
-        }
-
-        var underlyingType = Nullable.GetUnderlyingType(targetType) ?? targetType;
-
-        if (underlyingType == typeof(string))
-            return value;
-        if (underlyingType == typeof(int))
-            return int.TryParse(value, out var i) ? i : null;
-        if (underlyingType == typeof(decimal))
-            return decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var d) ? d : null;
-        if (underlyingType == typeof(double))
-            return double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var dbl) ? dbl : null;
-        if (underlyingType == typeof(DateTime))
-            return DateTime.TryParse(value, out var dt) ? dt : null;
-        if (underlyingType == typeof(bool))
-            return bool.TryParse(value, out var b) ? b : null;
-
-        return Convert.ChangeType(value, underlyingType);
-    }
+        => Services.ValueConverter.ConvertValue(value, targetType);
 
     private Type? GetEntityType(string tableName)
     {

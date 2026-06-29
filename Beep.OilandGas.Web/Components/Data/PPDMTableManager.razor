@@ -665,11 +665,7 @@
     }
 
     private static object? ConvertValue(object? src, Type targetType)
-    {
-        if (src == null) return null;
-        var underlying = Nullable.GetUnderlyingType(targetType) ?? targetType;
-        try { return Convert.ChangeType(src, underlying); } catch { return null; }
-    }
+        => Services.ValueConverter.ConvertValue(src, targetType);
 
     // ── Export ────────────────────────────────────────────────────────────────
     private void ExportCsv()

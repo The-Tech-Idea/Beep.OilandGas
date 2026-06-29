@@ -4,8 +4,6 @@
     <TargetFrameworks>net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>Latest</LangVersion>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <LangVersion>Latest</LangVersion>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Authors>The Tech Idea</Authors>
     <Company>The Tech Idea</Company>
