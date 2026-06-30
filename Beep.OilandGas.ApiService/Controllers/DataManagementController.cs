@@ -12,6 +12,7 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
 using Beep.OilandGas.Models.Data;
@@ -26,6 +27,7 @@ namespace Beep.OilandGas.ApiService.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class DataManagementController : ControllerBase
     {
         private readonly IDMEEditor _editor;

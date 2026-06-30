@@ -44,6 +44,10 @@ builder.WebHost.ConfigureKestrel(options =>
 // MUDBLAZOR & UI SERVICES
 // ============================================
 builder.Services.AddMudServices();
+
+// Beep.Razor.Components — shared data management UI components (setup wizard, CRUD, drivers, etc.)
+builder.Services.AddBeepBlazorStudio();
+
 builder.Services.AddBlazoredLocalStorage();
 
 // Configure request localization

@@ -77,7 +77,38 @@
         </ChildContent>
     </MudMenu>
 
-    <!-- Data Operations Menu (Phase 4A/5A: BeepDM Integration) -->
+    <!-- Role-Based Dashboards (Phase 1-6: Role Enhancement Plan) -->
+    <MudMenu Label="Dashboards" Icon="@Icons.Material.Filled.Dashboard" Color="Color.Secondary"
+             AnchorOrigin="Origin.BottomCenter" TransformOrigin="TransformOrigin.TopCenter">
+        <ChildContent>
+            <MudMenuItem Href="/executive/dashboard">
+                <MudIcon Icon="@Icons.Material.Filled.Insights" Class="mr-2" /> Executive
+            </MudMenuItem>
+            <MudMenuItem Href="/accounting/dashboard">
+                <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="mr-2" /> Accounting
+            </MudMenuItem>
+            <MudMenuItem Href="/production/operations">
+                <MudIcon Icon="@Icons.Material.Filled.Speed" Class="mr-2" /> Production Ops
+            </MudMenuItem>
+            <MudMenuItem Href="/reservoir/workspace">
+                <MudIcon Icon="@Icons.Material.Filled.Science" Class="mr-2" /> Reservoir
+            </MudMenuItem>
+            <MudMenuItem Href="/drilling/workspace">
+                <MudIcon Icon="@Icons.Material.Filled.Construction" Class="mr-2" /> Drilling
+            </MudMenuItem>
+            <MudMenuItem Href="/production/engineer-workspace">
+                <MudIcon Icon="@Icons.Material.Filled.Engineering" Class="mr-2" /> Production Eng
+            </MudMenuItem>
+            <MudMenuItem Href="/hse/dashboard">
+                <MudIcon Icon="@Icons.Material.Filled.HealthAndSafety" Class="mr-2" /> HSE
+            </MudMenuItem>
+            <MudMenuItem Href="/admin/dashboard">
+                <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Class="mr-2" /> Admin
+            </MudMenuItem>
+        </ChildContent>
+    </MudMenu>
+
+    <!-- Data Operations Menu (BeepDM Integration + Beep.Razor.Components) -->
     <MudMenu Label="Data Ops" Icon="@Icons.Material.Filled.Storage" Color="Color.Secondary"
              AnchorOrigin="Origin.BottomCenter" TransformOrigin="TransformOrigin.TopCenter">
         <ChildContent>
@@ -86,6 +117,35 @@
             </MudMenuItem>
             <MudMenuItem Href="/ppdm39/sync">
                 <MudIcon Icon="@Icons.Material.Filled.Sync" Class="mr-2" /> Sync Dashboard
+            </MudMenuItem>
+            <MudDivider Class="my-1" />
+            <MudMenuItem Href="/migration-viewer">
+                <MudIcon Icon="@Icons.Material.Filled.Schema" Class="mr-2" /> Migration Viewer
+            </MudMenuItem>
+            <MudMenuItem Href="/data-promotion">
+                <MudIcon Icon="@Icons.Material.Filled.MoveUp" Class="mr-2" /> Data Promotion
+            </MudMenuItem>
+            <MudMenuItem Href="/uc_dataset_studio">
+                <MudIcon Icon="@Icons.Material.Filled.Hub" Class="mr-2" /> DataSet Studio
+            </MudMenuItem>
+        </ChildContent>
+    </MudMenu>
+
+    <!-- Studio Menu (Beep.Razor.Components — Admin only) -->
+    <MudMenu Label="Studio" Icon="@Icons.Material.Filled.Build" Color="Color.Secondary"
+             AnchorOrigin="Origin.BottomCenter" TransformOrigin="TransformOrigin.TopCenter">
+        <ChildContent>
+            <MudMenuItem Href="/uc_dataconnection">
+                <MudIcon Icon="@Icons.Material.Filled.Cable" Class="mr-2" /> Connections
+            </MudMenuItem>
+            <MudMenuItem Href="/uc_connectiondrivers">
+                <MudIcon Icon="@Icons.Material.Filled.Usb" Class="mr-2" /> Drivers / NuGet
+            </MudMenuItem>
+            <MudMenuItem Href="/uc_nuggetsmanage">
+                <MudIcon Icon="@Icons.Material.Filled.Inventory2" Class="mr-2" /> NuGet Manager
+            </MudMenuItem>
+            <MudMenuItem Href="/assembly-registration">
+                <MudIcon Icon="@Icons.Material.Filled.Extension" Class="mr-2" /> Assemblies
             </MudMenuItem>
         </ChildContent>
     </MudMenu>

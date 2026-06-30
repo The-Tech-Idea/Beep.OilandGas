@@ -1,0 +1,18 @@
+@page "/production/operations"
+@using MudBlazor
+@inject NavigationManager Nav
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h3" GutterBottom="true"><MudIcon Icon="@Icons.Material.Filled.Speed" Class="mr-2" Color="Color.Primary" />Production Operations</MudText>
+
+    <MudGrid>
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Daily Production</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/production">Production Dashboard</MudButton><MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-2" Href="/ppdm39/production/well-tests">Well Tests</MudButton></MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Optimization</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/production/well-performance">Well Performance</MudButton><MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-2" Href="/production/intervention">Intervention Decisions</MudButton></MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Planning</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/production/forecasting">Forecasting</MudButton><MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-2" Href="/production/allocation">Allocation</MudButton></MudCardContent></MudCard></MudItem>
+    </MudGrid>
+    <MudGrid Class="mt-2">
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Reporting</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/production/reporting">Production Reports</MudButton><MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-2" Href="/ppdm39/production/reserves">Reserves</MudButton></MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Fields & Pools</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/production/fields">Fields</MudButton><MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-2" Href="/ppdm39/production/pools">Pools</MudButton></MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Engineering</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/production/engineer-workspace">Engineer Workspace</MudButton><MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-2" Href="/ppdm39/operations/enhancedrecovery">Enhanced Recovery</MudButton></MudCardContent></MudCard></MudItem>
+    </MudGrid>
+</MudContainer>

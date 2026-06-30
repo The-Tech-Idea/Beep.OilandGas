@@ -14,6 +14,7 @@ namespace Beep.OilandGas.ApiService.Controllers
     /// </summary>
     [ApiController]
     [Route("api/demo")]
+    [Authorize(Roles = "Admin,Administrator")]
     public class DemoDatabaseController : ControllerBase
     {
         private readonly DemoDatabaseService _demoDatabaseService;

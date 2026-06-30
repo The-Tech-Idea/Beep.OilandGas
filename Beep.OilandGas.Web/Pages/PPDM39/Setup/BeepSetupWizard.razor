@@ -1,0 +1,122 @@
+@page "/ppdm39/setup/beep-wizard"
+@using System.Net.Http.Json
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+@inject HttpClient Http
+@implements IDisposable
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h3" GutterBottom="true">
+        <MudIcon Icon="@Icons.Material.Filled.AutoFixHigh" Class="mr-2" Color="Color.Primary" />
+        Setup Wizard
+    </MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+        Driver provisioning → Connection setup → Schema creation → PPDM module seeding.
+        Supports checkpoint/resume — if interrupted, resumes from the last completed step.
+    </MudText>
+
+    @if (_state == "Idle")
+    {
+        <MudCard Elevation="3">
+            <MudCardContent>
+                <MudAlert Severity="Severity.Info" Class="mb-3">
+                    This wizard runs the full BeepDM setup pipeline with all PPDM domain modules
+                    (Exploration, Development, Production, Accounting, etc.) registered as seeders.
+                </MudAlert>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StartWizard" Disabled="@_starting">
+                    @if (_starting) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                    Start Setup Wizard
+                </MudButton>
+            </MudCardContent>
+        </MudCard>
+    }
+    else if (_state == "Running")
+    {
+        <MudCard Elevation="3">
+            <MudCardHeader><CardHeaderContent><MudText Typo="Typo.h5">Setup in progress...</MudText></CardHeaderContent></MudCardHeader>
+            <MudCardContent>
+                <MudProgressLinear Value="@_percent" Color="Color.Primary" Class="mb-3" />
+                <MudText Typo="Typo.body2"><strong>@_step</strong></MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@_message</MudText>
+            </MudCardContent>
+        </MudCard>
+    }
+    else if (_state == "Completed")
+    {
+        <MudCard Elevation="3">
+            <MudCardHeader><CardHeaderContent><MudText Typo="Typo.h5" Color="Color.Success">Setup Complete!</MudText></CardHeaderContent></MudCardHeader>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">The setup wizard completed successfully with all PPDM modules seeded.</MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3" Href="/admin/dashboard">Go to Admin Dashboard</MudButton>
+            </MudCardContent>
+        </MudCard>
+    }
+    else if (_state == "Failed")
+    {
+        <MudCard Elevation="3">
+            <MudCardHeader><CardHeaderContent><MudText Typo="Typo.h5" Color="Color.Error">Setup Failed</MudText></CardHeaderContent></MudCardHeader>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">@_message</MudText>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-3" OnClick="() => _state = 'Idle'">Retry</MudButton>
+            </MudCardContent>
+        </MudCard>
+    }
+</MudContainer>
+
+@code {
+    private string _state = "Idle";
+    private bool _starting;
+    private string _step = string.Empty;
+    private string _message = string.Empty;
+    private double _percent;
+    private CancellationTokenSource? _pollCts;
+
+    private async Task StartWizard()
+    {
+        _starting = true; StateHasChanged();
+        try
+        {
+            var response = await Http.PostAsync("/api/setup/wizard/start?connectionName=PPDM39", null);
+            if (response.IsSuccessStatusCode)
+            {
+                _state = "Running";
+                _starting = false;
+                await PollProgress();
+            }
+            else
+            {
+                _state = "Failed";
+                _message = $"API returned {response.StatusCode}";
+            }
+        }
+        catch (Exception ex) { _state = "Failed"; _message = ex.Message; }
+        _starting = false;
+    }
+
+    private async Task PollProgress()
+    {
+        _pollCts = new CancellationTokenSource();
+        try
+        {
+            while (!_pollCts.IsCancellationRequested)
+            {
+                await Task.Delay(1000);
+                var status = await Http.GetFromJsonAsync<WizardStatus>("/api/setup/wizard/status");
+                if (status == null) continue;
+
+                _state = status.state ?? "Running";
+                _step = status.step ?? "";
+                _message = status.message ?? "";
+                _percent = status.percent;
+                StateHasChanged();
+
+                if (_state is "Completed" or "Failed") break;
+            }
+        }
+        catch { /* polling error — keep trying */ }
+    }
+
+    public void Dispose() { _pollCts?.Cancel(); _pollCts?.Dispose(); }
+
+    public class WizardStatus { public string? state { get; set; } public string? step { get; set; } public string? message { get; set; } public double percent { get; set; } }
+}

@@ -1,0 +1,28 @@
+@page "/drilling/workspace"
+@using MudBlazor
+@inject NavigationManager Nav
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h3" GutterBottom="true"><MudIcon Icon="@Icons.Material.Filled.Construction" Class="mr-2" Color="Color.Primary" />Drilling Engineer Workspace</MudText>
+
+    <MudGrid>
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Drilling Programs</MudText></CardHeaderContent></MudCardHeader>
+            <MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/operations/drillingoperations">Drilling Operations</MudButton></MudCardContent></MudCard>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Well Design</MudText></CardHeaderContent></MudCardHeader>
+            <MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/development/well-design">Well Design & AFE</MudButton></MudCardContent></MudCard>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Quick Actions</MudText></CardHeaderContent></MudCardHeader>
+            <MudCardContent>
+                <MudStack Row="false" Spacing="2">
+                    <MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/wells/search">Well Search</MudButton>
+                    <MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/wells/compare">Compare Wells</MudButton>
+                    <MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/well-details/status">Well Status</MudButton>
+                </MudStack>
+            </MudCardContent></MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>

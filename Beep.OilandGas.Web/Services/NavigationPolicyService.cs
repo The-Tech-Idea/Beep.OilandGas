@@ -44,7 +44,15 @@ public class NavigationPolicyService : INavigationPolicyService
         ["ppdm39/data-management"] = "data",
         ["ppdm39/setup"] = "data",
         ["ppdm39/process"] = "processes",
-        ["ppdm39/compliance"] = "hse"
+        ["ppdm39/compliance"] = "hse",
+        // Role-based dashboards (Phase 1-6 Enhancement Plan)
+        ["executive"] = "production",
+        ["drilling"] = "development",
+        ["compliance"] = "hse",
+        ["ppdm39/sync"] = "data",
+        ["ppdm39/data-import"] = "data",
+        ["ppdm39/setup/beep"] = "data",
+        ["admin"] = "data"
     };
 
     public bool IsWorkflowAllowed(PersonaDefinition? persona, string workflowKey)

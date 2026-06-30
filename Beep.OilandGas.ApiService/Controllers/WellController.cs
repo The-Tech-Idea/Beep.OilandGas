@@ -23,6 +23,7 @@ namespace Beep.OilandGas.ApiService.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class WellController : ControllerBase
     {
         private readonly IWellComparisonService _wellComparisonService;

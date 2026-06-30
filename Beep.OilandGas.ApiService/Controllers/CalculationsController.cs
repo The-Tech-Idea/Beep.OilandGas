@@ -20,6 +20,7 @@ namespace Beep.OilandGas.ApiService.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class CalculationsController : ControllerBase
     {
         private readonly ICalculationService _calculationService;

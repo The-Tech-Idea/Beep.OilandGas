@@ -368,25 +368,45 @@ public class DefaultSecuritySeedService : IDefaultSecuritySeedService
             .OfType<PersonaDefinition>()
             .ToDictionary(p => p.PERSONA_CODE, StringComparer.OrdinalIgnoreCase);
 
+        // Workflow keys map to NavigationPolicyService.CoreRouteToWorkflow:
+        //   exploration → /exploration/*           development → /development/*
+        //   production  → /production/*             reservoir   → /reservoir/*
+        //   economics   → /economics/*, /accounting/*  hse      → /hse/*, /decommissioning/*
+        //   data        → /ppdm39/data-management/*, /ppdm39/setup/*, /ppdm39/sync/*, /ppdm39/data-import/*
+        //   processes   → /ppdm39/process/*
+        var wf = new {
+            exploration   = (string[])["exploration", "data"],
+            development   = (string[])["development", "data"],
+            production    = (string[])["production", "data"],
+            reservoir     = (string[])["reservoir", "data"],
+            hse           = (string[])["hse", "data"],
+            all           = (string[])["exploration", "development", "production", "reservoir", "economics", "hse", "data", "processes"],
+            mgmt          = (string[])["production", "reservoir", "economics", "data"],
+            facilities    = (string[])["development", "production", "data"],
+            processes     = (string[])["processes", "data"],
+        };
+
         var seedPersonas = new[]
         {
-            new { Code = "FIELD_ENGINEER", Name = "Field Engineer", Category = "Engineering", Route = "/field/dashboard", SortOrder = 10 },
-            new { Code = "PRODUCTION_MANAGER", Name = "Production Manager", Category = "Management", Route = "/production/dashboard", SortOrder = 20 },
-            new { Code = "RESERVOIR_ENGINEER", Name = "Reservoir Engineer", Category = "Engineering", Route = "/reservoir/dashboard", SortOrder = 30 },
-            new { Code = "DRILLING_ENGINEER", Name = "Drilling Engineer", Category = "Engineering", Route = "/drilling/dashboard", SortOrder = 40 },
-            new { Code = "HSE_OFFICER", Name = "HSE Officer", Category = "Safety", Route = "/hse/dashboard", SortOrder = 50 },
-            new { Code = "FACILITIES_ENGINEER", Name = "Facilities Engineer", Category = "Engineering", Route = "/facilities/dashboard", SortOrder = 60 },
-            new { Code = "DATA_ANALYST", Name = "Data Analyst", Category = "Analytics", Route = "/analytics/dashboard", SortOrder = 70 },
-            new { Code = "ADMINISTRATOR", Name = "System Administrator", Category = "Administration", Route = "/admin/dashboard", SortOrder = 80 },
-            // Lifecycle personas
-            new { Code = "EXPLORATION_GEOLOGIST", Name = "Exploration Geologist", Category = "Exploration", Route = "/lifecycle/exploration/dashboard", SortOrder = 90 },
-            new { Code = "DEVELOPMENT_PLANNER", Name = "Development Planner", Category = "Development", Route = "/lifecycle/development/dashboard", SortOrder = 100 },
-            new { Code = "PRODUCTION_ENGINEER", Name = "Production Engineer", Category = "Production", Route = "/lifecycle/production/dashboard", SortOrder = 110 },
-            new { Code = "DECOMMISSIONING_COORDINATOR", Name = "Decommissioning Coordinator", Category = "Decommissioning", Route = "/lifecycle/decommissioning/dashboard", SortOrder = 120 },
-            new { Code = "HSE_COORDINATOR", Name = "HSE Coordinator", Category = "HSE", Route = "/lifecycle/hse/dashboard", SortOrder = 130 },
-            new { Code = "FACILITY_OPERATOR", Name = "Facility Operator", Category = "Facilities", Route = "/lifecycle/facilities/dashboard", SortOrder = 140 },
-            new { Code = "ASSET_MANAGER", Name = "Asset Manager", Category = "Management", Route = "/lifecycle/asset/dashboard", SortOrder = 150 },
-            new { Code = "WORKFLOW_ADMINISTRATOR", Name = "Workflow Administrator", Category = "Administration", Route = "/lifecycle/workflow/admin", SortOrder = 160 },
+            new { Code = "FIELD_ENGINEER",              Name = "Field Engineer",              Category = "Engineering",     Route = "/field/dashboard",                      SortOrder = 10,  Workflows = wf.production },
+            new { Code = "EXECUTIVE",                   Name = "Executive / CEO",             Category = "Management",      Route = "/executive/dashboard",                  SortOrder = 5,   Workflows = wf.mgmt },
+            new { Code = "PRODUCTION_MANAGER",          Name = "Production Manager",          Category = "Management",      Route = "/production/dashboard",                  SortOrder = 20,  Workflows = wf.mgmt },
+            new { Code = "RESERVOIR_ENGINEER",          Name = "Reservoir Engineer",          Category = "Engineering",     Route = "/reservoir/dashboard",                  SortOrder = 30,  Workflows = new[]{"reservoir", "production", "data"} },
+            new { Code = "DRILLING_ENGINEER",           Name = "Drilling Engineer",           Category = "Engineering",     Route = "/drilling/dashboard",                   SortOrder = 40,  Workflows = wf.development },
+            new { Code = "HSE_OFFICER",                 Name = "HSE Officer",                 Category = "Safety",          Route = "/hse/dashboard",                        SortOrder = 50,  Workflows = wf.hse },
+            new { Code = "FACILITIES_ENGINEER",         Name = "Facilities Engineer",         Category = "Engineering",     Route = "/facilities/dashboard",                 SortOrder = 60,  Workflows = wf.facilities },
+            new { Code = "DATA_ANALYST",                Name = "Data Analyst",                Category = "Analytics",       Route = "/analytics/dashboard",                  SortOrder = 70,  Workflows = new[]{"data", "processes"} },
+            new { Code = "ACCOUNTANT",                  Name = "Accountant",                  Category = "Finance",         Route = "/accounting/dashboard",                 SortOrder = 25,  Workflows = new[]{"economics", "data"} },
+            new { Code = "ADMINISTRATOR",               Name = "System Administrator",        Category = "Administration",  Route = "/admin/dashboard",                      SortOrder = 80,  Workflows = wf.all },
+            new { Code = "EXPLORATION_GEOLOGIST",       Name = "Exploration Geologist",       Category = "Exploration",     Route = "/lifecycle/exploration/dashboard",       SortOrder = 90,  Workflows = wf.exploration },
+            new { Code = "DEVELOPMENT_PLANNER",         Name = "Development Planner",         Category = "Development",     Route = "/lifecycle/development/dashboard",       SortOrder = 100, Workflows = new[]{"development", "economics", "data"} },
+            new { Code = "PRODUCTION_ENGINEER",         Name = "Production Engineer",         Category = "Production",      Route = "/lifecycle/production/dashboard",        SortOrder = 110, Workflows = wf.production },
+            new { Code = "DECOMMISSIONING_COORDINATOR", Name = "Decommissioning Coordinator", Category = "Decommissioning", Route = "/lifecycle/decommissioning/dashboard",   SortOrder = 120, Workflows = new[]{"development", "hse", "data"} },
+            new { Code = "COMPLIANCE_OFFICER",          Name = "Compliance Officer",          Category = "Compliance",      Route = "/compliance/dashboard",                 SortOrder = 55,  Workflows = new[]{"hse", "data"} },
+            new { Code = "HSE_COORDINATOR",             Name = "HSE Coordinator",             Category = "HSE",             Route = "/lifecycle/hse/dashboard",              SortOrder = 130, Workflows = wf.hse },
+            new { Code = "FACILITY_OPERATOR",           Name = "Facility Operator",           Category = "Facilities",      Route = "/lifecycle/facilities/dashboard",        SortOrder = 140, Workflows = wf.facilities },
+            new { Code = "ASSET_MANAGER",               Name = "Asset Manager",               Category = "Management",      Route = "/lifecycle/asset/dashboard",             SortOrder = 150, Workflows = wf.mgmt },
+            new { Code = "WORKFLOW_ADMINISTRATOR",      Name = "Workflow Administrator",      Category = "Administration",  Route = "/lifecycle/workflow/admin",              SortOrder = 160, Workflows = wf.processes },
         };
 
         foreach (var seedPersona in seedPersonas)
@@ -403,7 +423,10 @@ public class DefaultSecuritySeedService : IDefaultSecuritySeedService
                 DESCRIPTION = $"Default persona: {seedPersona.Name}",
                 ACTIVE_FLAG = "Y",
                 DEFAULT_LANDING_ROUTE = seedPersona.Route,
-                DISPLAY_SORT_ORDER = seedPersona.SortOrder
+                DISPLAY_SORT_ORDER = seedPersona.SortOrder,
+                ALLOWED_WORKFLOWS_JSON = seedPersona.Workflows != null
+                    ? System.Text.Json.JsonSerializer.Serialize(seedPersona.Workflows)
+                    : null
             };
 
             await personaRepo.InsertAsync(persona, userId);

@@ -1087,6 +1087,62 @@ builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.IAuthorizationObse
         connectionName);
 });
 
+// Role-Based Enhancement — Executive Aggregation Service (Phase 3)
+builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.ExecutiveAggregationService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<Beep.OilandGas.ApiService.Services.ExecutiveAggregationService>();
+    return new Beep.OilandGas.ApiService.Services.ExecutiveAggregationService(
+        editor, commonColumnHandler, defaults, metadata, connectionName, logger);
+});
+
+// PPDM Module Seeding Service — runs all IModuleSetup seeders after BeepDM setup wizard
+builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.PpdmModuleSeedingService>(sp =>
+{
+    var modules = sp.GetServices<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup>();
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<Beep.OilandGas.ApiService.Services.PpdmModuleSeedingService>();
+    return new Beep.OilandGas.ApiService.Services.PpdmModuleSeedingService(modules, editor, connectionName, logger);
+});
+
+// Role-Based Enhancement — HSE Aggregation Service (Phase 5)
+builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.HseAggregationService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<Beep.OilandGas.ApiService.Services.HseAggregationService>();
+    return new Beep.OilandGas.ApiService.Services.HseAggregationService(editor,commonColumnHandler,defaults,metadata,connectionName,logger);
+});
+
+// Role-Based Enhancement — Reservoir Aggregation Service (Phase 4)
+builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.ReservoirAggregationService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<Beep.OilandGas.ApiService.Services.ReservoirAggregationService>();
+    return new Beep.OilandGas.ApiService.Services.ReservoirAggregationService(
+        editor, commonColumnHandler, defaults, metadata, connectionName, logger);
+});
+
+// Role-Based Enhancement — Accounting Aggregation Service (Phase 2)
+builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.AccountingAggregationService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<Beep.OilandGas.ApiService.Services.AccountingAggregationService>();
+    return new Beep.OilandGas.ApiService.Services.AccountingAggregationService(
+        editor, commonColumnHandler, defaults, metadata, connectionName, logger);
+});
+
 // BeepDM Data Import Service — server-side ETL with quality rules, error replay, watermarking (Phase 4A)
 builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.DataImportService>();
 

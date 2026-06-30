@@ -15,6 +15,7 @@ namespace Beep.OilandGas.ApiService.Controllers
     /// </summary>
     [ApiController]
     [Route("api/connections")]
+    [Authorize(Roles = "Admin,Administrator")]
     public class ConnectionController : ControllerBase
     {
         private readonly ConnectionService _connectionService;

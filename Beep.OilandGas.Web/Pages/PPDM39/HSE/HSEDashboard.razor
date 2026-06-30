@@ -1,26 +1,15 @@
-﻿@page "/ppdm39/hse"
-@inject NavigationManager NavigationManager
+@page "/hse/dashboard"
+@page "/ppdm39/hse"
+@using MudBlazor
+@inject NavigationManager Nav
 
-<PageTitle>HSE Incidents</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h3" GutterBottom="true"><MudIcon Icon="@Icons.Material.Filled.HealthAndSafety" Class="mr-2" Color="Color.Primary" />HSE Dashboard</MudText>
 
-<MudContainer MaxWidth="MaxWidth.Medium" Class="pa-6">
-    <MudPaper Elevation="1" Class="pa-6">
-        <MudStack Spacing="2" AlignItems="AlignItems.Center">
-            <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
-            <MudText Typo="Typo.h6">Redirecting to the workflow-backed HSE incidents page…</MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">
-                Legacy HSE routes now use the unified incident workflow experience.
-            </MudText>
-        </MudStack>
-    </MudPaper>
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="3"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Incidents</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/hse/incidents">Incident Management</MudButton><MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-2" Href="/ppdm39/hse/incident/new">Report Incident</MudButton></MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" sm="6" md="3"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">HAZOP & Studies</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/hse/hazop/new">New HAZOP Study</MudButton><MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-2" Href="/ppdm39/hse/incidents">All Incidents</MudButton></MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" sm="6" md="3"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Compliance</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/hse/compliance">Compliance Calendar</MudButton><MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-2" Href="/compliance/dashboard">Regulatory</MudButton></MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" sm="6" md="3"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Permits</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/permits">Permit Dashboard</MudButton><MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-2" Href="/ppdm39/permits/new">New Permit</MudButton></MudCardContent></MudCard></MudItem>
+    </MudGrid>
 </MudContainer>
-
-@code {
-    protected override void OnAfterRender(bool firstRender)
-    {
-        if (!firstRender)
-            return;
-
-        NavigationManager.NavigateTo("/ppdm39/hse/incidents", replace: true);
-    }
-}

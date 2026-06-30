@@ -25,6 +25,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\fahadTheTechIdea\MyWebSite\TheTechIdeaWeb\Beep.Foundation.IdentityServer.Shared\Beep.Foundation.IdentityServer.Shared.csproj" />
+    <ProjectReference Include="..\..\..\fahadTheTechIdea\MyWebSite\TheTechIdeaWeb\TheTechIdeaWeb.ThemeBranding\TheTechIdeaWeb.ThemeBranding.csproj" />
+    <ProjectReference Include="..\..\BeepWeb\Beep.Razor.Components\Beep.Razor.Components.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.Drawing\Beep.OilandGas.Drawing.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.HeatMap\Beep.OilandGas.HeatMap.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.LifeCycle\Beep.OilandGas.LifeCycle.csproj" />

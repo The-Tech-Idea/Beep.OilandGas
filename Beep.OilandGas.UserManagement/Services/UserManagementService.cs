@@ -92,6 +92,15 @@ namespace Beep.OilandGas.UserManagement.Services
             return user;
         }
 
+        // Backward-compatible with IUserService.UpdateAsync(USER user)
+        public async Task<bool> UpdateAsync(USER user)
+        {
+            if (user == null) throw new ArgumentNullException(nameof(user));
+            var repo = GetRepo<USER>("USER");
+            await repo.UpdateAsync(user, "system");
+            return true;
+        }
+
         public async Task<bool> UpdateAsync(USER user, string userId)
         {
             if (user == null) throw new ArgumentNullException(nameof(user));
