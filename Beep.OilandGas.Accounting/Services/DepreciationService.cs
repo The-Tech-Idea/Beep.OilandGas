@@ -7,7 +7,9 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -18,7 +20,7 @@ namespace Beep.OilandGas.Accounting.Services
     /// Supports multiple depreciation methods (Straight-line, MACRS, Units of Production)
     /// Integrates with GL for automatic depreciation posting
     /// </summary>
-    public class DepreciationService
+    public class DepreciationService 
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;

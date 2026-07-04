@@ -34,7 +34,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         /// Get all GL accounts.
         /// </summary>
         [HttpGet("accounts")]
-        public ActionResult<List<GLAccount>> GetAccounts([FromQuery] string? connectionName = null)
+        public ActionResult<List<GLAccount>> GetAccounts([FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -68,7 +68,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         [HttpGet("accounts/{id}")]
         public ActionResult<GLAccount> GetAccount(
             string id,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Account ID is required." });
@@ -108,7 +108,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         public ActionResult<GLAccount> CreateAccount(
             [FromBody] CreateGLAccountRequest request,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -147,7 +147,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         public ActionResult<object> CreateJournalEntry(
             [FromBody] CreateJournalEntryRequest request,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -186,7 +186,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         public ActionResult PostJournalEntry(
             string id,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Journal entry ID is required." });
@@ -208,7 +208,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         [HttpGet("journal-entries/{id}")]
         public ActionResult<object> GetJournalEntry(
             string id,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Journal entry ID is required." });

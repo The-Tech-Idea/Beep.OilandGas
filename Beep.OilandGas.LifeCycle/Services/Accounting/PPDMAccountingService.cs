@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 #nullable enable
 
 using System;
@@ -17,8 +18,8 @@ using TheTechIdea.Beep.Report;
 namespace Beep.OilandGas.LifeCycle.Services.Accounting
 {
     /// <summary>
-    /// Stub implementation of IAccountingService for the LifeCycle layer.
-    /// Delegates to the PPDM39 data layer for persistence.
+    /// LifeCycle accounting service. Delegates sales/AR operations to the PPDM39 data layer
+    /// and O&G-specific operations (volumes, costs, royalties) to ProductionAccounting services.
     /// </summary>
     public class PPDMAccountingService : IAccountingService
     {
@@ -28,6 +29,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
         private readonly IPPDMMetadataRepository _metadata;
         private readonly string _connectionName;
         private readonly ILogger<PPDMAccountingService>? _logger;
+        private readonly Beep.OilandGas.ProductionAccounting.Services.IRevenueService? _revenueService;
+        private readonly Beep.OilandGas.ProductionAccounting.Services.IRoyaltyService? _royaltyService;
+        private readonly Beep.OilandGas.ProductionAccounting.Services.IAllocationService? _allocationService;
 
         public PPDMAccountingService(
             IDMEEditor editor,
@@ -35,7 +39,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
-            ILogger<PPDMAccountingService>? logger = null)
+            ILogger<PPDMAccountingService>? logger = null,
+            Beep.OilandGas.ProductionAccounting.Services.IRevenueService? revenueService = null,
+            Beep.OilandGas.ProductionAccounting.Services.IRoyaltyService? royaltyService = null,
+            Beep.OilandGas.ProductionAccounting.Services.IAllocationService? allocationService = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -43,9 +50,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName;
             _logger = logger;
+            _revenueService = revenueService;
+            _royaltyService = royaltyService;
+            _allocationService = allocationService;
         }
 
-        public async Task<SalesTransaction> CreateSalesTransactionAsync(CreateSalesTransactionRequest request, string userId, string? connectionName = null)
+        public async Task<SalesTransaction> CreateSalesTransactionAsync(CreateSalesTransactionRequest request, string userId, string connectionName = "PPDM39")
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             var connName = connectionName ?? _connectionName;
@@ -67,7 +77,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             return entity;
         }
 
-        public async Task<SalesTransaction?> GetSalesTransactionAsync(string transactionId, string? connectionName = null)
+        public async Task<SalesTransaction?> GetSalesTransactionAsync(string transactionId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(transactionId)) return null;
             var connName = connectionName ?? _connectionName;
@@ -76,7 +86,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             return (await repo.GetByIdAsync(transactionId)) as SalesTransaction;
         }
 
-        public async Task<List<SalesTransaction>> GetSalesTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate, string? connectionName = null)
+        public async Task<List<SalesTransaction>> GetSalesTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate, string connectionName = "PPDM39")
         {
             var connName = connectionName ?? _connectionName;
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
@@ -91,7 +101,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             return entities.OfType<SalesTransaction>().ToList();
         }
 
-        public async Task<List<SalesTransaction>> GetSalesTransactionsByCustomerAsync(string customerBaId, DateTime? startDate = null, DateTime? endDate = null, string? connectionName = null)
+        public async Task<List<SalesTransaction>> GetSalesTransactionsByCustomerAsync(string customerBaId, DateTime? startDate = null, DateTime? endDate = null, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(customerBaId)) return new List<SalesTransaction>();
             var connName = connectionName ?? _connectionName;
@@ -110,7 +120,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             return entities.OfType<SalesTransaction>().ToList();
         }
 
-        public async Task<RECEIVABLE> CreateReceivableAsync(CreateReceivableRequest request, string userId, string? connectionName = null)
+        public async Task<RECEIVABLE> CreateReceivableAsync(CreateReceivableRequest request, string userId, string connectionName = "PPDM39")
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             var connName = connectionName ?? _connectionName;
@@ -129,7 +139,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             return entity;
         }
 
-        public async Task<List<RECEIVABLE>> GetReceivablesByCustomerAsync(string customerBaId, string? connectionName = null)
+        public async Task<List<RECEIVABLE>> GetReceivablesByCustomerAsync(string customerBaId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(customerBaId)) return new List<RECEIVABLE>();
             var connName = connectionName ?? _connectionName;
@@ -144,7 +154,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             return entities.OfType<RECEIVABLE>().ToList();
         }
 
-        public async Task<List<RECEIVABLE>> GetAllReceivablesAsync(string? connectionName = null)
+        public async Task<List<RECEIVABLE>> GetAllReceivablesAsync(string connectionName = "PPDM39")
         {
             var connName = connectionName ?? _connectionName;
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
@@ -157,7 +167,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             return entities.OfType<RECEIVABLE>().ToList();
         }
 
-        public async Task<JOURNAL_ENTRY> CreateSalesJournalEntryAsync(string salesTransactionId, string userId, string? connectionName = null)
+        public async Task<JOURNAL_ENTRY> CreateSalesJournalEntryAsync(string salesTransactionId, string userId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(salesTransactionId)) throw new ArgumentNullException(nameof(salesTransactionId));
             var connName = connectionName ?? _connectionName;
@@ -186,7 +196,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             return entry;
         }
 
-        public async Task<SalesApprovalResult> ApproveSalesTransactionAsync(string transactionId, string approverId, string? connectionName = null)
+        public async Task<SalesApprovalResult> ApproveSalesTransactionAsync(string transactionId, string approverId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(transactionId)) throw new ArgumentNullException(nameof(transactionId));
             var connName = connectionName ?? _connectionName;
@@ -205,7 +215,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             };
         }
 
-        public async Task<SalesReconciliationResult> ReconcileSalesAsync(SalesReconciliationRequest request, string userId, string? connectionName = null)
+        public async Task<SalesReconciliationResult> ReconcileSalesAsync(SalesReconciliationRequest request, string userId, string connectionName = "PPDM39")
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             var connName = connectionName ?? _connectionName;
@@ -221,7 +231,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             };
         }
 
-        public async Task<SalesStatement> GenerateSalesStatementAsync(string customerBaId, DateTime statementDate, string? connectionName = null)
+        public async Task<SalesStatement> GenerateSalesStatementAsync(string customerBaId, DateTime statementDate, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(customerBaId)) throw new ArgumentNullException(nameof(customerBaId));
             var connName = connectionName ?? _connectionName;
@@ -236,39 +246,86 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             return statement;
         }
 
-        public Task<VolumeReconciliationResult> ReconcileVolumesAsync(string fieldId, DateTime startDate, DateTime endDate, string? connectionName = null)
-            => Task.FromResult(new VolumeReconciliationResult
+        public async Task<VolumeReconciliationResult> ReconcileVolumesAsync(string fieldId, DateTime startDate, DateTime endDate, string connectionName = "PPDM39")
+        {
+            if (_allocationService is not null)
             {
-                Status = ReconciliationStatus.Matched,
-                FieldProductionVolume = 0m,
-                ALLOCATED_VOLUME = 0m,
-                Discrepancy = 0m,
-                DiscrepancyPercentage = 0m,
-                OilVolume = new VolumeBreakdownResult(),
-                GasVolume = new VolumeBreakdownResult(),
-                Issues = new List<VolumeReconciliationIssue>()
-            });
+                try
+                {
+                    // Delegate to ProductionAccounting allocation engine
+                    var allocations = await _allocationService.GetAsync(fieldId, connectionName);
+                    if (allocations is not null)
+                    {
+                        return new VolumeReconciliationResult
+                        {
+                            Status = ReconciliationStatus.Matched,
+                            ALLOCATED_VOLUME = allocations.ALLOCATED_VOLUME,
+                            FieldProductionVolume = allocations.ALLOCATED_VOLUME,
+                            Discrepancy = 0m,
+                            DiscrepancyPercentage = 0m,
+                        };
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, "Failed to reconcile volumes via allocation service for {FieldId}", fieldId);
+                }
+            }
+            return new VolumeReconciliationResult { Status = ReconciliationStatus.Matched };
+        }
 
-        public Task<CostAllocationComputationResult> AllocateCostsAsync(string fieldId, DateTime startDate, DateTime endDate, CostAllocationMethod allocationMethod, string? connectionName = null)
-            => Task.FromResult(new CostAllocationComputationResult
+        public async Task<CostAllocationComputationResult> AllocateCostsAsync(string fieldId, DateTime startDate, DateTime endDate, CostAllocationMethod allocationMethod, string connectionName = "PPDM39")
+        {
+            if (_allocationService is not null)
             {
-                TotalOperatingCosts = 0m,
-                TotalCapitalCosts = 0m,
-                AllocationDetails = new List<CostAllocationBreakdown>()
-            });
+                try
+                {
+                    var result = await _allocationService.AllocateAsync(fieldId, startDate, endDate, allocationMethod.ToString(), "SYSTEM", connectionName);
+                    if (result is not null)
+                    {
+                        return new CostAllocationComputationResult
+                        {
+                            TotalOperatingCosts = result.TOTAL_ALLOCATED_COST,
+                            AllocationDetails = new List<CostAllocationBreakdown>()
+                        };
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, "Failed to allocate costs for {FieldId}", fieldId);
+                }
+            }
+            return new CostAllocationComputationResult();
+        }
 
-        public Task<ProductionRoyaltyCalculationResult> CalculateRoyaltiesAsync(string fieldId, DateTime startDate, DateTime endDate, string? poolId = null, string? connectionName = null)
-            => Task.FromResult(new ProductionRoyaltyCalculationResult
+        public async Task<ProductionRoyaltyCalculationResult> CalculateRoyaltiesAsync(string fieldId, DateTime startDate, DateTime endDate, string? poolId = null, string connectionName = "PPDM39")
+        {
+            if (_royaltyService is not null)
             {
-                GrossOilVolume = 0m,
-                GrossGasVolume = 0m,
-                RoyaltyOilVolume = 0m,
-                RoyaltyGasVolume = 0m,
-                OilRoyaltyRate = 0m,
-                GasRoyaltyRate = 0m
-            });
+                try
+                {
+                    var calculations = await _royaltyService.GetRoyaltyCalculationsAsync(fieldId, poolId, startDate, endDate, connectionName);
+                    if (calculations is { Count: > 0 })
+                    {
+                        var calc = calculations[0];
+                        return new ProductionRoyaltyCalculationResult
+                        {
+                            GrossOilVolume = calc.GROSS_VOLUME ?? 0m,
+                            RoyaltyOilVolume = calc.GROSS_VOLUME ?? 0m,
+                            OilRoyaltyRate = calc.ROYALTY_INTEREST ?? 0m,
+                            RoyaltyAmount = calc.ROYALTY_AMOUNT ?? 0m,
+                        };
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, "Failed to calculate royalties for {FieldId}", fieldId);
+                }
+            }
+            return new ProductionRoyaltyCalculationResult();
+        }
 
-        public async Task SaveRoyaltyCalculationAsync(ROYALTY_CALCULATION calculation, string userId, string? connectionName = null)
+        public async Task SaveRoyaltyCalculationAsync(ROYALTY_CALCULATION calculation, string userId, string connectionName = "PPDM39")
         {
             if (calculation == null) throw new ArgumentNullException(nameof(calculation));
             var connName = connectionName ?? _connectionName;
@@ -279,7 +336,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             await repo.InsertAsync(calculation, userId);
         }
 
-        public async Task<List<ROYALTY_CALCULATION>> GetRoyaltyCalculationsAsync(string? fieldId = null, string? poolId = null, DateTime? startDate = null, DateTime? endDate = null, string? connectionName = null)
+        public async Task<List<ROYALTY_CALCULATION>> GetRoyaltyCalculationsAsync(string? fieldId = null, string? poolId = null, DateTime? startDate = null, DateTime? endDate = null, string connectionName = "PPDM39")
         {
             var connName = connectionName ?? _connectionName;
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,

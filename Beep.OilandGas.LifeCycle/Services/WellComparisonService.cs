@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,7 +47,7 @@ namespace Beep.OilandGas.LifeCycle.Services
         public async Task<WellComparisonData> CompareWellsAsync(
             List<string> wellIdentifiers,
             List<string>? fieldNames = null,
-            string? connectionName = null)
+            string connectionName = "PPDM39")
         {
             if (wellIdentifiers == null || wellIdentifiers.Count == 0)
                 throw new ArgumentException("At least one well identifier is required", nameof(wellIdentifiers));
@@ -471,8 +472,7 @@ namespace Beep.OilandGas.LifeCycle.Services
             }
         }
 
-            return null;
-        }
+        return null;
     }
 }
 

@@ -34,7 +34,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
         public ActionResult<List<OWNERSHIP_INTEREST>> GetOwnershipInterests(
             [FromQuery] string? propertyOrLeaseId = null,
             [FromQuery] DateTime? asOfDate = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -59,7 +59,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
         [HttpPost("interests")]
         public ActionResult<OWNERSHIP_INTEREST> RegisterOwnershipInterest(
             [FromBody] RegisterOwnershipInterestRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

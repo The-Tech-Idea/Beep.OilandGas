@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -49,7 +51,7 @@ namespace Beep.OilandGas.Accounting.Services
             string userId,
             string? debitAccountId = null,
             string? creditAccountId = null,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(description))
                 throw new ArgumentNullException(nameof(description));
@@ -62,7 +64,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (isAdjusting && (string.IsNullOrWhiteSpace(debitAccountId) || string.IsNullOrWhiteSpace(creditAccountId)))
                 throw new InvalidOperationException("Adjusting events require debit and credit accounts");
 
-            var cn = connectionName ?? ConnectionName;
             var cost = new ACCOUNTING_COST
             {
                 ACCOUNTING_COST_ID = Guid.NewGuid().ToString(),
@@ -103,9 +104,8 @@ namespace Beep.OilandGas.Accounting.Services
         public async Task<List<ACCOUNTING_COST>> GetSubsequentEventsAsync(
             DateTime periodEndDate,
             DateTime? throughDate = null,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
-            var cn = connectionName ?? ConnectionName;
             var endDate = throughDate ?? DateTime.UtcNow;
 
             var repo = await GetRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", cn);

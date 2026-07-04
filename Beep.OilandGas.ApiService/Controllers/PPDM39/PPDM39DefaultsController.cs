@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Beep.OilandGas.Models.Data.DataManagement;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -12,6 +14,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
     /// <summary>
     /// API controller for PPDM39 defaults and well status facets
     /// </summary>
+    [Authorize]
     [ApiController]
     [Route("api/ppdm39/defaults")]
     public class PPDM39DefaultsController : ControllerBase
@@ -34,7 +37,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Get default values for an entity type
         /// </summary>
         [HttpGet("{entityType}")]
-        public async Task<ActionResult<Dictionary<string, object>>> GetDefaults(string entityType, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult<Dictionary<string, object>>> GetDefaults(string entityType, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(entityType))
                 return BadRequest(new { error = "Entity type is required." });
@@ -63,7 +66,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Get well status facets
         /// </summary>
         [HttpGet("well-status/{statusId}/facets")]
-        public async Task<ActionResult> GetWellStatusFacets(string statusId, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult> GetWellStatusFacets(string statusId, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(statusId))
                 return BadRequest(new { error = "Status ID is required." });

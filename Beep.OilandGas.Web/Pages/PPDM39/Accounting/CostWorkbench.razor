@@ -1,0 +1,12 @@
+@page "/accounting/cost-workbench"
+@using MudBlazor
+@inject NavigationManager Nav
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h3" GutterBottom="true"><MudIcon Icon="@Icons.Material.Filled.MoneyOff" Class="mr-2" Color="Color.Primary"/>Cost Workbench</MudText>
+    <MudGrid>
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">AFE Tracking</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/economics/afe">AFE Management</MudButton><MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-2" Href="/ppdm39/accounting/cost-allocation">Cost Allocation</MudButton></MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">DD&A</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/production/reserves">Reserves (Depletion Basis)</MudButton><MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-2" Href="/ppdm39/accounting/dashboard">Cost Dashboard</MudButton></MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Impairment</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/economics/evaluation">Ceiling Test</MudButton><MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-2" Href="/ppdm39/production/reporting">Production Reports</MudButton></MudCardContent></MudCard></MudItem>
+    </MudGrid>
+</MudContainer>

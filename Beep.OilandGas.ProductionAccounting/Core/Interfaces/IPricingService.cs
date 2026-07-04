@@ -11,10 +11,10 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// </summary>
     public interface IPricingService
     {
-        Task<decimal> GetPriceAsync(string productId, DateTime date, string cn = "PPDM39");
-        Task<List<PRICE_INDEX>> GetHistoryAsync(string productId, DateTime start, DateTime end, string cn = "PPDM39");
-        Task<decimal> CalculateRevenueAsync(string productId, decimal volume, DateTime date, string cn = "PPDM39");
-        Task<decimal> GetAveragePriceAsync(string productId, DateTime start, DateTime end, string cn = "PPDM39");
+        Task<decimal> GetPriceAsync(string productId, DateTime date, string connectionName = "PPDM39");
+        Task<List<PRICE_INDEX>> GetHistoryAsync(string productId, DateTime start, DateTime end, string connectionName = "PPDM39");
+        Task<decimal> CalculateRevenueAsync(string productId, decimal volume, DateTime date, string connectionName = "PPDM39");
+        Task<decimal> GetAveragePriceAsync(string productId, DateTime start, DateTime end, string connectionName = "PPDM39");
     }
 }
 

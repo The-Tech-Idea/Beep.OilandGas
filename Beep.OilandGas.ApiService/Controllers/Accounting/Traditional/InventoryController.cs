@@ -47,7 +47,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         public async Task<ActionResult<object>> CreateTransaction(
             [FromBody] CreateInventoryTransactionRequest request,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -139,7 +139,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         [HttpGet("transactions/{id}")]
         public ActionResult<object> GetTransaction(
             string id,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Transaction ID is required." });
@@ -172,7 +172,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         public async Task<ActionResult<TANK_INVENTORY>> UpdateTankInventoryAsync(
             string tankId,
             [FromBody] UpdateTankInventoryRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -200,7 +200,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         [HttpGet("service/{tankId}")]
         public async Task<ActionResult<TANK_INVENTORY>> GetTankInventoryAsync(
             string tankId,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -227,7 +227,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         [HttpPost("service/validate")]
         public async Task<ActionResult<object>> ValidateInventoryAsync(
             [FromBody] TANK_INVENTORY inventory,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -254,7 +254,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         public async Task<ActionResult<INVENTORY_VALUATION>> CalculateValuationAsync(
             string inventoryItemId,
             [FromBody] CalculateInventoryValuationRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -284,7 +284,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         public async Task<ActionResult<INVENTORY_REPORT_SUMMARY>> GenerateReconciliationReportAsync(
             string inventoryItemId,
             [FromBody] GenerateInventoryReconciliationReportRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

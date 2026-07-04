@@ -51,8 +51,30 @@ public class NavigationPolicyService : INavigationPolicyService
         ["compliance"] = "hse",
         ["ppdm39/sync"] = "data",
         ["ppdm39/data-import"] = "data",
-        ["ppdm39/setup/beep"] = "data",
-        ["admin"] = "data"
+        ["ppdm39/setup"] = "data",
+        ["ppdm39/data-quality"] = "data",
+        ["ppdm39/data-management"] = "data",
+        ["admin"] = "data",
+        // Beep.Razor.Components — Data Manager tools
+        ["uc_dataconnection"] = "data",
+        ["uc_connectiondrivers"] = "data",
+        ["uc_createlocaldb"] = "data",
+        ["uc_exportmanagement"] = "data",
+        ["uc_importmanagement"] = "data",
+        ["uc_entityeditor"] = "data",
+        ["uc_dataedit"] = "data",
+        ["uc_nuggetsmanage"] = "data",
+        ["uc_dataset_studio"] = "data",
+        ["migration-viewer"] = "data",
+        ["data-promotion"] = "data",
+        ["assembly-registration"] = "data",
+        ["data/validation"] = "data",
+        // Phase 5: Task inbox & workflow views
+        ["tasks/inbox"] = "processes",
+        ["tasks/approvals"] = "processes",
+        ["ppdm39/tasks"] = "processes",
+        ["ppdm39/process/approve"] = "processes",
+        ["ppdm39/process/task"] = "processes"
     };
 
     public bool IsWorkflowAllowed(PersonaDefinition? persona, string workflowKey)

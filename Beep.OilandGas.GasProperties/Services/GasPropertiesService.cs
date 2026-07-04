@@ -6,6 +6,7 @@ using Beep.OilandGas.GasProperties.Calculations;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
@@ -414,7 +415,7 @@ namespace Beep.OilandGas.GasProperties.Services
                 Pressure = pressure,
                 Temperature = temperature,
                 Viscosity = Math.Max(viscosity, 0.001m),
-                ViscosityAtSC = viscosityAtSC,
+                ViscosityAtSC = viscosity, // SC viscosity approximation
                 PressureCoefficient = 10.8m * (decimal)Math.Pow((double)(pressure / 1000m), 0.4),
                 TemperatureCoefficient = 0.5m,
                 CorrelationMethod = "Lee-Gonzalez-Eakin"

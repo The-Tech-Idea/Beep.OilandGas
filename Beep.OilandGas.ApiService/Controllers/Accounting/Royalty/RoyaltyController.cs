@@ -50,7 +50,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
         public async Task<ActionResult<ROYALTY_PAYMENT>> CreateRoyaltyPayment(
             [FromBody] CreateRoyaltyPaymentRequest request,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -99,7 +99,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
         [HttpPost("calculate")]
         public async Task<ActionResult<object>> CalculateRoyalties(
             [FromBody] CalculateRoyaltyRequest request,
-            [FromQuery] string? connectionName = null,
+            [FromQuery] string connectionName = "PPDM39",
             [FromQuery] string? userId = null)
         {
             try
@@ -179,7 +179,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
             [FromQuery] string? poolId = null,
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -199,7 +199,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
         /// Get royalty payments by owner.
         /// </summary>
         [HttpGet("payments")]
-        public ActionResult<List<ROYALTY_PAYMENT>> GetRoyaltyPayments([FromQuery] string? ownerId = null, [FromQuery] string? connectionName = null)
+        public ActionResult<List<ROYALTY_PAYMENT>> GetRoyaltyPayments([FromQuery] string? ownerId = null, [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -221,7 +221,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
         [HttpPost("service/calculate")]
         public async Task<ActionResult<ROYALTY_CALCULATION>> CalculateFromAllocationDetailAsync(
             [FromBody] ALLOCATION_DETAIL detail,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -245,7 +245,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
         [HttpGet("service/calculations/{royaltyId}")]
         public async Task<ActionResult<ROYALTY_CALCULATION>> GetRoyaltyCalculationByIdAsync(
             string royaltyId,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -269,7 +269,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
         [HttpGet("service/calculations/by-allocation/{allocationId}")]
         public async Task<ActionResult<List<ROYALTY_CALCULATION>>> GetRoyaltyCalculationsByAllocationAsync(
             string allocationId,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -292,7 +292,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
         [HttpPost("service/payments")]
         public async Task<ActionResult<ROYALTY_PAYMENT>> RecordRoyaltyPaymentAsync(
             [FromBody] RecordRoyaltyPaymentFromCalculationRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

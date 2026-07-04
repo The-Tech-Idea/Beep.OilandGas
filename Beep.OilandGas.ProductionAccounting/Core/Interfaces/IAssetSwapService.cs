@@ -11,6 +11,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<ASSET_SWAP_TRANSACTION> RecordSwapAsync(
             ASSET_SWAP_TRANSACTION swap,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
     }
 }

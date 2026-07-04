@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -26,9 +28,8 @@ namespace Beep.OilandGas.Accounting.Services
             _logger = logger;
         }
 
-        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? connectionName)
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? cn)
         {
-            var cn = connectionName ?? ConnectionName;
             var ds = _editor.GetDataSource(cn);
             if (ds == null) throw new InvalidOperationException($"Connection {cn} not found.");
             
@@ -41,9 +42,8 @@ namespace Beep.OilandGas.Accounting.Services
             string accountCode, 
             DateTime startDate, 
             DateTime endDate, 
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
-            var cn = connectionName ?? ConnectionName;
             var lineRepo = await GetRepoAsync<JOURNAL_ENTRY_LINE>("JOURNAL_ENTRY_LINE", cn);
             
             // In reality, we might need to join with Header to filter by date, 
@@ -116,9 +116,8 @@ namespace Beep.OilandGas.Accounting.Services
             DateTime startDate, 
             DateTime endDate, 
             decimal roundNumberThreshold = 1000m,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
-            var cn = connectionName ?? ConnectionName;
             var headerRepo = await GetRepoAsync<JOURNAL_ENTRY>("JOURNAL_ENTRY", cn);
             
             var headerFilters = new List<AppFilter>

@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Constants;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +7,9 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -19,7 +22,7 @@ namespace Beep.OilandGas.Accounting.Services
     /// GL Posting: Debit Expense (6001), Credit AP (2000) on bill receipt
     ///            Debit AP (2000), Credit Cash (1000) on payment
     /// </summary>
-    public class APInvoiceService
+    public class APInvoiceService 
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -151,7 +154,7 @@ namespace Beep.OilandGas.Accounting.Services
                     "AP");
 
                 // Update bill status
-                bill.STATUS = "RECEIVED";
+                bill.STATUS = AccountingReferenceCodes.InvoiceStatusCodes.Received;
                 bill.ROW_CHANGED_BY = userId;
                 bill.ROW_CHANGED_DATE = DateTime.UtcNow;
 
@@ -232,7 +235,7 @@ namespace Beep.OilandGas.Accounting.Services
 
                 if (newBalance <= 0.01m)
                 {
-                    bill.STATUS = "PAID";
+                    bill.STATUS = AccountingReferenceCodes.InvoiceStatusCodes.Paid;
                 }
                 else
                 {

@@ -14,7 +14,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             decimal fairValue,
             DateTime valuationDate,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
 
         Task<HEDGE_MEASUREMENT> MeasureHedgeAsync(
             HEDGE_RELATIONSHIP hedge,
@@ -22,6 +22,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             decimal hedgingInstrumentChange,
             DateTime measurementDate,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
     }
 }

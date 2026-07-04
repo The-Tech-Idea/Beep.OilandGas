@@ -5,248 +5,46 @@
 @inject ISnackbar Snackbar
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
-    <MudText Typo="Typo.h4" GutterBottom="true">
-        <MudIcon Icon="@Icons.Material.Filled.Upload" Class="mr-2" />
-        Data Import
-    </MudText>
-    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
-        Quality-validated CSV import with error replay and data profiling.
-        Powered by BeepDM DataImportManager.
-    </MudText>
+    <MudText Typo="Typo.h4" GutterBottom="true"><MudIcon Icon="@Icons.Material.Filled.Upload" Class="mr-2" />Data Import</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">Quality-validated CSV import into PPDM tables.</MudText>
 
     <MudGrid>
         <MudItem xs="12" md="6">
-            <MudCard Elevation="2">
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Upload CSV</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent>
-                    <MudSelect T="string" Label="Target Table" @bind-Value="_tableName" Variant="Variant.Outlined" Class="mb-3">
-                        <MudSelectItem Value="WELL">WELL</MudSelectItem>
-                        <MudSelectItem Value="FIELD">FIELD</MudSelectItem>
-                        <MudSelectItem Value="FACILITY">FACILITY</MudSelectItem>
-                        <MudSelectItem Value="PDEN_VOL_SUMMARY">PDEN_VOL_SUMMARY (Production)</MudSelectItem>
-                        <MudSelectItem Value="PROSPECT">PROSPECT</MudSelectItem>
-                    </MudSelect>
-                    <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="OnFilesChanged"
-                                   Accept=".csv" MaximumFileCount="1" Class="mb-3">
-                        <LabelTemplate>
-                            <MudText>Drop CSV file here or click to browse</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">Max 100 MB</MudText>
-                        </LabelTemplate>
-                    </MudFileUpload>
-                    @if (_selectedFile != null)
-                    {
-                        <MudChip Color="Color.Info" Size="Size.Small">
-                            @_selectedFile.Name (@((_selectedFile.Size / 1024.0 / 1024.0).ToString("F1")) MB)
-                        </MudChip>
-                    }
-                </MudCardContent>
-                <MudCardActions>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                               OnClick="UploadAndImport" Disabled="@(_selectedFile == null || _importing || string.IsNullOrEmpty(_tableName))">
-                        @if (_importing) {
-                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                        }
-                        Import with Quality Validation
-                    </MudButton>
-                </MudCardActions>
-            </MudCard>
-
-            @if (_result != null)
-            {
-                <MudCard Elevation="2" Class="mt-3">
-                    <MudCardHeader>
-                        <CardHeaderContent><MudText Typo="Typo.h6">Import Result</MudText></CardHeaderContent>
-                        <CardHeaderActions>
-                            <MudChip Color="@(_result.Success ? Color.Success : Color.Error)" Size="Size.Small">
-                                @(_result.Success ? "Success" : "Failed")
-                            </MudChip>
-                        </CardHeaderActions>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudStack Row="true" Justify="Justify.SpaceAround">
-                            <div><MudText Typo="Typo.caption">Read</MudText><MudText Typo="Typo.h6">@_result.RecordsRead.ToString("N0")</MudText></div>
-                            <div><MudText Typo="Typo.caption">Inserted</MudText><MudText Typo="Typo.h6" Color="Color.Success">@_result.RecordsInserted.ToString("N0")</MudText></div>
-                            <div><MudText Typo="Typo.caption">Failed</MudText><MudText Typo="Typo.h6" Color="@(_result.RecordsFailed > 0 ? Color.Error : Color.Default)">@_result.RecordsFailed.ToString("N0")</MudText></div>
-                            <div><MudText Typo="Typo.caption">Duration</MudText><MudText Typo="Typo.h6">@_result.Duration</MudText></div>
-                        </MudStack>
-                        @if (_result.Quality != null)
-                        {
-                            <MudDivider Class="my-2" />
-                            <MudText Typo="Typo.caption">Quality: @(_result.Quality.SuccessRate.ToString("P1")) success rate · @_result.Quality.RulesEvaluated rules evaluated</MudText>
-                        }
-                        @if (_result.RecordsFailed > 0)
-                        {
-                            <MudButton Variant="Variant.Outlined" Color="Color.Warning" Size="Size.Small" Class="mt-2"
-                                       OnClick="() => ReplayFailed(_result.ContextKey)">
-                                Replay Failed Records
-                            </MudButton>
-                        }
-                    </MudCardContent>
-                </MudCard>
-            }
+            <MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Upload CSV</MudText></CardHeaderContent></MudCardHeader>
+            <MudCardContent>
+                <MudSelect T="string" Label="Target Table" @bind-Value="_tableName" Variant="Variant.Outlined" Class="mb-3">
+                    <MudSelectItem Value="WELL">WELL</MudSelectItem><MudSelectItem Value="FIELD">FIELD</MudSelectItem>
+                    <MudSelectItem Value="FACILITY">FACILITY</MudSelectItem><MudSelectItem Value="PDEN_VOL_SUMMARY">Production</MudSelectItem>
+                    <MudSelectItem Value="PROSPECT">PROSPECT</MudSelectItem>
+                </MudSelect>
+                <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="OnFilesChanged" Accept=".csv" MaximumFileCount="1" Class="mb-3">
+                    <LabelTemplate><MudText>Drop CSV file here or click to browse</MudText><MudText Typo="Typo.caption" Color="Color.Secondary">Max 100 MB</MudText></LabelTemplate>
+                </MudFileUpload>
+                @if(_selectedFile!=null){<MudChip Color="Color.Info" Size="Size.Small">@_selectedFile.Name (@($"{_selectedFile.Size/1024.0/1024.0:F1} MB"))</MudChip>}
+            </MudCardContent>
+            <MudCardActions><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="UploadAndImport" Disabled="@(_selectedFile==null||_importing||string.IsNullOrEmpty(_tableName))">@if(_importing){<MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2"/>}Import with Validation</MudButton></MudCardActions></MudCard>
+            @if(_result!=null){<MudCard Elevation="2" Class="mt-3"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Result</MudText></CardHeaderContent><CardHeaderActions><MudChip Color="@(_result.Success?Color.Success:Color.Error)" Size="Size.Small">@(_result.Success?"Success":"Failed")</MudChip></CardHeaderActions></MudCardHeader>
+            <MudCardContent><MudStack Row="true" Justify="Justify.SpaceAround"><div><MudText Typo="Typo.caption">Read</MudText><MudText Typo="Typo.h6">@_result.RecordsRead.ToString("N0")</MudText></div><div><MudText Typo="Typo.caption">Inserted</MudText><MudText Typo="Typo.h6" Color="Color.Success">@_result.RecordsInserted.ToString("N0")</MudText></div><div><MudText Typo="Typo.caption">Failed</MudText><MudText Typo="Typo.h6" Color="@(_result.RecordsFailed>0?Color.Error:Color.Default)">@_result.RecordsFailed.ToString("N0")</MudText></div></MudStack></MudCardContent></MudCard>}
         </MudItem>
-
         <MudItem xs="12" md="6">
-            <MudCard Elevation="2">
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Data Profiling</MudText>
-                    </CardHeaderContent>
-                    <CardHeaderActions>
-                        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="ProfileTable"
-                                   Disabled="@(string.IsNullOrEmpty(_tableName) || _profiling)">
-                            @if (_profiling) {
-                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                            }
-                            Profile Selected Table
-                        </MudButton>
-                    </CardHeaderActions>
-                </MudCardHeader>
-                <MudCardContent>
-                    @if (_profile != null)
-                    {
-                        <MudText Typo="Typo.caption" Class="mb-2">
-                            @_profile.SampleSize.ToString("N0") records sampled · Captured @_profile.CapturedAt
-                        </MudText>
-                        @if (_profile.Fields?.Count > 0)
-                        {
-                            <div style="max-height:400px;overflow-y:auto;">
-                                <MudTable Items="@_profile.Fields" Hover="true" Dense="true" Striped="true">
-                                    <HeaderContent>
-                                        <MudTh>Field</MudTh>
-                                        <MudTh>Type</MudTh>
-                                        <MudTh>Distinct</MudTh>
-                                        <MudTh>Null %</MudTh>
-                                        <MudTh>Min</MudTh>
-                                        <MudTh>Max</MudTh>
-                                    </HeaderContent>
-                                    <RowTemplate>
-                                        <MudTd>@context.FieldName</MudTd>
-                                        <MudTd><MudChip Size="Size.Small">@context.InferredType</MudChip></MudTd>
-                                        <MudTd>@context.DistinctCount?.ToString("N0")</MudTd>
-                                        <MudTd>@(context.NullRatio?.ToString("P1"))</MudTd>
-                                        <MudTd Class="og-label-sm">@Truncate(context.MinValue, 20)</MudTd>
-                                        <MudTd Class="og-label-sm">@Truncate(context.MaxValue, 20)</MudTd>
-                                    </RowTemplate>
-                                </MudTable>
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <MudAlert Severity="Severity.Info">Select a target table and click "Profile" to analyze field statistics before importing.</MudAlert>
-                    }
-                </MudCardContent>
-            </MudCard>
+            <MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Quality Rules (Optional)</MudText></CardHeaderContent></MudCardHeader>
+            <MudCardContent>
+                <MudSwitch @bind-Checked="_notNull">Require non-null values</MudSwitch>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">More quality rules available via API. See /api/data-import documentation.</MudText>
+            </MudCardContent></MudCard>
         </MudItem>
     </MudGrid>
 </MudContainer>
 
 @code {
-    private IBrowserFile? _selectedFile;
-    private string _tableName = string.Empty;
-    private bool _importing;
-    private bool _profiling;
+    private IBrowserFile? _selectedFile;private string _tableName="";private bool _importing,_notNull;
     private ImportResultDto? _result;
-    private ProfileResultDto? _profile;
-
-    private void OnFilesChanged(IReadOnlyList<IBrowserFile> files)
-    {
-        _selectedFile = files.FirstOrDefault();
-        _result = null;
+    private void OnFilesChanged(IReadOnlyList<IBrowserFile> files){_selectedFile=files.FirstOrDefault();_result=null;}
+    private async Task UploadAndImport(){
+        if(_selectedFile==null||string.IsNullOrEmpty(_tableName))return;_importing=true;StateHasChanged();
+        try{using var c=new MultipartFormDataContent();var s=new StreamContent(_selectedFile.OpenReadStream(100_000_000));s.Headers.ContentType=new System.Net.Http.Headers.MediaTypeHeaderValue("text/csv");c.Add(s,"file",_selectedFile.Name);
+        var r=await Http.PostAsync($"/api/data-import/csv/{_tableName}",c);if(r.IsSuccessStatusCode){_result=await r.Content.ReadFromJsonAsync<ImportResultDto>();Snackbar.Add($"Imported {_result?.RecordsInserted??0:N0} records",Severity.Success);}else{Snackbar.Add($"Import failed: {await r.Content.ReadAsStringAsync()}",Severity.Error);}}
+        catch(Exception ex){Snackbar.Add($"Error: {ex.Message}",Severity.Error);}finally{_importing=false;}
     }
-
-    private async Task UploadAndImport()
-    {
-        if (_selectedFile == null || string.IsNullOrEmpty(_tableName)) return;
-        _importing = true;
-        StateHasChanged();
-        try
-        {
-            using var content = new MultipartFormDataContent();
-            var fileContent = new StreamContent(_selectedFile.OpenReadStream(100_000_000));
-            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/csv");
-            content.Add(fileContent, "file", _selectedFile.Name);
-
-            var response = await Http.PostAsync($"/api/data-import/csv/{_tableName}", content);
-            if (response.IsSuccessStatusCode)
-            {
-                _result = await response.Content.ReadFromJsonAsync<ImportResultDto>();
-                Snackbar.Add($"Imported {_result?.RecordsInserted ?? 0:N0} records", Severity.Success);
-            }
-            else
-            {
-                var error = await response.Content.ReadAsStringAsync();
-                Snackbar.Add($"Import failed: {error}", Severity.Error);
-            }
-        }
-        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
-        finally { _importing = false; }
-    }
-
-    private async Task ReplayFailed(string? contextKey)
-    {
-        if (string.IsNullOrEmpty(contextKey)) return;
-        try
-        {
-            var response = await Http.PostAsync($"/api/data-import/replay/{contextKey}", null);
-            if (response.IsSuccessStatusCode)
-                Snackbar.Add("Replay completed", Severity.Success);
-        }
-        catch (Exception ex) { Snackbar.Add($"Replay failed: {ex.Message}", Severity.Error); }
-    }
-
-    private async Task ProfileTable()
-    {
-        if (string.IsNullOrEmpty(_tableName)) return;
-        _profiling = true;
-        StateHasChanged();
-        try
-        {
-            _profile = await Http.GetFromJsonAsync<ProfileResultDto>(
-                $"/api/data-import/profile/{_tableName}?sampleSize=500");
-        }
-        catch (Exception ex) { Snackbar.Add($"Profiling failed: {ex.Message}", Severity.Error); }
-        finally { _profiling = false; }
-    }
-
-    private static string Truncate(string? value, int max) =>
-        string.IsNullOrEmpty(value) ? "-" : value.Length <= max ? value : value[..max] + "...";
-
-    // DTOs
-    public class ImportResultDto
-    {
-        public string? ContextKey { get; set; }
-        public bool Success { get; set; }
-        public int RecordsRead { get; set; }
-        public int RecordsInserted { get; set; }
-        public int RecordsFailed { get; set; }
-        public string Duration { get; set; } = string.Empty;
-        public QualityDto? Quality { get; set; }
-    }
-    public class QualityDto
-    {
-        public double SuccessRate { get; set; }
-        public int RulesEvaluated { get; set; }
-    }
-    public class ProfileResultDto
-    {
-        public string TableName { get; set; } = string.Empty;
-        public int SampleSize { get; set; }
-        public DateTime CapturedAt { get; set; }
-        public List<FieldProfileDto> Fields { get; set; } = new();
-    }
-    public class FieldProfileDto
-    {
-        public string FieldName { get; set; } = string.Empty;
-        public string InferredType { get; set; } = string.Empty;
-        public int? DistinctCount { get; set; }
-        public double? NullRatio { get; set; }
-        public string? MinValue { get; set; }
-        public string? MaxValue { get; set; }
-    }
+    public class ImportResultDto{public bool Success{get;set;}public int RecordsRead{get;set;}public int RecordsInserted{get;set;}public int RecordsFailed{get;set;}}
 }

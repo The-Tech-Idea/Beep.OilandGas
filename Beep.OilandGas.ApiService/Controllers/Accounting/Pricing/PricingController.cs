@@ -34,7 +34,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
         [HttpGet("indices")]
         public ActionResult<List<PriceIndex>> GetPriceIndices(
             [FromQuery] string? indexName = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -80,7 +80,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
         [HttpPost("indices")]
         public ActionResult<PriceIndex> AddPriceIndex(
             [FromBody] PriceIndexRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -118,7 +118,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
         [HttpPost("valuateticket")]
         public ActionResult<RUN_TICKET_VALUATION> ValueRunTicket(
             [FromBody] ValueRunTicketRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

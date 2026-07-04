@@ -13,37 +13,37 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Renders a chart to a SkiaSharp canvas.
         /// </summary>
-        Task<RenderChartResult> RenderChartAsync(RenderChartRequest request, SKCanvas canvas, string userId, string? connectionName = null);
+        Task<RenderChartResult> RenderChartAsync(RenderChartRequest request, SKCanvas canvas, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Exports a chart to an image file.
         /// </summary>
-        Task<ExportChartResult> ExportChartAsync(ExportChartRequest request, string userId, string? connectionName = null);
+        Task<ExportChartResult> ExportChartAsync(ExportChartRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Saves a chart configuration.
         /// </summary>
-        Task<CHART_CONFIGURATION> SaveChartConfigurationAsync(SaveChartConfigurationRequest request, string userId, string? connectionName = null);
+        Task<CHART_CONFIGURATION> SaveChartConfigurationAsync(SaveChartConfigurationRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets a chart configuration by ID.
         /// </summary>
-        Task<CHART_CONFIGURATION?> GetChartConfigurationAsync(string configurationId, string? connectionName = null);
+        Task<CHART_CONFIGURATION?> GetChartConfigurationAsync(string configurationId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets all chart configurations for a chart type.
         /// </summary>
-        Task<List<CHART_CONFIGURATION>> GetChartConfigurationsAsync(string? chartType, string? connectionName = null);
+        Task<List<CHART_CONFIGURATION>> GetChartConfigurationsAsync(string? chartType, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets the default chart configuration for a chart type.
         /// </summary>
-        Task<CHART_CONFIGURATION?> GetDefaultChartConfigurationAsync(string chartType, string? connectionName = null);
+        Task<CHART_CONFIGURATION?> GetDefaultChartConfigurationAsync(string chartType, string connectionName = "PPDM39");
         
         /// <summary>
         /// Deletes a chart configuration.
         /// </summary>
-        Task<bool> DeleteChartConfigurationAsync(string configurationId, string userId, string? connectionName = null);
+        Task<bool> DeleteChartConfigurationAsync(string configurationId, string userId, string connectionName = "PPDM39");
     }
 }
 

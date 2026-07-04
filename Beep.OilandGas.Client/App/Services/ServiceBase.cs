@@ -171,7 +171,7 @@ namespace Beep.OilandGas.Client.App.Services
                 ?? throw new InvalidOperationException("HttpClient is not available");
         }
 
-        private string BuildRequestUri(string endpoint, string? connectionName = null)
+        private string BuildRequestUri(string endpoint, string connectionName = "PPDM39")
         {
             var baseUrl = _app.GetOptions().ApiBaseUrl ?? "";
             var uri = endpoint.StartsWith("/") ? endpoint : "/" + endpoint;
@@ -188,7 +188,7 @@ namespace Beep.OilandGas.Client.App.Services
         protected string BuildRequestUriWithParams(
             string endpoint,
             Dictionary<string, string>? queryParams = null,
-            string? connectionName = null)
+            string connectionName = "PPDM39")
         {
             var uri = endpoint.StartsWith("/") ? endpoint : "/" + endpoint;
             var hasParams = endpoint.Contains("?");

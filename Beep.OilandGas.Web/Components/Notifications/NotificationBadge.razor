@@ -1,0 +1,46 @@
+@* Real-time notification count badge for nav menus. Subscribes to NotificationService. *@
+@using Beep.OilandGas.Web.Services
+@implements IDisposable
+
+@if (_count > 0)
+{
+    <MudBadge Content="@(_count > 99 ? "99+" : _count.ToString())"
+              Color="Color.Error"
+              Overlap="true"
+              Class="notification-badge" />
+}
+
+@code {
+    [Inject] private INotificationService? NotificationService { get; set; }
+    [Parameter] public string? FilterTaskType { get; set; }
+
+    private int _count;
+
+    protected override void OnInitialized()
+    {
+        if (NotificationService is not null)
+        {
+            NotificationService.OnTaskCountsUpdated += OnCountsUpdated;
+        }
+    }
+
+    private void OnCountsUpdated(InboxCounts counts)
+    {
+        _count = FilterTaskType?.ToUpperInvariant() switch
+        {
+            "APPROVAL" => counts.Approvals,
+            "REVIEW" => counts.Reviews,
+            "DATA_ENTRY" => counts.DataEntry,
+            _ => counts.TotalPending,
+        };
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        if (NotificationService is not null)
+        {
+            NotificationService.OnTaskCountsUpdated -= OnCountsUpdated;
+        }
+    }
+}

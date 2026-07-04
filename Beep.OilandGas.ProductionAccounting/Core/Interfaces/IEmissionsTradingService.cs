@@ -15,13 +15,13 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             decimal allowancePrice,
             DateTime periodEnd,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
 
         Task<EMISSIONS_SETTLEMENT> SettleAsync(
             string obligationId,
             decimal allowancesSurrendered,
             DateTime settlementDate,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
     }
 }

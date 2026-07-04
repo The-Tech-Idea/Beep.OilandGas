@@ -5,7 +5,9 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -50,7 +52,7 @@ namespace Beep.OilandGas.Accounting.Services
             decimal indexAtReporting,
             DateTime restatementDate,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(accountId))
                 throw new ArgumentNullException(nameof(accountId));
@@ -64,7 +66,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (delta == 0m)
                 throw new InvalidOperationException("Restatement delta is zero");
 
-            var cn = connectionName ?? ConnectionName;
             var cost = new ACCOUNTING_COST
             {
                 ACCOUNTING_COST_ID = Guid.NewGuid().ToString(),
@@ -122,14 +123,13 @@ namespace Beep.OilandGas.Accounting.Services
             decimal amount,
             bool isGain,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (amount <= 0m)
                 throw new InvalidOperationException("Amount must be positive");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var cost = new ACCOUNTING_COST
             {
                 ACCOUNTING_COST_ID = Guid.NewGuid().ToString(),

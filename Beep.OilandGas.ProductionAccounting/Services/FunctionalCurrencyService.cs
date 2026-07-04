@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,14 +46,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string fromCurrency,
             string toCurrency,
             DateTime rateDate,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(fromCurrency))
                 throw new ArgumentNullException(nameof(fromCurrency));
             if (string.IsNullOrWhiteSpace(toCurrency))
                 throw new ArgumentNullException(nameof(toCurrency));
 
-            var rate = await GetFxRateAsync(fromCurrency, toCurrency, rateDate, cn);
+            var rate = await GetFxRateAsync(fromCurrency, toCurrency, rateDate, connectionName);
             return amount * rate;
         }
 
@@ -60,7 +61,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string entityId,
             DateTime periodEnd,
             string reportingCurrency,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(entityId))
                 throw new ArgumentNullException(nameof(entityId));
@@ -76,9 +77,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 baseCurrency,
                 reportingCurrency,
                 periodEnd,
-                cn);
+                connectionName);
 
-            var rate = await GetFxRateAsync(baseCurrency, reportingCurrency, periodEnd, cn);
+            var rate = await GetFxRateAsync(baseCurrency, reportingCurrency, periodEnd, connectionName);
 
             var result = new CURRENCY_TRANSLATION_RESULT
             {
@@ -101,7 +102,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "CURRENCY_TRANSLATION_RESULT");
+                entityType, connectionName, "CURRENCY_TRANSLATION_RESULT");
 
             await repo.InsertAsync(result, result.ROW_CREATED_BY);
 
@@ -116,7 +117,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string fromCurrency,
             string toCurrency,
             DateTime rateDate,
-            string cn)
+            string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync("FX_RATE");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -124,7 +125,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "FX_RATE");
+                entityType, connectionName, "FX_RATE");
 
             var filters = new List<AppFilter>
             {

@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -19,6 +20,7 @@ public class RoleAssignmentService : IRoleAssignmentService
     private readonly IPPDM39DefaultsRepository _defaults;
     private readonly IPPDMMetadataRepository _metadata;
     private readonly string _connectionName;
+    private readonly ISodConflictDetector? _sodDetector;
     private readonly ILogger<RoleAssignmentService>? _logger;
 
     public RoleAssignmentService(
@@ -27,7 +29,8 @@ public class RoleAssignmentService : IRoleAssignmentService
         IPPDM39DefaultsRepository defaults,
         IPPDMMetadataRepository metadata,
         string connectionName,
-        ILogger<RoleAssignmentService>? logger = null)
+        ILogger<RoleAssignmentService>? logger = null,
+        ISodConflictDetector? sodDetector = null)
     {
         _editor = editor;
         _commonColumnHandler = commonColumnHandler;
@@ -35,6 +38,7 @@ public class RoleAssignmentService : IRoleAssignmentService
         _metadata = metadata;
         _connectionName = connectionName;
         _logger = logger;
+        _sodDetector = sodDetector;
     }
 
     private PPDMGenericRepository GetRepo<T>(string tableName) =>
@@ -46,6 +50,29 @@ public class RoleAssignmentService : IRoleAssignmentService
     public async Task<AppUserRole> AssignRoleAsync(
         string userId, string roleId, string grantedByUserId, string? reason = null)
     {
+        // Phase 4: SoD pre-assignment check
+        if (_sodDetector is not null)
+        {
+            var newPermissions = await GetPermissionsForRoleAsync(roleId);
+            var sodCheck = await _sodDetector.PreAssignCheckAsync(userId, roleId, newPermissions);
+            await _sodDetector.LogSodEvaluationAsync(sodCheck, grantedByUserId);
+
+            if (sodCheck.HasBlockingConflict)
+            {
+                var conflictNames = string.Join(", ", sodCheck.Conflicts.Select(c => c.RuleName));
+                _logger?.LogWarning("Role assignment BLOCKED by SoD: User={UserId}, Role={RoleId}, Conflicts={Conflicts}",
+                    userId, roleId, conflictNames);
+                throw new InvalidOperationException(
+                    $"Role assignment violates Segregation of Duties: {conflictNames}. " +
+                    "A compensating control waiver is required before proceeding.");
+            }
+
+            if (sodCheck.HasConflict)
+            {
+                _logger?.LogWarning("Role assignment has SoD warnings: User={UserId}, Role={RoleId}", userId, roleId);
+            }
+        }
+
         var repo = GetRepo<AppUserRole>("APP_USER_ROLE");
         var assignment = new AppUserRole
         {
@@ -177,5 +204,28 @@ public class RoleAssignmentService : IRoleAssignmentService
             _logger?.LogWarning(ex,
                 "Failed to write access audit event {EventType} for user {UserId}", eventType, userId);
         }
+    }
+
+    private async Task<List<string>> GetPermissionsForRoleAsync(string roleId)
+    {
+        var perms = new List<string>();
+        try
+        {
+            var rpRepo = GetRepo<Beep.OilandGas.Models.Data.Security.ROLE_PERMISSION>("ROLE_PERMISSION");
+            var rps = (await rpRepo.GetAsync(new List<AppFilter>
+            {
+                new() { FieldName = "ROLE_ID", FilterValue = roleId }
+            })).OfType<Beep.OilandGas.Models.Data.Security.ROLE_PERMISSION>().ToList();
+
+            var permRepo = GetRepo<Beep.OilandGas.Models.Data.Security.PERMISSION>("PERMISSION");
+            var allPerms = (await permRepo.GetAsync(new List<AppFilter>()))
+                .OfType<Beep.OilandGas.Models.Data.Security.PERMISSION>().ToList();
+
+            var permIds = rps.Select(r => r.PERMISSION_ID).ToHashSet();
+            perms = allPerms.Where(p => permIds.Contains(p.PERMISSION_ID))
+                .Select(p => p.PERMISSION_CODE).ToList();
+        }
+        catch { /* Non-blocking — SoD check degrades gracefully */ }
+        return perms;
     }
 }

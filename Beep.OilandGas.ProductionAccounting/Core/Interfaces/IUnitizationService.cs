@@ -15,52 +15,52 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Creates a unit agreement.
         /// </summary>
-        Task<UNIT_AGREEMENT> CreateUnitAgreementAsync(CreateUnitAgreementRequest request, string userId, string? connectionName = null);
+        Task<UNIT_AGREEMENT> CreateUnitAgreementAsync(CreateUnitAgreementRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets a unit agreement by ID.
         /// </summary>
-        Task<UNIT_AGREEMENT?> GetUnitAgreementAsync(string agreementId, string? connectionName = null);
+        Task<UNIT_AGREEMENT?> GetUnitAgreementAsync(string agreementId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets all unit agreements.
         /// </summary>
-        Task<List<UNIT_AGREEMENT>> GetUnitAgreementsAsync(string? connectionName = null);
+        Task<List<UNIT_AGREEMENT>> GetUnitAgreementsAsync(string connectionName = "PPDM39");
         
         /// <summary>
         /// Creates a participating area.
         /// </summary>
-        Task<PARTICIPATING_AREA> CreateParticipatingAreaAsync(CreateParticipatingAreaRequest request, string userId, string? connectionName = null);
+        Task<PARTICIPATING_AREA> CreateParticipatingAreaAsync(CreateParticipatingAreaRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets participating areas by unit.
         /// </summary>
-        Task<List<PARTICIPATING_AREA>> GetParticipatingAreasByUnitAsync(string unitId, string? connectionName = null);
+        Task<List<PARTICIPATING_AREA>> GetParticipatingAreasByUnitAsync(string unitId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Registers tract participation.
         /// </summary>
-        Task<TRACT_PARTICIPATION> RegisterTractParticipationAsync(CreateTractParticipationRequest request, string userId, string? connectionName = null);
+        Task<TRACT_PARTICIPATION> RegisterTractParticipationAsync(CreateTractParticipationRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets tract participations by area.
         /// </summary>
-        Task<List<TRACT_PARTICIPATION>> GetTractParticipationsByAreaAsync(string areaId, string? connectionName = null);
+        Task<List<TRACT_PARTICIPATION>> GetTractParticipationsByAreaAsync(string areaId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Approves a unit agreement.
         /// </summary>
-        Task<UnitApprovalResult> ApproveUnitAgreementAsync(string agreementId, string approverId, string? connectionName = null);
+        Task<UnitApprovalResult> ApproveUnitAgreementAsync(string agreementId, string approverId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets unit operations summary.
         /// </summary>
-        Task<UnitOperationsSummary> GetUnitOperationsSummaryAsync(string unitId, string? connectionName = null);
+        Task<UnitOperationsSummary> GetUnitOperationsSummaryAsync(string unitId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets agreements requiring approval.
         /// </summary>
-        Task<List<UNIT_AGREEMENT>> GetAgreementsRequiringApprovalAsync(string? connectionName = null);
+        Task<List<UNIT_AGREEMENT>> GetAgreementsRequiringApprovalAsync(string connectionName = "PPDM39");
     }
 }
 

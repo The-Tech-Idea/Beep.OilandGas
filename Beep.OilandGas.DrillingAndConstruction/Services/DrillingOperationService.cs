@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +17,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
     /// Implements industry-standard drilling engineering including planning, execution, monitoring, and cost tracking.
     /// Uses PPDMGenericRepository for PPDM39 data access and persistence.
     /// </summary>
-    public class DrillingOperationService : Beep.OilandGas.Models.Core.Interfaces.IDrillingOperationService
+    public class DrillingOperationService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -47,7 +48,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
 
         #region Repository Helpers
 
-        private async Task<PPDMGenericRepository> GetWellRepositoryAsync()
+        private async Task<PPDMGenericRepository> GetWellRepositoryAsync(CancellationToken cancellationToken = default)
         {
             if (_wellRepository == null)
             {
@@ -64,7 +65,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             return _wellRepository;
         }
 
-        private async Task<PPDMGenericRepository> GetDrillReportRepositoryAsync()
+        private async Task<PPDMGenericRepository> GetDrillReportRepositoryAsync(CancellationToken cancellationToken = default)
         {
             if (_drillReportRepository == null)
             {
@@ -120,7 +121,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             return filters;
         }
 
-        private async Task<WELL?> GetWellAsync(string wellUWI, string? fieldId = null, bool activeOnly = true)
+        private async Task<WELL?> GetWellAsync(string wellUWI, string? fieldId = null, bool activeOnly = true, CancellationToken cancellationToken = default)
         {
             var wellRepo = await GetWellRepositoryAsync();
             var wellEntities = await wellRepo.GetAsync(CreateWellFilters(wellUWI, fieldId, activeOnly));
@@ -167,7 +168,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             return string.IsNullOrWhiteSpace(userId) ? "SYSTEM" : userId.Trim();
         }
 
-        public async Task<List<DRILLING_OPERATION>> GetDrillingOperationsAsync(string? wellUWI = null, string? fieldId = null)
+        public async Task<List<DRILLING_OPERATION>> GetDrillingOperationsAsync(string? wellUWI = null, string? fieldId = null, CancellationToken cancellationToken = default)
         {
             _logger?.LogInformation("Getting drilling operations for well UWI: {WellUWI} in field {FieldId}", wellUWI ?? "all", fieldId ?? "all");
 
@@ -196,7 +197,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             return operations;
         }
 
-        public async Task<DRILLING_OPERATION?> GetDrillingOperationAsync(string operationId, string? fieldId = null)
+        public async Task<DRILLING_OPERATION?> GetDrillingOperationAsync(string operationId, string? fieldId = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(operationId))
             {
@@ -226,7 +227,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             return MapToDrillingOperationDto(well, reports);
         }
 
-        public async Task<DRILLING_OPERATION> CreateDrillingOperationAsync(CREATE_DRILLING_OPERATION createDto, string? fieldId = null, string? userId = null)
+        public async Task<DRILLING_OPERATION> CreateDrillingOperationAsync(CREATE_DRILLING_OPERATION createDto, string? fieldId = null, string? userId = null, CancellationToken cancellationToken = default)
         {
             if (createDto == null)
                 throw new ArgumentNullException(nameof(createDto));
@@ -305,7 +306,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             return MapToDrillingOperationDto(well, new List<WELL_DRILL_REPORT> { report });
         }
 
-        public async Task<DRILLING_OPERATION> UpdateDrillingOperationAsync(string operationId, UpdateDrillingOperation updateDto, string? fieldId = null, string? userId = null)
+        public async Task<DRILLING_OPERATION> UpdateDrillingOperationAsync(string operationId, UpdateDrillingOperation updateDto, string? fieldId = null, string? userId = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(operationId))
                 throw new ArgumentException("Operation ID cannot be null or empty.", nameof(operationId));
@@ -366,7 +367,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             return MapToDrillingOperationDto(well, reports);
         }
 
-        public async Task<List<DRILLING_REPORT>> GetDrillingReportsAsync(string operationId, string? fieldId = null)
+        public async Task<List<DRILLING_REPORT>> GetDrillingReportsAsync(string operationId, string? fieldId = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(operationId))
             {
@@ -402,7 +403,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             return result;
         }
 
-        public async Task<DRILLING_REPORT> CreateDrillingReportAsync(string operationId, CreateDrillingReport createDto, string? fieldId = null, string? userId = null)
+        public async Task<DRILLING_REPORT> CreateDrillingReportAsync(string operationId, CreateDrillingReport createDto, string? fieldId = null, string? userId = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(operationId))
                 throw new ArgumentException("Operation ID cannot be null or empty.", nameof(operationId));
@@ -453,7 +454,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             string wellUWI,
             DateTime startDate,
             DateTime endDate,
-            string userId)
+            string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -511,7 +512,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             decimal dailyCost,
             decimal depthCompleted,
             decimal targetDepth,
-            string userId)
+            string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -577,7 +578,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             decimal currentDepth,
             decimal targetDepth,
             string wellType,
-            string userId)
+            string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -650,7 +651,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             string wellUWI,
             DrillingPerformanceAnalysisResult performance,
             DrillingCostAnalysisResult costs,
-            string userId)
+            string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));

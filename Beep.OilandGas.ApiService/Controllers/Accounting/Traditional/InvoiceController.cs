@@ -40,7 +40,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         /// </summary>
         [HttpGet]
         public async Task<ActionResult<List<object>>> GetInvoices(
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

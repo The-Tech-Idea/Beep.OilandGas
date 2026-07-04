@@ -19,7 +19,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string? propertyId = null,
             string? fieldId = null,
             string? status = null,
-            string? connectionName = null)
+            string connectionName = "PPDM39")
         {
             var filters = new List<AppFilter>
             {
@@ -51,7 +51,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         }
 
         /// <summary>Line items for an AFE; active rows only (aligned with <see cref="AfeService"/> line-item queries).</summary>
-        public async Task<List<AFE_LINE_ITEM>> GetAfeLineItemsAsync(string afeId, string? connectionName = null)
+        public async Task<List<AFE_LINE_ITEM>> GetAfeLineItemsAsync(string afeId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(afeId))
             {

@@ -44,7 +44,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         [HttpPost("allocate")]
         public async Task<ActionResult<CostAllocationComputationResult>> AllocateCosts(
             [FromBody] CostAllocationRequest request, 
-            [FromQuery] string? connectionName = null,
+            [FromQuery] string connectionName = "PPDM39",
             [FromQuery] string? userId = null)
         {
             try
@@ -105,7 +105,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         [HttpPost("service/allocate")]
         public async Task<ActionResult<ALLOCATION_RESULT>> AllocateProductionAsync(
             [FromBody] AllocateProductionRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -135,7 +135,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         [HttpGet("service/{allocationId}")]
         public async Task<ActionResult<ALLOCATION_RESULT>> GetAllocationAsync(
             string allocationId,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -159,7 +159,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         [HttpGet("service/{allocationId}/details")]
         public async Task<ActionResult<List<ALLOCATION_DETAIL>>> GetAllocationDetailsAsync(
             string allocationId,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -180,7 +180,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         [HttpPost("service/{allocationId}/reverse")]
         public async Task<ActionResult> ReverseAllocationAsync(
             string allocationId,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

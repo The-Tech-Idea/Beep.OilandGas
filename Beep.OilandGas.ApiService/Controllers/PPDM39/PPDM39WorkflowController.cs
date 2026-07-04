@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.Models.Data;
@@ -16,6 +17,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
     /// API controller for PPDM39 workflow pipeline operations
     /// Supports phase-specific workflows (Exploration, Development, Production, Decommissioning)
     /// </summary>
+    [Authorize]
     [ApiController]
     [Route("api/ppdm39/workflow")]
     public class PPDM39WorkflowController : ControllerBase

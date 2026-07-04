@@ -13,13 +13,13 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             ASSET_RETIREMENT_OBLIGATION obligation,
             DateTime asOfDate,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
 
         Task<ASSET_RETIREMENT_OBLIGATION> AccreteAroAsync(
             string aroId,
             DateTime periodEnd,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
     }
 }
 

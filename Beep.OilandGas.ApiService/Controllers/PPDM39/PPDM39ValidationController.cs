@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -15,6 +16,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
     /// <summary>
     /// API controller for PPDM39 data validation operations
     /// </summary>
+    [Authorize]
     [ApiController]
     [Route("api/ppdm39/validation")]
     public class PPDM39ValidationController : ControllerBase

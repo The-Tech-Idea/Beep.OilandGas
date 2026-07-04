@@ -16,7 +16,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Reconciles an account against its subledger.
         /// </summary>
-        Task<ReconciliationSummary> ReconcileAccountAsync(string accountId, DateTime periodEnd, string? connectionName = null);
+        Task<ReconciliationSummary> ReconcileAccountAsync(string accountId, DateTime periodEnd, string connectionName = "PPDM39");
 
         /// <summary>
         /// Identifies variances between GL account and subledger.
@@ -25,7 +25,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             string accountId, 
             DateTime periodStart, 
             DateTime periodEnd, 
-            string? connectionName = null);
+            string connectionName = "PPDM39");
 
         /// <summary>
         /// Performs intercompany reconciliation.
@@ -34,7 +34,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             string company1Id, 
             string company2Id, 
             DateTime periodEnd, 
-            string? connectionName = null);
+            string connectionName = "PPDM39");
 
         /// <summary>
         /// Performs bank reconciliation for cash accounts.
@@ -43,7 +43,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             string cashAccountId, 
             DateTime periodEnd, 
             decimal bankBalance, 
-            string? connectionName = null);
+            string connectionName = "PPDM39");
 
         /// <summary>
         /// Resolves a reconciliation variance.
@@ -53,7 +53,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             string resolutionType, 
             string notes, 
             string userId, 
-            string? connectionName = null);
+            string connectionName = "PPDM39");
 
         /// <summary>
         /// Gets aging analysis for accounts receivable/payable.
@@ -62,7 +62,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             string accountId, 
             DateTime asOfDate, 
             int[] agingBuckets, 
-            string? connectionName = null);
+            string connectionName = "PPDM39");
 
         /// <summary>
         /// Gets reconciliation history for an account.
@@ -71,7 +71,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             string accountId, 
             DateTime? startDate, 
             DateTime? endDate, 
-            string? connectionName = null);
+            string connectionName = "PPDM39");
     }
 
     /// <summary>

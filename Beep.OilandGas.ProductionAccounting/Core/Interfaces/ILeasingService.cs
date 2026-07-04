@@ -15,12 +15,12 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             IEnumerable<LEASE_PAYMENT> payments,
             DateTime commencementDate,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
 
         Task<LEASE_ACCOUNTING_ENTRY> RemeasureLeaseAsync(
             string leaseId,
             DateTime measurementDate,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
     }
 }

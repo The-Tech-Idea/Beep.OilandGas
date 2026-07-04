@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Constants;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +8,9 @@ using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -178,7 +181,7 @@ namespace Beep.OilandGas.Accounting.Services
                 bookId: bookId);
 
             await PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId);
-            entry.STATUS = "POSTED";
+            entry.STATUS = AccountingReferenceCodes.JournalEntryStatusCodes.Posted;
             return entry;
         }
 
@@ -236,7 +239,7 @@ namespace Beep.OilandGas.Accounting.Services
                 bookId: bookId);
 
             await PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId);
-            entry.STATUS = "POSTED";
+            entry.STATUS = AccountingReferenceCodes.JournalEntryStatusCodes.Posted;
             return entry;
         }
 
@@ -405,7 +408,7 @@ namespace Beep.OilandGas.Accounting.Services
                 await InsertGlEntriesAsync(entry, lineItems, userId);
 
                 // Update status to POSTED
-                entry.STATUS = "POSTED";
+                entry.STATUS = AccountingReferenceCodes.JournalEntryStatusCodes.Posted;
                 entry.ROW_CHANGED_BY = userId;
                 entry.ROW_CHANGED_DATE = DateTime.UtcNow;
 
@@ -465,7 +468,7 @@ namespace Beep.OilandGas.Accounting.Services
                     "REVERSAL");
 
                 // Update original entry status to REVERSED
-                originalEntry.STATUS = "REVERSED";
+                originalEntry.STATUS = AccountingReferenceCodes.JournalEntryStatusCodes.Reversed;
                 originalEntry.ROW_CHANGED_BY = userId;
                 originalEntry.ROW_CHANGED_DATE = DateTime.UtcNow;
 
@@ -623,13 +626,13 @@ namespace Beep.OilandGas.Accounting.Services
                 throw;
             }
         }
-        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? connectionName = null)
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string cn = "PPDM39")
         {
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
             
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(T), connectionName ?? ConnectionName, tableName);
+                typeof(T), cn ?? ConnectionName, tableName);
         }
     }
 }

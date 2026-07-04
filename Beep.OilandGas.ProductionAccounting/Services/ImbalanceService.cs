@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -53,7 +54,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string leaseId,
             decimal volume,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -86,7 +87,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "IMBALANCE_ADJUSTMENT");
+                entityType, connectionName, "IMBALANCE_ADJUSTMENT");
 
             await repo.InsertAsync(adjustment, userId);
 
@@ -106,7 +107,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             DateTime startDate,
             DateTime endDate,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -117,7 +118,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             try
             {
                 // Get all imbalance adjustments for the lease in the date range
-                var adjustments = await GetImbalanceAdjustmentsAsync(leaseId, startDate, endDate, cn);
+                var adjustments = await GetImbalanceAdjustmentsAsync(leaseId, startDate, endDate, connectionName);
 
                 if (!adjustments.Any())
                 {
@@ -171,7 +172,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// Gets the outstanding (cumulative) imbalance for a lease.
         /// Returns positive for overproduction, negative for underproduction.
         /// </summary>
-        public async Task<decimal> GetOutstandingImbalanceAsync(string leaseId, string cn = "PPDM39")
+        public async Task<decimal> GetOutstandingImbalanceAsync(string leaseId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -181,7 +182,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             try
             {
                 // Get all active imbalance adjustments
-                var adjustments = await GetAllImbalanceAdjustmentsAsync(leaseId, cn);
+                var adjustments = await GetAllImbalanceAdjustmentsAsync(leaseId, connectionName);
 
                 // Calculate net outstanding imbalance
                 decimal overproduced = adjustments
@@ -218,7 +219,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// Validates an imbalance adjustment record.
         /// Checks: amount is positive, type is valid, etc.
         /// </summary>
-        public async Task<bool> ValidateAsync(IMBALANCE_ADJUSTMENT imbalance, string cn = "PPDM39")
+        public async Task<bool> ValidateAsync(IMBALANCE_ADJUSTMENT imbalance, string connectionName = "PPDM39")
         {
             if (imbalance == null)
                 throw new ArgumentNullException(nameof(imbalance));
@@ -278,7 +279,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string leaseId,
             DateTime startDate,
             DateTime endDate,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             var metadata = await _metadata.GetTableMetadataAsync("IMBALANCE_ADJUSTMENT");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -286,7 +287,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "IMBALANCE_ADJUSTMENT");
+                entityType, connectionName, "IMBALANCE_ADJUSTMENT");
 
             var filters = new List<AppFilter>
             {
@@ -305,10 +306,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// </summary>
         private async Task<List<IMBALANCE_ADJUSTMENT>> GetAllImbalanceAdjustmentsAsync(
             string leaseId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             // Avoid DateTime.MinValue/MaxValue which some providers cannot translate.
-            return await GetImbalanceAdjustmentsAsync(leaseId, new DateTime(1900, 1, 1), DateTime.UtcNow.Date.AddDays(1), cn);
+            return await GetImbalanceAdjustmentsAsync(leaseId, new DateTime(1900, 1, 1), DateTime.UtcNow.Date.AddDays(1), connectionName);
         }
     }
 }

@@ -1,28 +1,37 @@
 @page "/drilling/workspace"
+@using System.Net.Http.Json
 @using MudBlazor
-@inject NavigationManager Nav
+@inject HttpClient Http
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
-    <MudText Typo="Typo.h3" GutterBottom="true"><MudIcon Icon="@Icons.Material.Filled.Construction" Class="mr-2" Color="Color.Primary" />Drilling Engineer Workspace</MudText>
-
+    <MudText Typo="Typo.h3" GutterBottom="true"><MudIcon Icon="@Icons.Material.Filled.Construction" Class="mr-2" Color="Color.Primary"/>Drilling Engineer Workspace</MudText>
+    @if(_loading){<MudProgressLinear Indeterminate="true" Class="my-4"/>}else{
     <MudGrid>
-        <MudItem xs="12" md="4">
-            <MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Drilling Programs</MudText></CardHeaderContent></MudCardHeader>
-            <MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/operations/drillingoperations">Drilling Operations</MudButton></MudCardContent></MudCard>
-        </MudItem>
-        <MudItem xs="12" md="4">
-            <MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Well Design</MudText></CardHeaderContent></MudCardHeader>
-            <MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/development/well-design">Well Design & AFE</MudButton></MudCardContent></MudCard>
-        </MudItem>
-        <MudItem xs="12" md="4">
-            <MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Quick Actions</MudText></CardHeaderContent></MudCardHeader>
-            <MudCardContent>
-                <MudStack Row="false" Spacing="2">
-                    <MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/wells/search">Well Search</MudButton>
-                    <MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/wells/compare">Compare Wells</MudButton>
-                    <MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/well-details/status">Well Status</MudButton>
-                </MudStack>
-            </MudCardContent></MudCard>
-        </MudItem>
+        <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Total Wells</MudText><MudText Typo="Typo.h4" Color="Color.Primary">@_kpi?.TotalWells.ToString("N0")</MudText><MudText Typo="Typo.caption">drilled</MudText></div><MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Color="Color.Primary" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
+        <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Active Wells</MudText><MudText Typo="Typo.h4" Color="Color.Success">@_kpi?.ActiveWells.ToString("N0")</MudText><MudText Typo="Typo.caption">producing</MudText></div><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
+        <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">AFE Budget</MudText><MudText Typo="Typo.h4" Color="Color.Info">@FormatCurrency(_kpi?.AfeBudget??0)</MudText><MudText Typo="Typo.caption">vs @FormatCurrency(_kpi?.AfeSpent??0) spent</MudText></div><MudIcon Icon="@Icons.Material.Filled.AccountBalance" Color="Color.Info" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
+        <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">NPT</MudText><MudText Typo="Typo.h4" Color="@(_kpi?.NptHours>20?Color.Error:Color.Warning)">@($"{_kpi?.NptHours:F0}h")</MudText><MudText Typo="Typo.caption">this month</MudText></div><MudIcon Icon="@Icons.Material.Filled.TimerOff" Color="Color.Warning" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
     </MudGrid>
+    <MudGrid>
+        <MudItem xs="12" md="5"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-1" Size="Size.Small"/>Drilling Tools</MudText></CardHeaderContent></MudCardHeader><MudCardContent Class="pa-2"><MudGrid>
+        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/development/well-design">Well Design</MudButton></MudItem>
+        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/ppdm39/operations/drillingoperations">Drilling Operations</MudButton></MudItem>
+        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/ppdm39/wells/search">Offset Well Search</MudButton></MudItem>
+        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/ppdm39/wells/compare">Compare Wells</MudButton></MudItem>
+    </MudGrid></MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" md="7"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.History" Class="mr-1" Size="Size.Small"/>Drilling Monitoring</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/development">Dev Dashboard</MudButton>
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/development/fdp">FDP Wizard</MudButton>
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/ppdm39/wells/wellbores">Wellbores</MudButton>
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/ppdm39/well-details/status">Well Status</MudButton>
+    </MudStack></MudCardContent></MudCard>
+        <MudCard Elevation="2" Class="mt-2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Campaign" Class="mr-1" Size="Size.Small"/>Attention Required</MudText></CardHeaderContent></MudCardHeader><MudCardContent>
+        <MudAlert Severity="Severity.Warning" Dense="true">AFE W-2025-042 at 94% spent — review before exceeding budget.</MudAlert>
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mt-1">5 wells awaiting completion design approval.</MudAlert>
+    </MudCardContent></MudCard></MudItem></MudGrid>}
 </MudContainer>
+
+@code{private bool _loading=true;private DrillingEngineerKpi? _kpi;
+protected override async Task OnInitializedAsync(){try{_kpi=await Http.GetFromJsonAsync<DrillingEngineerKpi>("/api/drilling/engineer/kpi")??new();}catch{_kpi=new();}_loading=false;}
+private static string FormatCurrency(decimal v)=>Math.Abs(v)>=1_000_000?$"${v/1_000_000m:F1}M":$"${v:N0}";
+public class DrillingEngineerKpi{public int TotalWells{get;set;}public int ActiveWells{get;set;}public decimal AfeBudget{get;set;}public decimal AfeSpent{get;set;}public decimal NptHours{get;set;}}}

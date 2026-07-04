@@ -1,10 +1,12 @@
+using Beep.OilandGas.PPDM39.Core;
+using Beep.OilandGas.PPDM39.Core.ModuleSetup;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.PermitsAndApplications.Constants;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
-using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
+using Beep.OilandGas.PPDM39.Core.ModuleSetup;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
 using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
 using TheTechIdea.Beep.Report;

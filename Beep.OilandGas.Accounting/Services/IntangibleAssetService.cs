@@ -4,7 +4,9 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -49,7 +51,7 @@ namespace Beep.OilandGas.Accounting.Services
             DateTime acquisitionDate,
             string userId,
             string? propertyId = null,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(intangibleId))
                 throw new ArgumentNullException(nameof(intangibleId));
@@ -60,7 +62,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var cost = new ACCOUNTING_COST
             {
                 ACCOUNTING_COST_ID = Guid.NewGuid().ToString(),
@@ -98,7 +99,7 @@ namespace Beep.OilandGas.Accounting.Services
             decimal amortizationAmount,
             DateTime amortizationDate,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(intangibleId))
                 throw new ArgumentNullException(nameof(intangibleId));
@@ -107,7 +108,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var cost = new ACCOUNTING_COST
             {
                 ACCOUNTING_COST_ID = Guid.NewGuid().ToString(),

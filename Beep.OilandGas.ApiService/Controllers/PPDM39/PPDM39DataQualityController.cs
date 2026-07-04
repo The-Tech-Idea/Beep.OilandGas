@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -11,6 +12,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
     /// <summary>
     /// API controller for PPDM39 data quality operations
     /// </summary>
+    [Authorize]
     [ApiController]
     [Route("api/ppdm39/quality")]
     public class PPDM39DataQualityController : ControllerBase
@@ -33,7 +35,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Get data quality metrics for a table
         /// </summary>
         [HttpGet("{tableName}/metrics")]
-        public async Task<ActionResult<DataQualityResult>> GetTableQualityMetrics(string tableName, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult<DataQualityResult>> GetTableQualityMetrics(string tableName, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
             try
@@ -71,7 +73,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Get data quality dashboard for all tables
         /// </summary>
         [HttpGet("dashboard")]
-        public async Task<ActionResult<DataQualityDashboardResult>> GetQualityDashboard([FromQuery] string? connectionName = null)
+        public async Task<ActionResult<DataQualityDashboardResult>> GetQualityDashboard([FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -122,7 +124,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Find data quality issues in a table
         /// </summary>
         [HttpGet("{tableName}/issues")]
-        public async Task<ActionResult> GetQualityIssues(string tableName, [FromQuery] string[]? fields = null, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult> GetQualityIssues(string tableName, [FromQuery] string[]? fields = null, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
             try

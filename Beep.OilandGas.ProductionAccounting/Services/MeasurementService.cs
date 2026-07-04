@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -50,7 +51,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<MEASUREMENT_RECORD> RecordAsync(
             RUN_TICKET ticket,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (ticket == null)
                 throw new ArgumentNullException(nameof(ticket));
@@ -92,7 +93,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "MEASUREMENT_RECORD");
+                entityType, connectionName, "MEASUREMENT_RECORD");
 
             await repo.InsertAsync(measurement, userId);
 
@@ -105,7 +106,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// <summary>
         /// Gets a measurement record by ID.
         /// </summary>
-        public async Task<MEASUREMENT_RECORD?> GetAsync(string measurementId, string cn = "PPDM39")
+        public async Task<MEASUREMENT_RECORD?> GetAsync(string measurementId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(measurementId))
                 throw new ArgumentNullException(nameof(measurementId));
@@ -116,7 +117,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "MEASUREMENT_RECORD");
+                entityType, connectionName, "MEASUREMENT_RECORD");
 
             var result = await repo.GetByIdAsync(measurementId);
             return result as MEASUREMENT_RECORD;
@@ -129,7 +130,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string wellId,
             DateTime start,
             DateTime end,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(wellId))
                 throw new ArgumentNullException(nameof(wellId));
@@ -142,7 +143,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "MEASUREMENT_RECORD");
+                entityType, connectionName, "MEASUREMENT_RECORD");
 
             var filters = new List<AppFilter>
             {
@@ -163,7 +164,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string leaseId,
             DateTime start,
             DateTime end,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -176,7 +177,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "MEASUREMENT_RECORD");
+                entityType, connectionName, "MEASUREMENT_RECORD");
 
             var filters = new List<AppFilter>
             {
@@ -193,7 +194,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// <summary>
         /// Validates a measurement record.
         /// </summary>
-        public async Task<bool> ValidateAsync(MEASUREMENT_RECORD measurement, string cn = "PPDM39")
+        public async Task<bool> ValidateAsync(MEASUREMENT_RECORD measurement, string connectionName = "PPDM39")
         {
             if (measurement == null)
                 throw new ArgumentNullException(nameof(measurement));

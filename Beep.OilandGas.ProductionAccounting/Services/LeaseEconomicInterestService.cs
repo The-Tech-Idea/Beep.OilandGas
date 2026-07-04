@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,7 +45,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<List<OWNERSHIP_INTEREST>> GetOwnershipInterestsAsync(
             string propertyOrLeaseId,
             DateTime? asOfDate = null,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(propertyOrLeaseId))
                 throw new ArgumentNullException(nameof(propertyOrLeaseId));
@@ -55,7 +56,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "OWNERSHIP_INTEREST");
+                entityType, connectionName, "OWNERSHIP_INTEREST");
 
             var filters = new List<AppFilter>
             {
@@ -72,7 +73,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<List<ROYALTY_INTEREST>> GetRoyaltyInterestsAsync(
             string propertyOrLeaseId,
             DateTime? asOfDate = null,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(propertyOrLeaseId))
                 throw new ArgumentNullException(nameof(propertyOrLeaseId));
@@ -83,7 +84,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "ROYALTY_INTEREST");
+                entityType, connectionName, "ROYALTY_INTEREST");
 
             var filters = new List<AppFilter>
             {
@@ -100,11 +101,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<bool> ValidateEconomicInterestsAsync(
             string propertyOrLeaseId,
             DateTime? asOfDate = null,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
-            var ownership = await GetOwnershipInterestsAsync(propertyOrLeaseId, asOfDate, cn);
-            var royalty = await GetRoyaltyInterestsAsync(propertyOrLeaseId, asOfDate, cn);
-            var divisionOrders = await GetDivisionOrdersAsync(propertyOrLeaseId, asOfDate, cn);
+            var ownership = await GetOwnershipInterestsAsync(propertyOrLeaseId, asOfDate, connectionName);
+            var royalty = await GetRoyaltyInterestsAsync(propertyOrLeaseId, asOfDate, connectionName);
+            var divisionOrders = await GetDivisionOrdersAsync(propertyOrLeaseId, asOfDate, connectionName);
 
             decimal workingTotal = ownership.Sum(o => NormalizeFraction(o.WORKING_INTEREST));
             decimal royaltyTotal = ownership.Sum(o => NormalizeFraction(o.ROYALTY_INTEREST) + NormalizeFraction(o.OVERRIDING_ROYALTY_INTEREST));
@@ -180,7 +181,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private async Task<List<DIVISION_ORDER>> GetDivisionOrdersAsync(
             string propertyOrLeaseId,
             DateTime? asOfDate,
-            string cn)
+            string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync("DIVISION_ORDER");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -188,7 +189,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "DIVISION_ORDER");
+                entityType, connectionName, "DIVISION_ORDER");
 
             var filters = new List<AppFilter>
             {

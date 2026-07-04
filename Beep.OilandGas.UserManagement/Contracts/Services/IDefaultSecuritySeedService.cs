@@ -19,5 +19,8 @@ public sealed class DefaultSecuritySeedResult
     public int OrganizationScopesInserted { get; set; }
     public int UserScopeAssignmentsInserted { get; set; }
     public int UserAssetAccessInserted { get; set; }
+    public int PersonaRolesInserted { get; set; }
+    public int RoleHierarchiesInserted { get; set; }
+    public int TempRoleElevationsInserted { get; set; }
     public List<string> Errors { get; set; } = new();
 }

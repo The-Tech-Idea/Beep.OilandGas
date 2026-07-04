@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Constants;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -157,7 +158,7 @@ namespace Beep.OilandGas.Accounting.Services
                             sourceModule,
                             ifrsBookId);
                         await _journalEntryService.PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId);
-                        entry.STATUS = "POSTED";
+                        entry.STATUS = AccountingReferenceCodes.JournalEntryStatusCodes.Posted;
                         return (entry, null);
                     }
                 case AccountingBasis.Gaap:
@@ -171,7 +172,7 @@ namespace Beep.OilandGas.Accounting.Services
                             sourceModule,
                             gaapBookId);
                         await _journalEntryService.PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId);
-                        entry.STATUS = "POSTED";
+                        entry.STATUS = AccountingReferenceCodes.JournalEntryStatusCodes.Posted;
                         return (null, entry);
                     }
                 default:

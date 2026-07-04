@@ -309,7 +309,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
         /// <summary>
         /// Seeds all PPDM reference tables (R_* tables) from JSON template
         /// </summary>
-        public async Task<SeedDataResponse> SeedPPDMReferenceTablesAsync(string? connectionName = null, List<string>? tableNames = null, bool skipExisting = true, string userId = "SYSTEM")
+        public async Task<SeedDataResponse> SeedPPDMReferenceTablesAsync(string connectionName = "PPDM39", List<string>? tableNames = null, bool skipExisting = true, string userId = "SYSTEM")
         {
             connectionName ??= _connectionName;
             var templatePath = GetTemplatePath("PPDMReferenceData.json");
@@ -319,7 +319,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
         /// <summary>
         /// Seeds accounting-specific reference data from JSON template
         /// </summary>
-        public async Task<SeedDataResponse> SeedAccountingReferenceDataAsync(string? connectionName = null, List<string>? tableNames = null, bool skipExisting = true, string userId = "SYSTEM")
+        public async Task<SeedDataResponse> SeedAccountingReferenceDataAsync(string connectionName = "PPDM39", List<string>? tableNames = null, bool skipExisting = true, string userId = "SYSTEM")
         {
             connectionName ??= _connectionName;
             var templatePath = GetTemplatePath("AccountingSeedData.json");
@@ -329,7 +329,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
         /// <summary>
         /// Seeds lifecycle-specific reference data from JSON template
         /// </summary>
-        public async Task<SeedDataResponse> SeedLifeCycleReferenceDataAsync(string? connectionName = null, List<string>? tableNames = null, bool skipExisting = true, string userId = "SYSTEM")
+        public async Task<SeedDataResponse> SeedLifeCycleReferenceDataAsync(string connectionName = "PPDM39", List<string>? tableNames = null, bool skipExisting = true, string userId = "SYSTEM")
         {
             connectionName ??= _connectionName;
             var templatePath = GetTemplatePath("LifeCycleSeedData.json");
@@ -339,7 +339,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
         /// <summary>
         /// Seeds analysis result reference data from JSON template
         /// </summary>
-        public async Task<SeedDataResponse> SeedAnalysisReferenceDataAsync(string? connectionName = null, List<string>? tableNames = null, bool skipExisting = true, string userId = "SYSTEM")
+        public async Task<SeedDataResponse> SeedAnalysisReferenceDataAsync(string connectionName = "PPDM39", List<string>? tableNames = null, bool skipExisting = true, string userId = "SYSTEM")
         {
             connectionName ??= _connectionName;
             var templatePath = GetTemplatePath("AnalysisSeedData.json");
@@ -349,7 +349,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
         /// <summary>
         /// Seeds data by category
         /// </summary>
-        public async Task<SeedDataResponse> SeedByCategoryAsync(string category, string? connectionName = null, List<string>? tableNames = null, bool skipExisting = true, string userId = "SYSTEM")
+        public async Task<SeedDataResponse> SeedByCategoryAsync(string category, string connectionName = "PPDM39", List<string>? tableNames = null, bool skipExisting = true, string userId = "SYSTEM")
         {
             connectionName ??= _connectionName;
             return category.ToUpperInvariant() switch
@@ -374,7 +374,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
         /// <summary>
         /// Seeds LIST_OF_VALUE table from CustomLOVSeedData.json
         /// </summary>
-        public async Task<SeedDataResponse> SeedListOfValueTableAsync(string? connectionName = null, List<string>? tableNames = null, bool skipExisting = true, string userId = "SYSTEM")
+        public async Task<SeedDataResponse> SeedListOfValueTableAsync(string connectionName = "PPDM39", List<string>? tableNames = null, bool skipExisting = true, string userId = "SYSTEM")
         {
             connectionName ??= _connectionName;
             var templatePath = GetTemplatePath("CustomLOVSeedData.json");
@@ -384,7 +384,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
         /// <summary>
         /// Seeds IHS reference data from IHSReferenceData.json
         /// </summary>
-        public async Task<SeedDataResponse> SeedIHSReferenceDataAsync(string? connectionName = null, List<string>? tableNames = null, bool skipExisting = true, string userId = "SYSTEM")
+        public async Task<SeedDataResponse> SeedIHSReferenceDataAsync(string connectionName = "PPDM39", List<string>? tableNames = null, bool skipExisting = true, string userId = "SYSTEM")
         {
             connectionName ??= _connectionName;
             var response = new SeedDataResponse
@@ -428,7 +428,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
         /// <summary>
         /// Seeds industry standards data from IndustryStandardsReferenceData.json
         /// </summary>
-        public async Task<SeedDataResponse> SeedIndustryStandardsDataAsync(string? connectionName = null, List<string>? tableNames = null, bool skipExisting = true, string userId = "SYSTEM")
+        public async Task<SeedDataResponse> SeedIndustryStandardsDataAsync(string connectionName = "PPDM39", List<string>? tableNames = null, bool skipExisting = true, string userId = "SYSTEM")
         {
             connectionName ??= _connectionName;
             var response = new SeedDataResponse

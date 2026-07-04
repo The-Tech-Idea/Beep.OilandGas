@@ -19,7 +19,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<WellComparisonData> CompareWellsAsync(
             List<string> wellIdentifiers,
             List<string>? fieldNames = null,
-            string? connectionName = null);
+            string connectionName = "PPDM39");
 
         /// <summary>
         /// Compares wells from different data sources

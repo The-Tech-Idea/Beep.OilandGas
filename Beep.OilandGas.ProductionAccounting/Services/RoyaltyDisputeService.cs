@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -44,7 +45,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _logger = logger;
         }
 
-        public async Task<ROYALTY_DISPUTE> CreateDisputeAsync(ROYALTY_DISPUTE dispute, string userId, string cn = "PPDM39")
+        public async Task<ROYALTY_DISPUTE> CreateDisputeAsync(ROYALTY_DISPUTE dispute, string userId, string connectionName = "PPDM39")
         {
             if (dispute == null)
                 throw new ArgumentNullException(nameof(dispute));
@@ -59,17 +60,17 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             dispute.ROW_CREATED_BY = userId;
             dispute.ROW_CREATED_DATE = DateTime.UtcNow;
 
-            var repo = await GetRepoAsync<ROYALTY_DISPUTE>("ROYALTY_DISPUTE", cn);
+            var repo = await GetRepoAsync<ROYALTY_DISPUTE>("ROYALTY_DISPUTE", connectionName);
             await repo.InsertAsync(dispute, userId);
             return dispute;
         }
 
-        public async Task<ROYALTY_DISPUTE> ResolveDisputeAsync(string disputeId, DateTime resolutionDate, string resolutionNotes, string userId, string cn = "PPDM39")
+        public async Task<ROYALTY_DISPUTE> ResolveDisputeAsync(string disputeId, DateTime resolutionDate, string resolutionNotes, string userId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(disputeId))
                 throw new ArgumentNullException(nameof(disputeId));
 
-            var repo = await GetRepoAsync<ROYALTY_DISPUTE>("ROYALTY_DISPUTE", cn);
+            var repo = await GetRepoAsync<ROYALTY_DISPUTE>("ROYALTY_DISPUTE", connectionName);
             var dispute = await repo.GetByIdAsync(disputeId) as ROYALTY_DISPUTE;
             if (dispute == null)
                 throw new ProductionAccountingException(string.Format(CultureInfo.InvariantCulture, RoyaltyDisputeMessageFormats.DisputeNotFoundFormat, disputeId));
@@ -84,12 +85,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return dispute;
         }
 
-        public async Task<List<ROYALTY_DISPUTE>> GetDisputesAsync(string royaltyOwnerBaId, string? status, string cn = "PPDM39")
+        public async Task<List<ROYALTY_DISPUTE>> GetDisputesAsync(string royaltyOwnerBaId, string? status, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(royaltyOwnerBaId))
                 throw new ArgumentNullException(nameof(royaltyOwnerBaId));
 
-            var repo = await GetRepoAsync<ROYALTY_DISPUTE>("ROYALTY_DISPUTE", cn);
+            var repo = await GetRepoAsync<ROYALTY_DISPUTE>("ROYALTY_DISPUTE", connectionName);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ROYALTY_OWNER_BA_ID", Operator = "=", FilterValue = royaltyOwnerBaId },
@@ -103,7 +104,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return results?.Cast<ROYALTY_DISPUTE>().ToList() ?? new List<ROYALTY_DISPUTE>();
         }
 
-        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string cn)
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -111,7 +112,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, tableName);
+                entityType, connectionName, tableName);
         }
     }
 }

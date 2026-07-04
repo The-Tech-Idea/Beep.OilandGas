@@ -41,7 +41,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
         public ActionResult<object> GetStorageFacilities(
             [FromQuery] string? facilityId = null,
             [FromQuery] string? leaseId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -74,7 +74,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
         [HttpPost("facilities")]
         public ActionResult<object> CreateStorageFacility(
             [FromBody] CreateStorageFacilityRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -103,7 +103,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
         public async Task<ActionResult<TANK_INVENTORY>> UpdateTankInventoryAsync(
             string tankId,
             [FromBody] StorageTankInventoryUpdateRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -131,7 +131,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
         [HttpGet("service/tanks/{tankId}")]
         public async Task<ActionResult<TANK_INVENTORY>> GetTankInventoryAsync(
             string tankId,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -159,7 +159,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
         public async Task<ActionResult<INVENTORY_VALUATION>> CalculateValuationAsync(
             string inventoryItemId,
             [FromBody] StorageInventoryValuationRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -189,7 +189,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
         public async Task<ActionResult<INVENTORY_REPORT_SUMMARY>> GenerateReconciliationReportAsync(
             string inventoryItemId,
             [FromBody] StorageReconciliationReportRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

@@ -13,42 +13,42 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Generates an operational report.
         /// </summary>
-        Task<ReportResult> GenerateOperationalReportAsync(GenerateOperationalReportRequest request, string userId, string? connectionName = null);
+        Task<ReportResult> GenerateOperationalReportAsync(GenerateOperationalReportRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Generates a financial report.
         /// </summary>
-        Task<ReportResult> GenerateFinancialReportAsync(GenerateFinancialReportRequest request, string userId, string? connectionName = null);
+        Task<ReportResult> GenerateFinancialReportAsync(GenerateFinancialReportRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Generates a royalty statement.
         /// </summary>
-        Task<ReportResult> GenerateRoyaltyStatementAsync(GenerateRoyaltyStatementRequest request, string userId, string? connectionName = null);
+        Task<ReportResult> GenerateRoyaltyStatementAsync(GenerateRoyaltyStatementRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Generates a JIB (Joint Interest Billing) statement.
         /// </summary>
-        Task<ReportResult> GenerateJIBStatementAsync(GenerateJIBStatementRequest request, string userId, string? connectionName = null);
+        Task<ReportResult> GenerateJIBStatementAsync(GenerateJIBStatementRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Schedules a report.
         /// </summary>
-        Task<ReportSchedule> ScheduleReportAsync(ScheduleReportRequest request, string userId, string? connectionName = null);
+        Task<ReportSchedule> ScheduleReportAsync(ScheduleReportRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets scheduled reports.
         /// </summary>
-        Task<List<ReportSchedule>> GetScheduledReportsAsync(string? connectionName = null);
+        Task<List<ReportSchedule>> GetScheduledReportsAsync(string connectionName = "PPDM39");
         
         /// <summary>
         /// Distributes a report.
         /// </summary>
-        Task<ReportDistributionResult> DistributeReportAsync(string reportId, ReportDistributionRequest request, string userId, string? connectionName = null);
+        Task<ReportDistributionResult> DistributeReportAsync(string reportId, ReportDistributionRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets report history.
         /// </summary>
-        Task<List<ReportHistory>> GetReportHistoryAsync(string? reportType, DateTime? startDate, DateTime? endDate, string? connectionName = null);
+        Task<List<ReportHistory>> GetReportHistoryAsync(string? reportType, DateTime? startDate, DateTime? endDate, string connectionName = "PPDM39");
     }
 }
 

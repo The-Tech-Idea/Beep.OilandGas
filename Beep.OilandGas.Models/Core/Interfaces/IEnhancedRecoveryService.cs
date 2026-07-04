@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Calculations;
@@ -17,16 +18,16 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="fieldId">Field identifier</param>
         /// <param name="eorMethod">EOR method to analyze</param>
         /// <returns>EOR analysis result</returns>
-        Task<EnhancedRecoveryOperation> AnalyzeEORPotentialAsync(string fieldId, string eorMethod);
+        Task<EnhancedRecoveryOperation> AnalyzeEORPotentialAsync(string fieldId, string eorMethod, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns the EOR operation with a **screening-level** incremental recovery factor estimate (% OOIP)
         /// stored on <see cref="EnhancedRecoveryOperation.Efficiency"/> and explained in <see cref="EnhancedRecoveryOperation.Remarks"/>.
-        /// This is a method-class heuristic until volumetric OOIP and production history are integrated — not a decline-curve RF.
+        /// This is a method-class heuristic until volumetric OOIP and production history are integrated.
         /// </summary>
         /// <param name="operationId">EOR operation identifier</param>
         /// <returns>Operation snapshot with screening RF metadata</returns>
-        Task<EnhancedRecoveryOperation> CalculateRecoveryFactorAsync(string operationId);
+        Task<EnhancedRecoveryOperation> CalculateRecoveryFactorAsync(string operationId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Calculates pilot economics for an EOR implementation.
@@ -46,14 +47,14 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             double capitalCost,
             double operatingCostPerBarrel,
             int projectLifeYears,
-            double discountRate = 0.10);
+            double discountRate = 0.10, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets stored injection operations, optionally scoped to a well.
         /// </summary>
         /// <param name="wellUWI">Optional injection well identifier</param>
         /// <returns>Stored injection operations</returns>
-        Task<List<InjectionOperation>> GetInjectionOperationsAsync(string? wellUWI = null);
+        Task<List<InjectionOperation>> GetInjectionOperationsAsync(string? wellUWI = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Manages injection well operations.
@@ -61,7 +62,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="injectionWellId">Injection well identifier</param>
         /// <param name="injectionRate">Injection rate</param>
         /// <returns>Injection operation result</returns>
-        Task<InjectionOperation> ManageInjectionAsync(string injectionWellId, decimal injectionRate);
+        Task<InjectionOperation> ManageInjectionAsync(string injectionWellId, decimal injectionRate, CancellationToken cancellationToken = default);
     }
 }
 

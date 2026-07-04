@@ -312,6 +312,60 @@
         </ChildContent>
     </MudMenu>
 
+    <!-- ─── Accounting (Accountant / Finance personas) ────────────── -->
+    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="@GetWorkflowMenuClass("economics")">
+        <ActivatorContent>
+            <MudButton Variant="Variant.Text" Class="nav-menu-btn">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Small" />
+                    <MudText Class="nav-menu-label">Accounting</MudText>
+                    <MudIcon Icon="@Icons.Material.Filled.ArrowDropDown" Size="Size.Small" />
+                </MudStack>
+            </MudButton>
+        </ActivatorContent>
+        <ChildContent>
+            <MudMenuItem Href="/accounting/dashboard">
+                <MudIcon Icon="@Icons.Material.Filled.Dashboard" Size="Size.Small" Class="mr-2" />
+                Accounting Dashboard
+            </MudMenuItem>
+            <MudDivider />
+            <MudMenuItem Href="/ppdm39/process/definitions/ACCT_PROCURE_TO_PAY">
+                <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Size="Size.Small" Class="mr-2" />
+                Procure-to-Pay
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/ACCT_ORDER_TO_CASH">
+                <MudIcon Icon="@Icons.Material.Filled.PointOfSale" Size="Size.Small" Class="mr-2" />
+                Order-to-Cash
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/ACCT_RECORD_TO_REPORT">
+                <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" Class="mr-2" />
+                Record-to-Report
+            </MudMenuItem>
+            <MudDivider />
+            <MudMenuItem Href="/ppdm39/process/definitions/ACCT_BANK_RECONCILIATION">
+                <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Small" Class="mr-2" />
+                Bank Reconciliation
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/ACCT_EXPENSE_MANAGEMENT">
+                <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Size="Size.Small" Class="mr-2" />
+                Expense Management
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/ACCT_FIXED_ASSET_LIFECYCLE">
+                <MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Size="Size.Small" Class="mr-2" />
+                Fixed Assets
+            </MudMenuItem>
+            <MudDivider />
+            <MudMenuItem Href="/ppdm39/process/definitions/ACCT_VENDOR_MANAGEMENT">
+                <MudIcon Icon="@Icons.Material.Filled.Business" Size="Size.Small" Class="mr-2" />
+                Vendors (BA)
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/ACCT_CUSTOMER_MANAGEMENT">
+                <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" Class="mr-2" />
+                Customers (BA)
+            </MudMenuItem>
+        </ChildContent>
+    </MudMenu>
+
     <!-- ─── Data Management (PPDM TreeView — admin/data managers) -->
     <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="@GetWorkflowMenuClass("data")">
         <ActivatorContent>

@@ -11,7 +11,9 @@ using Beep.OilandGas.Accounting.Models; // For PeriodCloseResult check
 using Beep.OilandGas.Accounting.Models; // For PeriodCloseResult 
 
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -351,8 +353,6 @@ namespace Beep.OilandGas.Accounting.Services
                 _editor, _commonColumnHandler, _defaults, _metadata,
                 typeof(T), cn, tableName);
         }
-    }
 
 }
-
-
+}

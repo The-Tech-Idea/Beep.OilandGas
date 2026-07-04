@@ -41,7 +41,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         [HttpPost("operational")]
         public async Task<ActionResult<ReportResult>> GenerateOperationalReport(
             [FromBody] GenerateOperationalReportRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -65,7 +65,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         [HttpPost("financial")]
         public async Task<ActionResult<ReportResult>> GenerateFinancialReport(
             [FromBody] GenerateFinancialReportRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -89,7 +89,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         [HttpPost("royalty-statement")]
         public async Task<ActionResult<ReportResult>> GenerateRoyaltyStatement(
             [FromBody] GenerateRoyaltyStatementRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -113,7 +113,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         [HttpPost("jib-statement")]
         public async Task<ActionResult<ReportResult>> GenerateJibStatement(
             [FromBody] GenerateJIBStatementRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -137,7 +137,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         [HttpPost("schedule")]
         public async Task<ActionResult<ReportSchedule>> ScheduleReport(
             [FromBody] ScheduleReportRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -159,7 +159,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
 
         /// <summary>Get report schedules through reporting service.</summary>
         [HttpGet("schedule")]
-        public async Task<ActionResult<List<ReportSchedule>>> GetSchedules([FromQuery] string? connectionName = null)
+        public async Task<ActionResult<List<ReportSchedule>>> GetSchedules([FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -178,7 +178,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         public async Task<ActionResult<ReportDistributionResult>> DistributeReport(
             string reportId,
             [FromBody] ReportDistributionRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -205,7 +205,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromQuery] string? reportType = null,
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -225,7 +225,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         [HttpPost("lease")]
         public ActionResult<LEASE_REPORT> GenerateLeaseReport(
             [FromBody] GenerateLeaseReportRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

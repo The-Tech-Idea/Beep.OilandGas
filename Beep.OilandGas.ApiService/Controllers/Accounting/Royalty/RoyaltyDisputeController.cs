@@ -30,7 +30,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
         [HttpPost]
         public async Task<ActionResult<ROYALTY_DISPUTE>> CreateAsync(
             [FromBody] ROYALTY_DISPUTE dispute,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             return await ExecuteAsync(
                 () => _disputeService.CreateDisputeAsync(dispute, ResolveUserId(), connectionName ?? "PPDM39"),
@@ -41,7 +41,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
         public async Task<ActionResult<ROYALTY_DISPUTE>> ResolveAsync(
             string disputeId,
             [FromBody] ResolveRoyaltyDisputeRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             return await ExecuteAsync(
                 () => _disputeService.ResolveDisputeAsync(
@@ -57,7 +57,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
         public async Task<ActionResult<List<ROYALTY_DISPUTE>>> GetAsync(
             [FromQuery] string royaltyOwnerBaId,
             [FromQuery] string? status = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             return await ExecuteAsync(
                 () => _disputeService.GetDisputesAsync(royaltyOwnerBaId, status, connectionName ?? "PPDM39"),

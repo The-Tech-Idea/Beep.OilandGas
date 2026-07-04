@@ -6,7 +6,9 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -15,7 +17,7 @@ namespace Beep.OilandGas.Accounting.Services
     /// <summary>
     /// IAS 12 current and deferred tax provisioning.
     /// </summary>
-    public class TaxProvisionService
+    public class TaxProvisionService 
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -50,7 +52,7 @@ namespace Beep.OilandGas.Accounting.Services
             decimal taxAmount,
             string jurisdiction,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(taxType))
                 throw new ArgumentNullException(nameof(taxType));
@@ -61,7 +63,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var tax = new TAX_TRANSACTION
             {
                 TAX_TRANSACTION_ID = Guid.NewGuid().ToString(),
@@ -94,12 +95,11 @@ namespace Beep.OilandGas.Accounting.Services
             decimal deferredTaxAsset,
             decimal deferredTaxLiability,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var previous = await GetLatestDeferredTaxBalanceAsync(cn);
 
             var deferred = new DEFERRED_TAX_BALANCE
@@ -172,7 +172,7 @@ namespace Beep.OilandGas.Accounting.Services
             DateTime periodEnd,
             string jurisdiction,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(taxType))
                 throw new ArgumentNullException(nameof(taxType));
@@ -181,7 +181,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var repo = await GetRepoAsync<TAX_TRANSACTION>("TAX_TRANSACTION", cn);
             var filters = new List<AppFilter>
             {
@@ -221,7 +220,7 @@ namespace Beep.OilandGas.Accounting.Services
             decimal statutoryRate,
             string jurisdiction,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
              if (string.IsNullOrWhiteSpace(differenceType))
                 throw new ArgumentNullException(nameof(differenceType));
@@ -230,7 +229,6 @@ namespace Beep.OilandGas.Accounting.Services
              if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var difference = bookCarryingAmount - taxBase;
             var deferredTaxObj = difference * statutoryRate;
 
@@ -271,9 +269,8 @@ namespace Beep.OilandGas.Accounting.Services
             decimal preTaxIncome,
             decimal statutoryRate,
             string jurisdiction,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
-            var cn = connectionName ?? ConnectionName;
             
             // Get Current Tax Provision
             var repo = await GetRepoAsync<TAX_TRANSACTION>("TAX_TRANSACTION", cn);
@@ -310,12 +307,11 @@ namespace Beep.OilandGas.Accounting.Services
             decimal returnAmount, // Actual from Tax Return
             decimal provisionAmount, // Estimated in prior year
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var delta = returnAmount - provisionAmount; // e.g. Return 110, Prov 100 -> Underprovision 10 (Expense)
 
             // Post adjustment

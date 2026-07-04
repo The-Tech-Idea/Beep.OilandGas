@@ -16,6 +16,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             decimal fairValueLessCosts,
             DateTime testDate,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
     }
 }

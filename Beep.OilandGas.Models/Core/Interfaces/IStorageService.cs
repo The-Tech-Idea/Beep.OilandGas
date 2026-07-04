@@ -13,57 +13,57 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Registers a storage facility.
         /// </summary>
-        Task<STORAGE_FACILITY> RegisterFacilityAsync(CreateStorageFacilityRequest request, string userId, string? connectionName = null);
+        Task<STORAGE_FACILITY> RegisterFacilityAsync(CreateStorageFacilityRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets a storage facility by ID.
         /// </summary>
-        Task<STORAGE_FACILITY?> GetFacilityAsync(string facilityId, string? connectionName = null);
+        Task<STORAGE_FACILITY?> GetFacilityAsync(string facilityId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets all storage facilities.
         /// </summary>
-        Task<List<STORAGE_FACILITY>> GetFacilitiesAsync(string? connectionName = null);
+        Task<List<STORAGE_FACILITY>> GetFacilitiesAsync(string connectionName = "PPDM39");
         
         /// <summary>
         /// Registers a tank battery.
         /// </summary>
-        Task<TANK_BATTERY> RegisterTankBatteryAsync(CreateTankBatteryRequest request, string userId, string? connectionName = null);
+        Task<TANK_BATTERY> RegisterTankBatteryAsync(CreateTankBatteryRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets a tank battery by ID.
         /// </summary>
-        Task<TANK_BATTERY?> GetTankBatteryAsync(string tankBatteryId, string? connectionName = null);
+        Task<TANK_BATTERY?> GetTankBatteryAsync(string tankBatteryId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets tank batteries by facility.
         /// </summary>
-        Task<List<TANK_BATTERY>> GetTankBatteriesByFacilityAsync(string facilityId, string? connectionName = null);
+        Task<List<TANK_BATTERY>> GetTankBatteriesByFacilityAsync(string facilityId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Registers a service unit.
         /// </summary>
-        Task<SERVICE_UNIT> RegisterServiceUnitAsync(CreateServiceUnitRequest request, string userId, string? connectionName = null);
+        Task<SERVICE_UNIT> RegisterServiceUnitAsync(CreateServiceUnitRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Registers a LACT unit.
         /// </summary>
-        Task<LACT_UNIT> RegisterLACTUnitAsync(CreateLACTUnitRequest request, string userId, string? connectionName = null);
+        Task<LACT_UNIT> RegisterLACTUnitAsync(CreateLACTUnitRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets storage capacity summary.
         /// </summary>
-        Task<StorageCapacitySummary> GetStorageCapacityAsync(string facilityId, string? connectionName = null);
+        Task<StorageCapacitySummary> GetStorageCapacityAsync(string facilityId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets storage utilization report.
         /// </summary>
-        Task<StorageUtilizationReport> GetStorageUtilizationAsync(string facilityId, DateTime? asOfDate, string? connectionName = null);
+        Task<StorageUtilizationReport> GetStorageUtilizationAsync(string facilityId, DateTime? asOfDate, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets facilities requiring maintenance.
         /// </summary>
-        Task<List<STORAGE_FACILITY>> GetFacilitiesRequiringMaintenanceAsync(string? connectionName = null);
+        Task<List<STORAGE_FACILITY>> GetFacilitiesRequiringMaintenanceAsync(string connectionName = "PPDM39");
     }
 }
 

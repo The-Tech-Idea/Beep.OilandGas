@@ -4,44 +4,35 @@
 @inject HttpClient Http
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
-    <MudText Typo="Typo.h3" GutterBottom="true"><MudIcon Icon="@Icons.Material.Filled.Science" Class="mr-2" Color="Color.Primary" />Reservoir Engineer Workspace</MudText>
-    @if (_loading) { <MudProgressLinear Indeterminate="true" Class="my-4" /> }
-    else
-    {
-        <MudGrid>
-            <MudItem xs="12" md="6">
-                <MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Pools</MudText></CardHeaderContent></MudCardHeader>
-                <MudCardContent>
-                    @if (_pools?.Count > 0)
-                    {
-                        <MudTable Items="@_pools" Hover="true" Dense="true">
-                            <HeaderContent><MudTh>Pool</MudTh><MudTh>Status</MudTh><MudTh>Discovered</MudTh></HeaderContent>
-                            <RowTemplate><MudTd>@context.PoolName</MudTd><MudTd>@context.Status</MudTd><MudTd>@context.DiscoveryDate?.ToString("yyyy-MM-dd")</MudTd></RowTemplate>
-                        </MudTable>
-                    }
-                    else { <MudAlert Severity="Severity.Info">No pool data</MudAlert> }
-                </MudCardContent></MudCard>
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Quick Actions</MudText></CardHeaderContent></MudCardHeader>
-                <MudCardContent>
-                    <MudStack Row="false" Spacing="2">
-                        <MudButton Variant="Variant.Outlined" FullWidth="true" Href="/reservoir/reserves">Reserves Classification</MudButton>
-                        <MudButton Variant="Variant.Outlined" FullWidth="true" Href="/reservoir/eor">EOR Screening</MudButton>
-                        <MudButton Variant="Variant.Outlined" FullWidth="true" Href="/reservoir/characterization">Reservoir Characterization</MudButton>
-                        <MudButton Variant="Variant.Outlined" FullWidth="true" Href="/analysis/well-test">Well Test Analysis</MudButton>
-                        <MudButton Variant="Variant.Outlined" FullWidth="true" Href="/analysis/flash-calculations">PVT / Flash</MudButton>
-                    </MudStack>
-                </MudCardContent></MudCard>
-            </MudItem>
-        </MudGrid>
-    }
+    <MudText Typo="Typo.h3" GutterBottom="true"><MudIcon Icon="@Icons.Material.Filled.Science" Class="mr-2" Color="Color.Primary"/>Reservoir Engineer Workspace</MudText>
+    @if(_loading){<MudProgressLinear Indeterminate="true" Class="my-4"/>}else{
+    <MudGrid>
+        <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Active Pools</MudText><MudText Typo="Typo.h4" Color="Color.Primary">@_kpi?.ActivePools.ToString("N0")</MudText><MudText Typo="Typo.caption">total</MudText></div><MudIcon Icon="@Icons.Material.Filled.WaterDrop" Color="Color.Primary" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
+        <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Discovery Pools</MudText><MudText Typo="Typo.h4" Color="Color.Success">@_kpi?.PoolsWithDiscovery.ToString("N0")</MudText><MudText Typo="Typo.caption">discovered</MudText></div><MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Success" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
+        <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Recovery Factor</MudText><MudText Typo="Typo.h4" Color="Color.Info">@($"{_kpi?.RecoveryFactor:F1}%")</MudText><MudText Typo="Typo.caption">avg</MudText></div><MudIcon Icon="@Icons.Material.Filled.PieChartOutline" Color="Color.Info" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
+        <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Pressure Maint</MudText><MudText Typo="Typo.h4" Color="Color.Warning">@_kpi?.PressureMaintenanceWells.ToString("N0")</MudText><MudText Typo="Typo.caption">injection wells</MudText></div><MudIcon Icon="@Icons.Material.Filled.Compress" Color="Color.Warning" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
+    </MudGrid>
+    <MudGrid>
+        <MudItem xs="12" md="5"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-1" Size="Size.Small"/>Analysis Tools</MudText></CardHeaderContent></MudCardHeader><MudCardContent Class="pa-2"><MudGrid>
+        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/reservoir/reserves">Reserves (PRMS)</MudButton></MudItem>
+        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/analysis/decline-curve">Decline Curve DCA</MudButton></MudItem>
+        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/reservoir/eor">EOR Screening</MudButton></MudItem>
+        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/analysis/well-test">Well Test PTA</MudButton></MudItem>
+        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/analysis/flash-calculations">PVT / Flash</MudButton></MudItem>
+        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/ppdm39/calculations/nodalanalysis">Nodal Analysis</MudButton></MudItem>
+    </MudGrid></MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" md="7"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.History" Class="mr-1" Size="Size.Small"/>Reservoir Monitoring</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/reservoir">Reservoir Overview</MudButton>
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/reservoir/characterization">Characterization</MudButton>
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/ppdm39/production/reserves">Reserves Report</MudButton>
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/ppdm39/operations/enhancedrecovery">Enhanced Recovery</MudButton>
+    </MudStack></MudCardContent></MudCard>
+        <MudCard Elevation="2" Class="mt-2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Campaign" Class="mr-1" Size="Size.Small"/>Attention Required</MudText></CardHeaderContent></MudCardHeader><MudCardContent>
+        <MudAlert Severity="Severity.Warning" Dense="true">Pool PL-003: Reservoir pressure below bubble point — evaluate pressure maintenance.</MudAlert>
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mt-1">EOR screening due for 5 pools this quarter. Run screening analysis.</MudAlert>
+    </MudCardContent></MudCard></MudItem></MudGrid>}
 </MudContainer>
 
-@code {
-    private bool _loading = true;
-    private List<PoolSummary>? _pools;
-    protected override async Task OnInitializedAsync()
-    { try { _pools = await Http.GetFromJsonAsync<List<PoolSummary>>("/api/reservoir/aggregation/pools") ?? new(); } catch { _pools = new(); } _loading = false; }
-    public class PoolSummary { public string PoolId { get; set; } = string.Empty; public string PoolName { get; set; } = string.Empty; public DateTime? DiscoveryDate { get; set; } public string Status { get; set; } = string.Empty; }
-}
+@code{private bool _loading=true;private ReservoirEngineerKpi? _kpi;
+protected override async Task OnInitializedAsync(){try{_kpi=await Http.GetFromJsonAsync<ReservoirEngineerKpi>("/api/reservoir/engineer/kpi")??new();}catch{_kpi=new();}_loading=false;}
+public class ReservoirEngineerKpi{public int ActivePools{get;set;}public int PoolsWithDiscovery{get;set;}public decimal RecoveryFactor{get;set;}public int PressureMaintenanceWells{get;set;}}}

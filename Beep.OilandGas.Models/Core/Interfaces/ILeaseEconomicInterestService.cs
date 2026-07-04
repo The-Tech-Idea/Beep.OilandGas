@@ -13,16 +13,16 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<List<OWNERSHIP_INTEREST>> GetOwnershipInterestsAsync(
             string propertyOrLeaseId,
             DateTime? asOfDate = null,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
 
         Task<List<ROYALTY_INTEREST>> GetRoyaltyInterestsAsync(
             string propertyOrLeaseId,
             DateTime? asOfDate = null,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
 
         Task<bool> ValidateEconomicInterestsAsync(
             string propertyOrLeaseId,
             DateTime? asOfDate = null,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
     }
 }

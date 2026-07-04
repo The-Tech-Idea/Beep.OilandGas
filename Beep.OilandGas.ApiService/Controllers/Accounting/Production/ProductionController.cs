@@ -32,7 +32,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         [HttpGet("inventory/{id}")]
         public ActionResult<object> GetTankInventory(
             string id,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Inventory ID is required." });
@@ -66,7 +66,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         [HttpPost("inventory")]
         public ActionResult<object> CreateTankInventory(
             [FromBody] CreateTankInventoryRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

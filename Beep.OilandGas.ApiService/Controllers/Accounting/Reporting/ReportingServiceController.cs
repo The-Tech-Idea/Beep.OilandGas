@@ -30,7 +30,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         [HttpPost("operational")]
         public async Task<ActionResult<ReportResult>> GenerateOperationalAsync(
             [FromBody] GenerateOperationalReportRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             return await ExecuteAsync(
                 () => _reportingService.GenerateOperationalReportAsync(request, ResolveUserId(), connectionName),
@@ -40,7 +40,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         [HttpPost("financial")]
         public async Task<ActionResult<ReportResult>> GenerateFinancialAsync(
             [FromBody] GenerateFinancialReportRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             return await ExecuteAsync(
                 () => _reportingService.GenerateFinancialReportAsync(request, ResolveUserId(), connectionName),
@@ -50,7 +50,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         [HttpPost("royalty-statement")]
         public async Task<ActionResult<ReportResult>> GenerateRoyaltyStatementAsync(
             [FromBody] GenerateRoyaltyStatementRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             return await ExecuteAsync(
                 () => _reportingService.GenerateRoyaltyStatementAsync(request, ResolveUserId(), connectionName),
@@ -60,7 +60,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         [HttpPost("jib-statement")]
         public async Task<ActionResult<ReportResult>> GenerateJibStatementAsync(
             [FromBody] GenerateJIBStatementRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             return await ExecuteAsync(
                 () => _reportingService.GenerateJIBStatementAsync(request, ResolveUserId(), connectionName),
@@ -70,7 +70,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         [HttpPost("schedule")]
         public async Task<ActionResult<ReportSchedule>> ScheduleAsync(
             [FromBody] ScheduleReportRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             return await ExecuteAsync(
                 () => _reportingService.ScheduleReportAsync(request, ResolveUserId(), connectionName),
@@ -78,7 +78,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         }
 
         [HttpGet("schedule")]
-        public async Task<ActionResult<List<ReportSchedule>>> GetSchedulesAsync([FromQuery] string? connectionName = null)
+        public async Task<ActionResult<List<ReportSchedule>>> GetSchedulesAsync([FromQuery] string connectionName = "PPDM39")
         {
             return await ExecuteAsync(
                 () => _reportingService.GetScheduledReportsAsync(connectionName),
@@ -89,7 +89,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         public async Task<ActionResult<ReportDistributionResult>> DistributeAsync(
             string reportId,
             [FromBody] ReportDistributionRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             return await ExecuteAsync(
                 () => _reportingService.DistributeReportAsync(reportId, request, ResolveUserId(), connectionName),
@@ -101,7 +101,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromQuery] string? reportType = null,
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             return await ExecuteAsync(
                 () => _reportingService.GetReportHistoryAsync(reportType, startDate, endDate, connectionName),

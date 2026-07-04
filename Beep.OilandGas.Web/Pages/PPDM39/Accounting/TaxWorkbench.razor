@@ -1,0 +1,16 @@
+@page "/accounting/tax-workbench"
+@using MudBlazor
+@inject NavigationManager Nav
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h3" GutterBottom="true"><MudIcon Icon="@Icons.Material.Filled.Receipt" Class="mr-2" Color="Color.Primary"/>Tax Workbench</MudText>
+    <MudGrid>
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Severance Tax</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/production/reporting">Production Tax Calc</MudButton></MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Ad Valorem</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/accounting/dashboard">Property Tax</MudButton></MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">1099 Reporting</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/accounting/royalties">Royalty Owner Report</MudButton></MudCardContent></MudCard></MudItem>
+    </MudGrid>
+    <MudGrid Class="mt-2">
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Filing Calendar</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/hse/compliance">Compliance Calendar</MudButton></MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">GHG / Emissions</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/compliance/ghg">GHG Reporting</MudButton></MudCardContent></MudCard></MudItem>
+    </MudGrid>
+</MudContainer>

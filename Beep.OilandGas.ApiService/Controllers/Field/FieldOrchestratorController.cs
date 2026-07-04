@@ -14,7 +14,9 @@ using Beep.OilandGas.ApiService.Attributes;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
@@ -55,7 +57,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         /// </summary>
         [HttpGet("fields")]
         [RequireRole(RoleDefinitions.Viewer, RoleDefinitions.Manager, RoleDefinitions.PetroleumEngineer, RoleDefinitions.ReservoirEngineer)]
-        public async Task<ActionResult<List<FieldListItem>>> GetAllFields([FromQuery] string? connectionName = null)
+        public async Task<ActionResult<List<FieldListItem>>> GetAllFields([FromQuery] string connectionName = "PPDM39")
         {
             try
             {

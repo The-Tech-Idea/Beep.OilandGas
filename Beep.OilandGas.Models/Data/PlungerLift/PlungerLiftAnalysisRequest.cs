@@ -225,6 +225,14 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
 
         } // fraction 0-1
         
+        // Casing/Tubing/Reservoir pressure (psi)
+        private decimal? CasingPressureValue;
+        public decimal? CasingPressure { get => CasingPressureValue; set => SetProperty(ref CasingPressureValue, value); }
+        private decimal? TubingPressureValue;
+        public decimal? TubingPressure { get => TubingPressureValue; set => SetProperty(ref TubingPressureValue, value); }
+        private decimal? ReservoirPressureValue;
+        public decimal? ReservoirPressure { get => ReservoirPressureValue; set => SetProperty(ref ReservoirPressureValue, value); }
+
         // Additional parameters
         public PlungerLiftAnalysisOptions? AdditionalParameters { get; set; }
         private string? UserIdValue;

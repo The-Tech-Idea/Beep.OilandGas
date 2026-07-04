@@ -32,7 +32,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Tax
         [HttpPost("calculate")]
         public async Task<ActionResult<TAX_TRANSACTION>> CalculateAsync(
             [FromBody] REVENUE_TRANSACTION revenueTransaction,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

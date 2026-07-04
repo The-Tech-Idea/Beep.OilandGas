@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Beep.OilandGas.PPDM.Models\Beep.OilandGas.PPDM.Models.csproj" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.9" />
   </ItemGroup>
 
 </Project>

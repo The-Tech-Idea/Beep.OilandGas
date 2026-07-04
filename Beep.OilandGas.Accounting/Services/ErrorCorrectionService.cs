@@ -4,7 +4,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -48,7 +50,7 @@ namespace Beep.OilandGas.Accounting.Services
             List<JOURNAL_ENTRY_LINE> correctedLines,
             DateTime effectiveDate,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(originalJournalEntryId))
                 throw new ArgumentNullException(nameof(originalJournalEntryId));
@@ -70,7 +72,7 @@ namespace Beep.OilandGas.Accounting.Services
                 correctionReason,
                 userId);
             await _basisPosting.PostExistingEntryAsync(reversal.JOURNAL_ENTRY_ID, userId);
-            await UpdateEntryRemarkAsync(reversal, originalEntry, correctionReason, userId, connectionName);
+            await UpdateEntryRemarkAsync(reversal, originalEntry, correctionReason, userId, cn);
 
             var correctionResult = await _basisPosting.PostEntryAsync(
                 effectiveDate,
@@ -80,9 +82,9 @@ namespace Beep.OilandGas.Accounting.Services
                 referenceNumber: $"CORR-{originalEntry.ENTRY_NUMBER}",
                 sourceModule: "CORRECTION");
             var correction = correctionResult.IfrsEntry ?? throw new InvalidOperationException("IFRS entry was not created.");
-            await UpdateEntryRemarkAsync(correction, originalEntry, correctionReason, userId, connectionName);
+            await UpdateEntryRemarkAsync(correction, originalEntry, correctionReason, userId, cn);
 
-            await UpdateEntryRemarkAsync(originalEntry, originalEntry, correctionReason, userId, connectionName,
+            await UpdateEntryRemarkAsync(originalEntry, originalEntry, correctionReason, userId, cn,
                 $"Corrected by {correction.ENTRY_NUMBER}");
 
             _logger?.LogInformation(
@@ -97,10 +99,9 @@ namespace Beep.OilandGas.Accounting.Services
             JOURNAL_ENTRY original,
             string reason,
             string userId,
-            string? connectionName,
+            string? cn,
             string? prefix = null)
         {
-            var cn = connectionName ?? ConnectionName;
             var repo = await GetRepoAsync<JOURNAL_ENTRY>("JOURNAL_ENTRY", cn);
             var notePrefix = string.IsNullOrWhiteSpace(prefix) ? "IAS8" : prefix;
             target.REMARK = $"{notePrefix}: {reason} (OriginalEntryId={original.JOURNAL_ENTRY_ID})";

@@ -15,21 +15,21 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             string scenario,
             DateTime costDate,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
 
         Task<ACCOUNTING_COST> RecordSalvageRecoveryAsync(
             string wellId,
             decimal salvageAmount,
             DateTime salvageDate,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
 
         Task<ACCOUNTING_COST> RecordTestWellContributionAsync(
             string wellId,
             decimal cost,
             DateTime costDate,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
 
         Task<bool> ValidateScenarioAsync(string scenario);
     }

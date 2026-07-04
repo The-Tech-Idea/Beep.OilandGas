@@ -57,7 +57,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Gets repository for a specific connection (or default)
         /// </summary>
-        private PPDMGenericRepository GetRepository(string? connectionName = null)
+        private PPDMGenericRepository GetRepository(string connectionName = "PPDM39")
         {
             connectionName ??= _connectionName;
             if (connectionName == _connectionName && _repository != null)
@@ -71,7 +71,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Gets repository for a specific entity type and table
         /// </summary>
-        private PPDMGenericRepository GetRepository(Type entityType, string tableName, string? connectionName = null)
+        private PPDMGenericRepository GetRepository(Type entityType, string tableName, string connectionName = "PPDM39")
         {
             connectionName ??= _connectionName;
             return new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
@@ -261,7 +261,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// </summary>
         public async Task<bool> CheckReferenceValueExistsAsync<T>(
             T entity,
-            string? connectionName = null) where T : class, IPPDMEntity
+            string connectionName = "PPDM39") where T : class, IPPDMEntity
         {
             connectionName ??= _connectionName;
             var entityType = typeof(T);
@@ -293,7 +293,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             T entity,
             string userId,
             bool skipExisting = true,
-            string? connectionName = null) where T : class, IPPDMEntity
+            string connectionName = "PPDM39") where T : class, IPPDMEntity
         {
             connectionName ??= _connectionName;
             var entityType = typeof(T);
@@ -325,7 +325,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             IEnumerable<T> entities,
             string userId,
             bool skipExisting = true,
-            string? connectionName = null) where T : class, IPPDMEntity
+            string connectionName = "PPDM39") where T : class, IPPDMEntity
         {
             connectionName ??= _connectionName;
             var result = new BulkReferenceResult
@@ -367,7 +367,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Checks if a LOV exists by VALUE_TYPE and VALUE_CODE
         /// </summary>
-        public async Task<bool> CheckLOVExistsAsync(string valueType, string valueCode, string? connectionName = null)
+        public async Task<bool> CheckLOVExistsAsync(string valueType, string valueCode, string connectionName = "PPDM39")
         {
             connectionName ??= _connectionName;
             var repository = GetRepository(connectionName);
@@ -602,7 +602,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             LIST_OF_VALUE lov, 
             string userId, 
             bool skipExisting = true, 
-            string? connectionName = null)
+            string connectionName = "PPDM39")
         {
             connectionName ??= _connectionName;
 
@@ -628,7 +628,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             IEnumerable<LIST_OF_VALUE> lovs, 
             string userId, 
             bool skipExisting = true, 
-            string? connectionName = null)
+            string connectionName = "PPDM39")
         {
             connectionName ??= _connectionName;
             var result = new BulkLOVResult

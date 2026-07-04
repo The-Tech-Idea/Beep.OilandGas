@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 ﻿using System;
 using System.Globalization;
 using System.Collections.Generic;
@@ -54,7 +55,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<REVENUE_ALLOCATION> RecognizeRevenueAsync(
             ALLOCATION_DETAIL allocation,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (allocation == null)
                 throw new ArgumentNullException(nameof(allocation));
@@ -69,11 +70,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 if (string.IsNullOrWhiteSpace(allocation.ALLOCATION_RESULT_ID))
                     throw new AccountingException("Allocation detail is missing ALLOCATION_RESULT_ID.");
 
-                var ALLOCATION_RESULT = await GetAllocationResultAsync(allocation.ALLOCATION_RESULT_ID, cn);
+                var ALLOCATION_RESULT = await GetAllocationResultAsync(allocation.ALLOCATION_RESULT_ID, connectionName);
                 if (ALLOCATION_RESULT == null)
                     throw new AccountingException($"Allocation result not found: {allocation.ALLOCATION_RESULT_ID}");
 
-                var RUN_TICKET = await GetRunTicketAsync(ALLOCATION_RESULT.ALLOCATION_REQUEST_ID, cn);
+                var RUN_TICKET = await GetRunTicketAsync(ALLOCATION_RESULT.ALLOCATION_REQUEST_ID, connectionName);
                 if (RUN_TICKET == null)
                     throw new AccountingException($"Run ticket not found for allocation request {ALLOCATION_RESULT.ALLOCATION_REQUEST_ID}");
 
@@ -82,7 +83,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     var interestsValid = await _leaseEconomicInterestService.ValidateEconomicInterestsAsync(
                         RUN_TICKET.LEASE_ID,
                         RUN_TICKET.TICKET_DATE_TIME,
-                        cn);
+                        connectionName);
                     if (!interestsValid)
                         throw new AccountingException($"Economic interest validation failed for lease {RUN_TICKET.LEASE_ID}");
                 }
@@ -92,12 +93,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 decimal commodityPrice = RUN_TICKET.PRICE_PER_BARREL > 0
                     ? RUN_TICKET.PRICE_PER_BARREL.Value
-                    : await GetCommodityPriceAsync(RevenueLineProductCodes.Oil, priceDate, cn);
+                    : await GetCommodityPriceAsync(RevenueLineProductCodes.Oil, priceDate, connectionName);
 
                 var totalVolume = ALLOCATION_RESULT.ALLOCATED_VOLUME ?? ALLOCATION_RESULT.TOTAL_VOLUME ?? allocatedVolume;
                 var grossRevenueTotal = totalVolume * commodityPrice;
 
-                var totalRoyalty = await GetTotalRoyaltyAsync(ALLOCATION_RESULT.ALLOCATION_RESULT_ID, cn);
+                var totalRoyalty = await GetTotalRoyaltyAsync(ALLOCATION_RESULT.ALLOCATION_RESULT_ID, connectionName);
                 var netRevenueTotal = grossRevenueTotal - totalRoyalty;
                 if (netRevenueTotal < 0m)
                     netRevenueTotal = 0m;
@@ -115,7 +116,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     grossRevenueTotal,
                     netRevenueTotal,
                     userId,
-                    cn);
+                    connectionName);
 
                 var allocationRatio = allocation.ALLOCATION_PERCENTAGE.HasValue && allocation.ALLOCATION_PERCENTAGE.Value > 0
                     ? allocation.ALLOCATION_PERCENTAGE.Value / 100m
@@ -151,7 +152,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "REVENUE_ALLOCATION");
+                    entityType, connectionName, "REVENUE_ALLOCATION");
 
                 await repo.InsertAsync(revenueAllocation, userId);
 
@@ -184,7 +185,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// Validates a revenue allocation record.
         /// Checks: amount is positive, interest percentage valid, etc.
         /// </summary>
-        public async Task<bool> ValidateAsync(REVENUE_ALLOCATION allocation, string cn = "PPDM39")
+        public async Task<bool> ValidateAsync(REVENUE_ALLOCATION allocation, string connectionName = "PPDM39")
         {
             if (allocation == null)
                 throw new ArgumentNullException(nameof(allocation));
@@ -256,7 +257,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// <summary>
         /// Gets current commodity price for revenue calculation from PRICE_INDEX.
         /// </summary>
-        private async Task<decimal> GetCommodityPriceAsync(string commodity, DateTime asOfDate, string cn)
+        private async Task<decimal> GetCommodityPriceAsync(string commodity, DateTime asOfDate, string connectionName)
         {
             try
             {
@@ -266,7 +267,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "PRICE_INDEX");
+                    entityType, connectionName, "PRICE_INDEX");
 
                 // Get latest oil price from PRICE_INDEX
                 var filters = new List<AppFilter>
@@ -308,7 +309,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
-        private async Task<decimal> GetTotalRoyaltyAsync(string allocationResultId, string cn)
+        private async Task<decimal> GetTotalRoyaltyAsync(string allocationResultId, string connectionName)
         {
             if (string.IsNullOrWhiteSpace(allocationResultId))
                 return 0m;
@@ -319,7 +320,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "ROYALTY_CALCULATION");
+                entityType, connectionName, "ROYALTY_CALCULATION");
 
             var filters = new List<AppFilter>
             {
@@ -341,7 +342,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             decimal grossRevenueTotal,
             decimal netRevenueTotal,
             string userId,
-            string cn)
+            string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync("REVENUE_TRANSACTION");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -349,7 +350,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "REVENUE_TRANSACTION");
+                entityType, connectionName, "REVENUE_TRANSACTION");
 
             var filters = new List<AppFilter>
             {
@@ -390,7 +391,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return revenueTransaction;
         }
 
-        private async Task<ALLOCATION_RESULT?> GetAllocationResultAsync(string allocationResultId, string cn)
+        private async Task<ALLOCATION_RESULT?> GetAllocationResultAsync(string allocationResultId, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync("ALLOCATION_RESULT");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -398,13 +399,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "ALLOCATION_RESULT");
+                entityType, connectionName, "ALLOCATION_RESULT");
 
             var result = await repo.GetByIdAsync(allocationResultId);
             return result as ALLOCATION_RESULT;
         }
 
-        private async Task<RUN_TICKET?> GetRunTicketAsync(string allocationRequestId, string cn)
+        private async Task<RUN_TICKET?> GetRunTicketAsync(string allocationRequestId, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync("RUN_TICKET");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -412,7 +413,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "RUN_TICKET");
+                entityType, connectionName, "RUN_TICKET");
 
             var filters = new List<AppFilter>
             {

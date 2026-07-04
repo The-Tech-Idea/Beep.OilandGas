@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -45,7 +46,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
         public async Task<AFE> CreateOrLinkAFEAsync(
             WorkOrderResponse workOrder,
             string userId,
-            string? connectionName = null)
+            string connectionName = "PPDM39")
         {
             if (workOrder == null)
                 throw new ArgumentNullException(nameof(workOrder));
@@ -54,18 +55,18 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             if (string.IsNullOrWhiteSpace(workOrder.WorkOrderId))
                 throw new ArgumentNullException(nameof(workOrder.WorkOrderId), "Work order ID is required.");
 
-            var cn = connectionName ?? DefaultConnectionName;
+            var connectionName = connectionName ?? DefaultConnectionName;
 
             if (!string.IsNullOrWhiteSpace(workOrder.AfeId))
             {
-                var existing = await GetAfeAsync(workOrder.AfeId, cn);
+                var existing = await GetAfeAsync(workOrder.AfeId, connectionName);
                 if (existing != null)
                 {
                     return existing;
                 }
             }
 
-            var linkedAfe = await GetAFEForWorkOrderAsync(workOrder.WorkOrderId, cn);
+            var linkedAfe = await GetAFEForWorkOrderAsync(workOrder.WorkOrderId, connectionName);
             if (linkedAfe != null)
             {
                 return linkedAfe;
@@ -93,9 +94,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
                 _commonColumnHandler.PrepareForInsert(afeEntity, userId);
             }
 
-            var repo = await CreateRepositoryAsync("AFE", typeof(AFE), cn);
+            var repo = await CreateRepositoryAsync("AFE", typeof(AFE), connectionName);
             await repo.InsertAsync(afe, userId);
-            await PersistAfeLinkAsync(workOrder.WorkOrderId, afe.AFE_ID, userId, cn);
+            await PersistAfeLinkAsync(workOrder.WorkOrderId, afe.AFE_ID, userId, connectionName);
 
             _logger?.LogInformation("Created AFE {AfeId} for work order {WorkOrderId}", afe.AFE_ID, workOrder.WorkOrderId);
             return afe;
@@ -104,44 +105,44 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
         public async Task<AFE> CreateOrLinkAFEAsync(
             string workOrderId,
             string userId,
-            string? connectionName = null)
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(workOrderId))
                 throw new ArgumentNullException(nameof(workOrderId));
 
-            var cn = connectionName ?? DefaultConnectionName;
-            var projectWorkOrder = await GetProjectWorkOrderAsync(workOrderId, cn);
+            var connectionName = connectionName ?? DefaultConnectionName;
+            var projectWorkOrder = await GetProjectWorkOrderAsync(workOrderId, connectionName);
             if (projectWorkOrder != null)
             {
-                return await CreateOrLinkAFEAsync(MapProjectWorkOrderToResponse(projectWorkOrder), userId, cn);
+                return await CreateOrLinkAFEAsync(MapProjectWorkOrderToResponse(projectWorkOrder), userId, connectionName);
             }
 
-            var workOrder = await GetLegacyWorkOrderAsync(workOrderId, cn);
+            var workOrder = await GetLegacyWorkOrderAsync(workOrderId, connectionName);
             if (workOrder == null)
                 throw new InvalidOperationException($"Work order {workOrderId} was not found.");
 
             var workOrderResponse = MapLegacyWorkOrderToResponse(workOrder);
-            return await CreateOrLinkAFEAsync(workOrderResponse, userId, cn);
+            return await CreateOrLinkAFEAsync(workOrderResponse, userId, connectionName);
         }
 
-        public async Task<AFE?> GetAFEForWorkOrderAsync(string workOrderId, string? connectionName = null)
+        public async Task<AFE?> GetAFEForWorkOrderAsync(string workOrderId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(workOrderId))
                 return null;
 
-            var cn = connectionName ?? DefaultConnectionName;
-            var projectWorkOrder = await GetProjectWorkOrderAsync(workOrderId, cn);
+            var connectionName = connectionName ?? DefaultConnectionName;
+            var projectWorkOrder = await GetProjectWorkOrderAsync(workOrderId, connectionName);
             var afeId = ExtractAfeId(GetStringValue(projectWorkOrder, "REMARK"));
             if (string.IsNullOrWhiteSpace(afeId))
             {
-                var workOrder = await GetLegacyWorkOrderAsync(workOrderId, cn);
+                var workOrder = await GetLegacyWorkOrderAsync(workOrderId, connectionName);
                 afeId = ExtractAfeId(workOrder?.REMARK);
             }
 
             if (string.IsNullOrWhiteSpace(afeId))
                 return null;
 
-            return await GetAfeAsync(afeId, cn);
+            return await GetAfeAsync(afeId, connectionName);
         }
 
         public async Task<string> RecordWorkOrderCostAsync(
@@ -153,20 +154,20 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             string userId,
             DateTime? transactionDate = null,
             string? description = null,
-            string? connectionName = null)
+            string connectionName = "PPDM39")
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? DefaultConnectionName;
+            var connectionName = connectionName ?? DefaultConnectionName;
 
-            var linkedAfe = await GetAFEForWorkOrderAsync(request.WorkOrderId, cn);
+            var linkedAfe = await GetAFEForWorkOrderAsync(request.WorkOrderId, connectionName);
             var afeId = linkedAfe?.AFE_ID;
             if (string.IsNullOrWhiteSpace(afeId))
             {
-                var afe = await CreateOrLinkAFEAsync(request.WorkOrderId, userId, cn);
+                var afe = await CreateOrLinkAFEAsync(request.WorkOrderId, userId, connectionName);
                 afeId = afe.AFE_ID;
             }
 
@@ -191,7 +192,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
                 _commonColumnHandler.PrepareForInsert(costEntity, userId);
             }
 
-            var repo = await CreateRepositoryAsync("ACCOUNTING_COST", typeof(ACCOUNTING_COST), cn);
+            var repo = await CreateRepositoryAsync("ACCOUNTING_COST", typeof(ACCOUNTING_COST), connectionName);
             await repo.InsertAsync(cost, userId);
 
             _logger?.LogInformation("Recorded work order cost {CostId} for work order {WorkOrderId}", cost.ACCOUNTING_COST_ID, request.WorkOrderId);

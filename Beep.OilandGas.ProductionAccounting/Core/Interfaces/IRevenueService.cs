@@ -10,7 +10,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// </summary>
     public interface IRevenueService
     {
-        Task<REVENUE_ALLOCATION> RecognizeRevenueAsync(ALLOCATION_DETAIL allocation, string userId, string cn = "PPDM39");
-        Task<bool> ValidateAsync(REVENUE_ALLOCATION allocation, string cn = "PPDM39");
+        Task<REVENUE_ALLOCATION> RecognizeRevenueAsync(ALLOCATION_DETAIL allocation, string userId, string connectionName = "PPDM39");
+        Task<bool> ValidateAsync(REVENUE_ALLOCATION allocation, string connectionName = "PPDM39");
     }
 }

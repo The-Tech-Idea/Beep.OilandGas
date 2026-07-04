@@ -44,7 +44,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         public ActionResult<List<RUN_TICKET>> GetRunTickets(
             [FromQuery] DateTime? startDate = null, 
             [FromQuery] DateTime? endDate = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -65,7 +65,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         /// Get run ticket by ID.
         /// </summary>
         [HttpGet("{id}")]
-        public ActionResult<RUN_TICKET> GetRunTicket(string id, [FromQuery] string? connectionName = null)
+        public ActionResult<RUN_TICKET> GetRunTicket(string id, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Run ticket ID is required." });
@@ -93,7 +93,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             [FromQuery] decimal? revenueAmount = null,
             [FromQuery] bool isCash = false,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -151,7 +151,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         [HttpPost("service/process-cycle")]
         public async Task<ActionResult> ProcessProductionCycleAsync(
             [FromBody] RUN_TICKET runTicket,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -179,7 +179,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         public async Task<ActionResult<AccountingStatusData>> GetAccountingStatusAsync(
             string fieldId,
             [FromQuery] DateTime? asOfDate = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -206,7 +206,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             string fieldId,
             [FromQuery] DateTime startDate,
             [FromQuery] DateTime endDate,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

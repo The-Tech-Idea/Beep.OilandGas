@@ -6,7 +6,9 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -50,7 +52,7 @@ namespace Beep.OilandGas.Accounting.Services
             string description,
             decimal? allocatedPrice,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(salesContractId))
                 throw new ArgumentNullException(nameof(salesContractId));
@@ -75,7 +77,7 @@ namespace Beep.OilandGas.Accounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await GetRepoAsync<CONTRACT_PERFORMANCE_OBLIGATION>("CONTRACT_PERFORMANCE_OBLIGATION", connectionName);
+            var repo = await GetRepoAsync<CONTRACT_PERFORMANCE_OBLIGATION>("CONTRACT_PERFORMANCE_OBLIGATION", cn);
             await repo.InsertAsync(obligation, userId);
             return obligation;
         }
@@ -85,7 +87,7 @@ namespace Beep.OilandGas.Accounting.Services
             decimal totalPrice,
             Dictionary<string, decimal> allocationWeights,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(salesContractId))
                 throw new ArgumentNullException(nameof(salesContractId));
@@ -96,7 +98,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var repo = await GetRepoAsync<CONTRACT_PERFORMANCE_OBLIGATION>("CONTRACT_PERFORMANCE_OBLIGATION", cn);
 
             var totalWeight = allocationWeights.Values.Sum();
@@ -127,14 +128,13 @@ namespace Beep.OilandGas.Accounting.Services
             DateTime satisfiedDate,
             string userId,
             bool billCustomer,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(obligationId))
                 throw new ArgumentNullException(nameof(obligationId));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var repo = await GetRepoAsync<CONTRACT_PERFORMANCE_OBLIGATION>("CONTRACT_PERFORMANCE_OBLIGATION", cn);
             var obligation = await repo.GetByIdAsync(obligationId) as CONTRACT_PERFORMANCE_OBLIGATION;
             if (obligation == null)
@@ -170,7 +170,7 @@ namespace Beep.OilandGas.Accounting.Services
             decimal amount,
             DateTime receiptDate,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(salesContractId))
                 throw new ArgumentNullException(nameof(salesContractId));
@@ -179,7 +179,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var debitAccount = GetAccountId(AccountMappingKeys.Cash, DefaultGlAccounts.Cash);
             var creditAccount = GetAccountId(AccountMappingKeys.ContractLiability, DefaultGlAccounts.ContractLiability);
 
@@ -198,7 +197,7 @@ namespace Beep.OilandGas.Accounting.Services
             decimal amount,
             DateTime recognitionDate,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(salesContractId))
                 throw new ArgumentNullException(nameof(salesContractId));
@@ -207,7 +206,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var debitAccount = GetAccountId(AccountMappingKeys.ContractLiability, DefaultGlAccounts.ContractLiability);
             var creditAccount = GetAccountId(AccountMappingKeys.Revenue, DefaultGlAccounts.Revenue);
 
@@ -225,7 +223,7 @@ namespace Beep.OilandGas.Accounting.Services
             List<string> salesContractIds,
             string combinedGroupId,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (salesContractIds == null || salesContractIds.Count < 2)
                 throw new ArgumentException("At least two contracts are required for combination");
@@ -234,7 +232,6 @@ namespace Beep.OilandGas.Accounting.Services
              if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             // Assuming SALES_CONTRACT table has a CONTRACT_GROUP_ID or similar field. 
             // If strictly PPDM, might be using a linker table, but for this exercise we assume we can update the contract records directly 
             // or we track it in a custom way. 
@@ -286,7 +283,7 @@ namespace Beep.OilandGas.Accounting.Services
             List<decimal> probabilities,
             string method, // "EXPECTED_VALUE" or "MOST_LIKELY"
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
              if (string.IsNullOrWhiteSpace(salesContractId))
                 throw new ArgumentNullException(nameof(salesContractId));
@@ -315,7 +312,6 @@ namespace Beep.OilandGas.Accounting.Services
             
             try 
             {
-                var cn = connectionName ?? ConnectionName;
                 // Check if we can get a repo for CONTRACT_ESTIMATE. 
                 // Since I don't have the class, I'll define a localized DTO or just skip persistence if class missing.
                 // I'll persist it to CONTRACT_PERFORMANCE_OBLIGATION if applicable, or just return value.
@@ -333,9 +329,8 @@ namespace Beep.OilandGas.Accounting.Services
             return Math.Round(estimatedPrice, 2);
         }
 
-        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? connectionName)
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? cn)
         {
-            var cn = connectionName ?? ConnectionName;
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
 
             return new PPDMGenericRepository(

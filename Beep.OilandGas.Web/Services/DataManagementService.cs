@@ -217,27 +217,27 @@ namespace Beep.OilandGas.Web.Services
         /// <summary>
         /// Get entities from a table with optional filters
         /// </summary>
-        Task<GetEntitiesResponse> GetEntitiesAsync(string tableName, List<AppFilter>? filters = null, string? connectionName = null);
+        Task<GetEntitiesResponse> GetEntitiesAsync(string tableName, List<AppFilter>? filters = null, string connectionName = "PPDM39");
 
         /// <summary>
         /// Get a single entity by ID
         /// </summary>
-        Task<GenericEntityResponse> GetEntityByIdAsync(string tableName, object id, string? connectionName = null);
+        Task<GenericEntityResponse> GetEntityByIdAsync(string tableName, object id, string connectionName = "PPDM39");
 
         /// <summary>
         /// Insert an entity
         /// </summary>
-        Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> entityData, string userId, string? connectionName = null);
+        Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> entityData, string userId, string connectionName = "PPDM39");
 
         /// <summary>
         /// Update an entity
         /// </summary>
-        Task<GenericEntityResponse> UpdateEntityAsync(string tableName, string entityId, Dictionary<string, object> entityData, string userId, string? connectionName = null);
+        Task<GenericEntityResponse> UpdateEntityAsync(string tableName, string entityId, Dictionary<string, object> entityData, string userId, string connectionName = "PPDM39");
 
         /// <summary>
         /// Delete an entity
         /// </summary>
-        Task<GenericEntityResponse> DeleteEntityAsync(string tableName, object id, string userId, string? connectionName = null);
+        Task<GenericEntityResponse> DeleteEntityAsync(string tableName, object id, string userId, string connectionName = "PPDM39");
 
         // ============================================
         // Import/Export Operations
@@ -246,12 +246,12 @@ namespace Beep.OilandGas.Web.Services
         /// <summary>
         /// Import data from CSV file
         /// </summary>
-        Task<OperationStartResponse> ImportFromCsvAsync(string tableName, Stream csvStream, string fileName, string userId, Dictionary<string, string>? columnMapping = null, bool validateForeignKeys = true, string? connectionName = null, Action<ProgressUpdate>? onProgress = null);
+        Task<OperationStartResponse> ImportFromCsvAsync(string tableName, Stream csvStream, string fileName, string userId, Dictionary<string, string>? columnMapping = null, bool validateForeignKeys = true, string connectionName = "PPDM39", Action<ProgressUpdate>? onProgress = null);
 
         /// <summary>
         /// Export data to CSV file
         /// </summary>
-        Task<Stream?> ExportToCsvAsync(string tableName, List<AppFilter>? filters = null, string? connectionName = null, Action<ProgressUpdate>? onProgress = null);
+        Task<Stream?> ExportToCsvAsync(string tableName, List<AppFilter>? filters = null, string connectionName = "PPDM39", Action<ProgressUpdate>? onProgress = null);
 
         // ============================================
         // Validation Operations
@@ -260,17 +260,17 @@ namespace Beep.OilandGas.Web.Services
         /// <summary>
         /// Validate an entity
         /// </summary>
-        Task<ValidationResult> ValidateEntityAsync(string tableName, Dictionary<string, object> entityData, string? connectionName = null);
+        Task<ValidationResult> ValidateEntityAsync(string tableName, Dictionary<string, object> entityData, string connectionName = "PPDM39");
 
         /// <summary>
         /// Validate multiple entities in batch
         /// </summary>
-        Task<List<ValidationResult>> ValidateBatchAsync(string tableName, List<Dictionary<string, object>> entities, string? connectionName = null);
+        Task<List<ValidationResult>> ValidateBatchAsync(string tableName, List<Dictionary<string, object>> entities, string connectionName = "PPDM39");
 
         /// <summary>
         /// Get validation rules for a table
         /// </summary>
-        Task<object> GetValidationRulesAsync(string tableName, string? connectionName = null);
+        Task<object> GetValidationRulesAsync(string tableName, string connectionName = "PPDM39");
 
         // ============================================
         // Quality Operations
@@ -279,12 +279,12 @@ namespace Beep.OilandGas.Web.Services
         /// <summary>
         /// Get data quality metrics for a table
         /// </summary>
-        Task<DataQualityResult> GetTableQualityMetricsAsync(string tableName, string? connectionName = null);
+        Task<DataQualityResult> GetTableQualityMetricsAsync(string tableName, string connectionName = "PPDM39");
 
         /// <summary>
         /// Get data quality dashboard
         /// </summary>
-        Task<DataQualityDashboardResult> GetQualityDashboardAsync(string? connectionName = null);
+        Task<DataQualityDashboardResult> GetQualityDashboardAsync(string connectionName = "PPDM39");
 
         // ============================================
         // Versioning Operations
@@ -293,17 +293,17 @@ namespace Beep.OilandGas.Web.Services
         /// <summary>
         /// Create a version snapshot of an entity
         /// </summary>
-        Task<VersioningResult> CreateVersionAsync(string tableName, string entityId, Dictionary<string, object>? entityData, string userId, string? versionLabel = null, string? connectionName = null);
+        Task<VersioningResult> CreateVersionAsync(string tableName, string entityId, Dictionary<string, object>? entityData, string userId, string? versionLabel = null, string connectionName = "PPDM39");
 
         /// <summary>
         /// Get version history for an entity
         /// </summary>
-        Task<List<VersionInfo>> GetVersionHistoryAsync(string tableName, string entityId, string? connectionName = null);
+        Task<List<VersionInfo>> GetVersionHistoryAsync(string tableName, string entityId, string connectionName = "PPDM39");
 
         /// <summary>
         /// Restore an entity to a specific version
         /// </summary>
-        Task<VersioningResult> RestoreVersionAsync(string tableName, string entityId, string versionId, string userId, string? connectionName = null);
+        Task<VersioningResult> RestoreVersionAsync(string tableName, string entityId, string versionId, string userId, string connectionName = "PPDM39");
 
         // ============================================
         // Defaults Operations
@@ -312,12 +312,12 @@ namespace Beep.OilandGas.Web.Services
         /// <summary>
         /// Get default values for an entity type
         /// </summary>
-        Task<Dictionary<string, object>> GetDefaultsAsync(string entityType, string? connectionName = null);
+        Task<Dictionary<string, object>> GetDefaultsAsync(string entityType, string connectionName = "PPDM39");
 
         /// <summary>
         /// Get well status facets
         /// </summary>
-        Task<object> GetWellStatusFacetsAsync(string statusId, string? connectionName = null);
+        Task<object> GetWellStatusFacetsAsync(string statusId, string connectionName = "PPDM39");
     }
 
     /// <summary>
@@ -1211,7 +1211,7 @@ namespace Beep.OilandGas.Web.Services
             throw lastException ?? new InvalidOperationException($"Operation {operationName} failed after {maxRetries} attempts");
         }
 
-        public async Task<GetEntitiesResponse> GetEntitiesAsync(string tableName, List<AppFilter>? filters = null, string? connectionName = null)
+        public async Task<GetEntitiesResponse> GetEntitiesAsync(string tableName, List<AppFilter>? filters = null, string connectionName = "PPDM39")
         {
             try
             {
@@ -1234,7 +1234,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<GenericEntityResponse> GetEntityByIdAsync(string tableName, object id, string? connectionName = null)
+        public async Task<GenericEntityResponse> GetEntityByIdAsync(string tableName, object id, string connectionName = "PPDM39")
         {
             try
             {
@@ -1251,7 +1251,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> entityData, string userId, string? connectionName = null)
+        public async Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> entityData, string userId, string connectionName = "PPDM39")
         {
             try
             {
@@ -1275,7 +1275,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<GenericEntityResponse> UpdateEntityAsync(string tableName, string entityId, Dictionary<string, object> entityData, string userId, string? connectionName = null)
+        public async Task<GenericEntityResponse> UpdateEntityAsync(string tableName, string entityId, Dictionary<string, object> entityData, string userId, string connectionName = "PPDM39")
         {
             try
             {
@@ -1299,7 +1299,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<GenericEntityResponse> DeleteEntityAsync(string tableName, object id, string userId, string? connectionName = null)
+        public async Task<GenericEntityResponse> DeleteEntityAsync(string tableName, object id, string userId, string connectionName = "PPDM39")
         {
             try
             {
@@ -1320,7 +1320,7 @@ namespace Beep.OilandGas.Web.Services
         // Import/Export Operations Implementation
         // ============================================
 
-        public async Task<OperationStartResponse> ImportFromCsvAsync(string tableName, Stream csvStream, string fileName, string userId, Dictionary<string, string>? columnMapping = null, bool validateForeignKeys = true, string? connectionName = null, Action<ProgressUpdate>? onProgress = null)
+        public async Task<OperationStartResponse> ImportFromCsvAsync(string tableName, Stream csvStream, string fileName, string userId, Dictionary<string, string>? columnMapping = null, bool validateForeignKeys = true, string connectionName = "PPDM39", Action<ProgressUpdate>? onProgress = null)
         {
             try
             {
@@ -1356,7 +1356,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<Stream?> ExportToCsvAsync(string tableName, List<AppFilter>? filters = null, string? connectionName = null, Action<ProgressUpdate>? onProgress = null)
+        public async Task<Stream?> ExportToCsvAsync(string tableName, List<AppFilter>? filters = null, string connectionName = "PPDM39", Action<ProgressUpdate>? onProgress = null)
         {
             try
             {
@@ -1383,7 +1383,7 @@ namespace Beep.OilandGas.Web.Services
         // Validation Operations Implementation
         // ============================================
 
-        public async Task<ValidationResult> ValidateEntityAsync(string tableName, Dictionary<string, object> entityData, string? connectionName = null)
+        public async Task<ValidationResult> ValidateEntityAsync(string tableName, Dictionary<string, object> entityData, string connectionName = "PPDM39")
         {
             try
             {
@@ -1404,7 +1404,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<List<ValidationResult>> ValidateBatchAsync(string tableName, List<Dictionary<string, object>> entities, string? connectionName = null)
+        public async Task<List<ValidationResult>> ValidateBatchAsync(string tableName, List<Dictionary<string, object>> entities, string connectionName = "PPDM39")
         {
             try
             {
@@ -1425,7 +1425,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<object> GetValidationRulesAsync(string tableName, string? connectionName = null)
+        public async Task<object> GetValidationRulesAsync(string tableName, string connectionName = "PPDM39")
         {
             try
             {
@@ -1446,7 +1446,7 @@ namespace Beep.OilandGas.Web.Services
         // Quality Operations Implementation
         // ============================================
 
-        public async Task<DataQualityResult> GetTableQualityMetricsAsync(string tableName, string? connectionName = null)
+        public async Task<DataQualityResult> GetTableQualityMetricsAsync(string tableName, string connectionName = "PPDM39")
         {
             try
             {
@@ -1464,7 +1464,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<DataQualityDashboardResult> GetQualityDashboardAsync(string? connectionName = null)
+        public async Task<DataQualityDashboardResult> GetQualityDashboardAsync(string connectionName = "PPDM39")
         {
             try
             {
@@ -1486,7 +1486,7 @@ namespace Beep.OilandGas.Web.Services
         // Versioning Operations Implementation
         // ============================================
 
-        public async Task<VersioningResult> CreateVersionAsync(string tableName, string entityId, Dictionary<string, object>? entityData, string userId, string? versionLabel = null, string? connectionName = null)
+        public async Task<VersioningResult> CreateVersionAsync(string tableName, string entityId, Dictionary<string, object>? entityData, string userId, string? versionLabel = null, string connectionName = "PPDM39")
         {
             try
             {
@@ -1508,7 +1508,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<List<VersionInfo>> GetVersionHistoryAsync(string tableName, string entityId, string? connectionName = null)
+        public async Task<List<VersionInfo>> GetVersionHistoryAsync(string tableName, string entityId, string connectionName = "PPDM39")
         {
             try
             {
@@ -1525,7 +1525,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<VersioningResult> RestoreVersionAsync(string tableName, string entityId, string versionId, string userId, string? connectionName = null)
+        public async Task<VersioningResult> RestoreVersionAsync(string tableName, string entityId, string versionId, string userId, string connectionName = "PPDM39")
         {
             try
             {
@@ -1552,7 +1552,7 @@ namespace Beep.OilandGas.Web.Services
         // Defaults Operations Implementation
         // ============================================
 
-        public async Task<Dictionary<string, object>> GetDefaultsAsync(string entityType, string? connectionName = null)
+        public async Task<Dictionary<string, object>> GetDefaultsAsync(string entityType, string connectionName = "PPDM39")
         {
             try
             {
@@ -1569,7 +1569,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<object> GetWellStatusFacetsAsync(string statusId, string? connectionName = null)
+        public async Task<object> GetWellStatusFacetsAsync(string statusId, string connectionName = "PPDM39")
         {
             try
             {

@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.Authentication;
@@ -422,6 +423,17 @@ builder.Services.AddBeepOilandGasAppAuto(builder.Configuration);
 
         // Multi-page PPDM39 database setup wizard state
         builder.Services.AddScoped<CreateDatabaseWizardState>();
+
+        // ── Phase 5: Workflow Notifications & Task Inbox ─────────────────
+        builder.Services.AddScoped<IUnifiedTaskInboxService, UnifiedTaskInboxService>();
+        builder.Services.AddSingleton<INotificationService, NotificationService>();
+        builder.Services.AddSingleton<IEmailNotificationProvider, EmailNotificationProvider>();
+        builder.Services.AddSingleton<IExternalWebhookTriggerService>(sp =>
+        {
+            var httpClient = sp.GetRequiredService<HttpClient>();
+            var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<ExternalWebhookTriggerService>();
+            return new ExternalWebhookTriggerService(httpClient, logger);
+        });
 
 // PPDM39 Data Management Services
 

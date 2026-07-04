@@ -9,7 +9,9 @@ using TheTechIdea.Beep.Report;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Repositories;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.DataManagement;
@@ -44,7 +46,7 @@ namespace Beep.OilandGas.ApiService.Services
             _logger = logger;
         }
 
-        public async Task<GetEntitiesResponse> GetEntitiesAsync(string tableName, List<AppFilter> filters, string? connectionName = null)
+        public async Task<GetEntitiesResponse> GetEntitiesAsync(string tableName, List<AppFilter> filters, string connectionName = "PPDM39")
         {
             var response = new GetEntitiesResponse();
             try
@@ -66,7 +68,7 @@ namespace Beep.OilandGas.ApiService.Services
             return response;
         }
 
-        public async Task<GenericEntityResponse> GetEntityByIdAsync(string tableName, object id, string? connectionName = null)
+        public async Task<GenericEntityResponse> GetEntityByIdAsync(string tableName, object id, string connectionName = "PPDM39")
         {
             var response = new GenericEntityResponse();
             try
@@ -88,7 +90,7 @@ namespace Beep.OilandGas.ApiService.Services
             return response;
         }
 
-        public async Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> entityData, string userId, string? connectionName = null)
+        public async Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> entityData, string userId, string connectionName = "PPDM39")
         {
             var response = new GenericEntityResponse();
             try
@@ -110,7 +112,7 @@ namespace Beep.OilandGas.ApiService.Services
             return response;
         }
 
-        public async Task<GenericEntityResponse> UpdateEntityAsync(string tableName, string entityId, Dictionary<string, object> entityData, string userId, string? connectionName = null)
+        public async Task<GenericEntityResponse> UpdateEntityAsync(string tableName, string entityId, Dictionary<string, object> entityData, string userId, string connectionName = "PPDM39")
         {
             var response = new GenericEntityResponse();
             try
@@ -132,7 +134,7 @@ namespace Beep.OilandGas.ApiService.Services
             return response;
         }
 
-        public async Task<GenericEntityResponse> DeleteEntityAsync(string tableName, object id, string userId, string? connectionName = null)
+        public async Task<GenericEntityResponse> DeleteEntityAsync(string tableName, object id, string userId, string connectionName = "PPDM39")
         {
             var response = new GenericEntityResponse();
             try

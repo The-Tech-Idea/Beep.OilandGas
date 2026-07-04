@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -43,7 +45,7 @@ namespace Beep.OilandGas.Accounting.Services
             decimal weightedAverageShares,
             string userId,
             decimal? dilutedShares = null,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (weightedAverageShares <= 0m)
                 throw new InvalidOperationException("Weighted average shares must be positive");
@@ -55,7 +57,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (dilutedShares.HasValue && dilutedShares.Value > 0m)
                 dilutedEps = netIncome / dilutedShares.Value;
 
-            var cn = connectionName ?? ConnectionName;
             var repo = await GetRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", cn);
 
             var remark = BuildRemark(basicEps, dilutedEps, weightedAverageShares, dilutedShares);

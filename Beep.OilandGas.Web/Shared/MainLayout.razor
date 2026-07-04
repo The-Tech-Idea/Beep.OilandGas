@@ -5,8 +5,10 @@
 @inject Beep.OilandGas.Web.Theme.IThemeProvider ThemeProvider
 @inject Beep.OilandGas.Web.Services.IFirstRunService FirstRunService
 @inject Beep.OilandGas.Web.Services.IPersonaContextService PersonaContext
+@inject HttpClient Http
 @using Microsoft.AspNetCore.Components.Authorization
 @using Beep.OilandGas.Web.Theme
+@using System.Net.Http.Json
 @implements IDisposable
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="@_isDarkMode" />

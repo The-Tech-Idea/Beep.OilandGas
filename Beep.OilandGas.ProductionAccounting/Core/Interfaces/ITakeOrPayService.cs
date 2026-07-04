@@ -14,6 +14,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             ALLOCATION_RESULT ALLOCATION_RESULT,
             decimal deliveredVolume,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
     }
 }

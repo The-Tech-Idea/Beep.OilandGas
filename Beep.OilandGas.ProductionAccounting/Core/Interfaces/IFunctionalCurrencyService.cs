@@ -14,12 +14,12 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             string fromCurrency,
             string toCurrency,
             DateTime rateDate,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
 
         Task<CURRENCY_TRANSLATION_RESULT> TranslateBalancesAsync(
             string entityId,
             DateTime periodEnd,
             string reportingCurrency,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
     }
 }

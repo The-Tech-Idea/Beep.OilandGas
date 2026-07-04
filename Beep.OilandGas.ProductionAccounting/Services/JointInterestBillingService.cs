@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -63,7 +64,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<bool> AllocateToParticipantsAsync(
             ALLOCATION_RESULT allocation,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (allocation == null)
                 throw new ArgumentNullException(nameof(allocation));
@@ -73,7 +74,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             try
             {
                 // Get allocation details (these represent different participating interests)
-                var details = await GetAllocationDetailsAsync(allocation.ALLOCATION_RESULT_ID, cn);
+                var details = await GetAllocationDetailsAsync(allocation.ALLOCATION_RESULT_ID, connectionName);
                 if (!details.Any())
                 {
                     _logger?.LogWarning("Allocation {AllocationId} has no details to allocate", allocation.ALLOCATION_RESULT_ID);
@@ -136,7 +137,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string leaseId,
             DateTime periodEnd,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -153,7 +154,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var allocRepo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    allocEntityType, cn, "ALLOCATION_RESULT");
+                    allocEntityType, connectionName, "ALLOCATION_RESULT");
 
                 var allocFilters = new List<AppFilter>
                 {
@@ -166,7 +167,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var filteredAllocations = new List<ALLOCATION_RESULT>();
                 foreach (var allocation in allocations)
                 {
-                    var RUN_TICKET = await GetRunTicketAsync(allocation.ALLOCATION_REQUEST_ID, cn);
+                    var RUN_TICKET = await GetRunTicketAsync(allocation.ALLOCATION_REQUEST_ID, connectionName);
                     if (RUN_TICKET != null && string.Equals(RUN_TICKET.LEASE_ID, leaseId, StringComparison.OrdinalIgnoreCase))
                         filteredAllocations.Add(allocation);
                 }
@@ -180,7 +181,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var costRepo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    costEntityType, cn, "COST_ALLOCATION");
+                    costEntityType, connectionName, "COST_ALLOCATION");
 
                 var costFilters = new List<AppFilter>
                 {
@@ -191,7 +192,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var costResults = await costRepo.GetAsync(costFilters);
                 var costs = costResults?.Cast<COST_ALLOCATION>().ToList() ?? new List<COST_ALLOCATION>();
                 var costIds = costs.Select(c => c.COST_TRANSACTION_ID).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList();
-                var costTransactions = await GetAccountingCostsAsync(costIds, cn);
+                var costTransactions = await GetAccountingCostsAsync(costIds, connectionName);
                 var filteredCosts = costs
                     .Where(c =>
                     {
@@ -211,7 +212,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var revTxRepo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    revTxEntityType, cn, "REVENUE_TRANSACTION");
+                    revTxEntityType, connectionName, "REVENUE_TRANSACTION");
 
                 var revTxFilters = new List<AppFilter>
                 {
@@ -223,7 +224,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var revTxResults = await revTxRepo.GetAsync(revTxFilters);
                 var revenueTransactions = revTxResults?.Cast<REVENUE_TRANSACTION>().ToList() ?? new List<REVENUE_TRANSACTION>();
                 var transactionIds = revenueTransactions.Select(r => r.REVENUE_TRANSACTION_ID).ToList();
-                var revenues = await GetRevenueAllocationsAsync(transactionIds, cn);
+                var revenues = await GetRevenueAllocationsAsync(transactionIds, connectionName);
 
                 _logger?.LogInformation("Found {Count} revenue records for lease {LeaseId}", revenues.Count, leaseId);
 
@@ -233,7 +234,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 decimal baseCosts = filteredCosts.Sum(c => c.ALLOCATED_AMOUNT ?? 0);
                 decimal overhead = 0m;
                 if (_copasOverheadService != null)
-                    overhead = await _copasOverheadService.CalculateOverheadAsync(leaseId, baseCosts, periodEnd, cn);
+                    overhead = await _copasOverheadService.CalculateOverheadAsync(leaseId, baseCosts, periodEnd, connectionName);
 
                 decimal totalCosts = baseCosts + overhead;
                 decimal netRevenue = totalRevenue - totalCosts;
@@ -252,10 +253,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     filteredCosts,
                     revenues,
                     userId,
-                    cn);
+                    connectionName);
 
                 if (_copasOverheadService != null && overhead > 0m)
-                    await _copasOverheadService.ApplyOverheadToStatementAsync(statement, baseCosts, userId, cn);
+                    await _copasOverheadService.ApplyOverheadToStatementAsync(statement, baseCosts, userId, connectionName);
 
                 // Step 5: Log statement generation
                 _logger?.LogInformation(
@@ -288,7 +289,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// Validates a lease's JIB data.
         /// Checks: total interests sum to 100%, cost allocations are correct, etc.
         /// </summary>
-        public async Task<bool> ValidateAsync(string leaseId, string cn = "PPDM39")
+        public async Task<bool> ValidateAsync(string leaseId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -306,7 +307,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var detailRepo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    detailEntityType, cn, "ALLOCATION_DETAIL");
+                    detailEntityType, connectionName, "ALLOCATION_DETAIL");
 
                 var detailFilters = new List<AppFilter>
                 {
@@ -315,7 +316,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var detailResults = await detailRepo.GetAsync(detailFilters);
                 var allDetails = detailResults?.Cast<ALLOCATION_DETAIL>().ToList() ?? new List<ALLOCATION_DETAIL>();
-                var allocationResults = await GetAllocationsForLeaseAsync(leaseId, cn);
+                var allocationResults = await GetAllocationsForLeaseAsync(leaseId, connectionName);
                 var allocationIds = new HashSet<string>(allocationResults.Select(a => a.ALLOCATION_RESULT_ID));
                 var leaseDetails = allDetails.Where(d => allocationIds.Contains(d.ALLOCATION_RESULT_ID)).ToList();
 
@@ -411,7 +412,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// </summary>
         private async Task<List<ALLOCATION_DETAIL>> GetAllocationDetailsAsync(
             string allocationResultId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             var metadata = await _metadata.GetTableMetadataAsync("ALLOCATION_DETAIL");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -419,7 +420,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "ALLOCATION_DETAIL");
+                entityType, connectionName, "ALLOCATION_DETAIL");
 
             var filters = new List<AppFilter>
             {
@@ -431,7 +432,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return results?.Cast<ALLOCATION_DETAIL>().ToList() ?? new List<ALLOCATION_DETAIL>();
         }
 
-        private async Task<RUN_TICKET?> GetRunTicketAsync(string allocationRequestId, string cn)
+        private async Task<RUN_TICKET?> GetRunTicketAsync(string allocationRequestId, string connectionName)
         {
             if (string.IsNullOrWhiteSpace(allocationRequestId))
                 return null;
@@ -442,7 +443,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "RUN_TICKET");
+                entityType, connectionName, "RUN_TICKET");
 
             var filters = new List<AppFilter>
             {
@@ -454,7 +455,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return results?.Cast<RUN_TICKET>().FirstOrDefault();
         }
 
-        private async Task<List<ALLOCATION_RESULT>> GetAllocationsForLeaseAsync(string leaseId, string cn)
+        private async Task<List<ALLOCATION_RESULT>> GetAllocationsForLeaseAsync(string leaseId, string connectionName)
         {
             var allocMetadata = await _metadata.GetTableMetadataAsync("ALLOCATION_RESULT");
             var allocEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{allocMetadata.EntityTypeName}")
@@ -462,7 +463,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var allocRepo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                allocEntityType, cn, "ALLOCATION_RESULT");
+                allocEntityType, connectionName, "ALLOCATION_RESULT");
 
             var allocFilters = new List<AppFilter>
             {
@@ -475,7 +476,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             foreach (var allocation in allocations)
             {
-                var RUN_TICKET = await GetRunTicketAsync(allocation.ALLOCATION_REQUEST_ID, cn);
+                var RUN_TICKET = await GetRunTicketAsync(allocation.ALLOCATION_REQUEST_ID, connectionName);
                 if (RUN_TICKET != null && string.Equals(RUN_TICKET.LEASE_ID, leaseId, StringComparison.OrdinalIgnoreCase))
                     filtered.Add(allocation);
             }
@@ -493,7 +494,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             List<COST_ALLOCATION> costs,
             List<REVENUE_ALLOCATION> revenues,
             string userId,
-            string cn)
+            string connectionName)
         {
             var periodStart = allocations.Select(a => a.ALLOCATION_DATE).Where(d => d.HasValue).Min()
                 ?? periodEnd.AddMonths(-1);
@@ -517,12 +518,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var statementRepo = await CreateRepoAsync<JOINT_INTEREST_STATEMENT>("JOINT_INTEREST_STATEMENT", cn);
+            var statementRepo = await CreateRepoAsync<JOINT_INTEREST_STATEMENT>("JOINT_INTEREST_STATEMENT", connectionName);
             await statementRepo.InsertAsync(statement, userId);
 
-            await PersistParticipantsAsync(statement, allocations, userId, cn);
-            await PersistChargesAsync(statement, costs, userId, cn);
-            await PersistCreditsAsync(statement, revenues, userId, cn);
+            await PersistParticipantsAsync(statement, allocations, userId, connectionName);
+            await PersistChargesAsync(statement, costs, userId, connectionName);
+            await PersistCreditsAsync(statement, revenues, userId, connectionName);
 
             return statement;
         }
@@ -531,7 +532,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             JOINT_INTEREST_STATEMENT statement,
             List<ALLOCATION_RESULT> allocations,
             string userId,
-            string cn)
+            string connectionName)
         {
             var details = new List<ALLOCATION_DETAIL>();
 
@@ -540,10 +541,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 if (string.IsNullOrWhiteSpace(allocation.ALLOCATION_RESULT_ID))
                     continue;
 
-                details.AddRange(await GetAllocationDetailsAsync(allocation.ALLOCATION_RESULT_ID, cn));
+                details.AddRange(await GetAllocationDetailsAsync(allocation.ALLOCATION_RESULT_ID, connectionName));
             }
 
-            var repo = await CreateRepoAsync<JIB_PARTICIPANT>("JIB_PARTICIPANT", cn);
+            var repo = await CreateRepoAsync<JIB_PARTICIPANT>("JIB_PARTICIPANT", connectionName);
             var totalVolume = details.Sum(d => d.ALLOCATED_VOLUME ?? 0m);
             var groups = details.GroupBy(d => d.ENTITY_ID).ToList();
 
@@ -573,9 +574,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             JOINT_INTEREST_STATEMENT statement,
             List<COST_ALLOCATION> costs,
             string userId,
-            string cn)
+            string connectionName)
         {
-            var repo = await CreateRepoAsync<JIB_CHARGE>("JIB_CHARGE", cn);
+            var repo = await CreateRepoAsync<JIB_CHARGE>("JIB_CHARGE", connectionName);
             foreach (var cost in costs)
             {
                 var record = new JIB_CHARGE
@@ -599,9 +600,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             JOINT_INTEREST_STATEMENT statement,
             List<REVENUE_ALLOCATION> revenues,
             string userId,
-            string cn)
+            string connectionName)
         {
-            var repo = await CreateRepoAsync<JIB_CREDIT>("JIB_CREDIT", cn);
+            var repo = await CreateRepoAsync<JIB_CREDIT>("JIB_CREDIT", connectionName);
             foreach (var revenue in revenues)
             {
                 var record = new JIB_CREDIT
@@ -621,7 +622,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
-        private async Task<PPDMGenericRepository> CreateRepoAsync<T>(string tableName, string cn)
+        private async Task<PPDMGenericRepository> CreateRepoAsync<T>(string tableName, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -629,10 +630,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, tableName);
+                entityType, connectionName, tableName);
         }
 
-        private async Task<List<ACCOUNTING_COST>> GetAccountingCostsAsync(List<string> costIds, string cn)
+        private async Task<List<ACCOUNTING_COST>> GetAccountingCostsAsync(List<string> costIds, string connectionName)
         {
             if (costIds == null || costIds.Count == 0)
                 return new List<ACCOUNTING_COST>();
@@ -643,7 +644,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "ACCOUNTING_COST");
+                entityType, connectionName, "ACCOUNTING_COST");
 
             var results = await repo.GetAsync(new List<AppFilter>
             {
@@ -654,7 +655,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return allCosts.Where(c => costIds.Contains(c.ACCOUNTING_COST_ID)).ToList();
         }
 
-        private async Task<List<REVENUE_ALLOCATION>> GetRevenueAllocationsAsync(List<string> transactionIds, string cn)
+        private async Task<List<REVENUE_ALLOCATION>> GetRevenueAllocationsAsync(List<string> transactionIds, string connectionName)
         {
             if (transactionIds == null || transactionIds.Count == 0)
                 return new List<REVENUE_ALLOCATION>();
@@ -665,7 +666,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "REVENUE_ALLOCATION");
+                entityType, connectionName, "REVENUE_ALLOCATION");
 
             var results = await repo.GetAsync(new List<AppFilter>
             {

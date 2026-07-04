@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -40,7 +41,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<ASSET_SWAP_TRANSACTION> RecordSwapAsync(
             ASSET_SWAP_TRANSACTION swap,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (swap == null)
                 throw new ArgumentNullException(nameof(swap));
@@ -61,7 +62,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "ASSET_SWAP_TRANSACTION");
+                entityType, connectionName, "ASSET_SWAP_TRANSACTION");
 
             await repo.InsertAsync(swap, userId);
 

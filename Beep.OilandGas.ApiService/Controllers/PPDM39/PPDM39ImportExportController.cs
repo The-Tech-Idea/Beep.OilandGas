@@ -2,12 +2,15 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM.Models;
 using Microsoft.AspNetCore.Http;
@@ -21,6 +24,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
     /// <summary>
     /// API controller for PPDM39 import/export operations
     /// </summary>
+    [Authorize]
     [ApiController]
     [Route("api/ppdm39/import-export")]
     public class PPDM39ImportExportController : ControllerBase
@@ -60,7 +64,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             IFormFile file,
             [FromQuery] string? operationId = null,
             [FromQuery] string userId = "SYSTEM",
-            [FromQuery] string? connectionName = null,
+            [FromQuery] string connectionName = "PPDM39",
             [FromQuery] bool validateForeignKeys = true)
         {
             if (string.IsNullOrWhiteSpace(tableName))
@@ -178,7 +182,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<IActionResult> ExportCsv(
             string tableName,
             [FromBody] ExportRequest? request = null,
-            [FromQuery] string? connectionName = null,
+            [FromQuery] string connectionName = "PPDM39",
             [FromQuery] string? operationId = null)
         {
             if (string.IsNullOrWhiteSpace(tableName))

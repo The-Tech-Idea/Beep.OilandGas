@@ -16,7 +16,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
     /// Service implementation for choke flow analysis using industry-standard petroleum engineering methods.
     /// Provides comprehensive choke performance evaluation with engineering accuracy.
     /// </summary>
-    public partial class ChokeAnalysisService : IChokeAnalysisService
+    public partial class ChokeAnalysisService
     {
         private readonly ILogger<ChokeAnalysisService>? _logger;
 
@@ -32,7 +32,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             WELL well,
             WELL_TEST_FLOW_MEAS? flowMeas = null,
             WELL_TUBULAR? tubing = null,
-            WELL_PRESSURE? pressure = null)
+            WELL_PRESSURE? pressure = null, CancellationToken cancellationToken = default)
         {
             return await Task.Run(async () =>
             {
@@ -87,7 +87,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// </summary>
         public async Task<CHOKE_FLOW_RESULT> CalculateDownholeChokeFlowAsync(
             CHOKE_PROPERTIES choke,
-            GAS_CHOKE_PROPERTIES gasProperties)
+            GAS_CHOKE_PROPERTIES gasProperties, CancellationToken cancellationToken = default)
         {
             return await Task.Run(() =>
             {
@@ -115,7 +115,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// </summary>
         public async Task<CHOKE_FLOW_RESULT> CalculateUpholeChokeFlowAsync(
             CHOKE_PROPERTIES choke,
-            GAS_CHOKE_PROPERTIES gasProperties)
+            GAS_CHOKE_PROPERTIES gasProperties, CancellationToken cancellationToken = default)
         {
             return await Task.Run(() =>
             {
@@ -144,7 +144,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         public async Task<decimal> CalculateDownstreamPressureAsync(
             CHOKE_PROPERTIES choke,
             GAS_CHOKE_PROPERTIES gasProperties,
-            decimal flowRate)
+            decimal flowRate, CancellationToken cancellationToken = default)
         {
             return await Task.Run(() =>
             {
@@ -171,7 +171,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// </summary>
         public async Task<decimal> CalculateRequiredChokeSizeAsync(
             GAS_CHOKE_PROPERTIES gasProperties,
-            decimal flowRate)
+            decimal flowRate, CancellationToken cancellationToken = default)
         {
             return await Task.Run(() =>
             {
@@ -198,7 +198,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// </summary>
         public async Task<ChokeValidationResult> ValidateChokeConfigurationAsync(
             CHOKE_PROPERTIES choke,
-            GAS_CHOKE_PROPERTIES gasProperties)
+            GAS_CHOKE_PROPERTIES gasProperties, CancellationToken cancellationToken = default)
         {
             return await Task.Run(() =>
             {
@@ -265,7 +265,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             CHOKE_PROPERTIES choke,
             GAS_CHOKE_PROPERTIES gasProperties,
             (decimal Min, decimal Max) pressureRange,
-            int numberOfPoints = 20)
+            int numberOfPoints = 20, CancellationToken cancellationToken = default)
         {
             return await Task.Run(() =>
             {
@@ -321,7 +321,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// </summary>
         public async Task<string[]> GetOptimizationRecommendationsAsync(
             CHOKE_PROPERTIES choke,
-            GAS_CHOKE_PROPERTIES gasProperties)
+            GAS_CHOKE_PROPERTIES gasProperties, CancellationToken cancellationToken = default)
         {
             return await Task.Run(() =>
             {

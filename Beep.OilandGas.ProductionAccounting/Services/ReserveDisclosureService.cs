@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,15 +42,15 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<RESERVE_DISCLOSURE_PACKAGE> BuildDisclosureAsync(
             string propertyId,
             DateTime? asOfDate = null,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(propertyId))
                 throw new ArgumentNullException(nameof(propertyId));
 
             var effectiveDate = asOfDate ?? DateTime.UtcNow;
 
-            var reserves = await GetLatestReservesAsync(propertyId, effectiveDate, cn);
-            var cashflows = await GetCashflowsAsync(propertyId, effectiveDate, cn);
+            var reserves = await GetLatestReservesAsync(propertyId, effectiveDate, connectionName);
+            var cashflows = await GetCashflowsAsync(propertyId, effectiveDate, connectionName);
 
             var totalOil = (reserves?.PROVED_DEVELOPED_OIL_RESERVES ?? 0m)
                 + (reserves?.PROVED_UNDEVELOPED_OIL_RESERVES ?? 0m);
@@ -80,7 +81,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "RESERVE_DISCLOSURE_PACKAGE");
+                entityType, connectionName, "RESERVE_DISCLOSURE_PACKAGE");
 
             await repo.InsertAsync(disclosure, disclosure.ROW_CREATED_BY);
 
@@ -94,7 +95,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private async Task<PROVED_RESERVES> GetLatestReservesAsync(
             string propertyId,
             DateTime asOfDate,
-            string cn)
+            string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync("PROVED_RESERVES");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -102,7 +103,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "PROVED_RESERVES");
+                entityType, connectionName, "PROVED_RESERVES");
 
             var filters = new List<AppFilter>
             {
@@ -121,7 +122,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private async Task<List<RESERVE_CASHFLOW>> GetCashflowsAsync(
             string propertyId,
             DateTime asOfDate,
-            string cn)
+            string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync("RESERVE_CASHFLOW");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -129,7 +130,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "RESERVE_CASHFLOW");
+                entityType, connectionName, "RESERVE_CASHFLOW");
 
             var filters = new List<AppFilter>
             {

@@ -39,7 +39,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         public async Task<ActionResult<object>> CreateCostTransaction(
             [FromBody] CreateCostTransactionRequest request,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

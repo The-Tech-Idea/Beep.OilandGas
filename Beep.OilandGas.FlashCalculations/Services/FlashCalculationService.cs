@@ -9,7 +9,9 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.DataBase;
@@ -24,7 +26,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
     /// Service for flash calculation operations.
     /// Uses PPDMGenericRepository for data persistence following LifeCycle patterns.
     /// </summary>
-    public partial class FlashCalculationService : IFlashCalculationService
+    public partial class FlashCalculationService
     {
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
@@ -100,7 +102,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
             return results;
         }
 
-        public async Task SaveFlashResultAsync(FlashResult result, string userId)
+        public async Task SaveFlashResultAsync(FlashResult result, string userId, CancellationToken cancellationToken = default)
         {
             if (result == null)
                 throw new ArgumentNullException(nameof(result));
@@ -137,7 +139,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
             _logger?.LogInformation("Successfully saved flash calculation result {CalculationId}", calculationId);
         }
 
-        public async Task<List<FlashResult>> GetFlashHistoryAsync(string? componentId = null)
+        public async Task<List<FlashResult>> GetFlashHistoryAsync(string? componentId = null, CancellationToken cancellationToken = default)
         {
             _logger?.LogInformation("Getting flash calculation history for component: {ComponentId}", componentId ?? "all");
 
@@ -174,7 +176,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Analyzes the PVT envelope for a given composition across a range of pressures and temperatures.
         /// </summary>
-        public async Task<PVTEnvelopeAnalysis> AnalyzePVTEnvelopeAsync(List<FLASH_COMPONENT> composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature)
+        public async Task<PVTEnvelopeAnalysis> AnalyzePVTEnvelopeAsync(List<FLASH_COMPONENT> composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature, CancellationToken cancellationToken = default)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
@@ -234,7 +236,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Performs bubble point calculation for the given composition.
         /// </summary>
-        public async Task<BubblePointAnalysis> CalculateBubblePointAsync(List<FLASH_COMPONENT> composition, decimal pressure)
+        public async Task<BubblePointAnalysis> CalculateBubblePointAsync(List<FLASH_COMPONENT> composition, decimal pressure, CancellationToken cancellationToken = default)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
@@ -298,7 +300,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Performs dew point calculation for the given composition.
         /// </summary>
-        public async Task<DewPointAnalysis> CalculateDewPointAsync(List<FLASH_COMPONENT> composition, decimal pressure)
+        public async Task<DewPointAnalysis> CalculateDewPointAsync(List<FLASH_COMPONENT> composition, decimal pressure, CancellationToken cancellationToken = default)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
@@ -362,7 +364,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Analyzes separator design and performance for multi-stage separation.
         /// </summary>
-        public async Task<SeparatorSimulation> SimulateSeparatorAsync(List<FLASH_COMPONENT> composition, decimal inletPressure, decimal inletTemperature, int stages)
+        public async Task<SeparatorSimulation> SimulateSeparatorAsync(List<FLASH_COMPONENT> composition, decimal inletPressure, decimal inletTemperature, int stages, CancellationToken cancellationToken = default)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
@@ -423,7 +425,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Generates pressure-temperature phase diagram for the composition.
         /// </summary>
-        public async Task<PhaseDiagram> GeneratePhaseDiagramAsync(List<FLASH_COMPONENT> composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature)
+        public async Task<PhaseDiagram> GeneratePhaseDiagramAsync(List<FLASH_COMPONENT> composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature, CancellationToken cancellationToken = default)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
@@ -486,7 +488,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Performs stability analysis using tangent plane distance criterion.
         /// </summary>
-        public async Task<StabilityAnalysis> AnalyzeStabilityAsync(List<FLASH_COMPONENT> composition, decimal pressure, decimal temperature)
+        public async Task<StabilityAnalysis> AnalyzeStabilityAsync(List<FLASH_COMPONENT> composition, decimal pressure, decimal temperature, CancellationToken cancellationToken = default)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
@@ -533,7 +535,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Analyzes equilibrium constants (K-values) across pressure and temperature ranges.
         /// </summary>
-        public async Task<EquilibriumConstantAnalysis> AnalyzeEquilibriumConstantsAsync(List<FLASH_COMPONENT> composition, decimal pressure, decimal temperature)
+        public async Task<EquilibriumConstantAnalysis> AnalyzeEquilibriumConstantsAsync(List<FLASH_COMPONENT> composition, decimal pressure, decimal temperature, CancellationToken cancellationToken = default)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));

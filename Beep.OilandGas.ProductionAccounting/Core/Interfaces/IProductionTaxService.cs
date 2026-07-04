@@ -11,6 +11,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<TAX_TRANSACTION?> CalculateProductionTaxesAsync(
             REVENUE_TRANSACTION revenueTransaction,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
     }
 }

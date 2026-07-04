@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -5,7 +6,7 @@ using System.Threading.Tasks;
 using Beep.OilandGas.ProductionOperations.Constants;
 using Beep.OilandGas.Models.Data.ProductionOperations;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
-using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
+using Beep.OilandGas.PPDM39.Core.ModuleSetup;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Report;
 

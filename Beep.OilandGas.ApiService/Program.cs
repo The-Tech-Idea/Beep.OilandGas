@@ -1,11 +1,14 @@
+using Beep.OilandGas.ApiService.DependencyInjection;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
+using Beep.OilandGas.LifeCycle.DependencyInjection;
 using Beep.OilandGas.LifeCycle.Services;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
-using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
+using Beep.OilandGas.PPDM39.Core.ModuleSetup;
 using Beep.OilandGas.PPDM39.DataManagement.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
 using Serilog;
@@ -14,6 +17,7 @@ using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.Logger;
 using TheTechIdea.Beep.Utils;
 using TheTechIdea.Beep;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL;
@@ -50,14 +54,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Use Serilog for existing Microsoft.Extensions.Logging consumers
 builder.Host.UseSerilog();
 
-// ── BeepDM Observability Pipeline (Phase 1) ────────────────────────────
-// ── BeepDM Framework Integration ─────────────────────────────────────────
-// NOTE: The full BeepDM Services pipeline (BeepLog, BeepAudit, redactors, budget
-// enforcement) requires TheTechIdea.Beep.DataManagementEngine >= 3.0.1.
-// Upgrade the NuGet package to v3.0.1 to enable:
-//   builder.Services.AddBeepLoggingForWeb(...)  — structured pipeline logging
-//   builder.Services.AddBeepAuditForWeb(...)    — tamper-evident hash-chain audit
-// Currently on v2.0.96 — Serilog handles logging; upgrade when available.
+// ── BeepDM Framework (v3.0.1) ──────────────────────────────────────────
+// DataManagementEngine v3.0.1 is installed. BeepLog and BeepAudit are available.
 
 // Add services to the container
 builder.Services.AddControllers();
@@ -1034,6 +1032,28 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IJournalEntrySe
         loggerFactory.CreateLogger<Beep.OilandGas.Accounting.Services.JournalEntryService>());
 });
 
+// Register IGLAccountService (Phase 1)
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IGLAccountService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var cch = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<Beep.OilandGas.Accounting.Services.GLAccountService>();
+    return new Beep.OilandGas.Accounting.Services.GLAccountService(editor, cch, defaults, metadata, logger);
+});
+
+// Register ITrialBalanceService (Phase 1)
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.ITrialBalanceService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var cch = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<Beep.OilandGas.Accounting.Services.TrialBalanceService>();
+    return new Beep.OilandGas.Accounting.Services.TrialBalanceService(editor, cch, defaults, metadata, logger);
+});
+
 builder.Services.AddScoped<GLAccountMappingService>(sp =>
 {
     var journalEntryService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IJournalEntryService>();
@@ -1087,17 +1107,14 @@ builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.IAuthorizationObse
         connectionName);
 });
 
-// Role-Based Enhancement — Executive Aggregation Service (Phase 3)
-builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.ExecutiveAggregationService>(sp =>
-{
-    var editor = sp.GetRequiredService<IDMEEditor>();
-    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
-    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
-    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
-    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<Beep.OilandGas.ApiService.Services.ExecutiveAggregationService>();
-    return new Beep.OilandGas.ApiService.Services.ExecutiveAggregationService(
-        editor, commonColumnHandler, defaults, metadata, connectionName, logger);
-});
+// Role-Based Aggregation Services (Phases 3-5) — using standard BeepDM DI helper
+builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.HseEngineerAggregationService>(connectionName);
+builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.DrillingEngineerAggregationService>(connectionName);
+builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.ReservoirEngineerAggregationService>(connectionName);
+builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.ProductionEngineerAggregationService>(connectionName);
+
+// Role-Based Aggregation — Executive (Phase 3)
+builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.ExecutiveAggregationService>(connectionName);
 
 // PPDM Module Seeding Service — runs all IModuleSetup seeders after BeepDM setup wizard
 builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.PpdmModuleSeedingService>(sp =>
@@ -1108,40 +1125,12 @@ builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.PpdmModuleSeedingS
     return new Beep.OilandGas.ApiService.Services.PpdmModuleSeedingService(modules, editor, connectionName, logger);
 });
 
-// Role-Based Enhancement — HSE Aggregation Service (Phase 5)
-builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.HseAggregationService>(sp =>
-{
-    var editor = sp.GetRequiredService<IDMEEditor>();
-    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
-    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
-    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
-    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<Beep.OilandGas.ApiService.Services.HseAggregationService>();
-    return new Beep.OilandGas.ApiService.Services.HseAggregationService(editor,commonColumnHandler,defaults,metadata,connectionName,logger);
-});
+// Role-Based Aggregation Services — HSE + Reservoir (Phase 4-5)
+builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.HseAggregationService>(connectionName);
+builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.ReservoirAggregationService>(connectionName);
 
-// Role-Based Enhancement — Reservoir Aggregation Service (Phase 4)
-builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.ReservoirAggregationService>(sp =>
-{
-    var editor = sp.GetRequiredService<IDMEEditor>();
-    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
-    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
-    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
-    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<Beep.OilandGas.ApiService.Services.ReservoirAggregationService>();
-    return new Beep.OilandGas.ApiService.Services.ReservoirAggregationService(
-        editor, commonColumnHandler, defaults, metadata, connectionName, logger);
-});
-
-// Role-Based Enhancement — Accounting Aggregation Service (Phase 2)
-builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.AccountingAggregationService>(sp =>
-{
-    var editor = sp.GetRequiredService<IDMEEditor>();
-    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
-    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
-    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
-    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<Beep.OilandGas.ApiService.Services.AccountingAggregationService>();
-    return new Beep.OilandGas.ApiService.Services.AccountingAggregationService(
-        editor, commonColumnHandler, defaults, metadata, connectionName, logger);
-});
+// Role-Based Aggregation — Accounting (Phase 2)
+builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.AccountingAggregationService>(connectionName);
 
 // BeepDM Data Import Service — server-side ETL with quality rules, error replay, watermarking (Phase 4A)
 builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.DataImportService>();
@@ -1249,6 +1238,9 @@ builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Interfaces.ModuleSetupCont
 // Beep.OilandGas assemblies and registered as plugin-style setup modules.
 builder.Services.AddDiscoveredModuleSetups();
 
+// Phase 2-4: LifeCycle workflow services (DoA, routing, escalation, cross-role, governance)
+builder.Services.AddLifeCycleServices(builder.Configuration);
+
 builder.Services.AddScoped<Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup.ModuleSetupOrchestrator>();
 
 // BeepDM SetupWizard adapter — wraps ModuleSetupOrchestrator modules as ISetupStep
@@ -1319,9 +1311,6 @@ builder.Services.AddScoped<ConnectionService>(sp =>
     return new ConnectionService(editor, setupService, logger);
 });
 
-// PPDM Database Creator Service (stub - interface has no members)
-builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPPDMDatabaseCreatorService>(
-    sp => new Beep.OilandGas.ApiService.Services.StubPPDMDatabaseCreatorService());
 
 // PPDM Reference Data Seeder
 builder.Services.AddScoped<Beep.OilandGas.PPDM39.DataManagement.SeedData.PPDMReferenceDataSeeder>(sp =>
@@ -2639,25 +2628,25 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Rate limiting — protects against abuse and accidental overuse.
-// Uses a fixed-window policy: 100 requests per 10 seconds per IP by default.
+// Rate limiting — configurable via appsettings.json "RateLimiting" section.
+// Defaults: 100 req/10s for general API, 10 req/30s for setup endpoints.
 builder.Services.AddRateLimiter(options =>
 {
+    var rateCfg = builder.Configuration.GetSection("RateLimiting");
     options.AddFixedWindowLimiter("Fixed", config =>
     {
-        config.PermitLimit = 100;
-        config.Window = TimeSpan.FromSeconds(10);
+        config.PermitLimit = rateCfg.GetValue("Fixed:PermitLimit", 100);
+        config.Window = TimeSpan.FromSeconds(rateCfg.GetValue("Fixed:WindowSeconds", 10));
         config.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
-        config.QueueLimit = 10;
+        config.QueueLimit = rateCfg.GetValue("Fixed:QueueLimit", 10);
     });
 
-    // Stricter limit for setup/database endpoints
     options.AddFixedWindowLimiter("Setup", config =>
     {
-        config.PermitLimit = 10;
-        config.Window = TimeSpan.FromSeconds(30);
+        config.PermitLimit = rateCfg.GetValue("Setup:PermitLimit", 10);
+        config.Window = TimeSpan.FromSeconds(rateCfg.GetValue("Setup:WindowSeconds", 30));
         config.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
-        config.QueueLimit = 2;
+        config.QueueLimit = rateCfg.GetValue("Setup:QueueLimit", 2);
     });
 
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -2791,6 +2780,9 @@ if (app.Environment.IsDevelopment())
 // Global exception handling — must be first to catch errors from all downstream middleware
 app.UseMiddleware<Beep.OilandGas.ApiService.Middleware.GlobalExceptionMiddleware>();
 
+// Setup gate — blocks all requests until PPDM39 datasource is configured (commercial best practice)
+app.UseMiddleware<Beep.OilandGas.ApiService.Middleware.SetupGateMiddleware>();
+
 app.UseRateLimiter();
 
 app.UseHttpsRedirection();
@@ -2810,6 +2802,9 @@ app.MapControllers().RequireAuthorization();
 
 // SignalR hub for progress tracking
 app.MapHub<ProgressHub>("/progressHub");
+
+// SignalR hub for real-time workflow notifications (Phase 5)
+app.MapHub<Beep.OilandGas.ApiService.Hubs.WorkflowNotificationHub>("/hubs/workflow-notifications");
 
 // Add authentication diagnostic endpoint
 app.MapGet("/api/auth-test", (HttpContext context) =>
@@ -2848,14 +2843,20 @@ app.MapGet("/api/auth-check", (HttpContext context) =>
 })
 .WithName("AuthCheck");
 
-// Health check endpoint for load balancers and monitoring
-app.MapGet("/health", () =>
+// Health check endpoint — returns setup status + connection health
+app.MapGet("/health", (IDMEEditor editor) =>
 {
+    bool hasDatasource = editor?.ConfigEditor?.DataConnections?.Any(c => c.ConnectionName == "PPDM39") == true;
+    bool isConnected = false;
+    if (hasDatasource) { try { var ds = editor.GetDataSource("PPDM39"); isConnected = ds?.ConnectionStatus == System.Data.ConnectionState.Open; } catch { } }
+
     return Results.Ok(new
     {
-        Status = "Healthy",
+        Status = !hasDatasource ? "SetupRequired" : isConnected ? "Healthy" : "Degraded",
         Timestamp = DateTime.UtcNow,
-        Service = "Beep.OilandGas.ApiService"
+        Service = "Beep.OilandGas.ApiService",
+        DatasourcesConfigured = editor?.ConfigEditor?.DataConnections?.Count ?? 0,
+        PPDM39Connected = isConnected
     });
 })
 .AllowAnonymous()

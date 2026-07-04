@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Globalization;
 using System.Collections.Generic;
@@ -52,7 +53,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string tankId,
             decimal volume,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(tankId))
                 throw new ArgumentNullException(nameof(tankId));
@@ -73,7 +74,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 // Create repository
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "TANK_INVENTORY");
+                    entityType, connectionName, "TANK_INVENTORY");
 
                 // Get current inventory
                 var inventory = await repo.GetByIdAsync(tankId);
@@ -144,7 +145,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// </summary>
         public async Task<TANK_INVENTORY?> GetInventoryAsync(
             string tankId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(tankId))
                 throw new ArgumentNullException(nameof(tankId));
@@ -161,7 +162,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 // Create repository
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "TANK_INVENTORY");
+                    entityType, connectionName, "TANK_INVENTORY");
 
                 // Get inventory
                 var inventory = await repo.GetByIdAsync(tankId);
@@ -203,7 +204,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// </summary>
         public async Task<bool> ValidateAsync(
             TANK_INVENTORY inventory,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (inventory == null)
                 throw new ArgumentNullException(nameof(inventory));
@@ -274,14 +275,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             DateTime valuationDate,
             string method,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(inventoryItemId))
                 throw new ArgumentNullException(nameof(inventoryItemId));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var transactions = await GetInventoryTransactionsAsync(inventoryItemId, valuationDate, cn);
+            var transactions = await GetInventoryTransactionsAsync(inventoryItemId, valuationDate, connectionName);
             var valuationMethod = string.IsNullOrWhiteSpace(method)
                 ? InventoryValuationMethodCodes.WeightedAvg
                 : method.ToUpperInvariant();
@@ -307,7 +308,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await GetRepoAsync<INVENTORY_VALUATION>("INVENTORY_VALUATION", cn);
+            var repo = await GetRepoAsync<INVENTORY_VALUATION>("INVENTORY_VALUATION", connectionName);
             await repo.InsertAsync(record, userId);
             return record;
         }
@@ -317,14 +318,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             DateTime periodStart,
             DateTime periodEnd,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(inventoryItemId))
                 throw new ArgumentNullException(nameof(inventoryItemId));
             if (periodStart > periodEnd)
                 throw new ArgumentException("periodStart must be <= periodEnd", nameof(periodStart));
 
-            var allTransactions = await GetInventoryTransactionsAsync(inventoryItemId, periodEnd, cn);
+            var allTransactions = await GetInventoryTransactionsAsync(inventoryItemId, periodEnd, connectionName);
             var openingTransactions = allTransactions.Where(t => t.TRANSACTION_DATE.HasValue && t.TRANSACTION_DATE.Value.Date < periodStart.Date).ToList();
             var periodTransactions = allTransactions.Where(t => t.TRANSACTION_DATE.HasValue &&
                 t.TRANSACTION_DATE.Value.Date >= periodStart.Date &&
@@ -349,14 +350,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await GetRepoAsync<INVENTORY_REPORT_SUMMARY>("INVENTORY_REPORT_SUMMARY", cn);
+            var repo = await GetRepoAsync<INVENTORY_REPORT_SUMMARY>("INVENTORY_REPORT_SUMMARY", connectionName);
             await repo.InsertAsync(summary, userId);
             return summary;
         }
 
-        private async Task<List<INVENTORY_TRANSACTION>> GetInventoryTransactionsAsync(string inventoryItemId, DateTime asOfDate, string cn)
+        private async Task<List<INVENTORY_TRANSACTION>> GetInventoryTransactionsAsync(string inventoryItemId, DateTime asOfDate, string connectionName)
         {
-            var repo = await GetRepoAsync<INVENTORY_TRANSACTION>("INVENTORY_TRANSACTION", cn);
+            var repo = await GetRepoAsync<INVENTORY_TRANSACTION>("INVENTORY_TRANSACTION", connectionName);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "INVENTORY_ITEM_ID", Operator = "=", FilterValue = inventoryItemId },
@@ -464,7 +465,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                    string.Equals(tx.TRANSACTION_TYPE, InventoryTransactionTypeCodes.Out, StringComparison.OrdinalIgnoreCase);
         }
 
-        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string cn)
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -472,7 +473,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, tableName);
+                entityType, connectionName, tableName);
         }
 
         private sealed class InventoryLayer

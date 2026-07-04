@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -41,7 +42,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             ASSET_RETIREMENT_OBLIGATION obligation,
             DateTime asOfDate,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (obligation == null)
                 throw new ArgumentNullException(nameof(obligation));
@@ -71,7 +72,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "ASSET_RETIREMENT_OBLIGATION");
+                entityType, connectionName, "ASSET_RETIREMENT_OBLIGATION");
 
             var existing = await repo.GetByIdAsync(obligation.ARO_ID) as ASSET_RETIREMENT_OBLIGATION;
             if (existing == null)
@@ -104,7 +105,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string aroId,
             DateTime periodEnd,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(aroId))
                 throw new ArgumentNullException(nameof(aroId));
@@ -117,7 +118,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "ASSET_RETIREMENT_OBLIGATION");
+                entityType, connectionName, "ASSET_RETIREMENT_OBLIGATION");
 
             var existing = await repo.GetByIdAsync(aroId) as ASSET_RETIREMENT_OBLIGATION;
             if (existing == null)

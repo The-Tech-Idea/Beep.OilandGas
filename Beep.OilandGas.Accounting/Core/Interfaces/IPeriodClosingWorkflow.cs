@@ -15,41 +15,41 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Executes the complete period closing workflow.
         /// </summary>
-        Task<PeriodClosingResult> ExecuteClosingAsync(string periodId, string entityId, string userId, string? connectionName = null);
+        Task<PeriodClosingResult> ExecuteClosingAsync(string periodId, string entityId, string userId, string cn = "PPDM39");
 
         /// <summary>
         /// Reverses a completed period close.
         /// </summary>
-        Task<PeriodClosingResult> ReverseClosingAsync(string periodId, string entityId, string userId, string? connectionName = null);
+        Task<PeriodClosingResult> ReverseClosingAsync(string periodId, string entityId, string userId, string cn = "PPDM39");
 
         /// <summary>
         /// Validates period closing prerequisites are met.
         /// </summary>
-        Task<PeriodClosingValidation> ValidateClosingReadinessAsync(string periodId, string entityId, string? connectionName = null);
+        Task<PeriodClosingValidation> ValidateClosingReadinessAsync(string periodId, string entityId, string cn = "PPDM39");
 
         /// <summary>
         /// Posts all pending journal entries for the period.
         /// </summary>
-        Task<PostingResult> PostUnpostedEntriesAsync(string periodId, string entityId, string userId, string? connectionName = null);
+        Task<PostingResult> PostUnpostedEntriesAsync(string periodId, string entityId, string userId, string cn = "PPDM39");
 
         /// <summary>
         /// Performs account balance reconciliation for the period.
         /// </summary>
-        Task<Beep.OilandGas.Models.Data.Accounting.ReconciliationResult> ReconcileAccountBalancesAsync(string periodId, string entityId, string? connectionName = null);
+        Task<Beep.OilandGas.Models.Data.Accounting.ReconciliationResult> ReconcileAccountBalancesAsync(string periodId, string entityId, string cn = "PPDM39");
 
         /// <summary>
         /// Locks the period from further changes.
         /// </summary>
-        Task<bool> LockPeriodAsync(string periodId, string entityId, string userId, string? connectionName = null);
+        Task<bool> LockPeriodAsync(string periodId, string entityId, string userId, string cn = "PPDM39");
 
         /// <summary>
         /// Unlocks the period for corrections.
         /// </summary>
-        Task<bool> UnlockPeriodAsync(string periodId, string entityId, string userId, string? connectionName = null);
+        Task<bool> UnlockPeriodAsync(string periodId, string entityId, string userId, string cn = "PPDM39");
 
         /// <summary>
         /// Gets the status of a period close.
         /// </summary>
-        Task<PeriodClosingStatus> GetStatusAsync(string periodId, string entityId, string? connectionName = null);
+        Task<PeriodClosingStatus> GetStatusAsync(string periodId, string entityId, string cn = "PPDM39");
     }
 }

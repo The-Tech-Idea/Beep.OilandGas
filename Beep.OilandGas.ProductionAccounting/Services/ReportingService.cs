@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Concurrent;
 using System.Globalization;
@@ -59,7 +60,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _logger = logger;
         }
 
-        public async Task<ReportResult> GenerateOperationalReportAsync(OperationalReportRequest request, string userId, string? connectionName = null)
+        public async Task<ReportResult> GenerateOperationalReportAsync(OperationalReportRequest request, string userId, string connectionName = "PPDM39")
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -97,7 +98,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             };
         }
 
-        public async Task<ReportResult> GenerateFinancialReportAsync(FinancialReportRequest request, string userId, string? connectionName = null)
+        public async Task<ReportResult> GenerateFinancialReportAsync(FinancialReportRequest request, string userId, string connectionName = "PPDM39")
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -174,7 +175,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             };
         }
 
-        public async Task<ReportResult> GenerateRoyaltyStatementAsync(RoyaltyStatementRequest request, string userId, string? connectionName = null)
+        public async Task<ReportResult> GenerateRoyaltyStatementAsync(RoyaltyStatementRequest request, string userId, string connectionName = "PPDM39")
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -223,7 +224,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             };
         }
 
-        public async Task<ReportResult> GenerateJIBStatementAsync(JIBStatementRequest request, string userId, string? connectionName = null)
+        public async Task<ReportResult> GenerateJIBStatementAsync(JIBStatementRequest request, string userId, string connectionName = "PPDM39")
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -242,7 +243,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             };
         }
 
-        public Task<ReportSchedule> ScheduleReportAsync(ReportingScheduleRequest request, string userId, string? connectionName = null)
+        public Task<ReportSchedule> ScheduleReportAsync(ReportingScheduleRequest request, string userId, string connectionName = "PPDM39")
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -269,12 +270,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return Task.FromResult(schedule);
         }
 
-        public Task<List<ReportSchedule>> GetScheduledReportsAsync(string? connectionName = null)
+        public Task<List<ReportSchedule>> GetScheduledReportsAsync(string connectionName = "PPDM39")
         {
             return Task.FromResult(_scheduleStore.Values.ToList());
         }
 
-        public Task<ReportDistributionResult> DistributeReportAsync(string reportId, ReportDistributionRequestAlias request, string userId, string? connectionName = null)
+        public Task<ReportDistributionResult> DistributeReportAsync(string reportId, ReportDistributionRequestAlias request, string userId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(reportId))
                 throw new ArgumentNullException(nameof(reportId));
@@ -291,7 +292,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return Task.FromResult(result);
         }
 
-        public async Task<List<HistoricalReport>> GetReportHistoryAsync(string? reportType, DateTime? startDate, DateTime? endDate, string? connectionName = null)
+        public async Task<List<HistoricalReport>> GetReportHistoryAsync(string? reportType, DateTime? startDate, DateTime? endDate, string connectionName = "PPDM39")
         {
             var histories = new List<ReportHistory>();
 

@@ -1,7 +1,9 @@
 using Beep.OilandGas.GasProperties.Calculations;
 using Beep.OilandGas.GasProperties.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using Moq;
 using TheTechIdea.Beep.Editor;

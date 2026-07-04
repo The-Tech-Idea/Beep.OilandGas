@@ -13,27 +13,27 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Exports data to CSV format.
         /// </summary>
-        Task<ExportResult> ExportToCsvAsync(ExportToCsvRequest request, string userId, bool trackHistory = false, string? connectionName = null);
+        Task<ExportResult> ExportToCsvAsync(ExportToCsvRequest request, string userId, bool trackHistory = false, string connectionName = "PPDM39");
         
         /// <summary>
         /// Exports data to Excel format.
         /// </summary>
-        Task<ExportResult> ExportToExcelAsync(ExportToExcelRequest request, string userId, bool trackHistory = false, string? connectionName = null);
+        Task<ExportResult> ExportToExcelAsync(ExportToExcelRequest request, string userId, bool trackHistory = false, string connectionName = "PPDM39");
         
         /// <summary>
         /// Exports data to JSON format.
         /// </summary>
-        Task<ExportResult> ExportToJsonAsync(ExportToJsonRequest request, string userId, bool trackHistory = false, string? connectionName = null);
+        Task<ExportResult> ExportToJsonAsync(ExportToJsonRequest request, string userId, bool trackHistory = false, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets export history.
         /// </summary>
-        Task<List<EXPORT_HISTORY>> GetExportHistoryAsync(string? exportType, DateTime? startDate, DateTime? endDate, string? connectionName = null);
+        Task<List<EXPORT_HISTORY>> GetExportHistoryAsync(string? exportType, DateTime? startDate, DateTime? endDate, string connectionName = "PPDM39");
         
         /// <summary>
         /// Schedules an export.
         /// </summary>
-        Task<ScheduleExportRequest> ScheduleExportAsync(ScheduleExportRequest request, string userId, string? connectionName = null);
+        Task<ScheduleExportRequest> ScheduleExportAsync(ScheduleExportRequest request, string userId, string connectionName = "PPDM39");
     }
 }
 

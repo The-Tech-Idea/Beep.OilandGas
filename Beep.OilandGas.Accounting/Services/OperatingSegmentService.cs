@@ -4,7 +4,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -43,7 +45,7 @@ namespace Beep.OilandGas.Accounting.Services
             decimal amount,
             string userId,
             string? segmentId = null,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(segmentName))
                 throw new ArgumentNullException(nameof(segmentName));
@@ -52,7 +54,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var remark = $"SEGMENT={segmentName};METRIC={metricName}";
 
             var cost = new ACCOUNTING_COST

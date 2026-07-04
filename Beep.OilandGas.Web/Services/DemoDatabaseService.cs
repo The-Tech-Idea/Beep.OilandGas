@@ -11,7 +11,7 @@ namespace Beep.OilandGas.Web.Services
     /// </summary>
     public interface IDemoDatabaseService
     {
-        Task<CreateDemoDatabaseResponse> CreateDemoDatabaseAsync(string userId, string seedDataOption, string? connectionName = null);
+        Task<CreateDemoDatabaseResponse> CreateDemoDatabaseAsync(string userId, string seedDataOption, string connectionName = "PPDM39");
         Task<List<DemoDatabaseMetadata>> GetMyDemoDatabasesAsync(string userId);
         Task<bool> DeleteDemoDatabaseAsync(string connectionName);
     }
@@ -38,7 +38,7 @@ namespace Beep.OilandGas.Web.Services
         public async Task<CreateDemoDatabaseResponse> CreateDemoDatabaseAsync(
             string userId, 
             string seedDataOption, 
-            string? connectionName = null)
+            string connectionName = "PPDM39")
         {
             try
             {

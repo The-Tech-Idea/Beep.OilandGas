@@ -319,6 +319,10 @@ private  System.String LENGTH_OUOMValue;
         public string? MATERIAL { get; set; }
         public string FIELD_ID { get; set; }
 
+        public decimal? WALL_THICKNESS { get; set; }
+        public DateTime? LAST_INSPECTION_DATE { get; set; }
+        public decimal? MAX_ALLOWABLE_WORKING_PRESSURE { get; set; }
+
         public PIPELINE () { }
 
   }

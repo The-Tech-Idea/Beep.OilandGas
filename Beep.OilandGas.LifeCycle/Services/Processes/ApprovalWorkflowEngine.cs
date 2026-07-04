@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes;
 /// Multi-level approval workflow engine for process steps.
 /// Supports sequential, parallel, and any-of-N approval patterns with delegation and escalation.
 /// </summary>
-public class ApprovalWorkflowEngine
+public class ApprovalWorkflowEngine : IApprovalWorkflowEngine
 {
     private readonly IDMEEditor _editor;
     private readonly ICommonColumnHandler _commonColumnHandler;
@@ -185,6 +186,59 @@ public class ApprovalWorkflowEngine
         return results.OfType<PROCESS_APPROVAL>().ToList();
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    // Phase 2: DoA-Driven Approval Chain Creation
+    // ══════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Create an approval chain dynamically based on Delegation of Authority thresholds.
+    /// </summary>
+    public async Task<ApprovalChainResult> CreateApprovalChainWithDoAAsync(
+        string processInstanceId,
+        string stepInstanceId,
+        string entityType,
+        Dictionary<string, object> entityFields,
+        IDoAEvaluationService doaService,
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        var result = new ApprovalChainResult { Success = true };
+
+        try
+        {
+            var levels = await doaService.EvaluateThresholdsAsync(entityType, entityFields);
+
+            if (levels.Count == 0)
+            {
+                _logger?.LogInformation("No DOA thresholds triggered for {EntityType}", entityType);
+                return result;
+            }
+
+            var config = new ApprovalChainConfig
+            {
+                ApprovalType = "SEQUENTIAL",
+                Approvers = levels.Select(l => new ApproverConfig
+                {
+                    Sequence = l.ApprovalSequence,
+                    ApproverRole = l.RequiredRole,
+                    RequiredAction = "APPROVE",
+                }).ToList(),
+                EscalationAfterHours = levels.FirstOrDefault()?.EscalationHours,
+            };
+
+            return await CreateApprovalChainAsync(
+                processInstanceId, stepInstanceId, config, userId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            result.Success = false;
+            result.Errors.Add($"DoA approval chain creation failed: {ex.Message}");
+            _logger?.LogError(ex, "DoA approval chain creation failed for {EntityType}", entityType);
+        }
+
+        return result;
+    }
+
     public async Task<bool> IsApprovalChainCompleteAsync(string stepInstanceId)
     {
         var repo = await GetApprovalRepositoryAsync();
@@ -201,6 +255,18 @@ public class ApprovalWorkflowEngine
 
         if (approvalType == "ANY")
             return approvals.Any(a => a.APPROVAL_STATUS == "APPROVED");
+
+        // Phase 2: QUORUM — N of M must approve
+        if (approvalType == "QUORUM")
+        {
+            var (quorumRequired, quorumTotal) = ParseQuorumConfig(approvals.First());
+            var approvedCount = approvals.Count(a => a.APPROVAL_STATUS == "APPROVED");
+            var rejectedCount = approvals.Count(a => a.APPROVAL_STATUS == "REJECTED");
+            var total = quorumTotal > 0 ? quorumTotal : approvals.Count;
+            if (approvedCount >= quorumRequired) return true;
+            if (rejectedCount > (total - quorumRequired)) return true; // Can't reach quorum
+            return false;
+        }
 
         if (approvalType == "SEQUENTIAL")
         {
@@ -222,10 +288,33 @@ public class ApprovalWorkflowEngine
 
         var approvals = (await repo.GetAsync(filters)).OfType<PROCESS_APPROVAL>().ToList();
 
+        // Phase 2: QUORUM — approved if quorum reached
+        if (approvals.FirstOrDefault()?.APPROVAL_TYPE == "QUORUM")
+        {
+            var (quorumRequired, _) = ParseQuorumConfig(approvals.First());
+            return approvals.Count(a => a.APPROVAL_STATUS == "APPROVED") >= quorumRequired;
+        }
+
         if (approvals.Any(a => a.APPROVAL_STATUS == "REJECTED"))
             return false;
 
         return await IsApprovalChainCompleteAsync(stepInstanceId);
+    }
+
+    private static (int required, int total) ParseQuorumConfig(PROCESS_APPROVAL approval)
+    {
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(approval.APPROVAL_NOTES))
+            {
+                var config = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, int>>(approval.APPROVAL_NOTES);
+                if (config?.TryGetValue("quorumRequired", out var req) == true &&
+                    config.TryGetValue("quorumTotal", out var tot) == true)
+                    return (req, tot);
+            }
+        }
+        catch { /* fall through to defaults */ }
+        return (1, 1);
     }
 
     private async Task AdvanceNextApprovalAsync(string stepInstanceId, int currentSequence, string userId)
@@ -264,12 +353,15 @@ public class ApprovalChainConfig
 {
     public string ApprovalType { get; set; } = "SEQUENTIAL";
     public int? EscalationAfterHours { get; set; }
+    public int? QuorumRequired { get; set; }       // Phase 2: N of M must approve
+    public int? QuorumTotal { get; set; }          // Phase 2: total approvers for QUORUM
     public List<ApproverConfig> Approvers { get; set; } = new();
 }
 
 public class ApproverConfig
 {
     public string ApproverUserId { get; set; } = string.Empty;
+    public string? ApproverRole { get; set; }       // Phase 2: role-based approver (resolved at runtime)
     public int Sequence { get; set; }
     public string? RequiredAction { get; set; }
 }

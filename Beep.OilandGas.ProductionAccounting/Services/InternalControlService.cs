@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,7 +43,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _logger = logger;
         }
 
-        public async Task<APPROVAL_WORKFLOW> RequestApprovalAsync(string entityName, string entityId, decimal amount, string requestedBy, string? comment, string cn = "PPDM39")
+        public async Task<APPROVAL_WORKFLOW> RequestApprovalAsync(string entityName, string entityId, decimal amount, string requestedBy, string? comment, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(entityName))
                 throw new ArgumentNullException(nameof(entityName));
@@ -67,24 +68,24 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await GetRepoAsync<APPROVAL_WORKFLOW>("APPROVAL_WORKFLOW", cn);
+            var repo = await GetRepoAsync<APPROVAL_WORKFLOW>("APPROVAL_WORKFLOW", connectionName);
             await repo.InsertAsync(approval, requestedBy);
             return approval;
         }
 
-        public async Task<APPROVAL_WORKFLOW> ApproveAsync(string approvalId, string approverId, string? comment, string cn = "PPDM39")
+        public async Task<APPROVAL_WORKFLOW> ApproveAsync(string approvalId, string approverId, string? comment, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(approvalId))
                 throw new ArgumentNullException(nameof(approvalId));
             if (string.IsNullOrWhiteSpace(approverId))
                 throw new ArgumentNullException(nameof(approverId));
 
-            var repo = await GetRepoAsync<APPROVAL_WORKFLOW>("APPROVAL_WORKFLOW", cn);
+            var repo = await GetRepoAsync<APPROVAL_WORKFLOW>("APPROVAL_WORKFLOW", connectionName);
             var approval = await repo.GetByIdAsync(approvalId) as APPROVAL_WORKFLOW;
             if (approval == null)
                 throw new ProductionAccountingException($"Approval not found: {approvalId}");
 
-            if (!await ValidateSegregationOfDutiesAsync(approval.ENTITY_NAME, approval.REQUESTED_BY, approverId, approval.AMOUNT, cn))
+            if (!await ValidateSegregationOfDutiesAsync(approval.ENTITY_NAME, approval.REQUESTED_BY, approverId, approval.AMOUNT, connectionName))
                 throw new ProductionAccountingException("Segregation-of-duties violation: approver must differ from requestor");
 
             approval.STATUS = ApprovalWorkflowStatusCodes.Approved;
@@ -98,9 +99,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return approval;
         }
 
-        public async Task<List<APPROVAL_WORKFLOW>> GetApprovalsForEntityAsync(string entityName, string entityId, string cn = "PPDM39")
+        public async Task<List<APPROVAL_WORKFLOW>> GetApprovalsForEntityAsync(string entityName, string entityId, string connectionName = "PPDM39")
         {
-            var repo = await GetRepoAsync<APPROVAL_WORKFLOW>("APPROVAL_WORKFLOW", cn);
+            var repo = await GetRepoAsync<APPROVAL_WORKFLOW>("APPROVAL_WORKFLOW", connectionName);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ENTITY_NAME", Operator = "=", FilterValue = entityName },
@@ -113,7 +114,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ?? new List<APPROVAL_WORKFLOW>();
         }
 
-        public async Task<bool> ValidateSegregationOfDutiesAsync(string entityName, string requestedBy, string approverId, decimal amount, string cn = "PPDM39")
+        public async Task<bool> ValidateSegregationOfDutiesAsync(string entityName, string requestedBy, string approverId, decimal amount, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(entityName))
                 throw new ArgumentNullException(nameof(entityName));
@@ -125,7 +126,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.Equals(requestedBy, approverId, StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            var rules = await GetRulesAsync(entityName, cn);
+            var rules = await GetRulesAsync(entityName, connectionName);
             foreach (var rule in rules)
             {
                 if (rule.THRESHOLD_AMOUNT.HasValue && amount < rule.THRESHOLD_AMOUNT.Value)
@@ -141,9 +142,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return true;
         }
 
-        private async Task<List<INTERNAL_CONTROL_RULE>> GetRulesAsync(string entityName, string cn)
+        private async Task<List<INTERNAL_CONTROL_RULE>> GetRulesAsync(string entityName, string connectionName)
         {
-            var repo = await GetRepoAsync<INTERNAL_CONTROL_RULE>("INTERNAL_CONTROL_RULE", cn);
+            var repo = await GetRepoAsync<INTERNAL_CONTROL_RULE>("INTERNAL_CONTROL_RULE", connectionName);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ENTITY_NAME", Operator = "=", FilterValue = entityName },
@@ -154,7 +155,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return results?.Cast<INTERNAL_CONTROL_RULE>().ToList() ?? new List<INTERNAL_CONTROL_RULE>();
         }
 
-        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string cn)
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -162,7 +163,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, tableName);
+                entityType, connectionName, tableName);
         }
     }
 }

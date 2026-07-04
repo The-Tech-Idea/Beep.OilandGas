@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Calculations;
@@ -14,32 +15,32 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         /// <summary>
         /// Gets enhanced recovery operations (non-injection PDEN schemes), optionally scoped by field.
         /// </summary>
-        Task<List<EnhancedRecoveryOperation>> GetEnhancedRecoveryOperationsAsync(string? fieldId = null);
+        Task<List<EnhancedRecoveryOperation>> GetEnhancedRecoveryOperationsAsync(string? fieldId = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets an enhanced recovery operation by PDEN / operation id.
         /// </summary>
-        Task<EnhancedRecoveryOperation?> GetEnhancedRecoveryOperationAsync(string operationId);
+        Task<EnhancedRecoveryOperation?> GetEnhancedRecoveryOperationAsync(string operationId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Creates a new enhanced recovery operation (PDEN-backed).
         /// </summary>
-        Task<EnhancedRecoveryOperation> CreateEnhancedRecoveryOperationAsync(CreateEnhancedRecoveryOperation createDto);
+        Task<EnhancedRecoveryOperation> CreateEnhancedRecoveryOperationAsync(CreateEnhancedRecoveryOperation createDto, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets injection operations.
         /// </summary>
-        Task<List<InjectionOperation>> GetInjectionOperationsAsync(string? wellUWI = null);
+        Task<List<InjectionOperation>> GetInjectionOperationsAsync(string? wellUWI = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets water flooding operations (<c>PDEN_SUBTYPE = WATER_FLOOD</c>).
         /// </summary>
-        Task<List<WaterFlooding>> GetWaterFloodingOperationsAsync(string? fieldId = null);
+        Task<List<WaterFlooding>> GetWaterFloodingOperationsAsync(string? fieldId = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets gas injection operations (<c>PDEN_SUBTYPE = GAS_INJECTION</c>).
         /// </summary>
-        Task<List<GasInjection>> GetGasInjectionOperationsAsync(string? fieldId = null);
+        Task<List<GasInjection>> GetGasInjectionOperationsAsync(string? fieldId = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Calculates pilot economics for an EOR implementation.
@@ -51,6 +52,6 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             double capitalCost,
             double operatingCostPerBarrel,
             int projectLifeYears,
-            double discountRate = 0.10);
+            double discountRate = 0.10, CancellationToken cancellationToken = default);
     }
 }

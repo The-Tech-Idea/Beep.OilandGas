@@ -1,0 +1,110 @@
+@using Beep.OilandGas.Web.Services
+@implements IDisposable
+
+<MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="TransformOrigin.TopRight">
+    <ActivatorContent>
+        <MudIconButton Icon="@Icons.Material.Filled.Notifications"
+                       Color="Color.Inherit"
+                       Size="Size.Medium" />
+        @if (_unreadCount > 0)
+        {
+            <MudBadge Content="@(_unreadCount > 99 ? "99+" : _unreadCount.ToString())"
+                      Color="Color.Error"
+                      Overlap="true"
+                      Class="notification-badge" />
+        }
+    </ActivatorContent>
+    <ChildContent>
+        <div style="max-height:400px; overflow-y:auto; width:360px">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="pa-2">
+                <MudText Typo="Typo.h6">Notifications</MudText>
+                @if (_unreadCount > 0)
+                {
+                    <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="MarkAllRead">
+                        Mark all read
+                    </MudButton>
+                }
+            </MudStack>
+            <MudDivider />
+
+            @if (_notifications.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-4" Style="text-align:center">
+                    No notifications yet
+                </MudText>
+            }
+            else
+            {
+                @foreach (var notification in _notifications.Take(20))
+                {
+                    <MudMenuItem OnClick="@(() => HandleClick(notification))" Class="pa-2">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.body2"
+                                      Style="@(notification.IsRead ? "" : "font-weight:600")">
+                                @if (notification.Severity == "CRITICAL")
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Error"
+                                             Color="Color.Error" Size="Size.Small" Class="mr-1" />
+                                }
+                                @notification.Title
+                            </MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                @notification.Body
+                            </MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                @notification.CreatedAt.ToString("g")
+                            </MudText>
+                        </MudStack>
+                    </MudMenuItem>
+                }
+            }
+        </div>
+    </ChildContent>
+</MudMenu>
+
+@code {
+    [Inject] private INotificationService NotificationService { get; set; } = default!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+
+    private List<NotificationModel> _notifications = new();
+    private int _unreadCount;
+
+    protected override void OnInitialized()
+    {
+        NotificationService.OnNotificationReceived += OnNotification;
+        RefreshState();
+    }
+
+    private void OnNotification(NotificationModel notification)
+    {
+        RefreshState();
+    }
+
+    private void RefreshState()
+    {
+        _notifications = NotificationService.RecentNotifications;
+        _unreadCount = NotificationService.UnreadCount;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleClick(NotificationModel notification)
+    {
+        notification.IsRead = true;
+        if (!string.IsNullOrWhiteSpace(notification.ActionRoute))
+        {
+            NavigationManager.NavigateTo(notification.ActionRoute);
+        }
+        RefreshState();
+    }
+
+    private void MarkAllRead()
+    {
+        NotificationService.MarkAllRead();
+        RefreshState();
+    }
+
+    public void Dispose()
+    {
+        NotificationService.OnNotificationReceived -= OnNotification;
+    }
+}

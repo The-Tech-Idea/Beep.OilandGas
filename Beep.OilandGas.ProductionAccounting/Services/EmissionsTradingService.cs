@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -44,7 +45,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             decimal allowancePrice,
             DateTime periodEnd,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (obligation == null)
                 throw new ArgumentNullException(nameof(obligation));
@@ -68,7 +69,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "EMISSIONS_OBLIGATION");
+                entityType, connectionName, "EMISSIONS_OBLIGATION");
 
             var existing = await repo.GetByIdAsync(obligation.EMISSIONS_OBLIGATION_ID) as EMISSIONS_OBLIGATION;
             if (existing == null)
@@ -88,7 +89,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             decimal allowancesSurrendered,
             DateTime settlementDate,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(obligationId))
                 throw new ArgumentNullException(nameof(obligationId));
@@ -115,7 +116,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "EMISSIONS_SETTLEMENT");
+                entityType, connectionName, "EMISSIONS_SETTLEMENT");
 
             await repo.InsertAsync(settlement, userId);
 

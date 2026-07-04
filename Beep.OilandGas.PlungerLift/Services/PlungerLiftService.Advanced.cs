@@ -30,9 +30,9 @@ namespace Beep.OilandGas.PlungerLift.Services
             decimal vc = PlungerLiftCalculator.CalculateCriticalVelocity_Turner(rho_g, rho_L, 60m); // sigma water=60
             
             // 2. Velocities — using actual differential pressure for rise velocity
-            decimal avgDifferentialPressure = request.CasingPressure > 0 && request.TubingPressure > 0
-                ? request.CasingPressure - request.TubingPressure
-                : 50m; // default if pressures not provided
+            decimal avgDifferentialPressure = (request.CasingPressure ?? 0) > 0 && (request.TubingPressure ?? 0) > 0
+                ? (request.CasingPressure ?? 0) - (request.TubingPressure ?? 0)
+                : 50m;
             result.FALL_VELOCITY = PlungerLiftCalculator.EstimateFallVelocity("BAR", false);
             result.RISE_VELOCITY = PlungerLiftCalculator.EstimateRiseVelocity(avgDifferentialPressure);
 
@@ -43,8 +43,9 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             // Shut-in time: pressure build-up for next cycle
             // Lower reservoir pressure → longer build-up needed
-            result.SHUT_IN_TIME = request.ReservoirPressure > 0
-                ? Math.Max(10m, Math.Min(45m, 500m / request.ReservoirPressure * 20m))
+            var rp = request.ReservoirPressure ?? 0;
+            result.SHUT_IN_TIME = rp > 0
+                ? Math.Max(10m, Math.Min(45m, 500m / rp * 20m))
                 : 30m;
 
             result.CYCLE_TIME = result.RISE_TIME + result.FALL_TIME + result.SHUT_IN_TIME;

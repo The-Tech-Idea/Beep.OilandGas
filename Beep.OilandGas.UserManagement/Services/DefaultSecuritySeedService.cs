@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.Models.Data.Security;
@@ -5,6 +6,7 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.UserManagement.Contracts.Services;
+using Beep.OilandGas.UserManagement.Models.Identity;
 using Beep.OilandGas.UserManagement.Models.Profile;
 using Beep.OilandGas.UserManagement.Models.Scope;
 using Microsoft.Extensions.Logging;
@@ -171,8 +173,13 @@ public class DefaultSecuritySeedService : IDefaultSecuritySeedService
 
             await SeedDefaultUserAssetAccessAsync(result, userId);
 
+            // ── Phase 1 RBAC Hardening ──────────────────────────────────────────
+            await SeedPersonaRoleMappingsAsync(result, userId);
+            await SeedRoleHierarchiesAsync(result, userId);
+            await SeedDefaultTempRoleElevationsAsync(result, userId);
+
             _logger?.LogInformation(
-                "Default security seed completed. BusinessAssociatesInserted={BusinessAssociatesInserted}, BaOrganizationsInserted={BaOrganizationsInserted}, UsersInserted={UsersInserted}, UserRolesInserted={UserRolesInserted}, RolesInserted={RolesInserted}, PermissionsInserted={PermissionsInserted}, RolePermissionsInserted={RolePermissionsInserted}, PersonasInserted={PersonasInserted}, OrganizationScopesInserted={OrganizationScopesInserted}, UserScopeAssignmentsInserted={UserScopeAssignmentsInserted}, UserAssetAccessInserted={UserAssetAccessInserted}",
+                "Default security seed completed. BA={BA}, BAOrg={BAOrg}, Users={Users}, UserRoles={UserRoles}, Roles={Roles}, Perms={Perms}, RolePerms={RolePerms}, Personas={Personas}, OrgScopes={OrgScopes}, UserScopes={UserScopes}, AssetAccess={AssetAccess}, PersonaRoles={PersonaRoles}, RoleHierarchies={RoleHierarchies}, TempElevations={TempElevations}",
                 result.BusinessAssociatesInserted,
                 result.BaOrganizationsInserted,
                 result.UsersInserted,
@@ -183,7 +190,10 @@ public class DefaultSecuritySeedService : IDefaultSecuritySeedService
                 result.PersonasInserted,
                 result.OrganizationScopesInserted,
                 result.UserScopeAssignmentsInserted,
-                result.UserAssetAccessInserted);
+                result.UserAssetAccessInserted,
+                result.PersonaRolesInserted,
+                result.RoleHierarchiesInserted,
+                result.TempRoleElevationsInserted);
         }
         catch (Exception ex)
         {
@@ -1174,5 +1184,156 @@ public class DefaultSecuritySeedService : IDefaultSecuritySeedService
                 PermissionConstants.Process.ViewApprovals
             }
         };
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Phase 1 — RBAC Hardening: Persona-Role Mappings
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private async Task SeedPersonaRoleMappingsAsync(DefaultSecuritySeedResult result, string userId)
+    {
+        var repo = GetRepo<PERSONA_ROLE>("PERSONA_ROLE");
+        var existing = (await repo.GetAsync(new List<AppFilter>()))
+            .OfType<PERSONA_ROLE>()
+            .ToDictionary(pr => $"{pr.PERSONA_CODE}|{pr.ROLE_NAME}", StringComparer.OrdinalIgnoreCase);
+
+        var personaRepo = GetRepo<PersonaDefinition>("PERSONA_DEFINITION");
+        var personas = (await personaRepo.GetAsync(new List<AppFilter>()))
+            .OfType<PersonaDefinition>()
+            .ToDictionary(p => p.PERSONA_CODE, StringComparer.OrdinalIgnoreCase);
+
+        var roleRepo = GetRepo<ROLE>("ROLE");
+        var roles = (await roleRepo.GetAsync(new List<AppFilter>()))
+            .OfType<ROLE>()
+            .ToDictionary(r => r.ROLE_NAME, StringComparer.OrdinalIgnoreCase);
+
+        // Map: PersonaCode → (RoleName, IsPrimary, Priority, Scope)[]
+        var mappings = new Dictionary<string, (string role, string isPrimary, int priority, string scope)[]>
+        {
+            ["FIELD_ENGINEER"]              = new[] { ("PetroleumEngineer", "Y", 1, "FIELD") },
+            ["EXECUTIVE"]                   = new[] { ("Manager", "Y", 1, "GLOBAL"), ("Viewer", "N", 2, "GLOBAL") },
+            ["PRODUCTION_MANAGER"]          = new[] { ("Manager", "Y", 1, "FIELD") },
+            ["RESERVOIR_ENGINEER"]          = new[] { ("ReservoirEngineer", "Y", 1, "FIELD") },
+            ["DRILLING_ENGINEER"]           = new[] { ("PetroleumEngineer", "Y", 1, "FIELD") },
+            ["HSE_OFFICER"]                 = new[] { ("SafetyOfficer", "Y", 1, "FIELD") },
+            ["FACILITIES_ENGINEER"]         = new[] { ("PetroleumEngineer", "Y", 1, "FIELD") },
+            ["DATA_ANALYST"]                = new[] { ("Viewer", "Y", 1, "GLOBAL") },
+            ["ACCOUNTANT"]                  = new[] { ("Viewer", "Y", 1, "GLOBAL") },
+            ["ADMINISTRATOR"]               = new[] { ("Administrator", "Y", 1, "GLOBAL") },
+            ["EXPLORATION_GEOLOGIST"]       = new[] { ("PetroleumEngineer", "Y", 1, "FIELD") },
+            ["DEVELOPMENT_PLANNER"]         = new[] { ("Manager", "Y", 1, "FIELD") },
+            ["PRODUCTION_ENGINEER"]         = new[] { ("PetroleumEngineer", "Y", 1, "FIELD") },
+            ["DECOMMISSIONING_COORDINATOR"] = new[] { ("PetroleumEngineer", "Y", 1, "FIELD") },
+            ["COMPLIANCE_OFFICER"]          = new[] { ("Compliance", "Y", 1, "GLOBAL"), ("Auditor", "N", 2, "GLOBAL") },
+            ["HSE_COORDINATOR"]             = new[] { ("SafetyOfficer", "Y", 1, "FIELD") },
+            ["FACILITY_OPERATOR"]           = new[] { ("PetroleumEngineer", "Y", 1, "FIELD") },
+            ["ASSET_MANAGER"]               = new[] { ("Manager", "Y", 1, "FIELD") },
+            ["WORKFLOW_ADMINISTRATOR"]      = new[] { ("Administrator", "Y", 1, "GLOBAL") },
+        };
+
+        foreach (var (personaCode, roleMappings) in mappings)
+        {
+            if (!personas.TryGetValue(personaCode, out var persona))
+                continue;
+
+            foreach (var (roleName, isPrimary, priority, scope) in roleMappings)
+            {
+                var key = $"{personaCode}|{roleName}";
+                if (existing.ContainsKey(key))
+                    continue;
+
+                if (!roles.TryGetValue(roleName, out var role))
+                    continue;
+
+                var pr = new PERSONA_ROLE
+                {
+                    PERSONA_ID = persona.PERSONA_ID,
+                    PERSONA_CODE = personaCode,
+                    ROLE_ID = role.ROLE_ID,
+                    ROLE_NAME = roleName,
+                    IS_PRIMARY = isPrimary,
+                    PRIORITY = priority,
+                    EFFECTIVE_SCOPE = scope,
+                };
+
+                await repo.InsertAsync(pr, userId);
+                existing[key] = pr;
+                result.PersonaRolesInserted++;
+            }
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Phase 1 — RBAC Hardening: Role Hierarchy
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private async Task SeedRoleHierarchiesAsync(DefaultSecuritySeedResult result, string userId)
+    {
+        var repo = GetRepo<ROLE_HIERARCHY>("ROLE_HIERARCHY");
+        var existing = (await repo.GetAsync(new List<AppFilter>()))
+            .OfType<ROLE_HIERARCHY>()
+            .ToDictionary(rh => $"{rh.PARENT_ROLE_NAME}|{rh.CHILD_ROLE_NAME}", StringComparer.OrdinalIgnoreCase);
+
+        var roleRepo = GetRepo<ROLE>("ROLE");
+        var roles = (await roleRepo.GetAsync(new List<AppFilter>()))
+            .OfType<ROLE>()
+            .ToDictionary(r => r.ROLE_NAME, StringComparer.OrdinalIgnoreCase);
+
+        // Hierarchy: Parent → Child (inheritance type)
+        var hierarchy = new (string parent, string child, string type, string? domainFilter)[]
+        {
+            ("Administrator", "Admin",        "FULL", null),
+            ("Administrator", "Manager",      "FULL", null),
+            ("Administrator", "Auditor",      "FULL", null),
+            ("Manager",       "Supervisor",   "FULL", null),
+            ("Manager",       "PetroleumEngineer", "FULL", null),
+            ("Manager",       "ReservoirEngineer", "FULL", null),
+            ("Manager",       "GateApprover", "SELECTIVE", "WellManagement,Production,Reservoir,Drilling,Facilities,Pipeline,HSE,Regulatory"),
+            ("Manager",       "Compliance",   "SELECTIVE", "HSE,Environmental,Regulatory"),
+            ("Manager",       "SafetyOfficer", "SELECTIVE", "HSE,Environmental"),
+            ("Supervisor",    "PetroleumEngineer", "FULL", null),
+            ("SafetyOfficer", "HSE Officer",  "FULL", null),       // covers if seeded as 'HSE Officer'
+            ("ReservoirEngineer", "ReservesEngineer", "FULL", null),
+        };
+
+        foreach (var (parentName, childName, inheritType, domainFilter) in hierarchy)
+        {
+            var key = $"{parentName}|{childName}";
+            if (existing.ContainsKey(key))
+                continue;
+
+            if (!roles.TryGetValue(parentName, out var parentRole))
+                continue;
+            if (!roles.TryGetValue(childName, out var childRole))
+                continue;
+
+            var rh = new ROLE_HIERARCHY
+            {
+                PARENT_ROLE_ID = parentRole.ROLE_ID,
+                PARENT_ROLE_NAME = parentName,
+                CHILD_ROLE_ID = childRole.ROLE_ID,
+                CHILD_ROLE_NAME = childName,
+                INHERITANCE_TYPE = inheritType,
+                DOMAIN_FILTER = domainFilter,
+                PRIORITY = 1,
+            };
+
+            await repo.InsertAsync(rh, userId);
+            existing[key] = rh;
+            result.RoleHierarchiesInserted++;
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Phase 1 — RBAC Hardening: Temporary Role Elevations (seed SYSTEM defaults)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private async Task SeedDefaultTempRoleElevationsAsync(DefaultSecuritySeedResult result, string userId)
+    {
+        // No default elevations on fresh install — this is a safety measure.
+        // Temporary elevations are created at runtime via TempRoleElevationService
+        // and require approval workflow. This method exists for schema consistency
+        // and to allow future default elevation scenarios.
+        await Task.CompletedTask;
     }
 }

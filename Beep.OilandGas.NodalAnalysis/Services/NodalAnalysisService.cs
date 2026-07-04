@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +23,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
     /// Service for nodal analysis operations.
     /// Uses PPDMGenericRepository for data persistence following LifeCycle patterns.
     /// </summary>
-    public partial class NodalAnalysisService : INodalAnalysisService
+    public partial class NodalAnalysisService
     {
         private const string DiagnosticsContractVersion = "NODAL_DIAGNOSTICS_V1";
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -48,7 +49,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
             _logger = logger;
         }
 
-        public async Task<NodalAnalysisRunResult> PerformNodalAnalysisAsync(string wellUWI, NodalAnalysisParameters analysisParameters)
+        public async Task<NodalAnalysisRunResult> PerformNodalAnalysisAsync(string wellUWI, NodalAnalysisParameters analysisParameters, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -105,7 +106,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
             return result;
         }
 
-        public async Task<OptimizationResult> OptimizeSystemAsync(string wellUWI, OptimizationGoals optimizationGoals)
+        public async Task<OptimizationResult> OptimizeSystemAsync(string wellUWI, OptimizationGoals optimizationGoals, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -137,7 +138,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
             return result;
         }
 
-        public async Task SaveAnalysisResultAsync(NodalAnalysisRunResult result, string userId)
+        public async Task SaveAnalysisResultAsync(NodalAnalysisRunResult result, string userId, CancellationToken cancellationToken = default)
         {
             if (result == null)
                 throw new ArgumentNullException(nameof(result));
@@ -214,7 +215,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
             _logger?.LogInformation("Successfully saved nodal analysis result {AnalysisId}", result.AnalysisId);
         }
 
-        private async Task SaveCurveSnapshotsAsync(NodalAnalysisRunResult result, string userId)
+        private async Task SaveCurveSnapshotsAsync(NodalAnalysisRunResult result, string userId, CancellationToken cancellationToken = default)
         {
             var iprRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
                 typeof(NODAL_IPR_POINT), _connectionName, "NODAL_IPR_POINT", null);
@@ -250,7 +251,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
             }
         }
 
-         public async Task<List<NodalAnalysisRunResult>> GetAnalysisHistoryAsync(string wellUWI)
+         public async Task<List<NodalAnalysisRunResult>> GetAnalysisHistoryAsync(string wellUWI, CancellationToken cancellationToken = default)
          {
              if (string.IsNullOrWhiteSpace(wellUWI))
                  throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -288,7 +289,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
          /// </summary>
          public async Task<PerformanceMatchingAnalysis> AnalyzePerformanceMatchingAsync(
              string wellUWI, 
-             NodalAnalysisParameters analysisParameters)
+             NodalAnalysisParameters analysisParameters, CancellationToken cancellationToken = default)
          {
              if (string.IsNullOrWhiteSpace(wellUWI))
                  throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -354,7 +355,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
          public async Task<EconomicSensitivityAnalysisResult> PerformSensitivityAnalysisAsync(
              string wellUWI,
              NodalAnalysisParameters baselineParameters,
-             List<string> parametersToVary)
+             List<string> parametersToVary, CancellationToken cancellationToken = default)
          {
              if (string.IsNullOrWhiteSpace(wellUWI))
                  throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -407,7 +408,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              decimal currentProduction,
              decimal targetProduction,
              decimal wellDepth,
-             decimal waterCut)
+             decimal waterCut, CancellationToken cancellationToken = default)
          {
              if (string.IsNullOrWhiteSpace(wellUWI))
                  throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -451,7 +452,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              decimal expectedProduction,
              decimal actualProduction,
              decimal wellheadPressure,
-             decimal bottomholePressure)
+             decimal bottomholePressure, CancellationToken cancellationToken = default)
          {
              if (string.IsNullOrWhiteSpace(wellUWI))
                  throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -514,7 +515,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              string wellUWI,
              decimal currentProduction,
              decimal declineRate,
-             int forecastMonths)
+             int forecastMonths, CancellationToken cancellationToken = default)
          {
              if (string.IsNullOrWhiteSpace(wellUWI))
                  throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -574,7 +575,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              string wellUWI,
              decimal currentReservoirPressure,
              decimal bubblePointPressure,
-             decimal productivityIndex)
+             decimal productivityIndex, CancellationToken cancellationToken = default)
          {
              if (string.IsNullOrWhiteSpace(wellUWI))
                  throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));

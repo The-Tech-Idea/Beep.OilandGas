@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -92,7 +93,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<bool> ValidateReadinessAsync(
             string fieldId,
             DateTime periodEnd,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(fieldId))
                 throw new ArgumentNullException(nameof(fieldId));
@@ -106,7 +107,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             try
             {
                 // Check allocations are complete
-                var unreconciledAllocations = await GetUnreconciledAllocationsAsync(fieldId, periodEnd, cn);
+                var unreconciledAllocations = await GetUnreconciledAllocationsAsync(fieldId, periodEnd, connectionName);
                 if (unreconciledAllocations.Count > 0)
                 {
                     _logger?.LogWarning(
@@ -116,7 +117,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Check royalties are calculated
-                var unreconciledRoyalties = await GetUnreconciledRoyaltiesAsync(fieldId, periodEnd, cn);
+                var unreconciledRoyalties = await GetUnreconciledRoyaltiesAsync(fieldId, periodEnd, connectionName);
                 if (unreconciledRoyalties.Count > 0)
                 {
                     _logger?.LogWarning(
@@ -126,7 +127,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Check revenue is recognized
-                var unreconciledRevenue = await GetUnreconciledRevenueAsync(fieldId, periodEnd, cn);
+                var unreconciledRevenue = await GetUnreconciledRevenueAsync(fieldId, periodEnd, connectionName);
                 if (unreconciledRevenue.Count > 0)
                 {
                     _logger?.LogWarning(
@@ -135,7 +136,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     return false;
                 }
 
-                var reconciliationIssues = await GetReconciliationIssuesAsync(fieldId, periodEnd, cn);
+                var reconciliationIssues = await GetReconciliationIssuesAsync(fieldId, periodEnd, connectionName);
                 if (reconciliationIssues.Count > 0)
                 {
                     _logger?.LogWarning(
@@ -145,7 +146,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Check GL is balanced
-                var glUnbalanced = await GetUnbalancedGLEntriesAsync(fieldId, periodEnd, cn);
+                var glUnbalanced = await GetUnbalancedGLEntriesAsync(fieldId, periodEnd, connectionName);
                 if (glUnbalanced.Count > 0)
                 {
                     _logger?.LogWarning(
@@ -185,7 +186,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string fieldId,
             DateTime periodEnd,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(fieldId))
                 throw new ArgumentNullException(nameof(fieldId));
@@ -201,7 +202,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             try
             {
                 // First validate readiness
-                var isReady = await ValidateReadinessAsync(fieldId, periodEnd, cn);
+                var isReady = await ValidateReadinessAsync(fieldId, periodEnd, connectionName);
                 if (!isReady)
                 {
                     _logger?.LogError(
@@ -212,39 +213,39 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Mark all allocation results as closed
-                await MarkAllocationsClosed(fieldId, periodEnd, userId, cn);
+                await MarkAllocationsClosed(fieldId, periodEnd, userId, connectionName);
 
                 // Mark all royalty calculations as paid/settled
-                await MarkRoyaltiesClosed(fieldId, periodEnd, userId, cn);
+                await MarkRoyaltiesClosed(fieldId, periodEnd, userId, connectionName);
 
                 // Mark all revenue as collected/billed
-                await MarkRevenueClosed(fieldId, periodEnd, userId, cn);
+                await MarkRevenueClosed(fieldId, periodEnd, userId, connectionName);
 
                 // Apply depletion for the period based on reserves
-                await ApplyDepletionAsync(fieldId, periodEnd, userId, cn);
+                await ApplyDepletionAsync(fieldId, periodEnd, userId, connectionName);
 
                 // Run ceiling test at quarter end (full cost)
                 if (IsQuarterEnd(periodEnd))
-                    await RunCeilingTestAsync(fieldId, userId, cn);
+                    await RunCeilingTestAsync(fieldId, userId, connectionName);
 
                 if (IsYearEnd(periodEnd))
-                    await RunImpairmentTestingAsync(fieldId, periodEnd, userId, cn);
+                    await RunImpairmentTestingAsync(fieldId, periodEnd, userId, connectionName);
 
-                await ApplyDecommissioningAccretionAsync(fieldId, periodEnd, userId, cn);
-                await ApplyFunctionalCurrencyTranslationAsync(fieldId, periodEnd, cn);
-                await UpdateLeaseRemeasurementsAsync(fieldId, periodEnd, userId, cn);
-                await MeasureFinancialInstrumentsAsync(periodEnd, userId, cn);
-                await UpdateEmissionsObligationsAsync(fieldId, periodEnd, userId, cn);
-                await ApplyInventoryLcmAsync(periodEnd, userId, cn);
-
-                if (IsYearEnd(periodEnd))
-                    await RunUnprovedPropertyImpairmentAsync(periodEnd, userId, cn);
+                await ApplyDecommissioningAccretionAsync(fieldId, periodEnd, userId, connectionName);
+                await ApplyFunctionalCurrencyTranslationAsync(fieldId, periodEnd, connectionName);
+                await UpdateLeaseRemeasurementsAsync(fieldId, periodEnd, userId, connectionName);
+                await MeasureFinancialInstrumentsAsync(periodEnd, userId, connectionName);
+                await UpdateEmissionsObligationsAsync(fieldId, periodEnd, userId, connectionName);
+                await ApplyInventoryLcmAsync(periodEnd, userId, connectionName);
 
                 if (IsYearEnd(periodEnd))
-                    await BuildReserveDisclosuresAsync(fieldId, periodEnd, cn);
+                    await RunUnprovedPropertyImpairmentAsync(periodEnd, userId, connectionName);
+
+                if (IsYearEnd(periodEnd))
+                    await BuildReserveDisclosuresAsync(fieldId, periodEnd, connectionName);
 
                 // Post final GL entries (period close entry)
-                await PostPeriodCloseEntry(fieldId, periodEnd, userId, cn);
+                await PostPeriodCloseEntry(fieldId, periodEnd, userId, connectionName);
 
                 _logger?.LogInformation(
                     "Period closed successfully for field {FieldId} as of {PeriodEnd}",
@@ -278,11 +279,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string fieldId,
             DateTime periodEnd,
             string userId,
-            string cn)
+            string connectionName)
         {
             if (_reserveAccountingService != null)
             {
-                var reserves = await _reserveAccountingService.GetLatestReservesAsync(fieldId, periodEnd, cn);
+                var reserves = await _reserveAccountingService.GetLatestReservesAsync(fieldId, periodEnd, connectionName);
                 if (reserves == null)
                 {
                     _logger?.LogWarning(
@@ -299,12 +300,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 return;
             }
 
-            await _amortizationService.CalculateAsync(fieldId, periodEnd, userId, cn);
-            await _amortizationService.CalculateFieldwideAsync(fieldId, periodEnd, userId, cn);
-            await _amortizationService.CalculateSplitAsync(fieldId, periodEnd, userId, cn);
+            await _amortizationService.CalculateAsync(fieldId, periodEnd, userId, connectionName);
+            await _amortizationService.CalculateFieldwideAsync(fieldId, periodEnd, userId, connectionName);
+            await _amortizationService.CalculateSplitAsync(fieldId, periodEnd, userId, connectionName);
         }
 
-        private async Task RunCeilingTestAsync(string fieldId, string userId, string cn)
+        private async Task RunCeilingTestAsync(string fieldId, string userId, string connectionName)
         {
             if (_fullCostService == null)
             {
@@ -314,7 +315,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 return;
             }
 
-            await _fullCostService.PerformCeilingTestAsync(fieldId, userId, cn);
+            await _fullCostService.PerformCeilingTestAsync(fieldId, userId, connectionName);
         }
 
         private static bool IsQuarterEnd(DateTime periodEnd)
@@ -333,7 +334,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<List<string>> GetUnreconciledItemsAsync(
             string fieldId,
             DateTime periodEnd,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(fieldId))
                 throw new ArgumentNullException(nameof(fieldId));
@@ -349,7 +350,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var unreconciledItems = new List<string>();
 
                 // Unreconciled allocations
-                var unreconciledAllocations = await GetUnreconciledAllocationsAsync(fieldId, periodEnd, cn);
+                var unreconciledAllocations = await GetUnreconciledAllocationsAsync(fieldId, periodEnd, connectionName);
                 if (unreconciledAllocations.Count > 0)
                 {
                     unreconciledItems.Add(
@@ -365,7 +366,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Unreconciled royalties
-                var unreconciledRoyalties = await GetUnreconciledRoyaltiesAsync(fieldId, periodEnd, cn);
+                var unreconciledRoyalties = await GetUnreconciledRoyaltiesAsync(fieldId, periodEnd, connectionName);
                 if (unreconciledRoyalties.Count > 0)
                 {
                     unreconciledItems.Add(
@@ -381,7 +382,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Unreconciled revenue
-                var unreconciledRevenue = await GetUnreconciledRevenueAsync(fieldId, periodEnd, cn);
+                var unreconciledRevenue = await GetUnreconciledRevenueAsync(fieldId, periodEnd, connectionName);
                 if (unreconciledRevenue.Count > 0)
                 {
                     unreconciledItems.Add(
@@ -397,7 +398,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Unbalanced GL
-                var unbalancedGL = await GetUnbalancedGLEntriesAsync(fieldId, periodEnd, cn);
+                var unbalancedGL = await GetUnbalancedGLEntriesAsync(fieldId, periodEnd, connectionName);
                 if (unbalancedGL.Count > 0)
                 {
                     unreconciledItems.Add(
@@ -413,7 +414,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Reconciliation issues
-                var reconciliationIssues = await GetReconciliationIssuesAsync(fieldId, periodEnd, cn);
+                var reconciliationIssues = await GetReconciliationIssuesAsync(fieldId, periodEnd, connectionName);
                 if (reconciliationIssues.Count > 0)
                 {
                     unreconciledItems.Add(
@@ -458,7 +459,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private async Task<List<string>> GetUnreconciledAllocationsAsync(
             string fieldId,
             DateTime periodEnd,
-            string cn)
+            string connectionName)
         {
             var items = new List<string>();
 
@@ -470,7 +471,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "ALLOCATION_RESULT");
+                    entityType, connectionName, "ALLOCATION_RESULT");
 
                 var filters = new List<AppFilter>
                 {
@@ -487,12 +488,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var detailRepo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    detailEntityType, cn, "ALLOCATION_DETAIL");
+                    detailEntityType, connectionName, "ALLOCATION_DETAIL");
 
                 // Filter for incomplete allocations (missing details)
                 foreach (var alloc in allocResults)
                 {
-                    var RUN_TICKET = await GetRunTicketAsync(alloc.ALLOCATION_REQUEST_ID, cn);
+                    var RUN_TICKET = await GetRunTicketAsync(alloc.ALLOCATION_REQUEST_ID, connectionName);
                     if (RUN_TICKET == null || !string.Equals(RUN_TICKET.LEASE_ID, fieldId, StringComparison.OrdinalIgnoreCase))
                         continue;
 
@@ -534,7 +535,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private async Task<List<string>> GetUnreconciledRoyaltiesAsync(
             string fieldId,
             DateTime periodEnd,
-            string cn)
+            string connectionName)
         {
             var items = new List<string>();
 
@@ -546,7 +547,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "ROYALTY_CALCULATION");
+                    entityType, connectionName, "ROYALTY_CALCULATION");
 
                 var filters = new List<AppFilter>
                 {
@@ -591,7 +592,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private async Task<List<string>> GetUnreconciledRevenueAsync(
             string fieldId,
             DateTime periodEnd,
-            string cn)
+            string connectionName)
         {
             var items = new List<string>();
 
@@ -603,7 +604,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var transactionRepo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    transactionEntityType, cn, "REVENUE_TRANSACTION");
+                    transactionEntityType, connectionName, "REVENUE_TRANSACTION");
 
                 var filters = new List<AppFilter>
                 {
@@ -621,7 +622,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var allocationRepo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    allocationEntityType, cn, "REVENUE_ALLOCATION");
+                    allocationEntityType, connectionName, "REVENUE_ALLOCATION");
 
                 var allocationResults = await allocationRepo.GetAsync(new List<AppFilter>
                 {
@@ -672,7 +673,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private async Task<List<string>> GetUnbalancedGLEntriesAsync(
             string fieldId,
             DateTime periodEnd,
-            string cn)
+            string connectionName)
         {
             var items = new List<string>();
 
@@ -684,7 +685,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "JOURNAL_ENTRY");
+                    entityType, connectionName, "JOURNAL_ENTRY");
 
                 var filters = new List<AppFilter>
                 {
@@ -733,7 +734,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string fieldId,
             DateTime periodEnd,
             string userId,
-            string cn)
+            string connectionName)
         {
             try
             {
@@ -745,7 +746,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "ALLOCATION_RESULT");
+                    entityType, connectionName, "ALLOCATION_RESULT");
 
                 // Get all unclosed allocations for this field up to period end
                 var filters = new List<AppFilter>
@@ -760,7 +761,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 // Mark each allocation as processed by updating row changed timestamp
                 foreach (var alloc in allocResults)
                 {
-                    var RUN_TICKET = await GetRunTicketAsync(alloc.ALLOCATION_REQUEST_ID, cn);
+                    var RUN_TICKET = await GetRunTicketAsync(alloc.ALLOCATION_REQUEST_ID, connectionName);
                     if (RUN_TICKET == null || !string.Equals(RUN_TICKET.LEASE_ID, fieldId, StringComparison.OrdinalIgnoreCase))
                         continue;
 
@@ -799,7 +800,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string fieldId,
             DateTime periodEnd,
             string userId,
-            string cn)
+            string connectionName)
         {
             try
             {
@@ -811,7 +812,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "ROYALTY_CALCULATION");
+                    entityType, connectionName, "ROYALTY_CALCULATION");
 
                 // Get all royalties that still need accrual posting
                 var filters = new List<AppFilter>
@@ -867,7 +868,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string fieldId,
             DateTime periodEnd,
             string userId,
-            string cn)
+            string connectionName)
         {
             try
             {
@@ -879,7 +880,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "REVENUE_TRANSACTION");
+                    entityType, connectionName, "REVENUE_TRANSACTION");
 
                 // Get all unrecognized revenue for this field up to period end
                 var filters = new List<AppFilter>
@@ -930,7 +931,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string fieldId,
             DateTime periodEnd,
             string userId,
-            string cn)
+            string connectionName)
         {
             try
             {
@@ -943,7 +944,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "JOURNAL_ENTRY");
+                    entityType, connectionName, "JOURNAL_ENTRY");
 
                 var entryNumber = $"PC-{fieldId}-{periodEnd:yyyyMM}";
                 var referenceNumber = $"CLOSE-{periodEnd:yyyyMM}";
@@ -962,7 +963,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     return;
                 }
 
-                var (grossRevenue, totalRoyalty) = await GetRevenueRoyaltyTotalsAsync(fieldId, periodEnd, cn);
+                var (grossRevenue, totalRoyalty) = await GetRevenueRoyaltyTotalsAsync(fieldId, periodEnd, connectionName);
                 if (grossRevenue == 0m && totalRoyalty == 0m)
                 {
                     _logger?.LogInformation(
@@ -1077,7 +1078,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var lineRepo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    lineEntityType, cn, "JOURNAL_ENTRY_LINE");
+                    lineEntityType, connectionName, "JOURNAL_ENTRY_LINE");
 
                 foreach (var line in lines)
                 {
@@ -1114,11 +1115,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private async Task<List<string>> GetReconciliationIssuesAsync(
             string fieldId,
             DateTime periodEnd,
-            string cn)
+            string connectionName)
         {
             var issues = new List<string>();
 
-            var (productionVolume, revenueVolume) = await GetProductionRevenueVolumesAsync(fieldId, periodEnd, cn);
+            var (productionVolume, revenueVolume) = await GetProductionRevenueVolumesAsync(fieldId, periodEnd, connectionName);
             var volumeVariance = productionVolume - revenueVolume;
             var volumeTolerance = Math.Max(1m, productionVolume * 0.001m);
             if (Math.Abs(volumeVariance) > volumeTolerance)
@@ -1126,7 +1127,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 issues.Add($"Production vs revenue volume variance: {volumeVariance} (production={productionVolume}, revenue={revenueVolume})");
             }
 
-            var (grossRevenue, totalRoyalty) = await GetRevenueRoyaltyTotalsAsync(fieldId, periodEnd, cn);
+            var (grossRevenue, totalRoyalty) = await GetRevenueRoyaltyTotalsAsync(fieldId, periodEnd, connectionName);
             if (totalRoyalty > grossRevenue + 0.01m)
             {
                 issues.Add($"Royalty exceeds gross revenue: royalty={totalRoyalty}, gross={grossRevenue}");
@@ -1138,7 +1139,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private async Task<(decimal productionVolume, decimal revenueVolume)> GetProductionRevenueVolumesAsync(
             string fieldId,
             DateTime periodEnd,
-            string cn)
+            string connectionName)
         {
             var periodStart = new DateTime(periodEnd.Year, periodEnd.Month, 1);
 
@@ -1148,7 +1149,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var measurementRepo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                measurementEntityType, cn, "MEASUREMENT_RECORD");
+                measurementEntityType, connectionName, "MEASUREMENT_RECORD");
 
             var measurementFilters = new List<AppFilter>
             {
@@ -1168,7 +1169,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var revenueRepo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                revenueEntityType, cn, "REVENUE_TRANSACTION");
+                revenueEntityType, connectionName, "REVENUE_TRANSACTION");
 
             var revenueFilters = new List<AppFilter>
             {
@@ -1188,7 +1189,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private async Task<(decimal grossRevenue, decimal totalRoyalty)> GetRevenueRoyaltyTotalsAsync(
             string fieldId,
             DateTime periodEnd,
-            string cn)
+            string connectionName)
         {
             var periodStart = new DateTime(periodEnd.Year, periodEnd.Month, 1);
 
@@ -1198,7 +1199,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var revenueRepo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                revenueEntityType, cn, "REVENUE_TRANSACTION");
+                revenueEntityType, connectionName, "REVENUE_TRANSACTION");
 
             var revenueFilters = new List<AppFilter>
             {
@@ -1218,7 +1219,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var royaltyRepo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                royaltyEntityType, cn, "ROYALTY_CALCULATION");
+                royaltyEntityType, connectionName, "ROYALTY_CALCULATION");
 
             var royaltyFilters = new List<AppFilter>
             {
@@ -1235,7 +1236,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return (grossRevenue, totalRoyalty);
         }
 
-        private async Task<RUN_TICKET?> GetRunTicketAsync(string allocationRequestId, string cn)
+        private async Task<RUN_TICKET?> GetRunTicketAsync(string allocationRequestId, string connectionName)
         {
             if (string.IsNullOrWhiteSpace(allocationRequestId))
                 return null;
@@ -1246,7 +1247,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "RUN_TICKET");
+                entityType, connectionName, "RUN_TICKET");
 
             var filters = new List<AppFilter>
             {
@@ -1262,7 +1263,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string fieldId,
             DateTime periodEnd,
             string userId,
-            string cn)
+            string connectionName)
         {
             if (_impairmentTestingService == null || _reserveAccountingService == null)
             {
@@ -1271,8 +1272,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
             try
             {
-                var carryingAmount = await GetCapitalizedCostsAsync(fieldId, periodEnd, cn);
-                var pv = await _reserveAccountingService.CalculatePresentValueAsync(fieldId, periodEnd, cn);
+                var carryingAmount = await GetCapitalizedCostsAsync(fieldId, periodEnd, connectionName);
+                var pv = await _reserveAccountingService.CalculatePresentValueAsync(fieldId, periodEnd, connectionName);
 
                 await _impairmentTestingService.EvaluateImpairmentAsync(
                     fieldId,
@@ -1281,7 +1282,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     pv * 0.95m,
                     periodEnd,
                     userId,
-                    cn);
+                    connectionName);
             }
             catch (OperationCanceledException)
             {
@@ -1300,7 +1301,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string fieldId,
             DateTime periodEnd,
             string userId,
-            string cn)
+            string connectionName)
         {
             if (_decommissioningService == null)
                 return;
@@ -1312,7 +1313,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "ASSET_RETIREMENT_OBLIGATION");
+                    entityType, connectionName, "ASSET_RETIREMENT_OBLIGATION");
 
                 var filters = new List<AppFilter>
                 {
@@ -1326,7 +1327,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 foreach (var aro in obligations)
                 {
-                    await _decommissioningService.AccreteAroAsync(aro.ARO_ID, periodEnd, userId, cn);
+                    await _decommissioningService.AccreteAroAsync(aro.ARO_ID, periodEnd, userId, connectionName);
                 }
             }
             catch (OperationCanceledException)
@@ -1345,13 +1346,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private async Task ApplyFunctionalCurrencyTranslationAsync(
             string fieldId,
             DateTime periodEnd,
-            string cn)
+            string connectionName)
         {
             if (_functionalCurrencyService == null)
                 return;
             try
             {
-                await _functionalCurrencyService.TranslateBalancesAsync(fieldId, periodEnd, AccountingCurrencyCodes.Usd, cn);
+                await _functionalCurrencyService.TranslateBalancesAsync(fieldId, periodEnd, AccountingCurrencyCodes.Usd, connectionName);
             }
             catch (OperationCanceledException)
             {
@@ -1370,7 +1371,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string fieldId,
             DateTime periodEnd,
             string userId,
-            string cn)
+            string connectionName)
         {
             if (_leasingService == null)
                 return;
@@ -1382,7 +1383,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "LEASE_CONTRACT");
+                    entityType, connectionName, "LEASE_CONTRACT");
 
                 var filters = new List<AppFilter>
                 {
@@ -1396,7 +1397,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 foreach (var lease in leases)
                 {
-                    await _leasingService.RemeasureLeaseAsync(lease.LEASE_ID, periodEnd, userId, cn);
+                    await _leasingService.RemeasureLeaseAsync(lease.LEASE_ID, periodEnd, userId, connectionName);
                 }
             }
             catch (OperationCanceledException)
@@ -1415,7 +1416,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private async Task MeasureFinancialInstrumentsAsync(
             DateTime periodEnd,
             string userId,
-            string cn)
+            string connectionName)
         {
             if (_financialInstrumentsService == null)
                 return;
@@ -1427,7 +1428,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "HEDGE_RELATIONSHIP");
+                    entityType, connectionName, "HEDGE_RELATIONSHIP");
 
                 var filters = new List<AppFilter>
                 {
@@ -1446,7 +1447,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         0m,
                         periodEnd,
                         userId,
-                        cn);
+                        connectionName);
                 }
             }
             catch (OperationCanceledException)
@@ -1466,7 +1467,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string fieldId,
             DateTime periodEnd,
             string userId,
-            string cn)
+            string connectionName)
         {
             if (_emissionsTradingService == null)
                 return;
@@ -1478,7 +1479,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "EMISSIONS_OBLIGATION");
+                    entityType, connectionName, "EMISSIONS_OBLIGATION");
 
                 var filters = new List<AppFilter>
                 {
@@ -1497,7 +1498,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         obligation.ALLOWANCE_PRICE ?? 0m,
                         periodEnd,
                         userId,
-                        cn);
+                        connectionName);
                 }
             }
             catch (OperationCanceledException)
@@ -1516,7 +1517,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private async Task ApplyInventoryLcmAsync(
             DateTime periodEnd,
             string userId,
-            string cn)
+            string connectionName)
         {
             if (_inventoryLcmService == null)
                 return;
@@ -1529,7 +1530,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "INVENTORY_ITEM");
+                    entityType, connectionName, "INVENTORY_ITEM");
 
                 var filters = new List<AppFilter>
                 {
@@ -1548,7 +1549,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         item.INVENTORY_ITEM_ID,
                         periodEnd,
                         userId,
-                        cn);
+                        connectionName);
                 }
             }
             catch (OperationCanceledException)
@@ -1567,7 +1568,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private async Task RunUnprovedPropertyImpairmentAsync(
             DateTime periodEnd,
             string userId,
-            string cn)
+            string connectionName)
         {
             if (_unprovedPropertyService == null)
                 return;
@@ -1580,7 +1581,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "ACCOUNTING_COST");
+                    entityType, connectionName, "ACCOUNTING_COST");
 
                 var filters = new List<AppFilter>
                 {
@@ -1605,7 +1606,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         propertyId,
                         periodEnd,
                         userId,
-                        cn);
+                        connectionName);
                 }
             }
             catch (OperationCanceledException)
@@ -1624,13 +1625,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private async Task BuildReserveDisclosuresAsync(
             string fieldId,
             DateTime periodEnd,
-            string cn)
+            string connectionName)
         {
             if (_reserveDisclosureService == null)
                 return;
             try
             {
-                await _reserveDisclosureService.BuildDisclosureAsync(fieldId, periodEnd, cn);
+                await _reserveDisclosureService.BuildDisclosureAsync(fieldId, periodEnd, connectionName);
             }
             catch (OperationCanceledException)
             {
@@ -1648,7 +1649,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private async Task<decimal> GetCapitalizedCostsAsync(
             string fieldId,
             DateTime periodEnd,
-            string cn)
+            string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync("ACCOUNTING_COST");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -1656,7 +1657,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "ACCOUNTING_COST");
+                entityType, connectionName, "ACCOUNTING_COST");
 
             var filters = new List<AppFilter>
             {

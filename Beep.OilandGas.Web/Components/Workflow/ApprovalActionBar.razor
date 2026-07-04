@@ -1,0 +1,69 @@
+<MudStack Row="true" Spacing="2" Class="approval-actions">
+    @if (ShowApprove)
+    {
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Success"
+                   Size="@Size"
+                   OnClick="OnApprove"
+                   StartIcon="@Icons.Material.Filled.Check"
+                   Disabled="@IsProcessing">
+            @ApproveLabel
+        </MudButton>
+    }
+
+    @if (ShowReject)
+    {
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Error"
+                   Size="@Size"
+                   OnClick="OnReject"
+                   StartIcon="@Icons.Material.Filled.Close"
+                   Disabled="@IsProcessing">
+            @RejectLabel
+        </MudButton>
+    }
+
+    @if (ShowDelegate)
+    {
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Secondary"
+                   Size="@Size"
+                   OnClick="OnDelegate"
+                   StartIcon="@Icons.Material.Filled.Forward"
+                   Disabled="@IsProcessing">
+            Delegate
+        </MudButton>
+    }
+
+    @if (ShowRequestInfo)
+    {
+        <MudButton Variant="Variant.Text"
+                   Size="@Size"
+                   OnClick="OnRequestInfo"
+                   StartIcon="@Icons.Material.Filled.Help"
+                   Disabled="@IsProcessing">
+            Request Info
+        </MudButton>
+    }
+
+    @if (IsProcessing)
+    {
+        <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
+    }
+</MudStack>
+
+@code {
+    [Parameter] public bool ShowApprove { get; set; } = true;
+    [Parameter] public bool ShowReject { get; set; } = true;
+    [Parameter] public bool ShowDelegate { get; set; } = true;
+    [Parameter] public bool ShowRequestInfo { get; set; } = true;
+    [Parameter] public string ApproveLabel { get; set; } = "Approve";
+    [Parameter] public string RejectLabel { get; set; } = "Reject";
+    [Parameter] public Size Size { get; set; } = Size.Medium;
+    [Parameter] public bool IsProcessing { get; set; }
+
+    [Parameter] public EventCallback OnApprove { get; set; }
+    [Parameter] public EventCallback OnReject { get; set; }
+    [Parameter] public EventCallback OnDelegate { get; set; }
+    [Parameter] public EventCallback OnRequestInfo { get; set; }
+}

@@ -38,7 +38,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         /// List all AFEs.
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult<List<object>>> GetAFEsAsync([FromQuery] string? connectionName = null)
+        public async Task<ActionResult<List<object>>> GetAFEsAsync([FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -73,7 +73,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         [HttpPost]
         public async Task<ActionResult<object>> CreateAFE(
             [FromBody] CreateAFERequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -109,7 +109,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         [HttpGet("{id}")]
         public async Task<ActionResult<object>> GetAFE(
             string id,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "AFE ID is required." });
@@ -141,7 +141,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
 
         /// <summary>Approve an AFE using <see cref="IAfeService"/>.</summary>
         [HttpPatch("{id}/approve")]
-        public async Task<ActionResult> ApproveAFE(string id, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult> ApproveAFE(string id, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "AFE ID is required." });
@@ -156,7 +156,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
 
         /// <summary>Reject an AFE by reverting status to draft for revision.</summary>
         [HttpPatch("{id}/reject")]
-        public async Task<ActionResult> RejectAFE(string id, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult> RejectAFE(string id, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "AFE ID is required." });
@@ -181,7 +181,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         public async Task<ActionResult<AFE_LINE_ITEM>> AddLineItemAsync(
             string id,
             [FromBody] AFE_LINE_ITEM lineItem,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "AFE ID is required." });
@@ -202,7 +202,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         public async Task<ActionResult<ACCOUNTING_COST>> RecordCostAsync(
             string id,
             [FromBody] ACCOUNTING_COST cost,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "AFE ID is required." });
@@ -219,7 +219,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         }
 
         [HttpGet("{id}/line-items")]
-        public async Task<ActionResult<List<AFE_LINE_ITEM>>> GetLineItemsAsync(string id, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult<List<AFE_LINE_ITEM>>> GetLineItemsAsync(string id, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "AFE ID is required." });
@@ -239,7 +239,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         public async Task<ActionResult<COST_VARIANCE_REPORT>> GenerateVarianceReportAsync(
             string id,
             [FromQuery] decimal varianceThreshold = 10m,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "AFE ID is required." });
@@ -265,7 +265,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             [FromQuery] string? costCenterId = null,
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.PipelineAnalysis;
+using Beep.OilandGas.PPDM39.Core;
+using TheTechIdea.Beep.Report;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -158,12 +161,12 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var config = new PipelineConfiguration
                 {
                     PipelineId = entity.PIPELINE_ID,
-                    Diameter = entity.DIAMETER.GetValueOrDefault(),
+                    Diameter = entity.DIAMETER,
                     WallThickness = entity.WALL_THICKNESS.GetValueOrDefault(),
-                    Length = entity.LENGTH.GetValueOrDefault(),
+                    Length = entity.LENGTH,
                     Material = entity.MATERIAL,
-                    DesignPressure = entity.DESIGN_PRESSURE.GetValueOrDefault(),
-                    DesignTemperature = entity.DESIGN_TEMPERATURE.GetValueOrDefault(),
+                    DesignPressure = entity.DESIGN_PRESSURE,
+                    DesignTemperature = entity.DESIGN_TEMPERATURE,
                     LastInspectionDate = entity.LAST_INSPECTION_DATE.GetValueOrDefault(),
                     MaxAllowableWorkingPressure = entity.MAX_ALLOWABLE_WORKING_PRESSURE.GetValueOrDefault()
                 };

@@ -25,7 +25,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             List<double> productionHistory,
             List<DateTime> timeHistory,
             double initialOilInPlace,
-            double waterInjectionRate)
+            double waterInjectionRate, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
                 throw new ArgumentException("Field ID cannot be null or empty", nameof(fieldId));
@@ -95,7 +95,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             string gasType,
             double injectionPressure,
             double minimumMiscibilityPressure,
-            List<double> productionHistory)
+            List<double> productionHistory, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
                 throw new ArgumentException("Field ID cannot be null or empty", nameof(fieldId));
@@ -159,7 +159,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             string chemicalType,
             double reservoirTemperature,
             double salinity,
-            double crudePaveViscosity)
+            double crudePaveViscosity, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
                 throw new ArgumentException("Field ID cannot be null or empty", nameof(fieldId));
@@ -226,7 +226,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             string thermalMethod,
             double reservoirTemperature,
             double crudePaveViscosity,
-            double oilSaturation)
+            double oilSaturation, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
                 throw new ArgumentException("Field ID cannot be null or empty", nameof(fieldId));
@@ -294,7 +294,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         public async Task<EORMethodComparison> CompareEORMethodsAsync(
             string fieldId,
             List<string> methodsToEvaluate,
-            Dictionary<string, double> reservoirProperties)
+            Dictionary<string, double> reservoirProperties, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
                 throw new ArgumentException("Field ID cannot be null or empty", nameof(fieldId));
@@ -357,7 +357,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             int desiredWellCount,
             double reservoirArea,
             double thickness,
-            double permeability)
+            double permeability, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
                 throw new ArgumentException("Field ID cannot be null or empty", nameof(fieldId));
@@ -429,7 +429,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             double currentReservoirPressure,
             double injectionRate,
             int operationMonths,
-            double reservoirVolume)
+            double reservoirVolume, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
                 throw new ArgumentException("Field ID cannot be null or empty", nameof(fieldId));
@@ -497,7 +497,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             double capitalCost,
             double operatingCostPerBarrel,
             int projectLifeYears,
-            double discountRate = 0.10)
+            double discountRate = 0.10, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
                 throw new ArgumentException("Field ID cannot be null or empty", nameof(fieldId));

@@ -5,7 +5,9 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -52,7 +54,7 @@ namespace Beep.OilandGas.Accounting.Services
             string? fieldId = null,
             string? wellId = null,
             string? facilityId = null,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (estimatedCost <= 0m)
                 throw new InvalidOperationException("Estimated cost must be positive");
@@ -61,7 +63,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var presentValue = CalculatePresentValue(estimatedCost, estimatedRetirementDate, discountRate);
 
             var aro = new ASSET_RETIREMENT_OBLIGATION
@@ -109,7 +110,7 @@ namespace Beep.OilandGas.Accounting.Services
             decimal updatedDiscountRate,
             string updateReason,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(aroId))
                 throw new ArgumentNullException(nameof(aroId));
@@ -120,7 +121,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var repo = await GetRepoAsync<ASSET_RETIREMENT_OBLIGATION>("ASSET_RETIREMENT_OBLIGATION", cn);
             var aro = await repo.GetByIdAsync(aroId) as ASSET_RETIREMENT_OBLIGATION;
             if (aro == null)
@@ -174,14 +174,13 @@ namespace Beep.OilandGas.Accounting.Services
             string aroId,
             DateTime asOfDate,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(aroId))
                 throw new ArgumentNullException(nameof(aroId));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var repo = await GetRepoAsync<ASSET_RETIREMENT_OBLIGATION>("ASSET_RETIREMENT_OBLIGATION", cn);
             var aro = await repo.GetByIdAsync(aroId) as ASSET_RETIREMENT_OBLIGATION;
             if (aro == null)

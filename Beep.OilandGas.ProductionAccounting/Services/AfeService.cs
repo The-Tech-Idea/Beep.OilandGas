@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,7 +46,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _logger = logger;
         }
 
-        public async Task<AFE> CreateAfeAsync(AFE afe, string userId, string cn = "PPDM39")
+        public async Task<AFE> CreateAfeAsync(AFE afe, string userId, string connectionName = "PPDM39")
         {
             if (afe == null)
                 throw new ArgumentNullException(nameof(afe));
@@ -67,7 +68,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "AFE");
+                entityType, connectionName, "AFE");
 
             await repo.InsertAsync(afe, userId);
             return afe;
@@ -76,7 +77,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<AFE_LINE_ITEM> AddLineItemAsync(
             AFE_LINE_ITEM lineItem,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (lineItem == null)
                 throw new ArgumentNullException(nameof(lineItem));
@@ -98,21 +99,21 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "AFE_LINE_ITEM");
+                entityType, connectionName, "AFE_LINE_ITEM");
 
             await repo.InsertAsync(lineItem, userId);
-            await UpdateAfeActualsAsync(lineItem.AFE_ID, userId, cn);
+            await UpdateAfeActualsAsync(lineItem.AFE_ID, userId, connectionName);
             return lineItem;
         }
 
-        public async Task<AFE> ApproveAfeAsync(string afeId, DateTime approvalDate, string userId, string cn = "PPDM39")
+        public async Task<AFE> ApproveAfeAsync(string afeId, DateTime approvalDate, string userId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(afeId))
                 throw new ArgumentNullException(nameof(afeId));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var afe = await GetAfeAsync(afeId, cn);
+            var afe = await GetAfeAsync(afeId, connectionName);
             if (afe == null)
                 throw new ProductionAccountingException($"AFE not found: {afeId}");
 
@@ -127,7 +128,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "AFE");
+                entityType, connectionName, "AFE");
 
             await repo.UpdateAsync(afe, userId);
             return afe;
@@ -137,7 +138,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string afeId,
             ACCOUNTING_COST cost,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(afeId))
                 throw new ArgumentNullException(nameof(afeId));
@@ -148,7 +149,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (cost.AMOUNT <= 0)
                 throw new ProductionAccountingException("Cost amount must be positive");
 
-            var afe = await GetAfeAsync(afeId, cn);
+            var afe = await GetAfeAsync(afeId, connectionName);
             if (afe == null)
                 throw new ProductionAccountingException($"AFE not found: {afeId}");
             if (!string.Equals(afe.STATUS, AfeStatusCodes.Approved, StringComparison.OrdinalIgnoreCase))
@@ -163,7 +164,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             if (_authorizationWorkflowService != null)
             {
-                var isAuthorized = await _authorizationWorkflowService.IsCostAuthorizedAsync(cost, cn);
+                var isAuthorized = await _authorizationWorkflowService.IsCostAuthorizedAsync(cost, connectionName);
                 if (!isAuthorized)
                     throw new ProductionAccountingException("Cost exceeds AFE authorization or AFE is not approved");
             }
@@ -174,14 +175,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "ACCOUNTING_COST");
+                entityType, connectionName, "ACCOUNTING_COST");
 
             await repo.InsertAsync(cost, userId);
-            await UpdateAfeActualsAsync(afeId, userId, cn);
+            await UpdateAfeActualsAsync(afeId, userId, connectionName);
             return cost;
         }
 
-        public async Task<List<AFE_LINE_ITEM>> GetLineItemsAsync(string afeId, string cn = "PPDM39")
+        public async Task<List<AFE_LINE_ITEM>> GetLineItemsAsync(string afeId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(afeId))
                 throw new ArgumentNullException(nameof(afeId));
@@ -192,7 +193,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "AFE_LINE_ITEM");
+                entityType, connectionName, "AFE_LINE_ITEM");
 
             var filters = new List<AppFilter>
             {
@@ -208,16 +209,16 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string afeId,
             decimal varianceThreshold,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(afeId))
                 throw new ArgumentNullException(nameof(afeId));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var lineItems = await GetLineItemsAsync(afeId, cn);
+            var lineItems = await GetLineItemsAsync(afeId, connectionName);
             var budgetAmount = lineItems.Sum(li => li.BUDGET_AMOUNT ?? 0m);
-            var actualAmount = await GetCostTotalAsync(afeId, cn);
+            var actualAmount = await GetCostTotalAsync(afeId, connectionName);
             var varianceAmount = actualAmount - budgetAmount;
             var variancePercent = budgetAmount != 0m ? (varianceAmount / budgetAmount) * 100m : 0m;
             var status = Math.Abs(variancePercent) >= varianceThreshold
@@ -245,7 +246,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "COST_VARIANCE_REPORT");
+                entityType, connectionName, "COST_VARIANCE_REPORT");
 
             await repo.InsertAsync(report, userId);
             return report;
@@ -256,7 +257,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string? costCenterId,
             DateTime? startDate,
             DateTime? endDate,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             var metadata = await _metadata.GetTableMetadataAsync("COST_VARIANCE_REPORT");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -264,7 +265,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "COST_VARIANCE_REPORT");
+                entityType, connectionName, "COST_VARIANCE_REPORT");
 
             var filters = new List<AppFilter>
             {
@@ -284,7 +285,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return results?.Cast<COST_VARIANCE_REPORT>().ToList() ?? new List<COST_VARIANCE_REPORT>();
         }
 
-        private async Task<AFE?> GetAfeAsync(string afeId, string cn)
+        private async Task<AFE?> GetAfeAsync(string afeId, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync("AFE");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -292,22 +293,22 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "AFE");
+                entityType, connectionName, "AFE");
 
             var result = await repo.GetByIdAsync(afeId);
             return result as AFE;
         }
 
-        private async Task UpdateAfeActualsAsync(string afeId, string userId, string cn)
+        private async Task UpdateAfeActualsAsync(string afeId, string userId, string connectionName)
         {
-            var afe = await GetAfeAsync(afeId, cn);
+            var afe = await GetAfeAsync(afeId, connectionName);
             if (afe == null)
                 return;
 
-            var lineItems = await GetLineItemsAsync(afeId, cn);
+            var lineItems = await GetLineItemsAsync(afeId, connectionName);
             var lineItemTotal = lineItems.Sum(li => li.ACTUAL_AMOUNT ?? 0m);
 
-            var costTotal = await GetCostTotalAsync(afeId, cn);
+            var costTotal = await GetCostTotalAsync(afeId, connectionName);
             var actualTotal = Math.Max(lineItemTotal, costTotal);
 
             afe.ACTUAL_COST = actualTotal;
@@ -320,12 +321,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "AFE");
+                entityType, connectionName, "AFE");
 
             await repo.UpdateAsync(afe, userId);
         }
 
-        private async Task<decimal> GetCostTotalAsync(string afeId, string cn)
+        private async Task<decimal> GetCostTotalAsync(string afeId, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync("ACCOUNTING_COST");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -333,7 +334,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "ACCOUNTING_COST");
+                entityType, connectionName, "ACCOUNTING_COST");
 
             var filters = new List<AppFilter>
             {

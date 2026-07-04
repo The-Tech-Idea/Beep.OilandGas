@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,7 +43,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<PRODUCTION_SHARING_AGREEMENT> GetActiveAgreementAsync(
             string propertyId,
             DateTime asOfDate,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(propertyId))
                 throw new ArgumentNullException(nameof(propertyId));
@@ -54,7 +55,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "PRODUCTION_SHARING_AGREEMENT");
+                    entityType, connectionName, "PRODUCTION_SHARING_AGREEMENT");
 
                 var filters = new List<AppFilter>
                 {
@@ -83,7 +84,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             ALLOCATION_DETAIL ALLOCATION_DETAIL,
             DateTime productionDate,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (ALLOCATION_DETAIL == null)
                 throw new ArgumentNullException(nameof(ALLOCATION_DETAIL));
@@ -91,11 +92,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new ArgumentNullException(nameof(userId));
             try
             {
-                var RUN_TICKET = await GetRunTicketAsync(ALLOCATION_DETAIL, cn);
+                var RUN_TICKET = await GetRunTicketAsync(ALLOCATION_DETAIL, connectionName);
                 if (RUN_TICKET == null || string.IsNullOrWhiteSpace(RUN_TICKET.LEASE_ID))
                     return null;
 
-                var agreement = await GetActiveAgreementAsync(RUN_TICKET.LEASE_ID, productionDate, cn);
+                var agreement = await GetActiveAgreementAsync(RUN_TICKET.LEASE_ID, productionDate, connectionName);
                 if (agreement == null)
                     return null;
 
@@ -148,7 +149,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "PRODUCTION_SHARING_ENTITLEMENT");
+                    entityType, connectionName, "PRODUCTION_SHARING_ENTITLEMENT");
 
                 await repo.InsertAsync(entitlement, userId);
 
@@ -165,7 +166,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
-        private async Task<RUN_TICKET> GetRunTicketAsync(ALLOCATION_DETAIL ALLOCATION_DETAIL, string cn)
+        private async Task<RUN_TICKET> GetRunTicketAsync(ALLOCATION_DETAIL ALLOCATION_DETAIL, string connectionName)
         {
             if (string.IsNullOrWhiteSpace(ALLOCATION_DETAIL.ALLOCATION_RESULT_ID))
                 return null;
@@ -176,7 +177,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var allocationRepo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                allocationEntityType, cn, "ALLOCATION_RESULT");
+                allocationEntityType, connectionName, "ALLOCATION_RESULT");
 
             var ALLOCATION_RESULT = await allocationRepo.GetByIdAsync(ALLOCATION_DETAIL.ALLOCATION_RESULT_ID) as ALLOCATION_RESULT;
             if (ALLOCATION_RESULT == null || string.IsNullOrWhiteSpace(ALLOCATION_RESULT.ALLOCATION_REQUEST_ID))
@@ -188,7 +189,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var runTicketRepo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                runTicketEntityType, cn, "RUN_TICKET");
+                runTicketEntityType, connectionName, "RUN_TICKET");
 
             var filters = new List<AppFilter>
             {

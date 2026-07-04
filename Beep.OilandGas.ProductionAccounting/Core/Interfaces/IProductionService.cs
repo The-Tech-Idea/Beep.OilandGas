@@ -18,22 +18,22 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<RUN_TICKET> CreateRunTicketAsync(
             CreateRunTicketRequest request,
             string userId,
-            string? connectionName = null);
+            string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets a run ticket by number.
         /// </summary>
-        Task<RUN_TICKET?> GetRunTicketAsync(string runTicketNumber, string? connectionName = null);
+        Task<RUN_TICKET?> GetRunTicketAsync(string runTicketNumber, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets all run tickets for a lease.
         /// </summary>
-        Task<List<RUN_TICKET>> GetRunTicketsByLeaseAsync(string leaseId, string? connectionName = null);
+        Task<List<RUN_TICKET>> GetRunTicketsByLeaseAsync(string leaseId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets run tickets by date range.
         /// </summary>
-        Task<List<RUN_TICKET>> GetRunTicketsByDateRangeAsync(DateTime startDate, DateTime endDate, string? connectionName = null);
+        Task<List<RUN_TICKET>> GetRunTicketsByDateRangeAsync(DateTime startDate, DateTime endDate, string connectionName = "PPDM39");
         
         /// <summary>
         /// Creates a tank inventory record.
@@ -41,22 +41,22 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<TANK_INVENTORY> CreateTankInventoryAsync(
             CreateTankInventoryRequest request,
             string userId,
-            string? connectionName = null);
+            string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets tank inventory by ID.
         /// </summary>
-        Task<TANK_INVENTORY?> GetTankInventoryAsync(string inventoryId, string? connectionName = null);
+        Task<TANK_INVENTORY?> GetTankInventoryAsync(string inventoryId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Calculates total production for a lease in a date range.
         /// </summary>
-        Task<decimal> CalculateTotalProductionAsync(string leaseId, DateTime startDate, DateTime endDate, string? connectionName = null);
+        Task<decimal> CalculateTotalProductionAsync(string leaseId, DateTime startDate, DateTime endDate, string connectionName = "PPDM39");
         
         /// <summary>
         /// Calculates dispositions by type.
         /// </summary>
-        Task<Dictionary<DispositionType, decimal>> CalculateDispositionsByTypeAsync(DateTime startDate, DateTime endDate, string? connectionName = null);
+        Task<Dictionary<DispositionType, decimal>> CalculateDispositionsByTypeAsync(DateTime startDate, DateTime endDate, string connectionName = "PPDM39");
     }
 }
 

@@ -15,11 +15,13 @@ using Beep.OilandGas.PPDM39.DataManagement.Core.Models.DatabaseCreation;
 using Beep.OilandGas.PPDM39.DataManagement.SeedData;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using System.Reflection;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.ConfigUtil;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.SeedData.Services;
 using Beep.OilandGas.DataManager.Core.Interfaces;
@@ -35,6 +37,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
     /// <summary>
     /// API controller for PPDM39 database setup wizard
     /// </summary>
+    [Authorize]
     [ApiController]
     [Route("api/ppdm39/setup")]
     public class PPDM39SetupController : ControllerBase
@@ -1604,7 +1607,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Get all VALUE_TYPEs
         /// </summary>
         [HttpGet("lov/types")]
-        public async Task<ActionResult<List<string>>> GetLOVTypes([FromQuery] string? connectionName = null)
+        public async Task<ActionResult<List<string>>> GetLOVTypes([FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -1627,7 +1630,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Get LOVs by type
         /// </summary>
         [HttpGet("lov/{valueType}")]
-        public async Task<ActionResult<LOVResponse>> GetLOVByType(string valueType, [FromQuery] string? category = null, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult<LOVResponse>> GetLOVByType(string valueType, [FromQuery] string? category = null, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(valueType)) return BadRequest(new { error = "Value type is required." });
             try
@@ -1657,7 +1660,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Get LOVs by category
         /// </summary>
         [HttpGet("lov/category/{category}")]
-        public async Task<ActionResult<LOVResponse>> GetLOVByCategory(string category, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult<LOVResponse>> GetLOVByCategory(string category, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(category)) return BadRequest(new { error = "Category is required." });
             try
@@ -1687,7 +1690,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Get LOVs by module
         /// </summary>
         [HttpGet("lov/module/{module}")]
-        public async Task<ActionResult<LOVResponse>> GetLOVByModule(string module, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult<LOVResponse>> GetLOVByModule(string module, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(module)) return BadRequest(new { error = "Module is required." });
             try
@@ -1717,7 +1720,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Get LOVs by source
         /// </summary>
         [HttpGet("lov/source/{source}")]
-        public async Task<ActionResult<LOVResponse>> GetLOVBySource(string source, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult<LOVResponse>> GetLOVBySource(string source, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(source)) return BadRequest(new { error = "Source is required." });
             try
@@ -1747,7 +1750,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Get hierarchical LOVs
         /// </summary>
         [HttpGet("lov/hierarchical/{valueType}")]
-        public async Task<ActionResult<LOVResponse>> GetHierarchicalLOV(string valueType, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult<LOVResponse>> GetHierarchicalLOV(string valueType, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(valueType)) return BadRequest(new { error = "Value type is required." });
             try
@@ -1777,7 +1780,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Search LOVs
         /// </summary>
         [HttpGet("lov/search")]
-        public async Task<ActionResult<LOVResponse>> SearchLOVs([FromQuery] string? searchTerm = null, [FromQuery] string? valueType = null, [FromQuery] string? category = null, [FromQuery] string? module = null, [FromQuery] string? source = null, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult<LOVResponse>> SearchLOVs([FromQuery] string? searchTerm = null, [FromQuery] string? valueType = null, [FromQuery] string? category = null, [FromQuery] string? module = null, [FromQuery] string? source = null, [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -1815,7 +1818,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Add new LOV
         /// </summary>
         [HttpPost("lov")]
-        public async Task<ActionResult<LOVResponse>> AddLOV([FromBody] ListOfValue lovDto, [FromQuery] string? userId = null, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult<LOVResponse>> AddLOV([FromBody] ListOfValue lovDto, [FromQuery] string? userId = null, [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -1865,7 +1868,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Update LOV
         /// </summary>
         [HttpPut("lov/{id}")]
-        public async Task<ActionResult<LOVResponse>> UpdateLOV(string id, [FromBody] ListOfValue lovDto, [FromQuery] string? userId = null, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult<LOVResponse>> UpdateLOV(string id, [FromBody] ListOfValue lovDto, [FromQuery] string? userId = null, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "LOV ID is required." });
             try
@@ -1916,7 +1919,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Delete LOV (soft delete)
         /// </summary>
         [HttpDelete("lov/{id}")]
-        public async Task<ActionResult<LOVResponse>> DeleteLOV(string id, [FromQuery] string? userId = null, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult<LOVResponse>> DeleteLOV(string id, [FromQuery] string? userId = null, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "LOV ID is required." });
             try

@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,7 +57,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string costCenterId,
             decimal cost,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(costCenterId))
                 throw new ArgumentNullException(nameof(costCenterId));
@@ -86,7 +87,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "ACCOUNTING_COST");
+                entityType, connectionName, "ACCOUNTING_COST");
 
             await repo.InsertAsync(accountingCost, userId);
 
@@ -103,7 +104,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<bool> PerformCeilingTestAsync(
             string costCenterId,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(costCenterId))
                 throw new ArgumentNullException(nameof(costCenterId));
@@ -113,15 +114,15 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             try
             {
                 // Get total capitalized costs for cost center
-                decimal capitalizedCosts = await GetTotalCapitalizedCostsAsync(costCenterId, cn);
+                decimal capitalizedCosts = await GetTotalCapitalizedCostsAsync(costCenterId, connectionName);
                 
                 // Calculate net book value
-                decimal accumulatedDepletion = await GetAccumulatedDepletionAsync(costCenterId, cn);
+                decimal accumulatedDepletion = await GetAccumulatedDepletionAsync(costCenterId, connectionName);
                 decimal netBookValue = capitalizedCosts - accumulatedDepletion;
 
                 // SEC Ceiling Test: Fair Value = PV of proved reserves
                 // Use proved reserves valuation at current commodity prices
-                decimal fairValueEstimate = await GetProvedReservesValueAsync(costCenterId, cn);
+                decimal fairValueEstimate = await GetProvedReservesValueAsync(costCenterId, connectionName);
                 
                 if (fairValueEstimate <= 0)
                 {
@@ -142,7 +143,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         impairmentAmount,
                         ImpairmentRecordReasonPhrases.SecCeilingTestImpairment,
                         userId,
-                        cn);
+                        connectionName);
                     return false;
                 }
 
@@ -167,7 +168,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string costCenterId,
             DateTime startDate,
             DateTime endDate,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(costCenterId))
                 throw new ArgumentNullException(nameof(costCenterId));
@@ -178,7 +179,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             try
             {
-                decimal capitalizedCosts = await GetTotalCapitalizedCostsAsync(costCenterId, cn);
+                decimal capitalizedCosts = await GetTotalCapitalizedCostsAsync(costCenterId, connectionName);
                 if (capitalizedCosts <= 0)
                 {
                     _logger?.LogInformation("Cost center {CostCenterId} has no capitalized costs", costCenterId);
@@ -188,8 +189,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 // Unit of Production Depletion Formula:
                 // Depletion = (Period Production x Capitalized Costs) / Total Proved Reserves
                 
-                decimal periodProduction = await GetPeriodProductionAsync(costCenterId, cn);
-                decimal totalReserves = await GetTotalReservesAsync(costCenterId, cn);
+                decimal periodProduction = await GetPeriodProductionAsync(costCenterId, connectionName);
+                decimal totalReserves = await GetTotalReservesAsync(costCenterId, connectionName);
 
                 decimal depletionAmount = 0;
                 if (totalReserves > 0)
@@ -223,7 +224,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// <summary>
         /// Validates an accounting cost record.
         /// </summary>
-        public async Task<bool> ValidateAsync(ACCOUNTING_COST cost, string cn = "PPDM39")
+        public async Task<bool> ValidateAsync(ACCOUNTING_COST cost, string connectionName = "PPDM39")
         {
             if (cost == null)
                 throw new ArgumentNullException(nameof(cost));
@@ -259,7 +260,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             decimal impairmentAmount,
             string reason,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(costCenterId))
                 throw new ArgumentNullException(nameof(costCenterId));
@@ -288,7 +289,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "IMPAIRMENT_RECORD");
+                entityType, connectionName, "IMPAIRMENT_RECORD");
 
             await repo.InsertAsync(impairment, userId);
 
@@ -299,7 +300,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return impairment;
         }
 
-        private async Task<decimal> GetTotalCapitalizedCostsAsync(string costCenterId, string cn = "PPDM39")
+        private async Task<decimal> GetTotalCapitalizedCostsAsync(string costCenterId, string connectionName = "PPDM39")
         {
             var metadata = await _metadata.GetTableMetadataAsync("ACCOUNTING_COST");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -307,7 +308,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "ACCOUNTING_COST");
+                entityType, connectionName, "ACCOUNTING_COST");
 
             var filters = new List<AppFilter>
             {
@@ -319,7 +320,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return costs?.Cast<ACCOUNTING_COST>().Sum(c => c.AMOUNT) ?? 0;
         }
 
-        private async Task<decimal> GetAccumulatedDepletionAsync(string costCenterId, string cn = "PPDM39")
+        private async Task<decimal> GetAccumulatedDepletionAsync(string costCenterId, string connectionName = "PPDM39")
         {
             var metadata = await _metadata.GetTableMetadataAsync("AMORTIZATION_RECORD");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -327,7 +328,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "AMORTIZATION_RECORD");
+                entityType, connectionName, "AMORTIZATION_RECORD");
 
             var filters = new List<AppFilter>
             {
@@ -342,7 +343,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// <summary>
         /// Gets total production for cost center during current period from MEASUREMENT_RECORD.
         /// </summary>
-        private async Task<decimal> GetPeriodProductionAsync(string costCenterId, string cn)
+        private async Task<decimal> GetPeriodProductionAsync(string costCenterId, string connectionName)
         {
             try
             {
@@ -352,7 +353,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "MEASUREMENT_RECORD");
+                    entityType, connectionName, "MEASUREMENT_RECORD");
 
                 var filters = new List<AppFilter>
                 {
@@ -378,13 +379,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// <summary>
         /// Gets total proved reserves for cost center from PROVED_RESERVES table.
         /// </summary>
-        private async Task<decimal> GetTotalReservesAsync(string costCenterId, string cn)
+        private async Task<decimal> GetTotalReservesAsync(string costCenterId, string connectionName)
         {
             try
             {
                 if (_reserveAccountingService != null)
                 {
-                    var latestReserves = await _reserveAccountingService.GetLatestReservesAsync(costCenterId, DateTime.UtcNow, cn);
+                    var latestReserves = await _reserveAccountingService.GetLatestReservesAsync(costCenterId, DateTime.UtcNow, connectionName);
                     if (latestReserves != null)
                     {
                         return (latestReserves.PROVED_DEVELOPED_OIL_RESERVES ?? 0) +
@@ -400,7 +401,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "PROVED_RESERVES");
+                    entityType, connectionName, "PROVED_RESERVES");
 
                 var filters = new List<AppFilter>
                 {
@@ -436,13 +437,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// Gets fair value of proved reserves using PV calculation.
         /// Fair Value = Sum of (Reserve Volume x Commodity Price x Discount Factor)
         /// </summary>
-        private async Task<decimal> GetProvedReservesValueAsync(string costCenterId, string cn)
+        private async Task<decimal> GetProvedReservesValueAsync(string costCenterId, string connectionName)
         {
             try
             {
                 if (_reserveAccountingService != null)
                 {
-                    var pv = await _reserveAccountingService.CalculatePresentValueAsync(costCenterId, DateTime.UtcNow, cn);
+                    var pv = await _reserveAccountingService.CalculatePresentValueAsync(costCenterId, DateTime.UtcNow, connectionName);
                     if (pv > 0m)
                         return pv;
                 }
@@ -453,7 +454,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "PROVED_RESERVES");
+                    entityType, connectionName, "PROVED_RESERVES");
 
                 var filters = new List<AppFilter>
                 {

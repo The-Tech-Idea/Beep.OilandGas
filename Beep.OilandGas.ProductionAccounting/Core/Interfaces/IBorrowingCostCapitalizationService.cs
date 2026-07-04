@@ -14,6 +14,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             DateTime periodStart,
             DateTime periodEnd,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
     }
 }

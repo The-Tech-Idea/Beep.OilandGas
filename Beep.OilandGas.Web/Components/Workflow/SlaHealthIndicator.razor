@@ -1,0 +1,68 @@
+@* SLA Health indicator — shows countdown or breach status for a workflow step *@
+
+@if (SlaHours <= 0)
+{
+    <MudChip Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">No SLA</MudChip>
+}
+else if (_isBreached)
+{
+    <MudChip Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">
+        <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="mr-1" />
+        BREACHED — @FormatElapsed()
+    </MudChip>
+}
+else if (_percentElapsed > 75)
+{
+    <MudChip Size="Size.Small" Color="Color.Error" Variant="Variant.Outlined">
+        <MudIcon Icon="@Icons.Material.Filled.Timer" Size="Size.Small" Class="mr-1" />
+        @_percentElapsed.ToString("F0")% — @FormatRemaining()
+    </MudChip>
+}
+else if (_percentElapsed > 50)
+{
+    <MudChip Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined">
+        @_percentElapsed.ToString("F0")% — @FormatRemaining()
+    </MudChip>
+}
+else
+{
+    <MudChip Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">
+        @FormatRemaining() remaining
+    </MudChip>
+}
+
+@code {
+    [Parameter] public double SlaHours { get; set; }
+    [Parameter] public DateTime? StartedDate { get; set; }
+
+    private bool _isBreached;
+    private double _percentElapsed;
+
+    protected override void OnParametersSet()
+    {
+        if (StartedDate.HasValue && SlaHours > 0)
+        {
+            var elapsed = (DateTime.UtcNow - StartedDate.Value).TotalHours;
+            _percentElapsed = Math.Min(100, (elapsed / SlaHours) * 100);
+            _isBreached = elapsed > SlaHours;
+        }
+    }
+
+    private string FormatRemaining()
+    {
+        if (!StartedDate.HasValue) return "—";
+        var remaining = TimeSpan.FromHours(SlaHours) - (DateTime.UtcNow - StartedDate.Value);
+        return remaining.TotalHours > 1
+            ? $"{(int)remaining.TotalHours}h {remaining.Minutes}m"
+            : $"{remaining.Minutes}m";
+    }
+
+    private string FormatElapsed()
+    {
+        if (!StartedDate.HasValue) return "—";
+        var elapsed = DateTime.UtcNow - StartedDate.Value;
+        return elapsed.TotalHours > 1
+            ? $"{(int)elapsed.TotalHours}h overdue"
+            : $"{elapsed.Minutes}m overdue";
+    }
+}

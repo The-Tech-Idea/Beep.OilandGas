@@ -176,6 +176,58 @@
 
     </MudGrid>
 
+    @* ── Accounting Workflows ─────────────────────────────────────────── *@
+    <MudText Typo="Typo.h6" Class="mt-4 mb-2">Accounting & Financial Workflows</MudText>
+    <MudGrid Spacing="2">
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.subtitle1">Financial Operations</MudText></CardHeaderContent></MudCardHeader>
+            <MudCardContent Class="pa-2">
+                <MudStack Spacing="0">
+                    <MudMenuItem Href="/ppdm39/process/definitions/ACCT_PROCURE_TO_PAY">Procure-to-Pay (P2P)</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/ACCT_ORDER_TO_CASH">Order-to-Cash (O2C)</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/ACCT_RECORD_TO_REPORT">Record-to-Report (R2R)</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/ACCT_JOURNAL_ENTRY_APPROVAL">Journal Entry Approval</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/ACCT_BANK_RECONCILIATION">Bank Reconciliation</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/ACCT_EXPENSE_MANAGEMENT">Expense Management</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/ACCT_FIXED_ASSET_LIFECYCLE">Fixed Assets</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/ACCT_VENDOR_MANAGEMENT">Vendor Management (BA)</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/ACCT_CUSTOMER_MANAGEMENT">Customer Management (BA)</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/ACCT_CASH_MANAGEMENT">Cash Management</MudMenuItem>
+                </MudStack>
+            </MudCardContent></MudCard>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.subtitle1">FASB / SEC Compliance</MudText></CardHeaderContent></MudCardHeader>
+            <MudCardContent Class="pa-2">
+                <MudStack Spacing="0">
+                    <MudMenuItem Href="/ppdm39/process/definitions/CRW_DDA_CALCULATION">DD&A (ASC 932)</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/CRW_CEILING_TEST">Ceiling Test (SEC Reg S-X)</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/CRW_ARO_ACCOUNTING">ARO (ASC 410)</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/CRW_IMPAIRMENT">Impairment (ASC 360)</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/CRW_ASC606_REVENUE">Revenue 5-Step (ASC 606)</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/CRW_HEDGE_EFFECTIVENESS">Hedge Test (ASC 815)</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/CRW_INVENTORY_LCM">Inventory LCM (ASC 330)</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/CRW_TAKE_OR_PAY">Take-or-Pay (ASC 440)</MudMenuItem>
+                </MudStack>
+            </MudCardContent></MudCard>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.subtitle1">COPAS / Joint Operations</MudText></CardHeaderContent></MudCardHeader>
+            <MudCardContent Class="pa-2">
+                <MudStack Spacing="0">
+                    <MudMenuItem Href="/ppdm39/process/definitions/CRW_AFE_COST_TRACKING">AFE Cost Tracking (MRP 1)</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/CRW_JIB_COPAS_OVERHEAD">JIB + Overhead (MRP 2)</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/CRW_NONCONSENT">Non-Consent Penalty</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/CRW_ROYALTY_CALCULATION">Royalty (MRP 3)</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/CRW_PRODUCTION_IMBALANCE">Imbalance (MFI-1)</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/CRW_COPAS_AUDIT">COPAS Audit (MFI-22)</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/CRW_PSC_ACCOUNTING">PSC (IFRS 6)</MudMenuItem>
+                    <MudMenuItem Href="/ppdm39/process/definitions/CRW_RBL_REDETERMINATION">RBL Redetermination</MudMenuItem>
+                </MudStack>
+            </MudCardContent></MudCard>
+        </MudItem>
+    </MudGrid>
+
     @* ── Quick actions row ────────────────────────────────────────────── *@
     <MudStack Row="true" Spacing="2" Class="mt-6" Wrap="Wrap.Wrap">
         <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.List"
@@ -186,13 +238,13 @@
                    OnClick='() => NavigationManager.NavigateTo("/ppdm39/process/gates")'>
             Gate Reviews
         </MudButton>
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.AccountBalance"
+                   OnClick='() => NavigationManager.NavigateTo("/accounting/dashboard")'>
+            Accounting Dashboard
+        </MudButton>
         <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.HealthAndSafety"
                    OnClick='() => NavigationManager.NavigateTo("/ppdm39/hse/incidents")'>
             Report Incident
-        </MudButton>
-        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.EventNote"
-                   OnClick='() => NavigationManager.NavigateTo("/ppdm39/compliance")'>
-            Compliance Calendar
         </MudButton>
     </MudStack>
 

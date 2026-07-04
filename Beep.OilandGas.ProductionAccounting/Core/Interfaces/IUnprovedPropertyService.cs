@@ -14,7 +14,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             decimal cost,
             DateTime acquisitionDate,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
 
         Task<LEASEHOLD_CARRYING_GROUP> CreateCarryingGroupAsync(
             string propertyId,
@@ -22,7 +22,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             DateTime effectiveDate,
             DateTime? expiryDate,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
 
         Task<LEASE_OPTION> RecordLeaseOptionAsync(
             string leaseId,
@@ -30,7 +30,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             DateTime optionExpiryDate,
             decimal bonusAmount,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
 
         Task<DELAY_RENTAL> RecordDelayRentalAsync(
             string leaseId,
@@ -38,23 +38,23 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             decimal amount,
             DateTime? nextDueDate,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
 
         Task<List<LEASE_EXPIRY_EVENT>> EvaluateExpiriesAsync(
             DateTime asOfDate,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
 
         Task<ACCOUNTING_COST?> TestImpairmentAsync(
             string propertyId,
             DateTime asOfDate,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
 
         Task<bool> ReclassifyToProvedAsync(
             string propertyId,
             DateTime effectiveDate,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
     }
 }

@@ -40,7 +40,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         public async Task<ActionResult<object>> RecordExplorationCosts(
             [FromBody] FullCostExplorationRequest request,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -80,7 +80,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         public async Task<ActionResult<object>> RecordDevelopmentCosts(
             [FromBody] FullCostDevelopmentRequest request,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -120,7 +120,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         public async Task<ActionResult<object>> RecordAcquisitionCosts(
             [FromBody] FullCostAcquisitionRequest request,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -167,7 +167,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         [HttpGet("cost-center/{costCenterId}/total-costs")]
         public ActionResult<object> GetTotalCapitalizedCosts(
             string costCenterId,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(costCenterId))
                 return BadRequest(new { error = "Cost center ID is required." });
@@ -190,7 +190,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         [HttpPost("ceiling-test")]
         public ActionResult<object> PerformCeilingTest(
             [FromBody] CeilingTestRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

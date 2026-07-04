@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Globalization;
 using System.Linq;
@@ -68,7 +69,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string scenario,
             DateTime costDate,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(wellId))
                 throw new ArgumentNullException(nameof(wellId));
@@ -103,7 +104,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", cn);
+            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", connectionName);
             await repo.InsertAsync(record, userId);
 
             _logger?.LogInformation(
@@ -118,7 +119,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             decimal salvageAmount,
             DateTime salvageDate,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(wellId))
                 throw new ArgumentNullException(nameof(wellId));
@@ -144,7 +145,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", cn);
+            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", connectionName);
             await repo.InsertAsync(record, userId);
 
             _logger?.LogInformation(
@@ -159,7 +160,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             decimal cost,
             DateTime costDate,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(wellId))
                 throw new ArgumentNullException(nameof(wellId));
@@ -185,7 +186,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", cn);
+            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", connectionName);
             await repo.InsertAsync(record, userId);
 
             _logger?.LogInformation(
@@ -204,7 +205,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return CostCategories.Drilling;
         }
 
-        private async Task<PPDMGenericRepository> CreateRepoAsync<T>(string tableName, string cn)
+        private async Task<PPDMGenericRepository> CreateRepoAsync<T>(string tableName, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -212,7 +213,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, tableName);
+                entityType, connectionName, tableName);
         }
     }
 }

@@ -64,11 +64,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public TradingCompatibilityService TradingService => new(this);
 
         /// <summary>Compatibility-only full-cost facade; active paths should use <c>IFullCostService</c>.</summary>
-        public FullCostAccountingCompatibility CreateFullCostAccounting(string? connectionName = null)
+        public FullCostAccountingCompatibility CreateFullCostAccounting(string connectionName = "PPDM39")
             => new(this, connectionName ?? ConnectionName);
 
         /// <summary>Compatibility-only successful-efforts facade; active paths should use <c>ISuccessfulEffortsService</c>.</summary>
-        public SuccessfulEffortsAccountingCompatibility CreateSuccessfulEffortsAccounting(string? connectionName = null)
+        public SuccessfulEffortsAccountingCompatibility CreateSuccessfulEffortsAccounting(string connectionName = "PPDM39")
             => new(this, connectionName ?? ConnectionName);
 
         private static T? ReadValue<T>(object? source, params string[] propertyNames)
@@ -115,7 +115,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return default;
         }
 
-        private T? GetEntityById<T>(string tableName, string id, string? connectionName = null) where T : class
+        private T? GetEntityById<T>(string tableName, string id, string connectionName = "PPDM39") where T : class
         {
             return RunSyncCompatibility(
                 async () =>
@@ -130,7 +130,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 id);
         }
 
-        private async Task<T?> GetEntityByIdAsync<T>(string tableName, string id, string? connectionName = null) where T : class
+        private async Task<T?> GetEntityByIdAsync<T>(string tableName, string id, string connectionName = "PPDM39") where T : class
         {
             try
             {
@@ -150,7 +150,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
-        private List<T> GetEntities<T>(string tableName, IEnumerable<AppFilter>? filters = null, string? connectionName = null) where T : class
+        private List<T> GetEntities<T>(string tableName, IEnumerable<AppFilter>? filters = null, string connectionName = "PPDM39") where T : class
         {
             return RunSyncCompatibility(
                     async () =>
@@ -165,7 +165,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ?? new List<T>();
         }
 
-        private void TryInsertEntity(object entity, string tableName, string userId, string? connectionName = null)
+        private void TryInsertEntity(object entity, string tableName, string userId, string connectionName = "PPDM39")
         {
             RunSyncCompatibility(
                 async () =>
@@ -179,7 +179,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 entity.GetType().Name);
         }
 
-        private async Task TryInsertEntityAsync(object entity, string tableName, string userId, string? connectionName = null)
+        private async Task TryInsertEntityAsync(object entity, string tableName, string userId, string connectionName = "PPDM39")
         {
             try
             {
@@ -1177,7 +1177,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _service = service;
             }
 
-            public Task<EXCHANGE_CONTRACT?> GetContractAsync(string contractId, string? connectionName = null)
+            public Task<EXCHANGE_CONTRACT?> GetContractAsync(string contractId, string connectionName = "PPDM39")
             {
                 if (Contracts.TryGetValue(contractId, out var contract))
                     return Task.FromResult<EXCHANGE_CONTRACT?>(contract);
@@ -1185,7 +1185,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 return _service.GetEntityByIdAsync<EXCHANGE_CONTRACT>("EXCHANGE_CONTRACT", contractId, connectionName);
             }
 
-            public async Task<EXCHANGE_CONTRACT> RegisterContractAsync(CreateExchangeContractRequest request, string userId, string? connectionName = null)
+            public async Task<EXCHANGE_CONTRACT> RegisterContractAsync(CreateExchangeContractRequest request, string userId, string connectionName = "PPDM39")
             {
                 var contract = new EXCHANGE_CONTRACT
                 {
@@ -1222,22 +1222,22 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _connectionName = connectionName;
             }
 
-            public void RecordExplorationCosts(string costCenterId, ExplorationCosts costs, string? connectionName = null)
+            public void RecordExplorationCosts(string costCenterId, ExplorationCosts costs, string connectionName = "PPDM39")
             {
                 AddToTotal(costCenterId, ReadValue<decimal?>(costs, "TotalExplorationCosts") ?? 0m);
             }
 
-            public void RecordDevelopmentCosts(string costCenterId, DevelopmentCosts costs, string? connectionName = null)
+            public void RecordDevelopmentCosts(string costCenterId, DevelopmentCosts costs, string connectionName = "PPDM39")
             {
                 AddToTotal(costCenterId, ReadValue<decimal?>(costs, "TotalDevelopmentCosts") ?? 0m);
             }
 
-            public void RecordAcquisitionCosts(string costCenterId, UnprovedProperty property, string? connectionName = null)
+            public void RecordAcquisitionCosts(string costCenterId, UnprovedProperty property, string connectionName = "PPDM39")
             {
                 AddToTotal(costCenterId, ReadValue<decimal?>(property, "AcquisitionCost") ?? 0m);
             }
 
-            public decimal CalculateTotalCapitalizedCosts(string costCenterId, string? connectionName = null)
+            public decimal CalculateTotalCapitalizedCosts(string costCenterId, string connectionName = "PPDM39")
             {
                 return TotalsByCostCenter.TryGetValue(costCenterId, out var total) ? total : 0m;
             }
@@ -1246,7 +1246,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             /// Compatibility behavior class: <c>fallback-only</c>.
             /// Attempts canonical full-cost ceiling test and falls back to pass-through compatibility result on failure.
             /// </summary>
-            public object PerformCeilingTest(string costCenterId, object? reserves, decimal discountRate, string? connectionName = null)
+            public object PerformCeilingTest(string costCenterId, object? reserves, decimal discountRate, string connectionName = "PPDM39")
             {
                 bool passes;
                 try
@@ -1298,32 +1298,32 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _connectionName = connectionName;
             }
 
-            public void RecordAcquisition(UnprovedProperty property, string? connectionName = null)
+            public void RecordAcquisition(UnprovedProperty property, string connectionName = "PPDM39")
             {
                 RecordCost(ReadValue<string>(property, "PropertyId") ?? string.Empty, ReadValue<decimal?>(property, "AcquisitionCost") ?? 0m, connectionName);
             }
 
-            public void RecordExplorationCosts(ExplorationCosts costs, string? connectionName = null)
+            public void RecordExplorationCosts(ExplorationCosts costs, string connectionName = "PPDM39")
             {
                 RecordCost(ReadValue<string>(costs, "PropertyId", "WellId") ?? string.Empty, ReadValue<decimal?>(costs, "TotalExplorationCosts") ?? 0m, connectionName);
             }
 
-            public void RecordDevelopmentCosts(DevelopmentCosts costs, string? connectionName = null)
+            public void RecordDevelopmentCosts(DevelopmentCosts costs, string connectionName = "PPDM39")
             {
                 RecordCost(ReadValue<string>(costs, "PropertyId", "WellId") ?? string.Empty, ReadValue<decimal?>(costs, "TotalDevelopmentCosts") ?? 0m, connectionName);
             }
 
-            public void RecordProductionCosts(ProductionCosts costs, string? connectionName = null)
+            public void RecordProductionCosts(ProductionCosts costs, string connectionName = "PPDM39")
             {
                 RecordCost(ReadValue<string>(costs, "PropertyId", "WellId") ?? string.Empty, ReadValue<decimal?>(costs, "TotalProductionCosts") ?? 0m, connectionName);
             }
 
-            public void RecordDryHole(ExplorationCosts costs, string? connectionName = null)
+            public void RecordDryHole(ExplorationCosts costs, string connectionName = "PPDM39")
             {
                 RecordCost(ReadValue<string>(costs, "PropertyId", "WellId") ?? string.Empty, ReadValue<decimal?>(costs, "TotalExplorationCosts") ?? 0m, connectionName);
             }
 
-            public void RecordImpairment(string propertyId, decimal impairmentAmount, string? connectionName = null)
+            public void RecordImpairment(string propertyId, decimal impairmentAmount, string connectionName = "PPDM39")
             {
                 RecordCost(propertyId, impairmentAmount, connectionName);
             }

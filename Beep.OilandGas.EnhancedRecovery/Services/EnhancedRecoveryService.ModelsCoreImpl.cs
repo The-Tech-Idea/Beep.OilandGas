@@ -13,7 +13,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         // Explicit implementations of Models.Core.Interfaces.IEnhancedRecoveryService
 
         async Task<EnhancedRecoveryOperation> Beep.OilandGas.Models.Core.Interfaces.IEnhancedRecoveryService.AnalyzeEORPotentialAsync(
-            string fieldId, string eorMethod)
+            string fieldId, string eorMethod, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
                 throw new ArgumentNullException(nameof(fieldId));
@@ -38,7 +38,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         }
 
         async Task<EnhancedRecoveryOperation> Beep.OilandGas.Models.Core.Interfaces.IEnhancedRecoveryService.CalculateRecoveryFactorAsync(
-            string operationId)
+            string operationId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(operationId))
                 throw new ArgumentNullException(nameof(operationId));
@@ -60,7 +60,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         }
 
         async Task<System.Collections.Generic.List<InjectionOperation>> Beep.OilandGas.Models.Core.Interfaces.IEnhancedRecoveryService.GetInjectionOperationsAsync(
-            string? wellUWI)
+            string? wellUWI, CancellationToken cancellationToken = default)
         {
             return await GetInjectionOperationsAsync(wellUWI);
         }
@@ -72,7 +72,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             double capitalCost,
             double operatingCostPerBarrel,
             int projectLifeYears,
-            double discountRate)
+            double discountRate, CancellationToken cancellationToken = default)
         {
             return await AnalyzeEOReconomicsAsync(
                 fieldId,
@@ -85,7 +85,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         }
 
         async Task<InjectionOperation> Beep.OilandGas.Models.Core.Interfaces.IEnhancedRecoveryService.ManageInjectionAsync(
-            string injectionWellId, decimal injectionRate)
+            string injectionWellId, decimal injectionRate, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(injectionWellId))
                 throw new ArgumentNullException(nameof(injectionWellId));

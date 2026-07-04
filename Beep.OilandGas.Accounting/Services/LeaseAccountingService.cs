@@ -6,7 +6,9 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -53,7 +55,7 @@ namespace Beep.OilandGas.Accounting.Services
             decimal discountRate,
             string currencyCode,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -86,7 +88,7 @@ namespace Beep.OilandGas.Accounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await GetRepoAsync<LEASE_CONTRACT>("LEASE_CONTRACT", connectionName);
+            var repo = await GetRepoAsync<LEASE_CONTRACT>("LEASE_CONTRACT", cn);
             await repo.InsertAsync(lease, userId);
             return lease;
         }
@@ -96,7 +98,7 @@ namespace Beep.OilandGas.Accounting.Services
             IEnumerable<(DateTime PaymentDate, decimal Amount)> payments,
             string currencyCode,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -107,7 +109,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var repo = await GetRepoAsync<LEASE_PAYMENT>("LEASE_PAYMENT", connectionName);
+            var repo = await GetRepoAsync<LEASE_PAYMENT>("LEASE_PAYMENT", cn);
             var created = new List<LEASE_PAYMENT>();
 
             foreach (var payment in payments)
@@ -139,14 +141,13 @@ namespace Beep.OilandGas.Accounting.Services
             string leaseId,
             DateTime measurementDate,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var lease = await GetLeaseAsync(leaseId, cn);
             if (lease == null)
                 throw new InvalidOperationException($"Lease not found: {leaseId}");
@@ -188,7 +189,7 @@ namespace Beep.OilandGas.Accounting.Services
             DateTime paymentDate,
             decimal paymentAmount,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -197,7 +198,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var lease = await GetLeaseAsync(leaseId, cn);
             if (lease == null)
                 throw new InvalidOperationException($"Lease not found: {leaseId}");
@@ -272,7 +272,7 @@ namespace Beep.OilandGas.Accounting.Services
             DateTime amortizationDate,
             decimal amortizationAmount,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -281,7 +281,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var lease = await GetLeaseAsync(leaseId, cn);
             if (lease == null)
                 throw new InvalidOperationException($"Lease not found: {leaseId}");
@@ -322,7 +321,7 @@ namespace Beep.OilandGas.Accounting.Services
             DateTime remeasurementDate,
             decimal newDiscountRate,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -331,7 +330,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var lease = await GetLeaseAsync(leaseId, cn);
             if (lease == null)
                 throw new InvalidOperationException($"Lease not found: {leaseId}");
@@ -387,7 +385,7 @@ namespace Beep.OilandGas.Accounting.Services
             int newTermMonths,
             decimal newDiscountRate,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
              if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -396,7 +394,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var lease = await GetLeaseAsync(leaseId, cn);
             if (lease == null)
                 throw new InvalidOperationException($"Lease not found: {leaseId}");
@@ -448,9 +445,8 @@ namespace Beep.OilandGas.Accounting.Services
             return entry;
         }
 
-        public async Task<List<LeaseMaturityBucket>> GenerateMaturityAnalysisAsync(string? connectionName = null)
+        public async Task<List<LeaseMaturityBucket>> GenerateMaturityAnalysisAsync(string cn = "PPDM39")
         {
-            var cn = connectionName ?? ConnectionName;
             var leaseRepo = await GetRepoAsync<LEASE_CONTRACT>("LEASE_CONTRACT", cn);
             
             var filters = new List<AppFilter>
@@ -613,9 +609,8 @@ namespace Beep.OilandGas.Accounting.Services
             return entry;
         }
 
-        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? connectionName)
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? cn)
         {
-            var cn = connectionName ?? ConnectionName;
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
 
             return new PPDMGenericRepository(

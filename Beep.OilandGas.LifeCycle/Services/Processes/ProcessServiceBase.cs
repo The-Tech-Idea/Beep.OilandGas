@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,6 +29,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         protected readonly IPPDMMetadataRepository _metadata;
         protected readonly string _connectionName;
         protected readonly ILogger<ProcessServiceBase>? _logger;
+        protected readonly IDynamicRoutingService? _dynamicRoutingService;
 
         protected ProcessServiceBase(
             IDMEEditor editor,
@@ -35,7 +37,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
-            ILogger<ProcessServiceBase>? logger = null)
+            ILogger<ProcessServiceBase>? logger = null,
+            IDynamicRoutingService? dynamicRoutingService = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -43,6 +46,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _logger = logger;
+            _dynamicRoutingService = dynamicRoutingService;
         }
 
         // Process Definition Management - To be implemented by derived classes
@@ -258,8 +262,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
 
                 if (currentStep != null)
                 {
-                    // Check conditional next steps (stored as "outcome:stepId" pairs in StepConfiguration)
-                    if (currentStep.StepConfiguration?.TryGetValue("ConditionalNextSteps", out var condObj) == true)
+                    // Phase 2: Use DynamicRoutingService for conditional branching
+                    if (_dynamicRoutingService != null && currentStep.ConditionalNextSteps?.Count > 0)
+                    {
+                        var entityContext = await LoadEntityContextAsync(instance);
+                        nextStepId = await _dynamicRoutingService.ResolveNextStepAsync(currentStep, entityContext);
+                    }
+
+                    // Legacy: Check conditional next steps (stored as "outcome:stepId" pairs in StepConfiguration)
+                    if (string.IsNullOrEmpty(nextStepId) &&
+                        currentStep.StepConfiguration?.TryGetValue("ConditionalNextSteps", out var condObj) == true)
                     {
                         var condStr = condObj?.ToString() ?? "";
                         var pairs = condStr.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
@@ -383,6 +395,99 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         protected virtual string GenerateStepInstanceId() => $"PSI_{Guid.NewGuid():N}";
         protected virtual string GenerateHistoryId() => $"PH_{Guid.NewGuid():N}";
         protected virtual string GenerateApprovalId() => $"PA_{Guid.NewGuid():N}";
+
+        // ══════════════════════════════════════════════════════════════════════
+        // Phase 2: Sub-Process Spawning
+        // ══════════════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Spawn a sub-process as a child of the current process instance.
+        /// The parent process step can be configured to block until the child completes.
+        /// </summary>
+        public virtual async Task<ProcessInstance> SpawnSubProcessAsync(
+            string parentProcessInstanceId,
+            string subProcessDefinitionId,
+            string entityType,
+            string entityId,
+            string fieldId,
+            string userId,
+            Dictionary<string, object>? contextData = null)
+        {
+            var parent = await GetProcessInstanceAsync(parentProcessInstanceId)
+                ?? throw new InvalidOperationException($"Parent process {parentProcessInstanceId} not found.");
+
+            if (parent.Status is ProcessStatus.COMPLETED or ProcessStatus.CANCELLED)
+                throw new InvalidOperationException($"Parent process {parentProcessInstanceId} is not active (status: {parent.Status}).");
+
+            var subProcess = await StartProcessAsync(
+                subProcessDefinitionId, entityId, entityType, fieldId, userId);
+
+            // Set parent-child link via instance data
+            var instanceData = string.IsNullOrWhiteSpace(subProcess.ProcessData?.DataJson)
+                ? new Dictionary<string, object>()
+                : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(subProcess.ProcessData?.DataJson ?? "{}")
+                  ?? new Dictionary<string, object>();
+
+            instanceData["parentProcessInstanceId"] = parentProcessInstanceId;
+            instanceData["parentProcessDefinitionId"] = parent.ProcessId;
+            subProcess.ProcessData = new PROCESS_DATA
+            {
+                InstanceId = subProcess.InstanceId,
+                Data = instanceData,
+                LastUpdated = DateTime.UtcNow,
+            };
+
+            await SaveProcessInstanceAsync(subProcess);
+
+            // Log to parent history
+            await AddHistoryEntryAsync(parentProcessInstanceId, new ProcessHistoryEntry
+            {
+                HistoryId = GenerateHistoryId(),
+                InstanceId = parentProcessInstanceId,
+                Action = "SUB_PROCESS_SPAWNED",
+                Notes = $"Sub-process {subProcess.InstanceId} ({subProcessDefinitionId}) spawned for {entityType}/{entityId}",
+                PerformedBy = userId,
+                Timestamp = DateTime.UtcNow,
+            });
+
+            _logger?.LogInformation(
+                "Sub-process spawned: Parent={ParentId}, Child={ChildId}, Definition={DefId}, Entity={EntityType}/{EntityId}",
+                parentProcessInstanceId, subProcess.InstanceId, subProcessDefinitionId, entityType, entityId);
+
+            return subProcess;
+        }
+
+        /// <summary>
+        /// Load entity context data for dynamic routing evaluation.
+        /// Override in derived classes to fetch real entity data from the database.
+        /// </summary>
+        protected virtual Task<Dictionary<string, object>> LoadEntityContextAsync(ProcessInstance instance)
+        {
+            var context = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+
+            // Populate from instance data
+            if (instance.ProcessData?.Data is not null)
+            {
+                foreach (var kvp in instance.ProcessData.Data)
+                    context[kvp.Key] = kvp.Value;
+            }
+
+            if (!string.IsNullOrWhiteSpace(instance.ProcessData?.DataJson))
+            {
+                try
+                {
+                    var parsed = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(instance.ProcessData.DataJson);
+                    if (parsed is not null)
+                    {
+                        foreach (var kvp in parsed)
+                            context[kvp.Key] = kvp.Value;
+                    }
+                }
+                catch { /* Ignore parse errors */ }
+            }
+
+            return Task.FromResult(context);
+        }
     }
 }
 

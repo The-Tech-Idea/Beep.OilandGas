@@ -11,10 +11,10 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// </summary>
     public interface IImbalanceService
     {
-        Task<IMBALANCE_ADJUSTMENT> RecordImbalanceAsync(string leaseId, decimal volume, string userId, string cn = "PPDM39");
-        Task<bool> ReconcileAsync(string leaseId, DateTime startDate, DateTime endDate, string userId, string cn = "PPDM39");
-        Task<decimal> GetOutstandingImbalanceAsync(string leaseId, string cn = "PPDM39");
-        Task<bool> ValidateAsync(IMBALANCE_ADJUSTMENT imbalance, string cn = "PPDM39");
+        Task<IMBALANCE_ADJUSTMENT> RecordImbalanceAsync(string leaseId, decimal volume, string userId, string connectionName = "PPDM39");
+        Task<bool> ReconcileAsync(string leaseId, DateTime startDate, DateTime endDate, string userId, string connectionName = "PPDM39");
+        Task<decimal> GetOutstandingImbalanceAsync(string leaseId, string connectionName = "PPDM39");
+        Task<bool> ValidateAsync(IMBALANCE_ADJUSTMENT imbalance, string connectionName = "PPDM39");
     }
 }
 

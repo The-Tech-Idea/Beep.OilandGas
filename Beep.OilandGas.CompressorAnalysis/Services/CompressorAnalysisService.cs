@@ -9,6 +9,7 @@ using Beep.OilandGas.CompressorAnalysis.Validation;
 using Beep.OilandGas.CompressorAnalysis.Core.Interfaces;
 using Beep.OilandGas.CompressorAnalysis.Data;
 using Beep.OilandGas.Models.Data.Calculations;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.Extensions.Logging;
 
@@ -54,7 +55,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
             decimal requiredInletPressure,
             decimal GAS_SPECIFIC_GRAVITY,
             decimal designTemperature,
-            string compressorType = "Centrifugal")
+            string compressorType = "Centrifugal", CancellationToken cancellationToken = default)
         {
             if (requiredFlowRate <= 0)
                 throw new ArgumentException("Flow rate must be greater than zero", nameof(requiredFlowRate));
@@ -160,7 +161,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
             decimal GAS_FLOW_RATE,
             decimal inletTemperature,
             decimal GAS_SPECIFIC_GRAVITY,
-            string compressorType = "Centrifugal")
+            string compressorType = "Centrifugal", CancellationToken cancellationToken = default)
         {
             if (inletPressure <= 0 || DISCHARGE_PRESSURE <= 0 || GAS_FLOW_RATE <= 0 || inletTemperature <= 0 || GAS_SPECIFIC_GRAVITY <= 0)
                 throw new ArgumentException("All input parameters must be greater than zero");
@@ -264,7 +265,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
             decimal DISCHARGE_PRESSURE,
             decimal inletTemperature,
             decimal dischargeTemperature,
-            decimal GAS_SPECIFIC_GRAVITY)
+            decimal GAS_SPECIFIC_GRAVITY, CancellationToken cancellationToken = default)
         {
             if (inletPressure <= 0 || DISCHARGE_PRESSURE <= 0 || inletTemperature <= 0 || dischargeTemperature <= 0 || GAS_SPECIFIC_GRAVITY <= 0)
                 throw new ArgumentException("All input parameters must be greater than zero");
@@ -353,7 +354,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
             decimal requiredDischargePressure,
             decimal inletPressure,
             decimal GasSpecificGravity,
-            decimal designTemperature)
+            decimal designTemperature, CancellationToken cancellationToken = default)
         {
             if (requiredFlowRate <= 0 || requiredDischargePressure <= 0 || inletPressure <= 0 || GasSpecificGravity <= 0 || designTemperature <= 0)
                 throw new ArgumentException("All input parameters must be greater than zero");
@@ -446,7 +447,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
             decimal operatingHoursPerYear,
             decimal inletPressure,
             decimal DISCHARGE_PRESSURE,
-            string compressorType = "Centrifugal")
+            string compressorType = "Centrifugal", CancellationToken cancellationToken = default)
         {
             if (operatingHoursPerYear <= 0 || inletPressure <= 0 || DISCHARGE_PRESSURE <= 0)
                 throw new ArgumentException("All input parameters must be greater than zero");
@@ -538,7 +539,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
         public async Task<CompressorPressureFlowAnalysis> AnalyzePressureFlowAsync(
             decimal inletPressure,
             decimal GAS_SPECIFIC_GRAVITY,
-            decimal inletTemperature)
+            decimal inletTemperature, CancellationToken cancellationToken = default)
         {
             if (inletPressure <= 0 || GAS_SPECIFIC_GRAVITY <= 0 || inletTemperature <= 0)
                 throw new ArgumentException("All input parameters must be greater than zero");

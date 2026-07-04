@@ -1,19 +1,64 @@
 @page "/production/engineer-workspace"
+@using System.Net.Http.Json
 @using MudBlazor
+@inject HttpClient Http
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
-    <MudText Typo="Typo.h3" GutterBottom="true"><MudIcon Icon="@Icons.Material.Filled.Engineering" Class="mr-2" Color="Color.Primary" />Production Engineer Workspace</MudText>
+    <MudText Typo="Typo.h3" GutterBottom="true"><MudIcon Icon="@Icons.Material.Filled.Engineering" Class="mr-2" Color="Color.Primary"/>Production Engineer Workspace</MudText>
 
-    <MudGrid>
-        <MudItem xs="12" sm="6" md="3"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Nodal Analysis</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/calculations/nodalanalysis">IPR / VLP</MudButton></MudCardContent></MudCard></MudItem>
-        <MudItem xs="12" sm="6" md="3"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Gas Lift</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/calculations/gaslift">Design & Optimize</MudButton></MudCardContent></MudCard></MudItem>
-        <MudItem xs="12" sm="6" md="3"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Pumping</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/pumps/suckerrodpumping">SRP · Plunger · ESP</MudButton></MudCardContent></MudCard></MudItem>
-        <MudItem xs="12" sm="6" md="3"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Pipeline</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/calculations/pipelineanalysis">Hydraulics</MudButton></MudCardContent></MudCard></MudItem>
-    </MudGrid>
-    <MudGrid Class="mt-2">
-        <MudItem xs="12" sm="6" md="3"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Compressors</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/calculations/compressor-analysis">Performance</MudButton></MudCardContent></MudCard></MudItem>
-        <MudItem xs="12" sm="6" md="3"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Chokes</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/calculations/choke-analysis">Flow Analysis</MudButton></MudCardContent></MudCard></MudItem>
-        <MudItem xs="12" sm="6" md="3"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Well Testing</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/calculations/well-test-analysis">PTA</MudButton></MudCardContent></MudCard></MudItem>
-        <MudItem xs="12" sm="6" md="3"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Forecasting</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/production/forecasting">DCA & Forecast</MudButton></MudCardContent></MudCard></MudItem>
-    </MudGrid>
+    @if(_loading){<MudProgressLinear Indeterminate="true" Class="my-4"/>}
+    else
+    {
+        @* ── KPI Row ── *@
+        <MudGrid>
+            <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Active Wells</MudText><MudText Typo="Typo.h4" Color="Color.Primary">@_kpi?.ActiveWells.ToString("N0")</MudText><MudText Typo="Typo.caption">producing</MudText></div><MudIcon Icon="@Icons.Material.Filled.OilBarrel" Color="Color.Primary" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
+            <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Avg Daily Prod</MudText><MudText Typo="Typo.h4" Color="Color.Success">@FormatVolume(_kpi?.AvgDailyBoe??0)</MudText><MudText Typo="Typo.caption">BOE/d</MudText></div><MudIcon Icon="@Icons.Material.Filled.TrendingUp" Color="Color.Success" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
+            <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Downtime Events</MudText><MudText Typo="Typo.h4" Color="@(_kpi?.DowntimeEvents>3?Color.Error:Color.Warning)">@(_kpi?.DowntimeEvents??0)</MudText><MudText Typo="Typo.caption">this week</MudText></div><MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
+            <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Pending Workovers</MudText><MudText Typo="Typo.h4" Color="@(_kpi?.PendingWorkovers>5?Color.Error:Color.Primary)">@(_kpi?.PendingWorkovers??0)</MudText><MudText Typo="Typo.caption">planned</MudText></div><MudIcon Icon="@Icons.Material.Filled.Build" Color="Color.Primary" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
+        </MudGrid>
+
+        @* ── Tools + Recent ── *@
+        <MudGrid>
+            <MudItem xs="12" md="5">
+                <MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-1" Size="Size.Small"/>Analysis Tools</MudText></CardHeaderContent></MudCardHeader>
+                <MudCardContent Class="pa-2">
+                    <MudGrid>
+                        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/ppdm39/calculations/nodalanalysis">Nodal Analysis</MudButton></MudItem>
+                        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/ppdm39/calculations/gaslift">Gas Lift</MudButton></MudItem>
+                        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/ppdm39/pumps/suckerrodpumping">Sucker Rod Pump</MudButton></MudItem>
+                        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/ppdm39/pumps/plungerlift">Plunger Lift</MudButton></MudItem>
+                        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/ppdm39/calculations/pipelineanalysis">Pipeline Hydraulics</MudButton></MudItem>
+                        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/ppdm39/calculations/compressor-analysis">Compressor Perf</MudButton></MudItem>
+                        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/ppdm39/calculations/choke-analysis">Choke Analysis</MudButton></MudItem>
+                        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/ppdm39/calculations/well-test-analysis">Well Test PTA</MudButton></MudItem>
+                    </MudGrid>
+                </MudCardContent></MudCard>
+            </MudItem>
+            <MudItem xs="12" md="7">
+                <MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.History" Class="mr-1" Size="Size.Small"/>Production Monitoring</MudText></CardHeaderContent></MudCardHeader>
+                <MudCardContent>
+                    <MudStack Row="true" Spacing="2">
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/production">Production Dashboard</MudButton>
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/production/well-performance">Well Performance</MudButton>
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/production/intervention">Intervention Decisions</MudButton>
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/production/forecasting">Forecasting</MudButton>
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/ppdm39/production/well-tests">Well Tests</MudButton>
+                    </MudStack>
+                </MudCardContent></MudCard>
+                <MudCard Elevation="2" Class="mt-2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Campaign" Class="mr-1" Size="Size.Small"/>Attention Required</MudText></CardHeaderContent></MudCardHeader>
+                <MudCardContent>
+                    <MudAlert Severity="Severity.Info" Dense="true">Run Nodal Analysis on wells with >10% production decline this month.</MudAlert>
+                    <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-1">Check gas lift injection rates — 3 wells below target GLR.</MudAlert>
+                    <MudAlert Severity="Severity.Info" Dense="true" Class="mt-1">Review plunger lift cycle times for optimization candidates.</MudAlert>
+                </MudCardContent></MudCard>
+            </MudItem>
+        </MudGrid>
+    }
 </MudContainer>
+
+@code {
+    private bool _loading=true;private ProductionEngineerKpi? _kpi;
+    protected override async Task OnInitializedAsync(){try{_kpi=await Http.GetFromJsonAsync<ProductionEngineerKpi>("/api/production/engineer/kpi")??new();}catch{_kpi=new();}_loading=false;}
+    private static string FormatVolume(decimal v)=>v>=1_000_000?$"{v/1_000_000m:F2}M":v>=1_000?$"{v/1_000m:F1}K":$"{v:F0}";
+    public class ProductionEngineerKpi{public int ActiveWells{get;set;}public decimal AvgDailyBoe{get;set;}public int DowntimeEvents{get;set;}public int PendingWorkovers{get;set;}}
+}

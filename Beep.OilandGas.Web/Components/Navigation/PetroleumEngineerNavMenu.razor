@@ -108,45 +108,50 @@
         </ChildContent>
     </MudMenu>
 
-    <!-- Data Operations Menu (BeepDM Integration + Beep.Razor.Components) -->
-    <MudMenu Label="Data Ops" Icon="@Icons.Material.Filled.Storage" Color="Color.Secondary"
+    <!-- Data Manager Menu — full Beep.Razor.Components + PPDM data tools -->
+    <MudMenu Label="Data Manager" Icon="@Icons.Material.Filled.Storage" Color="Color.Secondary"
              AnchorOrigin="Origin.BottomCenter" TransformOrigin="TransformOrigin.TopCenter">
         <ChildContent>
-            <MudMenuItem Href="/ppdm39/data-import">
-                <MudIcon Icon="@Icons.Material.Filled.Upload" Class="mr-2" /> Data Import (CSV)
-            </MudMenuItem>
-            <MudMenuItem Href="/ppdm39/sync">
-                <MudIcon Icon="@Icons.Material.Filled.Sync" Class="mr-2" /> Sync Dashboard
-            </MudMenuItem>
-            <MudDivider Class="my-1" />
-            <MudMenuItem Href="/migration-viewer">
-                <MudIcon Icon="@Icons.Material.Filled.Schema" Class="mr-2" /> Migration Viewer
-            </MudMenuItem>
-            <MudMenuItem Href="/data-promotion">
-                <MudIcon Icon="@Icons.Material.Filled.MoveUp" Class="mr-2" /> Data Promotion
-            </MudMenuItem>
-            <MudMenuItem Href="/uc_dataset_studio">
-                <MudIcon Icon="@Icons.Material.Filled.Hub" Class="mr-2" /> DataSet Studio
-            </MudMenuItem>
+            @* ── Connections & Drivers ── *@
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="px-2 pt-1">Connections &amp; Setup</MudText>
+            <MudMenuItem Href="/uc_dataconnection"><MudIcon Icon="@Icons.Material.Filled.Cable" Class="mr-2"/>Connection Editor</MudMenuItem>
+            <MudMenuItem Href="/uc_connectiondrivers"><MudIcon Icon="@Icons.Material.Filled.Usb" Class="mr-2"/>Driver Manager</MudMenuItem>
+            <MudMenuItem Href="/uc_createlocaldb"><MudIcon Icon="@Icons.Material.Filled.CreateNewFolder" Class="mr-2"/>Create Local DB</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/setup"><MudIcon Icon="@Icons.Material.Filled.AutoFixHigh" Class="mr-2"/>Setup Wizard</MudMenuItem>
+            <MudDivider Class="my-1"/>
+            @* ── Import / Export ── *@
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="px-2 pt-1">Import &amp; Export</MudText>
+            <MudMenuItem Href="/ppdm39/data-import"><MudIcon Icon="@Icons.Material.Filled.Upload" Class="mr-2"/>Data Import (CSV)</MudMenuItem>
+            <MudMenuItem Href="/uc_exportmanagement"><MudIcon Icon="@Icons.Material.Filled.Download" Class="mr-2"/>Export Management</MudMenuItem>
+            <MudMenuItem Href="/uc_importmanagement"><MudIcon Icon="@Icons.Material.Filled.Publish" Class="mr-2"/>Import Management</MudMenuItem>
+            <MudDivider Class="my-1"/>
+            @* ── Schema & Migration ── *@
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="px-2 pt-1">Schema &amp; Migration</MudText>
+            <MudMenuItem Href="/migration-viewer"><MudIcon Icon="@Icons.Material.Filled.Schema" Class="mr-2"/>Migration Viewer</MudMenuItem>
+            <MudMenuItem Href="/uc_entityeditor"><MudIcon Icon="@Icons.Material.Filled.TableChart" Class="mr-2"/>Entity Editor</MudMenuItem>
+            <MudMenuItem Href="/assembly-registration"><MudIcon Icon="@Icons.Material.Filled.Extension" Class="mr-2"/>Assembly Registration</MudMenuItem>
+            <MudDivider Class="my-1"/>
+            @* ── Data Operations ── *@
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="px-2 pt-1">Data Operations</MudText>
+            <MudMenuItem Href="/uc_dataedit"><MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2"/>Data Edit (CRUD)</MudMenuItem>
+            <MudMenuItem Href="/data-promotion"><MudIcon Icon="@Icons.Material.Filled.MoveUp" Class="mr-2"/>Data Promotion</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/sync"><MudIcon Icon="@Icons.Material.Filled.Sync" Class="mr-2"/>Sync Dashboard</MudMenuItem>
+            <MudDivider Class="my-1"/>
+            @* ── Tools & Quality ── *@
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="px-2 pt-1">Tools &amp; Quality</MudText>
+            <MudMenuItem Href="/uc_nuggetsmanage"><MudIcon Icon="@Icons.Material.Filled.Inventory2" Class="mr-2"/>NuGet Manager</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/data-quality"><MudIcon Icon="@Icons.Material.Filled.Verified" Class="mr-2"/>Data Quality</MudMenuItem>
+            <MudMenuItem Href="/data/validation"><MudIcon Icon="@Icons.Material.Filled.Checklist" Class="mr-2"/>Validation</MudMenuItem>
+            <MudMenuItem Href="/uc_dataset_studio"><MudIcon Icon="@Icons.Material.Filled.Hub" Class="mr-2"/>DataSet Studio Hub</MudMenuItem>
         </ChildContent>
     </MudMenu>
 
-    <!-- Studio Menu (Beep.Razor.Components — Admin only) -->
-    <MudMenu Label="Studio" Icon="@Icons.Material.Filled.Build" Color="Color.Secondary"
-             AnchorOrigin="Origin.BottomCenter" TransformOrigin="TransformOrigin.TopCenter">
-        <ChildContent>
-            <MudMenuItem Href="/uc_dataconnection">
-                <MudIcon Icon="@Icons.Material.Filled.Cable" Class="mr-2" /> Connections
-            </MudMenuItem>
-            <MudMenuItem Href="/uc_connectiondrivers">
-                <MudIcon Icon="@Icons.Material.Filled.Usb" Class="mr-2" /> Drivers / NuGet
-            </MudMenuItem>
-            <MudMenuItem Href="/uc_nuggetsmanage">
-                <MudIcon Icon="@Icons.Material.Filled.Inventory2" Class="mr-2" /> NuGet Manager
-            </MudMenuItem>
-            <MudMenuItem Href="/assembly-registration">
-                <MudIcon Icon="@Icons.Material.Filled.Extension" Class="mr-2" /> Assemblies
-            </MudMenuItem>
-        </ChildContent>
-    </MudMenu>
+    @* ── Task Inbox (Phase 5) ── *@
+    <MudNavLink Href="/tasks/inbox" Match="NavLinkMatch.Prefix" Class="og-nav-btn-legacy">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+            <MudIcon Icon="@Icons.Material.Filled.Inbox" Size="Size.Small" />
+            <MudText Class="og-nav-label-legacy">Tasks</MudText>
+            <NotificationBadge />
+        </MudStack>
+    </MudNavLink>
 </MudStack>

@@ -130,7 +130,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                 : "Inactive";
         }
 
-        private async Task<List<PDEN_FLOW_MEASUREMENT>> GetFlowMeasurementsAsync(PDEN pden, bool activeOnly = true)
+        private async Task<List<PDEN_FLOW_MEASUREMENT>> GetFlowMeasurementsAsync(PDEN pden, bool activeOnly = true, CancellationToken cancellationToken = default)
         {
             var measurementUow = GetPDENFlowMeasurementUnitOfWork();
             var filters = new List<AppFilter>
@@ -153,7 +153,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                 .ToList();
         }
 
-        private async Task<PDEN_FLOW_MEASUREMENT?> GetLatestFlowMeasurementAsync(PDEN pden)
+        private async Task<PDEN_FLOW_MEASUREMENT?> GetLatestFlowMeasurementAsync(PDEN pden, CancellationToken cancellationToken = default)
         {
             var measurements = await GetFlowMeasurementsAsync(pden);
 
@@ -164,7 +164,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                 ?? measurements.FirstOrDefault();
         }
 
-        private async Task UpsertFlowMeasurementAsync(PDEN pden, decimal flowRate, string? flowRateUnit, string productType = EnhancedRecoveryConstants.ProductTypeWater)
+        private async Task UpsertFlowMeasurementAsync(PDEN pden, decimal flowRate, string? flowRateUnit, string productType = EnhancedRecoveryConstants.ProductTypeWater, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(pden.PDEN_ID))
                 throw new InvalidOperationException("Cannot persist a flow measurement without a PDEN ID.");
@@ -231,7 +231,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             await measurementUow.Commit();
         }
 
-        private async Task<EnhancedRecoveryOperation> MapEnhancedRecoveryOperationAsync(PDEN pden)
+        private async Task<EnhancedRecoveryOperation> MapEnhancedRecoveryOperationAsync(PDEN pden, CancellationToken cancellationToken = default)
         {
             var latestMeasurement = await GetLatestFlowMeasurementAsync(pden);
 
@@ -248,7 +248,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             };
         }
 
-        private async Task<InjectionOperation> MapInjectionOperationAsync(PDEN pden)
+        private async Task<InjectionOperation> MapInjectionOperationAsync(PDEN pden, CancellationToken cancellationToken = default)
         {
             var latestMeasurement = await GetLatestFlowMeasurementAsync(pden);
 
@@ -269,7 +269,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             };
         }
 
-        private async Task<PDEN> CreateInjectionOperationAsync(string injectionWellId, decimal injectionRate)
+        private async Task<PDEN> CreateInjectionOperationAsync(string injectionWellId, decimal injectionRate, CancellationToken cancellationToken = default)
         {
             var wellUow = GetWellUnitOfWork();
             var well = wellUow.Read(injectionWellId) as WELL;
@@ -317,7 +317,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             return pden;
         }
 
-        public async Task<List<EnhancedRecoveryOperation>> GetEnhancedRecoveryOperationsAsync(string? fieldId = null)
+        public async Task<List<EnhancedRecoveryOperation>> GetEnhancedRecoveryOperationsAsync(string? fieldId = null, CancellationToken cancellationToken = default)
         {
             var pdenUow = GetPDENUnitOfWork();
             var filters = new List<AppFilter>
@@ -342,7 +342,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             return operations;
         }
 
-        public async Task<EnhancedRecoveryOperation?> GetEnhancedRecoveryOperationAsync(string operationId)
+        public async Task<EnhancedRecoveryOperation?> GetEnhancedRecoveryOperationAsync(string operationId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(operationId))
                 return null;
@@ -355,7 +355,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             return await MapEnhancedRecoveryOperationAsync(pden);
         }
 
-        public async Task<EnhancedRecoveryOperation> CreateEnhancedRecoveryOperationAsync(CreateEnhancedRecoveryOperation createDto)
+        public async Task<EnhancedRecoveryOperation> CreateEnhancedRecoveryOperationAsync(CreateEnhancedRecoveryOperation createDto, CancellationToken cancellationToken = default)
         {
             if (createDto == null)
                 throw new ArgumentNullException(nameof(createDto));
@@ -410,7 +410,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             return await MapEnhancedRecoveryOperationAsync(pden);
         }
 
-        public async Task<List<InjectionOperation>> GetInjectionOperationsAsync(string? wellUWI = null)
+        public async Task<List<InjectionOperation>> GetInjectionOperationsAsync(string? wellUWI = null, CancellationToken cancellationToken = default)
         {
             var pdenUow = GetPDENUnitOfWork();
             var filters = new List<AppFilter>
@@ -435,7 +435,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             return operations;
         }
 
-        public async Task<List<WaterFlooding>> GetWaterFloodingOperationsAsync(string? fieldId = null)
+        public async Task<List<WaterFlooding>> GetWaterFloodingOperationsAsync(string? fieldId = null, CancellationToken cancellationToken = default)
         {
             var pdenUow = GetPDENUnitOfWork();
             var filters = new List<AppFilter>
@@ -461,7 +461,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             }).ToList();
         }
 
-        public async Task<List<GasInjection>> GetGasInjectionOperationsAsync(string? fieldId = null)
+        public async Task<List<GasInjection>> GetGasInjectionOperationsAsync(string? fieldId = null, CancellationToken cancellationToken = default)
         {
             var pdenUow = GetPDENUnitOfWork();
             var filters = new List<AppFilter>

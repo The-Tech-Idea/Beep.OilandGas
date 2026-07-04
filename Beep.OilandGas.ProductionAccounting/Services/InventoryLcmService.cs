@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Globalization;
 using System.Collections.Generic;
@@ -47,19 +48,19 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string inventoryItemId,
             DateTime valuationDate,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(inventoryItemId))
                 throw new ArgumentNullException(nameof(inventoryItemId));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var itemRepo = await CreateRepoAsync<INVENTORY_ITEM>("INVENTORY_ITEM", cn);
+            var itemRepo = await CreateRepoAsync<INVENTORY_ITEM>("INVENTORY_ITEM", connectionName);
             var itemObj = await itemRepo.GetByIdAsync(inventoryItemId);
             if (itemObj is not INVENTORY_ITEM item)
                 throw new ProductionAccountingException($"Inventory item not found: {inventoryItemId}");
 
-            var valuation = await GetLatestValuationAsync(inventoryItemId, valuationDate, cn);
+            var valuation = await GetLatestValuationAsync(inventoryItemId, valuationDate, connectionName);
             var quantity = valuation?.QUANTITY ?? item.QUANTITY_ON_HAND ?? 0m;
             var unitCost = valuation?.UNIT_COST ?? item.UNIT_COST ?? 0m;
             var costValue = valuation?.TOTAL_VALUE ?? (quantity * unitCost);
@@ -72,7 +73,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 return null;
             }
 
-            var marketValue = await GetMarketValueAsync(inventoryItemId, valuationDate, cn);
+            var marketValue = await GetMarketValueAsync(inventoryItemId, valuationDate, connectionName);
             if (marketValue <= 0m || marketValue >= costValue)
             {
                 _logger?.LogInformation(
@@ -104,7 +105,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var adjustmentRepo = await CreateRepoAsync<INVENTORY_ADJUSTMENT>("INVENTORY_ADJUSTMENT", cn);
+            var adjustmentRepo = await CreateRepoAsync<INVENTORY_ADJUSTMENT>("INVENTORY_ADJUSTMENT", connectionName);
             await adjustmentRepo.InsertAsync(adjustment, userId);
 
             item.UNIT_COST = newUnitCost;
@@ -123,12 +124,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<decimal> GetMarketValueAsync(
             string inventoryItemId,
             DateTime valuationDate,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(inventoryItemId))
                 throw new ArgumentNullException(nameof(inventoryItemId));
 
-            var itemRepo = await CreateRepoAsync<INVENTORY_ITEM>("INVENTORY_ITEM", cn);
+            var itemRepo = await CreateRepoAsync<INVENTORY_ITEM>("INVENTORY_ITEM", connectionName);
             var itemObj = await itemRepo.GetByIdAsync(inventoryItemId);
             if (itemObj is not INVENTORY_ITEM item)
                 return 0m;
@@ -141,7 +142,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(commodity))
                 commodity = PriceIndexCommodityTypeCodes.Oil;
 
-            var price = await GetPriceAsync(commodity, valuationDate, cn);
+            var price = await GetPriceAsync(commodity, valuationDate, connectionName);
             var adjustments = GetNrvAdjustments(item.REMARK);
             var netPrice = price - adjustments.transportCost - adjustments.qualityDeduction;
             if (netPrice < 0m)
@@ -149,9 +150,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return netPrice * quantity;
         }
 
-        private async Task<INVENTORY_VALUATION?> GetLatestValuationAsync(string inventoryItemId, DateTime valuationDate, string cn)
+        private async Task<INVENTORY_VALUATION?> GetLatestValuationAsync(string inventoryItemId, DateTime valuationDate, string connectionName)
         {
-            var repo = await CreateRepoAsync<INVENTORY_VALUATION>("INVENTORY_VALUATION", cn);
+            var repo = await CreateRepoAsync<INVENTORY_VALUATION>("INVENTORY_VALUATION", connectionName);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "INVENTORY_ITEM_ID", Operator = "=", FilterValue = inventoryItemId },
@@ -165,9 +166,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 .FirstOrDefault();
         }
 
-        private async Task<decimal> GetPriceAsync(string commodityType, DateTime asOfDate, string cn)
+        private async Task<decimal> GetPriceAsync(string commodityType, DateTime asOfDate, string connectionName)
         {
-            var repo = await CreateRepoAsync<PRICE_INDEX>("PRICE_INDEX", cn);
+            var repo = await CreateRepoAsync<PRICE_INDEX>("PRICE_INDEX", connectionName);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "COMMODITY_TYPE", Operator = "=", FilterValue = commodityType },
@@ -224,7 +225,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return (transport, quality);
         }
 
-        private async Task<PPDMGenericRepository> CreateRepoAsync<T>(string tableName, string cn)
+        private async Task<PPDMGenericRepository> CreateRepoAsync<T>(string tableName, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -232,7 +233,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, tableName);
+                entityType, connectionName, tableName);
         }
     }
 }

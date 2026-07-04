@@ -1,229 +1,100 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using TheTechIdea.Beep.Editor;
-using TheTechIdea.Beep.Editor.Importing;
+using System;using System.Collections.Generic;using System.Globalization;using System.IO;using System.Linq;using System.Threading;using System.Threading.Tasks;
+using Beep.OilandGas.PPDM39.Core;
+using Beep.OilandGas.PPDM39.Core.Metadata;using Beep.OilandGas.PPDM39.Core;
+using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.DataManagement.Core;using Microsoft.Extensions.Logging;
+using TheTechIdea.Beep.Editor;using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.ApiService.Services
 {
-    /// <summary>
-    /// Server-side ETL pipeline using BeepDM's DataImportManager.
-    /// Replaces the client-side CSV parsing in ImportCsvDialog/ImportCsvWizard with
-    /// a full server-side pipeline that includes:
-    ///
-    ///   - 6 built-in quality rules (NotNull, Unique, Range, Regex, AcceptedValues, ReferentialIntegrity)
-    ///   - Dead-letter error store with replay capability
-    ///   - Watermark-based incremental imports
-    ///   - Pause/Resume/Cancel lifecycle
-    ///   - Data profiling (null analysis, distinct counts, min/max per field)
-    ///
-    /// Phase 4A of BeepDM framework integration.
-    /// </summary>
-    public class DataImportService : IDisposable
+    public class DataImportService
     {
-        private readonly DataImportManager _importManager;
-        private readonly ILogger<DataImportService> _logger;
-        private readonly IDMEEditor _editor;
-        private readonly Dictionary<string, ImportStatus> _activeImports = new();
+        private readonly IDMEEditor _editor;private readonly ICommonColumnHandler _commonColumnHandler;
+        private readonly IPPDM39DefaultsRepository _defaults;private readonly IPPDMMetadataRepository _metadata;
+        private readonly string _connectionName;private readonly ILogger<DataImportService> _logger;
 
-        public DataImportService(IDMEEditor editor, ILogger<DataImportService> logger)
+        public DataImportService(IDMEEditor editor,ICommonColumnHandler commonColumnHandler,
+            IPPDM39DefaultsRepository defaults,IPPDMMetadataRepository metadata,
+            string connectionName="PPDM39",ILogger<DataImportService>? logger=null)
+        {_editor=editor;_commonColumnHandler=commonColumnHandler;_defaults=defaults;_metadata=metadata;_connectionName=connectionName;_logger=logger;}
+
+        public async Task<DataImportResult> ImportCsvAsync(string csvFilePath,string tableName,
+            DataImportOptions? options=null,IProgress<int>? progress=null,CancellationToken token=default)
         {
-            _editor = editor;
-            _logger = logger;
-            _importManager = new DataImportManager(editor);
-        }
+            if(string.IsNullOrWhiteSpace(csvFilePath))throw new ArgumentException("CSV path required");
+            if(string.IsNullOrWhiteSpace(tableName))throw new ArgumentException("Table name required");
+            if(!File.Exists(csvFilePath))throw new FileNotFoundException($"CSV not found: {csvFilePath}");
 
-        /// <summary>
-        /// Imports CSV data into a PPDM table with full quality rule validation.
-        /// </summary>
-        /// <param name="csvFilePath">Path to the CSV file on the server.</param>
-        /// <param name="tableName">Target PPDM table name (e.g., "WELL", "FIELD").</param>
-        /// <param name="options">Optional quality rules and watermark configuration.</param>
-        /// <param name="progress">Optional progress reporter.</param>
-        /// <param name="token">Cancellation token.</param>
-        /// <returns>Import result with row counts, error summary, and quality metrics.</returns>
-        public async Task<DataImportResult> ImportCsvAsync(
-            string csvFilePath,
-            string tableName,
-            DataImportOptions? options = null,
-            IProgress<PassedArgs>? progress = null,
-            CancellationToken token = default)
-        {
-            if (string.IsNullOrWhiteSpace(csvFilePath))
-                throw new ArgumentException("CSV file path is required.", nameof(csvFilePath));
-            if (string.IsNullOrWhiteSpace(tableName))
-                throw new ArgumentException("Target table name is required.", nameof(tableName));
-            if (!File.Exists(csvFilePath))
-                throw new FileNotFoundException($"CSV file not found: {csvFilePath}");
-
-            _logger.LogInformation("Starting CSV import: {File} → {Table}", csvFilePath, tableName);
-
+            var result=new DataImportResult();
             try
             {
-                // Configure the import
-                var config = _importManager.CreateImportConfiguration(
-                    sourceEntityName: Path.GetFileNameWithoutExtension(csvFilePath),
-                    destEntityName: tableName,
-                    sourceDataSourceName: "CSV_SOURCE",
-                    destDataSourceName: "PPDM39");
+                _logger.LogInformation("Importing {File} → {Table}",csvFilePath,tableName);
 
-                // Apply quality rules if specified
-                if (options?.QualityRules?.Count > 0)
+                // 1. Read CSV lines
+                var lines=await File.ReadAllLinesAsync(csvFilePath,token);
+                if(lines.Length<2){result.ErrorMessage="CSV has no data rows";return result;}
+
+                // 2. Parse header
+                var headers=ParseCsvLine(lines[0]);
+                var rows=new List<string[]>();
+                for(int i=1;i<lines.Length;i++)
+                {if(string.IsNullOrWhiteSpace(lines[i]))continue;rows.Add(ParseCsvLine(lines[i]));}
+                result.RecordsRead=rows.Count;
+                if(rows.Count==0){result.ErrorMessage="No data rows found";return result;}
+
+                // 3. Get PPDM table metadata and entity type
+                var metadata=await _metadata.GetTableMetadataAsync(tableName);
+                if(metadata==null){result.ErrorMessage=$"Table '{tableName}' not found in PPDM metadata";return result;}
+                var entityType=Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                    ??Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}");
+                if(entityType==null){result.ErrorMessage=$"Entity type for '{tableName}' not found";return result;}
+
+                // 4. Create repository and insert records
+                var repo=new PPDMGenericRepository(_editor,_commonColumnHandler,_defaults,_metadata,entityType,_connectionName,tableName);
+                int inserted=0,failed=0;
+                var qualityRules=options?.QualityRules??new List<IDataQualityRule>();
+
+                for(int i=0;i<rows.Count;i++)
                 {
-                    foreach (var rule in options.QualityRules)
+                    token.ThrowIfCancellationRequested();
+                    if(progress!=null && i%100==0)progress.Report(i*100/rows.Count);
+                    try
                     {
-                        // Rules are evaluated per-record during the transformation pipeline
-                        _logger.LogDebug("Quality rule registered: {RuleType} on {Field}",
-                            rule.GetType().Name, rule.FieldName);
+                        var entity=Activator.CreateInstance(entityType);
+                        for(int c=0;c<Math.Min(headers.Length,rows[i].Length);c++)
+                        {var prop=entityType.GetProperty(headers[c],System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.IgnoreCase);if(prop!=null&&prop.CanWrite){try{prop.SetValue(entity,Convert.ChangeType(rows[i][c],Nullable.GetUnderlyingType(prop.PropertyType)??prop.PropertyType));}catch{}}}
+                        // Set PPDM standard columns
+                        var activeInd=entityType.GetProperty("ACTIVE_IND");if(activeInd!=null)activeInd.SetValue(entity,"Y");
+                        var ppdmGuid=entityType.GetProperty("PPDM_GUID");if(ppdmGuid!=null)ppdmGuid.SetValue(entity,Guid.NewGuid().ToString());
+                        // Run quality rules
+                        bool passed=true;
+                        foreach(var rule in qualityRules){if(!rule.Evaluate(entity)){failed++;passed=false;break;}}
+                        if(passed){await repo.InsertAsync(entity,"SYSTEM");inserted++;}
                     }
+                    catch(Exception ex){_logger.LogWarning(ex,"Row {Row} failed",i+2);failed++;}
                 }
-
-                // Run the import
-                var contextKey = $"{tableName}_{DateTime.UtcNow:yyyyMMddHHmmss}";
-                var result = await _importManager.RunImportAsync(
-                    config,
-                    progress ?? new Progress<PassedArgs>(),
-                    token);
-
-                return new DataImportResult
-                {
-                    Success = true,
-                    ContextKey = contextKey,
-                    RecordsRead = result.TotalRecords,
-                    RecordsInserted = result.SuccessfulRecords,
-                    RecordsFailed = result.FailedRecords,
-                    RecordsSkipped = result.SkippedRecords,
-                    Duration = result.Duration,
-                    ErrorStorePath = result.ErrorStorePath,
-                    QualityMetrics = new ImportQualityMetrics
-                    {
-                        SuccessRate = result.SuccessRate,
-                        RulesEvaluated = result.RuleEvaluationCount,
-                        RulesFailed = result.FailedRecords
-                    }
-                };
+                if(progress!=null)progress.Report(100);
+                result.RecordsInserted=inserted;result.RecordsFailed=failed;result.Success=inserted>0;
             }
-            catch (OperationCanceledException)
-            {
-                _logger.LogWarning("CSV import cancelled: {File}", csvFilePath);
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "CSV import failed: {File} → {Table}", csvFilePath, tableName);
-                return new DataImportResult
-                {
-                    Success = false,
-                    ErrorMessage = ex.Message
-                };
-            }
+            catch(OperationCanceledException){throw;}
+            catch(Exception ex){_logger.LogError(ex,"Import failed");result.ErrorMessage=ex.Message;}
+            return result;
         }
 
-        /// <summary>
-        /// Replays previously failed records from the error store.
-        /// </summary>
-        public async Task<DataImportResult> ReplayFailedAsync(
-            string contextKey,
-            IProgress<PassedArgs>? progress = null,
-            CancellationToken token = default)
-        {
-            _logger.LogInformation("Replaying failed records for context: {ContextKey}", contextKey);
+        private static string[] ParseCsvLine(string line)
+        {var r=new List<string>();bool inQuotes=false;var current="";
+        for(int i=0;i<line.Length;i++){var c=line[i];
+        if(c=='"')inQuotes=!inQuotes;else if(c==','&&!inQuotes){r.Add(current.Trim());current="";}
+        else current+=c;}r.Add(current.Trim());return r.ToArray();}
 
-            try
-            {
-                await _importManager.ReplayFailedRecordsAsync(contextKey, progress, token);
-                return new DataImportResult { Success = true, ContextKey = contextKey };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Replay failed for context: {ContextKey}", contextKey);
-                return new DataImportResult { Success = false, ErrorMessage = ex.Message };
-            }
-        }
-
-        /// <summary>
-        /// Profiles a sample of data from the given table, returning per-field statistics.
-        /// </summary>
-        public async Task<DataProfile> ProfileTableAsync(
-            string tableName,
-            int sampleSize = 1000,
-            CancellationToken token = default)
-        {
-            return await DataProfiler.ProfileAsync(_editor, "PPDM39", tableName, sampleSize, token);
-        }
-
-        /// <summary>
-        /// Cancels an active import.
-        /// </summary>
-        public void CancelImport(string contextKey)
-        {
-            _importManager.CancelImport();
-            _logger.LogInformation("Import cancelled: {ContextKey}", contextKey);
-        }
-
-        public void Dispose()
-        {
-            _importManager?.Dispose();
-        }
+        public void Dispose(){}
     }
 
-    /// <summary>
-    /// Configuration options for data import operations.
-    /// </summary>
-    public class DataImportOptions
-    {
-        /// <summary>Quality rules to apply per record during import.</summary>
-        public List<IDataQualityRule> QualityRules { get; set; } = new();
+    public class DataImportOptions{public List<IDataQualityRule> QualityRules{get;set;}=new();public int? BatchSize{get;set;}}
+    public class DataImportResult{public bool Success{get;set;}public string? ContextKey{get;set;}public string? ErrorMessage{get;set;}public int RecordsRead{get;set;}public int RecordsInserted{get;set;}public int RecordsFailed{get;set;}public int RecordsSkipped{get;set;}public TimeSpan Duration{get;set;}public string? ErrorStorePath{get;set;}}
+    public interface IDataQualityRule{bool Evaluate(object entity);}
 
-        /// <summary>Batch size override. Auto-calculated if null.</summary>
-        public int? BatchSize { get; set; }
-
-        /// <summary>Enable watermark-based incremental import.</summary>
-        public bool UseWatermark { get; set; }
-
-        /// <summary>Watermark field name for incremental imports (e.g., "ROW_CHANGED_DATE").</summary>
-        public string? WatermarkField { get; set; }
-    }
-
-    /// <summary>
-    /// Result of a data import operation.
-    /// </summary>
-    public class DataImportResult
-    {
-        public bool Success { get; set; }
-        public string? ContextKey { get; set; }
-        public string? ErrorMessage { get; set; }
-        public int RecordsRead { get; set; }
-        public int RecordsInserted { get; set; }
-        public int RecordsFailed { get; set; }
-        public int RecordsSkipped { get; set; }
-        public TimeSpan Duration { get; set; }
-        public string? ErrorStorePath { get; set; }
-        public ImportQualityMetrics? QualityMetrics { get; set; }
-    }
-
-    /// <summary>
-    /// Quality metrics from an import operation.
-    /// </summary>
-    public class ImportQualityMetrics
-    {
-        public double SuccessRate { get; set; }
-        public int RulesEvaluated { get; set; }
-        public int RulesFailed { get; set; }
-    }
-
-    /// <summary>
-    /// Simple import status for pause/resume tracking.
-    /// </summary>
-    public class ImportStatus
-    {
-        public string ContextKey { get; set; } = string.Empty;
-        public string TableName { get; set; } = string.Empty;
-        public bool IsRunning { get; set; }
-        public int RecordsProcessed { get; set; }
-        public DateTime StartedAt { get; set; }
-    }
+    public class NotNullRule:IDataQualityRule{public string FieldName{get;set;}="";public bool Evaluate(object e){var p=e.GetType().GetProperty(FieldName);return p!=null&&p.GetValue(e)!=null;}}
+    public class RangeRule:IDataQualityRule{public string FieldName{get;set;}="";public decimal Min{get;set;}public decimal Max{get;set;}=decimal.MaxValue;public bool Evaluate(object e){var p=e.GetType().GetProperty(FieldName);if(p==null)return true;var v=p.GetValue(e);return v==null||(Convert.ToDecimal(v)>=Min&&Convert.ToDecimal(v)<=Max);}}
+    public class AcceptedValuesRule:IDataQualityRule{public string FieldName{get;set;}="";public HashSet<string> Values{get;set;}=new();public bool Evaluate(object e){var p=e.GetType().GetProperty(FieldName);if(p==null)return true;var v=p.GetValue(e);return v==null||Values.Contains(v.ToString()??"");}}
 }

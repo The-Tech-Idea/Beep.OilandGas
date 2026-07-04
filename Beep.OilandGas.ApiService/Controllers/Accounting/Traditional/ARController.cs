@@ -40,7 +40,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         [HttpGet("{id}")]
         public ActionResult<object> GetARInvoice(
             string id,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Invoice ID is required." });
@@ -76,7 +76,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         public async Task<ActionResult<object>> CreateARInvoice(
             [FromBody] CreateARInvoiceRequest request,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

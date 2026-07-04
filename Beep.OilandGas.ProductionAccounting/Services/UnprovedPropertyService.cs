@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Globalization;
 using System.Collections.Generic;
@@ -50,7 +51,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             decimal cost,
             DateTime acquisitionDate,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(propertyId))
                 throw new ArgumentNullException(nameof(propertyId));
@@ -76,7 +77,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", cn);
+            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", connectionName);
             await repo.InsertAsync(record, userId);
 
             _logger?.LogInformation(
@@ -92,7 +93,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             DateTime effectiveDate,
             DateTime? expiryDate,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(propertyId))
                 throw new ArgumentNullException(nameof(propertyId));
@@ -115,7 +116,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await CreateRepoAsync<LEASEHOLD_CARRYING_GROUP>("LEASEHOLD_CARRYING_GROUP", cn);
+            var repo = await CreateRepoAsync<LEASEHOLD_CARRYING_GROUP>("LEASEHOLD_CARRYING_GROUP", connectionName);
             await repo.InsertAsync(group, userId);
             return group;
         }
@@ -126,7 +127,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             DateTime optionExpiryDate,
             decimal bonusAmount,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -147,7 +148,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await CreateRepoAsync<LEASE_OPTION>("LEASE_OPTION", cn);
+            var repo = await CreateRepoAsync<LEASE_OPTION>("LEASE_OPTION", connectionName);
             await repo.InsertAsync(option, userId);
 
             if (bonusAmount > 0m)
@@ -159,7 +160,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     CostCategories.LeaseOption,
                     UnprovedPropertyDescriptionPhrases.LeaseOptionBonus,
                     userId,
-                    cn);
+                    connectionName);
             }
 
             return option;
@@ -171,7 +172,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             decimal amount,
             DateTime? nextDueDate,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -192,7 +193,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await CreateRepoAsync<DELAY_RENTAL>("DELAY_RENTAL", cn);
+            var repo = await CreateRepoAsync<DELAY_RENTAL>("DELAY_RENTAL", connectionName);
             await repo.InsertAsync(rental, userId);
 
             if (amount > 0m)
@@ -204,7 +205,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     CostCategories.DelayRental,
                     UnprovedPropertyDescriptionPhrases.DelayRentalExpense,
                     userId,
-                    cn);
+                    connectionName);
             }
 
             return rental;
@@ -213,13 +214,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<List<LEASE_EXPIRY_EVENT>> EvaluateExpiriesAsync(
             DateTime asOfDate,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
             var events = new List<LEASE_EXPIRY_EVENT>();
-            var leaseRepo = await CreateRepoAsync<LEASE_CONTRACT>("LEASE_CONTRACT", cn);
+            var leaseRepo = await CreateRepoAsync<LEASE_CONTRACT>("LEASE_CONTRACT", connectionName);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
@@ -244,11 +245,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                var eventRepo = await CreateRepoAsync<LEASE_EXPIRY_EVENT>("LEASE_EXPIRY_EVENT", cn);
+                var eventRepo = await CreateRepoAsync<LEASE_EXPIRY_EVENT>("LEASE_EXPIRY_EVENT", connectionName);
                 await eventRepo.InsertAsync(evt, userId);
                 events.Add(evt);
 
-                await WriteOffUnprovedCostsAsync(lease.LEASE_ID, asOfDate, userId, cn);
+                await WriteOffUnprovedCostsAsync(lease.LEASE_ID, asOfDate, userId, connectionName);
             }
 
             return events;
@@ -258,14 +259,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string propertyId,
             DateTime asOfDate,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(propertyId))
                 throw new ArgumentNullException(nameof(propertyId));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var unprovedCosts = await GetUnprovedCostsAsync(propertyId, cn);
+            var unprovedCosts = await GetUnprovedCostsAsync(propertyId, connectionName);
             var carryingAmount = unprovedCosts.Sum(c => c.AMOUNT);
             if (carryingAmount <= 0m)
             {
@@ -276,7 +277,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var pv = 0m;
             if (_reserveAccountingService != null)
             {
-                pv = await _reserveAccountingService.CalculatePresentValueAsync(propertyId, asOfDate, cn);
+                pv = await _reserveAccountingService.CalculatePresentValueAsync(propertyId, asOfDate, connectionName);
             }
 
             if (pv <= 0m || pv >= carryingAmount)
@@ -305,7 +306,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", cn);
+            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", connectionName);
             await repo.InsertAsync(impairment, userId);
 
             _logger?.LogWarning(
@@ -319,14 +320,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string propertyId,
             DateTime effectiveDate,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(propertyId))
                 throw new ArgumentNullException(nameof(propertyId));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", cn);
+            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", connectionName);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = propertyId },
@@ -358,9 +359,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return true;
         }
 
-        private async Task<List<ACCOUNTING_COST>> GetUnprovedCostsAsync(string propertyId, string cn)
+        private async Task<List<ACCOUNTING_COST>> GetUnprovedCostsAsync(string propertyId, string connectionName)
         {
-            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", cn);
+            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", connectionName);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = propertyId },
@@ -380,7 +381,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string category,
             string description,
             string userId,
-            string cn)
+            string connectionName)
         {
             var record = new ACCOUNTING_COST
             {
@@ -399,7 +400,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", cn);
+            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", connectionName);
             await repo.InsertAsync(record, userId);
         }
 
@@ -407,9 +408,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string propertyId,
             DateTime asOfDate,
             string userId,
-            string cn)
+            string connectionName)
         {
-            var unproved = await GetUnprovedCostsAsync(propertyId, cn);
+            var unproved = await GetUnprovedCostsAsync(propertyId, connectionName);
             var carrying = unproved.Sum(c => c.AMOUNT);
             if (carrying <= 0m)
                 return;
@@ -431,11 +432,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", cn);
+            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", connectionName);
             await repo.InsertAsync(writeOff, userId);
         }
 
-        private async Task<PPDMGenericRepository> CreateRepoAsync<T>(string tableName, string cn)
+        private async Task<PPDMGenericRepository> CreateRepoAsync<T>(string tableName, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -443,7 +444,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, tableName);
+                entityType, connectionName, tableName);
         }
     }
 }

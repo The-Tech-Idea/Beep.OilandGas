@@ -30,27 +30,27 @@
             <MudItem xs="12" sm="6" md="3">
                 <MudCard Elevation="3">
                     <MudCardContent>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Revenue (MTD)</MudText>
-                        <MudText Typo="Typo.h4" Color="Color.Primary">@FormatCurrency(_kpi?.RevenueMtd ?? 0)</MudText>
-                        <MudText Typo="Typo.caption" Color="@(_kpi?.RevenueTrend > 0 ? Color.Success : Color.Error)">@(_kpi?.RevenueTrend > 0 ? "↑" : "↓") @($"{Math.Abs(_kpi?.RevenueTrend ?? 0):F1}%") vs prior</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Active Wells</MudText>
+                        <MudText Typo="Typo.h4" Color="Color.Primary">@(_kpi?.ActiveWells ?? 0) / @(_kpi?.TotalWells ?? 0)</MudText>
+                        <MudText Typo="Typo.caption">@(_kpi?.TotalIncidentsYtd ?? 0) HSE incidents YTD</MudText>
                     </MudCardContent>
                 </MudCard>
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
                 <MudCard Elevation="3">
                     <MudCardContent>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Total Reserves (2P)</MudText>
-                        <MudText Typo="Typo.h4" Color="Color.Primary">@FormatVolume(_kpi?.TotalReservesMmboe * 1000 ?? 0) MMBOE</MudText>
-                        <MudText Typo="Typo.caption">@(_kpi?.ReserveReplacementRatio ?? 0):F0% replacement</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Production Trend</MudText>
+                        <MudText Typo="Typo.h4" Color="@(_kpi?.ProductionTrend > 0 ? Color.Success : Color.Warning)">@($"{_kpi?.ProductionTrend ?? 0:F1}%")</MudText>
+                        <MudText Typo="Typo.caption">vs prior month</MudText>
                     </MudCardContent>
                 </MudCard>
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
                 <MudCard Elevation="3">
                     <MudCardContent>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">HSE (LTIF)</MudText>
-                        <MudText Typo="Typo.h4" Color="@(_kpi?.Ltif > 0.5 ? Color.Error : Color.Success)">@($"{_kpi?.Ltif ?? 0:F2}")</MudText>
-                        <MudText Typo="Typo.caption">@(_kpi?.Tier1Events ?? 0) Tier 1 events YTD</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">HSE Tier 1 Events</MudText>
+                        <MudText Typo="Typo.h4" Color="@(_kpi?.Tier1Events > 0 ? Color.Error : Color.Success)">@(_kpi?.Tier1Events ?? 0)</MudText>
+                        <MudText Typo="Typo.caption">YTD</MudText>
                     </MudCardContent>
                 </MudCard>
             </MudItem>
@@ -67,19 +67,15 @@
                         <MudTable Items="@_assets" Hover="true" Striped="true" Dense="true">
                             <HeaderContent>
                                 <MudTh>Field</MudTh>
-                                <MudTh>Production (BOE/d)</MudTh>
-                                <MudTh>OpEx ($/BOE)</MudTh>
-                                <MudTh>Reserves (MMBOE)</MudTh>
+                                <MudTh>Field ID</MudTh>
+                                <MudTh>Phase</MudTh>
                                 <MudTh>Active Wells</MudTh>
-                                <MudTh>Status</MudTh>
                             </HeaderContent>
                             <RowTemplate>
                                 <MudTd>@context.FieldName</MudTd>
-                                <MudTd>@FormatVolume(context.ProductionBoePerDay)</MudTd>
-                                <MudTd>@($"${context.OpExPerBoe:F1}")</MudTd>
-                                <MudTd>@($"{context.ReservesMmboe:F1}")</MudTd>
-                                <MudTd>@context.ActiveWells</MudTd>
+                                <MudTd>@context.FieldId</MudTd>
                                 <MudTd><MudChip Size="Size.Small" Color="@StatusColor(context.LifecyclePhase)">@context.LifecyclePhase</MudChip></MudTd>
+                                <MudTd>@context.ActiveWells</MudTd>
                             </RowTemplate>
                         </MudTable>
                     </MudCardContent>
@@ -142,7 +138,7 @@
             if (_kpi == null) _kpi = new ExecutiveKpi();
 
             var assets = await Http.GetFromJsonAsync<List<AssetSummary>>("/api/executive/assets");
-            _assets = assets?.OrderByDescending(f => f.ActiveWells).Take(10).ToList() ?? new();
+            _assets = assets ?? new();
         }
         catch
         {
@@ -168,22 +164,18 @@
     {
         public decimal TotalProductionBoe { get; set; }
         public decimal ProductionTrend { get; set; }
-        public decimal RevenueMtd { get; set; }
-        public decimal RevenueTrend { get; set; }
-        public decimal TotalReservesMmboe { get; set; }
-        public decimal ReserveReplacementRatio { get; set; }
-        public decimal Ltif { get; set; }
+        public int TotalWells { get; set; }
+        public int ActiveWells { get; set; }
         public int Tier1Events { get; set; }
+        public int TotalIncidentsYtd { get; set; }
     }
 
     public class AssetSummary
     {
-        public string? FieldName { get; set; }
-        public decimal ProductionBoePerDay { get; set; }
-        public decimal OpExPerBoe { get; set; }
-        public decimal ReservesMmboe { get; set; }
+        public string FieldId { get; set; } = string.Empty;
+        public string FieldName { get; set; } = string.Empty;
+        public string LifecyclePhase { get; set; } = string.Empty;
         public int ActiveWells { get; set; }
-        public string? LifecyclePhase { get; set; }
     }
 
     public class DeadlineItem

@@ -301,5 +301,9 @@ namespace Beep.OilandGas.Models.Data.PipelineAnalysis
         public DateTime? AnalysisDate { get; set; }
         public decimal? Velocity { get; set; }
         public string Recommendations { get; set; }
+        public decimal? INLET_PRESSURE { get; set; }
+        public decimal? OUTLET_PRESSURE { get; set; }
+        public string? FLOW_REGIME { get; set; }
+        public string? ANALYSIS_STATUS { get; set; }
     }
 }

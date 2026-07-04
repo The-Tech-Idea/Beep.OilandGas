@@ -38,7 +38,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         public async Task<ActionResult<object>> CalculateAmortization(
             [FromBody] AmortizationCalculationRequest request,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -75,7 +75,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         public async Task<ActionResult<object>> CalculateInterestCapitalization(
             [FromBody] InterestCapitalizationData data,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -108,7 +108,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         [HttpPost("convert-production-to-boe")]
         public ActionResult<object> ConvertProductionToBOE(
             [FromBody] ProductionData production,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -131,7 +131,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         [HttpPost("convert-reserves-to-boe")]
         public ActionResult<object> ConvertReservesToBOE(
             [FromBody] ProvedReserves reserves,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

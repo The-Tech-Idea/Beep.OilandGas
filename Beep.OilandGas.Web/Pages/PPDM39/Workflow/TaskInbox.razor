@@ -1,0 +1,180 @@
+@page "/ppdm39/tasks/inbox"
+@page "/tasks/inbox"
+@using Beep.OilandGas.Web.Services
+@inject IUnifiedTaskInboxService InboxService
+@inject NavigationManager Nav
+@implements IDisposable
+
+<MudContainer MaxWidth="MaxWidth.Large">
+    <MudText Typo="Typo.h3" GutterBottom>
+        <MudIcon Icon="@Icons.Material.Filled.Inbox" Class="mr-2" />
+        Task Inbox
+        @if (_counts.TotalPending > 0)
+        {
+            <MudChip Color="Color.Primary" Size="Size.Small" Class="ml-2">
+                @_counts.TotalPending pending
+            </MudChip>
+        }
+    </MudText>
+
+    @* ── Filter Bar ── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4" Wrap="Wrap.Wrap">
+        <MudChipSet @bind-SelectedValue="_selectedTaskType" Filter="true">
+            <MudChip Value="">All</MudChip>
+            <MudChip Value="APPROVAL">
+                Approvals
+                @if (_counts.Approvals > 0)
+                {
+                    <MudBadge Content="@_counts.Approvals" Color="Color.Primary" />
+                }
+            </MudChip>
+            <MudChip Value="REVIEW">
+                Reviews
+                @if (_counts.Reviews > 0)
+                {
+                    <MudBadge Content="@_counts.Reviews" Color="Color.Secondary" />
+                }
+            </MudChip>
+            <MudChip Value="DATA_ENTRY">
+                Data Entry
+                @if (_counts.DataEntry > 0)
+                {
+                    <MudBadge Content="@_counts.DataEntry" Color="Color.Tertiary" />
+                }
+            </MudChip>
+        </MudChipSet>
+
+        <MudSpacer />
+
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+            @if (_counts.Critical > 0)
+            {
+                <MudChip Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">
+                    @_counts.Critical critical
+                </MudChip>
+            }
+            @if (_counts.Overdue > 0)
+            {
+                <MudChip Color="Color.Warning" Size="Size.Small" Variant="Variant.Filled">
+                    @_counts.Overdue overdue
+                </MudChip>
+            }
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                           Size="Size.Small"
+                           OnClick="RefreshAsync"
+                           Disabled="@_isLoading"
+                           Title="Refresh" />
+        </MudStack>
+    </MudStack>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="my-2" />
+    }
+
+    @* ── Critical / Overdue Section ── *@
+    @if (_criticalTasks.Any())
+    {
+        <MudText Typo="Typo.h6" Color="Color.Error" Class="mb-2">
+            <MudIcon Icon="@Icons.Material.Filled.PriorityHigh" /> Requires Immediate Attention
+        </MudText>
+        @foreach (var task in _criticalTasks)
+        {
+            <TaskInboxCard Task="task" OnAction="HandleTaskAction" />
+        }
+        <MudDivider Class="my-4" />
+    }
+
+    @* ── Main Task List ── *@
+    @if (!_allTasks.Any() && !_isLoading)
+    {
+        <MudPaper Elevation="1" Class="pa-6" Style="text-align:center">
+            <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                     Size="Size.Large" Color="Color.Success" Class="mb-2" />
+            <MudText Typo="Typo.h6">All caught up!</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                You have no pending tasks in your inbox.
+            </MudText>
+        </MudPaper>
+    }
+    else
+    {
+        @foreach (var task in _allTasks)
+        {
+            <TaskInboxCard Task="task" OnAction="HandleTaskAction" />
+        }
+    }
+</MudContainer>
+
+@code {
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private INotificationService? NotificationService { get; set; }
+
+    private List<UnifiedTask> _allTasks = new();
+    private List<UnifiedTask> _criticalTasks = new();
+    private InboxCounts _counts = new();
+    private string? _selectedTaskType;
+    private bool _isLoading;
+    private string? _personaCode = "PRODUCTION_ENGINEER";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync();
+        if (NotificationService is not null)
+        {
+            NotificationService.OnTaskCountsUpdated += OnCountsUpdated;
+        }
+    }
+
+    private async Task RefreshAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var inbox = await InboxService.GetInboxAsync(_personaCode ?? string.Empty);
+            _criticalTasks = inbox.CriticalTasks;
+            _allTasks = inbox.HighPriorityTasks.Concat(inbox.NormalTasks).ToList();
+            _counts = inbox.Counts;
+
+            if (!string.IsNullOrWhiteSpace(_selectedTaskType))
+            {
+                _allTasks = _allTasks
+                    .Where(t => string.Equals(t.TaskType, _selectedTaskType, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load tasks: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task HandleTaskAction(UnifiedTask task)
+    {
+        if (!string.IsNullOrWhiteSpace(task.Route))
+        {
+            Nav.NavigateTo(task.Route);
+        }
+        await Task.CompletedTask;
+    }
+
+    private async void OnCountsUpdated(InboxCounts counts)
+    {
+        _counts = counts;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        if (NotificationService is not null)
+        {
+            NotificationService.OnTaskCountsUpdated -= OnCountsUpdated;
+        }
+    }
+}

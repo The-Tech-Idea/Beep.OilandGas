@@ -1,0 +1,17 @@
+@page "/accounting/revenue-workbench"
+@using MudBlazor
+@inject NavigationManager Nav
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h3" GutterBottom="true"><MudIcon Icon="@Icons.Material.Filled.AttachMoney" Class="mr-2" Color="Color.Primary"/>Revenue Workbench</MudText>
+    <MudGrid>
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Run Tickets</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/accounting/dashboard">Process Run Tickets</MudButton><MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-2" Href="/ppdm39/production/reporting">Production Reports</MudButton></MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Revenue Recognition</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/accounting/revenue-recognition">ASC 606 Recognition</MudButton><MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-2" Href="/ppdm39/accounting/volume-reconciliation">Volume Reconciliation</MudButton></MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Allocation</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/accounting/cost-allocation">Cost Allocation</MudButton><MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-2" Href="/production/allocation">Production Allocation</MudButton></MudCardContent></MudCard></MudItem>
+    </MudGrid>
+    <MudGrid Class="mt-2">
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Royalties</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/accounting/royalties">Royalty Management</MudButton><MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-2" Href="/economics/evaluation">Economic Analysis</MudButton></MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Joint Interest</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/accounting/joint-interest-billing">JIB Processing</MudButton></MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" md="4"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Period Close</MudText></CardHeaderContent></MudCardHeader><MudCardContent><MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/accounting/period-close">Close Period</MudButton></MudCardContent></MudCard></MudItem>
+    </MudGrid>
+</MudContainer>

@@ -82,6 +82,34 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 // Pipeline & infrastructure workflows
                 await InitializePipelineInfrastructureWorkflowsAsync(userId);
 
+                // Administrative & RBAC workflows (Phase 1)
+                await InitializeRoleAssignmentApprovalAsync(userId);
+                await InitializeTempRoleElevationApprovalAsync(userId);
+
+                // Cross-role workflows — Finance (Phase 3)
+                await InitializeCrossRoleFinanceWorkflowsAsync(userId);
+
+                // Cross-role workflows — Operations (Phase 3)
+                await InitializeCrossRoleOperationsWorkflowsAsync(userId);
+
+                // Cross-role workflows — HSE & Compliance (Phase 3)
+                await InitializeCrossRoleHSEComplianceWorkflowsAsync(userId);
+
+                // Cross-role workflows — Asset Lifecycle (Phase 3)
+                await InitializeCrossRoleAssetLifecycleWorkflowsAsync(userId);
+
+                // SOD waiver workflow (Phase 4)
+                await InitializeSodWaiverWorkflowAsync(userId);
+
+                // O&G Accounting Standards workflows (Phase A — Critical Compliance)
+                await InitializeAccountingStandardsWorkflowsAsync(userId);
+
+                // O&G Accounting Standards workflows (Phases B, C, D)
+                await InitializeAccountingStandardsPhaseBCDAsync(userId);
+
+                // Basic operational accounting workflows (P2P, O2C, R2R, Assets, Bank, Expenses, etc.)
+                await InitializeOperationalAccountingWorkflowsAsync(userId);
+
                 _logger?.LogInformation("Default process definitions initialized successfully");
             }
             catch (Exception ex)
@@ -171,6 +199,223 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             await _processService.CreateProcessDefinitionAsync(definition, userId);
             _logger?.LogInformation("Created process definition '{ProcessId}'", definition.ProcessId);
         }
+
+        #region RBAC & Administrative Process Definitions (Phase 1)
+
+        /// <summary>
+        /// Role Assignment Approval workflow — enforces 4-eyes principle on role grants.
+        /// Any role assignment to a non-Viewer role must go through this approval chain.
+        /// </summary>
+        private async Task InitializeRoleAssignmentApprovalAsync(string userId)
+        {
+            var definition = new ProcessDefinition
+            {
+                ProcessId = "RBAC_ROLE_ASSIGNMENT",
+                ProcessName = "Role Assignment Approval",
+                ProcessType = "ADMINISTRATIVE",
+                EntityType = "USER_ROLE",
+                Description = "Enforces 4-eyes principle on role grants. Manager approval + security review required before activation.",
+                IsActive = true,
+                Steps = new List<ProcessStepDefinition>
+                {
+                    new()
+                    {
+                        StepId = "RBAC_ROLE_REQUEST",
+                        StepName = "Request Role Assignment",
+                        SequenceNumber = 1,
+                        StepType = "ACTION",
+                        IsRequired = true,
+                        Description = "Requester fills in: user, role, field scope, justification",
+                        NextStepId = "RBAC_MANAGER_APPROVAL",
+                    },
+                    new()
+                    {
+                        StepId = "RBAC_MANAGER_APPROVAL",
+                        StepName = "Manager Approval",
+                        SequenceNumber = 2,
+                        StepType = "APPROVAL",
+                        IsRequired = true,
+                        RequiresApproval = true,
+                        RequiredRoles = new List<string> { "Manager", "Supervisor" },
+                        SlaHours = 48,
+                        Description = "User's line manager reviews and approves/denies the role request",
+                        NextStepId = "RBAC_SOD_CHECK",
+                        StepConfiguration = new Dictionary<string, object>
+                        {
+                            ["approvalType"] = "ANY",
+                            ["escalationHours"] = 72,
+                            ["escalationAction"] = "NOTIFY_MANAGER"
+                        }
+                    },
+                    new()
+                    {
+                        StepId = "RBAC_SOD_CHECK",
+                        StepName = "Segregation of Duties Check",
+                        SequenceNumber = 3,
+                        StepType = "SYSTEM",
+                        IsRequired = true,
+                        Description = "Automated: checks role combination against SoD rules. If conflict detected, routes to security review with flag.",
+                        NextStepId = "RBAC_SECURITY_REVIEW",
+                        StepConfiguration = new Dictionary<string, object>
+                        {
+                            ["autoValidate"] = true,
+                            ["validationRules"] = new[] { "SOD_CONFLICT_CHECK" }
+                        }
+                    },
+                    new()
+                    {
+                        StepId = "RBAC_SECURITY_REVIEW",
+                        StepName = "Security Administrator Review",
+                        SequenceNumber = 4,
+                        StepType = "APPROVAL",
+                        IsRequired = true,
+                        RequiresApproval = true,
+                        RequiredRoles = new List<string> { "Administrator", "Admin" },
+                        SlaHours = 24,
+                        Description = "Administrator verifies no SoD conflicts, validates field scope, confirms business need",
+                        NextStepId = "RBAC_ACTIVATION",
+                        StepConfiguration = new Dictionary<string, object>
+                        {
+                            ["approvalType"] = "SEQUENTIAL",
+                            ["escalationHours"] = 48
+                        }
+                    },
+                    new()
+                    {
+                        StepId = "RBAC_ACTIVATION",
+                        StepName = "Activate Role Assignment",
+                        SequenceNumber = 5,
+                        StepType = "SYSTEM",
+                        IsRequired = true,
+                        Description = "System assigns the role, logs to audit trail, sends notification to user and manager",
+                    }
+                },
+                Configuration = new Dictionary<string, object>
+                {
+                    ["category"] = "SECURITY",
+                    ["auditRequired"] = true,
+                    ["notificationTemplate"] = "ROLE_ASSIGNMENT_APPROVED"
+                }
+            };
+
+            await CreateProcessDefinitionIfNotExistsAsync(definition, userId);
+        }
+
+        /// <summary>
+        /// Temporary Role Elevation Approval workflow — time-bound elevation for acting-manager / leave coverage.
+        /// </summary>
+        private async Task InitializeTempRoleElevationApprovalAsync(string userId)
+        {
+            var definition = new ProcessDefinition
+            {
+                ProcessId = "RBAC_TEMP_ROLE_ELEVATION",
+                ProcessName = "Temporary Role Elevation Approval",
+                ProcessType = "ADMINISTRATIVE",
+                EntityType = "TEMP_ROLE_ELEVATION",
+                Description = "Approval workflow for time-bound temporary role elevations (acting manager, leave coverage, emergency access). Auto-expires.",
+                IsActive = true,
+                Steps = new List<ProcessStepDefinition>
+                {
+                    new()
+                    {
+                        StepId = "ELEVATION_REQUEST",
+                        StepName = "Request Temporary Elevation",
+                        SequenceNumber = 1,
+                        StepType = "ACTION",
+                        IsRequired = true,
+                        Description = "Requester specifies: user, elevated role, effective dates (max 90 days), business justification",
+                        NextStepId = "ELEVATION_MANAGER_APPROVAL",
+                    },
+                    new()
+                    {
+                        StepId = "ELEVATION_MANAGER_APPROVAL",
+                        StepName = "Manager Approval",
+                        SequenceNumber = 2,
+                        StepType = "APPROVAL",
+                        IsRequired = true,
+                        RequiresApproval = true,
+                        RequiredRoles = new List<string> { "Manager", "Supervisor" },
+                        SlaHours = 24,
+                        Description = "Manager confirms the elevation is necessary and appropriate",
+                        NextStepId = "ELEVATION_SECURITY_REVIEW",
+                        StepConfiguration = new Dictionary<string, object>
+                        {
+                            ["approvalType"] = "ANY",
+                            ["escalationHours"] = 48
+                        }
+                    },
+                    new()
+                    {
+                        StepId = "ELEVATION_SECURITY_REVIEW",
+                        StepName = "Security Review",
+                        SequenceNumber = 3,
+                        StepType = "APPROVAL",
+                        IsRequired = true,
+                        RequiresApproval = true,
+                        RequiredRoles = new List<string> { "Administrator", "Admin" },
+                        SlaHours = 24,
+                        Description = "Administrator reviews: scope limitation, SOD impact, expiry date, compensating controls if needed",
+                        NextStepId = "ELEVATION_ACTIVATION",
+                    },
+                    new()
+                    {
+                        StepId = "ELEVATION_ACTIVATION",
+                        StepName = "Activate Elevation",
+                        SequenceNumber = 4,
+                        StepType = "SYSTEM",
+                        IsRequired = true,
+                        Description = "System activates the elevation, sets auto-expiry timer, logs to audit trail, notifies user and manager",
+                    },
+                    new()
+                    {
+                        StepId = "ELEVATION_EXPIRY",
+                        StepName = "Auto-Expiry",
+                        SequenceNumber = 5,
+                        StepType = "SYSTEM",
+                        IsRequired = true,
+                        Description = "System automatically expires the elevation at EFFECTIVE_TO. User's token will no longer carry elevated permissions after next refresh.",
+                    }
+                },
+                Configuration = new Dictionary<string, object>
+                {
+                    ["category"] = "SECURITY",
+                    ["auditRequired"] = true,
+                    ["maxDurationDays"] = 90,
+                    ["autoExpiryEnabled"] = true
+                }
+            };
+
+            await CreateProcessDefinitionIfNotExistsAsync(definition, userId);
+        }
+
+        /// <summary>
+        /// SOD_WAIVER — Segregation of Duties violation waiver workflow (Phase 4).
+        /// Time-bound exception to an SoD rule. Requires independent approval, compensating control, auto-expires after 90 days.
+        /// </summary>
+        private async Task InitializeSodWaiverWorkflowAsync(string userId)
+        {
+            await CreateProcessDefinitionIfNotExistsAsync(new ProcessDefinition
+            {
+                ProcessId = "SOD_WAIVER",
+                ProcessName = "SoD Violation Waiver & Compensating Control",
+                ProcessType = "ADMINISTRATIVE",
+                EntityType = "SOD_CONFLICT",
+                Description = "Time-bound exception to SoD rule with compensating control. Independent approval required. Auto-expires 90 days.",
+                IsActive = true,
+                Steps = new List<ProcessStepDefinition>
+                {
+                    new() { StepId = "WAIVER_REQUEST", StepName = "Request SoD Waiver", SequenceNumber = 1, StepType = "DATA_ENTRY", IsRequired = true, NextStepId = "SOD_IMPACT_ASSESS", Description = "Manager requests waiver with business justification and proposed compensating control" },
+                    new() { StepId = "SOD_IMPACT_ASSESS", StepName = "SoD Impact Assessment", SequenceNumber = 2, StepType = "SYSTEM", IsRequired = true, NextStepId = "SECURITY_REVIEW", Description = "System evaluates SoD rule violations, severity, and regulatory implications" },
+                    new() { StepId = "SECURITY_REVIEW", StepName = "Security Admin Review", SequenceNumber = 3, StepType = "APPROVAL", IsRequired = true, RequiresApproval = true, RequiredRoles = new(){"Administrator","Admin"}, SlaHours = 48, NextStepId = "INDEPENDENT_APPROVAL", Description = "Administrator reviews impact and validates compensating control adequacy" },
+                    new() { StepId = "INDEPENDENT_APPROVAL", StepName = "Independent Approval", SequenceNumber = 4, StepType = "APPROVAL", IsRequired = true, RequiresApproval = true, RequiredRoles = new(){"Auditor","ComplianceOfficer"}, SlaHours = 72, NextStepId = "WAIVER_ACTIVATION", Description = "Independent reviewer approves (ensures approver ≠ requester)" },
+                    new() { StepId = "WAIVER_ACTIVATION", StepName = "Activate Waiver", SequenceNumber = 5, StepType = "SYSTEM", IsRequired = true, NextStepId = "WAIVER_EXPIRY", Description = "System activates waiver, creates COMPENSATING_CONTROL with 90-day expiry" },
+                    new() { StepId = "WAIVER_EXPIRY", StepName = "Auto-Expiry", SequenceNumber = 6, StepType = "SYSTEM", IsRequired = true, Description = "System auto-expires waiver at EFFECTIVE_TO. Renewal requires new request." },
+                },
+                Configuration = new() { ["category"] = "SECURITY", ["maxDurationDays"] = 90, ["regulation"] = "SOX 404, ISO 27001", ["autoExpiryEnabled"] = true }
+            }, userId);
+        }
+
+        #endregion
 
         private async Task InitializeProspectToDiscoveryProcessAsync(string userId)
         {

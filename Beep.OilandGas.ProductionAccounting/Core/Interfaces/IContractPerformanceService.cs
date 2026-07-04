@@ -10,8 +10,8 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// </summary>
     public interface IContractPerformanceService
     {
-        Task<CONTRACT_PERFORMANCE_OBLIGATION> CreateObligationAsync(CONTRACT_PERFORMANCE_OBLIGATION obligation, string userId, string cn = "PPDM39");
-        Task<CONTRACT_PERFORMANCE_OBLIGATION> MarkSatisfiedAsync(string obligationId, DateTime satisfiedDate, string userId, string cn = "PPDM39");
-        Task<List<CONTRACT_PERFORMANCE_OBLIGATION>> GetOutstandingAsync(string salesContractId, string cn = "PPDM39");
+        Task<CONTRACT_PERFORMANCE_OBLIGATION> CreateObligationAsync(CONTRACT_PERFORMANCE_OBLIGATION obligation, string userId, string connectionName = "PPDM39");
+        Task<CONTRACT_PERFORMANCE_OBLIGATION> MarkSatisfiedAsync(string obligationId, DateTime satisfiedDate, string userId, string connectionName = "PPDM39");
+        Task<List<CONTRACT_PERFORMANCE_OBLIGATION>> GetOutstandingAsync(string salesContractId, string connectionName = "PPDM39");
     }
 }

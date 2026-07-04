@@ -13,12 +13,12 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             string leaseId,
             decimal baseAmount,
             DateTime asOfDate,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
 
         Task<JIB_CHARGE?> ApplyOverheadToStatementAsync(
             JOINT_INTEREST_STATEMENT statement,
             decimal baseAmount,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
     }
 }

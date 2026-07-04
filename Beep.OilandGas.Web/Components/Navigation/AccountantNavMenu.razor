@@ -1,0 +1,98 @@
+@* Accountant Navigation Menu — all 34 accounting workflows organized by category *@
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="og-h-full">
+    @* ── Operations (Day-to-Day) ── *@
+    <MudMenu Label="Operations" Icon="@Icons.Material.Filled.AccountBalance" Color="Color.Inherit">
+        <ActivatorContent>
+            <MudButton Variant="Variant.Text" Class="og-nav-btn-legacy">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Small" />
+                    <MudText Class="og-nav-label-legacy">Accounting</MudText>
+                </MudStack>
+            </MudButton>
+        </ActivatorContent>
+        <ChildContent>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="px-2 pt-1">Core Financial Processes</MudText>
+            <MudMenuItem Href="/ppdm39/process/definitions/ACCT_PROCURE_TO_PAY"><MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Class="mr-2"/>Procure-to-Pay</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/ACCT_ORDER_TO_CASH"><MudIcon Icon="@Icons.Material.Filled.PointOfSale" Class="mr-2"/>Order-to-Cash</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/ACCT_RECORD_TO_REPORT"><MudIcon Icon="@Icons.Material.Filled.Description" Class="mr-2"/>Record-to-Report</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/ACCT_JOURNAL_ENTRY_APPROVAL"><MudIcon Icon="@Icons.Material.Filled.EditNote" Class="mr-2"/>Journal Entry</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/ACCT_EXPENSE_MANAGEMENT"><MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Class="mr-2"/>Expense Reports</MudMenuItem>
+            <MudDivider Class="my-1"/>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="px-2 pt-1">Treasury & Assets</MudText>
+            <MudMenuItem Href="/ppdm39/process/definitions/ACCT_BANK_RECONCILIATION"><MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="mr-2"/>Bank Reconciliation</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/ACCT_CASH_MANAGEMENT"><MudIcon Icon="@Icons.Material.Filled.Savings" Class="mr-2"/>Cash Management</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/ACCT_FIXED_ASSET_LIFECYCLE"><MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Class="mr-2"/>Fixed Assets</MudMenuItem>
+            <MudDivider Class="my-1"/>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="px-2 pt-1">Master Data</MudText>
+            <MudMenuItem Href="/ppdm39/process/definitions/ACCT_VENDOR_MANAGEMENT"><MudIcon Icon="@Icons.Material.Filled.Business" Class="mr-2"/>Vendors (BA)</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/ACCT_CUSTOMER_MANAGEMENT"><MudIcon Icon="@Icons.Material.Filled.People" Class="mr-2"/>Customers (BA)</MudMenuItem>
+            <MudDivider Class="my-1"/>
+            <MudMenuItem Href="/accounting/dashboard"><MudIcon Icon="@Icons.Material.Filled.Dashboard" Class="mr-2"/>Accounting Dashboard</MudMenuItem>
+        </ChildContent>
+    </MudMenu>
+
+    @* ── O&G Accounting (FASB/SEC/COPAS) ── *@
+    <MudMenu Label="O&G Accounting" Icon="@Icons.Material.Filled.OilBarrel" Color="Color.Inherit">
+        <ActivatorContent>
+            <MudButton Variant="Variant.Text" Class="og-nav-btn-legacy">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
+                    <MudIcon Icon="@Icons.Material.Filled.OilBarrel" Size="Size.Small" />
+                    <MudText Class="og-nav-label-legacy">O&G</MudText>
+                </MudStack>
+            </MudButton>
+        </ActivatorContent>
+        <ChildContent>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="px-2 pt-1">FASB / SEC Compliance</MudText>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_DDA_CALCULATION">DD&A (ASC 932)</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_CEILING_TEST">Ceiling Test (SEC)</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_ARO_ACCOUNTING">ARO (ASC 410)</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_IMPAIRMENT">Impairment (ASC 360)</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_ASC606_REVENUE">Revenue 5-Step (ASC 606)</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_HEDGE_EFFECTIVENESS">Hedge Test (ASC 815)</MudMenuItem>
+            <MudDivider Class="my-1"/>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="px-2 pt-1">COPAS / Joint Operations</MudText>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_AFE_COST_TRACKING">AFE Cost Tracking (MRP 1)</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_JIB_COPAS_OVERHEAD">JIB + Overhead (MRP 2)</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_NONCONSENT">Non-Consent Penalty</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_ROYALTY_CALCULATION">Royalty (MRP 3)</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_PRODUCTION_IMBALANCE">Imbalance (MFI-1)</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_COPAS_AUDIT">COPAS Audit (MFI-22)</MudMenuItem>
+            <MudDivider Class="my-1"/>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="px-2 pt-1">Other</MudText>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_INVENTORY_LCM">Inventory LCM (ASC 330)</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_TAKE_OR_PAY">Take-or-Pay (ASC 440)</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_PSC_ACCOUNTING">PSC (IFRS 6)</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_RBL_REDETERMINATION">RBL Redetermination</MudMenuItem>
+        </ChildContent>
+    </MudMenu>
+
+    @* ── Period Close & Reports ── *@
+    <MudMenu Label="Close & Report" Icon="@Icons.Material.Filled.EventAvailable" Color="Color.Inherit">
+        <ActivatorContent>
+            <MudButton Variant="Variant.Text" Class="og-nav-btn-legacy">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
+                    <MudIcon Icon="@Icons.Material.Filled.EventAvailable" Size="Size.Small" />
+                    <MudText Class="og-nav-label-legacy">Close</MudText>
+                </MudStack>
+            </MudButton>
+        </ActivatorContent>
+        <ChildContent>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_PERIOD_CLOSE">Period Close</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_BUDGET_VS_ACTUALS">Budget vs Actuals</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_PRODUCTION_TO_REVENUE">Production → Revenue</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_CAPITAL_VS_EXPENSE">Capital vs Expense</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_PRODUCTION_TAX_FILING">Production Tax Filing</MudMenuItem>
+            <MudMenuItem Href="/ppdm39/process/definitions/CRW_DECOM_ESTIMATE_REVISION">Decom Estimate Revision</MudMenuItem>
+        </ChildContent>
+    </MudMenu>
+
+    @* ── Task Inbox ── *@
+    <MudNavLink Href="/tasks/inbox" Match="NavLinkMatch.Prefix" Class="og-nav-btn-legacy">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+            <MudIcon Icon="@Icons.Material.Filled.Inbox" Size="Size.Small" />
+            <MudText Class="og-nav-label-legacy">Tasks</MudText>
+            <NotificationBadge />
+        </MudStack>
+    </MudNavLink>
+</MudStack>

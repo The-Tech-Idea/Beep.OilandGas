@@ -19,19 +19,20 @@
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
-	</ItemGroup>
+  </ItemGroup>
 	<ItemGroup>
     <ProjectReference Include="..\Beep.OilandGas.PPDM.Models\Beep.OilandGas.PPDM.Models.csproj" />
-	  <PackageReference Include="SkiaSharp" Version="3.119.2" />
+	  <PackageReference Include="SkiaSharp" Version="3.119.4" />
 	  <PackageReference Include="SkiaSharp.Extended" Version="3.0.0" />
 	  <PackageReference Include="SkiaSharp.Svg" Version="1.60.0" />
-	  <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.7" />
-	</ItemGroup>
+	  <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
+  </ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\Beep.OilandGas.GasProperties\Beep.OilandGas.GasProperties.csproj" />
 	  <ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />
 	  <ProjectReference Include="..\Beep.OilandGas.PPDM39.DataManagement\Beep.OilandGas.PPDM39.DataManagement.csproj" />
-	</ItemGroup>
+		<ProjectReference Include="..\Beep.OilandGas.PPDM39\Beep.OilandGas.PPDM39.csproj" />
+  </ItemGroup>
 	<Target Name="CopyPackage" AfterTargets="Pack">
 		<Copy SourceFiles="$(OutputPath)$(PackageId).$(PackageVersion).nupkg" DestinationFolder="..\..\..\LocalNugetFiles" />
 	</Target>

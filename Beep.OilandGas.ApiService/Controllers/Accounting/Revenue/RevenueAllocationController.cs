@@ -35,7 +35,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
         [HttpPost("allocate")]
         public async Task<ActionResult<object>> AllocateRevenue(
             [FromBody] RevenueAllocationRequest request,
-            [FromQuery] string? connectionName = null,
+            [FromQuery] string connectionName = "PPDM39",
             [FromQuery] string? userId = null)
         {
             try

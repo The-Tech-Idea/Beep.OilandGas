@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -55,7 +56,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             RUN_TICKET RUN_TICKET,
             string method,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (RUN_TICKET == null)
                 throw new AllocationException("Run ticket cannot be null");
@@ -71,7 +72,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (normalizedMethod == null)
                 throw new AllocationException($"Invalid allocation method: {method}");
 
-            var ALLOCATION_RESULT = await _allocationEngine.AllocateAsync(RUN_TICKET, normalizedMethod, userId, cn);
+            var ALLOCATION_RESULT = await _allocationEngine.AllocateAsync(RUN_TICKET, normalizedMethod, userId, connectionName);
 
             _logger?.LogInformation("Allocation completed: {AllocationResultId}", ALLOCATION_RESULT.ALLOCATION_RESULT_ID);
             return ALLOCATION_RESULT;
@@ -80,7 +81,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// <summary>
         /// Retrieves an allocation result by ID.
         /// </summary>
-        public async Task<ALLOCATION_RESULT?> GetAsync(string allocationId, string cn = "PPDM39")
+        public async Task<ALLOCATION_RESULT?> GetAsync(string allocationId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(allocationId))
                 throw new ArgumentNullException(nameof(allocationId));
@@ -91,7 +92,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "ALLOCATION_RESULT");
+                entityType, connectionName, "ALLOCATION_RESULT");
 
             var result = await repo.GetByIdAsync(allocationId);
             return result as ALLOCATION_RESULT;
@@ -100,7 +101,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// <summary>
         /// Retrieves all details for an allocation result.
         /// </summary>
-        public async Task<List<ALLOCATION_DETAIL>> GetDetailsAsync(string allocationId, string cn = "PPDM39")
+        public async Task<List<ALLOCATION_DETAIL>> GetDetailsAsync(string allocationId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(allocationId))
                 throw new ArgumentNullException(nameof(allocationId));
@@ -111,7 +112,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "ALLOCATION_DETAIL");
+                entityType, connectionName, "ALLOCATION_DETAIL");
 
             // Filter by allocation result ID
             var filters = new List<AppFilter>
@@ -127,7 +128,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// <summary>
         /// Gets allocation history for a run ticket (all previous allocations).
         /// </summary>
-        public async Task<List<ALLOCATION_RESULT>> GetHistoryAsync(string runTicketId, string cn = "PPDM39")
+        public async Task<List<ALLOCATION_RESULT>> GetHistoryAsync(string runTicketId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(runTicketId))
                 throw new ArgumentNullException(nameof(runTicketId));
@@ -138,7 +139,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "ALLOCATION_RESULT");
+                entityType, connectionName, "ALLOCATION_RESULT");
 
             // Filter by run ticket ID
             var filters = new List<AppFilter>
@@ -155,7 +156,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// Validates an allocation result.
         /// Checks: total volume match, percentage sum to 100%, all positive, etc.
         /// </summary>
-        public async Task<bool> ValidateAsync(ALLOCATION_RESULT allocation, string cn = "PPDM39")
+        public async Task<bool> ValidateAsync(ALLOCATION_RESULT allocation, string connectionName = "PPDM39")
         {
             if (allocation == null)
                 throw new ArgumentNullException(nameof(allocation));
@@ -181,7 +182,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Validation 3: Get details and validate
-                var details = await GetDetailsAsync(allocation.ALLOCATION_RESULT_ID, cn);
+                var details = await GetDetailsAsync(allocation.ALLOCATION_RESULT_ID, connectionName);
                 if (details.Count == 0)
                 {
                     _logger?.LogWarning("Allocation {AllocationResultId}: No allocation details found",
@@ -246,7 +247,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// <summary>
         /// Reverses an allocation (sets to inactive) and logs the reversal.
         /// </summary>
-        public async Task ReverseAsync(string allocationId, string userId, string cn = "PPDM39")
+        public async Task ReverseAsync(string allocationId, string userId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(allocationId))
                 throw new ArgumentNullException(nameof(allocationId));
@@ -254,7 +255,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _logger?.LogInformation("Reversing allocation {AllocationResultId}", allocationId);
 
             // Get the allocation
-            var allocation = await GetAsync(allocationId, cn);
+            var allocation = await GetAsync(allocationId, connectionName);
             if (allocation == null)
                 throw new AllocationException($"Allocation {allocationId} not found");
 
@@ -265,13 +266,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "ALLOCATION_RESULT");
+                entityType, connectionName, "ALLOCATION_RESULT");
 
             // Soft delete the allocation (sets ACTIVE_IND to 'N')
             await repo.SoftDeleteAsync(allocationId, userId);
 
             // Also reverse all details
-            var details = await GetDetailsAsync(allocationId, cn);
+            var details = await GetDetailsAsync(allocationId, connectionName);
             if (details.Any())
             {
                 var detailMetadata = await _metadata.GetTableMetadataAsync("ALLOCATION_DETAIL");
@@ -280,7 +281,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var detailRepo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    detailEntityType, cn, "ALLOCATION_DETAIL");
+                    detailEntityType, connectionName, "ALLOCATION_DETAIL");
 
                 foreach (var detail in details)
                 {

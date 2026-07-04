@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 ﻿using System;
 using System.Globalization;
 using System.Collections.Generic;
@@ -47,7 +48,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             ALLOCATION_RESULT ALLOCATION_RESULT,
             decimal deliveredVolume,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (RUN_TICKET == null)
                 throw new ArgumentNullException(nameof(RUN_TICKET));
@@ -56,16 +57,16 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var contract = await FindApplicableContractAsync(RUN_TICKET, cn);
+            var contract = await FindApplicableContractAsync(RUN_TICKET, connectionName);
             if (contract == null)
                 return null;
 
-            var obligation = await GetTakeOrPayObligationAsync(contract.SALES_CONTRACT_ID, cn);
+            var obligation = await GetTakeOrPayObligationAsync(contract.SALES_CONTRACT_ID, connectionName);
             if (obligation == null)
                 return null;
 
             var contractDate = RUN_TICKET.TICKET_DATE_TIME ?? DateTime.UtcNow;
-            var schedule = await GetScheduleAsync(contract.SALES_CONTRACT_ID, contractDate, cn);
+            var schedule = await GetScheduleAsync(contract.SALES_CONTRACT_ID, contractDate, connectionName);
             var minVolume = schedule?.MIN_VOLUME
                 ?? ParseDecimal(obligation.OBLIGATION_DESCRIPTION, TakeOrPayObligationParseKeys.MinVolume)
                 ?? ParseDecimal(obligation.REMARK, TakeOrPayObligationParseKeys.MinVolume)
@@ -94,8 +95,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var deficiency = minVolume - deliveredVolume;
             if (deficiency <= 0m)
             {
-                await UpdateObligationStatusAsync(obligation, ContractPerformanceStatusCodes.Satisfied, userId, cn);
-                await ApplyMakeupBalanceAsync(contract.SALES_CONTRACT_ID, deliveredVolume - minVolume, contractDate, userId, cn);
+                await UpdateObligationStatusAsync(obligation, ContractPerformanceStatusCodes.Satisfied, userId, connectionName);
+                await ApplyMakeupBalanceAsync(contract.SALES_CONTRACT_ID, deliveredVolume - minVolume, contractDate, userId, connectionName);
                 return null;
             }
 
@@ -129,11 +130,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await CreateRepoAsync<REVENUE_TRANSACTION>("REVENUE_TRANSACTION", cn);
+            var repo = await CreateRepoAsync<REVENUE_TRANSACTION>("REVENUE_TRANSACTION", connectionName);
             await repo.InsertAsync(revenueTransaction, userId);
 
-            await UpdateObligationStatusAsync(obligation, ContractPerformanceStatusCodes.PartiallySatisfied, userId, cn);
-            await ApplyMakeupBalanceAsync(contract.SALES_CONTRACT_ID, -deficiency, contractDate, userId, cn);
+            await UpdateObligationStatusAsync(obligation, ContractPerformanceStatusCodes.PartiallySatisfied, userId, connectionName);
+            await ApplyMakeupBalanceAsync(contract.SALES_CONTRACT_ID, -deficiency, contractDate, userId, connectionName);
 
             _logger?.LogWarning(
                 "Take-or-pay adjustment created for contract {ContractId}: deficiency {Deficiency} at price {Price}",
@@ -142,9 +143,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return revenueTransaction;
         }
 
-        private async Task<SALES_CONTRACT?> FindApplicableContractAsync(RUN_TICKET RUN_TICKET, string cn)
+        private async Task<SALES_CONTRACT?> FindApplicableContractAsync(RUN_TICKET RUN_TICKET, string connectionName)
         {
-            var repo = await CreateRepoAsync<SALES_CONTRACT>("SALES_CONTRACT", cn);
+            var repo = await CreateRepoAsync<SALES_CONTRACT>("SALES_CONTRACT", connectionName);
             var ticketDate = RUN_TICKET.TICKET_DATE_TIME ?? DateTime.UtcNow;
             var buyerId = RUN_TICKET.PURCHASER;
             var filters = new List<AppFilter>
@@ -166,9 +167,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 .FirstOrDefault();
         }
 
-        private async Task<CONTRACT_PERFORMANCE_OBLIGATION?> GetTakeOrPayObligationAsync(string salesContractId, string cn)
+        private async Task<CONTRACT_PERFORMANCE_OBLIGATION?> GetTakeOrPayObligationAsync(string salesContractId, string connectionName)
         {
-            var repo = await CreateRepoAsync<CONTRACT_PERFORMANCE_OBLIGATION>("CONTRACT_PERFORMANCE_OBLIGATION", cn);
+            var repo = await CreateRepoAsync<CONTRACT_PERFORMANCE_OBLIGATION>("CONTRACT_PERFORMANCE_OBLIGATION", connectionName);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "SALES_CONTRACT_ID", Operator = "=", FilterValue = salesContractId },
@@ -185,11 +186,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 (o.REMARK?.IndexOf(RevenueTypeCodes.TakeOrPay, StringComparison.OrdinalIgnoreCase) >= 0));
         }
 
-        private async Task<TAKE_OR_PAY_SCHEDULE?> GetScheduleAsync(string salesContractId, DateTime contractDate, string cn)
+        private async Task<TAKE_OR_PAY_SCHEDULE?> GetScheduleAsync(string salesContractId, DateTime contractDate, string connectionName)
         {
             try
             {
-                var repo = await CreateRepoAsync<TAKE_OR_PAY_SCHEDULE>("TAKE_OR_PAY_SCHEDULE", cn);
+                var repo = await CreateRepoAsync<TAKE_OR_PAY_SCHEDULE>("TAKE_OR_PAY_SCHEDULE", connectionName);
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "SALES_CONTRACT_ID", Operator = "=", FilterValue = salesContractId },
@@ -217,14 +218,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             decimal volumeDelta,
             DateTime updateDate,
             string userId,
-            string cn)
+            string connectionName)
         {
             if (string.IsNullOrWhiteSpace(salesContractId))
                 return;
 
             try
             {
-                var repo = await CreateRepoAsync<TAKE_OR_PAY_BALANCE>("TAKE_OR_PAY_BALANCE", cn);
+                var repo = await CreateRepoAsync<TAKE_OR_PAY_BALANCE>("TAKE_OR_PAY_BALANCE", connectionName);
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "SALES_CONTRACT_ID", Operator = "=", FilterValue = salesContractId },
@@ -271,7 +272,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
-        private async Task UpdateObligationStatusAsync(CONTRACT_PERFORMANCE_OBLIGATION obligation, string status, string userId, string cn)
+        private async Task UpdateObligationStatusAsync(CONTRACT_PERFORMANCE_OBLIGATION obligation, string status, string userId, string connectionName)
         {
             if (obligation == null || string.IsNullOrWhiteSpace(obligation.CONTRACT_PERFORMANCE_OBLIGATION_ID))
                 return;
@@ -280,7 +281,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             obligation.ROW_CHANGED_BY = userId;
             obligation.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-            var repo = await CreateRepoAsync<CONTRACT_PERFORMANCE_OBLIGATION>("CONTRACT_PERFORMANCE_OBLIGATION", cn);
+            var repo = await CreateRepoAsync<CONTRACT_PERFORMANCE_OBLIGATION>("CONTRACT_PERFORMANCE_OBLIGATION", connectionName);
             await repo.UpdateAsync(obligation, userId);
         }
 
@@ -304,7 +305,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return null;
         }
 
-        private async Task<PPDMGenericRepository> CreateRepoAsync<T>(string tableName, string cn)
+        private async Task<PPDMGenericRepository> CreateRepoAsync<T>(string tableName, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -312,7 +313,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, tableName);
+                entityType, connectionName, tableName);
         }
     }
 }

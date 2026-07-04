@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.DataManagement;
@@ -19,6 +20,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
     /// <summary>
     /// Schema module management — install per-module PPDM39 tables and track progress.
     /// </summary>
+    [Authorize]
     [ApiController]
     [Route("api/ppdm39/schema")]
     public class PPDM39SchemaController : ControllerBase

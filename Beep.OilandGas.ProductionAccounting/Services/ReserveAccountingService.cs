@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,7 +42,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _logger = logger;
         }
 
-        public async Task<PROVED_RESERVES> RecordReservesAsync(PROVED_RESERVES reserves, string userId, string cn = "PPDM39")
+        public async Task<PROVED_RESERVES> RecordReservesAsync(PROVED_RESERVES reserves, string userId, string connectionName = "PPDM39")
         {
             if (reserves == null)
                 throw new ArgumentNullException(nameof(reserves));
@@ -63,13 +64,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "PROVED_RESERVES");
+                entityType, connectionName, "PROVED_RESERVES");
 
             await repo.InsertAsync(reserves, userId);
             return reserves;
         }
 
-        public async Task<PROVED_RESERVES> GetLatestReservesAsync(string propertyId, DateTime? asOfDate = null, string cn = "PPDM39")
+        public async Task<PROVED_RESERVES> GetLatestReservesAsync(string propertyId, DateTime? asOfDate = null, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(propertyId))
                 throw new ArgumentNullException(nameof(propertyId));
@@ -80,7 +81,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "PROVED_RESERVES");
+                entityType, connectionName, "PROVED_RESERVES");
 
             var filters = new List<AppFilter>
             {
@@ -107,14 +108,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string propertyId,
             decimal netCapitalizedCosts,
             DateTime? asOfDate = null,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(propertyId))
                 throw new ArgumentNullException(nameof(propertyId));
             if (netCapitalizedCosts <= 0)
                 return 0m;
 
-            var reserves = await GetLatestReservesAsync(propertyId, asOfDate, cn);
+            var reserves = await GetLatestReservesAsync(propertyId, asOfDate, connectionName);
             if (reserves == null)
             {
                 _logger?.LogWarning("No reserves found for property {PropertyId}", propertyId);
@@ -133,7 +134,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return netCapitalizedCosts / totalReserves;
         }
 
-        public Task<bool> ValidateReservesAsync(PROVED_RESERVES reserves, string cn = "PPDM39")
+        public Task<bool> ValidateReservesAsync(PROVED_RESERVES reserves, string connectionName = "PPDM39")
         {
             if (reserves == null)
                 throw new ArgumentNullException(nameof(reserves));
@@ -153,7 +154,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<RESERVE_CASHFLOW> RecordCashflowAsync(
             RESERVE_CASHFLOW cashflow,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (cashflow == null)
                 throw new ArgumentNullException(nameof(cashflow));
@@ -176,7 +177,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "RESERVE_CASHFLOW");
+                entityType, connectionName, "RESERVE_CASHFLOW");
 
             await repo.InsertAsync(cashflow, userId);
             return cashflow;
@@ -185,7 +186,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<List<RESERVE_CASHFLOW>> GetCashflowsAsync(
             string propertyId,
             DateTime? asOfDate = null,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(propertyId))
                 throw new ArgumentNullException(nameof(propertyId));
@@ -196,7 +197,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "RESERVE_CASHFLOW");
+                entityType, connectionName, "RESERVE_CASHFLOW");
 
             var filters = new List<AppFilter>
             {
@@ -221,9 +222,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<decimal> CalculatePresentValueAsync(
             string propertyId,
             DateTime? asOfDate = null,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
-            var cashflows = await GetCashflowsAsync(propertyId, asOfDate, cn);
+            var cashflows = await GetCashflowsAsync(propertyId, asOfDate, connectionName);
             if (cashflows.Count == 0)
                 return 0m;
 

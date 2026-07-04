@@ -15,52 +15,52 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Creates a new GL account.
         /// </summary>
-        Task<GL_ACCOUNT> CreateAccountAsync(CreateGLAccountRequest request, string userId, string? connectionName = null);
+        Task<GL_ACCOUNT> CreateAccountAsync(CreateGLAccountRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets a GL account by ID.
         /// </summary>
-        Task<GL_ACCOUNT?> GetAccountAsync(string accountId, string? connectionName = null);
+        Task<GL_ACCOUNT?> GetAccountAsync(string accountId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets a GL account by account number.
         /// </summary>
-        Task<GL_ACCOUNT?> GetAccountByNumberAsync(string accountNumber, string? connectionName = null);
+        Task<GL_ACCOUNT?> GetAccountByNumberAsync(string accountNumber, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets accounts by type.
         /// </summary>
-        Task<List<GL_ACCOUNT>> GetAccountsByTypeAsync(string accountType, string? connectionName = null);
+        Task<List<GL_ACCOUNT>> GetAccountsByTypeAsync(string accountType, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets account hierarchy (parent-child relationships).
         /// </summary>
-        Task<List<GL_ACCOUNT>> GetAccountHierarchyAsync(string? connectionName = null);
+        Task<List<GL_ACCOUNT>> GetAccountHierarchyAsync(string connectionName = "PPDM39");
         
         /// <summary>
         /// Updates a GL account.
         /// </summary>
-        Task<GL_ACCOUNT> UpdateAccountAsync(UpdateGLAccountRequest request, string userId, string? connectionName = null);
+        Task<GL_ACCOUNT> UpdateAccountAsync(UpdateGLAccountRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Deletes a GL account (soft delete by setting ACTIVE_IND = 'N').
         /// </summary>
-        Task<bool> DeleteAccountAsync(string accountId, string userId, string? connectionName = null);
+        Task<bool> DeleteAccountAsync(string accountId, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets account balance summary.
         /// </summary>
-        Task<AccountBalanceSummary> GetAccountBalanceAsync(string accountId, DateTime? asOfDate, string? connectionName = null);
+        Task<AccountBalanceSummary> GetAccountBalanceAsync(string accountId, DateTime? asOfDate, string connectionName = "PPDM39");
         
         /// <summary>
         /// Reconciles an account.
         /// </summary>
-        Task<AccountReconciliationResult> ReconcileAccountAsync(string accountId, DateTime reconciliationDate, string userId, string? connectionName = null);
+        Task<AccountReconciliationResult> ReconcileAccountAsync(string accountId, DateTime reconciliationDate, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets accounts requiring reconciliation.
         /// </summary>
-        Task<List<GL_ACCOUNT>> GetAccountsRequiringReconciliationAsync(string? connectionName = null);
+        Task<List<GL_ACCOUNT>> GetAccountsRequiringReconciliationAsync(string connectionName = "PPDM39");
     }
 }
 

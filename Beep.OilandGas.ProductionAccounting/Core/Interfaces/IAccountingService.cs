@@ -15,66 +15,66 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Creates a sales transaction.
         /// </summary>
-        Task<SalesTransaction> CreateSalesTransactionAsync(CreateSalesTransactionRequest request, string userId, string? connectionName = null);
+        Task<SalesTransaction> CreateSalesTransactionAsync(CreateSalesTransactionRequest request, string userId, string connectionName = "PPDM39");
 
         /// <summary>
         /// Gets a sales transaction by ID.
         /// </summary>
-        Task<SalesTransaction?> GetSalesTransactionAsync(string transactionId, string? connectionName = null);
+        Task<SalesTransaction?> GetSalesTransactionAsync(string transactionId, string connectionName = "PPDM39");
 
         /// <summary>
         /// Gets sales transactions within a date range.
         /// </summary>
-        Task<List<SalesTransaction>> GetSalesTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate, string? connectionName = null);
+        Task<List<SalesTransaction>> GetSalesTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate, string connectionName = "PPDM39");
 
         /// <summary>
         /// Gets sales transactions for a specific customer.
         /// </summary>
-        Task<List<SalesTransaction>> GetSalesTransactionsByCustomerAsync(string customerBaId, DateTime? startDate = null, DateTime? endDate = null, string? connectionName = null);
+        Task<List<SalesTransaction>> GetSalesTransactionsByCustomerAsync(string customerBaId, DateTime? startDate = null, DateTime? endDate = null, string connectionName = "PPDM39");
 
         /// <summary>
         /// Creates a receivable record.
         /// </summary>
-        Task<RECEIVABLE> CreateReceivableAsync(CreateReceivableRequest request, string userId, string? connectionName = null);
+        Task<RECEIVABLE> CreateReceivableAsync(CreateReceivableRequest request, string userId, string connectionName = "PPDM39");
 
         /// <summary>
         /// Gets receivables for a specific customer.
         /// </summary>
-        Task<List<RECEIVABLE>> GetReceivablesByCustomerAsync(string customerBaId, string? connectionName = null);
+        Task<List<RECEIVABLE>> GetReceivablesByCustomerAsync(string customerBaId, string connectionName = "PPDM39");
 
         /// <summary>
         /// Gets all receivables.
         /// </summary>
-        Task<List<RECEIVABLE>> GetAllReceivablesAsync(string? connectionName = null);
+        Task<List<RECEIVABLE>> GetAllReceivablesAsync(string connectionName = "PPDM39");
 
         /// <summary>
         /// Creates a journal entry for a sales transaction.
         /// </summary>
-        Task<JOURNAL_ENTRY> CreateSalesJournalEntryAsync(string salesTransactionId, string userId, string? connectionName = null);
+        Task<JOURNAL_ENTRY> CreateSalesJournalEntryAsync(string salesTransactionId, string userId, string connectionName = "PPDM39");
 
         /// <summary>
         /// Approves a sales transaction.
         /// </summary>
-        Task<SalesApprovalResult> ApproveSalesTransactionAsync(string transactionId, string approverId, string? connectionName = null);
+        Task<SalesApprovalResult> ApproveSalesTransactionAsync(string transactionId, string approverId, string connectionName = "PPDM39");
 
         /// <summary>
         /// Reconciles sales transactions.
         /// </summary>
-        Task<SalesReconciliationResult> ReconcileSalesAsync(SalesReconciliationRequest request, string userId, string? connectionName = null);
+        Task<SalesReconciliationResult> ReconcileSalesAsync(SalesReconciliationRequest request, string userId, string connectionName = "PPDM39");
 
         /// <summary>
         /// Generates a sales statement for a customer.
         /// </summary>
-        Task<SalesStatement> GenerateSalesStatementAsync(string customerBaId, DateTime statementDate, string? connectionName = null);
+        Task<SalesStatement> GenerateSalesStatementAsync(string customerBaId, DateTime statementDate, string connectionName = "PPDM39");
 
-        Task<VolumeReconciliationResult> ReconcileVolumesAsync(string fieldId, DateTime startDate, DateTime endDate, string? connectionName = null);
+        Task<VolumeReconciliationResult> ReconcileVolumesAsync(string fieldId, DateTime startDate, DateTime endDate, string connectionName = "PPDM39");
 
-        Task<CostAllocationComputationResult> AllocateCostsAsync(string fieldId, DateTime startDate, DateTime endDate, CostAllocationMethod allocationMethod, string? connectionName = null);
+        Task<CostAllocationComputationResult> AllocateCostsAsync(string fieldId, DateTime startDate, DateTime endDate, CostAllocationMethod allocationMethod, string connectionName = "PPDM39");
 
-        Task<ProductionRoyaltyCalculationResult> CalculateRoyaltiesAsync(string fieldId, DateTime startDate, DateTime endDate, string? poolId = null, string? connectionName = null);
+        Task<ProductionRoyaltyCalculationResult> CalculateRoyaltiesAsync(string fieldId, DateTime startDate, DateTime endDate, string? poolId = null, string connectionName = "PPDM39");
 
-        Task SaveRoyaltyCalculationAsync(ROYALTY_CALCULATION calculation, string userId, string? connectionName = null);
+        Task SaveRoyaltyCalculationAsync(ROYALTY_CALCULATION calculation, string userId, string connectionName = "PPDM39");
 
-        Task<List<ROYALTY_CALCULATION>> GetRoyaltyCalculationsAsync(string? fieldId = null, string? poolId = null, DateTime? startDate = null, DateTime? endDate = null, string? connectionName = null);
+        Task<List<ROYALTY_CALCULATION>> GetRoyaltyCalculationsAsync(string? fieldId = null, string? poolId = null, DateTime? startDate = null, DateTime? endDate = null, string connectionName = "PPDM39");
     }
 }

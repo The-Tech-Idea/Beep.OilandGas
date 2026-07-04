@@ -9,7 +9,9 @@ using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.DataBase;
@@ -24,7 +26,7 @@ namespace Beep.OilandGas.GasLift.Services
     /// Implements industry-standard gas lift design, optimization, and monitoring.
     /// Uses PPDMGenericRepository for PPDM39 data persistence.
     /// </summary>
-    public partial class GasLiftService : IGasLiftService
+    public partial class GasLiftService
     {
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
@@ -90,7 +92,7 @@ namespace Beep.OilandGas.GasLift.Services
             GAS_LIFT_POTENTIAL_RESULT potentialResult,
             decimal gasInjectionCostPerMscf,
             decimal oilPricePerBarrel,
-            string userId)
+            string userId, CancellationToken cancellationToken = default)
         {
             if (potentialResult == null)
                 throw new ArgumentNullException(nameof(potentialResult));
@@ -151,7 +153,7 @@ namespace Beep.OilandGas.GasLift.Services
         /// </summary>
         public async Task<GasLiftRiskAnalysisResult> AnalyzeRiskFactorsAsync(
             GAS_LIFT_WELL_PROPERTIES wellProperties,
-            string userId)
+            string userId, CancellationToken cancellationToken = default)
         {
             if (wellProperties == null)
                 throw new ArgumentNullException(nameof(wellProperties));
@@ -210,7 +212,7 @@ namespace Beep.OilandGas.GasLift.Services
         /// </summary>
         public async Task<GasLiftConstraintAnalysisResult> AnalyzeConstraintsAsync(
             GAS_LIFT_WELL_PROPERTIES wellProperties,
-            string userId)
+            string userId, CancellationToken cancellationToken = default)
         {
             if (wellProperties == null)
                 throw new ArgumentNullException(nameof(wellProperties));
@@ -349,7 +351,7 @@ namespace Beep.OilandGas.GasLift.Services
         /// <summary>
         /// Gets gas lift performance data (existing method)
         /// </summary>
-        public async Task<GAS_LIFT_PERFORMANCE> GetGasLiftPerformanceAsync(string wellUWI)
+        public async Task<GAS_LIFT_PERFORMANCE> GetGasLiftPerformanceAsync(string wellUWI, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -400,7 +402,7 @@ namespace Beep.OilandGas.GasLift.Services
         public async Task<GasLiftPerformanceDiagnosisResult> DiagnosePerformanceIssuesAsync(
             GAS_LIFT_PERFORMANCE currentPerformance,
             GAS_LIFT_PERFORMANCE historicalPerformance,
-            string userId)
+            string userId, CancellationToken cancellationToken = default)
         {
             if (currentPerformance == null)
                 throw new ArgumentNullException(nameof(currentPerformance));
@@ -472,7 +474,7 @@ namespace Beep.OilandGas.GasLift.Services
         /// <summary>
         /// Saves gas lift design to database (existing method)
         /// </summary>
-        public async Task SaveGasLiftDesignAsync(GAS_LIFT_DESIGN design, string userId)
+        public async Task SaveGasLiftDesignAsync(GAS_LIFT_DESIGN design, string userId, CancellationToken cancellationToken = default)
         {
             if (design == null)
                 throw new ArgumentNullException(nameof(design));
@@ -514,7 +516,7 @@ namespace Beep.OilandGas.GasLift.Services
         /// <summary>
         /// Saves performance monitoring data
         /// </summary>
-        public async Task SavePerformanceDataAsync(GAS_LIFT_PERFORMANCE performance, string userId)
+        public async Task SavePerformanceDataAsync(GAS_LIFT_PERFORMANCE performance, string userId, CancellationToken cancellationToken = default)
         {
             if (performance == null)
                 throw new ArgumentNullException(nameof(performance));

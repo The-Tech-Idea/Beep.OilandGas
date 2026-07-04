@@ -56,5 +56,21 @@ namespace Beep.OilandGas.DevelopmentPlanning.Constants
 
         /// <summary>Small reserves threshold (MMBOE).</summary>
         public const double SmallReservesThresholdMmboe = 100;
+
+        // ── Status Codes ──────────────────────────────────────────────────
+        public const string Draft = "DRAFT";
+        public const string Planned = "PLANNED";
+        public const string Approved = "APPROVED";
+        public const string Active = "ACTIVE";
+        public const string Deferred = "DEFERRED";
+        public const string Cancelled = "CANCELLED";
+
+        // ── Priority Codes ────────────────────────────────────────────────
+        public const string High = "HIGH";
+        public const string Medium = "MEDIUM";
+        public const string Low = "LOW";
+
+        // ── Trigger Basis ─────────────────────────────────────────────────
+        public const string TimeBased = "TIME_BASED";
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -12,6 +13,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
     /// <summary>
     /// API controller for PPDM39 data versioning operations
     /// </summary>
+    [Authorize]
     [ApiController]
     [Route("api/ppdm39/versioning")]
     public class PPDM39VersioningController : ControllerBase
@@ -81,7 +83,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Get version history for an entity
         /// </summary>
         [HttpGet("{tableName}/{entityId}/versions")]
-        public async Task<ActionResult> GetVersionHistory(string tableName, string entityId, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult> GetVersionHistory(string tableName, string entityId, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
@@ -114,7 +116,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Get a specific version of an entity
         /// </summary>
         [HttpGet("{tableName}/{entityId}/versions/{versionNumber}")]
-        public async Task<ActionResult<VersionInfo>> GetVersion(string tableName, string entityId, int versionNumber, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult<VersionInfo>> GetVersion(string tableName, string entityId, int versionNumber, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });

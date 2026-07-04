@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,7 +50,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<decimal> GetPriceAsync(
             string productId,
             DateTime date,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(productId))
                 throw new ArgumentNullException(nameof(productId));
@@ -67,7 +68,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "PRICE_INDEX");
+                entityType, connectionName, "PRICE_INDEX");
 
             var filters = new List<AppFilter>
             {
@@ -98,7 +99,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string productId,
             DateTime start,
             DateTime end,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(productId))
                 throw new ArgumentNullException(nameof(productId));
@@ -113,7 +114,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "PRICE_INDEX");
+                entityType, connectionName, "PRICE_INDEX");
 
             var filters = new List<AppFilter>
             {
@@ -135,14 +136,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string productId,
             decimal volume,
             DateTime date,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(productId))
                 throw new ArgumentNullException(nameof(productId));
             if (volume <= 0)
                 throw new AccountingException($"Volume must be positive: {volume}");
 
-            var price = await GetPriceAsync(productId, date, cn);
+            var price = await GetPriceAsync(productId, date, connectionName);
             var revenue = volume * price;
 
             _logger?.LogInformation("Revenue calculated for {ProductId}: Volume={Volume} × Price={Price} = {Revenue}",
@@ -158,12 +159,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string productId,
             DateTime start,
             DateTime end,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(productId))
                 throw new ArgumentNullException(nameof(productId));
 
-            var history = await GetHistoryAsync(productId, start, end, cn);
+            var history = await GetHistoryAsync(productId, start, end, connectionName);
             if (!history.Any())
                 return 0;
 

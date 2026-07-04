@@ -5,7 +5,9 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -50,7 +52,7 @@ namespace Beep.OilandGas.Accounting.Services
             string userId,
             string? receivableAccountId = null,
             string? payableAccountId = null,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (amount <= 0m)
                 throw new InvalidOperationException("Elimination amount must be positive");
@@ -59,7 +61,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var receivable = string.IsNullOrWhiteSpace(receivableAccountId)
                 ? GetAccountId(AccountMappingKeys.IntercompanyReceivable, DefaultGlAccounts.IntercompanyReceivable)
                 : receivableAccountId;

@@ -1,0 +1,151 @@
+@* Persona-aware dashboard widgets: My Tasks, SLA Health, Approval Queue, Recent Completions.
+    Reusable MudCard components that accept data sources and render accordingly.
+    Part of Phase 5 experience & integration. *@
+@using Beep.OilandGas.Web.Services
+
+<MudGrid>
+    @* ── My Pending Tasks Widget ── *@
+    <MudItem xs="12" md="6" lg="4">
+        <MudCard Elevation="2">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">
+                        <MudIcon Icon="@Icons.Material.Filled.Inbox" Class="mr-2" Color="Color.Primary" />
+                        My Tasks
+                    </MudText>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    @if (Tasks != null && Tasks.Any())
+                    {
+                        <MudChip Color="Color.Primary" Size="Size.Small">@Tasks.Count</MudChip>
+                    }
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent>
+                @if (Tasks == null || !Tasks.Any())
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Style="text-align:center" Class="pa-2">
+                        All caught up! No pending tasks.
+                    </MudText>
+                }
+                else
+                {
+                    @foreach (var task in Tasks.Take(5))
+                    {
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-1">
+                            <MudIcon Icon="@(task.Priority <= 1 ? Icons.Material.Filled.Error : Icons.Material.Filled.Circle)"
+                                     Size="Size.Small"
+                                     Color="@(task.Priority <= 1 ? Color.Error : task.Priority <= 2 ? Color.Warning : Color.Default)" />
+                            <MudText Typo="Typo.body2" Style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">
+                                @task.StepName
+                            </MudText>
+                            <MudChip Size="Size.Small" Variant="Variant.Outlined" Color="@(task.SlaStatus == "BREACHED" ? Color.Error : Color.Default)">
+                                @task.TaskType
+                            </MudChip>
+                        </MudStack>
+                    }
+                    @if (Tasks.Count > 5)
+                    {
+                        <MudButton Variant="Variant.Text" Size="Size.Small" FullWidth Href="/tasks/inbox">
+                            View all @Tasks.Count tasks
+                        </MudButton>
+                    }
+                }
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    @* ── SLA Health Widget ── *@
+    <MudItem xs="12" md="6" lg="4">
+        <MudCard Elevation="2">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">
+                        <MudIcon Icon="@Icons.Material.Filled.Timer" Class="mr-2" Color="Color.Secondary" />
+                        SLA Health
+                    </MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                @if (SlaStats == null)
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Style="text-align:center" Class="pa-2">No active SLAs</MudText>
+                }
+                else
+                {
+                    <MudStack Spacing="2">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween">
+                            <MudText Typo="Typo.body2">On Track</MudText>
+                            <MudChip Size="Size.Small" Color="Color.Success">@SlaStats.OnTrack</MudChip>
+                        </MudStack>
+                        <MudStack Row="true" Justify="Justify.SpaceBetween">
+                            <MudText Typo="Typo.body2">At Risk</MudText>
+                            <MudChip Size="Size.Small" Color="Color.Warning">@SlaStats.AtRisk</MudChip>
+                        </MudStack>
+                        <MudStack Row="true" Justify="Justify.SpaceBetween">
+                            <MudText Typo="Typo.body2">Breached</MudText>
+                            <MudChip Size="Size.Small" Color="Color.Error">@SlaStats.Breached</MudChip>
+                        </MudStack>
+                        @if (SlaStats.Breached > 0)
+                        {
+                            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2">
+                                @SlaStats.Breached task(s) have breached their SLA
+                            </MudAlert>
+                        }
+                    </MudStack>
+                }
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    @* ── Approval Queue Widget ── *@
+    <MudItem xs="12" md="6" lg="4">
+        <MudCard Elevation="2">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">
+                        <MudIcon Icon="@Icons.Material.Filled.HowToVote" Class="mr-2" Color="Color.Tertiary" />
+                        Pending Approvals
+                    </MudText>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    @if (ApprovalCount > 0)
+                    {
+                        <MudChip Color="Color.Primary" Size="Size.Small">@ApprovalCount</MudChip>
+                    }
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent>
+                @if (ApprovalCount == 0)
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Style="text-align:center" Class="pa-2">
+                        No pending approvals.
+                    </MudText>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Class="mb-2">
+                        You have @ApprovalCount pending approval(s) requiring your action.
+                    </MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" FullWidth
+                               Href="/tasks/inbox?taskType=APPROVAL">
+                        Review Approvals
+                    </MudButton>
+                }
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter] public List<UnifiedTask>? Tasks { get; set; }
+    [Parameter] public SlaStats? SlaStats { get; set; }
+    [Parameter] public int ApprovalCount { get; set; }
+}
+
+public class SlaStats
+{
+    public int OnTrack { get; set; }
+    public int AtRisk { get; set; }
+    public int Breached { get; set; }
+}

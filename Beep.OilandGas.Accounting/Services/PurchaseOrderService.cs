@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Constants;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -5,7 +6,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -108,7 +111,7 @@ namespace Beep.OilandGas.Accounting.Services
                 if (po.STATUS != "DRAFT")
                     throw new InvalidOperationException($"Only DRAFT POs can be approved (current: {po.STATUS})");
 
-                po.STATUS = "APPROVED";
+                po.STATUS = AccountingReferenceCodes.POStatusCodes.Approved;
                 po.ROW_CHANGED_BY = userId;
                 po.ROW_CHANGED_DATE = DateTime.UtcNow;
 
@@ -274,7 +277,7 @@ namespace Beep.OilandGas.Accounting.Services
                 if (po == null)
                     throw new InvalidOperationException($"PO {poId} not found");
 
-                po.STATUS = "CLOSED";
+                po.STATUS = AccountingReferenceCodes.POStatusCodes.Closed;
                 po.ROW_CHANGED_BY = userId;
                 po.ROW_CHANGED_DATE = DateTime.UtcNow;
 
@@ -333,9 +336,8 @@ namespace Beep.OilandGas.Accounting.Services
             var lineItem = await repo.GetByIdAsync(poLineItemId);
             return lineItem as PO_LINE_ITEM;
         }
-        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? connectionName = null)
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string cn = "PPDM39")
         {
-            var cn = connectionName ?? ConnectionName;
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
 
             return new PPDMGenericRepository(

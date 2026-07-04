@@ -80,7 +80,7 @@ namespace Beep.OilandGas.Web.Services
     public interface ILifeCycleService
     {
         // Field Operations
-        Task<List<FieldListItem>> GetAllFieldsAsync(string? connectionName = null);
+        Task<List<FieldListItem>> GetAllFieldsAsync(string connectionName = "PPDM39");
         Task<FieldResponse> GetCurrentFieldAsync();
         Task<SetActiveFieldResponse> SetActiveFieldAsync(string fieldId);
         Task<FieldDashboard> GetFieldDashboardAsync();
@@ -114,7 +114,7 @@ namespace Beep.OilandGas.Web.Services
         /// <summary>
         /// Get all fields for selection
         /// </summary>
-        public async Task<List<FieldListItem>> GetAllFieldsAsync(string? connectionName = null)
+        public async Task<List<FieldListItem>> GetAllFieldsAsync(string connectionName = "PPDM39")
         {
             try
             {

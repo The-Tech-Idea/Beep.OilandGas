@@ -14,47 +14,47 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Registers a fee mineral lease.
         /// </summary>
-        Task<FEE_MINERAL_LEASE> RegisterFeeMineralLeaseAsync(CreateFeeMineralLeaseRequest request, string userId, string? connectionName = null);
+        Task<FEE_MINERAL_LEASE> RegisterFeeMineralLeaseAsync(CreateFeeMineralLeaseRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Registers a government lease.
         /// </summary>
-        Task<GOVERNMENT_LEASE> RegisterGovernmentLeaseAsync(CreateGovernmentLeaseRequest request, string userId, string? connectionName = null);
+        Task<GOVERNMENT_LEASE> RegisterGovernmentLeaseAsync(CreateGovernmentLeaseRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets a fee mineral lease by ID.
         /// </summary>
-        Task<FEE_MINERAL_LEASE?> GetFeeMineralLeaseAsync(string leaseId, string? connectionName = null);
+        Task<FEE_MINERAL_LEASE?> GetFeeMineralLeaseAsync(string leaseId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets leases by property.
         /// </summary>
-        Task<List<FEE_MINERAL_LEASE>> GetLeasesByPropertyAsync(string propertyId, string? connectionName = null);
+        Task<List<FEE_MINERAL_LEASE>> GetLeasesByPropertyAsync(string propertyId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Registers a sales agreement.
         /// </summary>
-        Task<SALES_AGREEMENT> RegisterSalesAgreementAsync(CreateSalesAgreementRequest request, string userId, string? connectionName = null);
+        Task<SALES_AGREEMENT> RegisterSalesAgreementAsync(CreateSalesAgreementRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Registers a transportation agreement.
         /// </summary>
-        Task<TRANSPORTATION_AGREEMENT> RegisterTransportationAgreementAsync(CreateTransportationAgreementRequest request, string userId, string? connectionName = null);
+        Task<TRANSPORTATION_AGREEMENT> RegisterTransportationAgreementAsync(CreateTransportationAgreementRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Renews a lease.
         /// </summary>
-        Task<LeaseRenewalResult> RenewLeaseAsync(string leaseId, LeaseRenewalRequest request, string userId, string? connectionName = null);
+        Task<LeaseRenewalResult> RenewLeaseAsync(string leaseId, LeaseRenewalRequest request, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets leases expiring within a date range.
         /// </summary>
-        Task<List<LeaseExpirationAlert>> GetLeasesExpiringAsync(DateTime? expirationDate, string? connectionName = null);
+        Task<List<LeaseExpirationAlert>> GetLeasesExpiringAsync(DateTime? expirationDate, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets lease summary.
         /// </summary>
-        Task<LeaseSummary> GetLeaseSummaryAsync(string leaseId, string? connectionName = null);
+        Task<LeaseSummary> GetLeaseSummaryAsync(string leaseId, string connectionName = "PPDM39");
     }
 }
 

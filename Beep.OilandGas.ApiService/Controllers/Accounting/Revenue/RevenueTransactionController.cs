@@ -45,7 +45,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
             [FromBody] CreateRevenueTransactionRequest request,
             [FromQuery] bool isCash = false,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -96,7 +96,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
         [HttpPost("service/recognize")]
         public async Task<ActionResult<REVENUE_ALLOCATION>> RecognizeRevenueAsync(
             [FromBody] ALLOCATION_DETAIL allocationDetail,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -125,7 +125,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
         [HttpPost("service/validate")]
         public async Task<ActionResult<object>> ValidateRevenueAllocationAsync(
             [FromBody] REVENUE_ALLOCATION allocation,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

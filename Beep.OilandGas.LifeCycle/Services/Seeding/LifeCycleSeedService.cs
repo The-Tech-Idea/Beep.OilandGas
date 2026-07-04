@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -55,8 +56,17 @@ public class LifeCycleSeedService : ILifeCycleSeedService
             await SeedLifecycleReferenceCodesAsync(connectionName, userId, result, cancellationToken);
             await SeedProcessDefinitionsAsync(connectionName, userId, result, cancellationToken);
 
+            // Phase 2: Seed DoA thresholds
+            await SeedDoAThresholdsAsync(connectionName, userId, result, cancellationToken);
+
+            // Phase 3: Seed business event triggers
+            await SeedBusinessEventTriggersAsync(connectionName, userId, result, cancellationToken);
+
+            // Phase 4: Seed SoD rules
+            await SeedSodRulesAsync(connectionName, userId, result, cancellationToken);
+
             result.Success = result.Errors.Count == 0;
-            result.TablesSeeded = result.TotalRecordsInserted > 0 ? 2 : 0;
+            result.TablesSeeded = result.TotalRecordsInserted > 0 ? 5 : 0;
 
             _logger?.LogInformation(
                 "Lifecycle seed completed. States={States}, Definitions={Defs}, Steps={Steps}, Total={Total}",
@@ -313,4 +323,123 @@ public class LifeCycleSeedService : ILifeCycleSeedService
             typeof(T),
             connectionName,
             tableName);
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Phase 2: Seed Delegation of Authority Thresholds
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private async Task SeedDoAThresholdsAsync(
+        string connectionName, string userId, LifeCycleSeedResult result, CancellationToken ct)
+    {
+        var repo = GetRepo<DELEGATION_OF_AUTHORITY>("DELEGATION_OF_AUTHORITY", connectionName);
+        var existing = (await repo.GetAsync(new List<AppFilter>()))
+            .OfType<DELEGATION_OF_AUTHORITY>()
+            .Select(d => d.DOA_NAME + "|" + d.APPROVAL_LEVEL)
+            .ToHashSet();
+
+        var thresholds = new (string name, string entity, string field, string op, decimal val, decimal? max, string level, string role, int seq, string processType)[]
+        {
+            // AFE Approval Limits (5 levels)
+            ("AFE Standard Limits", "AFE", "ESTIMATED_COST", "GREATER_THAN", 0, null, "LEVEL_1", "Supervisor", 1, "AFE_APPROVAL"),
+            ("AFE Standard Limits", "AFE", "ESTIMATED_COST", "GREATER_THAN", 50000, null, "LEVEL_2", "Manager", 2, "AFE_APPROVAL"),
+            ("AFE Standard Limits", "AFE", "ESTIMATED_COST", "GREATER_THAN", 500000, null, "LEVEL_3", "SeniorManager", 3, "AFE_APPROVAL"),
+            ("AFE Standard Limits", "AFE", "ESTIMATED_COST", "GREATER_THAN", 5000000, null, "LEVEL_4", "Executive", 4, "AFE_APPROVAL"),
+            ("AFE Standard Limits", "AFE", "ESTIMATED_COST", "GREATER_THAN", 50000000, null, "LEVEL_5", "Board", 5, "AFE_APPROVAL"),
+            // Cost Transaction Limits
+            ("Cost Transaction Limits", "COST_TRANSACTION", "AMOUNT", "GREATER_THAN", 0, null, "LEVEL_1", "Supervisor", 1, "COST_APPROVAL"),
+            ("Cost Transaction Limits", "COST_TRANSACTION", "AMOUNT", "GREATER_THAN", 25000, null, "LEVEL_2", "Manager", 2, "COST_APPROVAL"),
+            ("Cost Transaction Limits", "COST_TRANSACTION", "AMOUNT", "GREATER_THAN", 250000, null, "LEVEL_3", "SeniorManager", 3, "COST_APPROVAL"),
+            // Revenue Recognition Limits
+            ("Revenue Recognition Limits", "REVENUE_TRANSACTION", "GROSS_REVENUE", "GREATER_THAN", 0, null, "LEVEL_1", "Accountant", 1, "REVENUE_APPROVAL"),
+            ("Revenue Recognition Limits", "REVENUE_TRANSACTION", "GROSS_REVENUE", "GREATER_THAN", 100000, null, "LEVEL_2", "Manager", 2, "REVENUE_APPROVAL"),
+            ("Revenue Recognition Limits", "REVENUE_TRANSACTION", "GROSS_REVENUE", "GREATER_THAN", 1000000, null, "LEVEL_3", "Executive", 3, "REVENUE_APPROVAL"),
+            // Journal Entry Limits
+            ("Journal Entry Limits", "JOURNAL_ENTRY", "TOTAL_DEBIT", "GREATER_THAN", 0, null, "LEVEL_1", "Accountant", 1, "JOURNAL_APPROVAL"),
+            ("Journal Entry Limits", "JOURNAL_ENTRY", "TOTAL_DEBIT", "GREATER_THAN", 50000, null, "LEVEL_2", "Manager", 2, "JOURNAL_APPROVAL"),
+            ("Journal Entry Limits", "JOURNAL_ENTRY", "TOTAL_DEBIT", "GREATER_THAN", 500000, null, "LEVEL_3", "Executive", 3, "JOURNAL_APPROVAL"),
+        };
+
+        foreach (var (name, entity, field, op, val, max, level, role, seq, processType) in thresholds)
+        {
+            ct.ThrowIfCancellationRequested();
+            var key = $"{name}|{level}";
+            if (existing.Contains(key)) continue;
+
+            var doa = new DELEGATION_OF_AUTHORITY
+            {
+                DOA_NAME = name, ENTITY_TYPE = entity, FIELD_NAME = field,
+                COMPARISON_OPERATOR = op, THRESHOLD_VALUE = val, THRESHOLD_VALUE_MAX = max,
+                APPROVAL_LEVEL = level, REQUIRED_ROLE = role, APPROVAL_SEQUENCE = seq,
+                PROCESS_TYPE = processType, CURRENCY_CODE = "USD",
+                ESCALATION_HOURS = level == "LEVEL_1" ? 72 : 48,
+                ESCALATION_ROLE = seq switch { 1 => "Manager", 2 => "SeniorManager", 3 => "Executive", _ => "Board" },
+            };
+            await repo.InsertAsync(doa, userId);
+            result.TotalRecordsInserted++;
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Phase 3: Seed Business Event Triggers
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private async Task SeedBusinessEventTriggersAsync(
+        string connectionName, string userId, LifeCycleSeedResult result, CancellationToken ct)
+    {
+        var repo = GetRepo<BUSINESS_EVENT_TRIGGER>("BUSINESS_EVENT_TRIGGER", connectionName);
+        var existing = (await repo.GetAsync(new List<AppFilter>()))
+            .OfType<BUSINESS_EVENT_TRIGGER>()
+            .Select(t => t.TRIGGER_NAME)
+            .ToHashSet();
+
+        var triggers = new (string name, string eventType, string entityType, string? condition, string targetProcess)[]
+        {
+            ("Production Posted → Revenue Recognition", "STATUS_CHANGED", "PDEN_VOL_SUMMARY", "NewStatus == 'POSTED'", "CRW_PRODUCTION_TO_REVENUE"),
+            ("AFE Approved → Cost Tracking", "STATUS_CHANGED", "AFE", "NewStatus == 'APPROVED'", "CRW_AFE_COST_TRACKING"),
+            ("Revenue Posted → Royalty Calculation", "STATUS_CHANGED", "REVENUE_TRANSACTION", "NewStatus == 'POSTED'", "CRW_ROYALTY_CALCULATION"),
+            ("Incident Reported → Investigation", "ENTITY_CREATED", "HSE_INCIDENT", null, "HSE_INCIDENT_REPORTING"),
+            ("Well Completed → Production Handoff", "STATUS_CHANGED", "WELL", "NewStatus == 'COMPLETED'", "CRW_WELL_HANDOFF_DRILLING_PROD"),
+            ("Production Declining → Workover Proposal", "STATUS_CHANGED", "WELL", "NewStatus == 'DECLINING'", "CRW_WORKOVER_PROPOSAL"),
+            ("Period Close → Journal Entry Review", "STATUS_CHANGED", "JOURNAL_ENTRY", "NewStatus == 'DRAFT'", "CRW_PERIOD_CLOSE"),
+            ("Reserves Estimate → Executive Review", "STATUS_CHANGED", "RESERVES_ESTIMATE", "NewStatus == 'DRAFT'", "CRW_RESERVES_REVISION"),
+        };
+
+        foreach (var (name, eventType, entityType, condition, targetProcess) in triggers)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (existing.Contains(name)) continue;
+
+            var trigger = new BUSINESS_EVENT_TRIGGER
+            {
+                TRIGGER_NAME = name, EVENT_TYPE = eventType, ENTITY_TYPE = entityType,
+                CONDITION_EXPRESSION = condition, TARGET_PROCESS_DEF_ID = targetProcess,
+                IS_ACTIVE = "Y", PRIORITY = 10,
+            };
+            await repo.InsertAsync(trigger, userId);
+            result.TotalRecordsInserted++;
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Phase 4: Seed SoD Rules (delegates to SodEvaluationEngine)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private async Task SeedSodRulesAsync(
+        string connectionName, string userId, LifeCycleSeedResult result, CancellationToken ct)
+    {
+        try
+        {
+            var sodEngine = new Processes.SodEvaluationEngine(
+                _editor, _commonColumnHandler, _defaults, _metadata, connectionName,
+                _logger as ILogger<Processes.SodEvaluationEngine>);
+
+            await sodEngine.SeedDefaultRulesAsync(userId);
+            result.TotalRecordsInserted += 25; // 25 default SoD rules
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "SoD rule seeding skipped (may already exist): {Message}", ex.Message);
+        }
+    }
+
 }

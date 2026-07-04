@@ -12,6 +12,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             ACCOUNTING_COST cost,
             bool capitalize,
             string userId,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
     }
 }

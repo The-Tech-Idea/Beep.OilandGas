@@ -11,11 +11,11 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// </summary>
     public interface IPPDM39DataService
     {
-        Task<GetEntitiesResponse> GetEntitiesAsync(string tableName, List<AppFilter> filters, string? connectionName = null);
-        Task<GenericEntityResponse> GetEntityByIdAsync(string tableName, object id, string? connectionName = null);
-        Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> entityData, string userId, string? connectionName = null);
-        Task<GenericEntityResponse> UpdateEntityAsync(string tableName, string entityId, Dictionary<string, object> entityData, string userId, string? connectionName = null);
-        Task<GenericEntityResponse> DeleteEntityAsync(string tableName, object id, string userId, string? connectionName = null);
+        Task<GetEntitiesResponse> GetEntitiesAsync(string tableName, List<AppFilter> filters, string connectionName = "PPDM39");
+        Task<GenericEntityResponse> GetEntityByIdAsync(string tableName, object id, string connectionName = "PPDM39");
+        Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> entityData, string userId, string connectionName = "PPDM39");
+        Task<GenericEntityResponse> UpdateEntityAsync(string tableName, string entityId, Dictionary<string, object> entityData, string userId, string connectionName = "PPDM39");
+        Task<GenericEntityResponse> DeleteEntityAsync(string tableName, object id, string userId, string connectionName = "PPDM39");
     }
 }
 

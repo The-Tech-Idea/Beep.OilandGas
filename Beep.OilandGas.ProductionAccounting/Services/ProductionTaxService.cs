@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Globalization;
 using System.Collections.Generic;
@@ -45,7 +46,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         public async Task<TAX_TRANSACTION?> CalculateProductionTaxesAsync(
             REVENUE_TRANSACTION revenueTransaction,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (revenueTransaction == null)
                 throw new ArgumentNullException(nameof(revenueTransaction));
@@ -56,7 +57,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (grossRevenue <= 0m)
                 return null;
 
-            var taxData = await GetTaxDataAsync(revenueTransaction.PROPERTY_ID, cn);
+            var taxData = await GetTaxDataAsync(revenueTransaction.PROPERTY_ID, connectionName);
             if (taxData == null)
                 return null;
 
@@ -70,22 +71,22 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (totalTax <= 0m)
                 return null;
 
-            await InsertTaxTransactionAsync(revenueTransaction, ProductionTaxAssessmentCodes.Severance, severanceAmount, userId, cn);
-            await InsertTaxTransactionAsync(revenueTransaction, ProductionTaxAssessmentCodes.AdValorem, adValoremAmount, userId, cn);
+            await InsertTaxTransactionAsync(revenueTransaction, ProductionTaxAssessmentCodes.Severance, severanceAmount, userId, connectionName);
+            await InsertTaxTransactionAsync(revenueTransaction, ProductionTaxAssessmentCodes.AdValorem, adValoremAmount, userId, connectionName);
 
             revenueTransaction.TAX_AMOUNT = totalTax;
             revenueTransaction.ROW_CHANGED_BY = userId;
             revenueTransaction.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-            var revenueRepo = await CreateRepoAsync<REVENUE_TRANSACTION>("REVENUE_TRANSACTION", cn);
+            var revenueRepo = await CreateRepoAsync<REVENUE_TRANSACTION>("REVENUE_TRANSACTION", connectionName);
             await revenueRepo.UpdateAsync(revenueTransaction, userId);
 
             _logger?.LogInformation(
                 "Production taxes applied to revenue {RevenueId}: total {TaxAmount}",
                 revenueTransaction.REVENUE_TRANSACTION_ID, totalTax);
 
-            await RecordIdcAdjustmentAsync(revenueTransaction.PROPERTY_ID, revenueTransaction.TRANSACTION_DATE, userId, cn);
-            await RecordDepletionAdjustmentsAsync(revenueTransaction.PROPERTY_ID, revenueTransaction.TRANSACTION_DATE, userId, cn);
+            await RecordIdcAdjustmentAsync(revenueTransaction.PROPERTY_ID, revenueTransaction.TRANSACTION_DATE, userId, connectionName);
+            await RecordDepletionAdjustmentsAsync(revenueTransaction.PROPERTY_ID, revenueTransaction.TRANSACTION_DATE, userId, connectionName);
 
             return new TAX_TRANSACTION
             {
@@ -110,9 +111,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return rate.Value;
         }
 
-        private async Task<GOVERNMENTAL_TAX_DATA?> GetTaxDataAsync(string propertyId, string cn)
+        private async Task<GOVERNMENTAL_TAX_DATA?> GetTaxDataAsync(string propertyId, string connectionName)
         {
-            var repo = await CreateRepoAsync<GOVERNMENTAL_TAX_DATA>("GOVERNMENTAL_TAX_DATA", cn);
+            var repo = await CreateRepoAsync<GOVERNMENTAL_TAX_DATA>("GOVERNMENTAL_TAX_DATA", connectionName);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
@@ -140,7 +141,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string taxType,
             decimal amount,
             string userId,
-            string cn)
+            string connectionName)
         {
             if (amount <= 0m)
                 return;
@@ -158,7 +159,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await CreateRepoAsync<TAX_TRANSACTION>("TAX_TRANSACTION", cn);
+            var repo = await CreateRepoAsync<TAX_TRANSACTION>("TAX_TRANSACTION", connectionName);
             await repo.InsertAsync(tax, userId);
         }
 
@@ -166,13 +167,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string propertyId,
             DateTime? periodDate,
             string userId,
-            string cn)
+            string connectionName)
         {
             if (string.IsNullOrWhiteSpace(propertyId))
                 return;
 
             var periodEnd = periodDate?.Date ?? DateTime.UtcNow.Date;
-            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", cn);
+            var repo = await CreateRepoAsync<ACCOUNTING_COST>("ACCOUNTING_COST", connectionName);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = propertyId },
@@ -206,7 +207,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var adjustRepo = await CreateRepoAsync<TAX_ADJUSTMENT>("TAX_ADJUSTMENT", cn);
+            var adjustRepo = await CreateRepoAsync<TAX_ADJUSTMENT>("TAX_ADJUSTMENT", connectionName);
             await adjustRepo.InsertAsync(adjustment, userId);
         }
 
@@ -214,13 +215,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string propertyId,
             DateTime? periodDate,
             string userId,
-            string cn)
+            string connectionName)
         {
             if (string.IsNullOrWhiteSpace(propertyId))
                 return;
 
             var periodEnd = periodDate?.Date ?? DateTime.UtcNow.Date;
-            var amortRepo = await CreateRepoAsync<AMORTIZATION_RECORD>("AMORTIZATION_RECORD", cn);
+            var amortRepo = await CreateRepoAsync<AMORTIZATION_RECORD>("AMORTIZATION_RECORD", connectionName);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = propertyId },
@@ -235,7 +236,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (bookDepletion <= 0m)
                 return;
 
-            var taxRate = await GetTaxDepletionRateAsync(propertyId, cn);
+            var taxRate = await GetTaxDepletionRateAsync(propertyId, connectionName);
             var taxDepletion = bookDepletion * taxRate;
 
             var adjustment = new TAX_ADJUSTMENT
@@ -252,10 +253,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var adjustRepo = await CreateRepoAsync<TAX_ADJUSTMENT>("TAX_ADJUSTMENT", cn);
+            var adjustRepo = await CreateRepoAsync<TAX_ADJUSTMENT>("TAX_ADJUSTMENT", connectionName);
             await adjustRepo.InsertAsync(adjustment, userId);
 
-            var deferred = (taxDepletion - bookDepletion) * await GetDeferredTaxRateAsync(propertyId, cn);
+            var deferred = (taxDepletion - bookDepletion) * await GetDeferredTaxRateAsync(propertyId, connectionName);
             if (deferred != 0m)
             {
                 var balance = new DEFERRED_TAX_BALANCE
@@ -272,14 +273,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                var balanceRepo = await CreateRepoAsync<DEFERRED_TAX_BALANCE>("DEFERRED_TAX_BALANCE", cn);
+                var balanceRepo = await CreateRepoAsync<DEFERRED_TAX_BALANCE>("DEFERRED_TAX_BALANCE", connectionName);
                 await balanceRepo.InsertAsync(balance, userId);
             }
         }
 
-        private async Task<decimal> GetTaxDepletionRateAsync(string propertyId, string cn)
+        private async Task<decimal> GetTaxDepletionRateAsync(string propertyId, string connectionName)
         {
-            var data = await GetTaxDataAsync(propertyId, cn);
+            var data = await GetTaxDataAsync(propertyId, connectionName);
             if (data == null)
                 return 1m;
 
@@ -287,9 +288,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return rate > 0m ? rate : 1m;
         }
 
-        private async Task<decimal> GetDeferredTaxRateAsync(string propertyId, string cn)
+        private async Task<decimal> GetDeferredTaxRateAsync(string propertyId, string connectionName)
         {
-            var data = await GetTaxDataAsync(propertyId, cn);
+            var data = await GetTaxDataAsync(propertyId, connectionName);
             if (data == null)
                 return 0m;
 
@@ -356,7 +357,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return false;
         }
 
-        private async Task<PPDMGenericRepository> CreateRepoAsync<T>(string tableName, string cn)
+        private async Task<PPDMGenericRepository> CreateRepoAsync<T>(string tableName, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -364,7 +365,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, tableName);
+                entityType, connectionName, tableName);
         }
     }
 }

@@ -33,7 +33,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
         [HttpGet("exchanges")]
         public async Task<ActionResult<List<EXCHANGE_CONTRACT>>> GetExchanges(
             [FromQuery] string? contractId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -60,7 +60,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
         public async Task<ActionResult<EXCHANGE_CONTRACT>> CreateExchangeContract(
             [FromBody] CreateExchangeContractRequest request,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

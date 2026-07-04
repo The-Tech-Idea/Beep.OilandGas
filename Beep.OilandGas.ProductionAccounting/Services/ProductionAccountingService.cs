@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -436,7 +437,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
         // Private helper methods
 
-        private async Task<decimal> GetTotalProductionAsync(string fieldId, DateTime asOfDate, string cn)
+        private async Task<decimal> GetTotalProductionAsync(string fieldId, DateTime asOfDate, string connectionName)
         {
             try
             {
@@ -447,7 +448,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "MEASUREMENT_RECORD");
+                    entityType, connectionName, "MEASUREMENT_RECORD");
 
                 var filters = new List<AppFilter>
                 {
@@ -480,7 +481,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
-        private async Task<decimal> GetTotalRevenueAsync(string fieldId, DateTime asOfDate, string cn)
+        private async Task<decimal> GetTotalRevenueAsync(string fieldId, DateTime asOfDate, string connectionName)
         {
             try
             {
@@ -491,7 +492,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "REVENUE_TRANSACTION");
+                    entityType, connectionName, "REVENUE_TRANSACTION");
 
                 var filters = new List<AppFilter>
                 {
@@ -524,7 +525,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
-        private async Task<decimal> GetTotalRoyaltyAsync(string fieldId, DateTime asOfDate, string cn)
+        private async Task<decimal> GetTotalRoyaltyAsync(string fieldId, DateTime asOfDate, string connectionName)
         {
             try
             {
@@ -535,7 +536,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "ROYALTY_CALCULATION");
+                    entityType, connectionName, "ROYALTY_CALCULATION");
 
                 var filters = new List<AppFilter>
                 {
@@ -568,7 +569,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
-        private async Task<decimal> GetTotalCostsAsync(string fieldId, DateTime asOfDate, string cn)
+        private async Task<decimal> GetTotalCostsAsync(string fieldId, DateTime asOfDate, string connectionName)
         {
             try
             {
@@ -579,7 +580,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "ACCOUNTING_COST");
+                    entityType, connectionName, "ACCOUNTING_COST");
 
                 var filters = new List<AppFilter>
                 {
@@ -612,14 +613,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
-        private async Task<string> GetAccountingMethodAsync(string fieldId, string cn)
+        private async Task<string> GetAccountingMethodAsync(string fieldId, string connectionName)
         {
             try
             {
                 // Check ACCOUNTING_POLICY or company default for method (SE vs FC)
                 // Default to Successful Efforts, which is most common in upstream E&P
                 var metadata = await _metadata.GetTableMetadataAsync("FIELD");
-                var fieldEntity = await GetFieldAsync(fieldId, cn);
+                var fieldEntity = await GetFieldAsync(fieldId, connectionName);
                 
                 string accountingMethod = "SuccessfulEfforts";  // Default: SE is standard
                 
@@ -641,7 +642,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
-        private async Task<FIELD> GetFieldAsync(string fieldId, string cn)
+        private async Task<FIELD> GetFieldAsync(string fieldId, string connectionName)
         {
             try
             {
@@ -651,7 +652,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "FIELD");
+                    entityType, connectionName, "FIELD");
 
                 var field = await repo.GetByIdAsync(fieldId);
                 return field as FIELD;
@@ -670,7 +671,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
-        private async Task<string> GetPeriodStatusAsync(string fieldId, DateTime asOfDate, string cn)
+        private async Task<string> GetPeriodStatusAsync(string fieldId, DateTime asOfDate, string connectionName)
         {
             try
             {
@@ -680,7 +681,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "JOURNAL_ENTRY");
+                    entityType, connectionName, "JOURNAL_ENTRY");
 
                 var entryNumber = $"PC-{fieldId}-{asOfDate:yyyyMM}";
                 var entries = await repo.GetAsync(new List<AppFilter>
@@ -710,7 +711,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
-        private async Task MarkRunTicketProcessedAsync(RUN_TICKET RUN_TICKET, string userId, string cn)
+        private async Task MarkRunTicketProcessedAsync(RUN_TICKET RUN_TICKET, string userId, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync("RUN_TICKET");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -718,7 +719,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "RUN_TICKET");
+                entityType, connectionName, "RUN_TICKET");
 
             RUN_TICKET.IS_PROCESSED = _defaults.GetActiveIndicatorYes();
             RUN_TICKET.PROCESSED_DATE = DateTime.UtcNow;
@@ -732,7 +733,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             REVENUE_TRANSACTION revenueTransaction,
             List<ALLOCATION_DETAIL> allocationDetails,
             string userId,
-            string cn)
+            string connectionName)
         {
             if (revenueTransaction == null || allocationDetails == null || allocationDetails.Count == 0)
                 return;
@@ -741,7 +742,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (totalPercentage <= 0m)
                 totalPercentage = 100m;
 
-            var repo = await CreateRepoAsync<REVENUE_ALLOCATION>("REVENUE_ALLOCATION", cn);
+            var repo = await CreateRepoAsync<REVENUE_ALLOCATION>("REVENUE_ALLOCATION", connectionName);
             foreach (var detail in allocationDetails)
             {
                 var percentage = detail.ALLOCATION_PERCENTAGE ?? 0m;
@@ -768,7 +769,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
-        private async Task<REVENUE_TRANSACTION?> GetRevenueTransactionAsync(string revenueTransactionId, string cn)
+        private async Task<REVENUE_TRANSACTION?> GetRevenueTransactionAsync(string revenueTransactionId, string connectionName)
         {
             if (string.IsNullOrWhiteSpace(revenueTransactionId))
                 return null;
@@ -779,13 +780,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "REVENUE_TRANSACTION");
+                entityType, connectionName, "REVENUE_TRANSACTION");
 
             var result = await repo.GetByIdAsync(revenueTransactionId);
             return result as REVENUE_TRANSACTION;
         }
 
-        private async Task<PPDMGenericRepository> CreateRepoAsync<T>(string tableName, string cn)
+        private async Task<PPDMGenericRepository> CreateRepoAsync<T>(string tableName, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -793,7 +794,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, tableName);
+                entityType, connectionName, tableName);
         }
     }
 }

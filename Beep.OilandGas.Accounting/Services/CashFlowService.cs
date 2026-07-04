@@ -7,7 +7,9 @@ using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -16,7 +18,7 @@ namespace Beep.OilandGas.Accounting.Services
     /// <summary>
     /// IAS 7 cash flow statement generation (direct from GL entries).
     /// </summary>
-    public class CashFlowService
+    public class CashFlowService 
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -48,13 +50,12 @@ namespace Beep.OilandGas.Accounting.Services
         public async Task<CashFlowStatement> GenerateCashFlowAsync(
             DateTime periodStart,
             DateTime periodEnd,
-            string? connectionName = null,
+            string cn = "PPDM39",
             string? bookId = null)
         {
             if (periodEnd < periodStart)
                 throw new ArgumentException("periodEnd must be >= periodStart", nameof(periodEnd));
 
-            var cn = connectionName ?? ConnectionName;
             var cashAccount = GetAccountId(AccountMappingKeys.Cash, DefaultGlAccounts.Cash);
 
             var entries = await GetGlEntriesAsync(periodStart, periodEnd, cn, bookId);

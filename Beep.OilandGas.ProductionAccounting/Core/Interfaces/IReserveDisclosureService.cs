@@ -12,6 +12,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<RESERVE_DISCLOSURE_PACKAGE> BuildDisclosureAsync(
             string propertyId,
             DateTime? asOfDate = null,
-            string cn = "PPDM39");
+            string connectionName = "PPDM39");
     }
 }

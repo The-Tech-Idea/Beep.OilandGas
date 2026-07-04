@@ -6,7 +6,9 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -49,7 +51,7 @@ namespace Beep.OilandGas.Accounting.Services
             string fromCurrency,
             string toCurrency,
             DateTime rateDate,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(fromCurrency))
                 throw new ArgumentNullException(nameof(fromCurrency));
@@ -59,7 +61,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.Equals(fromCurrency, toCurrency, StringComparison.OrdinalIgnoreCase))
                 return amount;
 
-            var rate = await GetFxRateAsync(fromCurrency, toCurrency, rateDate, connectionName);
+            var rate = await GetFxRateAsync(fromCurrency, toCurrency, rateDate, cn);
             if (rate == null || rate.RATE == null || rate.RATE <= 0m)
                 throw new InvalidOperationException($"FX rate missing for {fromCurrency}->{toCurrency} on {rateDate:yyyy-MM-dd}");
 
@@ -73,7 +75,7 @@ namespace Beep.OilandGas.Accounting.Services
             string reportingCurrency,
             decimal originalAmount,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(entityId))
                 throw new ArgumentNullException(nameof(entityId));
@@ -84,7 +86,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var rate = await GetFxRateAsync(originalCurrency, reportingCurrency, periodEnd, cn);
             if (rate == null || rate.RATE == null || rate.RATE <= 0m)
                 throw new InvalidOperationException($"FX rate missing for {originalCurrency}->{reportingCurrency} on {periodEnd:yyyy-MM-dd}");
@@ -116,7 +117,7 @@ namespace Beep.OilandGas.Accounting.Services
             decimal amountDifference,
             DateTime asOfDate,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(adjustmentAccount))
                 throw new ArgumentNullException(nameof(adjustmentAccount));
@@ -125,7 +126,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var gainAccount = GetAccountId(AccountMappingKeys.ForeignExchangeGain, DefaultGlAccounts.ForeignExchangeGain);
             var lossAccount = GetAccountId(AccountMappingKeys.ForeignExchangeLoss, DefaultGlAccounts.ForeignExchangeLoss);
 
@@ -153,9 +153,8 @@ namespace Beep.OilandGas.Accounting.Services
             return entry;
         }
 
-        private async Task<FX_RATE?> GetFxRateAsync(string fromCurrency, string toCurrency, DateTime rateDate, string? connectionName)
+        private async Task<FX_RATE?> GetFxRateAsync(string fromCurrency, string toCurrency, DateTime rateDate, string? cn)
         {
-            var cn = connectionName ?? ConnectionName;
             var repo = await GetRepoAsync<FX_RATE>("FX_RATE", cn);
 
             var filters = new List<AppFilter>

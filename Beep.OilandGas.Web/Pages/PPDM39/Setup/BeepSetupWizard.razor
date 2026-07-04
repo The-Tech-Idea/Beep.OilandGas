@@ -1,4 +1,5 @@
 @page "/ppdm39/setup/beep-wizard"
+@page "/ppdm39/setup"
 @using System.Net.Http.Json
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
@@ -7,116 +8,97 @@
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
     <MudText Typo="Typo.h3" GutterBottom="true">
-        <MudIcon Icon="@Icons.Material.Filled.AutoFixHigh" Class="mr-2" Color="Color.Primary" />
-        Setup Wizard
-    </MudText>
-    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
-        Driver provisioning → Connection setup → Schema creation → PPDM module seeding.
-        Supports checkpoint/resume — if interrupted, resumes from the last completed step.
+        <MudIcon Icon="@Icons.Material.Filled.AutoFixHigh" Class="mr-2" Color="Color.Primary" />Setup Wizard
     </MudText>
 
-    @if (_state == "Idle")
+    @if (_checking){<MudProgressLinear Indeterminate="true" Class="my-4" Color="Color.Primary"/>}
+    else if (_state=="Idle")
     {
-        <MudCard Elevation="3">
-            <MudCardContent>
-                <MudAlert Severity="Severity.Info" Class="mb-3">
-                    This wizard runs the full BeepDM setup pipeline with all PPDM domain modules
-                    (Exploration, Development, Production, Accounting, etc.) registered as seeders.
-                </MudAlert>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StartWizard" Disabled="@_starting">
-                    @if (_starting) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
-                    Start Setup Wizard
-                </MudButton>
-            </MudCardContent>
-        </MudCard>
+        @* ── Setup Steps (using existing Beep.Razor.Components pages) ── *@
+        <MudGrid>
+            <MudItem xs="12" md="4">
+                <MudCard Elevation="2" Class="mb-3"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">1. Install Drivers</MudText></CardHeaderContent></MudCardHeader>
+                <MudCardContent><MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">Install database drivers via NuGet before creating connections.</MudText>
+                <MudButton Variant="Variant.Outlined" FullWidth="true" Href="/uc_connectiondrivers" Target="_blank">Driver Manager ↗</MudButton>
+                <MudButton Variant="Variant.Text" Size="Size.Small" FullWidth="true" Href="/uc_nuggetsmanage" Target="_blank" Class="mt-1">NuGet Manager ↗</MudButton>
+                </MudCardContent></MudCard>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudCard Elevation="2" Class="mb-3"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">2. Create Connection</MudText></CardHeaderContent></MudCardHeader>
+                <MudCardContent><MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">Create a datasource connection to your database (SQLite, SQL Server, PostgreSQL, Oracle, etc.).</MudText>
+                <MudButton Variant="Variant.Outlined" FullWidth="true" Href="/uc_dataconnection" Target="_blank">Connection Editor ↗</MudButton>
+                </MudCardContent></MudCard>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudCard Elevation="2" Class="mb-3"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">3. Run Setup Wizard</MudText></CardHeaderContent></MudCardHeader>
+                <MudCardContent><MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">After drivers and connections are ready, run the schema setup and PPDM module seeding.</MudText></MudCardContent></MudCard>
+            </MudItem>
+        </MudGrid>
+
+        @* ── Pre-flight Datasource Check ── *@
+        @if(_preflight?.datasources?.Count>0)
+        {<MudCard Elevation="2" Class="mb-3"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Existing Datasources</MudText></CardHeaderContent></MudCardHeader>
+        <MudCardContent><MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">@foreach(var ds in _preflight.datasources){<MudChip Color="@(ds.name==_connectionName?Color.Primary:Color.Default)" Variant="@(ds.name==_connectionName?Variant.Filled:Variant.Outlined)" OnClick="()=>_connectionName=ds.name">@ds.name (@ds.type)</MudChip>}</MudStack><MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">Click a chip to select it as the target connection for the wizard.</MudText></MudCardContent></MudCard>}
+        else{<MudAlert Severity="Severity.Warning" Class="mb-3">No datasources found. Open the Connection Editor (Step 2) to create one first.</MudAlert>}
+
+        @* ── Table Warning ── *@
+        @if(_preflight?.hasExistingTables==true){<MudAlert Severity="Severity.Warning" Class="mb-3">@_preflight.existingTableCount tables already exist. Schema setup will add missing tables only (non-destructive).</MudAlert>}
+
+        @* ── Start ── *@
+        <MudCard Elevation="3"><MudCardContent>
+            <MudTextField Label="Target Connection" @bind-Value="_connectionName" Variant="Variant.Outlined" Class="mb-3" HelperText="Must match the connection name configured in appsettings.json (default: PPDM39)"/>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StartWizard" Disabled="@_starting">
+                @if(_starting){<MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2"/>}Start Setup Wizard
+            </MudButton>
+        </MudCardContent></MudCard>
     }
-    else if (_state == "Running")
+    else
     {
-        <MudCard Elevation="3">
-            <MudCardHeader><CardHeaderContent><MudText Typo="Typo.h5">Setup in progress...</MudText></CardHeaderContent></MudCardHeader>
-            <MudCardContent>
-                <MudProgressLinear Value="@_percent" Color="Color.Primary" Class="mb-3" />
-                <MudText Typo="Typo.body2"><strong>@_step</strong></MudText>
-                <MudText Typo="Typo.caption" Color="Color.Secondary">@_message</MudText>
-            </MudCardContent>
-        </MudCard>
-    }
-    else if (_state == "Completed")
-    {
-        <MudCard Elevation="3">
-            <MudCardHeader><CardHeaderContent><MudText Typo="Typo.h5" Color="Color.Success">Setup Complete!</MudText></CardHeaderContent></MudCardHeader>
-            <MudCardContent>
-                <MudText Typo="Typo.body2">The setup wizard completed successfully with all PPDM modules seeded.</MudText>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3" Href="/admin/dashboard">Go to Admin Dashboard</MudButton>
-            </MudCardContent>
-        </MudCard>
-    }
-    else if (_state == "Failed")
-    {
-        <MudCard Elevation="3">
-            <MudCardHeader><CardHeaderContent><MudText Typo="Typo.h5" Color="Color.Error">Setup Failed</MudText></CardHeaderContent></MudCardHeader>
-            <MudCardContent>
-                <MudText Typo="Typo.body2">@_message</MudText>
-                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-3" OnClick="() => _state = 'Idle'">Retry</MudButton>
-            </MudCardContent>
-        </MudCard>
+        @* ── Running / Completed / Failed (stepper view) ── *@
+        <MudCard Elevation="3"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h5" Color="@(_state=="Completed"?Color.Success:_state=="Failed"?Color.Error:Color.Primary)">@(_state=="Completed"?"Setup Complete!":_state=="Failed"?"Setup Failed":"Setup in Progress...")</MudText></CardHeaderContent><CardHeaderActions>@if(_elapsed>0){<MudChip Size="Size.Small">@($"{_elapsed/60:D2}:{_elapsed%60:D2}")</MudChip>}</CardHeaderActions></MudCardHeader>
+        <MudCardContent><MudStack Spacing="1">
+            @foreach(var step in _steps){<MudPaper Outlined="true" Class="pa-2" Style="@GetStepStyle(step.status)"><MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2"><MudIcon Icon="@StepIcon(step.status)" Color="@StepColor(step.status)" Size="Size.Small"/><div style="flex:1"><MudText Typo="Typo.body2" Style="font-weight:500">@step.name</MudText><MudText Typo="Typo.caption" Color="Color.Secondary">@step.description</MudText></div><MudChip Size="Size.Small" Color="@StepColor(step.status)" Variant="Variant.Text">@StepLabel(step.status)</MudChip></MudStack>@if(step.status=="running"){<MudProgressLinear Value="@_percent" Color="Color.Primary" Class="mt-1" Size="Size.Small"/>}</MudPaper>}
+        </MudStack><MudProgressLinear Value="@_percent" Color="Color.Primary" Class="mt-3"/>
+        @if(!string.IsNullOrWhiteSpace(_message)){<MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">@_message</MudText>}
+        <MudStack Row="true" Spacing="2" Class="mt-3">
+            @if(_state=="Running"){<MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" OnClick="CancelWizard">Cancel</MudButton>}
+            else if(_state=="Completed"){<MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/admin/dashboard">Admin Dashboard</MudButton><MudButton Variant="Variant.Outlined" OnClick="ResetWizard">Run Again</MudButton>}
+            else if(_state=="Failed"){<MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ResetWizard">Retry</MudButton><MudButton Variant="Variant.Text" Href="/admin/dashboard">Skip</MudButton>}
+        </MudStack></MudCardContent></MudCard>
     }
 </MudContainer>
 
 @code {
-    private string _state = "Idle";
-    private bool _starting;
-    private string _step = string.Empty;
-    private string _message = string.Empty;
-    private double _percent;
-    private CancellationTokenSource? _pollCts;
+    private string _state="Idle";private string _connectionName="PPDM39";private bool _starting,_checking=true;
+    private string _message="";private double _percent;private int _elapsed,_pollErrors;
+    private List<StepInfo> _steps=new();private CancellationTokenSource? _pollCts;
+    private PreflightData? _preflight;
 
-    private async Task StartWizard()
-    {
-        _starting = true; StateHasChanged();
-        try
-        {
-            var response = await Http.PostAsync("/api/setup/wizard/start?connectionName=PPDM39", null);
-            if (response.IsSuccessStatusCode)
-            {
-                _state = "Running";
-                _starting = false;
-                await PollProgress();
-            }
-            else
-            {
-                _state = "Failed";
-                _message = $"API returned {response.StatusCode}";
-            }
-        }
-        catch (Exception ex) { _state = "Failed"; _message = ex.Message; }
-        _starting = false;
-    }
+    protected override async Task OnInitializedAsync(){
+        try{_preflight=await Http.GetFromJsonAsync<PreflightData>($"/api/setup/wizard/preflight?connectionName={_connectionName}");
+        var s=await Http.GetFromJsonAsync<WizardStatus>("/api/setup/wizard/status");if(s!=null){_state=s.state??"Idle";_steps=s.steps??new();_percent=s.percent;_elapsed=s.elapsedSeconds;if(_state=="Running")await PollProgress();}}catch{}_checking=false;}
 
-    private async Task PollProgress()
-    {
-        _pollCts = new CancellationTokenSource();
-        try
-        {
-            while (!_pollCts.IsCancellationRequested)
-            {
-                await Task.Delay(1000);
-                var status = await Http.GetFromJsonAsync<WizardStatus>("/api/setup/wizard/status");
-                if (status == null) continue;
+    private async Task StartWizard(){
+        if(string.IsNullOrWhiteSpace(_connectionName)){Snackbar.Add("Connection name required",Severity.Warning);return;}_starting=true;StateHasChanged();
+        try{var r=await Http.PostAsync($"/api/setup/wizard/start?connectionName={Uri.EscapeDataString(_connectionName)}",null);
+        if(r.IsSuccessStatusCode){_state="Running";_starting=false;await PollProgress();}
+        else{_state="Failed";_message=$"API returned {r.StatusCode}: {await r.Content.ReadAsStringAsync()}";}}catch(Exception ex){_state="Failed";_message=ex.Message;}_starting=false;}
 
-                _state = status.state ?? "Running";
-                _step = status.step ?? "";
-                _message = status.message ?? "";
-                _percent = status.percent;
-                StateHasChanged();
+    private async Task PollProgress(){
+        _pollCts?.Cancel();_pollCts=new CancellationTokenSource();_pollErrors=0;var t=_pollCts.Token;
+        try{while(!t.IsCancellationRequested){await Task.Delay(1000,t);try{var s=await Http.GetFromJsonAsync<WizardStatus>("/api/setup/wizard/status",t);if(s==null)continue;_state=s.state??"Running";_steps=s.steps??new();_message=s.message??"";_percent=s.percent;_elapsed=s.elapsedSeconds;_pollErrors=0;StateHasChanged();if(_state is "Completed" or "Failed")break;}catch(OperationCanceledException){break;}catch{_pollErrors++;if(_pollErrors>10){_state="Failed";_message="Lost connection after 10 retries.";break;}}}}catch(OperationCanceledException){}}
+    private async Task CancelWizard(){try{await Http.PostAsync("/api/setup/wizard/cancel",null);_state="Failed";_message="Cancelled.";}catch(Exception ex){_message=ex.Message;}_pollCts?.Cancel();}
+    private void ResetWizard(){_state="Idle";_starting=false;_steps.Clear();_percent=0;_elapsed=0;}
 
-                if (_state is "Completed" or "Failed") break;
-            }
-        }
-        catch { /* polling error — keep trying */ }
-    }
+    private static string StepIcon(string s)=>s switch{"completed"=>Icons.Material.Filled.CheckCircle,"running"=>Icons.Material.Filled.PlayCircle,"failed"=>Icons.Material.Filled.Error,"skipped"=>Icons.Material.Filled.SkipNext,_=>Icons.Material.Filled.Circle};
+    private static Color StepColor(string s)=>s switch{"completed"=>Color.Success,"running"=>Color.Primary,"failed"=>Color.Error,"skipped"=>Color.Warning,_=>Color.Default};
+    private static string StepLabel(string s)=>s switch{"completed"=>"Done","running"=>"Running","failed"=>"Failed","skipped"=>"Skipped",_=>"Pending"};
+    private static string GetStepStyle(string s)=>s switch{"running"=>"border-left:3px solid var(--mud-palette-primary)","completed"=>"border-left:3px solid var(--mud-palette-success)","failed"=>"border-left:3px solid var(--mud-palette-error)",_=>""};
+    public void Dispose(){_pollCts?.Cancel();_pollCts?.Dispose();}
 
-    public void Dispose() { _pollCts?.Cancel(); _pollCts?.Dispose(); }
-
-    public class WizardStatus { public string? state { get; set; } public string? step { get; set; } public string? message { get; set; } public double percent { get; set; } }
+    public class WizardStatus{public string? state{get;set;}public string? currentStep{get;set;}public string? message{get;set;}public double percent{get;set;}public int totalSteps{get;set;}public int currentStepIndex{get;set;}public int elapsedSeconds{get;set;}public List<StepInfo>? steps{get;set;}}
+    public class StepInfo{public string id{get;set;}="";public string name{get;set;}="";public string description{get;set;}="";public string status{get;set;}="pending";}
+    public class PreflightData{public bool hasExistingDatasource{get;set;}public List<DsInfo>? datasources{get;set;}public bool hasExistingTables{get;set;}public int existingTableCount{get;set;}public List<DrvInfo>? installedDrivers{get;set;}}
+    public class DsInfo{public string? name{get;set;}public string? type{get;set;}public string? server{get;set;}public string? category{get;set;}}
+    public class DrvInfo{public string? name{get;set;}public bool loaded{get;set;}public string? package{get;set;}}
 }

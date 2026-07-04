@@ -9,8 +9,8 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// </summary>
     public interface IAuthorizationWorkflowService
     {
-        Task<bool> ValidateAfeAuthorizationAsync(string afeId, string userId, string cn = "PPDM39");
-        Task<AFE> ApproveAfeAsync(string afeId, DateTime approvalDate, string userId, string cn = "PPDM39");
-        Task<bool> IsCostAuthorizedAsync(ACCOUNTING_COST cost, string cn = "PPDM39");
+        Task<bool> ValidateAfeAuthorizationAsync(string afeId, string userId, string connectionName = "PPDM39");
+        Task<AFE> ApproveAfeAsync(string afeId, DateTime approvalDate, string userId, string connectionName = "PPDM39");
+        Task<bool> IsCostAuthorizedAsync(ACCOUNTING_COST cost, string connectionName = "PPDM39");
     }
 }

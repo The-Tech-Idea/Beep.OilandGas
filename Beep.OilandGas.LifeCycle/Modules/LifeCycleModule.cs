@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -7,7 +8,7 @@ using Beep.OilandGas.Models.Data.LifeCycle;
 using Beep.OilandGas.Models.Data.Security;
 using Beep.OilandGas.Models.Data.Decommissioning;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
-using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
+using Beep.OilandGas.PPDM39.Core.ModuleSetup;
 using Beep.OilandGas.LifeCycle.Core.Interfaces;
 using Beep.OilandGas.LifeCycle.Data.Tables;
 using Beep.OilandGas.LifeCycle.Services.Seeding;
@@ -59,6 +60,18 @@ public sealed class LifeCycleModule : ModuleSetupBase
         typeof(ORGANIZATION_HIERARCHY_CONFIG),
         // ── Lifecycle reference LOV table ──────────────────────────────────
         typeof(R_LIFECYCLE_STATE_REFERENCE),
+        // ── Phase 2: Workflow engine enhancement tables ───────────────────
+        typeof(DELEGATION_OF_AUTHORITY),
+        typeof(WORKFLOW_VERSION),
+        typeof(WORKFLOW_DEPENDENCY),
+        // ── Phase 3: Cross-role orchestration tables ─────────────────────
+        typeof(ROLE_HANDOFF_CONTRACT),
+        typeof(BUSINESS_EVENT_TRIGGER),
+        typeof(CROSS_PERSONA_TASK),
+        // ── Phase 4: Governance & compliance tables ──────────────────────
+        typeof(SOD_RULE),
+        typeof(SOD_CONFLICT),
+        typeof(COMPENSATING_CONTROL),
     };
 
     private readonly ILifeCycleSeedService? _seedService;

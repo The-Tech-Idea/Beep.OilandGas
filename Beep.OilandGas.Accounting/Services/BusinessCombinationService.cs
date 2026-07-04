@@ -5,7 +5,9 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -52,7 +54,7 @@ namespace Beep.OilandGas.Accounting.Services
             string? netAssetsAccountId = null,
             string? considerationAccountId = null,
             string? acquisitionId = null,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(acquisitionName))
                 throw new ArgumentNullException(nameof(acquisitionName));
@@ -64,7 +66,6 @@ namespace Beep.OilandGas.Accounting.Services
                 throw new ArgumentNullException(nameof(userId));
 
             var goodwill = considerationPaid - netAssetsFairValue;
-            var cn = connectionName ?? ConnectionName;
             var cost = new ACCOUNTING_COST
             {
                 ACCOUNTING_COST_ID = Guid.NewGuid().ToString(),

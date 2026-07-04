@@ -6,7 +6,9 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -17,7 +19,7 @@ namespace Beep.OilandGas.Accounting.Services
     /// Critical for period closing: GL must be BALANCED before close
     /// Works directly with GL_ACCOUNT entities
     /// </summary>
-    public class TrialBalanceService
+    public class TrialBalanceService : ITrialBalanceService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;

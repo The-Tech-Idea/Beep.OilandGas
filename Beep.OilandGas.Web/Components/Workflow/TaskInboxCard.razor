@@ -1,0 +1,107 @@
+@using Beep.OilandGas.Web.Services
+
+<MudPaper Elevation="@(Task.Priority <= 1 ? 3 : 1)" Class="pa-3 mb-2" Style="@GetCardStyle()">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+        @* Priority indicator *@
+        <MudIcon Icon="@PriorityIcon()" Color="@PriorityColor()" Size="Size.Small" />
+
+        @* Task content *@
+        <div style="flex:1; min-width:0">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudText Typo="Typo.body2" Style="font-weight:600">
+                    @Task.StepName
+                </MudText>
+                <MudChip Size="Size.Small" Color="@TaskTypeColor()" Variant="Variant.Outlined">
+                    @Task.TaskType
+                </MudChip>
+                @if (Task.SlaStatus == "BREACHED")
+                {
+                    <MudChip Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">
+                        BREACHED
+                    </MudChip>
+                }
+                else if (Task.SlaStatus == "AT_RISK")
+                {
+                    <MudChip Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled">
+                        AT RISK
+                    </MudChip>
+                }
+            </MudStack>
+
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                @Task.WorkflowName — @Task.EntityDescription
+            </MudText>
+
+            <MudStack Row="true" Spacing="2" Class="mt-1">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-1" />
+                    From: @Task.FromPersona
+                </MudText>
+                @if (Task.DueDate.HasValue)
+                {
+                    <MudText Typo="Typo.caption" Color="@(Task.DueDate < DateTime.UtcNow ? Color.Error : Color.Secondary)">
+                        <MudIcon Icon="@Icons.Material.Filled.Schedule" Size="Size.Small" Class="mr-1" />
+                        Due: @Task.DueDate.Value.ToString("g")
+                    </MudText>
+                }
+            </MudStack>
+        </div>
+
+        @* Action buttons *@
+        <div>
+            @if (!string.IsNullOrWhiteSpace(Task.Route))
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               Href="@Task.Route"
+                               Title="Open task" />
+            }
+            @if (OnAction is not null)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.MoreVert"
+                               Size="Size.Small"
+                               OnClick="@(() => OnAction.Invoke(Task))"
+                               Title="More actions" />
+            }
+        </div>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public UnifiedTask Task { get; set; } = new();
+    [Parameter] public EventCallback<UnifiedTask>? OnAction { get; set; }
+
+    private string GetCardStyle()
+    {
+        if (Task.SlaStatus == "BREACHED")
+            return "border-left: 4px solid var(--mud-palette-error)";
+        if (Task.Priority <= 1)
+            return "border-left: 4px solid var(--mud-palette-error)";
+        if (Task.Priority <= 2)
+            return "border-left: 4px solid var(--mud-palette-warning)";
+        return string.Empty;
+    }
+
+    private string PriorityIcon() => Task.Priority switch
+    {
+        <= 1 => Icons.Material.Filled.PriorityHigh,
+        <= 2 => Icons.Material.Filled.ArrowUpward,
+        _ => Icons.Material.Filled.Remove
+    };
+
+    private Color PriorityColor() => Task.Priority switch
+    {
+        <= 1 => Color.Error,
+        <= 2 => Color.Warning,
+        _ => Color.Default
+    };
+
+    private Color TaskTypeColor() => Task.TaskType switch
+    {
+        "APPROVAL" => Color.Primary,
+        "REVIEW" => Color.Secondary,
+        "DATA_ENTRY" => Color.Tertiary,
+        _ => Color.Default
+    };
+}

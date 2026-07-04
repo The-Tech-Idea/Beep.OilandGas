@@ -3,7 +3,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -44,7 +46,7 @@ namespace Beep.OilandGas.Accounting.Services
             string reportingCurrency,
             string entityName,
             string userId,
-            string? connectionName = null,
+            string cn = "PPDM39",
             string? bookId = null)
         {
             if (string.IsNullOrWhiteSpace(reportingCurrency))
@@ -61,7 +63,7 @@ namespace Beep.OilandGas.Accounting.Services
                 entityName,
                 bookId);
 
-            await RecordSeparateStatementAsync(periodEnd, entityName, userId, connectionName ?? ConnectionName);
+            await RecordSeparateStatementAsync(periodEnd, entityName, userId, cn ?? ConnectionName);
 
             _logger?.LogInformation("IAS 27 separate statements generated for {Entity} {Start}-{End}",
                 entityName, periodStart, periodEnd);

@@ -11,8 +11,8 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// </summary>
     public interface IJointInterestBillingService
     {
-        Task<bool> AllocateToParticipantsAsync(ALLOCATION_RESULT allocation, string userId, string cn = "PPDM39");
-        Task<bool> GenerateStatementAsync(string leaseId, DateTime periodEnd, string userId, string cn = "PPDM39");
-        Task<bool> ValidateAsync(string leaseId, string cn = "PPDM39");
+        Task<bool> AllocateToParticipantsAsync(ALLOCATION_RESULT allocation, string userId, string connectionName = "PPDM39");
+        Task<bool> GenerateStatementAsync(string leaseId, DateTime periodEnd, string userId, string connectionName = "PPDM39");
+        Task<bool> ValidateAsync(string leaseId, string connectionName = "PPDM39");
     }
 }

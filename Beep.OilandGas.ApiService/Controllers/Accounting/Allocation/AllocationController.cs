@@ -36,7 +36,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
         [HttpPost("reconcile")]
         public async Task<ActionResult<VolumeReconciliationResult>> ReconcileVolumes(
             [FromBody] VolumeReconciliationRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -69,7 +69,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
         [HttpPost("allocate")]
         public ActionResult<ALLOCATION_RESULT> Allocate(
             [FromBody] AllocationRequest request, 
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

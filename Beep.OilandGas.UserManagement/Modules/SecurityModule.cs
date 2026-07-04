@@ -1,11 +1,13 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.Security;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
-using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
+using Beep.OilandGas.PPDM39.Core.ModuleSetup;
 using Beep.OilandGas.UserManagement.Contracts.Services;
+using Beep.OilandGas.UserManagement.Models.Identity;
 using Beep.OilandGas.UserManagement.Models.Profile;
 using Beep.OilandGas.UserManagement.Models.Scope;
 
@@ -48,6 +50,13 @@ namespace Beep.OilandGas.UserManagement.Modules
             typeof(Beep.OilandGas.UserManagement.Contracts.Services.UserMfaConfig),
             typeof(Beep.OilandGas.UserManagement.Contracts.Services.PasswordHistory),
             typeof(Beep.OilandGas.UserManagement.Contracts.Services.UserSession),
+            // ── RBAC hardening (Phase 1: Persona-Role bridge, hierarchy, elevation) ──
+            typeof(PERSONA_ROLE),
+            typeof(ROLE_HIERARCHY),
+            typeof(TEMP_ROLE_ELEVATION),
+            // ── Governance & compliance (Phase 4: Access review campaigns) ──
+            typeof(ACCESS_REVIEW_CAMPAIGN),
+            typeof(ACCESS_REVIEW_ITEM),
         };
 
         private readonly IDefaultSecuritySeedService _securitySeeder;
@@ -87,8 +96,11 @@ namespace Beep.OilandGas.UserManagement.Modules
                                        + secResult.PersonasInserted
                                        + secResult.OrganizationScopesInserted
                                        + secResult.UserScopeAssignmentsInserted
-                                       + secResult.UserAssetAccessInserted;
-                result.TablesSeeded    = 11;
+                                       + secResult.UserAssetAccessInserted
+                                       + secResult.PersonaRolesInserted
+                                       + secResult.RoleHierarchiesInserted
+                                       + secResult.TempRoleElevationsInserted;
+                result.TablesSeeded    = 14;
 
                 foreach (var err in secResult.Errors)
                     result.Errors.Add(err);

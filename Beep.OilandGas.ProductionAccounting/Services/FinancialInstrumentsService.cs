@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -44,7 +45,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             decimal fairValue,
             DateTime valuationDate,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (instrument == null)
                 throw new ArgumentNullException(nameof(instrument));
@@ -63,7 +64,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "FINANCIAL_INSTRUMENT");
+                entityType, connectionName, "FINANCIAL_INSTRUMENT");
 
             var existing = await repo.GetByIdAsync(instrument.INSTRUMENT_ID) as FINANCIAL_INSTRUMENT;
             if (existing == null)
@@ -110,7 +111,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             decimal hedgingInstrumentChange,
             DateTime measurementDate,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (hedge == null)
                 throw new ArgumentNullException(nameof(hedge));
@@ -143,7 +144,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "HEDGE_MEASUREMENT");
+                entityType, connectionName, "HEDGE_MEASUREMENT");
 
             await repo.InsertAsync(measurement, userId);
 

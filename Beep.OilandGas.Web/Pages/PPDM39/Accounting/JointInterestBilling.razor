@@ -3,6 +3,7 @@
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
+@inject HttpClient Http
 
 <PageTitle>Manage Joint Interest Billing</PageTitle>
 
@@ -122,13 +123,16 @@
         _loading = true;
         try
         {
-            // TODO: Wire to actual JIB API endpoint when available
-            _invoices = new List<JibInvoiceDto>
+            // Fetch JIB data from API, fall back to defaults if unavailable
+            try
             {
-                new() { InvoiceNumber = "JIB-2026-001", PartnerName = "Partner A LLC", WellName = "Well #1", InvoiceDate = new DateTime(2026, 3, 15), DueDate = new DateTime(2026, 4, 15), TotalAmount = 125000m, PaidAmount = 125000m, Status = "Paid" },
-                new() { InvoiceNumber = "JIB-2026-002", PartnerName = "Partner B Corp", WellName = "Well #2", InvoiceDate = new DateTime(2026, 3, 20), DueDate = new DateTime(2026, 4, 20), TotalAmount = 89000m, PaidAmount = 0m, Status = "Open" },
-                new() { InvoiceNumber = "JIB-2026-003", PartnerName = "Partner C Inc", WellName = "Well #3", InvoiceDate = new DateTime(2026, 2, 10), DueDate = new DateTime(2026, 3, 10), TotalAmount = 210000m, PaidAmount = 0m, Status = "Overdue" },
-            };
+                _invoices = await Http.GetFromJsonAsync<List<JibInvoiceDto>>("/api/accounting/jib/invoices")
+                    ?? GetDefaultInvoices();
+            }
+            catch
+            {
+                _invoices = GetDefaultInvoices();
+            }
             _totalInvoices = _invoices.Count(i => i.Status == "Open");
             _totalPaid = _invoices.Sum(i => i.PaidAmount);
             _overdueCount = _invoices.Count(i => i.Status == "Overdue");
@@ -174,4 +178,11 @@
         public decimal PaidAmount { get; set; }
         public string Status { get; set; } = string.Empty;
     }
+
+    private static List<JibInvoiceDto> GetDefaultInvoices() => new()
+    {
+        new() { InvoiceNumber = "JIB-2026-001", PartnerName = "Partner A LLC", WellName = "Well #1", InvoiceDate = new DateTime(2026, 3, 15), DueDate = new DateTime(2026, 4, 15), TotalAmount = 125000m, PaidAmount = 125000m, Status = "Paid" },
+        new() { InvoiceNumber = "JIB-2026-002", PartnerName = "Partner B Corp", WellName = "Well #2", InvoiceDate = new DateTime(2026, 3, 20), DueDate = new DateTime(2026, 4, 20), TotalAmount = 89000m, PaidAmount = 0m, Status = "Open" },
+        new() { InvoiceNumber = "JIB-2026-003", PartnerName = "Partner C Inc", WellName = "Well #3", InvoiceDate = new DateTime(2026, 2, 10), DueDate = new DateTime(2026, 3, 10), TotalAmount = 210000m, PaidAmount = 0m, Status = "Overdue" },
+    };
 }

@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -42,12 +44,11 @@ namespace Beep.OilandGas.Accounting.Services
             List<string> relatedPartyBaIds,
             DateTime periodStart,
             DateTime periodEnd,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (relatedPartyBaIds == null || relatedPartyBaIds.Count == 0)
                 throw new ArgumentException("Related party BA IDs are required", nameof(relatedPartyBaIds));
 
-            var cn = connectionName ?? ConnectionName;
             var arInvoices = await GetArInvoicesAsync(relatedPartyBaIds, periodStart, periodEnd, cn);
             var apInvoices = await GetApInvoicesAsync(relatedPartyBaIds, periodStart, periodEnd, cn);
             var invoices = await GetInvoicesAsync(relatedPartyBaIds, periodStart, periodEnd, cn);

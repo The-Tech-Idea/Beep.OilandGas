@@ -41,7 +41,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         public async Task<ActionResult<object>> RecordAcquisition(
             [FromBody] UnprovedProperty property,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -81,7 +81,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         public async Task<ActionResult<object>> RecordExplorationCosts(
             [FromBody] ExplorationCosts costs,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -122,7 +122,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         public async Task<ActionResult<object>> RecordDevelopmentCosts(
             [FromBody] DevelopmentCosts costs,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -162,7 +162,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         public async Task<ActionResult<object>> RecordProductionCosts(
             [FromBody] ProductionCosts costs,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -202,7 +202,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         public async Task<ActionResult<object>> RecordDryHole(
             [FromBody] ExplorationCosts costs,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -242,7 +242,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         public async Task<ActionResult<object>> RecordImpairment(
             [FromBody] ImpairmentRequest request,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

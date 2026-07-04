@@ -7,7 +7,9 @@ using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -16,7 +18,7 @@ namespace Beep.OilandGas.Accounting.Services
     /// <summary>
     /// IAS 16 fixed asset lifecycle: capitalization, depreciation posting, and disposal.
     /// </summary>
-    public class FixedAssetLifecycleService
+    public class FixedAssetLifecycleService 
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -55,7 +57,7 @@ namespace Beep.OilandGas.Accounting.Services
             string? propertyId = null,
             string? fieldId = null,
             string? offsetAccountId = null,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(assetName))
                 throw new ArgumentNullException(nameof(assetName));
@@ -66,7 +68,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var equipment = new EQUIPMENT
             {
                 EQUIPMENT_ID = Guid.NewGuid().ToString(),
@@ -133,7 +134,7 @@ namespace Beep.OilandGas.Accounting.Services
             decimal depreciationAmount,
             DateTime depreciationDate,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(equipmentId))
                 throw new ArgumentNullException(nameof(equipmentId));
@@ -142,7 +143,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var equipment = await GetEquipmentAsync(equipmentId, cn);
             if (equipment == null)
                 throw new InvalidOperationException($"Equipment not found: {equipmentId}");
@@ -204,7 +204,7 @@ namespace Beep.OilandGas.Accounting.Services
             decimal saleProceeds,
             DateTime disposalDate,
             string userId,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(equipmentId))
                 throw new ArgumentNullException(nameof(equipmentId));
@@ -213,7 +213,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var equipment = await GetEquipmentAsync(equipmentId, cn);
             if (equipment == null)
                 throw new InvalidOperationException($"Equipment not found: {equipmentId}");
@@ -304,7 +303,7 @@ namespace Beep.OilandGas.Accounting.Services
             DateTime effectiveDate,
             string userId,
             string? remark = null,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(equipmentId))
                 throw new ArgumentNullException(nameof(equipmentId));
@@ -315,7 +314,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var equipment = await GetEquipmentAsync(equipmentId, cn);
             if (equipment == null)
                 throw new InvalidOperationException($"Equipment not found: {equipmentId}");

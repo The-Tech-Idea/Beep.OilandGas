@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -44,6 +45,9 @@ namespace Beep.OilandGas.UserManagement.Services
         private readonly ILogger<AuthService> _logger;
         private readonly IConfiguration _configuration;
         private readonly IUserService _userService;
+        private readonly IRoleHierarchyService? _roleHierarchyService;
+        private readonly ITempRoleElevationService? _tempElevationService;
+        private readonly IFieldAccessService? _fieldAccessService;
 
         public AuthService(
             IDMEEditor editor,
@@ -53,7 +57,10 @@ namespace Beep.OilandGas.UserManagement.Services
             string connectionName,
             ILogger<AuthService> logger,
             IConfiguration configuration,
-            IUserService userService)
+            IUserService userService,
+            IRoleHierarchyService? roleHierarchyService = null,
+            ITempRoleElevationService? tempElevationService = null,
+            IFieldAccessService? fieldAccessService = null)
         {
             _editor = editor;
             _commonColumnHandler = commonColumnHandler;
@@ -63,6 +70,9 @@ namespace Beep.OilandGas.UserManagement.Services
             _logger = logger;
             _configuration = configuration;
             _userService = userService;
+            _roleHierarchyService = roleHierarchyService;
+            _tempElevationService = tempElevationService;
+            _fieldAccessService = fieldAccessService;
         }
 
         private PPDMGenericRepository GetRepo<T>(string tableName)
@@ -144,7 +154,43 @@ namespace Beep.OilandGas.UserManagement.Services
                 var roles = (await _userService.GetRolesAsync(user.USER_ID)).ToArray();
                 var permissions = await GetUserPermissionsAsync(user.USER_ID, roles);
 
-                var tokenResult = GenerateTokens(user, roles, permissions);
+                // Phase 1: Expand roles via hierarchy
+                var expandedRoles = roles.ToList();
+                if (_roleHierarchyService != null)
+                {
+                    var inheritedRoles = await _roleHierarchyService.ExpandRolesWithInheritanceAsync(
+                        new HashSet<string>(roles, StringComparer.OrdinalIgnoreCase));
+                    expandedRoles = inheritedRoles.ToList();
+                }
+
+                // Phase 1: Get active temporary role elevations
+                string[]? elevatedPermissions = null;
+                if (_tempElevationService != null)
+                {
+                    var activeElevations = await _tempElevationService.GetActiveElevationsAsync(user.USER_ID);
+                    if (activeElevations.Count > 0)
+                    {
+                        var elevatedRoleNames = activeElevations
+                            .Select(e => e.ELEVATED_ROLE_NAME)
+                            .Where(n => !string.IsNullOrWhiteSpace(n))
+                            .Distinct()
+                            .ToArray();
+                        if (elevatedRoleNames.Length > 0)
+                        {
+                            elevatedPermissions = await GetUserPermissionsAsync(user.USER_ID, elevatedRoleNames);
+                        }
+                    }
+                }
+
+                // Phase 1: Get field scope
+                string? fieldScope = null;
+                if (_fieldAccessService != null)
+                {
+                    var fields = await _fieldAccessService.GetUserFieldsAsync(user.USER_ID);
+                    fieldScope = fields.Count > 0 ? string.Join(",", fields) : null;
+                }
+
+                var tokenResult = GenerateTokens(user, roles, permissions, fieldScope, elevatedPermissions);
 
                 await WriteAccessAuditEventAsync(user.USER_ID, "LOGIN_SUCCESS", ipAddress, userAgent,
                     $"User {request.Username} logged in successfully from {ipAddress ?? "unknown"}");
@@ -211,7 +257,25 @@ namespace Beep.OilandGas.UserManagement.Services
 
             var roles = (await _userService.GetRolesAsync(user.USER_ID)).ToArray();
             var permissions = await GetUserPermissionsAsync(user.USER_ID, roles);
-            var tokenResult = GenerateTokens(user, roles, permissions);
+
+            // Phase 1: Re-resolve field scope and elevations on refresh (they may have changed)
+            string? fieldScope = null;
+            string[]? elevatedPermissions = null;
+            if (_fieldAccessService != null)
+            {
+                var fields = await _fieldAccessService.GetUserFieldsAsync(user.USER_ID);
+                fieldScope = fields.Count > 0 ? string.Join(",", fields) : null;
+            }
+            if (_tempElevationService != null)
+            {
+                var activeElevations = await _tempElevationService.GetActiveElevationsAsync(user.USER_ID);
+                var elevatedRoleNames = activeElevations
+                    .Select(e => e.ELEVATED_ROLE_NAME).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct().ToArray();
+                if (elevatedRoleNames.Length > 0)
+                    elevatedPermissions = await GetUserPermissionsAsync(user.USER_ID, elevatedRoleNames);
+            }
+
+            var tokenResult = GenerateTokens(user, roles, permissions, fieldScope, elevatedPermissions);
 
             await WriteAccessAuditEventAsync(user.USER_ID, "TOKEN_REFRESH", ipAddress, null,
                 $"Token refreshed for user {user.USER_NAME}");
@@ -415,7 +479,9 @@ namespace Beep.OilandGas.UserManagement.Services
                 .ToArray();
         }
 
-        private (string AccessToken, string RefreshToken, DateTime AccessTokenExpiry, DateTime RefreshTokenExpiry) GenerateTokens(USER user, string[] roles, string[] permissions)
+        private (string AccessToken, string RefreshToken, DateTime AccessTokenExpiry, DateTime RefreshTokenExpiry) GenerateTokens(
+            USER user, string[] roles, string[] permissions,
+            string? fieldScope = null, string[]? elevatedPermissions = null)
         {
             var jwtSettings = _configuration.GetSection("Authentication:Jwt");
             var secretKey = jwtSettings.GetValue<string>("SecretKey")
@@ -443,6 +509,18 @@ namespace Beep.OilandGas.UserManagement.Services
             if (!string.IsNullOrEmpty(permissionsClaim))
             {
                 claims.Add(new Claim("permissions", permissionsClaim));
+            }
+
+            // Phase 1: Field-scope claim
+            if (!string.IsNullOrWhiteSpace(fieldScope))
+            {
+                claims.Add(new Claim("field_scope", fieldScope));
+            }
+
+            // Phase 1: Elevated permissions from temporary role elevations
+            if (elevatedPermissions is { Length: > 0 })
+            {
+                claims.Add(new Claim("elevated_permissions", string.Join(",", elevatedPermissions)));
             }
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));

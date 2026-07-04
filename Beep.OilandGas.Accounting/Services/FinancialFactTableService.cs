@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -26,9 +28,8 @@ namespace Beep.OilandGas.Accounting.Services
             _logger = logger;
         }
 
-        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? connectionName)
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? cn)
         {
-            var cn = connectionName ?? ConnectionName;
             var ds = _editor.GetDataSource(cn);
             if (ds == null) throw new InvalidOperationException($"Connection {cn} not found.");
             
@@ -40,9 +41,8 @@ namespace Beep.OilandGas.Accounting.Services
         public async Task<List<FactJournalLine>> ExportToStarSchemaAsync(
             DateTime startDate, 
             DateTime endDate, 
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
-            var cn = connectionName ?? ConnectionName;
             
             // 1. Fetch Data
             // We need JOURNAL_ENTRY (Header) and JOURNAL_ENTRY_LINE (Details)

@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -39,14 +40,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _logger = logger;
         }
 
-        public async Task<bool> ValidateAfeAuthorizationAsync(string afeId, string userId, string cn = "PPDM39")
+        public async Task<bool> ValidateAfeAuthorizationAsync(string afeId, string userId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(afeId))
                 throw new ArgumentNullException(nameof(afeId));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var afe = await GetAfeAsync(afeId, cn);
+            var afe = await GetAfeAsync(afeId, connectionName);
             if (afe == null)
                 return false;
 
@@ -56,14 +57,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return string.Equals(afe.STATUS, AfeStatusCodes.Approved, StringComparison.OrdinalIgnoreCase);
         }
 
-        public async Task<AFE> ApproveAfeAsync(string afeId, DateTime approvalDate, string userId, string cn = "PPDM39")
+        public async Task<AFE> ApproveAfeAsync(string afeId, DateTime approvalDate, string userId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(afeId))
                 throw new ArgumentNullException(nameof(afeId));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var afe = await GetAfeAsync(afeId, cn);
+            var afe = await GetAfeAsync(afeId, connectionName);
             if (afe == null)
                 throw new ProductionAccountingException($"AFE not found: {afeId}");
 
@@ -78,13 +79,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "AFE");
+                entityType, connectionName, "AFE");
 
             await repo.UpdateAsync(afe, userId);
             return afe;
         }
 
-        public async Task<bool> IsCostAuthorizedAsync(ACCOUNTING_COST cost, string cn = "PPDM39")
+        public async Task<bool> IsCostAuthorizedAsync(ACCOUNTING_COST cost, string connectionName = "PPDM39")
         {
             if (cost == null)
                 throw new ArgumentNullException(nameof(cost));
@@ -92,7 +93,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(cost.AFE_ID))
                 return false;
 
-            var afe = await GetAfeAsync(cost.AFE_ID, cn);
+            var afe = await GetAfeAsync(cost.AFE_ID, connectionName);
             if (afe == null)
                 return false;
 
@@ -112,7 +113,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return true;
         }
 
-        private async Task<AFE> GetAfeAsync(string afeId, string cn)
+        private async Task<AFE> GetAfeAsync(string afeId, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync("AFE");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -120,7 +121,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "AFE");
+                entityType, connectionName, "AFE");
 
             var result = await repo.GetByIdAsync(afeId);
             return result as AFE;

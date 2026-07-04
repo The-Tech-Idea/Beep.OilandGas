@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -12,6 +13,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
     /// API controller for PPDM39 schema metadata: categories, modules, table lists.
     /// Used by the Data Management pages and the database creation wizard.
     /// </summary>
+    [Authorize]
     [ApiController]
     [Route("api/ppdm39/metadata")]
     public class PPDM39MetadataController : ControllerBase

@@ -15,27 +15,27 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Calculates decline rate.
         /// </summary>
-        Task<CalculationResultResponse> CalculateDeclineRateAsync(CalculateDeclineRateRequest request, string userId, bool trackHistory = false, string? connectionName = null);
+        Task<CalculationResultResponse> CalculateDeclineRateAsync(CalculateDeclineRateRequest request, string userId, bool trackHistory = false, string connectionName = "PPDM39");
         
         /// <summary>
         /// Calculates volume (net or gross).
         /// </summary>
-        Task<CalculationResultResponse> CalculateVolumeAsync(CalculateVolumeRequest request, string userId, bool trackHistory = false, string? connectionName = null);
+        Task<CalculationResultResponse> CalculateVolumeAsync(CalculateVolumeRequest request, string userId, bool trackHistory = false, string connectionName = "PPDM39");
         
         /// <summary>
         /// Calculates API gravity or specific gravity.
         /// </summary>
-        Task<CalculationResultResponse> CalculateApiGravityAsync(CalculateApiGravityRequest request, string userId, bool trackHistory = false, string? connectionName = null);
+        Task<CalculationResultResponse> CalculateApiGravityAsync(CalculateApiGravityRequest request, string userId, bool trackHistory = false, string connectionName = "PPDM39");
         
         /// <summary>
         /// Saves calculation result to history.
         /// </summary>
-        Task<CALCULATION_RESULT> SaveCalculationResultAsync(CalculationResultResponse result, string userId, string? connectionName = null);
+        Task<CALCULATION_RESULT> SaveCalculationResultAsync(CalculationResultResponse result, string userId, string connectionName = "PPDM39");
         
         /// <summary>
         /// Gets calculation history.
         /// </summary>
-        Task<List<CALCULATION_RESULT>> GetCalculationHistoryAsync(string? calculationType, DateTime? startDate, DateTime? endDate, string? connectionName = null);
+        Task<List<CALCULATION_RESULT>> GetCalculationHistoryAsync(string? calculationType, DateTime? startDate, DateTime? endDate, string connectionName = "PPDM39");
     }
 }
 

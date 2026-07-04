@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,12 +45,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string leaseId,
             decimal baseAmount,
             DateTime asOfDate,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (baseAmount <= 0m)
                 return 0m;
 
-            var overheadRate = await GetOverheadRateAsync(leaseId, asOfDate, cn);
+            var overheadRate = await GetOverheadRateAsync(leaseId, asOfDate, connectionName);
             if (overheadRate <= 0m)
                 return 0m;
 
@@ -65,18 +66,18 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             JOINT_INTEREST_STATEMENT statement,
             decimal baseAmount,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (statement == null)
                 throw new ArgumentNullException(nameof(statement));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var overhead = await CalculateOverheadAsync(statement.JIB_ID, baseAmount, statement.REPORT_PERIOD_END ?? DateTime.UtcNow, cn);
+            var overhead = await CalculateOverheadAsync(statement.JIB_ID, baseAmount, statement.REPORT_PERIOD_END ?? DateTime.UtcNow, connectionName);
             if (overhead <= 0m)
                 return null;
 
-            await RecordOverheadAuditAsync(statement.JIB_ID, statement.REPORT_PERIOD_END ?? DateTime.UtcNow, userId, cn);
+            await RecordOverheadAuditAsync(statement.JIB_ID, statement.REPORT_PERIOD_END ?? DateTime.UtcNow, userId, connectionName);
 
             var charge = new JIB_CHARGE
             {
@@ -91,19 +92,19 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await CreateRepoAsync<JIB_CHARGE>("JIB_CHARGE", cn);
+            var repo = await CreateRepoAsync<JIB_CHARGE>("JIB_CHARGE", connectionName);
             await repo.InsertAsync(charge, userId);
 
             return charge;
         }
 
-        private async Task<decimal> GetOverheadRateAsync(string leaseId, DateTime asOfDate, string cn)
+        private async Task<decimal> GetOverheadRateAsync(string leaseId, DateTime asOfDate, string connectionName)
         {
-            var scheduleRate = await GetScheduleRateAsync(leaseId, asOfDate, cn);
+            var scheduleRate = await GetScheduleRateAsync(leaseId, asOfDate, connectionName);
             if (scheduleRate > 0m)
                 return scheduleRate;
 
-            var repo = await CreateRepoAsync<COST_SHARING>("COST_SHARING", cn);
+            var repo = await CreateRepoAsync<COST_SHARING>("COST_SHARING", connectionName);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
@@ -119,11 +120,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return overheadPercent;
         }
 
-        private async Task<decimal> GetScheduleRateAsync(string leaseId, DateTime asOfDate, string cn)
+        private async Task<decimal> GetScheduleRateAsync(string leaseId, DateTime asOfDate, string connectionName)
         {
             try
             {
-                var repo = await CreateRepoAsync<COPAS_OVERHEAD_SCHEDULE>("COPAS_OVERHEAD_SCHEDULE", cn);
+                var repo = await CreateRepoAsync<COPAS_OVERHEAD_SCHEDULE>("COPAS_OVERHEAD_SCHEDULE", connectionName);
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
@@ -159,11 +160,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
-        private async Task RecordOverheadAuditAsync(string leaseId, DateTime asOfDate, string userId, string cn)
+        private async Task RecordOverheadAuditAsync(string leaseId, DateTime asOfDate, string userId, string connectionName)
         {
             try
             {
-                var scheduleRepo = await CreateRepoAsync<COPAS_OVERHEAD_SCHEDULE>("COPAS_OVERHEAD_SCHEDULE", cn);
+                var scheduleRepo = await CreateRepoAsync<COPAS_OVERHEAD_SCHEDULE>("COPAS_OVERHEAD_SCHEDULE", connectionName);
                 var scheduleFilters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() },
@@ -193,7 +194,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                var auditRepo = await CreateRepoAsync<COPAS_OVERHEAD_AUDIT>("COPAS_OVERHEAD_AUDIT", cn);
+                var auditRepo = await CreateRepoAsync<COPAS_OVERHEAD_AUDIT>("COPAS_OVERHEAD_AUDIT", connectionName);
                 await auditRepo.InsertAsync(audit, userId);
             }
             catch (Exception ex)
@@ -223,7 +224,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return false;
         }
 
-        private async Task<PPDMGenericRepository> CreateRepoAsync<T>(string tableName, string cn)
+        private async Task<PPDMGenericRepository> CreateRepoAsync<T>(string tableName, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -231,7 +232,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, tableName);
+                entityType, connectionName, tableName);
         }
     }
 }

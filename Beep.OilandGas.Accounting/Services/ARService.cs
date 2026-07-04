@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Constants;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,8 +10,10 @@ using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Models;
 
@@ -48,7 +51,7 @@ namespace Beep.OilandGas.Accounting.Services
             _accountMapping = accountMapping;
         }
 
-        public async Task<AR_INVOICE> CreateInvoiceAsync(CreateARInvoiceRequest request, string userId, string? connectionName = null)
+        public async Task<AR_INVOICE> CreateInvoiceAsync(CreateARInvoiceRequest request, string userId, string cn = "PPDM39")
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -63,7 +66,7 @@ namespace Beep.OilandGas.Accounting.Services
             {
                 AR_INVOICE_ID = Guid.NewGuid().ToString(),
                 INVOICE_NUMBER = string.IsNullOrWhiteSpace(request.InvoiceNumber)
-                    ? await GenerateInvoiceNumberAsync(connectionName)
+                    ? await GenerateInvoiceNumberAsync(cn)
                     : request.InvoiceNumber,
                 CUSTOMER_BA_ID = request.CustomerBaId,
                 INVOICE_DATE = request.InvoiceDate,
@@ -78,27 +81,27 @@ namespace Beep.OilandGas.Accounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", connectionName);
+            var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", cn);
             await repo.InsertAsync(invoice, userId);
             return invoice;
         }
 
-        public async Task<AR_INVOICE?> GetInvoiceAsync(string invoiceId, string? connectionName = null)
+        public async Task<AR_INVOICE?> GetInvoiceAsync(string invoiceId, string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(invoiceId))
                 throw new ArgumentNullException(nameof(invoiceId));
 
-            var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", connectionName);
+            var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", cn);
             var invoice = await repo.GetByIdAsync(invoiceId);
             return invoice as AR_INVOICE;
         }
 
-        public async Task<List<AR_INVOICE>> GetInvoicesByCustomerAsync(string customerId, DateTime? startDate, DateTime? endDate, string? connectionName = null)
+        public async Task<List<AR_INVOICE>> GetInvoicesByCustomerAsync(string customerId, DateTime? startDate, DateTime? endDate, string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(customerId))
                 throw new ArgumentNullException(nameof(customerId));
 
-            var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", connectionName);
+            var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", cn);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "CUSTOMER_BA_ID", Operator = "=", FilterValue = customerId },
@@ -114,14 +117,14 @@ namespace Beep.OilandGas.Accounting.Services
             return results?.Cast<AR_INVOICE>().ToList() ?? new List<AR_INVOICE>();
         }
 
-        public async Task<AR_INVOICE> UpdateInvoiceAsync(UpdateARInvoiceRequest request, string userId, string? connectionName = null)
+        public async Task<AR_INVOICE> UpdateInvoiceAsync(UpdateARInvoiceRequest request, string userId, string cn = "PPDM39")
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.ArInvoiceId))
                 throw new ArgumentNullException(nameof(request.ArInvoiceId));
 
-            var invoice = await GetInvoiceAsync(request.ArInvoiceId, connectionName);
+            var invoice = await GetInvoiceAsync(request.ArInvoiceId, cn);
             if (invoice == null)
                 throw new InvalidOperationException($"AR invoice not found: {request.ArInvoiceId}");
 
@@ -143,14 +146,14 @@ namespace Beep.OilandGas.Accounting.Services
             invoice.ROW_CHANGED_BY = userId;
             invoice.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-            var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", connectionName);
+            var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", cn);
             await repo.UpdateAsync(invoice, userId);
             return invoice;
         }
 
-        public async Task<bool> DeleteInvoiceAsync(string invoiceId, string userId, string? connectionName = null)
+        public async Task<bool> DeleteInvoiceAsync(string invoiceId, string userId, string cn = "PPDM39")
         {
-            var invoice = await GetInvoiceAsync(invoiceId, connectionName);
+            var invoice = await GetInvoiceAsync(invoiceId, cn);
             if (invoice == null)
                 return false;
 
@@ -158,12 +161,12 @@ namespace Beep.OilandGas.Accounting.Services
             invoice.ROW_CHANGED_BY = userId;
             invoice.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-            var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", connectionName);
+            var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", cn);
             await repo.UpdateAsync(invoice, userId);
             return true;
         }
 
-        public async Task<AR_PAYMENT> CreatePaymentAsync(CreateARPaymentRequest request, string userId, string? connectionName = null)
+        public async Task<AR_PAYMENT> CreatePaymentAsync(CreateARPaymentRequest request, string userId, string cn = "PPDM39")
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -189,22 +192,22 @@ namespace Beep.OilandGas.Accounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await GetRepoAsync<AR_PAYMENT>("AR_PAYMENT", connectionName);
+            var repo = await GetRepoAsync<AR_PAYMENT>("AR_PAYMENT", cn);
             await repo.InsertAsync(payment, userId);
             return payment;
         }
 
-        public async Task<AR_PAYMENT> ApplyPaymentAsync(string paymentId, string invoiceId, decimal amount, string userId, string? connectionName = null)
+        public async Task<AR_PAYMENT> ApplyPaymentAsync(string paymentId, string invoiceId, decimal amount, string userId, string cn = "PPDM39")
         {
             if (amount <= 0m)
                 throw new InvalidOperationException("Applied amount must be positive");
 
-            var paymentRepo = await GetRepoAsync<AR_PAYMENT>("AR_PAYMENT", connectionName);
+            var paymentRepo = await GetRepoAsync<AR_PAYMENT>("AR_PAYMENT", cn);
             var payment = await paymentRepo.GetByIdAsync(paymentId) as AR_PAYMENT;
             if (payment == null)
                 throw new InvalidOperationException($"Payment not found: {paymentId}");
 
-            var invoice = await GetInvoiceAsync(invoiceId, connectionName);
+            var invoice = await GetInvoiceAsync(invoiceId, cn);
             if (invoice == null)
                 throw new InvalidOperationException($"AR invoice not found: {invoiceId}");
 
@@ -212,7 +215,7 @@ namespace Beep.OilandGas.Accounting.Services
             var appliedAmount = Math.Min(amount, remainingBalance);
 
             payment.AR_INVOICE_ID = invoiceId;
-            paymentRepo = await GetRepoAsync<AR_PAYMENT>("AR_PAYMENT", connectionName);
+            paymentRepo = await GetRepoAsync<AR_PAYMENT>("AR_PAYMENT", cn);
             await paymentRepo.UpdateAsync(payment, userId);
 
             invoice.PAID_AMOUNT = (invoice.PAID_AMOUNT ?? 0m) + appliedAmount;
@@ -221,7 +224,7 @@ namespace Beep.OilandGas.Accounting.Services
             invoice.ROW_CHANGED_BY = userId;
             invoice.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-            var invoiceRepo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", connectionName);
+            var invoiceRepo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", cn);
             await invoiceRepo.UpdateAsync(invoice, userId);
 
             await _basisPosting.PostBalancedEntryByAccountAsync(
@@ -230,17 +233,17 @@ namespace Beep.OilandGas.Accounting.Services
                 appliedAmount,
                 $"AR payment applied {invoice.INVOICE_NUMBER}",
                 userId,
-                connectionName ?? ConnectionName);
+                cn ?? ConnectionName);
 
             return payment;
         }
 
-        public async Task<List<AR_PAYMENT>> GetPaymentsByInvoiceAsync(string invoiceId, string? connectionName = null)
+        public async Task<List<AR_PAYMENT>> GetPaymentsByInvoiceAsync(string invoiceId, string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(invoiceId))
                 throw new ArgumentNullException(nameof(invoiceId));
 
-            var repo = await GetRepoAsync<AR_PAYMENT>("AR_PAYMENT", connectionName);
+            var repo = await GetRepoAsync<AR_PAYMENT>("AR_PAYMENT", cn);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "AR_INVOICE_ID", Operator = "=", FilterValue = invoiceId },
@@ -251,7 +254,7 @@ namespace Beep.OilandGas.Accounting.Services
             return results?.Cast<AR_PAYMENT>().ToList() ?? new List<AR_PAYMENT>();
         }
 
-        public async Task<AR_CREDIT_MEMO> CreateCreditMemoAsync(CreateARCreditMemoRequest request, string userId, string? connectionName = null)
+        public async Task<AR_CREDIT_MEMO> CreateCreditMemoAsync(CreateARCreditMemoRequest request, string userId, string cn = "PPDM39")
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -260,7 +263,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (request.CreditAmount <= 0m)
                 throw new InvalidOperationException("Credit amount must be positive");
 
-            var invoice = await GetInvoiceAsync(request.ArInvoiceId, connectionName);
+            var invoice = await GetInvoiceAsync(request.ArInvoiceId, cn);
             if (invoice == null)
                 throw new InvalidOperationException($"AR invoice not found: {request.ArInvoiceId}");
 
@@ -279,7 +282,7 @@ namespace Beep.OilandGas.Accounting.Services
                 ROW_CREATED_DATE = DateTime.UtcNow
             };
 
-            var repo = await GetRepoAsync<AR_CREDIT_MEMO>("AR_CREDIT_MEMO", connectionName);
+            var repo = await GetRepoAsync<AR_CREDIT_MEMO>("AR_CREDIT_MEMO", cn);
             await repo.InsertAsync(creditMemo, userId);
 
             invoice.TOTAL_AMOUNT = Math.Max(0m, (invoice.TOTAL_AMOUNT ?? 0m) - request.CreditAmount);
@@ -288,7 +291,7 @@ namespace Beep.OilandGas.Accounting.Services
             invoice.ROW_CHANGED_BY = userId;
             invoice.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-            var invoiceRepo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", connectionName);
+            var invoiceRepo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", cn);
             await invoiceRepo.UpdateAsync(invoice, userId);
 
             await _basisPosting.PostBalancedEntryByAccountAsync(
@@ -297,19 +300,19 @@ namespace Beep.OilandGas.Accounting.Services
                 request.CreditAmount,
                 $"AR credit memo {request.CreditMemoNumber}",
                 userId,
-                connectionName ?? ConnectionName);
+                cn ?? ConnectionName);
 
             return creditMemo;
         }
 
-        public async Task<ARApprovalResult> ApproveInvoiceAsync(string invoiceId, string approverId, string? connectionName = null)
+        public async Task<ARApprovalResult> ApproveInvoiceAsync(string invoiceId, string approverId, string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(invoiceId))
                 throw new ArgumentNullException(nameof(invoiceId));
             if (string.IsNullOrWhiteSpace(approverId))
                 throw new ArgumentNullException(nameof(approverId));
 
-            var invoice = await GetInvoiceAsync(invoiceId, connectionName);
+            var invoice = await GetInvoiceAsync(invoiceId, cn);
             if (invoice == null)
                 throw new InvalidOperationException($"AR invoice not found: {invoiceId}");
 
@@ -330,13 +333,13 @@ namespace Beep.OilandGas.Accounting.Services
                 invoice.TOTAL_AMOUNT ?? 0m,
                 $"AR invoice approved {invoice.INVOICE_NUMBER}",
                 approverId,
-                connectionName ?? ConnectionName);
+                cn ?? ConnectionName);
 
-            invoice.STATUS = "ISSUED";
+            invoice.STATUS = AccountingReferenceCodes.InvoiceStatusCodes.Issued;
             invoice.ROW_CHANGED_BY = approverId;
             invoice.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-            var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", connectionName);
+            var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", cn);
             await repo.UpdateAsync(invoice, approverId);
 
             return new ARApprovalResult
@@ -348,9 +351,9 @@ namespace Beep.OilandGas.Accounting.Services
             };
         }
 
-        public async Task<List<ARAgingSummary>> GetARAgingAsync(string? customerId, string? connectionName = null)
+        public async Task<List<ARAgingSummary>> GetARAgingAsync(string? customerId, string cn = "PPDM39")
         {
-            var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", connectionName);
+            var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", cn);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
@@ -391,9 +394,9 @@ namespace Beep.OilandGas.Accounting.Services
             }).ToList();
         }
 
-        public async Task<CustomerSummary> GetCustomerSummaryAsync(string customerId, string? connectionName = null)
+        public async Task<CustomerSummary> GetCustomerSummaryAsync(string customerId, string cn = "PPDM39")
         {
-            var invoices = await GetInvoicesByCustomerAsync(customerId, null, null, connectionName);
+            var invoices = await GetInvoicesByCustomerAsync(customerId, null, null, cn);
             var totalInvoices = invoices.Sum(i => i.TOTAL_AMOUNT ?? 0m);
             var totalPaid = invoices.Sum(i => i.PAID_AMOUNT ?? 0m);
             var totalOutstanding = invoices.Sum(i => i.BALANCE_DUE ?? 0m);
@@ -413,7 +416,7 @@ namespace Beep.OilandGas.Accounting.Services
             };
         }
 
-        public async Task<PaymentApplicationResult> ApplyPaymentToInvoicesAsync(PaymentApplicationRequest request, string userId, string? connectionName = null)
+        public async Task<PaymentApplicationResult> ApplyPaymentToInvoicesAsync(PaymentApplicationRequest request, string userId, string cn = "PPDM39")
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -431,7 +434,7 @@ namespace Beep.OilandGas.Accounting.Services
             {
                 try
                 {
-                    await ApplyPaymentAsync(request.PaymentId, application.InvoiceId, application.Amount, userId, connectionName);
+                    await ApplyPaymentAsync(request.PaymentId, application.InvoiceId, application.Amount, userId, cn);
                     result.SuccessfulApplications++;
                     result.TotalApplied += application.Amount;
                     result.AppliedInvoiceIds.Add(application.InvoiceId);
@@ -446,9 +449,9 @@ namespace Beep.OilandGas.Accounting.Services
             return result;
         }
 
-        private async Task<string> GenerateInvoiceNumberAsync(string? connectionName)
+        private async Task<string> GenerateInvoiceNumberAsync(string? cn)
         {
-            var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", connectionName);
+            var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", cn);
             var existing = await repo.GetAsync(new List<AppFilter>
             {
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
@@ -458,9 +461,9 @@ namespace Beep.OilandGas.Accounting.Services
             return $"AR-{DateTime.UtcNow:yyyyMMdd}-{(count + 1):D4}";
         }
 
-        private async Task<string> GenerateCreditMemoNumberAsync(string? connectionName)
+        private async Task<string> GenerateCreditMemoNumberAsync(string? cn)
         {
-            var repo = await GetRepoAsync<AR_CREDIT_MEMO>("AR_CREDIT_MEMO", connectionName);
+            var repo = await GetRepoAsync<AR_CREDIT_MEMO>("AR_CREDIT_MEMO", cn);
             var existing = await repo.GetAsync(new List<AppFilter>
             {
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
@@ -485,13 +488,13 @@ namespace Beep.OilandGas.Accounting.Services
             return totalDays / paidInvoices.Count;
         }
 
-        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? connectionName)
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? cn)
         {
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
             // Use strongly typed class directly
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(T), connectionName ?? ConnectionName, tableName);
+                typeof(T), cn ?? ConnectionName, tableName);
         }
 
         public async Task<bool> HasUnpostedInvoicesAsync(DateTime periodEndDate)

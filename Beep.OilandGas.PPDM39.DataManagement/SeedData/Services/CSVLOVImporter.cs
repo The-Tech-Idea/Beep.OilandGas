@@ -46,7 +46,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
         /// <summary>
         /// Imports LOV data from CSV file to LIST_OF_VALUE table
         /// </summary>
-        public async Task<ImportResult> ImportToListOfValueAsync(string csvFilePath, Dictionary<string, string>? columnMapping = null, bool skipExisting = true, string userId = "SYSTEM", string? connectionName = null)
+        public async Task<ImportResult> ImportToListOfValueAsync(string csvFilePath, Dictionary<string, string>? columnMapping = null, bool skipExisting = true, string userId = "SYSTEM", string connectionName = "PPDM39")
         {
             var result = new ImportResult
             {
@@ -165,7 +165,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
         /// <summary>
         /// Imports LOV data from CSV to a specific RA_* table
         /// </summary>
-        public async Task<ImportResult> ImportToRATableAsync(string csvFilePath, string tableName, Dictionary<string, string>? columnMapping = null, bool skipExisting = true, string userId = "SYSTEM", string? connectionName = null)
+        public async Task<ImportResult> ImportToRATableAsync(string csvFilePath, string tableName, Dictionary<string, string>? columnMapping = null, bool skipExisting = true, string userId = "SYSTEM", string connectionName = "PPDM39")
         {
             var result = new ImportResult
             {

@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -45,7 +47,7 @@ namespace Beep.OilandGas.Accounting.Services
             string userId,
             string? fieldId = null,
             string? costCenterId = null,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(methodType))
                 throw new ArgumentNullException(nameof(methodType));
@@ -56,7 +58,6 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var cn = connectionName ?? ConnectionName;
             var repo = await GetRepoAsync<ACCOUNTING_METHOD>("ACCOUNTING_METHOD", cn);
 
             var activePolicies = await GetActivePoliciesAsync(methodType, fieldId, costCenterId, cn);
@@ -96,12 +97,12 @@ namespace Beep.OilandGas.Accounting.Services
             string methodType,
             string? fieldId = null,
             string? costCenterId = null,
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(methodType))
                 throw new ArgumentNullException(nameof(methodType));
 
-            var policies = await GetActivePoliciesAsync(methodType, fieldId, costCenterId, connectionName ?? ConnectionName);
+            var policies = await GetActivePoliciesAsync(methodType, fieldId, costCenterId, cn ?? ConnectionName);
             return policies.OrderByDescending(p => p.EFFECTIVE_DATE).FirstOrDefault();
         }
 

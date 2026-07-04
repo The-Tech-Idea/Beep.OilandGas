@@ -21,17 +21,3 @@ public static class DevelopmentPlanningReferenceSets
     public const string ServiceJobPriority = "SERVICE_JOB_PRIORITY";
     public const string ServiceJobTriggerBasis = "SERVICE_JOB_TRIGGER_BASIS";
 }
-
-public static class DevelopmentPlanningDefaults
-{
-    public const string Draft = "DRAFT";
-    public const string Planned = "PLANNED";
-    public const string Approved = "APPROVED";
-    public const string Active = "ACTIVE";
-    public const string Deferred = "DEFERRED";
-    public const string Cancelled = "CANCELLED";
-    public const string High = "HIGH";
-    public const string Medium = "MEDIUM";
-    public const string Low = "LOW";
-    public const string TimeBased = "TIME_BASED";
-}

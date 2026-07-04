@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,7 +44,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             IEnumerable<LEASE_PAYMENT> payments,
             DateTime commencementDate,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (leaseContract == null)
                 throw new ArgumentNullException(nameof(leaseContract));
@@ -77,7 +78,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "LEASE_ACCOUNTING_ENTRY");
+                entityType, connectionName, "LEASE_ACCOUNTING_ENTRY");
 
             await repo.InsertAsync(entry, userId);
 
@@ -92,18 +93,18 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string leaseId,
             DateTime measurementDate,
             string userId,
-            string cn = "PPDM39")
+            string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var lease = await GetLeaseAsync(leaseId, cn);
+            var lease = await GetLeaseAsync(leaseId, connectionName);
             if (lease == null)
                 return null;
 
-            var payments = await GetPaymentsAsync(leaseId, cn);
+            var payments = await GetPaymentsAsync(leaseId, connectionName);
             var discountRate = lease.DISCOUNT_RATE ?? 0.0m;
             var pv = CalculatePresentValue(payments, discountRate, measurementDate);
 
@@ -129,7 +130,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "LEASE_ACCOUNTING_ENTRY");
+                entityType, connectionName, "LEASE_ACCOUNTING_ENTRY");
 
             await repo.InsertAsync(entry, userId);
 
@@ -140,7 +141,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return entry;
         }
 
-        private async Task<LEASE_CONTRACT> GetLeaseAsync(string leaseId, string cn)
+        private async Task<LEASE_CONTRACT> GetLeaseAsync(string leaseId, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync("LEASE_CONTRACT");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -148,13 +149,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "LEASE_CONTRACT");
+                entityType, connectionName, "LEASE_CONTRACT");
 
             var result = await repo.GetByIdAsync(leaseId);
             return result as LEASE_CONTRACT;
         }
 
-        private async Task<List<LEASE_PAYMENT>> GetPaymentsAsync(string leaseId, string cn)
+        private async Task<List<LEASE_PAYMENT>> GetPaymentsAsync(string leaseId, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync("LEASE_PAYMENT");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -162,7 +163,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "LEASE_PAYMENT");
+                entityType, connectionName, "LEASE_PAYMENT");
 
             var filters = new List<AppFilter>
             {

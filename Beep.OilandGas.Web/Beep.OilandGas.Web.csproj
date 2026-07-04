@@ -5,22 +5,21 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <!-- Suppress known analyzer/generated-code noise that is non-actionable in source -->
-    <NoWarn>$(NoWarn);MUD0002;CS8669</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MudBlazor" Version="9.4.0" />
+    <PackageReference Include="MudBlazor" Version="9.5.0" />
     <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.7" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.7" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.9" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.9" />
     <PackageReference Include="TheTechIdea.Beep.AssemblyLoader" Version="2.0.24" />
     <PackageReference Include="TheTechIdea.Beep.Container" Version="1.0.1" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.96" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.1444" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="3.0.1" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="3.0.0" />
     <PackageReference Include="TheTechIdea.Beep.DMLogger" Version="2.0.3" />
     <PackageReference Include="TheTechIdea.Beep.SqliteDatasourceCore" Version="1.0.56" />
     <PackageReference Include="TheTechIdea.Beep.TreeNodes" Version="1.0.16" />
-    <PackageReference Include="TheTechIdea.Beep.Vis.Loader" Version="1.0.6" />
+    <PackageReference Include="TheTechIdea.Beep.Vis.Loader" Version="1.0.7" />
   </ItemGroup>
 
   <ItemGroup>

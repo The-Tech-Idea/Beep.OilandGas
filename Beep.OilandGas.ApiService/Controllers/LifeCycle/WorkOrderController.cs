@@ -10,7 +10,9 @@ using Beep.OilandGas.PPDM.Models;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using TheTechIdea.Beep.Editor;
 using Microsoft.Extensions.Logging;
@@ -56,7 +58,7 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
         public async Task<ActionResult<object>> CreateOrLinkAFE(
             string workOrderId,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(workOrderId))
                 return BadRequest(new { error = "Work order ID is required." });
@@ -129,7 +131,7 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
             [FromQuery] string? fieldId = null,
             [FromQuery] string? propertyId = null,
             [FromQuery] string? userId = null,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(workOrderId))
                 return BadRequest(new { error = "Work order ID is required." });
@@ -179,7 +181,7 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
         [HttpGet("{workOrderId}/afe")]
         public async Task<ActionResult<object>> GetAFEForWorkOrder(
             string workOrderId,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(workOrderId))
                 return BadRequest(new { error = "Work order ID is required." });

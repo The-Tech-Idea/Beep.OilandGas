@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
 namespace Beep.OilandGas.Accounting.Services
 {
-    public class AuditService
+    public class AuditService 
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -33,9 +35,8 @@ namespace Beep.OilandGas.Accounting.Services
             _logger = logger;
         }
 
-        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? connectionName)
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? cn)
         {
-            var cn = connectionName ?? ConnectionName;
             var ds = _editor.GetDataSource(cn);
             if (ds == null) throw new InvalidOperationException($"Connection {cn} not found.");
             
@@ -48,9 +49,8 @@ namespace Beep.OilandGas.Accounting.Services
             string userId, 
             DateTime startDate, 
             DateTime endDate, 
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
-            var cn = connectionName ?? ConnectionName;
             var logs = new List<AuditLogEntry>();
 
             // 1. Check Journal Entries
@@ -109,12 +109,12 @@ namespace Beep.OilandGas.Accounting.Services
         public async Task<List<AuditLogEntry>> GetAnomalyReportAsync(
             DateTime startDate, 
             DateTime endDate, 
-            string? connectionName = null)
+            string cn = "PPDM39")
         {
             var logs = new List<AuditLogEntry>();
 
             // 1. Unusual Postings
-            var unusuals = await _anomalyService.DetectUnusualPostingsAsync(startDate, endDate, 1000m, connectionName);
+            var unusuals = await _anomalyService.DetectUnusualPostingsAsync(startDate, endDate, 1000m, cn);
             foreach (var u in unusuals)
             {
                 logs.Add(new AuditLogEntry
@@ -132,7 +132,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             // 2. Benford Analysis (Sample on a key account, e.g., '1000' Cash)
             // In a real viewer, user would select account
-            var benford = await _anomalyService.BenfordLawAnalysisAsync("1000", startDate, endDate, connectionName);
+            var benford = await _anomalyService.BenfordLawAnalysisAsync("1000", startDate, endDate, cn);
             foreach (var b in benford.Where(x => x.IsAnomaly))
             {
                 logs.Add(new AuditLogEntry

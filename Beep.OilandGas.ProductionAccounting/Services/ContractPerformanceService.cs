@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,7 +44,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _logger = logger;
         }
 
-        public async Task<CONTRACT_PERFORMANCE_OBLIGATION> CreateObligationAsync(CONTRACT_PERFORMANCE_OBLIGATION obligation, string userId, string cn = "PPDM39")
+        public async Task<CONTRACT_PERFORMANCE_OBLIGATION> CreateObligationAsync(CONTRACT_PERFORMANCE_OBLIGATION obligation, string userId, string connectionName = "PPDM39")
         {
             if (obligation == null)
                 throw new ArgumentNullException(nameof(obligation));
@@ -57,17 +58,17 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             obligation.ROW_CREATED_BY = userId;
             obligation.ROW_CREATED_DATE = DateTime.UtcNow;
 
-            var repo = await GetRepoAsync<CONTRACT_PERFORMANCE_OBLIGATION>("CONTRACT_PERFORMANCE_OBLIGATION", cn);
+            var repo = await GetRepoAsync<CONTRACT_PERFORMANCE_OBLIGATION>("CONTRACT_PERFORMANCE_OBLIGATION", connectionName);
             await repo.InsertAsync(obligation, userId);
             return obligation;
         }
 
-        public async Task<CONTRACT_PERFORMANCE_OBLIGATION> MarkSatisfiedAsync(string obligationId, DateTime satisfiedDate, string userId, string cn = "PPDM39")
+        public async Task<CONTRACT_PERFORMANCE_OBLIGATION> MarkSatisfiedAsync(string obligationId, DateTime satisfiedDate, string userId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(obligationId))
                 throw new ArgumentNullException(nameof(obligationId));
 
-            var repo = await GetRepoAsync<CONTRACT_PERFORMANCE_OBLIGATION>("CONTRACT_PERFORMANCE_OBLIGATION", cn);
+            var repo = await GetRepoAsync<CONTRACT_PERFORMANCE_OBLIGATION>("CONTRACT_PERFORMANCE_OBLIGATION", connectionName);
             var obligation = await repo.GetByIdAsync(obligationId) as CONTRACT_PERFORMANCE_OBLIGATION;
             if (obligation == null)
                 throw new ProductionAccountingException($"Obligation not found: {obligationId}");
@@ -81,12 +82,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return obligation;
         }
 
-        public async Task<List<CONTRACT_PERFORMANCE_OBLIGATION>> GetOutstandingAsync(string salesContractId, string cn = "PPDM39")
+        public async Task<List<CONTRACT_PERFORMANCE_OBLIGATION>> GetOutstandingAsync(string salesContractId, string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(salesContractId))
                 throw new ArgumentNullException(nameof(salesContractId));
 
-            var repo = await GetRepoAsync<CONTRACT_PERFORMANCE_OBLIGATION>("CONTRACT_PERFORMANCE_OBLIGATION", cn);
+            var repo = await GetRepoAsync<CONTRACT_PERFORMANCE_OBLIGATION>("CONTRACT_PERFORMANCE_OBLIGATION", connectionName);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "SALES_CONTRACT_ID", Operator = "=", FilterValue = salesContractId },
@@ -99,7 +100,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ?? new List<CONTRACT_PERFORMANCE_OBLIGATION>();
         }
 
-        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string cn)
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -107,7 +108,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, tableName);
+                entityType, connectionName, tableName);
         }
     }
 }

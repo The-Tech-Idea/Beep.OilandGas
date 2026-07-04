@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Microsoft.Extensions.Logging;
@@ -43,7 +45,7 @@ namespace Beep.OilandGas.ApiService.Services
                     PoolId = p.POOL_ID ?? "N/A",
                     PoolName = p.POOL_NAME ?? p.POOL_ID ?? "Unknown",
                     DiscoveryDate = p.DISCOVERY_DATE,
-                    Status = p.POOL_STATUS ?? "UNKNOWN"
+                    Status = p.CURRENT_STATUS_DATE.HasValue ? "Active" : "Unknown"
                 }).OrderBy(p => p.PoolName).ToList();
             }
             catch (Exception ex) { _logger?.LogWarning(ex, "Failed to load pool summary"); }

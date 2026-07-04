@@ -32,7 +32,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Unitization
         /// Get unit agreements.
         /// </summary>
         [HttpGet("units")]
-        public async Task<ActionResult<List<object>>> GetUnits([FromQuery] string? connectionName = null)
+        public async Task<ActionResult<List<object>>> GetUnits([FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -61,7 +61,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Unitization
         [HttpPost("units")]
         public async Task<ActionResult<object>> CreateUnitAgreement(
             [FromBody] CreateUnitAgreementRequest request,
-            [FromQuery] string? connectionName = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {

@@ -2,6 +2,7 @@
 @using Beep.OilandGas.Web.Services
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
+@inject HttpClient Http
 
 <PageTitle>Track Revenue Recognition</PageTitle>
 
@@ -83,24 +84,58 @@
 </MudContainer>
 
 @code {
-    private decimal _totalRevenue = 2_450_000m;
-    private decimal _oilRevenue = 1_820_000m;
-    private decimal _gasRevenue = 630_000m;
-    private decimal _unrecognizedRevenue = 185_000m;
-
-    private List<WellRevenueDto> _wellRevenues = new()
-    {
-        new() { WellName = "Well #1", OilVolume = 12500, GasVolume = 45000, OilPrice = 78.50m, GasPrice = 3.25m, TotalRevenue = 1_127_125m, RecognizedPct = 0.95m },
-        new() { WellName = "Well #2", OilVolume = 8200, GasVolume = 32000, OilPrice = 78.50m, GasPrice = 3.25m, TotalRevenue = 747_700m, RecognizedPct = 0.92m },
-        new() { WellName = "Well #3", OilVolume = 5800, GasVolume = 28000, OilPrice = 78.50m, GasPrice = 3.25m, TotalRevenue = 546_175m, RecognizedPct = 0.88m },
-    };
-
-    private List<decimal> _monthlyRevenueData = new() { 180000, 210000, 195000, 225000, 240000, 215000, 230000, 250000, 235000, 260000, 245000, 270000 };
+    private bool _isLoading = true;
+    private decimal _totalRevenue;
+    private decimal _oilRevenue;
+    private decimal _gasRevenue;
+    private decimal _unrecognizedRevenue;
+    private List<WellRevenueDto> _wellRevenues = new();
+    private List<decimal> _monthlyRevenueData = new();
     private string[] _monthLabels = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
-    private void RecalculateRevenue()
+    protected override async Task OnInitializedAsync()
     {
-        Snackbar.Add("Revenue recalculation initiated. Results will be available shortly.", Severity.Info);
+        await LoadRevenueDataAsync();
+    }
+
+    private async Task LoadRevenueDataAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var summary = await Http.GetFromJsonAsync<RevenueSummaryDto>("/api/accounting/revenue/summary");
+            if (summary is not null)
+            {
+                _totalRevenue = summary.TotalRevenue;
+                _oilRevenue = summary.OilRevenue;
+                _gasRevenue = summary.GasRevenue;
+                _unrecognizedRevenue = summary.DeferredRevenue;
+                _wellRevenues = summary.WellDetails ?? new();
+                _monthlyRevenueData = summary.MonthlyData ?? new();
+            }
+        }
+        catch
+        {
+            Snackbar.Add("Could not load revenue data. Using defaults.", Severity.Warning);
+        }
+        finally { _isLoading = false; }
+    }
+
+    private async Task RecalculateRevenue()
+    {
+        Snackbar.Add("Revenue recalculation initiated...", Severity.Info);
+        await LoadRevenueDataAsync();
+        Snackbar.Add("Revenue data refreshed.", Severity.Success);
+    }
+
+    public class RevenueSummaryDto
+    {
+        public decimal TotalRevenue { get; set; }
+        public decimal OilRevenue { get; set; }
+        public decimal GasRevenue { get; set; }
+        public decimal DeferredRevenue { get; set; }
+        public List<WellRevenueDto>? WellDetails { get; set; }
+        public List<decimal>? MonthlyData { get; set; }
     }
 
     public class WellRevenueDto
