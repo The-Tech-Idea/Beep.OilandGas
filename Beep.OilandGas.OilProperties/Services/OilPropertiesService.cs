@@ -32,6 +32,7 @@ namespace Beep.OilandGas.OilProperties.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly IDMEEditor _editor;
         private readonly string _connectionName;
+        private readonly Func<Task<string>>? _resolveConnection;
         private readonly ILogger<OilPropertiesService>? _logger;
 
         public OilPropertiesService(
@@ -40,7 +41,8 @@ namespace Beep.OilandGas.OilProperties.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
-            ILogger<OilPropertiesService>? logger = null)
+            ILogger<OilPropertiesService>? logger = null,
+            Func<Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -48,7 +50,11 @@ namespace Beep.OilandGas.OilProperties.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _logger = logger;
+            _resolveConnection = resolveConnection;
         }
+
+        private Task<string> ResolveConnectionAsync() =>
+            _resolveConnection is null ? Task.FromResult(_connectionName) : _resolveConnection();
 
         public decimal CalculateFormationVolumeFactor(decimal pressure, decimal temperature, decimal gasOilRatio, decimal oilGravity, string correlation = "Standing", decimal gasSpecificGravity = 0.65m)
         {
@@ -198,6 +204,7 @@ namespace Beep.OilandGas.OilProperties.Services
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
             _logger?.LogInformation("Saving oil composition {CompositionId}", composition.CompositionId);
+            var targetConnection = await ResolveConnectionAsync();
 
             if (string.IsNullOrWhiteSpace(composition.CompositionId))
             {
@@ -206,7 +213,7 @@ namespace Beep.OilandGas.OilProperties.Services
 
             // Create repository for OIL_COMPOSITION
             var compositionRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(OIL_COMPOSITION), _connectionName, "OIL_COMPOSITION", null);
+                typeof(OIL_COMPOSITION), targetConnection, "OIL_COMPOSITION", null);
 
             // Check if composition exists
             var filters = new List<AppFilter>
@@ -272,7 +279,7 @@ namespace Beep.OilandGas.OilProperties.Services
 
             // Create repository for OIL_COMPOSITION
             var compositionRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(OIL_COMPOSITION), _connectionName, "OIL_COMPOSITION", null);
+                typeof(OIL_COMPOSITION), await ResolveConnectionAsync(), "OIL_COMPOSITION", null);
 
             var filters = new List<AppFilter>
             {
@@ -312,7 +319,7 @@ namespace Beep.OilandGas.OilProperties.Services
 
             // Create repository for OIL_PROPERTY_RESULT
             var resultRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(OIL_PROPERTY_RESULT), _connectionName, "OIL_PROPERTY_RESULT", null);
+                typeof(OIL_PROPERTY_RESULT), await ResolveConnectionAsync(), "OIL_PROPERTY_RESULT", null);
 
             var filters = new List<AppFilter>
             {
@@ -347,6 +354,7 @@ namespace Beep.OilandGas.OilProperties.Services
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
             _logger?.LogInformation("Saving oil property calculation result {CalculationId}", result.CalculationId);
+            var targetConnection = await ResolveConnectionAsync();
 
             if (string.IsNullOrWhiteSpace(result.CalculationId))
             {
@@ -355,7 +363,7 @@ namespace Beep.OilandGas.OilProperties.Services
 
             // Create repository for OIL_PROPERTY_RESULT
             var resultRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(OIL_PROPERTY_RESULT), _connectionName, "OIL_PROPERTY_RESULT", null);
+                typeof(OIL_PROPERTY_RESULT), targetConnection, "OIL_PROPERTY_RESULT", null);
 
             var newEntity = new OIL_PROPERTY_RESULT
             {

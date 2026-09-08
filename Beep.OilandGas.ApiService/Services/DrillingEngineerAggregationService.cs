@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.PPDM39.Core;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
-using PPDM = Beep.OilandGas.PPDM39.Models;
+using PpdmEntities= Beep.OilandGas.PPDM39.Models;
 
 namespace Beep.OilandGas.ApiService.Services
 {
@@ -53,8 +54,8 @@ namespace Beep.OilandGas.ApiService.Services
             try
             {
                 var activeFilter = new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" };
-                var wells = (await GetRepo<PPDM.WELL>("WELL").GetAsync(new List<AppFilter> { activeFilter }))
-                    .OfType<PPDM.WELL>().ToList();
+                var wells = (await GetRepo<PpdmEntities.WELL>("WELL").GetAsync(new List<AppFilter> { activeFilter }))
+                    .OfType<PpdmEntities.WELL>().ToList();
                 kpi.TotalWells = wells.Count;
                 kpi.ActiveWells = wells.Count;
             }

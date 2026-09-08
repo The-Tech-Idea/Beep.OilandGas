@@ -13,7 +13,7 @@ public partial class ProcessDefinitionInitializer
     {
         await InitializeDiscoveryToDevelopmentAsync(userId);
         await InitializeFdpToFirstOilAsync(userId);
-        await InitializeReservesRevisionAsync(userId);
+        await InitializeCrossRoleReservesRevisionAsync(userId);
         await InitializeDecommissioningPlanningAsync(userId);
         await InitializeAssetAcquisitionAsync(userId);
     }
@@ -65,7 +65,7 @@ public partial class ProcessDefinitionInitializer
     }
 
     /// <summary>CRW-23: Annual reserves review → Reservoir calculates → peer review → Executive approval → auditor review</summary>
-    private async Task InitializeReservesRevisionAsync(string userId)
+    private async Task InitializeCrossRoleReservesRevisionAsync(string userId)
     {
         await CreateProcessDefinitionIfNotExistsAsync(new ProcessDefinition
         {

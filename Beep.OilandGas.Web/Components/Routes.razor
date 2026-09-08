@@ -1,7 +1,23 @@
-<ConnectionCheck />
 <Router AppAssembly="@typeof(Routes).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+            <NotAuthorized Context="authenticationState">
+                @if (authenticationState.User.Identity?.IsAuthenticated == true)
+                {
+                    <PageTitle>Access Denied</PageTitle>
+                    <MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
+                        <MudAlert Severity="Severity.Error">You do not have permission to access this page.</MudAlert>
+                    </MudContainer>
+                }
+                else
+                {
+                    <Beep.OilandGas.Web.Components.Account.Shared.RedirectToLogin />
+                }
+            </NotAuthorized>
+            <Authorizing>
+                <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+            </Authorizing>
+        </AuthorizeRouteView>
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
     <NotFound>
@@ -24,4 +40,3 @@
         </LayoutView>
     </NotFound>
 </Router>
-

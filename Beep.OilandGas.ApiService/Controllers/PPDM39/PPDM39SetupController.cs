@@ -18,6 +18,7 @@ using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using System.Reflection;
+using System.Security.Claims;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.ConfigUtil;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -37,7 +38,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
     /// <summary>
     /// API controller for PPDM39 database setup wizard
     /// </summary>
-    [Authorize]
+    [Authorize(Roles = "Administrator")]
     [ApiController]
     [Route("api/ppdm39/setup")]
     public class PPDM39SetupController : ControllerBase
@@ -61,7 +62,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         private readonly IPPDMDatabaseCreatorService? _databaseCreatorService;
         private readonly SeedDataCatalogCompatibility _seedDataCatalog;
         private readonly Beep.OilandGas.PPDM39.DataManagement.SeedData.WellStatusFacetSeeder? _wellStatusFacetSeeder;
-        private readonly IDefaultSecuritySeedService? _defaultSecuritySeedService;
 
         public PPDM39SetupController(
             PPDM39SetupService setupService,
@@ -81,8 +81,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
            StandardValueMapper? standardValueMapper = null,
             PPDMReferenceDataSeeder? referenceDataSeeder = null,
             PPDMDemoDataSeeder? demoDataSeeder = null,
-            Beep.OilandGas.PPDM39.DataManagement.SeedData.WellStatusFacetSeeder? wellStatusFacetSeeder = null,
-            IDefaultSecuritySeedService? defaultSecuritySeedService = null)
+            Beep.OilandGas.PPDM39.DataManagement.SeedData.WellStatusFacetSeeder? wellStatusFacetSeeder = null)
         {
             _setupService = setupService ?? throw new ArgumentNullException(nameof(setupService));
             _schemaMigrationService = schemaMigrationService ?? (IPPDM39SchemaMigrationService)setupService;
@@ -103,7 +102,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             _referenceDataSeeder = referenceDataSeeder;
             _demoDataSeeder = demoDataSeeder;
             _wellStatusFacetSeeder = wellStatusFacetSeeder;
-            _defaultSecuritySeedService = defaultSecuritySeedService;
 
             // Pass progress tracking to service if available
             if (progressTracking != null && _setupService is PPDM39SetupService setupSvc)
@@ -579,55 +577,18 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             }
         }
 
-        /// <summary>
-        /// Copy database from source to target (ETL operation) with progress tracking
-        /// </summary>
+        /// <summary>Database copy is unavailable through the setup service.</summary>
         [HttpPost("copy-database")]
         public async Task<ActionResult<object>> CopyDatabase([FromBody] CopyDatabaseRequest request)
         {
-            try
+            if (request == null || string.IsNullOrWhiteSpace(request.SourceConnectionName) ||
+                string.IsNullOrWhiteSpace(request.TargetConnectionName))
+                return BadRequest(new { error = "Source and target connection names are required." });
+            return StatusCode(501, new CopyDatabaseResult
             {
-                if (request == null || string.IsNullOrEmpty(request.SourceConnectionName) || string.IsNullOrEmpty(request.TargetConnectionName))
-                {
-                        return BadRequest(new { error = "Source and target connection names are required." });
-                }
-
-                // Start progress tracking
-                string? operationId = null;
-                if (_progressTracking != null)
-                {
-                    operationId = _progressTracking.StartOperation("CopyDatabase", 
-                        $"Copying database from {request.SourceConnectionName} to {request.TargetConnectionName}");
-                }
-
-                // Execute copy asynchronously
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        var result = await _setupService.CopyDatabaseAsync(request, operationId);
-                        if (!string.IsNullOrEmpty(operationId) && _progressTracking != null)
-                        {
-                            _progressTracking.CompleteOperation(operationId, result.Success, result.Message, result.ErrorDetails);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error copying database");
-                        if (!string.IsNullOrEmpty(operationId) && _progressTracking != null)
-                        {
-                            _progressTracking.CompleteOperation(operationId, false, "Database copy failed", "See server logs for details.");
-                        }
-                    }
-                });
-
-                return Ok(new OperationStartResponse { OperationId = operationId ?? string.Empty, Message = "Database copy started" });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error starting database copy");
-                    return StatusCode(500, new { error = "Failed to start database copy." });
-            }
+                Success = false,
+                Message = "Database copy is not implemented through the setup service."
+            });
         }
 
         /// <summary>
@@ -800,6 +761,11 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                         return BadRequest(new { error = "Connection and options are required." });
                 }
 
+                if (request.Options.SeedDefaultSecurityData)
+                {
+                    return BadRequest(new { error = "Security is installed through repository EF migrations and account registration, not module database seeding." });
+                }
+
                 if (_dataManager == null)
                 {
                     // Fallback to old service if DataManager not available
@@ -929,31 +895,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     LogFilePath = request.Options.LogFilePath
                 };
 
-                if (overallSuccess && request.Options.SeedDefaultSecurityData && _defaultSecuritySeedService != null)
-                {
-                    var seedUserId = User?.Identity?.Name;
-                    if (string.IsNullOrWhiteSpace(seedUserId))
-                    {
-                        seedUserId = "SYSTEM";
-                    }
-
-                    var securitySeed = await _defaultSecuritySeedService.SeedDefaultsAsync(seedUserId);
-                    resultDto.Summary ??= new Dictionary<string, object>();
-                    resultDto.Summary["SecuritySeedSuccess"] = securitySeed.Success;
-                    resultDto.Summary["SecuritySeedBusinessAssociatesInserted"] = securitySeed.BusinessAssociatesInserted;
-                    resultDto.Summary["SecuritySeedBaOrganizationsInserted"] = securitySeed.BaOrganizationsInserted;
-                    resultDto.Summary["SecuritySeedUsersInserted"] = securitySeed.UsersInserted;
-                    resultDto.Summary["SecuritySeedRolesInserted"] = securitySeed.RolesInserted;
-                    resultDto.Summary["SecuritySeedPermissionsInserted"] = securitySeed.PermissionsInserted;
-                    resultDto.Summary["SecuritySeedRolePermissionsInserted"] = securitySeed.RolePermissionsInserted;
-                    resultDto.Summary["SecuritySeedUserRolesInserted"] = securitySeed.UserRolesInserted;
-
-                    if (securitySeed.Errors.Count > 0)
-                    {
-                        resultDto.Summary["SecuritySeedErrors"] = securitySeed.Errors;
-                    }
-                }
-
                 return Ok(resultDto);
             }
             catch (Exception ex)
@@ -1046,16 +987,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     request.TableNames, 
                     request.SkipExisting, 
                     request.UserId ?? "SYSTEM");
-
-                if (_defaultSecuritySeedService != null)
-                {
-                    var securitySeed = await _defaultSecuritySeedService.SeedDefaultsAsync(request.UserId ?? "SYSTEM");
-                    result.Message = $"{result.Message} | Security defaults: business associates +{securitySeed.BusinessAssociatesInserted}, BA organizations +{securitySeed.BaOrganizationsInserted}, users +{securitySeed.UsersInserted}, roles +{securitySeed.RolesInserted}, permissions +{securitySeed.PermissionsInserted}, role mappings +{securitySeed.RolePermissionsInserted}, user role mappings +{securitySeed.UserRolesInserted}";
-                    if (securitySeed.Errors.Count > 0)
-                    {
-                        result.Errors.AddRange(securitySeed.Errors);
-                    }
-                }
 
                 return Ok(result);
             }
@@ -2565,7 +2496,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Lists all registered IModuleSetup implementations.
         /// </summary>
         [HttpGet("available-modules")]
-        [AllowAnonymous]
         public ActionResult<Beep.OilandGas.Models.Core.DTOs.AvailableModulesResponse> GetAvailableModules()
         {
             try
@@ -2683,7 +2613,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// GET /api/ppdm39/setup/status
         /// Returns whether a PPDM39 connection already exists.
         /// </summary>
-        [AllowAnonymous]
         [HttpGet("status")]
         public async Task<ActionResult<SetupStatusResult>> GetSetupStatus()
         {
@@ -2702,7 +2631,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// POST /api/ppdm39/setup/create-sqlite
         /// Creates a new SQLite database file and registers the connection.
         /// </summary>
-        [AllowAnonymous]
         [HttpPost("create-sqlite")]
         public async Task<ActionResult<CreateSqliteResult>> CreateSqliteDatabase([FromBody] CreateSqliteRequest request)
         {
@@ -2727,7 +2655,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// POST /api/ppdm39/setup/schema/plan
         /// Builds a MigrationManager plan and returns review artifacts without executing it.
         /// </summary>
-        [AllowAnonymous]
         [HttpPost("schema/plan")]
         public async Task<ActionResult<SchemaMigrationPlanResult>> PlanSchemaMigration([FromBody] SchemaMigrationPlanRequest request)
         {
@@ -2754,6 +2681,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPost("schema/approve")]
         public async Task<ActionResult<SchemaMigrationApprovalResult>> ApproveSchemaMigration([FromBody] SchemaMigrationApprovalRequest request)
         {
+            var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(actor)) return Forbid();
+            request.ApprovedBy = actor;
             try
             {
                 var result = await _schemaMigrationService.ApproveSchemaMigrationPlanAsync(request);
@@ -2774,7 +2704,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// GET /api/ppdm39/setup/schema/ci-validate/{planId}
         /// Returns CI gate, policy, and preflight validation evidence for a generated migration plan.
         /// </summary>
-        [AllowAnonymous]
         [HttpGet("schema/ci-validate/{planId}")]
         public async Task<ActionResult<SchemaMigrationCiValidationResult>> ValidateSchemaMigrationForCi(string planId)
         {
@@ -2802,6 +2731,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPost("schema/execute")]
         public async Task<ActionResult<SchemaMigrationExecuteResult>> ExecuteSchemaMigration([FromBody] SchemaMigrationExecuteRequest request)
         {
+            var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(actor)) return Forbid();
+            request.ExecutedBy = actor;
             try
             {
                 var result = await _schemaMigrationService.ExecuteSchemaMigrationPlanAsync(request);
@@ -2825,6 +2757,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPost("schema/start")]
         public async Task<ActionResult<OperationStartResponse>> StartSchemaMigration([FromBody] SchemaMigrationExecuteRequest request)
         {
+            var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(actor)) return Forbid();
+            request.ExecutedBy = actor;
             try
             {
                 var result = await _schemaMigrationService.StartSchemaMigrationExecutionAsync(request);
@@ -2869,7 +2804,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// GET /api/ppdm39/setup/schema/artifacts/{planId}
         /// Returns stored plan and evidence artifacts for a schema migration plan.
         /// </summary>
-        [AllowAnonymous]
         [HttpGet("schema/artifacts/{planId}")]
         public async Task<ActionResult<SchemaMigrationArtifactsResult>> GetSchemaMigrationArtifacts(string planId)
         {
@@ -3153,5 +3087,3 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         }
     }
 }
-
-

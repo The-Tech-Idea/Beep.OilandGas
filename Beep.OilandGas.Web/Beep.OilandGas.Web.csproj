@@ -4,6 +4,8 @@
      <TargetFrameworks>net10.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <IdentitySharedProject Condition="'$(IdentitySharedProject)' == ''">$(MSBuildThisFileDirectory)..\..\Beep.IdentityServer\Beep.Foundation.IdentityServer.Shared\Beep.Foundation.IdentityServer.Shared.csproj</IdentitySharedProject>
+    <ThemeBrandingProject Condition="'$(ThemeBrandingProject)' == ''">$(MSBuildThisFileDirectory)..\..\Beep.Web\TheTechIdeaWeb.ThemeBranding\TheTechIdeaWeb.ThemeBranding.csproj</ThemeBrandingProject>
     <!-- Suppress known analyzer/generated-code noise that is non-actionable in source -->
   </PropertyGroup>
 
@@ -14,8 +16,8 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.9" />
     <PackageReference Include="TheTechIdea.Beep.AssemblyLoader" Version="2.0.24" />
     <PackageReference Include="TheTechIdea.Beep.Container" Version="1.0.1" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="3.0.1" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="3.0.0" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="$(BeepDMVersion)" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="$(BeepDMVersion)" />
     <PackageReference Include="TheTechIdea.Beep.DMLogger" Version="2.0.3" />
     <PackageReference Include="TheTechIdea.Beep.SqliteDatasourceCore" Version="1.0.56" />
     <PackageReference Include="TheTechIdea.Beep.TreeNodes" Version="1.0.16" />
@@ -23,8 +25,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\fahadTheTechIdea\MyWebSite\TheTechIdeaWeb\Beep.Foundation.IdentityServer.Shared\Beep.Foundation.IdentityServer.Shared.csproj" />
-    <ProjectReference Include="..\..\..\fahadTheTechIdea\MyWebSite\TheTechIdeaWeb\TheTechIdeaWeb.ThemeBranding\TheTechIdeaWeb.ThemeBranding.csproj" />
+    <ProjectReference Include="$(IdentitySharedProject)" />
+    <ProjectReference Include="..\TheTechIdea.Data\TheTechIdea.Data.csproj" />
+    <ProjectReference Include="$(ThemeBrandingProject)" />
     <ProjectReference Include="..\..\BeepWeb\Beep.Razor.Components\Beep.Razor.Components.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.Drawing\Beep.OilandGas.Drawing.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.HeatMap\Beep.OilandGas.HeatMap.csproj" />
@@ -39,4 +42,3 @@
   </ItemGroup>
 
 </Project>
- 

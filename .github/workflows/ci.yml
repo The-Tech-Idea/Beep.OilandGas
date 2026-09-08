@@ -7,6 +7,40 @@ on:
     branches: [ "main", "develop" ]
 
 jobs:
+  test-domain-contracts:
+    name: ${{ matrix.project }} Tests
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [Beep.OilandGas.UserManagement.Tests, Beep.OilandGas.LifeCycle.Tests]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Test domain contracts
+        run: dotnet test ${{ matrix.project }}/${{ matrix.project }}.csproj -p:GeneratePackageOnBuild=false --logger "trx;LogFileName=contracts.trx" --results-directory TestResults
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.project }}
+          path: TestResults/contracts.trx
+  test-ppdm:
+    name: PPDM Repository Tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Test repository contracts
+        run: dotnet test Beep.OilandGas.PPDM39.Tests/Beep.OilandGas.PPDM39.Tests.csproj -p:GeneratePackageOnBuild=false --logger "trx;LogFileName=ppdm.trx" --results-directory TestResults
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-ppdm
+          path: TestResults/ppdm.trx
   # ────────────────────────────────────────────────────────────────────────────
   # 1. Full solution build
   # ────────────────────────────────────────────────────────────────────────────

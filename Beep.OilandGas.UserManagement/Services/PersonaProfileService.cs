@@ -61,8 +61,7 @@ public class PersonaProfileService : IPersonaProfileService
             ? System.Text.Json.JsonSerializer.Serialize(existing)
             : null;
 
-        if (string.IsNullOrEmpty(profile.PROFILE_ID))
-            profile.PROFILE_ID = Guid.NewGuid().ToString();
+        profile.PROFILE_ID = existing?.PROFILE_ID ?? Guid.NewGuid().ToString();
 
         profile.PROFILE_VERSION = (existing?.PROFILE_VERSION ?? 0) + 1;
         profile.LAST_ACCESSED_UTC = DateTime.UtcNow;
@@ -129,8 +128,7 @@ public class PersonaProfileService : IPersonaProfileService
             new AppFilter { FieldName = "VIEW_KEY", Operator = "=", FilterValue = preference.VIEW_KEY }
         })).OfType<PersonaViewPreference>().FirstOrDefault();
 
-        if (string.IsNullOrEmpty(preference.PREFERENCE_ID))
-            preference.PREFERENCE_ID = Guid.NewGuid().ToString();
+        preference.PREFERENCE_ID = existing?.PREFERENCE_ID ?? Guid.NewGuid().ToString();
         preference.UPDATED_UTC = DateTime.UtcNow;
 
         if (existing is null)

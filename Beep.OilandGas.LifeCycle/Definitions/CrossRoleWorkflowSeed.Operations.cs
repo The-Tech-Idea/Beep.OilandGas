@@ -13,7 +13,7 @@ public partial class ProcessDefinitionInitializer
     {
         await InitializeWellHandoffDrillingToProductionAsync(userId);
         await InitializeWorkoverProposalAsync(userId);
-        await InitializeFacilityModificationAsync(userId);
+        await InitializeCrossRoleFacilityModificationAsync(userId);
         await InitializeProductionOptimizationAsync(userId);
         await InitializeWellTestToReservoirModelAsync(userId);
         await InitializePipelineCapacityReviewAsync(userId);
@@ -65,7 +65,7 @@ public partial class ProcessDefinitionInitializer
     }
 
     /// <summary>CRW-11: Production needs modification → Facilities assesses → design → construction → handback</summary>
-    private async Task InitializeFacilityModificationAsync(string userId)
+    private async Task InitializeCrossRoleFacilityModificationAsync(string userId)
     {
         await CreateProcessDefinitionIfNotExistsAsync(new ProcessDefinition
         {

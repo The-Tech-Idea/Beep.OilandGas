@@ -30,6 +30,7 @@ namespace Beep.OilandGas.GasProperties.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly IDMEEditor _editor;
         private readonly string _connectionName;
+        private readonly Func<Task<string>>? _resolveConnection;
         private readonly ILogger<GasPropertiesService>? _logger;
 
         public GasPropertiesService(
@@ -38,7 +39,8 @@ namespace Beep.OilandGas.GasProperties.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
-            ILogger<GasPropertiesService>? logger = null)
+            ILogger<GasPropertiesService>? logger = null,
+            Func<Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -46,7 +48,11 @@ namespace Beep.OilandGas.GasProperties.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _logger = logger;
+            _resolveConnection = resolveConnection;
         }
+
+        private Task<string> ResolveConnectionAsync() =>
+            _resolveConnection is null ? Task.FromResult(_connectionName) : _resolveConnection();
 
         public decimal CalculateZFactor(decimal pressure, decimal temperature, decimal specificGravity, string correlation = "Standing-Katz")
         {
@@ -102,6 +108,7 @@ namespace Beep.OilandGas.GasProperties.Services
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
             _logger?.LogInformation("Saving gas composition {CompositionId}", composition.CompositionId);
+            var targetConnection = await ResolveConnectionAsync();
 
             if (string.IsNullOrWhiteSpace(composition.CompositionId))
             {
@@ -110,7 +117,7 @@ namespace Beep.OilandGas.GasProperties.Services
 
             // Create repository for composition
             var compositionRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(GAS_COMPOSITION), _connectionName, "GAS_COMPOSITION", null);
+                typeof(GAS_COMPOSITION), targetConnection, "GAS_COMPOSITION", null);
 
             // Check if composition exists
             var filters = new List<AppFilter>
@@ -168,7 +175,7 @@ namespace Beep.OilandGas.GasProperties.Services
             {
                 // Create repository for components
                 var componentRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(GAS_COMPOSITION_COMPONENT), _connectionName, "GAS_COMPOSITION_COMPONENT", null);
+                    typeof(GAS_COMPOSITION_COMPONENT), targetConnection, "GAS_COMPOSITION_COMPONENT", null);
 
                 // Delete existing components
                 var deleteFilters = new List<AppFilter>
@@ -217,10 +224,11 @@ namespace Beep.OilandGas.GasProperties.Services
             }
 
             _logger?.LogInformation("Getting gas composition {CompositionId}", compositionId);
+            var targetConnection = await ResolveConnectionAsync();
 
             // Create repository for composition
             var compositionRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(GAS_COMPOSITION), _connectionName, "GAS_COMPOSITION", null);
+                typeof(GAS_COMPOSITION), targetConnection, "GAS_COMPOSITION", null);
 
             // Get composition using filters
             var filters = new List<AppFilter>
@@ -250,7 +258,7 @@ namespace Beep.OilandGas.GasProperties.Services
 
             // Get components
             var componentRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(GAS_COMPOSITION_COMPONENT), _connectionName, "GAS_COMPOSITION_COMPONENT", null);
+                typeof(GAS_COMPOSITION_COMPONENT), targetConnection, "GAS_COMPOSITION_COMPONENT", null);
 
             var componentFilters = new List<AppFilter>
             {
@@ -694,4 +702,3 @@ namespace Beep.OilandGas.GasProperties.Services
         }
     }
 }
-

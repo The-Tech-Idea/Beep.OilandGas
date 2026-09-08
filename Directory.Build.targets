@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <UseBeepDMSource Condition="'$(UseBeepDMSource)' == ''">false</UseBeepDMSource>
+    <BeepDMSourceRoot Condition="'$(BeepDMSourceRoot)' == ''">$(MSBuildThisFileDirectory)..\BeepDM</BeepDMSourceRoot>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(UseBeepDMSource)' == 'true'">
+    <_BeepEngineReference Include="@(PackageReference->WithMetadataValue('Identity', 'TheTechIdea.Beep.DataManagementEngine'))" />
+    <_BeepModelsReference Include="@(PackageReference->WithMetadataValue('Identity', 'TheTechIdea.Beep.DataManagementModels'))" />
+    <PackageReference Remove="@(_BeepEngineReference);@(_BeepModelsReference)" />
+    <ProjectReference Include="$(BeepDMSourceRoot)\DataManagementEngineStandard\DataManagementEngine.csproj" Condition="'@(_BeepEngineReference)' != ''" />
+    <ProjectReference Include="$(BeepDMSourceRoot)\DataManagementModelsStandard\DataManagementModels.csproj" Condition="'@(_BeepModelsReference)' != ''" />
+  </ItemGroup>
+</Project>

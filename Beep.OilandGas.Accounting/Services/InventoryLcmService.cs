@@ -28,7 +28,7 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly AccountingBasisPostingService? _basisPosting;
         private readonly IAccountMappingService? _accountMapping;
         private readonly ILogger<InventoryLcmService> _logger;
-        private const string ConnectionName = "PPDM39";
+        private readonly Func<Task<string>>? _resolveConnection;
 
         public InventoryLcmService(
             IDMEEditor editor,
@@ -37,7 +37,8 @@ namespace Beep.OilandGas.Accounting.Services
             IPPDMMetadataRepository metadata,
             ILogger<InventoryLcmService> logger,
             AccountingBasisPostingService? basisPosting = null,
-            IAccountMappingService? accountMapping = null)
+            IAccountMappingService? accountMapping = null,
+            Func<Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -46,6 +47,7 @@ namespace Beep.OilandGas.Accounting.Services
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _basisPosting = basisPosting;
             _accountMapping = accountMapping;
+            _resolveConnection = resolveConnection;
         }
 
         public async Task<INVENTORY_ADJUSTMENT?> ApplyLowerOfCostOrMarketAsync(
@@ -243,11 +245,13 @@ namespace Beep.OilandGas.Accounting.Services
 
         private async Task<PPDMGenericRepository> CreateRepoAsync<T>(string tableName, string cn)
         {
-            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            var connection = _resolveConnection == null ? cn : await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection))
+                throw new InvalidOperationException("A PRODUCTION database binding is required.");
 
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(T), cn, tableName);
+                typeof(T), connection, tableName);
         }
 
         private string GetAccountId(string key, string fallback)
@@ -256,4 +260,3 @@ namespace Beep.OilandGas.Accounting.Services
         }
     }
 }
-

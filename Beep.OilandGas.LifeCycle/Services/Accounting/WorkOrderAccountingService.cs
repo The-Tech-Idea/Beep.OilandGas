@@ -55,7 +55,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             if (string.IsNullOrWhiteSpace(workOrder.WorkOrderId))
                 throw new ArgumentNullException(nameof(workOrder.WorkOrderId), "Work order ID is required.");
 
-            var connectionName = connectionName ?? DefaultConnectionName;
+            connectionName ??= DefaultConnectionName;
 
             if (!string.IsNullOrWhiteSpace(workOrder.AfeId))
             {
@@ -110,7 +110,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             if (string.IsNullOrWhiteSpace(workOrderId))
                 throw new ArgumentNullException(nameof(workOrderId));
 
-            var connectionName = connectionName ?? DefaultConnectionName;
+            connectionName ??= DefaultConnectionName;
             var projectWorkOrder = await GetProjectWorkOrderAsync(workOrderId, connectionName);
             if (projectWorkOrder != null)
             {
@@ -130,7 +130,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             if (string.IsNullOrWhiteSpace(workOrderId))
                 return null;
 
-            var connectionName = connectionName ?? DefaultConnectionName;
+            connectionName ??= DefaultConnectionName;
             var projectWorkOrder = await GetProjectWorkOrderAsync(workOrderId, connectionName);
             var afeId = ExtractAfeId(GetStringValue(projectWorkOrder, "REMARK"));
             if (string.IsNullOrWhiteSpace(afeId))
@@ -161,7 +161,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var connectionName = connectionName ?? DefaultConnectionName;
+            connectionName ??= DefaultConnectionName;
 
             var linkedAfe = await GetAFEForWorkOrderAsync(request.WorkOrderId, connectionName);
             var afeId = linkedAfe?.AFE_ID;

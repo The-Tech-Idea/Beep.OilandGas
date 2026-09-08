@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Services.Audit;
+using TheTechIdea.Beep.Services.Audit.Models;
 
 namespace Beep.OilandGas.ApiService.Services
 {
@@ -54,13 +55,13 @@ namespace Beep.OilandGas.ApiService.Services
             {
                 var auditEvent = new AuditEvent
                 {
-                    EventType = eventType,
-                    Resource = resource,
-                    Action = action,
+                    Source = eventType,
+                    EntityName = resource,
+                    Operation = action,
                     UserId = userId,
-                    Details = details,
+                    Properties = new System.Collections.Generic.Dictionary<string, object> { ["Details"] = details ?? string.Empty },
                     RecordKey = recordKey,
-                    Timestamp = DateTimeOffset.UtcNow
+                    TimestampUtc = DateTime.UtcNow
                 };
 
                 await _audit.RecordAsync(auditEvent);

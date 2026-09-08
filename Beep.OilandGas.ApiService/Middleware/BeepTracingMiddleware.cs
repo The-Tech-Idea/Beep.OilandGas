@@ -25,7 +25,7 @@ namespace Beep.OilandGas.ApiService.Middleware
             // Start a Beep activity scope for this request.
             // The scope propagates trace-id and span-id to all downstream
             // BeepLog / BeepAudit calls via AsyncLocal.
-            using (BeepActivityScope.Scope("http-request", new Dictionary<string, string>
+            using (BeepActivityScope.Begin("http-request", new Dictionary<string, object>
             {
                 ["method"] = context.Request.Method,
                 ["path"] = context.Request.Path.Value ?? "/",

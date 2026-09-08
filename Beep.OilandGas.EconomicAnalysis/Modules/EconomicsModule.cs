@@ -15,9 +15,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Modules
 {
     /// <summary>
         /// Module order 90 — owns economics setup orchestration for the EconomicAnalysis project.
-        /// EntityTypes is intentionally empty: all classes in Data/Projections are projection/response
-        /// types, not persisted table classes.  If project-owned table classes are added in future,
-        /// register them here.
+        /// Declares persisted analysis results and economics reference tables.
     /// Shared reference-data import infrastructure remains in PPDM39.DataManagement.
     /// </summary>
     public sealed class EconomicsModule : ModuleSetupBase
@@ -26,15 +24,13 @@ namespace Beep.OilandGas.EconomicAnalysis.Modules
         {
             typeof(R_ECONOMIC_METRIC),
             typeof(R_ECONOMIC_SCENARIO),
-            typeof(R_ECONOMIC_SCHEDULE)
+            typeof(R_ECONOMIC_SCHEDULE),
+            typeof(Beep.OilandGas.Models.Data.EconomicAnalysis.ECONOMIC_ANALYSIS_RESULT)
         };
 
-        private readonly PPDMReferenceDataSeeder _referenceSeeder;
-
-        public EconomicsModule(ModuleSetupContext context, PPDMReferenceDataSeeder referenceSeeder)
+        public EconomicsModule(ModuleSetupContext context)
             : base(context)
         {
-            _referenceSeeder = referenceSeeder ?? throw new ArgumentNullException(nameof(referenceSeeder));
         }
 
         public override string ModuleId => "ECONOMICS";
@@ -52,22 +48,6 @@ namespace Beep.OilandGas.EconomicAnalysis.Modules
 
             try
             {
-                var seed = await _referenceSeeder.SeedAccountingReferenceDataAsync(
-                    connectionName,
-                    tableNames: null,
-                    skipExisting: true,
-                    userId: userId);
-
-                result.Success = seed.Success;
-                result.TablesSeeded = seed.TablesSeeded;
-                result.RecordsInserted = seed.RecordsInserted;
-
-                if (!seed.Success && !string.IsNullOrWhiteSpace(seed.Message))
-                    result.Errors.Add(seed.Message);
-
-                if (seed.Errors != null)
-                    result.Errors.AddRange(seed.Errors);
-
                 await SeedEconomicReferenceDataAsync(connectionName, userId, result, cancellationToken);
                 result.Success = result.Errors.Count == 0;
                 if (result.Success && result.RecordsInserted == 0 && result.TablesSeeded == 0)

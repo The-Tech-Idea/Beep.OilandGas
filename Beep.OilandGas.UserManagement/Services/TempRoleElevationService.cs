@@ -4,6 +4,7 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.UserManagement.Models.Identity;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.UserManagement.Services;
 

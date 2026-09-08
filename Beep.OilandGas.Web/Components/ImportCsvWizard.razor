@@ -234,14 +234,14 @@
                             <MudCard>
                                 <MudCardContent>
                                     <MudText Typo="Typo.subtitle1" Class="mb-3">Options</MudText>
-                                    <MudSwitch T="bool" @bind-Checked="@_validateForeignKeys" 
+                                    <MudSwitch T="bool" @bind-Value="@_validateForeignKeys"
                                              Label="Validate Foreign Keys" 
                                              Color="Color.Primary" />
-                                    <MudSwitch T="bool" @bind-Checked="@_applyDefaults" 
+                                    <MudSwitch T="bool" @bind-Value="@_applyDefaults"
                                              Label="Apply Default Values" 
                                              Color="Color.Primary" 
                                              Class="mt-2" />
-                                    <MudSwitch T="bool" @bind-Checked="@_skipHeaderRow" 
+                                    <MudSwitch T="bool" @bind-Value="@_skipHeaderRow"
                                              Label="Skip Header Row" 
                                              Color="Color.Primary" 
                                              Class="mt-2" />

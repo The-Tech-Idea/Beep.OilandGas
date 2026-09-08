@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Processes
     public class ProcessDefinition
     {
         public string ProcessId { get; set; } = string.Empty;
+        public string Version { get; set; } = "1.0.0";
         public string ProcessName { get; set; } = string.Empty;
         public string ProcessType { get; set; } = string.Empty; // EXPLORATION, DEVELOPMENT, PRODUCTION, DECOMMISSIONING
         public string EntityType { get; set; } = string.Empty; // WELL, FIELD, RESERVOIR, PROSPECT, POOL, FACILITY

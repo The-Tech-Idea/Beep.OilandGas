@@ -33,6 +33,8 @@ namespace Beep.OilandGas.ProductionForecasting.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly IDMEEditor _editor;
         private readonly string _connectionName;
+        private readonly Func<Task<string>>? _resolveConnection;
+        private readonly Func<Task<string>>? _resolveHistoryConnection;
         private readonly ILogger<ProductionForecastingService>? _logger;
 
         public ProductionForecastingService(
@@ -41,7 +43,9 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
-            ILogger<ProductionForecastingService>? logger = null)
+            ILogger<ProductionForecastingService>? logger = null,
+            Func<Task<string>>? resolveConnection = null,
+            Func<Task<string>>? resolveHistoryConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -49,7 +53,14 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _logger = logger;
+            _resolveConnection = resolveConnection;
+            _resolveHistoryConnection = resolveHistoryConnection;
         }
+
+        private Task<string> ResolveConnectionAsync() =>
+            _resolveConnection is null ? Task.FromResult(_connectionName) : _resolveConnection();
+        private Task<string> ResolveHistoryConnectionAsync() =>
+            _resolveHistoryConnection is null ? Task.FromResult(_connectionName) : _resolveHistoryConnection();
 
         public async Task<ProductionForecastResult> GenerateForecastAsync(string? wellUWI, string? fieldId, ForecastType forecastMethod, int forecastPeriod)
         {
@@ -120,10 +131,11 @@ namespace Beep.OilandGas.ProductionForecasting.Services
         public async Task<ProductionForecastResult?> GetForecastAsync(string forecastId)
         {
             if (string.IsNullOrWhiteSpace(forecastId)) return null;
+            var targetConnection = await ResolveConnectionAsync();
 
             // Repository for PRODUCTION_FORECAST
             var forecastRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(PRODUCTION_FORECAST), _connectionName, "PRODUCTION_FORECAST", null);
+                typeof(PRODUCTION_FORECAST), targetConnection, "PRODUCTION_FORECAST", null);
 
             var entity = await forecastRepo.GetByIdAsync(forecastId);
             if (entity == null) return null;
@@ -147,7 +159,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
 
             // Load points
             var pointRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(PRODUCTION_FORECAST_POINT), _connectionName, "PRODUCTION_FORECAST_POINT", null);
+                typeof(PRODUCTION_FORECAST_POINT), targetConnection, "PRODUCTION_FORECAST_POINT", null);
 
             var filters = new List<AppFilter>
             {
@@ -292,6 +304,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
             _logger?.LogInformation("Saving production forecast {ForecastId}", forecast.ForecastId);
+            var targetConnection = await ResolveConnectionAsync();
 
             if (string.IsNullOrWhiteSpace(forecast.ForecastId))
             {
@@ -300,7 +313,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
 
             // Create repository for PRODUCTION_FORECAST
             var forecastRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(PRODUCTION_FORECAST), _connectionName, "PRODUCTION_FORECAST", null);
+                typeof(PRODUCTION_FORECAST), targetConnection, "PRODUCTION_FORECAST", null);
 
             var newForecast = new PRODUCTION_FORECAST
             {
@@ -325,7 +338,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             {
                 // Create repository for PRODUCTION_FORECAST_POINT
                 var pointRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PRODUCTION_FORECAST_POINT), _connectionName, "PRODUCTION_FORECAST_POINT", null);
+                    typeof(PRODUCTION_FORECAST_POINT), targetConnection, "PRODUCTION_FORECAST_POINT", null);
 
                 foreach (var point in forecast.ForecastPoints)
                 {

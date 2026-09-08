@@ -31,6 +31,7 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly AccountingBasisPostingService _basisPosting;
         private readonly IAccountMappingService? _accountMapping;
         private readonly ILogger<ARService> _logger;
+        private readonly Func<Task<string>>? _resolveConnection;
         private const string ConnectionName = "PPDM39";
 
         public ARService(
@@ -40,7 +41,8 @@ namespace Beep.OilandGas.Accounting.Services
             IPPDMMetadataRepository metadata,
             AccountingBasisPostingService basisPosting,
             ILogger<ARService> logger = null,
-            IAccountMappingService? accountMapping = null)
+            IAccountMappingService? accountMapping = null,
+            Func<Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -49,6 +51,7 @@ namespace Beep.OilandGas.Accounting.Services
             _basisPosting = basisPosting ?? throw new ArgumentNullException(nameof(basisPosting));
             _logger = logger;
             _accountMapping = accountMapping;
+            _resolveConnection = resolveConnection;
         }
 
         public async Task<AR_INVOICE> CreateInvoiceAsync(CreateARInvoiceRequest request, string userId, string cn = "PPDM39")
@@ -490,11 +493,12 @@ namespace Beep.OilandGas.Accounting.Services
 
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? cn)
         {
-            var metadata = await _metadata.GetTableMetadataAsync(tableName);
-            // Use strongly typed class directly
+            var connection = _resolveConnection == null ? cn ?? ConnectionName : await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection))
+                throw new InvalidOperationException("A PRODUCTION database binding is required.");
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(T), cn ?? ConnectionName, tableName);
+                typeof(T), connection, tableName);
         }
 
         public async Task<bool> HasUnpostedInvoicesAsync(DateTime periodEndDate)
@@ -525,6 +529,5 @@ namespace Beep.OilandGas.Accounting.Services
         }
     }
 }
-
 
 

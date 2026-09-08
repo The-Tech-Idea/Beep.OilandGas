@@ -20,7 +20,8 @@ public sealed class FlashCalculationsModule : ModuleSetupBase
 {
     private static readonly IReadOnlyList<Type> _entityTypes = new List<Type>
     {
-        typeof(R_FLASH_CALCULATION_REFERENCE_CODE)
+        typeof(R_FLASH_CALCULATION_REFERENCE_CODE),
+        typeof(Beep.OilandGas.Models.Data.FlashCalculations.FLASH_CALCULATION_RESULT)
     };
 
     public FlashCalculationsModule(ModuleSetupContext context)

@@ -1,5 +1,6 @@
 using Beep.OilandGas.Models.Constants;
 using Beep.OilandGas.PPDM39.Core;
+using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.ModuleSetup;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Report;
@@ -129,7 +130,7 @@ public sealed class AccountingModuleSetup : ModuleSetupBase
     {
         var repo = GetRepo<R_BA_STATUS>("R_BA_STATUS", connectionName);
         var existing = (await repo.GetAsync(new List<AppFilter>()))
-            .OfType<R_BA_STATUS>().Select(r => r.STATUS).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            .OfType<R_BA_STATUS>().Select(r => r.BA_STATUS).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (var code in AccountingReferenceCodes.BAStatusCodes.All)
         {
@@ -138,7 +139,7 @@ public sealed class AccountingModuleSetup : ModuleSetupBase
 
             await TryInsertAsync(repo, new R_BA_STATUS
             {
-                STATUS = code, ABBREVIATION = code[..Math.Min(code.Length, 10)],
+                BA_STATUS = code, ABBREVIATION = code[..Math.Min(code.Length, 10)],
                 SHORT_NAME = code.Replace("_", " "), LONG_NAME = $"{code.Replace("_", " ")} (seeded)",
                 ACTIVE_IND = "Y", EFFECTIVE_DATE = DateTime.UtcNow,
                 PPDM_GUID = Guid.NewGuid().ToString(), SOURCE = "ACCOUNTING_MODULE"

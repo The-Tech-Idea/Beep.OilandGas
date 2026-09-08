@@ -11,6 +11,8 @@ namespace Beep.OilandGas.Models.Processes
     {
         public string StepId { get; set; } = string.Empty;
         public string StepName { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public int? SlaHours { get; set; }
         public int SequenceNumber { get; set; }
         public string StepType { get; set; } = string.Empty; // ACTION, APPROVAL, VALIDATION, NOTIFICATION
         public bool IsRequired { get; set; } = true;

@@ -29,6 +29,7 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly GLAccountService _glAccountService;
         private readonly ILogger<JournalEntryService> _logger;
         private const string ConnectionName = "PPDM39";
+        private readonly Func<Task<string>>? _resolveConnection;
 
         // Tolerance for debit = credit check (0.01%)
         private const decimal BalanceTolerance = 0.0001m;
@@ -39,7 +40,8 @@ namespace Beep.OilandGas.Accounting.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             GLAccountService glAccountService,
-            ILogger<JournalEntryService> logger)
+            ILogger<JournalEntryService> logger,
+            Func<Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -47,6 +49,7 @@ namespace Beep.OilandGas.Accounting.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _glAccountService = glAccountService ?? throw new ArgumentNullException(nameof(glAccountService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _resolveConnection = resolveConnection;
         }
 
         /// <summary>
@@ -628,11 +631,12 @@ namespace Beep.OilandGas.Accounting.Services
         }
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string cn = "PPDM39")
         {
-            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            var connection = _resolveConnection is null ? cn ?? ConnectionName : await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException("A PRODUCTION database binding is required.");
             
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(T), cn ?? ConnectionName, tableName);
+                typeof(T), connection, tableName);
         }
     }
 }

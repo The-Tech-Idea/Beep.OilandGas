@@ -472,7 +472,5 @@ namespace Beep.OilandGas.LifeCycle.Services
             }
         }
 
-        return null;
     }
 }
-

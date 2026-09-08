@@ -21,7 +21,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
     /// LifeCycle accounting service. Delegates sales/AR operations to the PPDM39 data layer
     /// and O&G-specific operations (volumes, costs, royalties) to ProductionAccounting services.
     /// </summary>
-    public class PPDMAccountingService : IAccountingService
+    public partial class PPDMAccountingService : IAccountingService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -29,9 +29,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
         private readonly IPPDMMetadataRepository _metadata;
         private readonly string _connectionName;
         private readonly ILogger<PPDMAccountingService>? _logger;
-        private readonly Beep.OilandGas.ProductionAccounting.Services.IRevenueService? _revenueService;
-        private readonly Beep.OilandGas.ProductionAccounting.Services.IRoyaltyService? _royaltyService;
-        private readonly Beep.OilandGas.ProductionAccounting.Services.IAllocationService? _allocationService;
+        private readonly Beep.OilandGas.Models.Core.Interfaces.IRevenueService? _revenueService;
+        private readonly Beep.OilandGas.Models.Core.Interfaces.IRoyaltyService? _royaltyService;
+        private readonly Beep.OilandGas.Models.Core.Interfaces.IAllocationService? _allocationService;
+        private readonly Microsoft.Extensions.Configuration.IConfiguration? _configuration;
+        private readonly Beep.OilandGas.Accounting.Services.CostAllocationService? _costAllocationService;
 
         public PPDMAccountingService(
             IDMEEditor editor,
@@ -40,9 +42,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
             ILogger<PPDMAccountingService>? logger = null,
-            Beep.OilandGas.ProductionAccounting.Services.IRevenueService? revenueService = null,
-            Beep.OilandGas.ProductionAccounting.Services.IRoyaltyService? royaltyService = null,
-            Beep.OilandGas.ProductionAccounting.Services.IAllocationService? allocationService = null)
+            Beep.OilandGas.Models.Core.Interfaces.IRevenueService? revenueService = null,
+            Beep.OilandGas.Models.Core.Interfaces.IRoyaltyService? royaltyService = null,
+            Beep.OilandGas.Models.Core.Interfaces.IAllocationService? allocationService = null,
+            Microsoft.Extensions.Configuration.IConfiguration? configuration = null,
+            Beep.OilandGas.Accounting.Services.CostAllocationService? costAllocationService = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -53,6 +57,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             _revenueService = revenueService;
             _royaltyService = royaltyService;
             _allocationService = allocationService;
+            _configuration = configuration;
+            _costAllocationService = costAllocationService;
         }
 
         public async Task<SalesTransaction> CreateSalesTransactionAsync(CreateSalesTransactionRequest request, string userId, string connectionName = "PPDM39")
@@ -254,13 +260,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
                 {
                     // Delegate to ProductionAccounting allocation engine
                     var allocations = await _allocationService.GetAsync(fieldId, connectionName);
-                    if (allocations is not null)
+                    if (allocations?.ALLOCATED_VOLUME is decimal allocatedVolume)
                     {
                         return new VolumeReconciliationResult
                         {
                             Status = ReconciliationStatus.Matched,
-                            ALLOCATED_VOLUME = allocations.ALLOCATED_VOLUME,
-                            FieldProductionVolume = allocations.ALLOCATED_VOLUME,
+                            ALLOCATED_VOLUME = allocatedVolume,
+                            FieldProductionVolume = allocatedVolume,
                             Discrepancy = 0m,
                             DiscrepancyPercentage = 0m,
                         };
@@ -274,29 +280,6 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             return new VolumeReconciliationResult { Status = ReconciliationStatus.Matched };
         }
 
-        public async Task<CostAllocationComputationResult> AllocateCostsAsync(string fieldId, DateTime startDate, DateTime endDate, CostAllocationMethod allocationMethod, string connectionName = "PPDM39")
-        {
-            if (_allocationService is not null)
-            {
-                try
-                {
-                    var result = await _allocationService.AllocateAsync(fieldId, startDate, endDate, allocationMethod.ToString(), "SYSTEM", connectionName);
-                    if (result is not null)
-                    {
-                        return new CostAllocationComputationResult
-                        {
-                            TotalOperatingCosts = result.TOTAL_ALLOCATED_COST,
-                            AllocationDetails = new List<CostAllocationBreakdown>()
-                        };
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogWarning(ex, "Failed to allocate costs for {FieldId}", fieldId);
-                }
-            }
-            return new CostAllocationComputationResult();
-        }
 
         public async Task<ProductionRoyaltyCalculationResult> CalculateRoyaltiesAsync(string fieldId, DateTime startDate, DateTime endDate, string? poolId = null, string connectionName = "PPDM39")
         {
@@ -304,7 +287,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             {
                 try
                 {
-                    var calculations = await _royaltyService.GetRoyaltyCalculationsAsync(fieldId, poolId, startDate, endDate, connectionName);
+                    var calculations = await GetRoyaltyCalculationsAsync(fieldId, poolId, startDate, endDate, connectionName);
                     if (calculations is { Count: > 0 })
                     {
                         var calc = calculations[0];

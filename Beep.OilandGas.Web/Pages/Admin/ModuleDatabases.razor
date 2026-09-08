@@ -1,0 +1,195 @@
+@page "/admin/module-databases"
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.Models.Data
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]
+@inject ModuleDatabaseClient Client
+@inject ISnackbar Snackbar
+
+<PageTitle>Module Databases</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+        <MudText Typo="Typo.h5">Module Databases</MudText>
+        <MudSpacer />
+        <MudTooltip Text="Reload modules and connections">
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="Reload" Disabled="_busy" aria-label="Reload" />
+        </MudTooltip>
+    </MudStack>
+    @if (_busy) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" /> }
+    @if (_error is not null) { <MudAlert Severity="Severity.Error" Class="my-3">@_error</MudAlert> }
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudSelect T="string" Label="Module" Value="@_moduleId" ValueChanged="SelectModule" Disabled="_busy" Variant="Variant.Outlined">
+                @foreach (var module in _modules)
+                {
+                    <MudSelectItem T="string" Value="@module.ModuleId">@module.ModuleName</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudSelect T="string" Label="BeepDM connection" Value="@_connection" ValueChanged="SelectConnection" Disabled="@(_busy || Selected is null)" Variant="Variant.Outlined">
+                @foreach (var connection in _connections)
+                {
+                    <MudSelectItem T="string" Value="@connection">@connection</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12">
+            <MudButton StartIcon="@Icons.Material.Filled.Save" Color="Color.Primary" Variant="Variant.Filled"
+                       Disabled="@(_busy || Selected is null || string.IsNullOrWhiteSpace(_connection))" OnClick="Save">Save Binding</MudButton>
+        </MudItem>
+        <MudItem xs="12"><MudDivider Class="my-2" /></MudItem>
+        <MudItem xs="12" md="6">
+            <MudSelect T="string" Label="Environment" @bind-Value="_environment" Disabled="_busy" Variant="Variant.Outlined">
+                @foreach (var tier in new[] { "Development", "Test", "Staging", "Production" })
+                {
+                    <MudSelectItem T="string" Value="@tier">@tier</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudCheckBox T="bool" @bind-Value="_backup" Disabled="_busy" Label="Backup confirmed" />
+            <MudCheckBox T="bool" @bind-Value="_restore" Disabled="_busy" Label="Restore test evidence available" />
+        </MudItem>
+        @if (_restore)
+        {
+            <MudItem xs="12"><MudTextField T="string" Label="Restore test evidence" @bind-Value="_evidence" Disabled="_busy" Variant="Variant.Outlined" /></MudItem>
+        }
+        <MudItem xs="12">
+            <MudButton StartIcon="@Icons.Material.Filled.Preview" Variant="Variant.Outlined" Color="Color.Primary"
+                       Disabled="@(_busy || !HasSavedBinding || (_restore && string.IsNullOrWhiteSpace(_evidence)))" OnClick="Plan">Generate Plan</MudButton>
+        </MudItem>
+        @if (_plan is not null)
+        {
+            <MudItem xs="12"><MudTextField T="string" Label="Migration plan" Value="@_plan" ReadOnly="true" Lines="18" Variant="Variant.Outlined" /></MudItem>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" @bind-Value="_confirmed" Disabled="@(_busy || _attempted)" Label="I reviewed this plan and confirm applying it to the displayed connection" />
+                @if (_reviewed?.HighRiskOperationCount > 0)
+                {
+                    <MudCheckBox T="bool" @bind-Value="_riskAcknowledged" Disabled="@(_busy || _attempted)" Label="I acknowledge the high-risk operations" />
+                }
+                <MudButton StartIcon="@Icons.Material.Filled.CheckCircle" Disabled="@(!CanAct || _approved)" OnClick="Approve" Variant="Variant.Outlined">Approve Plan</MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.PlayArrow" Disabled="@(!CanAct || !_approved)" OnClick="Execute" Variant="Variant.Filled" Color="Color.Warning">Apply Migration</MudButton>
+            </MudItem>
+        }
+        @if (_execution is not null)
+        {
+            <MudItem xs="12"><MudAlert Severity="@(_execution.Success ? Severity.Success : Severity.Error)">@_execution.Message (@_execution.CompletedSteps / @_execution.TotalSteps steps)</MudAlert></MudItem>
+        }
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private List<ModuleDatabaseSummary> _modules = [];
+    private List<string> _connections = [];
+    private string _moduleId = "", _connection = "", _environment = "Development", _evidence = "";
+    private bool _busy, _backup, _restore;
+    private string? _error, _plan;
+    private SchemaMigrationPlanResult? _reviewed;
+    private SchemaMigrationExecuteResult? _execution;
+    private ModulePlanRequest? _plannedOptions;
+    private bool _approved, _confirmed, _riskAcknowledged, _attempted;
+    private ModulePlanRequest CurrentOptions => new(_environment, _backup, _restore, _restore ? _evidence : null, Selected?.ConcurrencyStamp);
+    private bool CanAct => !_busy && !_attempted && _confirmed && HasSavedBinding &&
+        _reviewed is { Success: true, CanApply: true } && _reviewed.ConnectionName == _connection &&
+        !string.IsNullOrWhiteSpace(_reviewed.PlanId) && !string.IsNullOrWhiteSpace(_reviewed.PlanHash) &&
+        !string.IsNullOrWhiteSpace(_reviewed.ManifestHash) &&
+        _plannedOptions == CurrentOptions && (_reviewed.HighRiskOperationCount == 0 || _riskAcknowledged);
+    private ModuleDatabaseSummary? Selected => _modules.FirstOrDefault(x => x.ModuleId == _moduleId);
+    private bool HasSavedBinding => Selected?.ConcurrencyStamp is not null && Selected.ConnectionName == _connection;
+
+    protected override Task OnInitializedAsync() => Reload();
+
+    private async Task Reload()
+    {
+        _busy = true;
+        _error = null;
+        ClearPlan();
+        try
+        {
+            _modules = await Client.ListAsync();
+            _connections = await Client.ConnectionsAsync();
+            SelectModule(_modules.Any(x => x.ModuleId == _moduleId) ? _moduleId : _modules.FirstOrDefault()?.ModuleId ?? "");
+        }
+        catch { _modules = []; _connections = []; _error = "Could not load module databases."; }
+        finally { _busy = false; }
+    }
+
+    private void ClearPlan() { _plan = null; _reviewed = null; _execution = null; _approved = false; _confirmed = false; _riskAcknowledged = false; _attempted = false; }
+    private void SelectModule(string id) { _moduleId = id; _connection = Selected?.ConnectionName ?? ""; ClearPlan(); }
+    private void SelectConnection(string connection) { _connection = connection; ClearPlan(); }
+
+    private async Task Save()
+    {
+        if (_busy || Selected is null) return;
+        _busy = true;
+        _error = null;
+        ClearPlan();
+        try
+        {
+            var saved = await Client.BindAsync(_moduleId, new(_connection, Selected.ConcurrencyStamp));
+            var index = _modules.FindIndex(x => x.ModuleId == _moduleId);
+            _modules[index] = _modules[index] with { ConnectionName = saved.ConnectionName, ConcurrencyStamp = saved.ConcurrencyStamp };
+            _connection = saved.ConnectionName;
+            Snackbar.Add("Module binding saved.", Severity.Success);
+        }
+        catch { _error = "Binding could not be saved. Reload to check for changes."; }
+        finally { _busy = false; }
+    }
+
+    private async Task Plan()
+    {
+        if (_busy || !HasSavedBinding) return;
+        _busy = true;
+        _error = null;
+        ClearPlan();
+        try
+        {
+            _plannedOptions = CurrentOptions;
+            var result = await Client.PlanAsync(_moduleId, _plannedOptions);
+            _reviewed = result;
+            _plan = System.Text.Json.JsonSerializer.Serialize(result, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            if (!result.Success) _error = "Migration planning failed.";
+        }
+        catch { _error = "Could not generate the migration plan. Check the binding and connection."; }
+        finally { _busy = false; }
+    }
+
+    private async Task VerifyBinding()
+    {
+        var current = (await Client.ListAsync()).SingleOrDefault(x => x.ModuleId == _moduleId);
+        if (current?.ConcurrencyStamp != Selected?.ConcurrencyStamp || current?.ConnectionName != _connection)
+            throw new InvalidOperationException("The binding changed.");
+    }
+
+    private async Task Approve()
+    {
+        if (!CanAct || _reviewed is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            await VerifyBinding();
+            var result = await Client.ApproveAsync(_reviewed.PlanId);
+            _approved = result.Success && result.PlanHash == _reviewed.PlanHash && result.ManifestHash == _reviewed.ManifestHash;
+            if (!_approved) _error = "Approval failed or the plan changed. Generate a new plan.";
+        }
+        catch { _error = "Approval could not be verified. Reload and generate a new plan."; }
+        finally { _busy = false; }
+    }
+
+    private async Task Execute()
+    {
+        if (!CanAct || !_approved || _reviewed is null) return;
+        _busy = true;
+        _attempted = true;
+        _error = null;
+        try
+        {
+            await VerifyBinding();
+            _execution = await Client.ExecuteAsync(_reviewed, _riskAcknowledged);
+        }
+        catch { _error = "Execution outcome could not be verified. Check migration status before attempting another migration."; }
+        finally { _busy = false; }
+    }
+}

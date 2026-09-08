@@ -2,31 +2,31 @@
 
 @if (SlaHours <= 0)
 {
-    <MudChip Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">No SLA</MudChip>
+    <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">No SLA</MudChip>
 }
 else if (_isBreached)
 {
-    <MudChip Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">
+    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">
         <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="mr-1" />
         BREACHED — @FormatElapsed()
     </MudChip>
 }
 else if (_percentElapsed > 75)
 {
-    <MudChip Size="Size.Small" Color="Color.Error" Variant="Variant.Outlined">
+    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Outlined">
         <MudIcon Icon="@Icons.Material.Filled.Timer" Size="Size.Small" Class="mr-1" />
         @_percentElapsed.ToString("F0")% — @FormatRemaining()
     </MudChip>
 }
 else if (_percentElapsed > 50)
 {
-    <MudChip Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined">
+    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined">
         @_percentElapsed.ToString("F0")% — @FormatRemaining()
     </MudChip>
 }
 else
 {
-    <MudChip Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">
+    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">
         @FormatRemaining() remaining
     </MudChip>
 }

@@ -28,6 +28,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly IDMEEditor _editor;
         private readonly string _connectionName;
+        private readonly Func<Task<string>>? _resolveConnection;
         private readonly ILogger<ProspectIdentificationService>? _logger;
 
         public ProspectIdentificationService(
@@ -36,7 +37,8 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
-            ILogger<ProspectIdentificationService>? logger = null)
+            ILogger<ProspectIdentificationService>? logger = null,
+            Func<Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -44,17 +46,20 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _logger = logger;
+            _resolveConnection = resolveConnection;
         }
 
-        private PPDMGenericRepository CreateProspectRepository()
+        private async Task<PPDMGenericRepository> CreateProspectRepositoryAsync()
         {
+            var connection = _resolveConnection is null ? _connectionName : await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException("An EXPLORATION database binding is required.");
             return new PPDMGenericRepository(
                 _editor,
                 _commonColumnHandler,
                 _defaults,
                 _metadata,
                 typeof(ProspectRecord),
-                _connectionName,
+                connection,
                 "PROSPECT",
                 null);
         }

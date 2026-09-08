@@ -19,9 +19,11 @@ namespace Beep.OilandGas.UserManagement.Security
             if (requirement == null)
                 throw new ArgumentNullException(nameof(requirement));
 
-            // 1. Check single permission claim
-            var permissionClaim = context.User.FindFirst("permission");
-            if (permissionClaim != null && permissionClaim.Value == requirement.Permission)
+            if (context.User.Identity?.IsAuthenticated != true)
+                return Task.CompletedTask;
+
+            // Identity emits one claim per permission; every grant must be considered.
+            if (context.User.HasClaim("permission", requirement.Permission))
             {
                 context.Succeed(requirement);
                 return Task.CompletedTask;

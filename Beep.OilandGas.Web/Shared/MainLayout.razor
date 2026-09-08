@@ -3,8 +3,7 @@
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
 @inject Beep.OilandGas.Web.Theme.IThemeProvider ThemeProvider
-@inject Beep.OilandGas.Web.Services.IFirstRunService FirstRunService
-@inject Beep.OilandGas.Web.Services.IPersonaContextService PersonaContext
+@inject Beep.OilandGas.Web.Services.RepositoryAccountClient RepositoryClient
 @inject HttpClient Http
 @using Microsoft.AspNetCore.Components.Authorization
 @using Beep.OilandGas.Web.Theme
@@ -84,7 +83,6 @@
     }
     
     <MudMainContent>
-        <ConnectionCheck />
         <div class="og-main-content">
             <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
                 @Body
@@ -120,8 +118,6 @@
     protected override async Task OnInitializedAsync()
     {
         var currentPath = new Uri(NavigationManager.Uri).AbsolutePath;
-        if (!await EnsureFirstRunSetupGateAsync(currentPath))
-            return;
 
         // Load theme from ThemeProvider
         _theme = ThemeProvider.GetMudTheme();
@@ -132,10 +128,9 @@
         
         await LoadThemePreference(defaultDarkMode);
         await CheckAuthenticationStatus();
-        await PersonaContext.EnsureLoadedAsync();
-        await EnforceCurrentRouteAccessAsync();
         CheckIfLandingPage();
         NavigationManager.LocationChanged += OnLocationChanged;
+        await EnsureFirstRunSetupGateAsync(currentPath);
     }
     
     protected override void OnAfterRender(bool firstRender)
@@ -249,26 +244,7 @@
             return;
         }
 
-        await PersonaContext.EnsureLoadedAsync();
-        await EnforceCurrentRouteAccessAsync();
         CheckIfLandingPage();
-    }
-
-    private Task EnforceCurrentRouteAccessAsync()
-    {
-        var path = new Uri(NavigationManager.Uri).AbsolutePath;
-
-        if (IsSetupExemptPath(path))
-        {
-            return Task.CompletedTask;
-        }
-
-        if (!PersonaContext.CanAccessRoute(path))
-        {
-            NavigationManager.NavigateTo("/dashboard", forceLoad: false);
-        }
-
-        return Task.CompletedTask;
     }
 
     public void Dispose()
@@ -281,11 +257,11 @@
         if (IsSetupExemptPath(currentPath))
             return true;
 
-        var setupRequired = await FirstRunService.IsSetupRequiredAsync();
-        if (!setupRequired)
+        var status = await RepositoryClient.GetReadinessAsync();
+        if (status == TheTechIdea.Data.OilGas.RepositoryReadiness.Ready)
             return true;
 
-        NavigationManager.NavigateTo("/ppdm39/setup", forceLoad: false);
+        NavigationManager.NavigateTo("/setup/repository", forceLoad: false);
         return false;
     }
 
@@ -294,7 +270,9 @@
         if (string.IsNullOrWhiteSpace(currentPath))
             return false;
 
-        return currentPath.StartsWith("/ppdm39/setup", StringComparison.OrdinalIgnoreCase)
+        return currentPath.Equals("/setup/repository", StringComparison.OrdinalIgnoreCase)
+            || currentPath.Equals("/login", StringComparison.OrdinalIgnoreCase)
+            || currentPath.Equals("/register", StringComparison.OrdinalIgnoreCase)
             || currentPath.StartsWith("/authentication", StringComparison.OrdinalIgnoreCase)
             || currentPath.StartsWith("/signin-oidc", StringComparison.OrdinalIgnoreCase)
             || currentPath.StartsWith("/signout", StringComparison.OrdinalIgnoreCase);

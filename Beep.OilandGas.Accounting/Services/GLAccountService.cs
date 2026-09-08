@@ -22,19 +22,22 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly ILogger<GLAccountService> _logger;
         private const string ConnectionName = "PPDM39";
+        private readonly Func<Task<string>>? _resolveConnection;
 
         public GLAccountService(
             IDMEEditor editor,
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILogger<GLAccountService> logger)
+            ILogger<GLAccountService> logger,
+            Func<Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _resolveConnection = resolveConnection;
         }
 
         /// <summary>
@@ -417,11 +420,12 @@ namespace Beep.OilandGas.Accounting.Services
         }
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName)
         {
-            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            var connection = _resolveConnection is null ? ConnectionName : await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException("A PRODUCTION database binding is required.");
             
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(T), ConnectionName, tableName);
+                typeof(T), connection, tableName);
         }
     }
 }

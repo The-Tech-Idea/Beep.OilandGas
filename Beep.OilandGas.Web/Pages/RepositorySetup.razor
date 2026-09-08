@@ -1,0 +1,52 @@
+@page "/setup/repository"
+@using TheTechIdea.Data.OilGas
+@inject RepositoryAccountClient RepositoryClient
+
+<PageTitle>Repository Setup</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h5">Repository Setup</MudText>
+        @if (_busy)
+        {
+            <MudProgressLinear Indeterminate="true" />
+        }
+        else
+        {
+            <MudAlert Severity="@SeverityForStatus">@StatusText</MudAlert>
+            <MudStack Row="true" Spacing="2">
+                <MudButton StartIcon="@Icons.Material.Filled.Refresh" OnClick="Refresh" Variant="Variant.Outlined">Refresh</MudButton>
+                @if (_status == RepositoryReadiness.BootstrapRequired)
+                {
+                    <MudButton StartIcon="@Icons.Material.Filled.Login" Href="/authentication/start-login?returnUrl=%2Fdashboard"
+                               Variant="Variant.Filled" Color="Color.Primary">Register Administrator</MudButton>
+                }
+                @if (_status == RepositoryReadiness.Ready)
+                {
+                    <MudButton StartIcon="@Icons.Material.Filled.Dashboard" Href="/dashboard"
+                               Variant="Variant.Filled" Color="Color.Primary">Dashboard</MudButton>
+                }
+            </MudStack>
+        }
+    </MudStack>
+</MudContainer>
+
+@code {
+    private bool _busy = true;
+    private RepositoryReadiness _status = RepositoryReadiness.Unavailable;
+    private string StatusText => _status switch
+    {
+        RepositoryReadiness.Ready => "Repository ready.",
+        RepositoryReadiness.BootstrapRequired => "Repository installed. First administrator registration pending.",
+        RepositoryReadiness.MigrationRequired => "Repository installation or migration required on the API server.",
+        RepositoryReadiness.RecoveryRequired => "Repository administrator state requires operator recovery. First-user registration is unavailable.",
+        _ => "Repository unavailable. Check the API service and repository connection."
+    };
+    private Severity SeverityForStatus => _status == RepositoryReadiness.Ready ? Severity.Success : Severity.Warning;
+    protected override Task OnInitializedAsync() => Refresh();
+    private async Task Refresh()
+    {
+        _busy = true;
+        try { _status = await RepositoryClient.GetReadinessAsync(); }
+        finally { _busy = false; }
+    }
+}

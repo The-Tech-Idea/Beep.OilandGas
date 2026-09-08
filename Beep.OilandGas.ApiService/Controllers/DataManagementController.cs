@@ -3,7 +3,6 @@ using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Repositories;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
-using Beep.OilandGas.PPDM39.DataManagement.Core.Repositories;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using TheTechIdea.Beep.Editor;
 using System.Reflection;

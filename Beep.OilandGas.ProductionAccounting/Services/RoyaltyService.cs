@@ -34,9 +34,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly IJournalEntryService _glService;
-        private readonly IAccountingServices _accountingServices;
+        private readonly Func<Task<string>> _resolveConnection;
         private readonly ILogger<RoyaltyService> _logger;
-        private const string ConnectionName = "PPDM39";
 
         public RoyaltyService(
             IDMEEditor editor,
@@ -44,15 +43,15 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             IJournalEntryService glService,
-            ILogger<RoyaltyService> logger = null,
-            IAccountingServices accountingServices = null)
+            ILogger<RoyaltyService> logger,
+            Func<Task<string>> resolveConnection)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
-            _accountingServices = accountingServices;
-            _glService = _accountingServices?.JournalEntries ?? glService ?? throw new ArgumentNullException(nameof(glService));
+            _resolveConnection = resolveConnection ?? throw new ArgumentNullException(nameof(resolveConnection));
+            _glService = glService ?? throw new ArgumentNullException(nameof(glService));
             _logger = logger;
         }
 
@@ -199,13 +198,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 };
 
                 // Save ROYALTY_CALCULATION to database
-                var metadata = await _metadata.GetTableMetadataAsync("ROYALTY_CALCULATION");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(ROYALTY_CALCULATION);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "ROYALTY_CALCULATION");
+                var repo = await CreateRepositoryAsync<ROYALTY_CALCULATION>("ROYALTY_CALCULATION");
 
                 await repo.InsertAsync(royaltyCalc, userId);
 
@@ -255,13 +248,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(royaltyId))
                 throw new ArgumentNullException(nameof(royaltyId));
 
-            var metadata = await _metadata.GetTableMetadataAsync("ROYALTY_CALCULATION");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(ROYALTY_CALCULATION);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "ROYALTY_CALCULATION");
+            var repo = await CreateRepositoryAsync<ROYALTY_CALCULATION>("ROYALTY_CALCULATION");
 
             var result = await repo.GetByIdAsync(royaltyId);
             return result as ROYALTY_CALCULATION;
@@ -276,13 +263,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(allocationId))
                 throw new ArgumentNullException(nameof(allocationId));
 
-            var metadata = await _metadata.GetTableMetadataAsync("ROYALTY_CALCULATION");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(ROYALTY_CALCULATION);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "ROYALTY_CALCULATION");
+            var repo = await CreateRepositoryAsync<ROYALTY_CALCULATION>("ROYALTY_CALCULATION");
 
             // Query royalty calculations linked to this allocation
             var filters = new List<AppFilter>
@@ -347,13 +328,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             };
 
             // Save payment to database
-            var metadata = await _metadata.GetTableMetadataAsync("ROYALTY_PAYMENT");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(ROYALTY_PAYMENT);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "ROYALTY_PAYMENT");
+            var repo = await CreateRepositoryAsync<ROYALTY_PAYMENT>("ROYALTY_PAYMENT");
 
             await repo.InsertAsync(payment, userId);
 
@@ -466,13 +441,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         {
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("PRICE_INDEX");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(PRICE_INDEX);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "PRICE_INDEX");
+                var repo = await CreateRepositoryAsync<PRICE_INDEX>("PRICE_INDEX");
 
                 var filters = new List<AppFilter>
                 {
@@ -510,13 +479,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
         private async Task<ALLOCATION_RESULT?> GetAllocationResultAsync(string allocationResultId, string connectionName)
         {
-            var metadata = await _metadata.GetTableMetadataAsync("ALLOCATION_RESULT");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(ALLOCATION_RESULT);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "ALLOCATION_RESULT");
+            var repo = await CreateRepositoryAsync<ALLOCATION_RESULT>("ALLOCATION_RESULT");
 
             var result = await repo.GetByIdAsync(allocationResultId);
             return result as ALLOCATION_RESULT;
@@ -524,13 +487,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
         private async Task<RUN_TICKET?> GetRunTicketAsync(string allocationRequestId, string connectionName)
         {
-            var metadata = await _metadata.GetTableMetadataAsync("RUN_TICKET");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(RUN_TICKET);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "RUN_TICKET");
+            var repo = await CreateRepositoryAsync<RUN_TICKET>("RUN_TICKET");
 
             var filters = new List<AppFilter>
             {
@@ -548,13 +505,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             DateTime? asOfDate,
             string connectionName)
         {
-            var metadata = await _metadata.GetTableMetadataAsync("ROYALTY_INTEREST");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(ROYALTY_INTEREST);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "ROYALTY_INTEREST");
+            var repo = await CreateRepositoryAsync<ROYALTY_INTEREST>("ROYALTY_INTEREST");
 
             var filters = new List<AppFilter>
             {
@@ -624,13 +575,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             DateTime? asOfDate,
             string connectionName)
         {
-            var metadata = await _metadata.GetTableMetadataAsync("OWNERSHIP_INTEREST");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(OWNERSHIP_INTEREST);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "OWNERSHIP_INTEREST");
+            var repo = await CreateRepositoryAsync<OWNERSHIP_INTEREST>("OWNERSHIP_INTEREST");
 
             var filters = new List<AppFilter>
             {
@@ -660,13 +605,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(divisionOrderId))
                 return null;
 
-            var metadata = await _metadata.GetTableMetadataAsync("DIVISION_ORDER");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(DIVISION_ORDER);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "DIVISION_ORDER");
+            var repo = await CreateRepositoryAsync<DIVISION_ORDER>("DIVISION_ORDER");
 
             var result = await repo.GetByIdAsync(divisionOrderId);
             var DIVISION_ORDER = result as DIVISION_ORDER;
@@ -691,13 +630,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string userId,
             string connectionName)
         {
-            var metadata = await _metadata.GetTableMetadataAsync("ROYALTY_CALCULATION");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(ROYALTY_CALCULATION);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "ROYALTY_CALCULATION");
+            var repo = await CreateRepositoryAsync<ROYALTY_CALCULATION>("ROYALTY_CALCULATION");
 
             royalty.ROW_CHANGED_DATE = DateTime.UtcNow;
             royalty.ROW_CHANGED_BY = userId;
@@ -732,13 +665,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         {
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("ACCOUNTING_COST");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(ACCOUNTING_COST);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "ACCOUNTING_COST");
+                var repo = await CreateRepositoryAsync<ACCOUNTING_COST>("ACCOUNTING_COST");
 
                 var filters = new List<AppFilter>
                 {
@@ -774,6 +701,16 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _logger?.LogWarning(ex, "Error retrieving deductions for lease {LeaseId}", leaseId);
                 return (0, 0, 0);  // Return zeros if lookup fails - will trigger fallback in main logic
             }
+        }
+        private async Task<PPDMGenericRepository> CreateRepositoryAsync<T>(string tableName)
+        {
+            var connection = await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection))
+                throw new InvalidOperationException("A PRODUCTION database binding is required.");
+
+            return new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(T), connection, tableName);
         }
     }
 }

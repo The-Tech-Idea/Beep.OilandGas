@@ -97,7 +97,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
 
             if (existing != null)
             {
-                var pdenUow = GetPDENUnitOfWork();
+                var pdenUow = await GetPDENUnitOfWorkAsync();
                 var pden = pdenUow.Read(existing.OperationId) as PDEN;
                 if (pden == null)
                     throw new InvalidOperationException($"Injection operation {existing.OperationId} was not found.");

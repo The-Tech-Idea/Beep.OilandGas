@@ -30,6 +30,7 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly AccountingBasisPostingService _basisPosting;
         private readonly IAccountMappingService? _accountMapping;
         private readonly ILogger<InventoryService> _logger;
+        private readonly Func<Task<string>>? _resolveConnection;
         private const string ConnectionName = "PPDM39";
 
         public InventoryService(
@@ -39,7 +40,8 @@ namespace Beep.OilandGas.Accounting.Services
             IPPDMMetadataRepository metadata,
             AccountingBasisPostingService basisPosting,
             ILogger<InventoryService> logger,
-            IAccountMappingService? accountMapping = null)
+            IAccountMappingService? accountMapping = null,
+            Func<Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -48,6 +50,7 @@ namespace Beep.OilandGas.Accounting.Services
             _basisPosting = basisPosting ?? throw new ArgumentNullException(nameof(basisPosting));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _accountMapping = accountMapping;
+            _resolveConnection = resolveConnection;
         }
 
         /// <summary>
@@ -88,9 +91,7 @@ namespace Beep.OilandGas.Accounting.Services
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                var itemRepo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(INVENTORY_ITEM), ConnectionName, "INVENTORY_ITEM");
+                var itemRepo = await GetRepoAsync<INVENTORY_ITEM>("INVENTORY_ITEM");
 
                 await itemRepo.InsertAsync(item, userId);
                 _logger?.LogInformation("Inventory item {ItemNumber} created", itemNumber);
@@ -336,7 +337,7 @@ namespace Beep.OilandGas.Accounting.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error getting inventory item {ItemId}", itemId);
-                return null;
+                throw;
             }
         }
 
@@ -360,7 +361,7 @@ namespace Beep.OilandGas.Accounting.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error getting all inventory items");
-                return new List<INVENTORY_ITEM>();
+                throw;
             }
         }
 
@@ -388,7 +389,7 @@ namespace Beep.OilandGas.Accounting.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error getting transactions for item {ItemId}", inventoryItemId);
-                return new List<INVENTORY_TRANSACTION>();
+                throw;
             }
         }
 
@@ -404,11 +405,13 @@ namespace Beep.OilandGas.Accounting.Services
 
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName)
         {
-            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            var connection = _resolveConnection == null ? ConnectionName : await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection))
+                throw new InvalidOperationException("A PRODUCTION database binding is required.");
             
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(T), ConnectionName, tableName);
+                typeof(T), connection, tableName);
         }
 
         private string GetAccountId(string key, string fallback)
@@ -417,5 +420,4 @@ namespace Beep.OilandGas.Accounting.Services
         }
     }
 }
-
 

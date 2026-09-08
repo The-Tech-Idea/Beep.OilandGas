@@ -20,10 +20,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
     [Authorize]
     public class GasLiftController : ControllerBase
     {
-        private readonly IGasLiftService _service;
+        private readonly Beep.OilandGas.GasLift.Services.GasLiftService _service;
         private readonly ILogger<GasLiftController> _logger;
 
-        public GasLiftController(IGasLiftService service, ILogger<GasLiftController> logger)
+        public GasLiftController(Beep.OilandGas.GasLift.Services.GasLiftService service, ILogger<GasLiftController> logger)
         {
             _service = service;
             _logger = logger;
@@ -184,4 +184,3 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
     }
 }
-

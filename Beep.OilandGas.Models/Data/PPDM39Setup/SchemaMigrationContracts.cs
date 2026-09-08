@@ -5,6 +5,7 @@ namespace Beep.OilandGas.Models.Data
 {
     public class SchemaMigrationPlanRequest : ModelEntityBase
     {
+        public List<string>? ModuleIds { get; set; }
         public string ConnectionName { get; set; } = string.Empty;
         public string? SchemaName { get; set; }
         public string? TargetAssemblyName { get; set; }

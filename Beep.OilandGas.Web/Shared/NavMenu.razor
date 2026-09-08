@@ -12,7 +12,7 @@
     </MudButton>
 
     <!-- ─── Exploration ───────────────────────────────────────── -->
-    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="@GetWorkflowMenuClass("exploration")">
+    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
         <ActivatorContent>
             <MudButton Variant="Variant.Text" Class="nav-menu-btn">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -44,7 +44,7 @@
     </MudMenu>
 
     <!-- ─── Development ───────────────────────────────────────── -->
-    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="@GetWorkflowMenuClass("development")">
+    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
         <ActivatorContent>
             <MudButton Variant="Variant.Text" Class="nav-menu-btn">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -76,7 +76,7 @@
     </MudMenu>
 
     <!-- ─── Production ────────────────────────────────────────── -->
-    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="@GetWorkflowMenuClass("production")">
+    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
         <ActivatorContent>
             <MudButton Variant="Variant.Text" Class="nav-menu-btn">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -132,7 +132,7 @@
     </MudMenu>
 
     <!-- ─── Reservoir ─────────────────────────────────────────── -->
-    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="@GetWorkflowMenuClass("reservoir")">
+    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
         <ActivatorContent>
             <MudButton Variant="Variant.Text" Class="nav-menu-btn">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -176,7 +176,7 @@
     </MudMenu>
 
     <!-- ─── Economics ─────────────────────────────────────────── -->
-    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="@GetWorkflowMenuClass("economics")">
+    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
         <ActivatorContent>
             <MudButton Variant="Variant.Text" Class="nav-menu-btn">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -204,7 +204,7 @@
     </MudMenu>
 
     <!-- ─── Business Processes ───────────────────────────────── -->
-    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="@GetWorkflowMenuClass("processes")">
+    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
         <ActivatorContent>
             <MudButton Variant="Variant.Text" Class="nav-menu-btn">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -272,7 +272,7 @@
     </MudMenu>
 
     <!-- ─── HSE & Compliance ──────────────────────────────────── -->
-    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="@GetWorkflowMenuClass("hse")">
+    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
         <ActivatorContent>
             <MudButton Variant="Variant.Text" Class="nav-menu-btn">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -313,7 +313,7 @@
     </MudMenu>
 
     <!-- ─── Accounting (Accountant / Finance personas) ────────────── -->
-    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="@GetWorkflowMenuClass("economics")">
+    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
         <ActivatorContent>
             <MudButton Variant="Variant.Text" Class="nav-menu-btn">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -367,7 +367,7 @@
     </MudMenu>
 
     <!-- ─── Data Management (PPDM TreeView — admin/data managers) -->
-    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="@GetWorkflowMenuClass("data")">
+    <MudMenu Color="Color.Inherit" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
         <ActivatorContent>
             <MudButton Variant="Variant.Text" Class="nav-menu-btn">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -386,6 +386,12 @@
                 <MudIcon Icon="@Icons.Material.Filled.Build" Size="Size.Small" Class="mr-2" />
                 Database Setup
             </MudMenuItem>
+            <AuthorizeView Roles="Administrator" Context="moduleAdmin">
+                <MudMenuItem Href="/admin/module-databases">
+                    <MudIcon Icon="@Icons.Material.Filled.Storage" Size="Size.Small" Class="mr-2" />
+                    Module Databases
+                </MudMenuItem>
+            </AuthorizeView>
             <MudDivider />
             <MudMenuItem Href="/data/quality-dashboard">
                 <MudIcon Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Class="mr-2" />
@@ -400,22 +406,3 @@
 
 </MudStack>
 
-@code {
-    private bool _personaLoaded;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await PersonaContext.EnsureLoadedAsync();
-        _personaLoaded = true;
-    }
-
-    private string GetWorkflowMenuClass(string workflow)
-    {
-        if (!_personaLoaded)
-        {
-            return string.Empty;
-        }
-
-        return PersonaContext.CanAccessWorkflow(workflow) ? string.Empty : "d-none";
-    }
-}

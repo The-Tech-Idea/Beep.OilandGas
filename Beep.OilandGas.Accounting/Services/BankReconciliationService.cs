@@ -28,6 +28,7 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly GLAccountService _glAccountService;
         private readonly ILogger<BankReconciliationService> _logger;
+        private readonly Func<Task<string>>? _resolveConnection;
         private const string ConnectionName = "PPDM39";
 
         public BankReconciliationService(
@@ -36,7 +37,8 @@ namespace Beep.OilandGas.Accounting.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             GLAccountService glAccountService,
-            ILogger<BankReconciliationService> logger)
+            ILogger<BankReconciliationService> logger,
+            Func<Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -44,6 +46,7 @@ namespace Beep.OilandGas.Accounting.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _glAccountService = glAccountService ?? throw new ArgumentNullException(nameof(glAccountService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _resolveConnection = resolveConnection;
         }
 
         /// <summary>
@@ -373,11 +376,13 @@ namespace Beep.OilandGas.Accounting.Services
 
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName)
         {
-            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            var connection = _resolveConnection == null ? ConnectionName : await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection))
+                throw new InvalidOperationException("A PRODUCTION database binding is required.");
             
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(T), ConnectionName, tableName);
+                typeof(T), connection, tableName);
         }
     }
 }

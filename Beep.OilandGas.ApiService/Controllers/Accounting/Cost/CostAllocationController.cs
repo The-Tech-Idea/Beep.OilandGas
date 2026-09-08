@@ -55,7 +55,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
                 if (string.IsNullOrEmpty(request.FieldId))
                         return BadRequest(new { error = "Field ID is required." });
 
-                if (!Enum.TryParse<CostAllocationMethod>(request.AllocationMethod, true, out var allocationMethod))
+                if (!Enum.TryParse<CostAllocationMethod>(request.AllocationMethod, true, out var allocationMethod) || !Enum.IsDefined(allocationMethod))
                     return BadRequest(new { error = $"Invalid allocation method: {request.AllocationMethod}" });
 
                 var startDate = request.AllocationDate.Date;
@@ -66,10 +66,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
                     startDate,
                     endDate,
                     allocationMethod,
-                    null);
+                    connectionName);
 
-                var totalOperatingCosts = request.TotalOperatingCosts ?? result.TotalOperatingCosts ?? 0m;
-                var totalCapitalCosts = request.TotalCapitalCosts ?? result.TotalCapitalCosts ?? 0m;
+                var totalOperatingCosts = result.TotalOperatingCosts ?? 0m;
+                var totalCapitalCosts = result.TotalCapitalCosts ?? 0m;
                 var totalCosts = totalOperatingCosts + totalCapitalCosts;
 
                 var costAllocation = new COST_ALLOCATION
@@ -81,12 +81,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
                     ROW_EFFECTIVE_DATE = request.AllocationDate,
                     ACTIVE_IND = "Y",
                     ROW_CREATED_DATE = DateTime.UtcNow,
-                    ROW_CREATED_BY = userId ?? "system"
+                    ROW_CREATED_BY = ResolveUserId()
                 };
 
                 var connName = connectionName ?? _service.DefaultConnectionName;
                 var repository = _service.GetRepository(typeof(COST_ALLOCATION), connName, "COST_ALLOCATION");
-                await repository.InsertAsync(costAllocation, userId ?? "system");
+                await repository.InsertAsync(costAllocation, ResolveUserId());
 
                 result.TotalOperatingCosts = totalOperatingCosts;
                 result.TotalCapitalCosts = totalCapitalCosts;
@@ -210,4 +210,3 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
     }
 
 }
-

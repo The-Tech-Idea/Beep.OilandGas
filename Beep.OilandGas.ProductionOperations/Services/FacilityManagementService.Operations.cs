@@ -19,7 +19,7 @@ public sealed partial class FacilityManagementService
         var f = await ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
         if (f == null) return Array.Empty<FACILITY_EQUIPMENT>();
 
-        var repo = Repo<FACILITY_EQUIPMENT>("FACILITY_EQUIPMENT");
+        var repo = await RepoAsync<FACILITY_EQUIPMENT>("FACILITY_EQUIPMENT");
         var filters = new List<AppFilter>
         {
             new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = f.FACILITY_ID },
@@ -35,7 +35,7 @@ public sealed partial class FacilityManagementService
         var f = await ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false)
                 ?? throw new InvalidOperationException("Facility not found.");
 
-        var repo = Repo<FACILITY_EQUIPMENT>("FACILITY_EQUIPMENT");
+        var repo = await RepoAsync<FACILITY_EQUIPMENT>("FACILITY_EQUIPMENT");
         var existing = (await repo.GetAsync(new List<AppFilter>
         {
             new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = f.FACILITY_ID },
@@ -64,7 +64,7 @@ public sealed partial class FacilityManagementService
         var f = await ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
         if (f == null) return Array.Empty<FACILITY_MAINTAIN>();
 
-        var repo = Repo<FACILITY_MAINTAIN>("FACILITY_MAINTAIN");
+        var repo = await RepoAsync<FACILITY_MAINTAIN>("FACILITY_MAINTAIN");
         var filters = new List<AppFilter>
         {
             new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = f.FACILITY_ID },
@@ -87,7 +87,7 @@ public sealed partial class FacilityManagementService
         maintenance.ACTIVE_IND ??= "Y";
         if (maintenance is IPPDMEntity e)
             _commonColumnHandler.PrepareForInsert(e, userId);
-        var repo = Repo<FACILITY_MAINTAIN>("FACILITY_MAINTAIN");
+        var repo = await RepoAsync<FACILITY_MAINTAIN>("FACILITY_MAINTAIN");
         return (await repo.InsertAsync(maintenance, userId) as FACILITY_MAINTAIN)!;
     }
 
@@ -96,7 +96,7 @@ public sealed partial class FacilityManagementService
         var f = await ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
         if (f == null) return Array.Empty<WORK_ORDER>();
 
-        var compRepo = Repo<WORK_ORDER_COMPONENT>("WORK_ORDER_COMPONENT");
+        var compRepo = await RepoAsync<WORK_ORDER_COMPONENT>("WORK_ORDER_COMPONENT");
         var compFilters = new List<AppFilter>
         {
             new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = f.FACILITY_ID },
@@ -107,7 +107,7 @@ public sealed partial class FacilityManagementService
         var ids = components.Select(c => c.WORK_ORDER_ID).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList();
         if (ids.Count == 0) return Array.Empty<WORK_ORDER>();
 
-        var woRepo = Repo<WORK_ORDER>("WORK_ORDER");
+        var woRepo = await RepoAsync<WORK_ORDER>("WORK_ORDER");
         var result = new List<WORK_ORDER>();
         foreach (var id in ids)
         {
@@ -131,7 +131,7 @@ public sealed partial class FacilityManagementService
         if (workOrder is IPPDMEntity e)
             _commonColumnHandler.PrepareForInsert(e, userId);
 
-        var woRepo = Repo<WORK_ORDER>("WORK_ORDER");
+        var woRepo = await RepoAsync<WORK_ORDER>("WORK_ORDER");
         var created = await woRepo.InsertAsync(workOrder, userId) as WORK_ORDER
                       ?? throw new InvalidOperationException("Work order insert failed.");
 
@@ -146,7 +146,7 @@ public sealed partial class FacilityManagementService
         };
         if (comp is IPPDMEntity ce)
             _commonColumnHandler.PrepareForInsert(ce, userId);
-        var compRepo = Repo<WORK_ORDER_COMPONENT>("WORK_ORDER_COMPONENT");
+        var compRepo = await RepoAsync<WORK_ORDER_COMPONENT>("WORK_ORDER_COMPONENT");
         await compRepo.InsertAsync(comp, userId);
         return created;
     }
@@ -156,7 +156,7 @@ public sealed partial class FacilityManagementService
         var f = await ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false)
                 ?? throw new InvalidOperationException("Facility not found.");
 
-        var linkRepo = Repo<PDEN_FACILITY>("PDEN_FACILITY");
+        var linkRepo = await RepoAsync<PDEN_FACILITY>("PDEN_FACILITY");
         var existing = (await linkRepo.GetAsync(new List<AppFilter>
         {
             new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = f.FACILITY_ID },
@@ -183,7 +183,7 @@ public sealed partial class FacilityManagementService
         };
         if (pden is IPPDMEntity pe)
             _commonColumnHandler.PrepareForInsert(pe, userId);
-        var pdenRepo = Repo<PDEN>("PDEN");
+        var pdenRepo = await RepoAsync<PDEN>("PDEN");
         await pdenRepo.InsertAsync(pden, userId);
 
         var link = new PDEN_FACILITY
@@ -207,7 +207,7 @@ public sealed partial class FacilityManagementService
 
     public async Task<IReadOnlyList<PDEN_VOL_SUMMARY>> ListFacilityProductionVolumesAsync(string facilityId, string? facilityType, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
     {
-        var linkRepo = Repo<PDEN_FACILITY>("PDEN_FACILITY");
+        var linkRepo = await RepoAsync<PDEN_FACILITY>("PDEN_FACILITY");
         var f = await ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
         if (f == null) return Array.Empty<PDEN_VOL_SUMMARY>();
 
@@ -222,7 +222,7 @@ public sealed partial class FacilityManagementService
         if (link == null || string.IsNullOrWhiteSpace(link.PDEN_ID))
             return Array.Empty<PDEN_VOL_SUMMARY>();
 
-        var volRepo = Repo<PDEN_VOL_SUMMARY>("PDEN_VOL_SUMMARY");
+        var volRepo = await RepoAsync<PDEN_VOL_SUMMARY>("PDEN_VOL_SUMMARY");
         var filters = new List<AppFilter>
         {
             new AppFilter { FieldName = "PDEN_ID", Operator = "=", FilterValue = link.PDEN_ID },
@@ -244,7 +244,7 @@ public sealed partial class FacilityManagementService
         volume.ACTIVE_IND ??= "Y";
         if (volume is IPPDMEntity e)
             _commonColumnHandler.PrepareForInsert(e, userId);
-        var volRepo = Repo<PDEN_VOL_SUMMARY>("PDEN_VOL_SUMMARY");
+        var volRepo = await RepoAsync<PDEN_VOL_SUMMARY>("PDEN_VOL_SUMMARY");
         return (await volRepo.InsertAsync(volume, userId) as PDEN_VOL_SUMMARY)!;
     }
 
@@ -253,7 +253,7 @@ public sealed partial class FacilityManagementService
         var f = await ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
         if (f == null) return Array.Empty<FACILITY_LICENSE>();
 
-        var repo = Repo<FACILITY_LICENSE>("FACILITY_LICENSE");
+        var repo = await RepoAsync<FACILITY_LICENSE>("FACILITY_LICENSE");
         var filters = new List<AppFilter>
         {
             new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = f.FACILITY_ID },
@@ -271,7 +271,7 @@ public sealed partial class FacilityManagementService
         license.ACTIVE_IND ??= "Y";
         if (license is IPPDMEntity e)
             _commonColumnHandler.PrepareForInsert(e, userId);
-        var repo = Repo<FACILITY_LICENSE>("FACILITY_LICENSE");
+        var repo = await RepoAsync<FACILITY_LICENSE>("FACILITY_LICENSE");
         return (await repo.InsertAsync(license, userId) as FACILITY_LICENSE)!;
     }
 
@@ -310,7 +310,7 @@ public sealed partial class FacilityManagementService
         var f = await ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
         if (f == null) return Array.Empty<FACILITY_MEASUREMENT>();
 
-        var repo = Repo<FACILITY_MEASUREMENT>("FACILITY_MEASUREMENT");
+        var repo = await RepoAsync<FACILITY_MEASUREMENT>("FACILITY_MEASUREMENT");
         var filters = new List<AppFilter>
         {
             new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = f.FACILITY_ID },
@@ -352,7 +352,7 @@ public sealed partial class FacilityManagementService
 
         if (measurement is IPPDMEntity e)
             _commonColumnHandler.PrepareForInsert(e, userId);
-        var repo = Repo<FACILITY_MEASUREMENT>("FACILITY_MEASUREMENT");
+        var repo = await RepoAsync<FACILITY_MEASUREMENT>("FACILITY_MEASUREMENT");
         return (await repo.InsertAsync(measurement, userId) as FACILITY_MEASUREMENT)!;
     }
 
@@ -368,7 +368,7 @@ public sealed partial class FacilityManagementService
         var f = await ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
         if (f == null) return Array.Empty<FACILITY_EQUIPMENT_ACTIVITY>();
 
-        var repo = Repo<FACILITY_EQUIPMENT_ACTIVITY>("FACILITY_EQUIPMENT_ACTIVITY");
+        var repo = await RepoAsync<FACILITY_EQUIPMENT_ACTIVITY>("FACILITY_EQUIPMENT_ACTIVITY");
         var filters = new List<AppFilter>
         {
             new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = f.FACILITY_ID },
@@ -409,7 +409,7 @@ public sealed partial class FacilityManagementService
 
         if (activity is IPPDMEntity e)
             _commonColumnHandler.PrepareForInsert(e, userId);
-        var repo = Repo<FACILITY_EQUIPMENT_ACTIVITY>("FACILITY_EQUIPMENT_ACTIVITY");
+        var repo = await RepoAsync<FACILITY_EQUIPMENT_ACTIVITY>("FACILITY_EQUIPMENT_ACTIVITY");
         return (await repo.InsertAsync(activity, userId) as FACILITY_EQUIPMENT_ACTIVITY)!;
     }
 }

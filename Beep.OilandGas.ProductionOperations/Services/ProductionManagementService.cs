@@ -18,9 +18,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
 {
     /// <summary>
     /// Service for managing production operations.
-    /// Compatibility-focused production management surface implemented on PPDMGenericRepository.
-    /// Data-access convergence guidance is tracked per
-    /// <c>.plans/07_Phase2_Data_Access_Strategy_Matrix.md</c>.
+    /// Stores core PPDM production entities through PPDMGenericRepository.
     /// </summary>
     public partial class ProductionManagementService : IProductionManagementService
     {
@@ -31,30 +29,36 @@ namespace Beep.OilandGas.ProductionOperations.Services
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly string _connectionName;
+        private readonly Func<CancellationToken, Task<string>>? _resolveConnection;
 
         public ProductionManagementService(
             IDMEEditor editor,
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            string connectionName = "PPDM39")
+            string connectionName = "PPDM39",
+            Func<CancellationToken, Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName;
+            _resolveConnection = resolveConnection;
         }
 
-        private PPDMGenericRepository Repo<T>(string tableName)
+        private async Task<PPDMGenericRepository> RepoAsync<T>(string tableName, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            var connection = _resolveConnection is null ? _connectionName : await _resolveConnection(cancellationToken);
+            if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException("A PPDM_CORE database binding is required.");
             return new PPDMGenericRepository(
                 _editor,
                 _commonColumnHandler,
                 _defaults,
                 _metadata,
                 typeof(T),
-                _connectionName,
+                connection,
                 tableName,
                 null);
         }
@@ -62,7 +66,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
         public async Task<List<PDEN>> GetProductionOperationsAsync(string? wellUWI = null, DateTime? startDate = null, DateTime? endDate = null, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var repo = Repo<PDEN>("PDEN");
+            var repo = await RepoAsync<PDEN>("PDEN", cancellationToken);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
@@ -89,7 +93,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             if (string.IsNullOrWhiteSpace(operationId))
                 return null;
 
-            var repo = Repo<PDEN>("PDEN");
+            var repo = await RepoAsync<PDEN>("PDEN", cancellationToken);
             var pden = await repo.GetByIdAsync(operationId) as PDEN;
             if (pden == null || pden.ACTIVE_IND != "Y")
                 return null;
@@ -103,7 +107,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             if (createRequest == null)
                 throw new ArgumentNullException(nameof(createRequest));
 
-            var repo = Repo<PDEN>("PDEN");
+            var repo = await RepoAsync<PDEN>("PDEN", cancellationToken);
             var operationDate = createRequest.OperationDate ?? DateTime.UtcNow;
             var pden = new PDEN
             {
@@ -132,7 +136,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
         public async Task<List<PDEN>> GetProductionReportsAsync(string? wellUWI = null, DateTime? startDate = null, DateTime? endDate = null, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var repo = Repo<PDEN>("PDEN");
+            var repo = await RepoAsync<PDEN>("PDEN", cancellationToken);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
@@ -159,7 +163,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             if (string.IsNullOrWhiteSpace(wellUWI))
                 return new List<PDEN>();
 
-            var repo = Repo<PDEN>("PDEN");
+            var repo = await RepoAsync<PDEN>("PDEN", cancellationToken);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "CURRENT_WELL_STR_NUMBER", FilterValue = wellUWI, Operator = "=" },
@@ -176,7 +180,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             if (string.IsNullOrWhiteSpace(facilityId))
                 return new List<FACILITY>();
 
-            var repo = Repo<FACILITY>("FACILITY");
+            var repo = await RepoAsync<FACILITY>("FACILITY", cancellationToken);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "FACILITY_ID", FilterValue = facilityId, Operator = "=" },
@@ -190,4 +194,3 @@ namespace Beep.OilandGas.ProductionOperations.Services
         }
     }
 }
-

@@ -24,14 +24,22 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
 
             try
             {
+                var targetConnection = _resolveConnection is null ? _connectionName : await _resolveConnection();
                 if (string.IsNullOrWhiteSpace(results.AnalysisId))
                 {
-                    results.AnalysisId = _defaults.FormatIdForTable("PIPELINE_ANALYSIS", Guid.NewGuid().ToString());
+                    results.AnalysisId = _defaults.FormatIdForTable("PIPELINE_ANALYSIS_RESULT", Guid.NewGuid().ToString());
                 }
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PIPELINE_ANALYSIS_RESULT), _connectionName, "PIPELINE_ANALYSIS_RESULT");
-                await repo.InsertAsync(results, userId);
+                    typeof(PIPELINE_ANALYSIS_RESULT), targetConnection, "PIPELINE_ANALYSIS_RESULT");
+                await repo.InsertAsync(new PIPELINE_ANALYSIS_RESULT
+                {
+                    ANALYSIS_ID = results.AnalysisId, PIPELINE_ID = results.PipelineId,
+                    ANALYSIS_DATE = results.AnalysisDate, FLOW_RATE = results.FlowRate,
+                    INLET_PRESSURE = results.InletPressure, OUTLET_PRESSURE = results.OutletPressure,
+                    PRESSURE_DROP = results.PressureDrop, VELOCITY = results.Velocity,
+                    FLOW_REGIME = results.FlowRegime, ANALYSIS_STATUS = results.Status
+                }, userId);
 
                 _logger?.LogInformation("Analysis results saved successfully: {AnalysisId}", results.AnalysisId);
             }
@@ -53,7 +61,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             try
             {
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PIPELINE_ANALYSIS_RESULT), _connectionName, "PIPELINE_ANALYSIS_RESULT");
+                    typeof(PIPELINE_ANALYSIS_RESULT), _resolveConnection is null ? _connectionName : await _resolveConnection(), "PIPELINE_ANALYSIS_RESULT");
 
                 var filters = new List<AppFilter>
                 {
@@ -101,7 +109,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             try
             {
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PIPELINE), _connectionName, "PIPELINE");
+                    typeof(PIPELINE), _resolveConnection is null ? _connectionName : await _resolveConnection(), "PIPELINE");
 
                 var filter = new List<AppFilter>
                 {
@@ -142,7 +150,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             try
             {
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PIPELINE), _connectionName, "PIPELINE");
+                    typeof(PIPELINE), _resolveConnection is null ? _connectionName : await _resolveConnection(), "PIPELINE");
 
                 var filter = new List<AppFilter>
                 {

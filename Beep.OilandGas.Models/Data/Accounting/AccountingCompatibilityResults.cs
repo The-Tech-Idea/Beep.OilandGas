@@ -54,6 +54,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
 
     public class ProductionRoyaltyCalculationResult : ModelEntityBase
     {
+        public decimal? RoyaltyAmount { get; set; }
         public decimal? GrossOilVolume { get; set; }
         public decimal? GrossGasVolume { get; set; }
         public decimal? RoyaltyOilVolume { get; set; }

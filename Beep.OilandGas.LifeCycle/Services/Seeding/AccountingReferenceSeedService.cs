@@ -48,7 +48,7 @@ public class AccountingReferenceSeedService
                 "R_BA_CATEGORY" => ((R_BA_CATEGORY)row).BA_CATEGORY,
                 "R_BA_TYPE"     => ((R_BA_TYPE)row).BA_TYPE,
                 "R_BA_PREF_TYPE" => ((R_BA_PREF_TYPE)row).PREFERENCE_TYPE,
-                "R_BA_STATUS"   => ((R_BA_STATUS)row).STATUS,
+                "R_BA_STATUS"   => ((R_BA_STATUS)row).BA_STATUS,
                 _ => null
             }) ?? "";
             if (!string.IsNullOrEmpty(key)) existingKeys.Add(key);
@@ -76,7 +76,7 @@ public class AccountingReferenceSeedService
                 "R_BA_CATEGORY" => new R_BA_CATEGORY { BA_CATEGORY = code, ABBREVIATION = code[..Math.Min(code.Length, 10)], SHORT_NAME = code.Replace("_", " "), LONG_NAME = $"{code.Replace("_", " ")} (seeded)", ACTIVE_IND = "Y", EFFECTIVE_DATE = DateTime.UtcNow, PPDM_GUID = Guid.NewGuid().ToString(), SOURCE = "ACCOUNTING_SEED" },
                 "R_BA_TYPE"     => new R_BA_TYPE     { BA_TYPE     = code, ABBREVIATION = code[..Math.Min(code.Length, 10)], SHORT_NAME = code.Replace("_", " "), LONG_NAME = $"{code.Replace("_", " ")} (seeded)", ACTIVE_IND = "Y", EFFECTIVE_DATE = DateTime.UtcNow, PPDM_GUID = Guid.NewGuid().ToString(), SOURCE = "ACCOUNTING_SEED" },
                 "R_BA_PREF_TYPE" => new R_BA_PREF_TYPE { PREFERENCE_TYPE = code, ABBREVIATION = code[..Math.Min(code.Length, 10)], SHORT_NAME = code.Replace("_", " "), LONG_NAME = $"{code.Replace("_", " ")} (seeded)", ACTIVE_IND = "Y", EFFECTIVE_DATE = DateTime.UtcNow, PPDM_GUID = Guid.NewGuid().ToString(), SOURCE = "ACCOUNTING_SEED" },
-                "R_BA_STATUS"   => new R_BA_STATUS   { STATUS      = code, ABBREVIATION = code[..Math.Min(code.Length, 10)], SHORT_NAME = code.Replace("_", " "), LONG_NAME = $"{code.Replace("_", " ")} (seeded)", ACTIVE_IND = "Y", EFFECTIVE_DATE = DateTime.UtcNow, PPDM_GUID = Guid.NewGuid().ToString(), SOURCE = "ACCOUNTING_SEED" },
+                "R_BA_STATUS"   => new R_BA_STATUS   { BA_STATUS   = code, ABBREVIATION = code[..Math.Min(code.Length, 10)], SHORT_NAME = code.Replace("_", " "), LONG_NAME = $"{code.Replace("_", " ")} (seeded)", ACTIVE_IND = "Y", EFFECTIVE_DATE = DateTime.UtcNow, PPDM_GUID = Guid.NewGuid().ToString(), SOURCE = "ACCOUNTING_SEED" },
                 _ => throw new ArgumentException($"Unknown table: {tableName}")
             };
 

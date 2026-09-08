@@ -74,7 +74,7 @@
                             <RowTemplate>
                                 <MudTd>@context.FieldName</MudTd>
                                 <MudTd>@context.FieldId</MudTd>
-                                <MudTd><MudChip Size="Size.Small" Color="@StatusColor(context.LifecyclePhase)">@context.LifecyclePhase</MudChip></MudTd>
+                                <MudTd><MudChip T="string" Size="Size.Small" Color="@StatusColor(context.LifecyclePhase)">@context.LifecyclePhase</MudChip></MudTd>
                                 <MudTd>@context.ActiveWells</MudTd>
                             </RowTemplate>
                         </MudTable>
@@ -109,7 +109,7 @@
                             {
                                 <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mb-2">
                                     <MudText Typo="Typo.body2">@d.Description</MudText>
-                                    <MudChip Size="Size.Small" Color="@(d.DaysUntil < 7 ? Color.Error : d.DaysUntil < 30 ? Color.Warning : Color.Default)">@d.DaysUntil d</MudChip>
+                                    <MudChip T="string" Size="Size.Small" Color="@(d.DaysUntil < 7 ? Color.Error : d.DaysUntil < 30 ? Color.Warning : Color.Default)">@d.DaysUntil d</MudChip>
                                 </MudStack>
                             }
                         }

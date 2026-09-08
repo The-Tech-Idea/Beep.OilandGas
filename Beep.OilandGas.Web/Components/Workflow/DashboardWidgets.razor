@@ -17,7 +17,7 @@
                 <CardHeaderActions>
                     @if (Tasks != null && Tasks.Any())
                     {
-                        <MudChip Color="Color.Primary" Size="Size.Small">@Tasks.Count</MudChip>
+                        <MudChip T="string" Color="Color.Primary" Size="Size.Small">@Tasks.Count</MudChip>
                     }
                 </CardHeaderActions>
             </MudCardHeader>
@@ -39,7 +39,7 @@
                             <MudText Typo="Typo.body2" Style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">
                                 @task.StepName
                             </MudText>
-                            <MudChip Size="Size.Small" Variant="Variant.Outlined" Color="@(task.SlaStatus == "BREACHED" ? Color.Error : Color.Default)">
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(task.SlaStatus == "BREACHED" ? Color.Error : Color.Default)">
                                 @task.TaskType
                             </MudChip>
                         </MudStack>
@@ -76,15 +76,15 @@
                     <MudStack Spacing="2">
                         <MudStack Row="true" Justify="Justify.SpaceBetween">
                             <MudText Typo="Typo.body2">On Track</MudText>
-                            <MudChip Size="Size.Small" Color="Color.Success">@SlaStats.OnTrack</MudChip>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Success">@SlaStats.OnTrack</MudChip>
                         </MudStack>
                         <MudStack Row="true" Justify="Justify.SpaceBetween">
                             <MudText Typo="Typo.body2">At Risk</MudText>
-                            <MudChip Size="Size.Small" Color="Color.Warning">@SlaStats.AtRisk</MudChip>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Warning">@SlaStats.AtRisk</MudChip>
                         </MudStack>
                         <MudStack Row="true" Justify="Justify.SpaceBetween">
                             <MudText Typo="Typo.body2">Breached</MudText>
-                            <MudChip Size="Size.Small" Color="Color.Error">@SlaStats.Breached</MudChip>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Error">@SlaStats.Breached</MudChip>
                         </MudStack>
                         @if (SlaStats.Breached > 0)
                         {
@@ -111,7 +111,7 @@
                 <CardHeaderActions>
                     @if (ApprovalCount > 0)
                     {
-                        <MudChip Color="Color.Primary" Size="Size.Small">@ApprovalCount</MudChip>
+                        <MudChip T="string" Color="Color.Primary" Size="Size.Small">@ApprovalCount</MudChip>
                     }
                 </CardHeaderActions>
             </MudCardHeader>
@@ -141,11 +141,4 @@
     [Parameter] public List<UnifiedTask>? Tasks { get; set; }
     [Parameter] public SlaStats? SlaStats { get; set; }
     [Parameter] public int ApprovalCount { get; set; }
-}
-
-public class SlaStats
-{
-    public int OnTrack { get; set; }
-    public int AtRisk { get; set; }
-    public int Breached { get; set; }
 }

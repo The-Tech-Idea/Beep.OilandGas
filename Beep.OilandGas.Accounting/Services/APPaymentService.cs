@@ -29,6 +29,7 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly IAccountMappingService? _accountMapping;
         private readonly ILogger<APPaymentService> _logger;
         private const string ConnectionName = "PPDM39";
+        private readonly Func<Task<string>>? _resolveConnection;
 
         public APPaymentService(
             IDMEEditor editor,
@@ -37,7 +38,8 @@ namespace Beep.OilandGas.Accounting.Services
             IPPDMMetadataRepository metadata,
             AccountingBasisPostingService basisPosting,
             ILogger<APPaymentService> logger,
-            IAccountMappingService? accountMapping = null)
+            IAccountMappingService? accountMapping = null,
+            Func<Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -46,6 +48,7 @@ namespace Beep.OilandGas.Accounting.Services
             _basisPosting = basisPosting ?? throw new ArgumentNullException(nameof(basisPosting));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _accountMapping = accountMapping;
+            _resolveConnection = resolveConnection;
         }
 
         /// <summary>
@@ -199,7 +202,7 @@ namespace Beep.OilandGas.Accounting.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error getting payment {PaymentId}", paymentId);
-                return null;
+                throw;
             }
         }
 
@@ -247,13 +250,12 @@ namespace Beep.OilandGas.Accounting.Services
         }
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string cn = "PPDM39")
         {
-            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            var connection = _resolveConnection is null ? cn ?? ConnectionName : await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException("A PRODUCTION database binding is required.");
             
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(T), cn ?? ConnectionName, tableName);
+                typeof(T), connection, tableName);
         }
     }
 }
-
-

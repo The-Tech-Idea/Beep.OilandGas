@@ -1,4 +1,5 @@
 using System;
+using Beep.OilandGas.Models.Core.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -27,11 +28,12 @@ namespace Beep.OilandGas.ApiService.Services
             IPPDM39DefaultsRepository defaults,IPPDMMetadataRepository metadata,
             string connectionName="PPDM39",ILogger<HseAggregationService>? logger=null)
         {
-            _editor = editor
-            _commonColumnHandler=commonColumnHandler
-            _defaults=defaults
-            _metadata=metadata
-            _connectionName=connectionName_logger = logger;
+            _editor = editor;
+            _commonColumnHandler = commonColumnHandler;
+            _defaults = defaults;
+            _metadata = metadata;
+            _connectionName = connectionName;
+            _logger = logger;
         }
 
         private PPDMGenericRepository GetRepo<T>(string t)=>new(_editor,_commonColumnHandler,_defaults,_metadata,typeof(T),_connectionName,t);

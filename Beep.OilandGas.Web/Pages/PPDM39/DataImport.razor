@@ -13,23 +13,21 @@
             <MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Upload CSV</MudText></CardHeaderContent></MudCardHeader>
             <MudCardContent>
                 <MudSelect T="string" Label="Target Table" @bind-Value="_tableName" Variant="Variant.Outlined" Class="mb-3">
-                    <MudSelectItem Value="WELL">WELL</MudSelectItem><MudSelectItem Value="FIELD">FIELD</MudSelectItem>
-                    <MudSelectItem Value="FACILITY">FACILITY</MudSelectItem><MudSelectItem Value="PDEN_VOL_SUMMARY">Production</MudSelectItem>
-                    <MudSelectItem Value="PROSPECT">PROSPECT</MudSelectItem>
+                    <MudSelectItem T="string" Value='@("WELL")'>WELL</MudSelectItem><MudSelectItem T="string" Value='@("FIELD")'>FIELD</MudSelectItem>
+                    <MudSelectItem T="string" Value='@("FACILITY")'>FACILITY</MudSelectItem><MudSelectItem T="string" Value='@("PDEN_VOL_SUMMARY")'>Production</MudSelectItem>
+                    <MudSelectItem T="string" Value='@("PROSPECT")'>PROSPECT</MudSelectItem>
                 </MudSelect>
-                <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="OnFilesChanged" Accept=".csv" MaximumFileCount="1" Class="mb-3">
-                    <LabelTemplate><MudText>Drop CSV file here or click to browse</MudText><MudText Typo="Typo.caption" Color="Color.Secondary">Max 100 MB</MudText></LabelTemplate>
-                </MudFileUpload>
-                @if(_selectedFile!=null){<MudChip Color="Color.Info" Size="Size.Small">@_selectedFile.Name (@($"{_selectedFile.Size/1024.0/1024.0:F1} MB"))</MudChip>}
+                <MudFileUpload T="IBrowserFile" FilesChanged="OnFileChanged" Accept=".csv" DragAndDrop="true" Disabled="_importing" Class="mb-3" />
+                @if(_selectedFile!=null){<MudChip T="string" Color="Color.Info" Size="Size.Small">@_selectedFile.Name (@($"{_selectedFile.Size/1024.0/1024.0:F1} MB"))</MudChip>}
             </MudCardContent>
             <MudCardActions><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="UploadAndImport" Disabled="@(_selectedFile==null||_importing||string.IsNullOrEmpty(_tableName))">@if(_importing){<MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2"/>}Import with Validation</MudButton></MudCardActions></MudCard>
-            @if(_result!=null){<MudCard Elevation="2" Class="mt-3"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Result</MudText></CardHeaderContent><CardHeaderActions><MudChip Color="@(_result.Success?Color.Success:Color.Error)" Size="Size.Small">@(_result.Success?"Success":"Failed")</MudChip></CardHeaderActions></MudCardHeader>
+            @if(_result!=null){<MudCard Elevation="2" Class="mt-3"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Result</MudText></CardHeaderContent><CardHeaderActions><MudChip T="string" Color="@(_result.Success?Color.Success:Color.Error)" Size="Size.Small">@(_result.Success?"Success":"Failed")</MudChip></CardHeaderActions></MudCardHeader>
             <MudCardContent><MudStack Row="true" Justify="Justify.SpaceAround"><div><MudText Typo="Typo.caption">Read</MudText><MudText Typo="Typo.h6">@_result.RecordsRead.ToString("N0")</MudText></div><div><MudText Typo="Typo.caption">Inserted</MudText><MudText Typo="Typo.h6" Color="Color.Success">@_result.RecordsInserted.ToString("N0")</MudText></div><div><MudText Typo="Typo.caption">Failed</MudText><MudText Typo="Typo.h6" Color="@(_result.RecordsFailed>0?Color.Error:Color.Default)">@_result.RecordsFailed.ToString("N0")</MudText></div></MudStack></MudCardContent></MudCard>}
         </MudItem>
         <MudItem xs="12" md="6">
             <MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Quality Rules (Optional)</MudText></CardHeaderContent></MudCardHeader>
             <MudCardContent>
-                <MudSwitch @bind-Checked="_notNull">Require non-null values</MudSwitch>
+                <MudSwitch T="bool" @bind-Value="_notNull">Require non-null values</MudSwitch>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">More quality rules available via API. See /api/data-import documentation.</MudText>
             </MudCardContent></MudCard>
         </MudItem>
@@ -39,7 +37,7 @@
 @code {
     private IBrowserFile? _selectedFile;private string _tableName="";private bool _importing,_notNull;
     private ImportResultDto? _result;
-    private void OnFilesChanged(IReadOnlyList<IBrowserFile> files){_selectedFile=files.FirstOrDefault();_result=null;}
+    private void OnFileChanged(IBrowserFile? file){_selectedFile=file;_result=null;}
     private async Task UploadAndImport(){
         if(_selectedFile==null||string.IsNullOrEmpty(_tableName))return;_importing=true;StateHasChanged();
         try{using var c=new MultipartFormDataContent();var s=new StreamContent(_selectedFile.OpenReadStream(100_000_000));s.Headers.ContentType=new System.Net.Http.Headers.MediaTypeHeaderValue("text/csv");c.Add(s,"file",_selectedFile.Name);

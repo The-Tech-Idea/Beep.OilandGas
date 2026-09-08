@@ -182,7 +182,7 @@
 </MudContainer>
 
 @code {
-    private Beep.Foundation.IdentityServer.Shared.Services.UserProfile? profile;
+    private Beep.Foundation.IdentityServer.Shared.Services.AccountInfo? profile;
     private bool isLoading = true;
     private int externalLoginsCount;
 
@@ -198,7 +198,7 @@
 
         try
         {
-            profile = await AccountService.GetProfileAsync();
+            profile = await AccountService.GetAccountInfoAsync();
             var loginsInfo = await AccountService.GetExternalLoginsAsync();
             externalLoginsCount = loginsInfo?.CurrentLogins.Count ?? 0;
         }

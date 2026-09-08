@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers
@@ -170,4 +171,3 @@ namespace Beep.OilandGas.ApiService.Controllers
         }
     }
 }
-

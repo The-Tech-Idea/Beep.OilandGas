@@ -24,6 +24,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly string _connectionName;
+        private readonly Func<Task<string>>? _resolveConnection;
         private readonly ILogger<PlungerLiftService>? _logger;
 
         public PlungerLiftService(
@@ -32,7 +33,8 @@ namespace Beep.OilandGas.PlungerLift.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
-            ILogger<PlungerLiftService>? logger = null)
+            ILogger<PlungerLiftService>? logger = null,
+            Func<Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -40,6 +42,14 @@ namespace Beep.OilandGas.PlungerLift.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _logger = logger;
+            _resolveConnection = resolveConnection;
+        }
+
+        private async Task<string> ResolveConnectionAsync()
+        {
+            var connection = _resolveConnection is null ? _connectionName : await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException("A PPDM_CORE database binding is required.");
+            return connection;
         }
 
         #region System Design
@@ -849,7 +859,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             try
             {
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+                    typeof(WELL_ACTIVITY), await ResolveConnectionAsync(), "WELL_ACTIVITY", null);
                 var activityId = _defaults.FormatIdForTable("WELL_ACTIVITY", design.DesignId ?? Guid.NewGuid().ToString());
                 var activity = new WELL_ACTIVITY
                 {
@@ -880,7 +890,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             try
             {
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+                    typeof(WELL_ACTIVITY), await ResolveConnectionAsync(), "WELL_ACTIVITY", null);
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellUWI },
@@ -917,7 +927,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             try
             {
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+                    typeof(WELL_ACTIVITY), await ResolveConnectionAsync(), "WELL_ACTIVITY", null);
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "ACTIVITY_SET_ID", Operator = "=", FilterValue = design.DesignId },
@@ -948,7 +958,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             try
             {
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+                    typeof(WELL_ACTIVITY), await ResolveConnectionAsync(), "WELL_ACTIVITY", null);
                 var activity = new WELL_ACTIVITY
                 {
                     UWI = performanceData.WellUWI ?? string.Empty,
@@ -977,7 +987,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             try
             {
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+                    typeof(WELL_ACTIVITY), await ResolveConnectionAsync(), "WELL_ACTIVITY", null);
                 var filters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellUWI },

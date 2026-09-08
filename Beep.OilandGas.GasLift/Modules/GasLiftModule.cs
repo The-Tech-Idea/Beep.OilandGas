@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.GasLift.Constants;
 using Beep.OilandGas.GasLift.Data;
+using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.ModuleSetup;
 using TheTechIdea.Beep.Report;
@@ -17,14 +18,9 @@ namespace Beep.OilandGas.GasLift.Modules;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Why only one <see cref="EntityTypes"/> entry?</b>
-/// The only gas-lift <b>extension</b> table class owned in this assembly is
-/// <see cref="R_GAS_LIFT_REFERENCE_CODE"/> (<c>Beep.OilandGas.GasLift.Data</c> / <c>Data/Tables</c>).
-/// It is <b>not</b> part of standard PPDM 3.9 core, so it belongs on <see cref="ModuleSetupBase.EntityTypes"/> for
-/// metadata/schema tooling. Transactional wire types such as <c>GAS_LIFT_DESIGN</c>, <c>GAS_LIFT_WELL_PROPERTIES</c>,
-/// <c>GAS_LIFT_POTENTIAL_RESULT</c>, etc. live in <c>Beep.OilandGas.Models</c> with the shared PPDM39 schema path;
-/// they are intentionally <b>not</b> duplicated here (same pattern as other domains: module lists feature-specific
-/// <c>R_*</c> / extension tables only — see root <c>CLAUDE.md</c>).
+/// The manifest includes the reference-code extension and the two shared transactional
+/// entity types persisted by GasLiftService. Calculation-only request/result types
+/// are not tables. Shared entity definitions are referenced, not copied into this assembly.
 /// </para>
 /// <para>
 /// <b><see cref="SeedAsync"/></b> idempotently inserts rows from <see cref="GasLiftReferenceCodeSeed"/> into
@@ -38,7 +34,9 @@ public sealed class GasLiftModule : ModuleSetupBase
 {
     private static readonly IReadOnlyList<Type> _entityTypes = new List<Type>
     {
-        typeof(R_GAS_LIFT_REFERENCE_CODE)
+        typeof(R_GAS_LIFT_REFERENCE_CODE),
+        typeof(GAS_LIFT_DESIGN),
+        typeof(GAS_LIFT_PERFORMANCE)
     };
 
     public GasLiftModule(ModuleSetupContext context)

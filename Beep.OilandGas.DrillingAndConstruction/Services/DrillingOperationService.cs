@@ -17,18 +17,15 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
     /// Implements industry-standard drilling engineering including planning, execution, monitoring, and cost tracking.
     /// Uses PPDMGenericRepository for PPDM39 data access and persistence.
     /// </summary>
-    public class DrillingOperationService
+    public class DrillingOperationService : Beep.OilandGas.DrillingAndConstruction.Core.Interfaces.IDrillingOperationService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly string _connectionName;
+        private readonly Func<CancellationToken, Task<string>>? _resolveConnection;
         private readonly ILogger<DrillingOperationService>? _logger;
-
-        // Cached repositories
-        private PPDMGenericRepository? _wellRepository;
-        private PPDMGenericRepository? _drillReportRepository;
 
         public DrillingOperationService(
             IDMEEditor editor,
@@ -36,7 +33,8 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
-            ILogger<DrillingOperationService>? logger = null)
+            ILogger<DrillingOperationService>? logger = null,
+            Func<CancellationToken, Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -44,42 +42,43 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _logger = logger;
+            _resolveConnection = resolveConnection;
         }
 
         #region Repository Helpers
 
         private async Task<PPDMGenericRepository> GetWellRepositoryAsync(CancellationToken cancellationToken = default)
         {
-            if (_wellRepository == null)
-            {
-                _wellRepository = new PPDMGenericRepository(
+            return new PPDMGenericRepository(
                     _editor,
                     _commonColumnHandler,
                     _defaults,
                     _metadata,
                     typeof(WELL),
-                    _connectionName,
+                    await ResolveConnectionAsync(cancellationToken),
                     "WELL",
                     null);
-            }
-            return _wellRepository;
         }
 
         private async Task<PPDMGenericRepository> GetDrillReportRepositoryAsync(CancellationToken cancellationToken = default)
         {
-            if (_drillReportRepository == null)
-            {
-                _drillReportRepository = new PPDMGenericRepository(
+            return new PPDMGenericRepository(
                     _editor,
                     _commonColumnHandler,
                     _defaults,
                     _metadata,
                     typeof(WELL_DRILL_REPORT),
-                    _connectionName,
+                    await ResolveConnectionAsync(cancellationToken),
                     "WELL_DRILL_REPORT",
                     null);
-            }
-            return _drillReportRepository;
+        }
+
+        private async Task<string> ResolveConnectionAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var connection = _resolveConnection is null ? _connectionName : await _resolveConnection(cancellationToken);
+            if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException("A PPDM_CORE database binding is required.");
+            return connection;
         }
 
         private List<T> ConvertToList<T>(IEnumerable<object>? entities) where T : class
@@ -123,7 +122,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
 
         private async Task<WELL?> GetWellAsync(string wellUWI, string? fieldId = null, bool activeOnly = true, CancellationToken cancellationToken = default)
         {
-            var wellRepo = await GetWellRepositoryAsync();
+            var wellRepo = await GetWellRepositoryAsync(cancellationToken);
             var wellEntities = await wellRepo.GetAsync(CreateWellFilters(wellUWI, fieldId, activeOnly));
             return ConvertToList<WELL>(wellEntities).FirstOrDefault();
         }
@@ -172,12 +171,12 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
         {
             _logger?.LogInformation("Getting drilling operations for well UWI: {WellUWI} in field {FieldId}", wellUWI ?? "all", fieldId ?? "all");
 
-            var wellRepo = await GetWellRepositoryAsync();
+            var wellRepo = await GetWellRepositoryAsync(cancellationToken);
             var wellEntities = await wellRepo.GetAsync(CreateWellFilters(wellUWI, fieldId));
             var wells = ConvertToList<WELL>(wellEntities);
 
             var operations = new List<DRILLING_OPERATION>();
-            var drillReportRepo = await GetDrillReportRepositoryAsync();
+            var drillReportRepo = await GetDrillReportRepositoryAsync(cancellationToken);
 
             foreach (var well in wells)
             {
@@ -215,7 +214,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
                 return null;
             }
 
-            var drillReportRepo = await GetDrillReportRepositoryAsync();
+            var drillReportRepo = await GetDrillReportRepositoryAsync(cancellationToken);
             var reportFilters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "UWI", FilterValue = operationId, Operator = "=" },
@@ -237,7 +236,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
 
             _logger?.LogInformation("Creating drilling operation for well UWI: {WellUWI} in field {FieldId}", createDto.WellUWI, fieldId ?? "all");
 
-            var wellRepo = await GetWellRepositoryAsync();
+            var wellRepo = await GetWellRepositoryAsync(cancellationToken);
             var existingWell = await GetWellAsync(createDto.WellUWI, null, activeOnly: false);
             var plannedSpudDate = createDto.PlannedSpudDate ?? DateTime.UtcNow;
             var normalizedWellName = string.IsNullOrWhiteSpace(createDto.WellName) ? null : createDto.WellName.Trim();
@@ -287,7 +286,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
                 await wellRepo.UpdateAsync(well, auditUser);
             }
 
-            var drillReportRepo = await GetDrillReportRepositoryAsync();
+            var drillReportRepo = await GetDrillReportRepositoryAsync(cancellationToken);
             var report = new WELL_DRILL_REPORT
             {
                 REPORT_ID = _defaults.FormatIdForTable("WELL_DRILL_REPORT", Guid.NewGuid().ToString()),
@@ -316,7 +315,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
 
             _logger?.LogInformation("Updating drilling operation for UWI: {OperationId} in field {FieldId}", operationId, fieldId ?? "all");
 
-            var wellRepo = await GetWellRepositoryAsync();
+            var wellRepo = await GetWellRepositoryAsync(cancellationToken);
             var well = await GetWellAsync(operationId, fieldId);
             var auditUser = ResolveAuditUser(userId);
 
@@ -353,7 +352,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
 
             await wellRepo.UpdateAsync(well, auditUser);
 
-            var drillReportRepo = await GetDrillReportRepositoryAsync();
+            var drillReportRepo = await GetDrillReportRepositoryAsync(cancellationToken);
             var reportFilters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "UWI", FilterValue = operationId, Operator = "=" },
@@ -381,7 +380,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             if (well == null)
                 throw new KeyNotFoundException($"Drilling operation with ID {operationId} not found.");
 
-            var drillReportRepo = await GetDrillReportRepositoryAsync();
+            var drillReportRepo = await GetDrillReportRepositoryAsync(cancellationToken);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "UWI", FilterValue = operationId, Operator = "=" },
@@ -418,7 +417,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
                 throw new KeyNotFoundException($"Drilling operation with ID {operationId} not found.");
             var auditUser = ResolveAuditUser(userId);
 
-            var drillReportRepo = await GetDrillReportRepositoryAsync();
+            var drillReportRepo = await GetDrillReportRepositoryAsync(cancellationToken);
             var report = new WELL_DRILL_REPORT
             {
                 REPORT_ID = _defaults.FormatIdForTable("WELL_DRILL_REPORT", Guid.NewGuid().ToString()),
@@ -474,7 +473,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             };
 
             // Get drilling reports in date range
-            var drillReportRepo = await GetDrillReportRepositoryAsync();
+            var drillReportRepo = await GetDrillReportRepositoryAsync(cancellationToken);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellUWI },
@@ -533,7 +532,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             };
 
             // Get drilling reports to calculate actual days
-            var drillReportRepo = await GetDrillReportRepositoryAsync();
+            var drillReportRepo = await GetDrillReportRepositoryAsync(cancellationToken);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellUWI },
@@ -835,4 +834,3 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
 
     #endregion
 }
-

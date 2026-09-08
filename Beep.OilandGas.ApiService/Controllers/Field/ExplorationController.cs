@@ -867,7 +867,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 if (scopeDenied != null)
                     return scopeDenied;
 
-                PROCESS_STEP_DATA stepData = new PROCESS_STEP_DATA { Data = request.StepData ?? new Dictionary<string, object>() };
+                var payload = request.StepData ?? new Dictionary<string, object>();
+                var json = System.Text.Json.JsonSerializer.SerializeToElement(payload);
+                var stepData = new PROCESS_STEP_DATA
+                {
+                    Data = payload,
+                    DataJson = json.GetRawText(),
+                    StepType = json.TryGetProperty("StepType", out var stepType) && stepType.ValueKind == System.Text.Json.JsonValueKind.String
+                        ? stepType.GetString() ?? string.Empty : string.Empty,
+                    Status = json.TryGetProperty("Status", out var status) && status.ValueKind == System.Text.Json.JsonValueKind.String
+                        ? status.GetString() ?? string.Empty : string.Empty
+                };
                 var ok = await execute(request.InstanceId, stepData, request.UserId, cancellationToken);
                 return Ok(ok);
             }

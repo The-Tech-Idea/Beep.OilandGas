@@ -33,6 +33,7 @@ namespace Beep.OilandGas.GasLift.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly IDMEEditor _editor;
         private readonly string _connectionName;
+        private readonly Func<CancellationToken, Task<string>>? _resolveConnection;
         private readonly ILogger<GasLiftService>? _logger;
 
         public GasLiftService(
@@ -41,7 +42,8 @@ namespace Beep.OilandGas.GasLift.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
-            ILogger<GasLiftService>? logger = null)
+            ILogger<GasLiftService>? logger = null,
+            Func<CancellationToken, Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -49,7 +51,11 @@ namespace Beep.OilandGas.GasLift.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _logger = logger;
+            _resolveConnection = resolveConnection;
         }
+
+        private Task<string> ResolveConnectionAsync(CancellationToken cancellationToken) =>
+            _resolveConnection is null ? Task.FromResult(_connectionName) : _resolveConnection(cancellationToken);
 
         #region Core Gas Lift Analysis Methods
 
@@ -360,7 +366,7 @@ namespace Beep.OilandGas.GasLift.Services
 
             // Create repository for GAS_LIFT_PERFORMANCE
             var performanceRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(GAS_LIFT_PERFORMANCE), _connectionName, "GAS_LIFT_PERFORMANCE", null);
+                typeof(GAS_LIFT_PERFORMANCE), await ResolveConnectionAsync(cancellationToken), "GAS_LIFT_PERFORMANCE", null);
 
             var filters = new List<AppFilter>
             {
@@ -482,6 +488,7 @@ namespace Beep.OilandGas.GasLift.Services
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
             _logger?.LogInformation("Saving gas lift design {DesignId} for well {WellUWI}", design.DESIGN_ID, design.WELL_UWI);
+            var targetConnection = await ResolveConnectionAsync(cancellationToken);
 
             if (string.IsNullOrWhiteSpace(design.DESIGN_ID))
             {
@@ -490,7 +497,7 @@ namespace Beep.OilandGas.GasLift.Services
 
             // Create repository for GAS_LIFT_DESIGN
             var designRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(GAS_LIFT_DESIGN), _connectionName, "GAS_LIFT_DESIGN", null);
+                typeof(GAS_LIFT_DESIGN), targetConnection, "GAS_LIFT_DESIGN", null);
 
             var newEntity = new GAS_LIFT_DESIGN
             {
@@ -527,7 +534,7 @@ namespace Beep.OilandGas.GasLift.Services
 
             // Create repository for GAS_LIFT_PERFORMANCE
             var performanceRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(GAS_LIFT_PERFORMANCE), _connectionName, "GAS_LIFT_PERFORMANCE", null);
+                typeof(GAS_LIFT_PERFORMANCE), await ResolveConnectionAsync(cancellationToken), "GAS_LIFT_PERFORMANCE", null);
 
             var newEntity = new GAS_LIFT_PERFORMANCE
             {

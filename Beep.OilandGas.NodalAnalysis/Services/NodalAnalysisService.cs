@@ -23,7 +23,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
     /// Service for nodal analysis operations.
     /// Uses PPDMGenericRepository for data persistence following LifeCycle patterns.
     /// </summary>
-    public partial class NodalAnalysisService
+    public partial class NodalAnalysisService : Beep.OilandGas.NodalAnalysis.Core.Interfaces.INodalAnalysisService
     {
         private const string DiagnosticsContractVersion = "NODAL_DIAGNOSTICS_V1";
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -31,6 +31,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly IDMEEditor _editor;
         private readonly string _connectionName;
+        private readonly Func<CancellationToken, Task<string>>? _resolveConnection;
         private readonly ILogger<NodalAnalysisService>? _logger;
 
         public NodalAnalysisService(
@@ -39,7 +40,8 @@ namespace Beep.OilandGas.NodalAnalysis.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
-            ILogger<NodalAnalysisService>? logger = null)
+            ILogger<NodalAnalysisService>? logger = null,
+            Func<CancellationToken, Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -47,7 +49,11 @@ namespace Beep.OilandGas.NodalAnalysis.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _logger = logger;
+            _resolveConnection = resolveConnection;
         }
+
+        private Task<string> ResolveConnectionAsync(CancellationToken token) =>
+            _resolveConnection is null ? Task.FromResult(_connectionName) : _resolveConnection(token);
 
         public async Task<NodalAnalysisRunResult> PerformNodalAnalysisAsync(string wellUWI, NodalAnalysisParameters analysisParameters, CancellationToken cancellationToken = default)
         {
@@ -148,6 +154,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
             _logger?.LogInformation("Saving nodal analysis result {AnalysisId} for well {WellUWI}", result.AnalysisId, result.WellUWI);
+            var targetConnection = await ResolveConnectionAsync(cancellationToken);
 
             if (string.IsNullOrWhiteSpace(result.AnalysisId))
             {
@@ -156,7 +163,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
 
             // Create repository for NODAL_ANALYSIS_RESULT
             var analysisRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(NODAL_ANALYSIS_RESULT), _connectionName, "NODAL_ANALYSIS_RESULT", null);
+                typeof(NODAL_ANALYSIS_RESULT), targetConnection, "NODAL_ANALYSIS_RESULT", null);
 
             var newEntity = new NODAL_ANALYSIS_RESULT
             {
@@ -178,7 +185,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
             await analysisRepo.InsertAsync(newEntity, userId);
 
             var metadataRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(NODAL_ANALYSIS_RUN_METADATA), _connectionName, "NODAL_ANALYSIS_RUN_METADATA", null);
+                typeof(NODAL_ANALYSIS_RUN_METADATA), targetConnection, "NODAL_ANALYSIS_RUN_METADATA", null);
             var metadataEntity = new NODAL_ANALYSIS_RUN_METADATA
             {
                 NODAL_ANALYSIS_RUN_METADATA_ID = _defaults.FormatIdForTable("NODAL_ANALYSIS_RUN_METADATA", Guid.NewGuid().ToString()),
@@ -195,7 +202,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
             await metadataRepo.InsertAsync(metadataEntity, userId);
 
             var operatingPointRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(NODAL_OPERATING_POINT), _connectionName, "NODAL_OPERATING_POINT", null);
+                typeof(NODAL_OPERATING_POINT), targetConnection, "NODAL_OPERATING_POINT", null);
             var operatingPointEntity = new NODAL_OPERATING_POINT
             {
                 NODAL_OPERATING_POINT_ID = _defaults.FormatIdForTable("NODAL_OPERATING_POINT", Guid.NewGuid().ToString()),
@@ -209,18 +216,18 @@ namespace Beep.OilandGas.NodalAnalysis.Services
 
             if (result.PersistCurveSnapshots)
             {
-                await SaveCurveSnapshotsAsync(result, userId);
+                await SaveCurveSnapshotsAsync(result, userId, targetConnection, cancellationToken);
             }
 
             _logger?.LogInformation("Successfully saved nodal analysis result {AnalysisId}", result.AnalysisId);
         }
 
-        private async Task SaveCurveSnapshotsAsync(NodalAnalysisRunResult result, string userId, CancellationToken cancellationToken = default)
+        private async Task SaveCurveSnapshotsAsync(NodalAnalysisRunResult result, string userId, string targetConnection, CancellationToken cancellationToken = default)
         {
             var iprRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(NODAL_IPR_POINT), _connectionName, "NODAL_IPR_POINT", null);
+                typeof(NODAL_IPR_POINT), targetConnection, "NODAL_IPR_POINT", null);
             var vlpRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(NODAL_VLP_POINT), _connectionName, "NODAL_VLP_POINT", null);
+                typeof(NODAL_VLP_POINT), targetConnection, "NODAL_VLP_POINT", null);
 
             foreach (var point in result.IPRCurve ?? new List<IPRPoint>())
             {
@@ -260,7 +267,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
 
              // Create repository for NODAL_ANALYSIS_RESULT
              var analysisRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                 typeof(NODAL_ANALYSIS_RESULT), _connectionName, "NODAL_ANALYSIS_RESULT", null);
+                 typeof(NODAL_ANALYSIS_RESULT), await ResolveConnectionAsync(cancellationToken), "NODAL_ANALYSIS_RESULT", null);
 
              var filters = new List<AppFilter>
              {

@@ -182,7 +182,11 @@ public class SodEvaluationEngine : ISodEvaluationEngine
     }
 
     public async Task SeedDefaultRulesAsync(string userId)
+        => await SeedDefaultRulesWithCountAsync(userId);
+
+    public async Task<int> SeedDefaultRulesWithCountAsync(string userId)
     {
+        var inserted = 0;
         var repo = GetRepo();
         var existing = (await repo.GetAsync(new List<AppFilter>()))
             .OfType<SOD_RULE>()
@@ -235,8 +239,10 @@ public class SodEvaluationEngine : ISodEvaluationEngine
             };
 
             await repo.InsertAsync(rule, userId);
+            inserted++;
             _logger?.LogInformation("Seeded SoD rule: {RuleName}", name);
         }
+        return inserted;
     }
 
     private async Task<HashSet<string>> GetPermissionsForRoleAsync(string roleName)

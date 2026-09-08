@@ -19,7 +19,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var repo = Repo<PDEN>("PDEN");
+            var repo = await RepoAsync<PDEN>("PDEN", cancellationToken);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" },

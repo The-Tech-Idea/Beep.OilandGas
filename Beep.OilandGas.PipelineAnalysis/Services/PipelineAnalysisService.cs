@@ -28,6 +28,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly IDMEEditor _editor;
         private readonly string _connectionName;
+        private readonly Func<Task<string>>? _resolveConnection;
         private readonly ILogger<PipelineAnalysisService>? _logger;
 
         public PipelineAnalysisService(
@@ -36,7 +37,8 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
-            ILogger<PipelineAnalysisService>? logger = null)
+            ILogger<PipelineAnalysisService>? logger = null,
+            Func<Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -44,6 +46,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _logger = logger;
+            _resolveConnection = resolveConnection;
         }
 
         #region Pipeline Hydraulics Methods

@@ -32,6 +32,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly IDMEEditor _editor;
         private readonly string _connectionName;
+        private readonly Func<string, Task<string>>? _resolveModuleConnection;
         private readonly ILogger<ProductionOperationsService>? _logger;
         private readonly IFacilityManagementService _facilityManagement;
         private const string PDEN_VOL_SUMMARY_TABLE = "PDEN_VOL_SUMMARY";
@@ -44,7 +45,8 @@ namespace Beep.OilandGas.ProductionOperations.Services
             IPPDMMetadataRepository metadata,
             IFacilityManagementService facilityManagement,
             string connectionName = "PPDM39",
-            ILogger<ProductionOperationsService>? logger = null)
+            ILogger<ProductionOperationsService>? logger = null,
+            Func<string, Task<string>>? resolveModuleConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -53,6 +55,14 @@ namespace Beep.OilandGas.ProductionOperations.Services
             _facilityManagement = facilityManagement ?? throw new ArgumentNullException(nameof(facilityManagement));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _logger = logger;
+            _resolveModuleConnection = resolveModuleConnection;
+        }
+
+        private async Task<string> ResolveConnectionAsync(string module)
+        {
+            var connection = _resolveModuleConnection is null ? _connectionName : await _resolveModuleConnection(module);
+            if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException($"A {module} database binding is required.");
+            return connection;
         }
 
         public async Task<List<ProductionData>> GetProductionDataAsync(string? wellUWI, string? fieldId, DateTime startDate, DateTime endDate)
@@ -64,7 +74,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
                 wellUWI ?? string.Empty, fieldId ?? string.Empty, startDate, endDate);
 
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(PDEN_VOL_SUMMARY), _connectionName, PDEN_VOL_SUMMARY_TABLE, null);
+                typeof(PDEN_VOL_SUMMARY), await ResolveConnectionAsync("PPDM_CORE"), PDEN_VOL_SUMMARY_TABLE, null);
 
             var filters = new List<AppFilter>
             {
@@ -113,7 +123,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             }
 
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(PDEN_VOL_SUMMARY), _connectionName, PDEN_VOL_SUMMARY_TABLE, null);
+                typeof(PDEN_VOL_SUMMARY), await ResolveConnectionAsync("PPDM_CORE"), PDEN_VOL_SUMMARY_TABLE, null);
 
             var entity = new PDEN_VOL_SUMMARY
             {
@@ -150,7 +160,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
             PrepareOperationForWrite(request, null);
 
-            var repo = CreateProductionCostsRepository();
+            var repo = await CreateProductionCostsRepositoryAsync();
             await repo.InsertAsync(request, userId);
 
             _logger?.LogInformation("Created production operation cost record {OperationId}", request.PRODUCTION_COST_ID);
@@ -163,7 +173,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             if (string.IsNullOrWhiteSpace(operationId))
                 throw new ArgumentException("Operation ID cannot be null or empty", nameof(operationId));
 
-            var repo = CreateProductionCostsRepository();
+            var repo = await CreateProductionCostsRepositoryAsync();
             var entity = await repo.GetByIdAsync(operationId);
             return entity as PRODUCTION_COSTS;
         }
@@ -183,7 +193,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             request.PRODUCTION_COST_ID = operationId;
             PrepareOperationForWrite(request, existing);
 
-            var repo = CreateProductionCostsRepository();
+            var repo = await CreateProductionCostsRepositoryAsync();
             await repo.UpdateAsync(request, userId);
 
             _logger?.LogInformation("Updated production operation cost record {OperationId}", operationId);
@@ -283,7 +293,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             _logger?.LogInformation("Recording well production for {WellUWI}", productionData.WellUWI);
 
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(PDEN_VOL_SUMMARY), _connectionName, PDEN_VOL_SUMMARY_TABLE, null);
+                typeof(PDEN_VOL_SUMMARY), await ResolveConnectionAsync("PPDM_CORE"), PDEN_VOL_SUMMARY_TABLE, null);
 
             var entity = new PDEN_VOL_SUMMARY
             {
@@ -315,7 +325,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             _logger?.LogInformation("Getting well production for {WellUWI}", wellUWI);
 
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(PDEN_VOL_SUMMARY), _connectionName, PDEN_VOL_SUMMARY_TABLE, null);
+                typeof(PDEN_VOL_SUMMARY), await ResolveConnectionAsync("PPDM_CORE"), PDEN_VOL_SUMMARY_TABLE, null);
 
             var filters = new List<AppFilter>
             {
@@ -367,7 +377,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             _logger?.LogInformation("Getting well status for {WellUWI}", wellUWI);
 
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(WELL), _connectionName, "WELL", null);
+                typeof(WELL), await ResolveConnectionAsync("PPDM_CORE"), "WELL", null);
 
             var filters = new List<AppFilter>
             {
@@ -399,7 +409,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             _logger?.LogInformation("Updating well parameters for {WellUWI}", wellUWI);
 
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(WELL), _connectionName, "WELL", null);
+                typeof(WELL), await ResolveConnectionAsync("PPDM_CORE"), "WELL", null);
 
             var existing = (await repo.GetAsync(new List<AppFilter>
             {
@@ -443,7 +453,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             _logger?.LogInformation("Recording equipment maintenance for {EquipmentId}", maintenance.EquipmentId);
 
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(EQUIPMENT_MAINTAIN), _connectionName, "EQUIPMENT_MAINTAIN", null);
+                typeof(EQUIPMENT_MAINTAIN), await ResolveConnectionAsync("PPDM_CORE"), "EQUIPMENT_MAINTAIN", null);
 
             var entity = new EQUIPMENT_MAINTAIN
             {
@@ -466,7 +476,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             _logger?.LogInformation("Getting maintenance history for {EquipmentId}", equipmentId);
 
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(EQUIPMENT_MAINTAIN), _connectionName, "EQUIPMENT_MAINTAIN", null);
+                typeof(EQUIPMENT_MAINTAIN), await ResolveConnectionAsync("PPDM_CORE"), "EQUIPMENT_MAINTAIN", null);
 
             var filters = new List<AppFilter>
             {
@@ -495,7 +505,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             _logger?.LogInformation("Scheduling maintenance for {EquipmentId}", schedule.EquipmentId);
 
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(EQUIPMENT_MAINTAIN), _connectionName, "EQUIPMENT_MAINTAIN", null);
+                typeof(EQUIPMENT_MAINTAIN), await ResolveConnectionAsync("PPDM_CORE"), "EQUIPMENT_MAINTAIN", null);
 
             var entity = new EQUIPMENT_MAINTAIN
             {
@@ -517,7 +527,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             _logger?.LogInformation("Getting upcoming maintenance schedules");
 
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(EQUIPMENT_MAINTAIN), _connectionName, "EQUIPMENT_MAINTAIN", null);
+                typeof(EQUIPMENT_MAINTAIN), await ResolveConnectionAsync("PPDM_CORE"), "EQUIPMENT_MAINTAIN", null);
 
             var filters = new List<AppFilter>
             {
@@ -787,10 +797,10 @@ namespace Beep.OilandGas.ProductionOperations.Services
             });
         }
 
-        private PPDMGenericRepository CreateProductionCostsRepository()
+        private async Task<PPDMGenericRepository> CreateProductionCostsRepositoryAsync()
         {
             return new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(PRODUCTION_COSTS), _connectionName, PRODUCTION_COSTS_TABLE, null);
+                typeof(PRODUCTION_COSTS), await ResolveConnectionAsync("PRODUCTION"), PRODUCTION_COSTS_TABLE, null);
         }
 
         private void PrepareOperationForWrite(PRODUCTION_COSTS request, PRODUCTION_COSTS? existing)
@@ -868,4 +878,3 @@ namespace Beep.OilandGas.ProductionOperations.Services
         }
     }
 }
-

@@ -940,12 +940,7 @@ namespace Beep.OilandGas.PPDM39.Core
             }
 
             var result = dataSource.InsertEntity(_tableName, entity);
-            if (result != null && result.Errors != null && result.Errors.Count > 0)
-            {
-                var errorMessage = string.Join("; ", result.Errors.Select(e => e.Message));
-                _logger?.LogError("Insert failed for table {TableName}: {Message}", _tableName, errorMessage);
-                throw new Exception($"Insert failed: {errorMessage}");
-            }
+            BeepOperationResult.EnsureSuccess(result, "Insert", _tableName);
 
             _logger?.LogDebug("Successfully inserted entity into table {TableName}", _tableName);
             return entity;
@@ -975,11 +970,7 @@ namespace Beep.OilandGas.PPDM39.Core
 
                 _commonColumnHandler.PrepareForInsert(entity as IPPDMEntity, userId);
                 var result = dataSource.InsertEntity(_tableName, entity);
-                if (result != null && result.Errors != null && result.Errors.Count > 0)
-                {
-                    var errorMessage = string.Join("; ", result.Errors.Select(e => e.Message));
-                    throw new Exception($"Batch insert failed: {errorMessage}");
-                }
+                BeepOperationResult.EnsureSuccess(result, "Batch insert", _tableName);
             }
 
             return entityList;
@@ -1015,12 +1006,7 @@ namespace Beep.OilandGas.PPDM39.Core
             }
 
             var result = dataSource.UpdateEntity(_tableName, entity);
-            if (result != null && result.Errors != null && result.Errors.Count > 0)
-            {
-                var errorMessage = string.Join("; ", result.Errors.Select(e => e.Message));
-                _logger?.LogError("Update failed for table {TableName}: {Message}", _tableName, errorMessage);
-                throw new Exception($"Update failed: {errorMessage}");
-            }
+            BeepOperationResult.EnsureSuccess(result, "Update", _tableName);
 
             _logger?.LogDebug("Successfully updated entity in table {TableName}", _tableName);
             return entity;
@@ -1050,11 +1036,7 @@ namespace Beep.OilandGas.PPDM39.Core
 
                 _commonColumnHandler.PrepareForUpdate(entity as IPPDMEntity, userId);
                 var result = dataSource.UpdateEntity(_tableName, entity);
-                if (result != null && result.Errors != null && result.Errors.Count > 0)
-                {
-                    var errorMessage = string.Join("; ", result.Errors.Select(e => e.Message));
-                    throw new Exception($"Batch update failed: {errorMessage}");
-                }
+                BeepOperationResult.EnsureSuccess(result, "Batch update", _tableName);
             }
 
             return entityList;
@@ -1096,7 +1078,7 @@ namespace Beep.OilandGas.PPDM39.Core
             }
 
             var result = dataSource.DeleteEntity(_tableName, entity);
-            bool success = result == null || (result.Errors == null || result.Errors.Count == 0);
+            bool success = BeepOperationResult.IsSuccess(result);
 
             if (success)
             {
@@ -1104,7 +1086,7 @@ namespace Beep.OilandGas.PPDM39.Core
             }
             else
             {
-                var errorMessage = result?.Errors != null ? string.Join("; ", result.Errors.Select(e => e.Message)) : "Unknown error";
+                var errorMessage = BeepOperationResult.Describe(result);
                 _logger?.LogWarning("Delete operation failed: {Message}", errorMessage);
             }
 
@@ -1493,7 +1475,7 @@ namespace Beep.OilandGas.PPDM39.Core
                 }
 
                 // Commit batch
-                await uow.Commit();
+                BeepOperationResult.EnsureSuccess(await uow.Commit(), "Batch delete commit", _tableName);
             }
 
             _logger?.LogInformation("Batch delete completed: {Count} entities deleted from {TableName} (SoftDelete: {SoftDelete})",
@@ -1590,7 +1572,7 @@ namespace Beep.OilandGas.PPDM39.Core
                 }
 
                 // Commit batch
-                await uow.Commit();
+                BeepOperationResult.EnsureSuccess(await uow.Commit(), "Batch upsert commit", _tableName);
             }
 
             _logger?.LogInformation("Batch upsert completed: {Count} entities processed in {TableName}", results.Count, _tableName);

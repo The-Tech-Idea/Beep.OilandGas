@@ -4,6 +4,7 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.UserManagement.Models.Scope;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.UserManagement.Services;
 
@@ -58,6 +59,9 @@ public class FieldAccessService : IFieldAccessService
     public async Task<List<string>> GetUserFieldsAsync(string userId)
     {
         var fields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(userId))
+            return new();
+        var now = DateTime.UtcNow;
 
         try
         {
@@ -71,23 +75,28 @@ public class FieldAccessService : IFieldAccessService
 
             var assetFilters = new List<AppFilter>
             {
-                new() { FieldName = "USER_ID", FilterValue = userId },
-                new() { FieldName = "ACTIVE_IND", FilterValue = "Y" },
+                new() { FieldName = "USER_ID", Operator = "=", FilterValue = userId },
+                new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" },
             };
 
             var assets = (await assetRepo.GetAsync(assetFilters))
                 .OfType<UserAssetAccess>()
+                .Where(a => a.USER_ID == userId && a.ACTIVE_IND == "Y" &&
+                    string.Equals(a.ASSET_TYPE, "FIELD", StringComparison.OrdinalIgnoreCase) &&
+                    (!a.ACCESS_EXPIRES_UTC.HasValue || a.ACCESS_EXPIRES_UTC > now))
                 .ToList();
 
+            var denied = assets.Where(a => string.Equals(a.DENY_OVERRIDE_IND, "Y", StringComparison.OrdinalIgnoreCase))
+                .Select(a => a.ASSET_ID).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var global = false;
             foreach (var asset in assets)
             {
-                if (!string.IsNullOrWhiteSpace(asset.FIELD_ID))
+                if (!string.IsNullOrWhiteSpace(asset.ASSET_ID) && !denied.Contains(asset.ASSET_ID))
                 {
-                    if (asset.FIELD_ID == "*" || asset.FIELD_ID.Equals("GLOBAL", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return new List<string> { "*" };
-                    }
-                    fields.Add(asset.FIELD_ID);
+                    if (asset.ASSET_ID == "*" || asset.ASSET_ID.Equals("GLOBAL", StringComparison.OrdinalIgnoreCase))
+                        global = true;
+                    else if (!asset.ASSET_ID.Contains(','))
+                        fields.Add(asset.ASSET_ID);
                 }
             }
 
@@ -101,30 +110,43 @@ public class FieldAccessService : IFieldAccessService
 
             var scopeFilters = new List<AppFilter>
             {
-                new() { FieldName = "USER_ID", FilterValue = userId },
+                new() { FieldName = "USER_ID", Operator = "=", FilterValue = userId },
+                new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" },
             };
 
             var scopes = (await scopeRepo.GetAsync(scopeFilters))
                 .OfType<UserScopeAssignment>()
+                .Where(s => s.USER_ID == userId && s.ACTIVE_IND == "Y" && s.EFFECTIVE_FROM_UTC <= now &&
+                    (!s.EFFECTIVE_TO_UTC.HasValue || s.EFFECTIVE_TO_UTC > now))
                 .ToList();
 
             foreach (var scope in scopes)
             {
                 if (scope.SCOPE_TYPE?.Equals("GLOBAL", StringComparison.OrdinalIgnoreCase) == true)
                 {
-                    return new List<string> { "*" };
+                    global = true;
+                }
+                else if (string.Equals(scope.SCOPE_TYPE, "FIELD", StringComparison.OrdinalIgnoreCase) &&
+                    !string.IsNullOrWhiteSpace(scope.SCOPE_VALUE) && !scope.SCOPE_VALUE.Contains(','))
+                {
+                    if (scope.SCOPE_VALUE == "*" || scope.SCOPE_VALUE.Equals("GLOBAL", StringComparison.OrdinalIgnoreCase))
+                        global = true;
+                    else
+                        fields.Add(scope.SCOPE_VALUE);
                 }
             }
 
-            // 3. If SYSTEM user, grant global access
-            if (userId.Equals("SYSTEM", StringComparison.OrdinalIgnoreCase))
-            {
-                return new List<string> { "*" };
-            }
+            if (denied.Contains("*") || denied.Contains("GLOBAL"))
+                return new();
+            fields.ExceptWith(denied);
+            // The existing claim format cannot represent wildcard access with exclusions.
+            if (global && denied.Count == 0)
+                return new() { "*" };
         }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Failed to resolve field access for user {UserId}", userId);
+            return new();
         }
 
         return fields.Any() ? fields.ToList() : new List<string>();
@@ -132,18 +154,17 @@ public class FieldAccessService : IFieldAccessService
 
     public async Task<bool> HasFieldAccessAsync(string userId, string fieldId)
     {
+        if (string.IsNullOrWhiteSpace(fieldId) || fieldId.Contains(','))
+            return false;
         var fields = await GetUserFieldsAsync(userId);
         return fields.Contains("*") || fields.Contains(fieldId, StringComparer.OrdinalIgnoreCase);
     }
 
     public async Task<List<string>> GetUserFieldsByAssetTypeAsync(string userId, string assetType)
     {
-        var allFields = await GetUserFieldsAsync(userId);
-        if (allFields.Contains("*"))
-            return allFields;
-
-        // For specific asset type filtering, we'd query USER_ASSET_ACCESS with the asset type
-        // For now, return the full list — asset-type filtering can be added when needed
-        return allFields;
+        // No authoritative well/facility-to-field mapping is available in this resolver.
+        if (!string.Equals(assetType, "FIELD", StringComparison.OrdinalIgnoreCase))
+            return new();
+        return await GetUserFieldsAsync(userId);
     }
 }

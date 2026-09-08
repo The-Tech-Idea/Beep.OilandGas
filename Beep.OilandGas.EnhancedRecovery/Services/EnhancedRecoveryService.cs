@@ -22,6 +22,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
     {
         private readonly IDMEEditor _editor;
         private readonly string _connectionName;
+        private readonly Func<Task<string>>? _resolveConnection;
         private readonly ILogger<EnhancedRecoveryService> _logger;
 
         public EnhancedRecoveryService(IDMEEditor editor, string connectionName = "PPDM39")
@@ -29,11 +30,20 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         {
         }
 
-        public EnhancedRecoveryService(IDMEEditor editor, ILogger<EnhancedRecoveryService> logger, string connectionName = "PPDM39")
+        public EnhancedRecoveryService(IDMEEditor editor, ILogger<EnhancedRecoveryService> logger, string connectionName = "PPDM39",
+            Func<Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _connectionName = connectionName;
+            _resolveConnection = resolveConnection;
+        }
+
+        private async Task<string> ResolveConnectionAsync()
+        {
+            var connection = _resolveConnection is null ? _connectionName : await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException("A PPDM_CORE database binding is required.");
+            return connection;
         }
 
         /// <summary>
@@ -76,27 +86,27 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             return result;
         }
 
-        private IUnitOfWorkWrapper GetPDENUnitOfWork()
+        private async Task<IUnitOfWorkWrapper> GetPDENUnitOfWorkAsync()
         {
-            return UnitOfWorkFactory.CreateUnitOfWork(typeof(PDEN), _editor, _connectionName, "PDEN", "PDEN_ID");
+            return UnitOfWorkFactory.CreateUnitOfWork(typeof(PDEN), _editor, await ResolveConnectionAsync(), "PDEN", "PDEN_ID");
         }
 
-        private IUnitOfWorkWrapper GetFieldUnitOfWork()
+        private async Task<IUnitOfWorkWrapper> GetFieldUnitOfWorkAsync()
         {
-            return UnitOfWorkFactory.CreateUnitOfWork(typeof(FIELD), _editor, _connectionName, "FIELD", "FIELD_ID");
+            return UnitOfWorkFactory.CreateUnitOfWork(typeof(FIELD), _editor, await ResolveConnectionAsync(), "FIELD", "FIELD_ID");
         }
 
-        private IUnitOfWorkWrapper GetWellUnitOfWork()
+        private async Task<IUnitOfWorkWrapper> GetWellUnitOfWorkAsync()
         {
-            return UnitOfWorkFactory.CreateUnitOfWork(typeof(WELL), _editor, _connectionName, "WELL", "UWI");
+            return UnitOfWorkFactory.CreateUnitOfWork(typeof(WELL), _editor, await ResolveConnectionAsync(), "WELL", "UWI");
         }
 
-        private IUnitOfWorkWrapper GetPDENFlowMeasurementUnitOfWork()
+        private async Task<IUnitOfWorkWrapper> GetPDENFlowMeasurementUnitOfWorkAsync()
         {
             return UnitOfWorkFactory.CreateUnitOfWork(
                 typeof(PDEN_FLOW_MEASUREMENT),
                 _editor,
-                _connectionName,
+                await ResolveConnectionAsync(),
                 "PDEN_FLOW_MEASUREMENT",
                 "PDEN_ID,PDEN_SUBTYPE,PDEN_SOURCE,PRODUCT_TYPE,AMENDMENT_SEQ_NO,PERIOD_TYPE,MEASUREMENT_OBS_NO");
         }
@@ -132,7 +142,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
 
         private async Task<List<PDEN_FLOW_MEASUREMENT>> GetFlowMeasurementsAsync(PDEN pden, bool activeOnly = true, CancellationToken cancellationToken = default)
         {
-            var measurementUow = GetPDENFlowMeasurementUnitOfWork();
+            var measurementUow = await GetPDENFlowMeasurementUnitOfWorkAsync();
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "PDEN_ID", FilterValue = pden.PDEN_ID ?? string.Empty, Operator = "=" }
@@ -169,7 +179,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             if (string.IsNullOrWhiteSpace(pden.PDEN_ID))
                 throw new InvalidOperationException("Cannot persist a flow measurement without a PDEN ID.");
 
-            var measurementUow = GetPDENFlowMeasurementUnitOfWork();
+            var measurementUow = await GetPDENFlowMeasurementUnitOfWorkAsync();
             var now = DateTime.UtcNow;
             var normalizedUnit = string.IsNullOrWhiteSpace(flowRateUnit) ? "BBL/D" : flowRateUnit;
             var existingMeasurements = await GetFlowMeasurementsAsync(pden, activeOnly: false);
@@ -271,14 +281,14 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
 
         private async Task<PDEN> CreateInjectionOperationAsync(string injectionWellId, decimal injectionRate, CancellationToken cancellationToken = default)
         {
-            var wellUow = GetWellUnitOfWork();
+            var wellUow = await GetWellUnitOfWorkAsync();
             var well = wellUow.Read(injectionWellId) as WELL;
             if (well == null)
                 throw new InvalidOperationException($"Injection well {injectionWellId} was not found.");
 
             var now = DateTime.UtcNow;
             var fieldId = well.ASSIGNED_FIELD ?? string.Empty;
-            var pdenUow = GetPDENUnitOfWork();
+            var pdenUow = await GetPDENUnitOfWorkAsync();
             var pden = new PDEN
             {
                 PDEN_ID = Guid.NewGuid().ToString(),
@@ -319,7 +329,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
 
         public async Task<List<EnhancedRecoveryOperation>> GetEnhancedRecoveryOperationsAsync(string? fieldId = null, CancellationToken cancellationToken = default)
         {
-            var pdenUow = GetPDENUnitOfWork();
+            var pdenUow = await GetPDENUnitOfWorkAsync();
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
@@ -347,7 +357,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             if (string.IsNullOrWhiteSpace(operationId))
                 return null;
 
-            var pdenUow = GetPDENUnitOfWork();
+            var pdenUow = await GetPDENUnitOfWorkAsync();
             var pden = pdenUow.Read(operationId) as PDEN;
             if (pden == null || pden.ACTIVE_IND != "Y" || !IsEnhancedRecoveryOperation(pden))
                 return null;
@@ -363,7 +373,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             var now = DateTime.UtcNow;
             var recoveryType = string.IsNullOrWhiteSpace(createDto.EORType) ? "EOR" : createDto.EORType;
             var startDate = createDto.PlannedStartDate ?? now;
-            var pdenUow = GetPDENUnitOfWork();
+            var pdenUow = await GetPDENUnitOfWorkAsync();
             var pden = new PDEN
             {
                 PDEN_ID = Guid.NewGuid().ToString(),
@@ -412,7 +422,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
 
         public async Task<List<InjectionOperation>> GetInjectionOperationsAsync(string? wellUWI = null, CancellationToken cancellationToken = default)
         {
-            var pdenUow = GetPDENUnitOfWork();
+            var pdenUow = await GetPDENUnitOfWorkAsync();
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
@@ -437,7 +447,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
 
         public async Task<List<WaterFlooding>> GetWaterFloodingOperationsAsync(string? fieldId = null, CancellationToken cancellationToken = default)
         {
-            var pdenUow = GetPDENUnitOfWork();
+            var pdenUow = await GetPDENUnitOfWorkAsync();
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "PDEN_SUBTYPE", FilterValue = EnhancedRecoveryConstants.PdenSubtypeWaterFlood, Operator = "=" },
@@ -463,7 +473,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
 
         public async Task<List<GasInjection>> GetGasInjectionOperationsAsync(string? fieldId = null, CancellationToken cancellationToken = default)
         {
-            var pdenUow = GetPDENUnitOfWork();
+            var pdenUow = await GetPDENUnitOfWorkAsync();
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "PDEN_SUBTYPE", FilterValue = EnhancedRecoveryConstants.PdenSubtypeGasInjection, Operator = "=" },
@@ -489,4 +499,3 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         }
     }
 }
-

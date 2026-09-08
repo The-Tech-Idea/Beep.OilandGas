@@ -11,7 +11,7 @@
         Task Inbox
         @if (_counts.TotalPending > 0)
         {
-            <MudChip Color="Color.Primary" Size="Size.Small" Class="ml-2">
+            <MudChip T="string" Color="Color.Primary" Size="Size.Small" Class="ml-2">
                 @_counts.TotalPending pending
             </MudChip>
         }
@@ -19,23 +19,23 @@
 
     @* ── Filter Bar ── *@
     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4" Wrap="Wrap.Wrap">
-        <MudChipSet @bind-SelectedValue="_selectedTaskType" Filter="true">
-            <MudChip Value="">All</MudChip>
-            <MudChip Value="APPROVAL">
+        <MudChipSet T="string" @bind-SelectedValue="_selectedTaskType" CheckMark="true">
+            <MudChip T="string" Value="@(string.Empty)">All</MudChip>
+            <MudChip T="string" Value='@("APPROVAL")'>
                 Approvals
                 @if (_counts.Approvals > 0)
                 {
                     <MudBadge Content="@_counts.Approvals" Color="Color.Primary" />
                 }
             </MudChip>
-            <MudChip Value="REVIEW">
+            <MudChip T="string" Value='@("REVIEW")'>
                 Reviews
                 @if (_counts.Reviews > 0)
                 {
                     <MudBadge Content="@_counts.Reviews" Color="Color.Secondary" />
                 }
             </MudChip>
-            <MudChip Value="DATA_ENTRY">
+            <MudChip T="string" Value='@("DATA_ENTRY")'>
                 Data Entry
                 @if (_counts.DataEntry > 0)
                 {
@@ -49,13 +49,13 @@
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
             @if (_counts.Critical > 0)
             {
-                <MudChip Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">
+                <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">
                     @_counts.Critical critical
                 </MudChip>
             }
             @if (_counts.Overdue > 0)
             {
-                <MudChip Color="Color.Warning" Size="Size.Small" Variant="Variant.Filled">
+                <MudChip T="string" Color="Color.Warning" Size="Size.Small" Variant="Variant.Filled">
                     @_counts.Overdue overdue
                 </MudChip>
             }

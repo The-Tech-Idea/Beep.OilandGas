@@ -27,6 +27,7 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly GLAccountService _glAccountService;
         private readonly IAccountMappingService? _accountMapping;
         private readonly ILogger<ReconciliationService> _logger;
+        private readonly Func<Task<string>>? _resolveConnection;
         private const string ConnectionName = "PPDM39";
 
         public ReconciliationService(
@@ -36,7 +37,8 @@ namespace Beep.OilandGas.Accounting.Services
             IPPDMMetadataRepository metadata,
             GLAccountService glAccountService,
             ILogger<ReconciliationService> logger,
-            IAccountMappingService? accountMapping = null)
+            IAccountMappingService? accountMapping = null,
+            Func<Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -45,6 +47,7 @@ namespace Beep.OilandGas.Accounting.Services
             _glAccountService = glAccountService ?? throw new ArgumentNullException(nameof(glAccountService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _accountMapping = accountMapping;
+            _resolveConnection = resolveConnection;
         }
 
         public async Task<AccountingModels.ReconciliationSummary> ReconcileAccountsReceivableAsync(DateTime? asOfDate = null)
@@ -176,11 +179,13 @@ namespace Beep.OilandGas.Accounting.Services
 
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName)
         {
-            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            var connection = _resolveConnection == null ? ConnectionName : await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection))
+                throw new InvalidOperationException("A PRODUCTION database binding is required.");
             
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(T), ConnectionName, tableName);
+                typeof(T), connection, tableName);
         }
 
         private string GetAccountId(string key, string fallback)

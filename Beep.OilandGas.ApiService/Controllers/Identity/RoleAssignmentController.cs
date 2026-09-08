@@ -1,4 +1,5 @@
-using Beep.OilandGas.UserManagement.Contracts.Services;
+using Beep.OilandGas.ApiService.Services;
+using TheTechIdea.Data.OilGas;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -7,14 +8,14 @@ namespace Beep.OilandGas.ApiService.Controllers.Identity;
 
 [ApiController]
 [Route("api/identity/roles")]
-[Authorize]
+[Authorize(Roles = "Administrator")]
 public class RoleAssignmentController : ControllerBase
 {
-    private readonly IRoleAssignmentService _roleService;
+    private readonly RepositoryRoleAssignmentService _roleService;
     private readonly ILogger<RoleAssignmentController> _logger;
 
     public RoleAssignmentController(
-        IRoleAssignmentService roleService,
+        RepositoryRoleAssignmentService roleService,
         ILogger<RoleAssignmentController> logger)
     {
         _roleService = roleService;
@@ -22,7 +23,7 @@ public class RoleAssignmentController : ControllerBase
     }
 
     private string ActorUserId =>
-        User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "anonymous";
+        User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
 
     // ── Catalog ─────────────────────────────────────────────────────────────
 
@@ -70,6 +71,7 @@ public class RoleAssignmentController : ControllerBase
     [HttpPost("users/{userId}/assignments")]
     public async Task<IActionResult> AssignRole(string userId, [FromBody] AssignRoleRequest request)
     {
+        if (string.IsNullOrWhiteSpace(ActorUserId)) return Forbid();
         if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(request?.RoleId))
             return BadRequest(new { error = "User ID and RoleId are required." });
         try
@@ -78,6 +80,9 @@ public class RoleAssignmentController : ControllerBase
                 userId, request.RoleId, ActorUserId, request.Reason);
             return Ok(assignment);
         }
+        catch (ArgumentException exception) { return BadRequest(new { error = exception.Message }); }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException) { return Conflict(new { error = "The grant changed. Reload before retrying." }); }
+        catch (InvalidOperationException exception) { return Conflict(new { error = exception.Message }); }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to assign role {RoleId} to user {UserId}", request?.RoleId, userId);
@@ -89,6 +94,7 @@ public class RoleAssignmentController : ControllerBase
     [HttpDelete("assignments/{userRoleId}")]
     public async Task<IActionResult> RevokeRole(string userRoleId)
     {
+        if (string.IsNullOrWhiteSpace(ActorUserId)) return Forbid();
         if (string.IsNullOrWhiteSpace(userRoleId))
             return BadRequest(new { error = "UserRoleId is required." });
         try
@@ -97,6 +103,9 @@ public class RoleAssignmentController : ControllerBase
             if (!ok) return NotFound(new { message = $"Assignment {userRoleId} not found." });
             return Ok(new { message = "Role assignment revoked." });
         }
+        catch (ArgumentException exception) { return BadRequest(new { error = exception.Message }); }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException) { return Conflict(new { error = "The grant changed. Reload before retrying." }); }
+        catch (InvalidOperationException exception) { return Conflict(new { error = exception.Message }); }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to revoke role assignment {UserRoleId}", userRoleId);
@@ -124,6 +133,7 @@ public class RoleAssignmentController : ControllerBase
     [HttpPost("{roleId}/permissions")]
     public async Task<IActionResult> GrantPermission(string roleId, [FromBody] GrantPermissionRequest request)
     {
+        if (string.IsNullOrWhiteSpace(ActorUserId)) return Forbid();
         if (string.IsNullOrWhiteSpace(roleId) || string.IsNullOrWhiteSpace(request?.PermissionId))
             return BadRequest(new { error = "Role ID and PermissionId are required." });
         try
@@ -132,6 +142,9 @@ public class RoleAssignmentController : ControllerBase
                 roleId, request.PermissionId, ActorUserId);
             return Ok(grant);
         }
+        catch (ArgumentException exception) { return BadRequest(new { error = exception.Message }); }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException) { return Conflict(new { error = "The grant changed. Reload before retrying." }); }
+        catch (InvalidOperationException exception) { return Conflict(new { error = exception.Message }); }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to grant permission {PermId} to role {RoleId}",
@@ -144,6 +157,7 @@ public class RoleAssignmentController : ControllerBase
     [HttpDelete("permissions/{rolePermissionId}")]
     public async Task<IActionResult> RevokePermission(string rolePermissionId)
     {
+        if (string.IsNullOrWhiteSpace(ActorUserId)) return Forbid();
         if (string.IsNullOrWhiteSpace(rolePermissionId))
             return BadRequest(new { error = "RolePermissionId is required." });
         try
@@ -152,6 +166,9 @@ public class RoleAssignmentController : ControllerBase
             if (!ok) return NotFound(new { message = $"Grant {rolePermissionId} not found." });
             return Ok(new { message = "Permission grant revoked." });
         }
+        catch (ArgumentException exception) { return BadRequest(new { error = exception.Message }); }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException) { return Conflict(new { error = "The grant changed. Reload before retrying." }); }
+        catch (InvalidOperationException exception) { return Conflict(new { error = exception.Message }); }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to revoke permission grant {RolePermissionId}", rolePermissionId);
@@ -159,6 +176,3 @@ public class RoleAssignmentController : ControllerBase
         }
     }
 }
-
-public sealed record AssignRoleRequest(string RoleId, string? Reason);
-public sealed record GrantPermissionRequest(string PermissionId);

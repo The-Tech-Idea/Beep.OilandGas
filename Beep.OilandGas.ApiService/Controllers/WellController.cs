@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.WellComparison;
@@ -150,6 +151,5 @@ namespace Beep.OilandGas.ApiService.Controllers
     }
 
 }
-
 
 

@@ -367,8 +367,10 @@ public class ExplorationControllerWorkflowConflictTests
         processService.VerifyAll();
     }
 
-    [Fact]
-    public async Task ProspectToDiscoveryRiskAssessment_MapsStepData_ToProcessStepData()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ProspectToDiscoveryRiskAssessment_MapsStepData_ToProcessStepData(bool deserializePayload)
     {
         const string fieldId = "FIELD-DATA-P2D";
         const string instanceId = "INST-DATA-P2D";
@@ -383,6 +385,9 @@ public class ExplorationControllerWorkflowConflictTests
                 ["CustomKey"] = "custom-value"
             }
         };
+
+        if (deserializePayload)
+            request.StepData = JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(request.StepData));
 
         var processInstance = new ProcessInstance
         {
@@ -438,8 +443,10 @@ public class ExplorationControllerWorkflowConflictTests
         processService.VerifyAll();
     }
 
-    [Fact]
-    public async Task DiscoveryToDevelopmentAppraisal_MapsStepData_ToProcessStepData()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task DiscoveryToDevelopmentAppraisal_MapsStepData_ToProcessStepData(bool deserializePayload)
     {
         const string fieldId = "FIELD-DATA-D2D";
         const string instanceId = "INST-DATA-D2D";
@@ -454,6 +461,9 @@ public class ExplorationControllerWorkflowConflictTests
                 ["Phase"] = "APPRAISAL-1"
             }
         };
+
+        if (deserializePayload)
+            request.StepData = JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(request.StepData));
 
         var processInstance = new ProcessInstance
         {

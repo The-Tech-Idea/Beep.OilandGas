@@ -1,0 +1,132 @@
+@page "/admin/access-control/users"
+@using TheTechIdea.Data.OilGas
+@attribute [Authorize(Roles = "Administrator")]
+@inject UserAdministrationClient Accounts
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<PageTitle>Users</PageTitle>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+        <MudText Typo="Typo.h5">Users</MudText>
+        <MudSpacer />
+        <MudButton Href="/admin/access-control/user-roles" StartIcon="@Icons.Material.Filled.ManageAccounts">Roles</MudButton>
+        <MudTooltip Text="Reload users">
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" aria-label="Reload users" Disabled="_busy" OnClick="ReloadAsync" />
+        </MudTooltip>
+    </MudStack>
+    @if (_error is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+    }
+    <MudGrid>
+        <MudItem xs="12" md="8">
+            <MudTextField T="string" @bind-Value="_search" Label="Search users" Immediate="true"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-3" />
+            <MudDataGrid T="RepositoryUserSummary" Items="FilteredUsers" Loading="_busy" Dense="true" Hover="true">
+                <Columns>
+                    <PropertyColumn Property="x => x.UserName" Title="Username" />
+                    <PropertyColumn Property="x => x.FullName" Title="Name" />
+                    <PropertyColumn Property="x => x.Email" Title="Email" />
+                    <TemplateColumn Title="Status">
+                        <CellTemplate>@(context.Item.IsActive ? "Active" : "Inactive")</CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="" Sortable="false">
+                        <CellTemplate>
+                            <MudTooltip Text="Edit user">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Edit user"
+                                               Disabled="_busy" OnClick="@(() => Select(context.Item))" />
+                            </MudTooltip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <NoRecordsContent><MudText>No users found.</MudText></NoRecordsContent>
+                <PagerContent><MudDataGridPager T="RepositoryUserSummary" /></PagerContent>
+            </MudDataGrid>
+        </MudItem>
+        @if (_selected is not null)
+        {
+            <MudItem xs="12" md="4">
+                <MudText Typo="Typo.h6" Class="mb-3">Edit User</MudText>
+                <MudForm @ref="_form">
+                    <MudTextField T="string" Value="@_selected.UserName" Label="Username" ReadOnly="true" Class="mb-3" />
+                    <MudTextField T="string" @bind-Value="_fullName" Label="Full name" MaxLength="1000" Disabled="_busy" Class="mb-3" />
+                    <MudSwitch T="bool" @bind-Value="_active" Label="Active" Color="Color.Primary" Disabled="_busy" />
+                    <MudStack Row="true" Class="mt-3">
+                        <MudButton StartIcon="@Icons.Material.Filled.Save" Variant="Variant.Filled" Color="Color.Primary"
+                                   Disabled="@(_busy || !HasChanges)" OnClick="SaveAsync">Save</MudButton>
+                        <MudButton StartIcon="@Icons.Material.Filled.Close" Disabled="_busy" OnClick="Cancel">Cancel</MudButton>
+                    </MudStack>
+                </MudForm>
+            </MudItem>
+        }
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private List<RepositoryUserSummary> _users = [];
+    private RepositoryUserSummary? _selected;
+    private MudForm? _form;
+    private string? _fullName;
+    private string _search = "";
+    private bool _active;
+    private bool _busy;
+    private string? _error;
+    private bool HasChanges => _selected is not null && (_fullName != _selected.FullName || _active != _selected.IsActive);
+    private IEnumerable<RepositoryUserSummary> FilteredUsers => _users.Where(user =>
+        string.IsNullOrWhiteSpace(_search) ||
+        user.UserName.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+        (user.FullName?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+        (user.Email?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false));
+
+    protected override Task OnInitializedAsync() => ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            _users = await Accounts.GetUsersAsync();
+            Cancel();
+        }
+        catch { _error = "Could not load users. Try reloading."; }
+        finally { _busy = false; }
+    }
+
+    private void Select(RepositoryUserSummary user)
+    {
+        _selected = user;
+        _fullName = user.FullName;
+        _active = user.IsActive;
+        _error = null;
+    }
+
+    private void Cancel() { _selected = null; _error = null; }
+
+    private async Task SaveAsync()
+    {
+        if (_busy || _selected is null || !HasChanges) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            if (_form is not null)
+            {
+                await _form.Validate();
+                if (!_form.IsValid) return;
+            }
+            if (_selected.IsActive && !_active && await Dialogs.ShowMessageBoxAsync(
+                "Deactivate user", "Deactivate this user's OilGas account?", yesText: "Deactivate", cancelText: "Cancel") != true)
+                return;
+            var saved = await Accounts.UpdateUserAsync(_selected.UserId, new(_fullName, _active, _selected.ConcurrencyStamp));
+            if (saved is null) throw new InvalidOperationException("Missing saved user.");
+            _users = _users.Select(user => user.UserId == saved.UserId ? saved : user).ToList();
+            Select(saved);
+            Snackbar.Add("User saved.", Severity.Success);
+        }
+        catch { _error = "Could not save. The account may have changed, or this may be the last active administrator. Reload before retrying."; }
+        finally { _busy = false; }
+    }
+}

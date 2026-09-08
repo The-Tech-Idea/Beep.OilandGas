@@ -44,6 +44,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             public string ApprovalNotes { get; set; } = string.Empty;
             public DateTime? ApprovedOnUtc { get; set; }
             public string LastExecutionToken { get; set; } = string.Empty;
+            public IReadOnlyList<string>? ModuleIds { get; init; }
+            public string? BindingFingerprint { get; init; }
         }
 
         private static readonly ConcurrentDictionary<string, SchemaMigrationPlanSession> _schemaMigrationPlans =
@@ -56,6 +58,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly LOVManagementService? _lovService;
         private readonly ModuleSetupOrchestrator? _moduleSetupOrchestrator;
+        private readonly IBackgroundOperationQueue? _backgroundOperations;
+        private readonly Func<IReadOnlyList<string>, string, Task<string>>? _migrationBindingFingerprint;
 
         private IProgressTrackingService? _progressTracking;
         private string? _currentConnectionName;
@@ -81,7 +85,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             LOVManagementService? lovService = null,
-            ModuleSetupOrchestrator? moduleSetupOrchestrator = null)
+            ModuleSetupOrchestrator? moduleSetupOrchestrator = null,
+            IBackgroundOperationQueue? backgroundOperations = null,
+            Func<IReadOnlyList<string>, string, Task<string>>? migrationBindingFingerprint = null)
         {
             _editor              = editor              ?? throw new ArgumentNullException(nameof(editor));
             _logger              = logger              ?? throw new ArgumentNullException(nameof(logger));
@@ -90,6 +96,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             _metadata            = metadata            ?? throw new ArgumentNullException(nameof(metadata));
             _lovService          = lovService;
             _moduleSetupOrchestrator = moduleSetupOrchestrator;
+            _backgroundOperations = backgroundOperations;
+            _migrationBindingFingerprint = migrationBindingFingerprint;
         }
 
         // ── PROGRESS TRACKING ─────────────────────────────────────────────────
@@ -220,6 +228,17 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
             try
             {
+                if (request.ModuleIds is not null && (!string.IsNullOrWhiteSpace(request.TargetAssemblyName)
+                    || !string.IsNullOrWhiteSpace(request.TargetModelNamespace)))
+                    throw new ArgumentException("Module selection cannot be combined with assembly or namespace selection.");
+                var environmentTier = ParseEnvironmentTier(request.EnvironmentTier);
+                var entityTypes = request.ModuleIds is null
+                    ? GetMigrationEntityTypes(request.TargetAssemblyName, request.TargetModelNamespace)
+                    : ModuleMigrationScope.Resolve(request.ModuleIds, GetAvailableModules(), GetPpdm39EntityTypes());
+                ModuleSchemaBoundary.Validate(entityTypes);
+                var moduleIds = request.ModuleIds?.ToArray();
+                var bindingFingerprint = moduleIds is not null && _migrationBindingFingerprint is not null
+                    ? await _migrationBindingFingerprint(moduleIds, request.ConnectionName) : null;
                 var migration = CreateMigrationManager(request.ConnectionName, out var dataSource);
                 if (migration == null || dataSource == null)
                 {
@@ -231,7 +250,6 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     };
                 }
 
-                var entityTypes = GetMigrationEntityTypes(request.TargetAssemblyName, request.TargetModelNamespace);
                 if (entityTypes.Count == 0)
                 {
                     return new SchemaMigrationPlanResult
@@ -260,7 +278,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
                 var policyOptions = new TheTechIdea.Beep.Editor.Migration.MigrationPolicyOptions
                 {
-                    EnvironmentTier = ParseEnvironmentTier(request.EnvironmentTier)
+                    EnvironmentTier = environmentTier
                 };
                 var resolvedTier = policyOptions.EnvironmentTier;
 
@@ -294,33 +312,20 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 plan.RollbackReadinessReport = rollback;
                 plan.CiValidationReport = ciValidation;
 
-                var session = _schemaMigrationPlans.AddOrUpdate(
-                    plan.PlanId,
-                    _ => new SchemaMigrationPlanSession
+                var session = new SchemaMigrationPlanSession
                     {
                         ConnectionName = request.ConnectionName,
                         SchemaName = request.SchemaName ?? string.Empty,
+                        ModuleIds = moduleIds,
+                        BindingFingerprint = bindingFingerprint,
                         TargetAssemblyName = request.TargetAssemblyName,
                         TargetModelNamespace = request.TargetModelNamespace,
                         Plan = plan,
                         ManifestHash = manifestHash,
                         EnvironmentTier = resolvedTier
-                    },
-                    (_, existing) => new SchemaMigrationPlanSession
-                    {
-                        ConnectionName = request.ConnectionName,
-                        SchemaName = request.SchemaName ?? string.Empty,
-                        TargetAssemblyName = request.TargetAssemblyName,
-                        TargetModelNamespace = request.TargetModelNamespace,
-                        Plan = plan,
-                        ManifestHash = manifestHash,
-                        EnvironmentTier = resolvedTier,
-                        IsApproved = existing.IsApproved,
-                        ApprovedBy = existing.ApprovedBy,
-                        ApprovalNotes = existing.ApprovalNotes,
-                        ApprovedOnUtc = existing.ApprovedOnUtc,
-                        LastExecutionToken = existing.LastExecutionToken
-                    });
+                    };
+                // A regenerated plan requires fresh approval, even if its identifier is reused.
+                _schemaMigrationPlans[plan.PlanId] = session;
 
                 return MapPlanResult(session);
             }
@@ -358,6 +363,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 };
             }
 
+            if (!await BindingIsCurrentAsync(session))
+                return new SchemaMigrationApprovalResult { Success = false, PlanId = request.PlanId,
+                    Message = "Module binding changed or is unavailable. Generate a new plan." };
             session.IsApproved = true;
             session.ApprovedBy = string.IsNullOrWhiteSpace(request.ApprovedBy) ? "SYSTEM" : request.ApprovedBy.Trim();
             session.ApprovalNotes = request.Notes?.Trim() ?? string.Empty;
@@ -386,6 +394,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 };
             }
 
+            if (string.IsNullOrWhiteSpace(ResolveExpectedPlanHash(request)) ||
+                string.IsNullOrWhiteSpace(ResolveExpectedManifestHash(request)))
+                return new SchemaMigrationExecuteResult { Success = false, PlanId = request.PlanId,
+                    Message = "Reviewed plan and manifest hashes are required." };
+
             if (!_schemaMigrationPlans.TryGetValue(request.PlanId, out var session))
             {
                 return new SchemaMigrationExecuteResult
@@ -406,6 +419,10 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     Message = "Migration plan must be approved before execution."
                 };
             }
+
+            if (!await BindingIsCurrentAsync(session))
+                return new SchemaMigrationExecuteResult { Success = false, PlanId = request.PlanId,
+                    Message = "Module binding changed or is unavailable. Generate a new plan." };
 
             // ── GOVERNANCE GATES ─────────────────────────────────────────────────
             // Gate 1: Plan hash integrity — reject if caller provided a hash that no longer matches.
@@ -551,6 +568,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 };
             }
 
+            if (string.IsNullOrWhiteSpace(ResolveExpectedPlanHash(request)) ||
+                string.IsNullOrWhiteSpace(ResolveExpectedManifestHash(request)))
+                return new OperationStartResponse { Success = false,
+                    Message = "Reviewed plan and manifest hashes are required." };
+
             if (!_schemaMigrationPlans.TryGetValue(request.PlanId, out var session))
             {
                 return new OperationStartResponse
@@ -570,6 +592,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             }
 
             // ── GOVERNANCE GATES ─────────────────────────────────────────────────
+            if (!await BindingIsCurrentAsync(session))
+                return new OperationStartResponse { Success = false,
+                    Message = "Module binding changed or is unavailable. Generate a new plan." };
             // Gate 1: Plan hash integrity.
             var expectedPlanHash = ResolveExpectedPlanHash(request);
             if (!string.IsNullOrWhiteSpace(expectedPlanHash) &&
@@ -626,6 +651,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             }
             // ── END GOVERNANCE GATES ─────────────────────────────────────────────
 
+            if (_backgroundOperations == null)
+                return new OperationStartResponse { Success = false, Message = "Background migration execution is not configured on this host." };
+            var jobKey = "schema-migration:" + session.Plan.PlanId;
+            if (_backgroundOperations.GetStatus(jobKey)?.State is BackgroundOperationState.Queued or BackgroundOperationState.Running)
+                return new OperationStartResponse { Success = false, Message = "This migration plan is already queued or running." };
+
             try
             {
                 var migration = CreateMigrationManager(session.ConnectionName, out var dataSource);
@@ -648,37 +679,18 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     ? checkpoint.ExecutionToken
                     : migration.CreateExecutionCheckpoint(session.Plan).ExecutionToken;
 
+                var work = new SchemaMigrationWork(request.PlanId, executionToken, session.Plan.PlanHash, session.ManifestHash,
+                    request.ResumeIfCheckpointExists && checkpoint != null && !checkpoint.IsCompleted, request.AcknowledgeHighRisk);
+                if (!_backgroundOperations.TryEnqueue<PPDM39SetupService, SchemaMigrationWork>(jobKey, work,
+                    static (service, state, token) => service.RunQueuedMigrationAsync(state, token)))
+                    return new OperationStartResponse { Success = false, Message = "Migration queue is full, stopping, or this plan is already active." };
                 session.LastExecutionToken = executionToken;
-
-                _ = Task.Run(() =>
-                {
-                    try
-                    {
-                        var backgroundMigration = CreateMigrationManager(session.ConnectionName, out var backgroundDataSource);
-                        if (backgroundMigration == null || backgroundDataSource == null)
-                        {
-                            _logger.LogError("Background schema migration start failed for plan {PlanId}: datasource unavailable", request.PlanId);
-                            return;
-                        }
-
-                        RegisterScopeAssemblies(backgroundMigration, session.TargetAssemblyName, session.TargetModelNamespace);
-
-                        if (request.ResumeIfCheckpointExists && checkpoint != null && !checkpoint.IsCompleted)
-                            backgroundMigration.ResumeMigrationPlan(executionToken);
-                        else
-                            backgroundMigration.ExecuteMigrationPlan(session.Plan, executionToken: executionToken);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Background schema migration execution failed for plan {PlanId}", request.PlanId);
-                    }
-                });
 
                 return await Task.FromResult(new OperationStartResponse
                 {
                     Success = true,
                     OperationId = executionToken,
-                    Message = "Schema migration started."
+                    Message = "Schema migration queued."
                 });
             }
             catch (Exception ex)
@@ -689,6 +701,46 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     Success = false,
                     Message = "Schema migration could not be started."
                 };
+            }
+        }
+
+        private sealed record SchemaMigrationWork(string PlanId, string ExecutionToken, string PlanHash,
+            string ManifestHash, bool Resume, bool AcknowledgeHighRisk);
+
+        private async Task RunQueuedMigrationAsync(SchemaMigrationWork work, System.Threading.CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            if (!_schemaMigrationPlans.TryGetValue(work.PlanId, out var session) || !session.IsApproved ||
+                session.Plan.PlanHash != work.PlanHash || session.ManifestHash != work.ManifestHash || !CanApplyPlan(session.Plan) ||
+                IsProtectedEnvironmentTier(session.EnvironmentTier) && (string.IsNullOrWhiteSpace(session.ApprovedBy) ||
+                    CountHighRiskOperations(session.Plan) > 0 && !work.AcknowledgeHighRisk))
+                throw new InvalidOperationException("Migration approval or policy changed while the job was queued.");
+            if (!await BindingIsCurrentAsync(session))
+                throw new InvalidOperationException("Module binding changed or is unavailable. Generate a new plan.");
+            var migration = CreateMigrationManager(session.ConnectionName, out var dataSource);
+            if (migration == null || dataSource == null)
+                throw new InvalidOperationException("Background migration datasource is unavailable.");
+            RegisterScopeAssemblies(migration, session.TargetAssemblyName, session.TargetModelNamespace);
+            token.ThrowIfCancellationRequested();
+            var result = work.Resume ? migration.ResumeMigrationPlan(work.ExecutionToken)
+                : migration.ExecuteMigrationPlan(session.Plan, executionToken: work.ExecutionToken);
+            if (result?.Success != true)
+                throw new InvalidOperationException(result?.Message ?? "Migration did not report success.");
+        }
+
+        private async Task<bool> BindingIsCurrentAsync(SchemaMigrationPlanSession session)
+        {
+            if (session.ModuleIds is null) return true;
+            if (_migrationBindingFingerprint is null) return session.BindingFingerprint is null;
+            try
+            {
+                return session.BindingFingerprint is not null && string.Equals(session.BindingFingerprint,
+                    await _migrationBindingFingerprint(session.ModuleIds, session.ConnectionName), StringComparison.Ordinal);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogWarning(exception, "Module migration binding could not be validated");
+                return false;
             }
         }
 
@@ -715,6 +767,17 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     Message = "Execution token was not found."
                 };
             }
+
+            var job = _backgroundOperations?.GetStatus("schema-migration:" + session.Plan.PlanId);
+            if (job?.State is BackgroundOperationState.Queued or BackgroundOperationState.Failed or BackgroundOperationState.Cancelled)
+                return new SchemaMigrationProgressResult
+                {
+                    Success = true, ExecutionToken = executionToken, PlanId = session.Plan.PlanId, PlanHash = session.Plan.PlanHash,
+                    ManifestHash = session.ManifestHash, Message = "Background migration " + job.State.ToString().ToLowerInvariant() + ".",
+                    HasFailed = job.State != BackgroundOperationState.Queued,
+                    FailureCategory = job.State == BackgroundOperationState.Queued ? null : "BackgroundExecution",
+                    FailureReason = job.Error
+                };
 
             try
             {
@@ -1636,10 +1699,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             if (string.Equals(environmentTier, "Protected", StringComparison.OrdinalIgnoreCase))
                 return TheTechIdea.Beep.Editor.Migration.MigrationEnvironmentTier.Production;
 
-            if (Enum.TryParse(environmentTier, true, out TheTechIdea.Beep.Editor.Migration.MigrationEnvironmentTier tier))
+            if (!string.IsNullOrWhiteSpace(environmentTier) &&
+                Enum.GetNames<MigrationEnvironmentTier>().Any(name => string.Equals(name, environmentTier, StringComparison.OrdinalIgnoreCase)) &&
+                Enum.TryParse(environmentTier, true, out MigrationEnvironmentTier tier))
                 return tier;
 
-            return TheTechIdea.Beep.Editor.Migration.MigrationEnvironmentTier.Development;
+            throw new ArgumentException("Environment tier must be Development, Test, Staging, Production, or Protected.");
         }
 
         private static bool IsProtectedEnvironmentTier(MigrationEnvironmentTier tier) =>
@@ -1660,8 +1725,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             string.Equals(moduleId, "PPDM_CORE", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(moduleId, "R_SHARED_REFERENCES", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(moduleId, "WELL_STATUS_FACETS", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(moduleId, "WELL_REFERENCES", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(moduleId, "SECURITY", StringComparison.OrdinalIgnoreCase);
+            string.Equals(moduleId, "WELL_REFERENCES", StringComparison.OrdinalIgnoreCase);
 
         private async Task<SeedingOperationResult> SeedRequiredModulesAsync(string connectionName, string userId)
         {

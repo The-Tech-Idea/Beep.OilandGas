@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Beep.OilandGas.LifeCycle.Services.Calculations;
 using Beep.OilandGas.CompressorAnalysis.Core.Interfaces;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.ChokeAnalysis.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core;

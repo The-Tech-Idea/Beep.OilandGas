@@ -27,6 +27,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         private readonly IPPDM39DefaultsRepository? _defaults;
         private readonly IPPDMMetadataRepository? _metadata;
         private readonly string _connectionName;
+        private readonly Func<string, Task<string>>? _resolveModuleConnection;
         private readonly ILogger<ProspectEvaluationService>? _logger;
 
         public ProspectEvaluationService(IDMEEditor editor, string connectionName = "PPDM39")
@@ -41,7 +42,8 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
-            ILogger<ProspectEvaluationService>? logger = null)
+            ILogger<ProspectEvaluationService>? logger = null,
+            Func<string, Task<string>>? resolveModuleConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -49,6 +51,14 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName;
             _logger = logger;
+            _resolveModuleConnection = resolveModuleConnection;
+        }
+
+        private async Task<string> ResolveConnectionAsync(string module)
+        {
+            var connection = _resolveModuleConnection is null ? _connectionName : await _resolveModuleConnection(module);
+            if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException($"A {module} database binding is required.");
+            return connection;
         }
 
         public async Task<ProspectEvaluation> EvaluateProspectAsync(string prospectId, ProspectEvaluationRequest request)
@@ -56,7 +66,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             if (string.IsNullOrWhiteSpace(prospectId))
                 throw new ArgumentException("Prospect ID cannot be null or empty.", nameof(prospectId));
 
-            var prospectRepo = CreateProspectRepository();
+            var prospectRepo = await CreateProspectRepositoryAsync();
             var prospect = await prospectRepo.GetByIdAsync(prospectId) as ProspectRecord;
             if (prospect == null)
                 throw new KeyNotFoundException($"Prospect with ID {prospectId} not found.");
@@ -86,7 +96,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
 
         public async Task<List<Prospect>> GetProspectsAsync(string? fieldId = null, string? basinId = null, ProspectStatus? status = null, DateTime? startDate = null, DateTime? endDate = null)
         {
-            var prospectRepo = CreateProspectRepository();
+            var prospectRepo = await CreateProspectRepositoryAsync();
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
@@ -128,7 +138,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             if (string.IsNullOrWhiteSpace(prospectId))
                 return null;
 
-            var prospectRepo = CreateProspectRepository();
+            var prospectRepo = await CreateProspectRepositoryAsync();
             var prospect = await prospectRepo.GetByIdAsync(prospectId) as ProspectRecord;
             if (prospect == null)
                 return null;
@@ -158,7 +168,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                 ACTIVE_IND = "Y"
             };
 
-            var prospectRepo = CreateProspectRepository();
+            var prospectRepo = await CreateProspectRepositoryAsync();
             await prospectRepo.InsertAsync(prospect, userId);
             return MapToProspectDto(prospect, 0);
         }
@@ -171,7 +181,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             if (updateDto == null)
                 throw new ArgumentNullException(nameof(updateDto));
 
-            var prospectRepo = CreateProspectRepository();
+            var prospectRepo = await CreateProspectRepositoryAsync();
             var prospect = await prospectRepo.GetByIdAsync(prospectId) as ProspectRecord;
             if (prospect == null)
                 throw new KeyNotFoundException($"Prospect with ID {prospectId} not found.");
@@ -205,7 +215,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             if (string.IsNullOrWhiteSpace(prospectId))
                 throw new ArgumentException("Prospect ID cannot be null or empty.", nameof(prospectId));
 
-            var prospectRepo = CreateProspectRepository();
+            var prospectRepo = await CreateProspectRepositoryAsync();
             var prospect = await prospectRepo.GetByIdAsync(prospectId) as ProspectRecord;
             if (prospect == null)
                 throw new KeyNotFoundException($"Prospect with ID {prospectId} not found.");
@@ -224,7 +234,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             if (string.IsNullOrWhiteSpace(prospectId))
                 throw new ArgumentException("Prospect ID cannot be null or empty.", nameof(prospectId));
 
-            var prospectRepo = CreateProspectRepository();
+            var prospectRepo = await CreateProspectRepositoryAsync();
             var prospect = await prospectRepo.GetByIdAsync(prospectId) as ProspectRecord;
             if (prospect == null)
                 throw new KeyNotFoundException($"Prospect with ID {prospectId} not found.");
@@ -448,7 +458,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             }
         }
 
-        private PPDMGenericRepository CreateProspectRepository()
+        private async Task<PPDMGenericRepository> CreateProspectRepositoryAsync()
         {
             EnsureRepositoryDependencies();
             return new PPDMGenericRepository(
@@ -457,12 +467,12 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                 _defaults!,
                 _metadata!,
                 typeof(ProspectRecord),
-                _connectionName,
+                await ResolveConnectionAsync(ExplorationReferenceCodes.ExplorationModuleRegistryId),
                 "PROSPECT",
                 null);
         }
 
-        private PPDMGenericRepository CreateSeismicSurveyRepository()
+        private async Task<PPDMGenericRepository> CreateSeismicSurveyRepositoryAsync()
         {
             EnsureRepositoryDependencies();
             return new PPDMGenericRepository(
@@ -471,7 +481,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                 _defaults!,
                 _metadata!,
                 typeof(SEIS_ACQTN_SURVEY),
-                _connectionName,
+                await ResolveConnectionAsync("PPDM_CORE"),
                 "SEIS_ACQTN_SURVEY",
                 null);
         }
@@ -481,7 +491,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             if (string.IsNullOrWhiteSpace(prospectId))
                 return 0;
 
-            var surveyRepo = CreateSeismicSurveyRepository();
+            var surveyRepo = await CreateSeismicSurveyRepositoryAsync();
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "AREA_ID", FilterValue = _defaults!.FormatIdForTable("SEIS_ACQTN_SURVEY", prospectId), Operator = "=" },
@@ -567,4 +577,3 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         }
     }
 }
-

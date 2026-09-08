@@ -22,6 +22,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly string _connectionName;
+        private readonly Func<Task<string>>? _resolveConnection;
         private readonly ILogger<LeaseAcquisitionService>? _logger;
 
         /// <summary>
@@ -33,7 +34,8 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             string connectionName = "DefaultConnection",
-            ILogger<LeaseAcquisitionService>? logger = null)
+            ILogger<LeaseAcquisitionService>? logger = null,
+            Func<Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -41,6 +43,14 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _logger = logger;
+            _resolveConnection = resolveConnection;
+        }
+
+        private async Task<string> ResolveConnectionAsync()
+        {
+            var connection = _resolveConnection is null ? _connectionName : await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException("A PPDM_CORE database binding is required.");
+            return connection;
         }
 
         /// <summary>

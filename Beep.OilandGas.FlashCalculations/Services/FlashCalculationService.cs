@@ -33,6 +33,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly IDMEEditor _editor;
         private readonly string _connectionName;
+        private readonly Func<CancellationToken, Task<string>>? _resolveConnection;
         private readonly ILogger<FlashCalculationService>? _logger;
 
         public FlashCalculationService(
@@ -41,7 +42,8 @@ namespace Beep.OilandGas.FlashCalculations.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
-            ILogger<FlashCalculationService>? logger = null)
+            ILogger<FlashCalculationService>? logger = null,
+            Func<CancellationToken, Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -49,7 +51,11 @@ namespace Beep.OilandGas.FlashCalculations.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _logger = logger;
+            _resolveConnection = resolveConnection;
         }
+
+        private Task<string> ResolveConnectionAsync(CancellationToken token) =>
+            _resolveConnection is null ? Task.FromResult(_connectionName) : _resolveConnection(token);
 
         public FlashResult PerformIsothermalFlash(FLASH_CONDITIONS conditions)
         {
@@ -113,7 +119,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
 
             // Create repository for FLASH_CALCULATION_RESULT
             var flashRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(FLASH_CALCULATION_RESULT), _connectionName, "FLASH_CALCULATION_RESULT", null);
+                typeof(FLASH_CALCULATION_RESULT), await ResolveConnectionAsync(cancellationToken), "FLASH_CALCULATION_RESULT", null);
 
             var calculationId = _defaults.FormatIdForTable("FLASH_CALCULATION", Guid.NewGuid().ToString());
             
@@ -145,7 +151,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
 
             // Create repository for FLASH_CALCULATION_RESULT
             var flashRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(FLASH_CALCULATION_RESULT), _connectionName, "FLASH_CALCULATION_RESULT", null);
+                typeof(FLASH_CALCULATION_RESULT), await ResolveConnectionAsync(cancellationToken), "FLASH_CALCULATION_RESULT", null);
 
             var filters = new List<AppFilter>
             {

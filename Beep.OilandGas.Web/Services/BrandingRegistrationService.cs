@@ -1,4 +1,5 @@
 using Beep.OilandGas.Web.Theme;
+using TheTechIdeaWeb.ThemeBranding;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 
@@ -246,4 +247,3 @@ public class BrandingRegistrationService : BackgroundService
         return Convert.ToBase64String(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(key)));
     }
 }
-

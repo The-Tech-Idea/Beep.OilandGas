@@ -263,7 +263,7 @@
                     }
                     else
                     {
-                        <MudSwitch T="bool" @bind-Checked="@_executeAllScripts" 
+                        <MudSwitch T="bool" @bind-Value="@_executeAllScripts"
                                   Label="Execute All Scripts (Recommended)" 
                                   Color="Color.Primary" 
                                   Class="mb-4" />
@@ -275,8 +275,8 @@
                                 <Columns>
                                     <TemplateColumn Title="Execute" SortBy="s => s.FileName">
                                         <CellTemplate>
-                                            <MudCheckBox T="bool" Checked="@_selectedScriptFileNames.Contains(context.Item.FileName)"
-                                                        CheckedChanged="@((bool v) => ToggleScriptSelection(context.Item.FileName, v))"
+                                            <MudCheckBox T="bool" Value="@_selectedScriptFileNames.Contains(context.Item.FileName)"
+                                                        ValueChanged="@((bool v) => ToggleScriptSelection(context.Item.FileName, v))"
                                                         Disabled="@context.Item.IsMandatory" />
                                         </CellTemplate>
                                     </TemplateColumn>
@@ -454,7 +454,7 @@
                         </MudCardContent>
                     </MudCard>
 
-                    <MudSwitch T="bool" @bind-Checked="@_testAfterSave" 
+                    <MudSwitch T="bool" @bind-Value="@_testAfterSave"
                               Label="Test connection after saving" 
                               Color="Color.Primary" 
                               Class="mb-2" />
@@ -771,6 +771,7 @@
                 _scriptExecutionProgress = null;
                 await InvokeAsync(StateHasChanged);
             }
+        }
         }
         catch (Exception ex)
         {

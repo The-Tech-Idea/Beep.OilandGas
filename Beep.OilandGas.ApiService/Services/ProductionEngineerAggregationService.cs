@@ -1,4 +1,5 @@
 using System;
+using Beep.OilandGas.Models.Core.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,7 +11,7 @@ using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
-using PPDM=Beep.OilandGas.PPDM39.Models;
+using PpdmEntities=Beep.OilandGas.PPDM39.Models;
 
 namespace Beep.OilandGas.ApiService.Services
 {
@@ -26,11 +27,12 @@ namespace Beep.OilandGas.ApiService.Services
             IPPDM39DefaultsRepository defaults,IPPDMMetadataRepository metadata,
             string connectionName="PPDM39",ILogger<ProductionEngineerAggregationService>? logger=null)
         {
-            _editor = editor
-            _commonColumnHandler=commonColumnHandler
-            _defaults=defaults
-            _metadata=metadata
-            _connectionName=connectionName_logger = logger;
+            _editor = editor;
+            _commonColumnHandler = commonColumnHandler;
+            _defaults = defaults;
+            _metadata = metadata;
+            _connectionName = connectionName;
+            _logger = logger;
         }
 
         private PPDMGenericRepository GetRepo<T>(string t)=>new(_editor,_commonColumnHandler,_defaults,_metadata,typeof(T),_connectionName,t);
@@ -41,11 +43,11 @@ namespace Beep.OilandGas.ApiService.Services
             try{
                 var af=new AppFilter{FieldName="ACTIVE_IND",Operator="=",FilterValue="Y"};
                 // Active wells
-                var wells=(await GetRepo<PPDM.WELL>("WELL").GetAsync(new List<AppFilter>{af})).OfType<PPDM.WELL>().ToList();
+                var wells=(await GetRepo<PpdmEntities.WELL>("WELL").GetAsync(new List<AppFilter>{af})).OfType<PpdmEntities.WELL>().ToList();
                 kpi.ActiveWells=wells.Count;
                 // Daily production
-                var pden=(await GetRepo<PPDM.PDEN_VOL_SUMMARY>("PDEN_VOL_SUMMARY").GetAsync(new List<AppFilter>{af})).OfType<PPDM.PDEN_VOL_SUMMARY>().ToList();
-                kpi.AvgDailyBoe=pden.Sum(e=>(e.OIL_VOLUME??0)+((e.GAS_VOLUME??0)/6m));
+                var pden=(await GetRepo<PpdmEntities.PDEN_VOL_SUMMARY>("PDEN_VOL_SUMMARY").GetAsync(new List<AppFilter>{af})).OfType<PpdmEntities.PDEN_VOL_SUMMARY>().ToList();
+                kpi.AvgDailyBoe=pden.Sum(e=>e.OIL_VOLUME+(e.GAS_VOLUME/6m));
                 if(pden.Count>0)kpi.AvgDailyBoe/=Math.Max(1,pden.Count);
             }catch(Exception ex){_logger?.LogWarning(ex,"Failed to build production engineer KPI");}
             return kpi;

@@ -1,5 +1,6 @@
 using System;
 using System.Net.Http;
+using System.Linq;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Client.Authentication;
 using Microsoft.Extensions.Configuration;
@@ -92,6 +93,15 @@ namespace Beep.OilandGas.Client.DependencyInjection
         public static IServiceCollection AddBeepOilandGasAppAuto(
             this IServiceCollection services,
             IConfiguration configuration)
+            => RegisterConfiguredApp(services, configuration, remoteOnly: false);
+
+        public static IServiceCollection AddBeepOilandGasAppRemote(
+            this IServiceCollection services,
+            IConfiguration configuration)
+            => RegisterConfiguredApp(services, configuration, remoteOnly: true);
+
+        private static IServiceCollection RegisterConfiguredApp(
+            IServiceCollection services, IConfiguration configuration, bool remoteOnly)
         {
             var section = configuration.GetSection("BeepOilandGas");
             var options = new AppOptions();
@@ -115,23 +125,17 @@ namespace Beep.OilandGas.Client.DependencyInjection
                     ?? configuration["Authentication:Schemes:OpenIdConnect:ClientId"];
             }
 
-            if (options.AccessMode == ServiceAccessMode.Auto)
+            if (remoteOnly)
             {
-                var serviceProvider = services.BuildServiceProvider();
-                try
-                {
-                    var dmeEditor = serviceProvider.GetService<IDMEEditor>();
-                    if (dmeEditor != null && options.UseLocalServices)
-                    {
-                        options.AccessMode = ServiceAccessMode.Local;
-                        return services.AddBeepOilandGasAppLocal(opts =>
-                        {
-                            opts.DefaultConnectionName = options.DefaultConnectionName;
-                        });
-                    }
-                }
-                catch { }
                 options.AccessMode = ServiceAccessMode.Remote;
+                options.UseLocalServices = false;
+            }
+            else if (options.AccessMode == ServiceAccessMode.Auto)
+            {
+                // Inspect registrations without constructing a second container or editor.
+                options.AccessMode = options.UseLocalServices && services.Any(d => d.ServiceType == typeof(IDMEEditor))
+                    ? ServiceAccessMode.Local
+                    : ServiceAccessMode.Remote;
             }
 
             if (options.AccessMode == ServiceAccessMode.Remote)

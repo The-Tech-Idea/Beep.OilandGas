@@ -1,8 +1,8 @@
 @page "/dashboard"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @inject ILifeCycleService LifeCycleService
 @inject IDataManagementService DataManagementService
 @inject NavigationManager NavigationManager
-@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject ISnackbar Snackbar
 @inject Beep.OilandGas.Web.Theme.IThemeProvider ThemeProvider
 @inject Beep.OilandGas.Web.Services.IPersonaContextService PersonaContext
@@ -79,60 +79,42 @@
     @* ── Workflow Entry Points ────────────────────────────────────────────── *@
     <MudText Typo="Typo.h6" Class="mb-3">Start Work</MudText>
     <MudGrid Spacing="3" Class="mb-6">
-        @if (CanAccessWorkflow("exploration"))
-        {
         <MudItem xs="6" sm="4" md="2">
             <MudPaper Elevation="1" Class="pa-3 d-flex flex-column align-center gap-2 workflow-card" @onclick='() => NavigationManager.NavigateTo("/exploration")'>
                 <img src="/imgs/icons/process/exploration.svg" class="og-icon og-icon-xl" alt="Exploration" />
                 <MudText Typo="Typo.caption" Align="Align.Center">Exploration</MudText>
             </MudPaper>
         </MudItem>
-        }
-        @if (CanAccessWorkflow("development"))
-        {
         <MudItem xs="6" sm="4" md="2">
             <MudPaper Elevation="1" Class="pa-3 d-flex flex-column align-center gap-2 workflow-card" @onclick='() => NavigationManager.NavigateTo("/development")'>
                 <img src="/imgs/icons/process/drilling-rig.svg" class="og-icon og-icon-xl" alt="Development" />
                 <MudText Typo="Typo.caption" Align="Align.Center">Development</MudText>
             </MudPaper>
         </MudItem>
-        }
-        @if (CanAccessWorkflow("production"))
-        {
         <MudItem xs="6" sm="4" md="2">
             <MudPaper Elevation="1" Class="pa-3 d-flex flex-column align-center gap-2 workflow-card" @onclick='() => NavigationManager.NavigateTo("/production")'>
                 <img src="/imgs/icons/process/wellhead.svg" class="og-icon og-icon-xl" alt="Production" />
                 <MudText Typo="Typo.caption" Align="Align.Center">Production</MudText>
             </MudPaper>
         </MudItem>
-        }
-        @if (CanAccessWorkflow("reservoir"))
-        {
         <MudItem xs="6" sm="4" md="2">
             <MudPaper Elevation="1" Class="pa-3 d-flex flex-column align-center gap-2 workflow-card" @onclick='() => NavigationManager.NavigateTo("/reservoir")'>
                 <img src="/imgs/icons/process/reservoir.svg" class="og-icon og-icon-xl" alt="Reservoir" />
                 <MudText Typo="Typo.caption" Align="Align.Center">Reservoir</MudText>
             </MudPaper>
         </MudItem>
-        }
-        @if (CanAccessWorkflow("economics"))
-        {
         <MudItem xs="6" sm="4" md="2">
             <MudPaper Elevation="1" Class="pa-3 d-flex flex-column align-center gap-2 workflow-card" @onclick='() => NavigationManager.NavigateTo("/economics/afe")'>
                 <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Large" Color="Color.Primary" Class="my-1" />
                 <MudText Typo="Typo.caption" Align="Align.Center">Economics</MudText>
             </MudPaper>
         </MudItem>
-        }
-        @if (CanAccessWorkflow("data"))
-        {
         <MudItem xs="6" sm="4" md="2">
             <MudPaper Elevation="1" Class="pa-3 d-flex flex-column align-center gap-2 workflow-card" @onclick='() => NavigationManager.NavigateTo("/ppdm39/data-management")'>
                 <MudIcon Icon="@Icons.Material.Filled.Storage" Size="Size.Large" Color="Color.Secondary" Class="my-1" />
                 <MudText Typo="Typo.caption" Align="Align.Center">Data Mgmt</MudText>
             </MudPaper>
         </MudItem>
-        }
     </MudGrid>
 
     @* ── Recent Activity ─────────────────────────────────────────────────── *@
@@ -170,36 +152,15 @@
     
     protected override async Task OnInitializedAsync()
     {
-        // Check authentication
-        try
-        {
-            var authToken = await LocalStorage.GetItemAsync<string>("auth-token");
-            if (string.IsNullOrEmpty(authToken))
-            {
-                NavigationManager.NavigateTo("/");
-                return;
-            }
-        }
-        catch
-        {
-            NavigationManager.NavigateTo("/");
-            return;
-        }
-        
         await LoadDashboardData();
 
         await PersonaContext.EnsureLoadedAsync();
         _personaLoaded = true;
-        _personaLabel = PersonaContext.CurrentPersona?.PERSONA_CODE
-            ?? PersonaContext.CurrentProfile?.PRIMARY_PERSONA
+        _personaLabel = PersonaContext.CurrentPersona?.Name
+            ?? PersonaContext.CurrentProfile?.PersonaCode
             ?? string.Empty;
     }
 
-    private bool CanAccessWorkflow(string workflow)
-    {
-        return !_personaLoaded || PersonaContext.CanAccessWorkflow(workflow);
-    }
-    
     private async Task LoadDashboardData()
     {
         // Primary: single dashboard endpoint gives all KPIs
@@ -263,4 +224,3 @@
         public DateTime Timestamp { get; set; }
     }
 }
-

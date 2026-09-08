@@ -56,10 +56,10 @@
     <MudPaper Elevation="2" Class="pa-3 mt-2">
         <MudText Typo="Typo.h6">@_selectedNode.Label</MudText>
         <MudStack Row="true" Spacing="2" Class="mt-1">
-            <MudChip Size="Size.Small" Color="@NodeColor(_selectedNode)">@_selectedNode.Status</MudChip>
+            <MudChip T="string" Size="Size.Small" Color="@NodeColor(_selectedNode)">@_selectedNode.Status</MudChip>
             @if (!string.IsNullOrWhiteSpace(_selectedNode.AssignedTo))
             {
-                <MudChip Size="Size.Small" Variant="Variant.Outlined">
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">
                     <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-1" />
                     @_selectedNode.AssignedTo
                 </MudChip>
@@ -130,6 +130,7 @@
         (text?.Length ?? 0) > maxLen ? text![..(maxLen - 2)] + "…" : text ?? "";
 }
 
+@code {
 public class DagNode
 {
     public string StepId { get; set; } = string.Empty;
@@ -161,4 +162,5 @@ public class DagEdge
     public double X2 { get; set; } public double Y2 { get; set; }
     public bool IsActive { get; set; }
     public bool IsConditional { get; set; }
+}
 }

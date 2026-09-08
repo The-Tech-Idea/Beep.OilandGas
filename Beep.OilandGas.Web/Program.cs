@@ -47,7 +47,7 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services.AddMudServices();
 
 // Beep.Razor.Components — shared data management UI components (setup wizard, CRUD, drivers, etc.)
-builder.Services.AddBeepBlazorStudio();
+Beep.Razor.Components.Extensions.BeepStudioServiceCollectionExtensions.AddBeepBlazorStudio(builder.Services);
 
 builder.Services.AddBlazoredLocalStorage();
 
@@ -96,6 +96,11 @@ builder.Services.TryAddEnumerable(
 // ============================================
 // ApiClient: Generic HTTP client for calling the API service
 var apiServiceUrl = builder.Configuration["ApiService:BaseUrl"] ?? "https://localhost:7001";
+builder.Services.AddHttpClient<RepositoryAccountClient>(client => client.BaseAddress = new Uri(apiServiceUrl));
+builder.Services.AddScoped<IClaimsTransformation, OilGasClaimsTransformation>();
+builder.Services.AddScoped<UserAdministrationClient>();
+builder.Services.AddScoped<ModuleDatabaseClient>();
+builder.Services.AddScoped<PersonaClient>();
 builder.Services.AddHttpClient<ApiClient>(client =>
 {
     client.BaseAddress = new Uri(apiServiceUrl);
@@ -162,6 +167,12 @@ builder.Services.AddAuthentication(options =>
     options.LoginPath = "/login";
     options.LogoutPath = "/authentication/logout";
     options.AccessDeniedPath = "/access-denied";
+    options.Events.OnValidatePrincipal = context =>
+    {
+        var token = context.Properties.GetTokenValue("access_token");
+        if (!string.IsNullOrEmpty(token)) context.HttpContext.Items["OilGas.AccessToken"] = token;
+        return Task.CompletedTask;
+    };
 })
 .AddOpenIdConnect(OIDC_SCHEME, options =>
 {
@@ -180,14 +191,13 @@ builder.Services.AddAuthentication(options =>
     options.Scope.Add("openid");
     options.Scope.Add("profile");
     options.Scope.Add("email");
-    options.Scope.Add("roles");
     options.Scope.Add("beep-api");
     options.Scope.Add("offline_access"); // Required for token refresh
     
     // IMPORTANT: Configure claim mapping for Blazor
     options.MapInboundClaims = false;
     options.TokenValidationParameters.NameClaimType = "name";
-    options.TokenValidationParameters.RoleClaimType = "role";
+    options.TokenValidationParameters.RoleClaimType = System.Security.Claims.ClaimTypes.Role;
     options.GetClaimsFromUserInfoEndpoint = true;
     options.SaveTokens = true;
     
@@ -237,7 +247,7 @@ builder.Services.AddAuthentication(options =>
             return Task.CompletedTask;
         },
         
-        OnTokenValidated = context =>
+        OnTokenValidated = async context =>
         {
             var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
                 .CreateLogger("OIDC.TokenValidated");
@@ -283,6 +293,18 @@ builder.Services.AddAuthentication(options =>
             {
                 var tokenProvider = context.HttpContext.RequestServices.GetRequiredService<Beep.Foundation.IdentityServer.Shared.Authentication.TokenProvider>();
                 tokenProvider.SetUserToken(userId, accessToken);
+                context.HttpContext.Items["OilGas.AccessToken"] = accessToken;
+                try
+                {
+                    var repository = context.HttpContext.RequestServices.GetRequiredService<RepositoryAccountClient>();
+                    await repository.RegisterAsync(accessToken, context.HttpContext.RequestAborted);
+                }
+                catch (Exception exception)
+                {
+                    logger.LogError(exception, "OilGas registration failed");
+                    context.Fail("OilGas registration could not complete.");
+                    return;
+                }
                 logger.LogInformation("OIDC: ✓ Stored access token for user {UserId} in TokenProvider (length: {Length})", 
                     userId, accessToken.Length);
             }
@@ -290,9 +312,9 @@ builder.Services.AddAuthentication(options =>
             {
                 logger.LogWarning("OIDC: ✗ Could not capture access token. UserId: {UserId}, HasToken: {HasToken}", 
                     userId, !string.IsNullOrEmpty(accessToken));
+                context.Fail("An API access token is required for OilGas registration.");
             }
             
-            return Task.CompletedTask;
         },
         
         OnRemoteFailure = context =>
@@ -372,15 +394,13 @@ builder.Services.AddHostedService<Beep.OilandGas.Web.Services.BrandingRegistrati
 // APPLICATION SERVICES
 // ============================================
 // Register the Beep.OilandGas client app (auto-detect local/remote)
-builder.Services.AddBeepOilandGasAppAuto(builder.Configuration);
+builder.Services.AddBeepOilandGasAppRemote(builder.Configuration);
 
     // Keep the Beep.OilandGas app facade registered for legacy flows.
     // Prefer focused typed clients or scoped services in pages and components where an HTTP/API seam already exists.
         
     // Focused web clients and scoped services
         builder.Services.AddScoped<IAccountingServiceClient, AccountingServiceClient>();
-        builder.Services.AddScoped<IIdentityServiceClient, IdentityServiceClient>();
-            builder.Services.AddScoped<INavigationPolicyService, NavigationPolicyService>();
         builder.Services.AddScoped<IPersonaContextService, PersonaContextService>();
         builder.Services.AddScoped<IAfeServiceClient, AfeServiceClient>();
         builder.Services.AddScoped<IDataManagementService, DataManagementService>();
@@ -419,7 +439,6 @@ builder.Services.AddBeepOilandGasAppAuto(builder.Configuration);
         builder.Services.AddScoped<Beep.OilandGas.Web.Services.IDemoDatabaseService, Beep.OilandGas.Web.Services.DemoDatabaseService>();
 
         // First-run setup wizard service
-        builder.Services.AddScoped<Beep.OilandGas.Web.Services.IFirstRunService, Beep.OilandGas.Web.Services.FirstRunService>();
 
         // Multi-page PPDM39 database setup wizard state
         builder.Services.AddScoped<CreateDatabaseWizardState>();

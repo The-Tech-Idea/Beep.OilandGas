@@ -173,7 +173,7 @@ namespace Beep.OilandGas.Models.Data.DataManagement
 
         }
 
-        private bool SeedDefaultSecurityDataValue = true;
+        private bool SeedDefaultSecurityDataValue = false;
 
         public bool SeedDefaultSecurityData
 

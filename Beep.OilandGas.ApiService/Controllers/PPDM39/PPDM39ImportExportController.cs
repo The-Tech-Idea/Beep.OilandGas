@@ -1,4 +1,6 @@
 using System;
+using System.Security.Claims;
+using Beep.OilandGas.ApiService.Services;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -30,6 +32,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
     public class PPDM39ImportExportController : ControllerBase
     {
         private readonly IDMEEditor _editor;
+        private readonly IBackgroundOperationQueue _queue;
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
@@ -44,7 +47,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             IPPDMMetadataRepository metadata,
             ILogger<PPDM39ImportExportController> logger,
             ILoggerFactory loggerFactory,
-            IProgressTrackingService progressTracking)
+            IProgressTrackingService progressTracking,
+            IBackgroundOperationQueue queue)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -53,12 +57,15 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
             _progressTracking = progressTracking;
+            _queue = queue;
         }
 
         /// <summary>
         /// Import data from CSV file
         /// </summary>
         [HttpPost("csv/{tableName}")]
+        [RequestSizeLimit(CsvImportJob.MaxUploadBytes + 65536)]
+        [RequestFormLimits(MultipartBodyLengthLimit = CsvImportJob.MaxUploadBytes)]
         public async Task<ActionResult<OperationStartResponse>> ImportCsv(
             string tableName,
             IFormFile file,
@@ -67,111 +74,49 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             [FromQuery] string connectionName = "PPDM39",
             [FromQuery] bool validateForeignKeys = true)
         {
-            if (string.IsNullOrWhiteSpace(tableName))
-                    return BadRequest(new { error = "Table name is required." });
+            if (string.IsNullOrWhiteSpace(tableName) || string.IsNullOrWhiteSpace(connectionName))
+                return BadRequest(new { error = "Table and connection names are required." });
+            var actor = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+            if (string.IsNullOrWhiteSpace(actor)) return Unauthorized();
+            if (!string.IsNullOrEmpty(operationId))
+                return BadRequest(new { error = "Import operation IDs are assigned by the server." });
+            if (file == null || file.Length == 0)
+                return BadRequest(new { error = "No file uploaded." });
+            if (file.Length > CsvImportJob.MaxUploadBytes)
+                return StatusCode(413, new { error = "CSV uploads are limited to 2 MiB." });
+            var entityType = typeof(IPPDMEntity).Assembly.GetTypes().FirstOrDefault(t =>
+                typeof(IPPDMEntity).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract &&
+                t.Name.Equals(tableName, StringComparison.OrdinalIgnoreCase));
+            if (entityType == null) return BadRequest(new { error = "Unknown PPDM table." });
             try
             {
-                if (file == null || file.Length == 0)
+                using var input = file.OpenReadStream();
+                using var content = new MemoryStream();
+                var buffer = new byte[81920];
+                int read;
+                while ((read = await input.ReadAsync(buffer, HttpContext.RequestAborted)) > 0)
                 {
-                    return BadRequest(new OperationStartResponse { OperationId = "", Message = "No file uploaded" });
+                    if (content.Length + read > CsvImportJob.MaxUploadBytes)
+                        return StatusCode(413, new { error = "CSV uploads are limited to 2 MiB." });
+                    await content.WriteAsync(buffer.AsMemory(0, read), HttpContext.RequestAborted);
                 }
-
-                operationId ??= _progressTracking?.StartOperation("ImportCsv", $"Importing {tableName} from CSV file: {file.FileName}");
-
-                connectionName ??= _editor.ConfigEditor?.DataConnections?.FirstOrDefault()?.ConnectionName ?? "PPDM39";
-
-                _logger.LogInformation("Starting CSV import for table {TableName} from file {FileName} (OperationId: {OperationId})", 
-                    tableName, file.FileName, operationId);
-
-                // Save uploaded file temporarily
-                var tempFilePath = Path.Combine(Path.GetTempPath(), $"import_{Guid.NewGuid()}_{file.FileName}");
-                using (var stream = new FileStream(tempFilePath, FileMode.Create))
+                if (content.Length == 0) return BadRequest(new { error = "No file uploaded." });
+                operationId = _progressTracking!.StartOperation("ImportCsv", $"Importing {entityType.Name} from CSV");
+                var job = new CsvImportJob(operationId, entityType.Name, connectionName, actor, validateForeignKeys, content.ToArray());
+                if (!_queue.TryEnqueue<CsvImportJobRunner, CsvImportJob>(CsvImportJob.QueueKey(operationId), job,
+                    static (runner, request, token) => runner.RunAsync(request, token)))
                 {
-                    await file.CopyToAsync(stream);
+                    _progressTracking.CompleteOperation(operationId, false, errorMessage: "Import worker is full or stopping.");
+                    return StatusCode(503, new OperationStartResponse { OperationId = operationId, Message = "Import worker is unavailable." });
                 }
-
-                // Start async import operation
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        // Get entity type
-                        var assembly = typeof(IPPDMEntity).Assembly;
-                        var entityType = assembly.GetTypes()
-                            .FirstOrDefault(t => typeof(IPPDMEntity).IsAssignableFrom(t) && 
-                                                !t.IsInterface && !t.IsAbstract &&
-                                                t.Name.Equals(tableName, StringComparison.OrdinalIgnoreCase));
-
-                        if (entityType == null)
-                        {
-                            _progressTracking?.CompleteOperation(operationId!, false, errorMessage: $"Entity type not found for table: {tableName}");
-                            return;
-                        }
-
-                        var repository = new PPDMGenericRepository(
-                            _editor, _commonColumnHandler, _defaults, _metadata,
-                            entityType, connectionName, tableName, _loggerFactory.CreateLogger<PPDMGenericRepository>());
-
-                        // Wrap progress tracking in delegate
-                        PPDMGenericRepository.ProgressReportDelegate? progressDelegate = null;
-                        if (_progressTracking != null && !string.IsNullOrEmpty(operationId))
-                        {
-                            progressDelegate = (opId, percentage, message, itemsProcessed, totalItems) =>
-                            {
-                                _progressTracking.UpdateProgress(opId, percentage, message, itemsProcessed, totalItems);
-                            };
-                        }
-
-                        var result = await repository.ImportFromCsvAsync(
-                            tempFilePath,
-                            userId,
-                            columnMapping: null,
-                            skipHeaderRow: true,
-                            validateForeignKeys: validateForeignKeys,
-                            progressDelegate,
-                            operationId);
-
-                        // Clean up temp file
-                        if (System.IO.File.Exists(tempFilePath))
-                        {
-                            System.IO.File.Delete(tempFilePath);
-                        }
-
-                        if (result.ErrorCount == 0)
-                        {
-                            _progressTracking?.CompleteOperation(operationId!, true, 
-                                $"Import completed: {result.SuccessCount} rows imported successfully");
-                        }
-                        else
-                        {
-                            _progressTracking?.CompleteOperation(operationId!, false,
-                                errorMessage: $"Import completed with {result.ErrorCount} errors. {result.SuccessCount} rows imported.");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error during CSV import for table {TableName}", tableName);
-                        
-                        // Clean up temp file
-                        if (System.IO.File.Exists(tempFilePath))
-                        {
-                            try { System.IO.File.Delete(tempFilePath); } catch (Exception ex) { _logger.LogWarning(ex, "Failed to clean up temp file: {Path}", tempFilePath); }
-                        }
-                        
-                        _progressTracking?.CompleteOperation(operationId!, false, errorMessage: "Import failed. See server logs for details.");
-                    }
-                });
-
-                return Ok(new OperationStartResponse { OperationId = operationId ?? string.Empty, Message = "Import started" });
+                return Ok(new OperationStartResponse { OperationId = operationId, Message = "Import queued" });
             }
+            catch (OperationCanceledException) when (HttpContext.RequestAborted.IsCancellationRequested) { throw; }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error starting CSV import for table {TableName}", tableName);
-                return StatusCode(500, new OperationStartResponse 
-                { 
-                    OperationId = "", 
-                    Message = "Error starting import. See server logs for details." 
-                });
+                _logger.LogError(ex, "Error starting CSV import for {TableName}", tableName);
+                if (operationId != null) _progressTracking?.CompleteOperation(operationId, false, errorMessage: "Import could not be queued.");
+                return StatusCode(500, new OperationStartResponse { Message = "Error starting import. See server logs." });
             }
         }
 

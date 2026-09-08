@@ -73,7 +73,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly IFieldMappingService _fieldMappingService;
-        private readonly IChokeAnalysisService _chokeAnalysisService;
+        private readonly Beep.OilandGas.ChokeAnalysis.Core.Interfaces.IChokeAnalysisService _chokeAnalysisService;
         private readonly ICompressorAnalysisService _compressorAnalysisService;
         private readonly string _connectionName;
         private readonly ILogger<PPDMCalculationService>? _logger;
@@ -84,7 +84,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             IFieldMappingService fieldMappingService,
-            IChokeAnalysisService chokeAnalysisService,
+            Beep.OilandGas.ChokeAnalysis.Core.Interfaces.IChokeAnalysisService chokeAnalysisService,
             ICompressorAnalysisService compressorAnalysisService,
             string connectionName = "PPDM39",
             ILogger<PPDMCalculationService>? logger = null)

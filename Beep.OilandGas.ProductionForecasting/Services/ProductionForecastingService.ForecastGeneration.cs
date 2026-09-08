@@ -92,7 +92,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
                 return (qi, di, b, null);
 
             var history = await ProductionHistoryLoader.TryLoadOilHistoryAsync(
-                _editor, _commonColumnHandler, _defaults, _metadata, _connectionName, request.WellUWI!).ConfigureAwait(false);
+                _editor, _commonColumnHandler, _defaults, _metadata, await ResolveHistoryConnectionAsync(), request.WellUWI!).ConfigureAwait(false);
 
             if (history == null)
             {

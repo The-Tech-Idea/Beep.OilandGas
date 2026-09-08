@@ -17,10 +17,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
     [Authorize]
     public class NodalAnalysisController : ControllerBase
     {
-        private readonly INodalAnalysisService _service;
+        private readonly Beep.OilandGas.NodalAnalysis.Core.Interfaces.INodalAnalysisService _service;
         private readonly ILogger<NodalAnalysisController> _logger;
 
-        public NodalAnalysisController(INodalAnalysisService service, ILogger<NodalAnalysisController> logger)
+        public NodalAnalysisController(Beep.OilandGas.NodalAnalysis.Core.Interfaces.INodalAnalysisService service, ILogger<NodalAnalysisController> logger)
         {
             _service = service;
             _logger = logger;
@@ -331,4 +331,3 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
     }
 }
-

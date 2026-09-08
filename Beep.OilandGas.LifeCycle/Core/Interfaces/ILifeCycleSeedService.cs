@@ -20,9 +20,13 @@ public sealed class LifeCycleSeedResult
     public int ProcessStepsInserted { get; set; }
     public int SlaTemplatesInserted { get; set; }
     public int ApprovalChainsInserted { get; set; }
+    public int DelegationRulesInserted { get; set; }
+    public int BusinessEventTriggersInserted { get; set; }
+    public int SodRulesInserted { get; set; }
     public int TotalRecordsInserted =>
         LifecycleStatesInserted + ProcessDefinitionsInserted + ProcessStepsInserted +
-        SlaTemplatesInserted + ApprovalChainsInserted;
+        SlaTemplatesInserted + ApprovalChainsInserted + DelegationRulesInserted +
+        BusinessEventTriggersInserted + SodRulesInserted;
     public int TablesSeeded { get; set; }
     public List<string> Errors { get; set; } = new();
 }

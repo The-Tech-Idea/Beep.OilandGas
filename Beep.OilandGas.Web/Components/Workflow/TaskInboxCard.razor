@@ -11,18 +11,18 @@
                 <MudText Typo="Typo.body2" Style="font-weight:600">
                     @Task.StepName
                 </MudText>
-                <MudChip Size="Size.Small" Color="@TaskTypeColor()" Variant="Variant.Outlined">
+                <MudChip T="string" Size="Size.Small" Color="@TaskTypeColor()" Variant="Variant.Outlined">
                     @Task.TaskType
                 </MudChip>
                 @if (Task.SlaStatus == "BREACHED")
                 {
-                    <MudChip Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">
+                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">
                         BREACHED
                     </MudChip>
                 }
                 else if (Task.SlaStatus == "AT_RISK")
                 {
-                    <MudChip Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled">
+                    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled">
                         AT RISK
                     </MudChip>
                 }
@@ -57,11 +57,11 @@
                                Href="@Task.Route"
                                Title="Open task" />
             }
-            @if (OnAction is not null)
+            @if (OnAction.HasDelegate)
             {
                 <MudIconButton Icon="@Icons.Material.Filled.MoreVert"
                                Size="Size.Small"
-                               OnClick="@(() => OnAction.Invoke(Task))"
+                               OnClick="@(() => OnAction.InvokeAsync(Task))"
                                Title="More actions" />
             }
         </div>
@@ -70,7 +70,7 @@
 
 @code {
     [Parameter] public UnifiedTask Task { get; set; } = new();
-    [Parameter] public EventCallback<UnifiedTask>? OnAction { get; set; }
+    [Parameter] public EventCallback<UnifiedTask> OnAction { get; set; }
 
     private string GetCardStyle()
     {

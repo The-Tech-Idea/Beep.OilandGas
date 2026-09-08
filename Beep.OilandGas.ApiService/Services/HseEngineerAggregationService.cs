@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.PPDM39.Core;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
-using PPDM = Beep.OilandGas.PPDM39.Models;
+using PpdmEntities= Beep.OilandGas.PPDM39.Models;
 
 namespace Beep.OilandGas.ApiService.Services
 {
@@ -54,7 +55,7 @@ namespace Beep.OilandGas.ApiService.Services
                 var ytd = new DateTime(now.Year, 1, 1);
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PPDM.HSE_INCIDENT), _connectionName, "HSE_INCIDENT");
+                    typeof(PpdmEntities.HSE_INCIDENT), _connectionName, "HSE_INCIDENT");
 
                 var filters = new List<AppFilter>
                 {
@@ -62,7 +63,7 @@ namespace Beep.OilandGas.ApiService.Services
                     new() { FieldName = "INCIDENT_DATE", Operator = ">=", FilterValue = ytd.ToString("yyyy-MM-dd") }
                 };
 
-                var incidents = (await repo.GetAsync(filters)).OfType<PPDM.HSE_INCIDENT>().ToList();
+                var incidents = (await repo.GetAsync(filters)).OfType<PpdmEntities.HSE_INCIDENT>().ToList();
                 kpi.TotalIncidents = incidents.Count;
                 kpi.OpenIncidents = incidents.Count(i => string.IsNullOrEmpty(i.INCIDENT_CLASS_ID));
             }

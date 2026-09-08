@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using Beep.OilandGas.UserManagement.Services;
 
 namespace Beep.OilandGas.LifeCycle.Services.Processes;
 

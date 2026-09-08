@@ -375,7 +375,7 @@ public class LifeCycleSeedService : ILifeCycleSeedService
                 ESCALATION_ROLE = seq switch { 1 => "Manager", 2 => "SeniorManager", 3 => "Executive", _ => "Board" },
             };
             await repo.InsertAsync(doa, userId);
-            result.TotalRecordsInserted++;
+            result.DelegationRulesInserted++;
         }
     }
 
@@ -416,7 +416,7 @@ public class LifeCycleSeedService : ILifeCycleSeedService
                 IS_ACTIVE = "Y", PRIORITY = 10,
             };
             await repo.InsertAsync(trigger, userId);
-            result.TotalRecordsInserted++;
+            result.BusinessEventTriggersInserted++;
         }
     }
 
@@ -433,8 +433,7 @@ public class LifeCycleSeedService : ILifeCycleSeedService
                 _editor, _commonColumnHandler, _defaults, _metadata, connectionName,
                 _logger as ILogger<Processes.SodEvaluationEngine>);
 
-            await sodEngine.SeedDefaultRulesAsync(userId);
-            result.TotalRecordsInserted += 25; // 25 default SoD rules
+            result.SodRulesInserted += await sodEngine.SeedDefaultRulesWithCountAsync(userId);
         }
         catch (Exception ex)
         {

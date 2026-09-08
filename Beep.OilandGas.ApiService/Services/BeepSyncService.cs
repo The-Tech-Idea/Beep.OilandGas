@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Editor.BeepSync;
-using TheTechIdea.Beep.Editor.BeepSync.Models;
+using TheTechIdea.Beep.Addin;
+using TheTechIdea.Beep.ConfigUtil;
+using TheTechIdea.Beep.Editor.Importing.Factories;
 using TheTechIdea.Beep.Editor.Importing;
 
 namespace Beep.OilandGas.ApiService.Services
@@ -27,6 +29,7 @@ namespace Beep.OilandGas.ApiService.Services
         private readonly ILogger<BeepSyncService> _logger;
         private readonly IDMEEditor _editor;
         private bool _schemasLoaded;
+        private SyncReconciliationReport? _lastReport;
 
         public BeepSyncService(IDMEEditor editor, ILogger<BeepSyncService> logger)
         {
@@ -44,32 +47,52 @@ namespace Beep.OilandGas.ApiService.Services
             string entityName,
             string sourceDataSourceName,
             string destDataSourceName,
-            SyncMode mode = SyncMode.Full,
-            SyncDirection direction = SyncDirection.SourceToDestination,
+            SyncMode mode = SyncMode.FullRefresh,
+            string direction = "OneWay",
             List<SyncFieldMapping>? fieldMappings = null)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(entityName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(sourceDataSourceName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(destDataSourceName);
+            if (!Enum.IsDefined(mode) || direction != "OneWay")
+                throw new ArgumentException("Only defined one-way sync modes are supported by this adapter.");
             var schema = new DataSyncSchema
             {
-                SchemaId = $"ppdm39-{entityName.ToLowerInvariant()}",
-                SchemaName = $"PPDM39 {entityName} Sync",
+                Id = $"ppdm39-{entityName.ToLowerInvariant()}",
+                EntityName = entityName,
                 SourceEntityName = entityName,
-                DestEntityName = entityName,
+                DestinationEntityName = entityName,
                 SourceDataSourceName = sourceDataSourceName,
-                DestDataSourceName = destDataSourceName,
-                SyncMode = mode,
+                DestinationDataSourceName = destDataSourceName,
+                SyncType = mode == SyncMode.FullRefresh ? "Full" : mode.ToString(),
                 SyncDirection = direction,
                 ConflictResolutionStrategy = "DestinationWins",
-                IsEnabled = true
+                BatchSize = 500
             };
 
             if (fieldMappings?.Count > 0)
             {
+                if (fieldMappings.Any(m => string.IsNullOrWhiteSpace(m.SourceField) || string.IsNullOrWhiteSpace(m.DestField)))
+                    throw new ArgumentException("Field mappings require source and destination names.");
                 foreach (var mapping in fieldMappings)
-                    schema.FieldMappings.Add(mapping);
+                    schema.MappedFields.Add(new FieldSyncData { SourceField = mapping.SourceField, DestinationField = mapping.DestField });
+                var keys = fieldMappings.Where(m => m.IsKey).ToList();
+                var watermarks = fieldMappings.Where(m => m.IsWatermark).ToList();
+                if (keys.Count > 1 || watermarks.Count > 1)
+                    throw new ArgumentException("The sync schema supports only one key and one watermark field.");
+                if (mode == SyncMode.Incremental && watermarks.Count != 1)
+                    throw new ArgumentException("Incremental sync requires an explicit watermark mapping.");
+                schema.SourceKeyField = keys.FirstOrDefault()?.SourceField;
+                schema.DestinationKeyField = keys.FirstOrDefault()?.DestField;
+                schema.SourceSyncDataField = watermarks.FirstOrDefault()?.SourceField ?? schema.SourceKeyField;
+                schema.DestinationSyncDataField = mode == SyncMode.Upsert ? schema.DestinationKeyField : watermarks.FirstOrDefault()?.DestField ?? schema.DestinationKeyField;
             }
 
-            _syncManager.AddSyncSchema(schema);
-            _logger.LogInformation("Created sync schema: {SchemaId} ({Entity})", schema.SchemaId, entityName);
+            if (_syncManager.SyncSchemas.Any(s => s.Id == schema.Id))
+                _syncManager.UpdateSyncSchema(schema);
+            else
+                _syncManager.AddSyncSchema(schema);
+            _logger.LogInformation("Created sync schema: {SchemaId} ({Entity})", schema.Id, entityName);
 
             return schema;
         }
@@ -83,42 +106,60 @@ namespace Beep.OilandGas.ApiService.Services
         /// <returns>Sync result with row counts and reconciliation data.</returns>
         public async Task<SyncResult> SyncEntityAsync(
             string schemaId,
-            IProgress<TheTechIdea.Beep.PassedArgs>? progress = null,
+            IProgress<PassedArgs>? progress = null,
             CancellationToken token = default)
         {
             _logger.LogInformation("Starting entity sync: {SchemaId}", schemaId);
 
             try
             {
+                token.ThrowIfCancellationRequested();
+                _lastReport = null;
                 // Use file-based stores for error/history tracking
                 var errorStore = LocalStoreFactory.CreateErrorStore(_editor);
                 var historyStore = LocalStoreFactory.CreateHistoryStore(_editor);
 
-                await _syncManager.SyncDataAsync(schemaId, token, progress, errorStore, historyStore);
-
-                var report = _syncManager.LastRunReconciliationReport;
-                var metrics = _syncManager.LastRunMetrics;
+                token.ThrowIfCancellationRequested();
+                var schema = _syncManager.SyncSchemas.SingleOrDefault(s => s.Id == schemaId)
+                    ?? throw new InvalidOperationException("Sync schema was not found.");
+                if (string.IsNullOrWhiteSpace(schema.SourceKeyField) || string.IsNullOrWhiteSpace(schema.DestinationKeyField) ||
+                    string.IsNullOrWhiteSpace(schema.SourceSyncDataField) || string.IsNullOrWhiteSpace(schema.DestinationSyncDataField))
+                    throw new InvalidOperationException("Configure the schema's key and sync field mappings before execution.");
+                // Early validation failures in the engine may leave the previous report in place.
+                schema.LastReconciliationReport = null;
+                var timer = System.Diagnostics.Stopwatch.StartNew();
+                var outcome = await _syncManager.SyncDataAsync(schema, token, progress, errorStore, historyStore);
+                token.ThrowIfCancellationRequested();
+                var report = schema.LastReconciliationReport;
+                _lastReport = report;
+                var success = outcome != null && outcome.Flag == Errors.Ok &&
+                    !(outcome.Errors?.Any() ?? false) && schema.SyncStatus == "Success" &&
+                    report?.RunAbortedByThreshold != true;
 
                 return new SyncResult
                 {
-                    Success = metrics?.IsSuccessful ?? report?.TotalRecords > 0,
+                    Success = success,
+                    ErrorMessage = success ? null : outcome?.Message ?? schema.SyncStatusMessage ?? "Sync did not report success.",
                     SchemaId = schemaId,
-                    RecordsRead = report?.SourceRowCount ?? 0,
-                    RecordsInserted = metrics?.RecordsInserted ?? 0,
-                    RecordsUpdated = metrics?.RecordsUpdated ?? 0,
-                    RecordsFailed = metrics?.FailedRecords ?? 0,
-                    ConflictsResolved = report?.ConflictsResolved ?? 0,
-                    Duration = metrics?.Duration ?? TimeSpan.Zero,
-                    SloTier = metrics?.SloComplianceTier ?? "Green",
+                    SchemaName = schema.EntityName,
+                    RecordsRead = report?.SourceRowsScanned ?? 0,
+                    RecordsInserted = report?.DestRowsInserted ?? 0,
+                    RecordsUpdated = report?.DestRowsUpdated ?? 0,
+                    RecordsFailed = report?.RejectCount ?? 0,
+                    Duration = timer.Elapsed,
                     Reconciliation = report != null ? new SyncReconciliation
                     {
-                        SourceRows = report.SourceRowCount,
-                        DestRows = report.DestRowCount,
+                        SourceRows = report.SourceRowsScanned,
+                        DestRows = report.DestRowsWritten,
                         Rejects = report.RejectCount,
                         Conflicts = report.ConflictCount,
                         MappingQualityBand = report.MappingQualityBand
                     } : null
                 };
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -136,22 +177,16 @@ namespace Beep.OilandGas.ApiService.Services
         /// Synchronizes all enabled PPDM sync schemas sequentially.
         /// </summary>
         public async Task<List<SyncResult>> SyncAllAsync(
-            IProgress<TheTechIdea.Beep.PassedArgs>? progress = null,
+            IProgress<PassedArgs>? progress = null,
             CancellationToken token = default)
         {
             var results = new List<SyncResult>();
 
-            await _syncManager.SyncAllDataAsync(token, progress);
-
-            var schemas = _syncManager.GetSyncSchemas();
-            foreach (var schema in schemas.Where(s => s.IsEnabled))
+            var schemas = _syncManager.SyncSchemas.ToList();
+            foreach (var schema in schemas)
             {
-                results.Add(new SyncResult
-                {
-                    SchemaId = schema.SchemaId,
-                    SchemaName = schema.SchemaName,
-                    Success = true
-                });
+                token.ThrowIfCancellationRequested();
+                results.Add(await SyncEntityAsync(schema.Id, progress, token));
             }
 
             return results;
@@ -178,7 +213,7 @@ namespace Beep.OilandGas.ApiService.Services
 
             // Production data — full sync initially (CDC in Phase 5B)
             CreateEntitySyncSchema("PDEN_VOL_SUMMARY", sourceDataSourceName, destDataSourceName,
-                mode: SyncMode.Full);
+                mode: SyncMode.FullRefresh);
 
             _schemasLoaded = true;
             _logger.LogInformation("Initialized PPDM39 sync schemas for WELL, FIELD, FACILITY, PDEN_VOL_SUMMARY");
@@ -208,7 +243,7 @@ namespace Beep.OilandGas.ApiService.Services
         /// </summary>
         public IReadOnlyList<DataSyncSchema> GetSchemas()
         {
-            return _syncManager.GetSyncSchemas().ToList();
+            return _syncManager.SyncSchemas.ToList();
         }
 
         /// <summary>
@@ -216,7 +251,7 @@ namespace Beep.OilandGas.ApiService.Services
         /// </summary>
         public SyncReconciliationReport? GetLastReconciliation()
         {
-            return _syncManager.LastRunReconciliationReport;
+            return _lastReport;
         }
 
         public void Dispose()

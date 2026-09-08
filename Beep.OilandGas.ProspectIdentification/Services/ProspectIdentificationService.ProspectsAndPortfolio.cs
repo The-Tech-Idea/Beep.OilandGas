@@ -19,7 +19,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
 
             _logger?.LogInformation("Evaluating prospect {ProspectId}", prospectId);
 
-            var prospectRepo = CreateProspectRepository();
+            var prospectRepo = await CreateProspectRepositoryAsync();
 
             var entity = await prospectRepo.GetByIdAsync(prospectId);
             var prospect = entity as ProspectRecord;
@@ -50,7 +50,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         {
             _logger?.LogInformation("Getting prospects with filters: {FilterCount}", filters?.Count ?? 0);
 
-            var prospectRepo = CreateProspectRepository();
+            var prospectRepo = await CreateProspectRepositoryAsync();
 
             var appFilters = new List<AppFilter>
             {
@@ -100,7 +100,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                 prospect.ProspectId = _defaults.FormatIdForTable("PROSPECT", Guid.NewGuid().ToString());
             }
 
-            var prospectRepo = CreateProspectRepository();
+            var prospectRepo = await CreateProspectRepositoryAsync();
 
             var newEntity = new ProspectRecord
             {
@@ -140,7 +140,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             _logger?.LogInformation("Ranking {Count} prospects using {CriteriaCount} criteria",
                 prospectIds.Count, rankingCriteria.Count);
 
-            var prospectRepo = CreateProspectRepository();
+            var prospectRepo = await CreateProspectRepositoryAsync();
 
             var rankings = new List<ProspectRanking>();
             foreach (var id in prospectIds)

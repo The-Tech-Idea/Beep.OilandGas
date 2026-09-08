@@ -48,7 +48,7 @@
                                 <RowTemplate>
                                     <MudTd>@context.SchemaName</MudTd>
                                     <MudTd>@context.SyncMode</MudTd>
-                                    <MudTd><MudChip Color="@(context.IsEnabled ? Color.Success : Color.Default)" Size="Size.Small">@(context.IsEnabled ? "Yes" : "No")</MudChip></MudTd>
+                                    <MudTd><MudChip T="string" Color="@(context.IsEnabled ? Color.Success : Color.Default)" Size="Size.Small">@(context.IsEnabled ? "Yes" : "No")</MudChip></MudTd>
                                     <MudTd>
                                         <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary"
                                                    OnClick="() => SyncEntity(context.SchemaId)" Disabled="_syncing">
@@ -134,7 +134,7 @@
                                 </div>
                                 <div>
                                     <MudText Typo="Typo.caption">SLO</MudText>
-                                    <MudChip Color="@SloColor(_lastResult.SloTier)" Size="Size.Small">@_lastResult.SloTier</MudChip>
+                                    <MudChip T="string" Color="@SloColor(_lastResult.SloTier)" Size="Size.Small">@_lastResult.SloTier</MudChip>
                                 </div>
                             </MudStack>
                         }

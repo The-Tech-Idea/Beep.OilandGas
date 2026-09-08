@@ -1,4 +1,5 @@
 using Beep.OilandGas.PPDM39.Core;
+using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,8 @@ using System.Threading.Tasks;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep;
+using TheTechIdea.Beep.Addin;
+using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.SetUp.Seeding;
 
@@ -63,7 +66,7 @@ namespace Beep.OilandGas.ApiService.Services
         /// </summary>
         public IErrorsInfo Seed(IDataSource dataSource, IDMEEditor editor, IProgress<PassedArgs>? progress = null)
         {
-            var errors = new TheTechIdea.Beep.ConfigUtil.ErrorsInfo();
+            var errors = new TheTechIdea.Beep.ConfigUtil.ErrorsInfo { Flag = Errors.Ok };
             try
             {
                 progress?.Report(new PassedArgs { Messege = $"Seeding {_module.ModuleName}..." });
@@ -74,8 +77,8 @@ namespace Beep.OilandGas.ApiService.Services
 
                 if (!result.Success)
                 {
-                    foreach (var err in result.Errors)
-                        errors.FlagError(err, _module.ModuleId);
+                    errors.Flag = Errors.Failed;
+                    errors.Message = string.Join("; ", result.Errors);
                 }
                 else
                 {
@@ -86,12 +89,14 @@ namespace Beep.OilandGas.ApiService.Services
             catch (ModuleSetupAbortException ex)
             {
                 _logger.LogError(ex, "PPDM seeder {Id} ABORTED", _module.ModuleId);
-                errors.FlagError($"Module {_module.ModuleId} aborted: {ex.Message}", _module.ModuleId);
+                errors.Flag = Errors.Failed;
+                errors.Message = $"Module {_module.ModuleId} aborted: {ex.Message}";
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "PPDM seeder {Id} failed", _module.ModuleId);
-                errors.FlagError($"Module {_module.ModuleId} failed: {ex.Message}", _module.ModuleId);
+                errors.Flag = Errors.Failed;
+                errors.Message = $"Module {_module.ModuleId} failed: {ex.Message}";
             }
 
             return errors;

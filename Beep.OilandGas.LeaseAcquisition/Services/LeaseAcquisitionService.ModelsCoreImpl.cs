@@ -67,9 +67,10 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             var leaseType = NormalizeLeaseType(leaseRequest.LeaseType);
             var locationId = leaseRequest.PropertyId?.Trim() ?? string.Empty;
 
-            var landRightRepo = CreateLandRightRepository();
-            var landAgreementRepo = CreateLandAgreementRepository();
-            var landStatusRepo = CreateLandStatusRepository();
+            var connection = await ResolveConnectionAsync();
+            var landRightRepo = CreateLandRightRepository(connection);
+            var landAgreementRepo = CreateLandAgreementRepository(connection);
+            var landStatusRepo = CreateLandStatusRepository(connection);
 
             var landRight = new LAND_RIGHT
             {
@@ -131,9 +132,10 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
 
             var normalizedStatus = NormalizeLeaseStatus(status);
             var activeIndicator = normalizedStatus == LeaseReferenceCodes.Active ? ActiveIndicator : InactiveIndicator;
-            var landRightRepo = CreateLandRightRepository();
-            var landAgreementRepo = CreateLandAgreementRepository();
-            var landStatusRepo = CreateLandStatusRepository();
+            var connection = await ResolveConnectionAsync();
+            var landRightRepo = CreateLandRightRepository(connection);
+            var landAgreementRepo = CreateLandAgreementRepository(connection);
+            var landStatusRepo = CreateLandStatusRepository(connection);
 
             var landRight = await landRightRepo.GetByIdAsync(leaseId) as LAND_RIGHT;
             if (landRight == null)
@@ -192,26 +194,27 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         private const string FieldAreaType = "FIELD";
         private const string MonthsOuom = "MONTH";
 
-        private PPDMGenericRepository CreateLandRightRepository()
+        private PPDMGenericRepository CreateLandRightRepository(string connection)
             => new(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(LAND_RIGHT), _connectionName, "LAND_RIGHT", null);
+                typeof(LAND_RIGHT), connection, "LAND_RIGHT", null);
 
-        private PPDMGenericRepository CreateLandAgreementRepository()
+        private PPDMGenericRepository CreateLandAgreementRepository(string connection)
             => new(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(LAND_AGREEMENT), _connectionName, "LAND_AGREEMENT", null);
+                typeof(LAND_AGREEMENT), connection, "LAND_AGREEMENT", null);
 
-        private PPDMGenericRepository CreateLandStatusRepository()
+        private PPDMGenericRepository CreateLandStatusRepository(string connection)
             => new(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(LAND_STATUS), _connectionName, "LAND_STATUS", null);
+                typeof(LAND_STATUS), connection, "LAND_STATUS", null);
 
         private async Task<List<LeaseSummary>> GetLeaseSummariesAsync(Dictionary<string, string>? filters)
         {
-            var landRightRepo = CreateLandRightRepository();
-            var landAgreementRepo = CreateLandAgreementRepository();
-            var landStatusRepo = CreateLandStatusRepository();
+            var connection = await ResolveConnectionAsync();
+            var landRightRepo = CreateLandRightRepository(connection);
+            var landAgreementRepo = CreateLandAgreementRepository(connection);
+            var landStatusRepo = CreateLandStatusRepository(connection);
             var landRightFilters = BuildLandRightFilters(filters);
             var landRightEntities = await landRightRepo.GetAsync(landRightFilters);
             var landRights = landRightEntities.OfType<LAND_RIGHT>().ToList();

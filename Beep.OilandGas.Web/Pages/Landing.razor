@@ -1,9 +1,9 @@
 @page "/landing"
 @page "/"
-@using Beep.OilandGas.UserManagement.Models.Profile
+@using TheTechIdea.Data.OilGas
 @using Beep.OilandGas.Web.Services
 @using System.Security.Claims
-@inject IIdentityServiceClient IdentityClient
+@inject PersonaClient IdentityClient
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Nav
 
@@ -33,8 +33,8 @@ else if (_errorMessage != null)
     private bool _isLoading = true;
     private string? _errorMessage;
     private string? _userId;
-    private UserPersonaProfile? _currentProfile;
-    private PersonaDefinition? _currentPersona;
+    private AppUserPersona? _currentProfile;
+    private AppPersona? _currentPersona;
 
     protected override async Task OnInitializedAsync()
     {
@@ -53,22 +53,22 @@ else if (_errorMessage != null)
             }
 
             // Load user's profile and available personas
-            _currentProfile = await IdentityClient.GetProfileAsync(_userId);
+            _currentProfile = await IdentityClient.GetAsync(_userId);
             
             if (_currentProfile == null)
             {
-                _errorMessage = "No persona profile found. Please contact your administrator.";
+                Nav.NavigateTo("/dashboard");
                 return;
             }
 
             // Get the list of available personas to find the current one's definition
-            var allPersonas = await IdentityClient.GetPersonaCatalogAsync();
-            _currentPersona = allPersonas?.FirstOrDefault(p => p.PERSONA_CODE == _currentProfile.PRIMARY_PERSONA);
+            var allPersonas = await IdentityClient.CatalogAsync();
+            _currentPersona = allPersonas.FirstOrDefault(p => p.Code == _currentProfile.PersonaCode);
 
             // Redirect to the persona's default landing route if defined
-            if (!string.IsNullOrEmpty(_currentPersona?.DEFAULT_LANDING_ROUTE))
+            if (!string.IsNullOrEmpty(_currentPersona?.DefaultRoute))
             {
-                Nav.NavigateTo(_currentPersona.DEFAULT_LANDING_ROUTE);
+                Nav.NavigateTo(_currentPersona.DefaultRoute);
             }
             else
             {
@@ -76,9 +76,9 @@ else if (_errorMessage != null)
                 Nav.NavigateTo("/dashboard");
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            _errorMessage = $"Error loading persona information: {ex.Message}";
+            _errorMessage = "Persona settings could not be loaded.";
         }
         finally
         {

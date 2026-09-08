@@ -25,6 +25,7 @@ namespace Beep.OilandGas.SuckerRodPumping.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly IDMEEditor _editor;
         private readonly string _connectionName;
+        private readonly Func<Task<string>>? _resolveConnection;
         private readonly ILogger<SuckerRodPumpingService>? _logger;
 
         public SuckerRodPumpingService(
@@ -33,7 +34,8 @@ namespace Beep.OilandGas.SuckerRodPumping.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
-            ILogger<SuckerRodPumpingService>? logger = null)
+            ILogger<SuckerRodPumpingService>? logger = null,
+            Func<Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -41,6 +43,7 @@ namespace Beep.OilandGas.SuckerRodPumping.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _logger = logger;
+            _resolveConnection = resolveConnection;
         }
 
         #region Pump Design & Sizing Methods
@@ -274,8 +277,10 @@ namespace Beep.OilandGas.SuckerRodPumping.Services
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
             _logger?.LogInformation("Saving sucker rod pump design {DesignId} for well {WellUWI}", design.DesignId, design.WellUWI);
+            var connection = _resolveConnection is null ? _connectionName : await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException("A PPDM_CORE database binding is required.");
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+                typeof(WELL_ACTIVITY), connection, "WELL_ACTIVITY", null);
             var activity = new WELL_ACTIVITY
             {
                 UWI = design.WellUWI ?? string.Empty,

@@ -15,10 +15,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
     [Authorize]
     public class DrillingOperationController : ControllerBase
     {
-        private readonly IDrillingOperationService _service;
+        private readonly Beep.OilandGas.DrillingAndConstruction.Services.DrillingOperationService _service;
         private readonly ILogger<DrillingOperationController> _logger;
 
-        public DrillingOperationController(IDrillingOperationService service, ILogger<DrillingOperationController> logger)
+        public DrillingOperationController(Beep.OilandGas.DrillingAndConstruction.Services.DrillingOperationService service, ILogger<DrillingOperationController> logger)
         {
             _service = service;
             _logger = logger;
@@ -123,4 +123,3 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
     }
 }
-

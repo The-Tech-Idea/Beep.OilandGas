@@ -138,7 +138,7 @@ else
 }
 
 @code {
-    private Beep.Foundation.IdentityServer.Shared.Services.UserProfile? profile;
+    private Beep.Foundation.IdentityServer.Shared.Services.AccountInfo? profile;
     private MudForm? form;
     private bool isLoading = true;
     private bool isSaving = false;
@@ -155,7 +155,7 @@ else
     {
         isLoading = true;
         StateHasChanged();
-        profile = await AccountService.GetProfileAsync();
+        profile = await AccountService.GetAccountInfoAsync();
         if (profile != null)
         {
             newEmail = profile.Email;
@@ -177,17 +177,12 @@ else
         if (string.IsNullOrWhiteSpace(newEmail) || profile == null) return;
         
         isSaving = true;
-        var result = await AccountService.UpdateProfileAsync(new UpdateProfileRequest
-        {
-            Email = newEmail
-        });
+        var result = await AccountService.InitiateEmailChangeAsync(newEmail);
         isSaving = false;
 
         if (result.IsSuccess)
         {
-            profile.Email = newEmail;
-            profile.EmailConfirmed = false; // Email needs to be re-verified
-            Snackbar.Add("Email updated! Please check your inbox for a verification link.", Severity.Success);
+            Snackbar.Add("Email change requested. Check your inbox for the confirmation link.", Severity.Success);
         }
         else
         {
@@ -207,5 +202,4 @@ else
         Snackbar.Add("Verification email sent! Please check your inbox.", Severity.Info);
     }
 }
-
 

@@ -2,6 +2,12 @@
 
 This guide helps agents make safe, well-scoped edits that align with Beep.OilandGas architecture and patterns.
 
+> **Payments**: if this app ever needs to charge/checkout a customer, integrate with the
+> Beep.DoitAll Payments API over HTTP — see
+> `../Beep.DoitAll/docs/payments/EXTERNAL-API-INTEGRATION-GUIDE.md` for the endpoints, auth, and
+> setup steps. Never embed Beep.DoitAll in-process (it's a separate SaaS) and never hand-roll a
+> vendor SDK integration directly.
+
 ## Essential Architecture Knowledge (Read First)
 
 1. **Three-Layer Architecture**:

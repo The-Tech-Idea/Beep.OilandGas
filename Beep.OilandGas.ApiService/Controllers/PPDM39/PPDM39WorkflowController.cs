@@ -39,77 +39,17 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             _fieldOrchestrator = fieldOrchestrator;
         }
 
-        /// <summary>
-        /// Execute a workflow pipeline
-        /// Supports phase-specific workflows scoped to current field
-        /// </summary>
+        /// <summary>Execution is unavailable until real step handlers are implemented.</summary>
         [HttpPost("execute")]
         public async Task<ActionResult<OperationStartResponse>> ExecuteWorkflow([FromBody] WorkflowExecutionRequest request, [FromQuery] string? phase = null)
         {
-            try
+            if (request?.Workflow == null)
+                return BadRequest(new { error = "Workflow definition is required." });
+            return StatusCode(501, new OperationStartResponse
             {
-                if (request?.Workflow == null)
-                {
-                        return BadRequest(new { error = "Workflow definition is required." });
-                }
-
-                // Set field context if available and workflow doesn't already have field ID
-                if (_fieldOrchestrator != null && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId))
-                {
-                    // Add field context to workflow if not already set
-                    if (request.Workflow.Parameters == null)
-                    {
-                        request.Workflow.Parameters = new Dictionary<string, object>();
-                    }
-                    if (!request.Workflow.Parameters.ContainsKey("FIELD_ID"))
-                    {
-                        request.Workflow.Parameters["FIELD_ID"] = _fieldOrchestrator.CurrentFieldId;
-                    }
-
-                    // Set phase context if specified
-                    if (!string.IsNullOrEmpty(phase) && !request.Workflow.Parameters.ContainsKey("PHASE"))
-                    {
-                        request.Workflow.Parameters["PHASE"] = phase.ToUpperInvariant();
-                    }
-                }
-
-                var operationId = request.OperationId ?? _progressTracking?.StartOperation("Workflow", request.Workflow.WorkflowName);
-
-                _logger.LogInformation("Starting workflow execution: {WorkflowName} (OperationId: {OperationId}, Phase: {Phase})", 
-                    request.Workflow.WorkflowName, operationId, phase ?? "N/A");
-
-                // Execute workflow asynchronously
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        await _workflowService.ExecuteWorkflowAsync(request.Workflow, operationId);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error executing workflow {WorkflowId}", request.Workflow.WorkflowId);
-                        if (_progressTracking != null && operationId != null)
-                        {
-                            _progressTracking.CompleteOperation(operationId, false, errorMessage: "An internal error occurred.");
-                        }
-                    }
-                });
-
-                return Ok(new OperationStartResponse 
-                { 
-                    OperationId = operationId ?? request.Workflow.WorkflowId, 
-                    Message = "Workflow execution started" 
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error starting workflow execution");
-                return StatusCode(500, new OperationStartResponse 
-                { 
-                    OperationId = "", 
-                    Message = $"Error starting workflow: See server logs for details." 
-                });
-            }
+                OperationId = string.Empty,
+                Message = PPDM39WorkflowService.ExecutionUnavailableMessage
+            });
         }
 
         /// <summary>

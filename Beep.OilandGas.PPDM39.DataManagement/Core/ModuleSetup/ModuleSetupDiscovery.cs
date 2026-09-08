@@ -18,10 +18,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup
     {
         private const string AssemblyPrefix = "Beep.OilandGas";
 
-        public static IServiceCollection AddDiscoveredModuleSetups(this IServiceCollection services)
+        public static IServiceCollection AddDiscoveredModuleSetups(this IServiceCollection services, Func<Type, bool>? include = null)
         {
             foreach (var moduleType in DiscoverModuleSetupTypes())
             {
+                if (include != null && !include(moduleType)) continue;
                 services.AddScoped(typeof(IModuleSetup), provider =>
                     (IModuleSetup)ActivatorUtilities.CreateInstance(provider, moduleType));
             }

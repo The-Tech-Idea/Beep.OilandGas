@@ -32,6 +32,7 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly IAccountMappingService? _accountMapping;
         private readonly ILogger<APInvoiceService> _logger;
         private const string ConnectionName = "PPDM39";
+        private readonly Func<Task<string>>? _resolveConnection;
 
         public APInvoiceService(
             IDMEEditor editor,
@@ -40,7 +41,8 @@ namespace Beep.OilandGas.Accounting.Services
             IPPDMMetadataRepository metadata,
             AccountingBasisPostingService basisPosting,
             ILogger<APInvoiceService> logger,
-            IAccountMappingService? accountMapping = null)
+            IAccountMappingService? accountMapping = null,
+            Func<Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -49,6 +51,7 @@ namespace Beep.OilandGas.Accounting.Services
             _basisPosting = basisPosting ?? throw new ArgumentNullException(nameof(basisPosting));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _accountMapping = accountMapping;
+            _resolveConnection = resolveConnection;
         }
 
         /// <summary>
@@ -279,7 +282,7 @@ namespace Beep.OilandGas.Accounting.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error getting bill {BillId}", billId);
-                return null;
+                throw;
             }
         }
 
@@ -416,11 +419,12 @@ namespace Beep.OilandGas.Accounting.Services
 
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName)
         {
-            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            var connection = _resolveConnection is null ? ConnectionName : await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException("A PRODUCTION database binding is required.");
             // Use strongly typed class directly
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(T), ConnectionName, tableName);
+                typeof(T), connection, tableName);
         }
 
         private string GetAccountId(string key, string fallback)
@@ -429,5 +433,3 @@ namespace Beep.OilandGas.Accounting.Services
         }
     }
 }
-
-

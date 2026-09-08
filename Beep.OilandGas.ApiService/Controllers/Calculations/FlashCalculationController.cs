@@ -17,10 +17,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
     [Authorize]
     public class FlashCalculationController : ControllerBase
     {
-        private readonly IFlashCalculationService _service;
+        private readonly Beep.OilandGas.FlashCalculations.Services.FlashCalculationService _service;
         private readonly ILogger<FlashCalculationController> _logger;
 
-        public FlashCalculationController(IFlashCalculationService service, ILogger<FlashCalculationController> logger)
+        public FlashCalculationController(Beep.OilandGas.FlashCalculations.Services.FlashCalculationService service, ILogger<FlashCalculationController> logger)
         {
             _service = service;
             _logger = logger;
@@ -115,4 +115,3 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
     }
 }
-

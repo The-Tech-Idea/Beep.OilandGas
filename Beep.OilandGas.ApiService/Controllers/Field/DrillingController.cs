@@ -19,12 +19,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
     public class DrillingController : ControllerBase
     {
         private readonly IFieldOrchestrator _fieldOrchestrator;
-        private readonly IDrillingOperationService _service;
+        private readonly Beep.OilandGas.DrillingAndConstruction.Services.DrillingOperationService _service;
         private readonly ILogger<DrillingController> _logger;
 
         public DrillingController(
             IFieldOrchestrator fieldOrchestrator,
-            IDrillingOperationService service,
+            Beep.OilandGas.DrillingAndConstruction.Services.DrillingOperationService service,
             ILogger<DrillingController> logger)
         {
             _fieldOrchestrator = fieldOrchestrator ?? throw new ArgumentNullException(nameof(fieldOrchestrator));

@@ -27,6 +27,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         private readonly IPPDM39DefaultsRepository? _defaults;
         private readonly IPPDMMetadataRepository? _metadata;
         private readonly string _connectionName;
+        private readonly Func<string, Task<string>>? _resolveModuleConnection;
         private readonly ILogger<SeismicAnalysisService>? _logger;
 
         public SeismicAnalysisService(IDMEEditor editor, string connectionName = "PPDM39")
@@ -41,7 +42,8 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
-            ILogger<SeismicAnalysisService>? logger = null)
+            ILogger<SeismicAnalysisService>? logger = null,
+            Func<string, Task<string>>? resolveModuleConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -49,11 +51,19 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName;
             _logger = logger;
+            _resolveModuleConnection = resolveModuleConnection;
+        }
+
+        private async Task<string> ResolveConnectionAsync(string module)
+        {
+            var connection = _resolveModuleConnection is null ? _connectionName : await _resolveModuleConnection(module);
+            if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException($"A {module} database binding is required.");
+            return connection;
         }
 
         public async Task<List<SeismicSurvey>> GetSeismicSurveysAsync(string? prospectId = null, string? fieldId = null, DateTime? startDate = null, DateTime? endDate = null)
         {
-            var surveyRepo = CreateSurveyRepository();
+            var surveyRepo = await CreateSurveyRepositoryAsync();
 
             var filters = new List<AppFilter>
             {
@@ -121,7 +131,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
 
             if (!string.IsNullOrWhiteSpace(createDto.ProspectId))
             {
-                var prospectRepo = CreateProspectRepository();
+                var prospectRepo = await CreateProspectRepositoryAsync();
                 var existingProspect = await prospectRepo.GetByIdAsync(createDto.ProspectId);
                 if (existingProspect is not ProspectRecord)
                     throw new KeyNotFoundException($"Prospect {createDto.ProspectId} not found.");
@@ -144,7 +154,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                 ACTIVE_IND = "Y"
             };
 
-            var surveyRepo = CreateSurveyRepository();
+            var surveyRepo = await CreateSurveyRepositoryAsync();
             await surveyRepo.InsertAsync(survey, userId);
             return MapToSeismicSurveyDto(survey);
         }
@@ -154,7 +164,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             if (string.IsNullOrWhiteSpace(surveyId)) throw new ArgumentNullException(nameof(surveyId));
             if (updateDto == null) throw new ArgumentNullException(nameof(updateDto));
 
-            var surveyRepo = CreateSurveyRepository();
+            var surveyRepo = await CreateSurveyRepositoryAsync();
             var survey = await GetSurveyEntityAsync(surveyId)
                 ?? throw new KeyNotFoundException($"Seismic survey {surveyId} not found.");
 
@@ -176,7 +186,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         {
             if (string.IsNullOrWhiteSpace(surveyId)) throw new ArgumentNullException(nameof(surveyId));
 
-            var surveyRepo = CreateSurveyRepository();
+            var surveyRepo = await CreateSurveyRepositoryAsync();
             var survey = await GetSurveyEntityAsync(surveyId)
                 ?? throw new KeyNotFoundException($"Seismic survey {surveyId} not found.");
 
@@ -372,7 +382,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             }
         }
 
-        private PPDMGenericRepository CreateSurveyRepository()
+        private async Task<PPDMGenericRepository> CreateSurveyRepositoryAsync()
         {
             EnsureRepositoryDependencies();
             return new PPDMGenericRepository(
@@ -381,12 +391,12 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                 _defaults!,
                 _metadata!,
                 typeof(SEIS_ACQTN_SURVEY),
-                _connectionName,
+                await ResolveConnectionAsync("PPDM_CORE"),
                 "SEIS_ACQTN_SURVEY",
                 null);
         }
 
-        private PPDMGenericRepository CreateProspectRepository()
+        private async Task<PPDMGenericRepository> CreateProspectRepositoryAsync()
         {
             EnsureRepositoryDependencies();
             return new PPDMGenericRepository(
@@ -395,14 +405,14 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                 _defaults!,
                 _metadata!,
                 typeof(ProspectRecord),
-                _connectionName,
+                await ResolveConnectionAsync(ExplorationReferenceCodes.ExplorationModuleRegistryId),
                 "PROSPECT",
                 null);
         }
 
         private async Task<SEIS_ACQTN_SURVEY?> GetSurveyEntityAsync(string surveyId)
         {
-            var surveyRepo = CreateSurveyRepository();
+            var surveyRepo = await CreateSurveyRepositoryAsync();
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "SEIS_ACQTN_SURVEY_ID", FilterValue = _defaults!.FormatIdForTable("SEIS_ACQTN_SURVEY", surveyId), Operator = "=" },

@@ -31,6 +31,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly IDMEEditor _editor;
         private readonly string _connectionName;
+        private readonly Func<Task<string>>? _resolveConnection;
         private readonly ILogger<EconomicAnalysisService>? _logger;
 
 
@@ -40,7 +41,8 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
-            ILogger<EconomicAnalysisService>? logger = null)
+            ILogger<EconomicAnalysisService>? logger = null,
+            Func<Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -48,7 +50,11 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _logger = logger;
+            _resolveConnection = resolveConnection;
         }
+
+        private Task<string> ResolveConnectionAsync() =>
+            _resolveConnection is null ? Task.FromResult(_connectionName) : _resolveConnection();
 
         public double CalculateNPV(CashFlow[] cashFlows, double discountRate)
         {
@@ -93,7 +99,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
 
             // Create repository for economic analysis result
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(ECONOMIC_ANALYSIS_RESULT), _connectionName, "ECONOMIC_ANALYSIS_RESULT", null);
+                typeof(ECONOMIC_ANALYSIS_RESULT), await ResolveConnectionAsync(), "ECONOMIC_ANALYSIS_RESULT", null);
 
             // Create entity
             var entity = new ECONOMIC_ANALYSIS_RESULT
@@ -129,7 +135,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
 
             // Create repository for economic analysis result
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(ECONOMIC_ANALYSIS_RESULT), _connectionName, "ECONOMIC_ANALYSIS_RESULT", null);
+                typeof(ECONOMIC_ANALYSIS_RESULT), await ResolveConnectionAsync(), "ECONOMIC_ANALYSIS_RESULT", null);
 
             // Get entity using filters
             var filters = new List<AppFilter>
@@ -564,4 +570,3 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         }
     }
 }
-
