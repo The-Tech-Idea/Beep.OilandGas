@@ -34,8 +34,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         {
             public required string ConnectionName { get; init; }
             public string SchemaName { get; init; } = string.Empty;
-            public string? TargetAssemblyName { get; init; }
-            public string? TargetModelNamespace { get; init; }
+            public IReadOnlyList<Type> EntityTypes { get; init; } = Array.Empty<Type>();
             public required TheTechIdea.Beep.Editor.Migration.MigrationPlanArtifact Plan { get; init; }
             public string ManifestHash { get; init; } = string.Empty;
             public MigrationEnvironmentTier EnvironmentTier { get; init; } = MigrationEnvironmentTier.Development;
@@ -228,17 +227,19 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
             try
             {
-                if (request.ModuleIds is not null && (!string.IsNullOrWhiteSpace(request.TargetAssemblyName)
-                    || !string.IsNullOrWhiteSpace(request.TargetModelNamespace)))
-                    throw new ArgumentException("Module selection cannot be combined with assembly or namespace selection.");
                 var environmentTier = ParseEnvironmentTier(request.EnvironmentTier);
-                var entityTypes = request.ModuleIds is null
-                    ? GetMigrationEntityTypes(request.TargetAssemblyName, request.TargetModelNamespace)
-                    : ModuleMigrationScope.Resolve(request.ModuleIds, GetAvailableModules(), GetPpdm39EntityTypes());
+                if (request.ModuleIds is null || request.ModuleIds.Count == 0)
+                    throw new ArgumentException("Select modules bound to the target database before planning a migration.");
+                if (!string.IsNullOrWhiteSpace(request.TargetAssemblyName) || !string.IsNullOrWhiteSpace(request.TargetModelNamespace))
+                    throw new ArgumentException("Assembly and namespace migration scopes are not supported. Select modules instead.");
+                if (_migrationBindingFingerprint is null)
+                    throw new InvalidOperationException("Module binding validation is unavailable.");
+                var entityTypes = ModuleMigrationScope.Resolve(request.ModuleIds, GetAvailableModules(), GetPpdm39EntityTypes());
                 ModuleSchemaBoundary.Validate(entityTypes);
-                var moduleIds = request.ModuleIds?.ToArray();
-                var bindingFingerprint = moduleIds is not null && _migrationBindingFingerprint is not null
-                    ? await _migrationBindingFingerprint(moduleIds, request.ConnectionName) : null;
+                var moduleIds = request.ModuleIds.ToArray();
+                var bindingFingerprint = await _migrationBindingFingerprint(moduleIds, request.ConnectionName);
+                if (string.IsNullOrWhiteSpace(bindingFingerprint))
+                    throw new InvalidOperationException("Module binding validation did not identify a target.");
                 var migration = CreateMigrationManager(request.ConnectionName, out var dataSource);
                 if (migration == null || dataSource == null)
                 {
@@ -318,8 +319,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                         SchemaName = request.SchemaName ?? string.Empty,
                         ModuleIds = moduleIds,
                         BindingFingerprint = bindingFingerprint,
-                        TargetAssemblyName = request.TargetAssemblyName,
-                        TargetModelNamespace = request.TargetModelNamespace,
+                        EntityTypes = entityTypes.ToArray(),
                         Plan = plan,
                         ManifestHash = manifestHash,
                         EnvironmentTier = resolvedTier
@@ -510,7 +510,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     };
                 }
 
-                RegisterScopeAssemblies(migration, session.TargetAssemblyName, session.TargetModelNamespace);
+                RegisterScopeAssemblies(migration, session.EntityTypes);
                 string? resumeToken = null;
                 if (request.ResumeIfCheckpointExists && !string.IsNullOrWhiteSpace(session.LastExecutionToken))
                 {
@@ -524,6 +524,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     : migration.ResumeMigrationPlan(resumeToken);
 
                 session.LastExecutionToken = executionResult.ExecutionToken;
+
+                if (executionResult.Success)
+                    ModuleSchemaVerification.Verify(_editor, dataSource, session.EntityTypes);
 
                 return await Task.FromResult(new SchemaMigrationExecuteResult
                 {
@@ -669,7 +672,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     };
                 }
 
-                RegisterScopeAssemblies(migration, session.TargetAssemblyName, session.TargetModelNamespace);
+                RegisterScopeAssemblies(migration, session.EntityTypes);
 
                 var checkpoint = !string.IsNullOrWhiteSpace(session.LastExecutionToken) && request.ResumeIfCheckpointExists
                     ? migration.GetExecutionCheckpoint(session.LastExecutionToken)
@@ -720,18 +723,20 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             var migration = CreateMigrationManager(session.ConnectionName, out var dataSource);
             if (migration == null || dataSource == null)
                 throw new InvalidOperationException("Background migration datasource is unavailable.");
-            RegisterScopeAssemblies(migration, session.TargetAssemblyName, session.TargetModelNamespace);
+            RegisterScopeAssemblies(migration, session.EntityTypes);
             token.ThrowIfCancellationRequested();
             var result = work.Resume ? migration.ResumeMigrationPlan(work.ExecutionToken)
                 : migration.ExecuteMigrationPlan(session.Plan, executionToken: work.ExecutionToken);
             if (result?.Success != true)
                 throw new InvalidOperationException(result?.Message ?? "Migration did not report success.");
+            ModuleSchemaVerification.Verify(_editor, dataSource, session.EntityTypes);
         }
 
         private async Task<bool> BindingIsCurrentAsync(SchemaMigrationPlanSession session)
         {
-            if (session.ModuleIds is null) return true;
-            if (_migrationBindingFingerprint is null) return session.BindingFingerprint is null;
+            if (session.ModuleIds is null || session.ModuleIds.Count == 0 || session.EntityTypes.Count == 0 ||
+                string.IsNullOrWhiteSpace(session.BindingFingerprint) || _migrationBindingFingerprint is null)
+                return false;
             try
             {
                 return session.BindingFingerprint is not null && string.Equals(session.BindingFingerprint,
@@ -805,6 +810,13 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                         PlanHash = session.Plan.PlanHash,
                         Message = "Execution checkpoint was not found."
                     };
+                }
+
+                if (checkpoint.IsCompleted && !checkpoint.HasFailed)
+                {
+                    if (!await BindingIsCurrentAsync(session))
+                        throw new InvalidOperationException("Module binding changed; migration completion cannot be verified.");
+                    ModuleSchemaVerification.Verify(_editor, dataSource, session.EntityTypes);
                 }
 
                 return await Task.FromResult(new SchemaMigrationProgressResult
@@ -1542,10 +1554,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         {
             if (_moduleSetupOrchestrator == null)
             {
-                _logger.LogWarning(
-                    "SeedSelectedModulesAsync: ModuleSetupOrchestrator not available — falling back to all-reference-data");
-
-                return await SeedAllReferenceDataAsync(connectionName, userId ?? "SYSTEM");
+                throw new InvalidOperationException("Module setup is unavailable. No module data was seeded.");
             }
 
             userId ??= "SYSTEM";
@@ -1612,71 +1621,13 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 .ToList();
         }
 
-        private List<Type> GetMigrationEntityTypes(string? targetAssemblyName, string? targetModelNamespace)
-        {
-            var hasScope = !string.IsNullOrWhiteSpace(targetAssemblyName) || !string.IsNullOrWhiteSpace(targetModelNamespace);
-            if (!hasScope)
-            {
-                return GetPpdm39EntityTypes();
-            }
-
-            Assembly? assembly = ResolveAssembly(targetAssemblyName);
-            if (assembly == null)
-                return new List<Type>();
-
-            var targetNamespace = string.IsNullOrWhiteSpace(targetModelNamespace)
-                ? null
-                : targetModelNamespace.Trim();
-
-            return assembly
-                .GetTypes()
-                .Where(type =>
-                    type.IsClass &&
-                    !type.IsAbstract &&
-                    typeof(Entity).IsAssignableFrom(type) &&
-                    (targetNamespace == null ||
-                     string.Equals(type.Namespace, targetNamespace, StringComparison.Ordinal) ||
-                     (type.Namespace != null && type.Namespace.StartsWith(targetNamespace + ".", StringComparison.Ordinal))))
-                .OrderBy(type => type.FullName, StringComparer.Ordinal)
-                .ToList();
-        }
-
-        private static Assembly? ResolveAssembly(string? requestedAssemblyName)
-        {
-            if (string.IsNullOrWhiteSpace(requestedAssemblyName))
-                return null;
-
-            var trimmed = requestedAssemblyName.Trim();
-            var loaded = AppDomain.CurrentDomain
-                .GetAssemblies()
-                .FirstOrDefault(assembly =>
-                    string.Equals(assembly.GetName().Name, trimmed, StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(assembly.FullName, trimmed, StringComparison.OrdinalIgnoreCase));
-            if (loaded != null)
-                return loaded;
-
-            try
-            {
-                return Assembly.Load(new AssemblyName(trimmed));
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        private void RegisterScopeAssemblies(
+        private static void RegisterScopeAssemblies(
             TheTechIdea.Beep.Editor.Migration.MigrationManager migration,
-            string? targetAssemblyName,
-            string? targetModelNamespace)
+            IReadOnlyList<Type> entityTypes)
         {
-            var entityTypes = GetMigrationEntityTypes(targetAssemblyName, targetModelNamespace);
             if (entityTypes.Count == 0)
-            {
-                migration.RegisterAssembly(typeof(Beep.OilandGas.PPDM39.Models.WELL).Assembly);
-                return;
-            }
-
+                throw new InvalidOperationException("The reviewed module entity manifest is missing.");
+            ModuleSchemaBoundary.Validate(entityTypes);
             foreach (var assembly in entityTypes.Select(type => type.Assembly).Distinct())
                 migration.RegisterAssembly(assembly);
         }
@@ -1687,6 +1638,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             if (dataSource == null)
                 return null;
 
+            MigrationConnectionTarget.Validate(_editor, dataSource, connectionName);
             var state = dataSource.Openconnection();
             if (state != ConnectionState.Open)
                 return null;

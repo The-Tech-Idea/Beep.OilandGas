@@ -11,6 +11,7 @@ public partial class R_LIFECYCLE_STATE_REFERENCE : ModelEntityBase
 {
     private string REFERENCE_SETValue = string.Empty;
 
+    [System.ComponentModel.DataAnnotations.Key, System.ComponentModel.DataAnnotations.MaxLength(128)]
     public string REFERENCE_SET
     {
         get => REFERENCE_SETValue;
@@ -19,6 +20,7 @@ public partial class R_LIFECYCLE_STATE_REFERENCE : ModelEntityBase
 
     private string REFERENCE_CODEValue = string.Empty;
 
+    [System.ComponentModel.DataAnnotations.Key, System.ComponentModel.DataAnnotations.MaxLength(128)]
     public string REFERENCE_CODE
     {
         get => REFERENCE_CODEValue;

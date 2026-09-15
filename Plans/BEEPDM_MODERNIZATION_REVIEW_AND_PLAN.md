@@ -2,6 +2,21 @@
 
 Date: 2026-09-05. Scope: source comparison, phased plan, and implementation progress.
 
+## Current Dependency Build - 2026-09-12
+
+Source mode is now the default. Directory.Build.targets resolves Engine, Models,
+RDBDataSource and SqlServerDataSourceCore from sibling BeepDM/BeepDataSources
+checkouts and suppresses automatic package generation for these references.
+Keep both checkouts adjacent, including their transitive project references.
+The live LocalDB test now verifies schema creation plus record persistence and
+preservation of the caller's GUID. It passes with the combined source stack;
+engine-only source mode retained the old relational driver's GUID mutation bug.
+The original package-mode path (`-p:UseBeepDMSource=false`) remains available for
+release evaluation but currently fails the live persistence gate. Do not use the
+old package combination as a verified deployment. These source checkouts are
+mutable development dependencies, not pinned release artifacts. The history below
+records earlier states and is superseded by this section for build defaults.
+
 ## Implementation progress - 2026-09-05
 
 Implementation has started following approval. The original review below describes the pre-change state.

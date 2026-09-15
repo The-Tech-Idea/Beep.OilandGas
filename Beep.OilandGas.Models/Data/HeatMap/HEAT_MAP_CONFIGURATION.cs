@@ -6,6 +6,7 @@ namespace Beep.OilandGas.Models.Data.HeatMap
     public class HEAT_MAP_CONFIGURATION : ModelEntityBase
     {
         private string _heatMapId = string.Empty;
+        [System.ComponentModel.DataAnnotations.Key, System.ComponentModel.DataAnnotations.MaxLength(128)]
         public string HEAT_MAP_ID
         {
             get { return _heatMapId; }
@@ -19,29 +20,22 @@ namespace Beep.OilandGas.Models.Data.HeatMap
             set { SetProperty(ref _configurationName, value); }
         }
 
-        private string _activeInd = "Y";
-        public new string ACTIVE_IND
-        {
-            get { return _activeInd; }
-            set { SetProperty(ref _activeInd, value); }
-        }
-
-        private string _name;
-        public string Name
+        private string? _name;
+        public string? Name
         {
             get { return _name; }
             set { SetProperty(ref _name, value); }
         }
 
-        private string _description;
-        public string Description
+        private string? _description;
+        public string? Description
         {
             get { return _description; }
             set { SetProperty(ref _description, value); }
         }
 
-        private string _configurationJson;
-        public string ConfigurationJson
+        private string? _configurationJson;
+        public string? ConfigurationJson
         {
             get { return _configurationJson; }
             set { SetProperty(ref _configurationJson, value); }

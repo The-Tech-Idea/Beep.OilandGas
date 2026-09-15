@@ -6,6 +6,22 @@ namespace Beep.OilandGas.ApiService.Tests;
 public class ModuleMigrationScopeTests
 {
     [Fact]
+    public void OilModuleKeysHaveNonNullableBoundedBeepMetadata()
+    {
+        var creator = new TheTechIdea.Beep.Tools.ClassCreator(Moq.Mock.Of<TheTechIdea.Beep.Editor.IDMEEditor>());
+        var module = new Beep.OilandGas.OilProperties.Modules.OilPropertiesModule();
+        foreach (var type in module.EntityTypes)
+        {
+            var entity = creator.ConvertToEntityStructure(type);
+            var key = Assert.Single(entity.Fields, field => field.IsKey);
+            Assert.False(key.AllowDBNull);
+            Assert.Equal(128, key.Size1);
+            Assert.True(Assert.Single(entity.Fields, field => field.FieldName == "REMARK").AllowDBNull);
+            Assert.True(Assert.Single(entity.Fields, field => field.FieldName == "SOURCE").AllowDBNull);
+        }
+    }
+
+    [Fact]
     public void ModuleSchemasRejectLegacyAndCanonicalIdentityEntities()
     {
         foreach (var entity in new[]

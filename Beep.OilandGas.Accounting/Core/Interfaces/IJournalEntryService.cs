@@ -10,6 +10,9 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// </summary>
     public interface IJournalEntryService
     {
+        Task<JOURNAL_ENTRY> CreateEntryAsync(DateTime entryDate, string description, List<JOURNAL_ENTRY_LINE> lineItems,
+            string userId, string? referenceNumber = null, string? sourceModule = null, string? bookId = null);
+        Task<bool> PostEntryAsync(string journalEntryId, string userId);
         Task<JOURNAL_ENTRY> CreateEntryAsync(string glAccount, decimal amount, string description, string userId, string cn = "PPDM39", string? bookId = null);
         Task<JOURNAL_ENTRY> CreateBalancedEntryAsync(string debitAccount, string creditAccount, decimal amount, string description, string userId, string cn = "PPDM39", string? bookId = null);
         Task<List<GL_ENTRY>> GetEntriesByAccountAsync(string glAccount, DateTime start, DateTime end, string cn = "PPDM39", string? bookId = null);

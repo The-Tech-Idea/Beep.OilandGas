@@ -1,6 +1,7 @@
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
+using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -91,7 +92,12 @@ public sealed class ModuleRepositoryController(RepositoryDbContext repository, I
         var module = Find(moduleId);
         if (module is null) return BadRequest(new { Error = "Unknown module or repository-owned security module." });
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrWhiteSpace(userId)) return Forbid();
+        if (User.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(userId)) return Forbid();
+        try { ModuleSchemaBoundary.Validate(module.EntityTypes); }
+        catch (ArgumentException)
+        {
+            return BadRequest(new { Error = "Repository-owned entities cannot be seeded into a module database." });
+        }
         var binding = await repository.ModuleDatabases.AsNoTracking()
             .SingleOrDefaultAsync(x => x.ModuleId == module.ModuleId, cancellationToken);
         if (binding is null || string.IsNullOrWhiteSpace(request.ConcurrencyStamp) ||
@@ -103,10 +109,26 @@ public sealed class ModuleRepositoryController(RepositoryDbContext repository, I
             return Conflict(new { Error = "The selected BeepDM connection is missing or ambiguous." });
         var connection = matches[0];
         cancellationToken.ThrowIfCancellationRequested();
-        if (editor.OpenDataSource(connection.ConnectionName) != ConnectionState.Open)
+        var source = editor.GetDataSource(connection.ConnectionName);
+        if (source is null)
+            return StatusCode(503, new { Error = "The selected module datasource is unavailable." });
+        try { MigrationConnectionTarget.Validate(editor, source, connection.ConnectionName); }
+        catch (InvalidOperationException)
+        {
+            return Conflict(new { Error = "The cached datasource does not match the selected connection. Reload it before seeding." });
+        }
+        if (source.Openconnection() != ConnectionState.Open)
             return StatusCode(503, new { Error = "The selected module connection could not be opened." });
+        try { ModuleSchemaVerification.Verify(editor, source, module.EntityTypes); }
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            return Conflict(new { Error = "The module schema could not be verified. Install or repair the selected module before seeding." });
+        }
+        cancellationToken.ThrowIfCancellationRequested();
         var result = await module.SeedAsync(connection.ConnectionName, userId, cancellationToken);
-        return result.Success && result.Errors.Count == 0 ? Ok(result) : BadRequest(result);
+        var summary = new ModuleSeedSummary(module.ModuleId, result.Success && result.Errors.Count == 0,
+            result.RecordsInserted, result.TablesSeeded, result.Errors, result.SkipReason);
+        return summary.Success ? Ok(summary) : BadRequest(summary);
     }
 
     private IModuleSetup? Find(string moduleId) => modules.SingleOrDefault(x =>

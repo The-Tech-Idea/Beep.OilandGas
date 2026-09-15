@@ -31,7 +31,7 @@ namespace Beep.OilandGas.HeatMap.Services
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly IDMEEditor _editor;
-        private readonly string _connectionName;
+        private readonly Func<Task<string>> _resolveConnection;
         private readonly ILogger<HeatMapService>? _logger;
 
         public HeatMapService(
@@ -39,14 +39,14 @@ namespace Beep.OilandGas.HeatMap.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            string connectionName = "PPDM39",
+            Func<Task<string>> resolveConnection,
             ILogger<HeatMapService>? logger = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
-            _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
+            _resolveConnection = resolveConnection ?? throw new ArgumentNullException(nameof(resolveConnection));
             _logger = logger;
         }
 
@@ -93,20 +93,23 @@ namespace Beep.OilandGas.HeatMap.Services
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
             _logger?.LogInformation("Saving heat map configuration {ConfigurationId}", configuration.ConfigurationId);
+            var connectionName = await ResolveConnectionAsync();
 
             if (string.IsNullOrWhiteSpace(configuration.ConfigurationId))
             {
-                configuration.ConfigurationId = _defaults.FormatIdForTable("HEAT_MAP", Guid.NewGuid().ToString());
+                configuration.ConfigurationId = Guid.NewGuid().ToString("N");
             }
 
             // Create repository for HEAT_MAP_CONFIGURATION
             var configRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(HeatMapConfigModel), _connectionName, "HEAT_MAP_CONFIGURATION", null);
+                typeof(HeatMapConfigModel), connectionName, "HEAT_MAP_CONFIGURATION", null);
 
             var newEntity = new HeatMapConfigModel
             {
                 HEAT_MAP_ID = configuration.ConfigurationId,
                 CONFIGURATION_NAME = configuration.ConfigurationName ?? string.Empty,
+                UserId = userId,
+                ROW_CREATED_DATE = DateTime.UtcNow,
                 ACTIVE_IND = "Y"
             };
 
@@ -130,10 +133,11 @@ namespace Beep.OilandGas.HeatMap.Services
             }
 
             _logger?.LogInformation("Getting heat map configuration {HeatMapId}", heatMapId);
+            var connectionName = await ResolveConnectionAsync();
 
             // Create repository for HEAT_MAP_CONFIGURATION
             var configRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(HeatMapConfigModel), _connectionName, "HEAT_MAP_CONFIGURATION", null);
+                typeof(HeatMapConfigModel), connectionName, "HEAT_MAP_CONFIGURATION", null);
 
             var filters = new List<AppFilter>
             {
@@ -153,11 +157,19 @@ namespace Beep.OilandGas.HeatMap.Services
             {
                 ConfigurationId = entity.HEAT_MAP_ID ?? string.Empty,
                 ConfigurationName = entity.CONFIGURATION_NAME ?? string.Empty,
-                CreatedDate = DateTime.UtcNow
+                CreatedDate = entity.ROW_CREATED_DATE ?? default
             };
 
             _logger?.LogInformation("Successfully retrieved heat map configuration {HeatMapId}", heatMapId);
             return config;
+        }
+
+        private async Task<string> ResolveConnectionAsync()
+        {
+            var connection = await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection))
+                throw new InvalidOperationException("Configure a database binding for module HEAT_MAP before accessing its data.");
+            return connection;
         }
 
          public async Task<HeatMapResult> GenerateProductionHeatMapAsync(string fieldId, DateTime startDate, DateTime endDate)

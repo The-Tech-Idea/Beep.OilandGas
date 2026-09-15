@@ -8,6 +8,7 @@ namespace Beep.OilandGas.Models.Data.LifeCycle
     public partial class ENVIRONMENTAL_RESTORATION : ModelEntityBase
     {
         private System.String RESTORATION_IDValue;
+        [System.ComponentModel.DataAnnotations.Key, System.ComponentModel.DataAnnotations.MaxLength(128)]
         public System.String RESTORATION_ID
         {
             get => RESTORATION_IDValue;

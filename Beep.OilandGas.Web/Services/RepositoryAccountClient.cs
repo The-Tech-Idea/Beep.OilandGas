@@ -31,6 +31,9 @@ public sealed class RepositoryAccountClient(HttpClient http)
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         using var response = await http.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<RepositoryRegistrationResponse>(cancellationToken);
+        if (result?.Status is not (nameof(BootstrapOutcome.Created) or nameof(BootstrapOutcome.Registered) or nameof(BootstrapOutcome.AlreadyCompleted)))
+            throw new InvalidOperationException("The API did not confirm repository registration.");
     }
 
     public async Task<RepositoryUserAccess> GetAccessAsync(string token, CancellationToken cancellationToken = default)

@@ -15,18 +15,24 @@ public class RepositoryMigrationTests
     public void InitialMigrationGeneratesProviderSqlWithoutConnecting(string provider, string expected, string forbidden)
     {
         using var context = Create(provider);
-        Assert.Equal(4, context.Database.GetMigrations().Count());
+        Assert.Equal(6, context.Database.GetMigrations().Count());
         Assert.False(context.Database.HasPendingModelChanges());
         var script = context.GetService<IMigrator>().GenerateScript();
         Assert.Contains(expected, script);
         Assert.DoesNotContain(forbidden, script);
         foreach (var table in new[] { "AspNetUsers", "AspNetRoles", "AspNetUserRoles", "AspNetUserClaims",
             "AspNetRoleClaims", "AspNetUserLogins", "AspNetUserTokens", "RepositoryBootstrap", "ModuleDatabaseBindings",
-            "APP_USER", "APP_ROLE", "APP_PERMISSION", "APP_USER_ROLE", "APP_ROLE_PERMISSION",
+            "APP_USER", "APP_USER_ASSET_ACCESS", "APP_ROLE", "APP_PERMISSION", "APP_USER_ROLE", "APP_ROLE_PERMISSION",
             "APP_PERSONA", "APP_USER_PERSONA", "APP_PERSONA_PREFERENCE", "APP_PERSONA_AUDIT" })
             Assert.Contains(table, script);
         Assert.DoesNotContain("CREATE TABLE WELL", script);
         Assert.Contains("__EFMigrationsHistory", script);
+        var asset = context.Model.FindEntityType(typeof(TheTechIdea.Data.OilGas.AppUserAssetAccess))!;
+        Assert.Equal("APP_USER_ASSET_ACCESS", asset.GetTableName());
+        Assert.True(asset.FindProperty("ConcurrencyStamp")!.IsConcurrencyToken);
+        Assert.Equal(64, asset.FindProperty("DatabaseScope")!.GetMaxLength());
+        Assert.Contains(asset.GetForeignKeys(), key => key.PrincipalEntityType.ClrType == typeof(TheTechIdea.Data.OilGas.OilGasUser)
+            && key.DeleteBehavior == DeleteBehavior.Restrict);
     }
 
     [Theory]
@@ -39,6 +45,7 @@ public class RepositoryMigrationTests
         var script = context.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
         Assert.Contains("InitialRepository", script);
         Assert.Contains("AspNetUsers", script);
+        Assert.Contains("AssetAccessExtensions", script);
     }
 
     private static RepositoryDbContext Create(string provider) => provider switch

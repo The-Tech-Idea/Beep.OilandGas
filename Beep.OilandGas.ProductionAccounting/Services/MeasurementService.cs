@@ -29,13 +29,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly ILogger<MeasurementService> _logger;
-        private const string ConnectionName = "PPDM39";
+        private readonly Func<Task<string>> _resolveConnection;
 
         public MeasurementService(
             IDMEEditor editor,
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
+            Func<Task<string>> resolveConnection,
             ILogger<MeasurementService> logger = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
@@ -43,6 +44,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _logger = logger;
+            _resolveConnection = resolveConnection ?? throw new ArgumentNullException(nameof(resolveConnection));
         }
 
         /// <summary>
@@ -87,13 +89,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ROW_CREATED_BY = userId
             };
 
-            var metadata = await _metadata.GetTableMetadataAsync("MEASUREMENT_RECORD");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(MEASUREMENT_RECORD);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "MEASUREMENT_RECORD");
+            var repo = await CreateRepositoryAsync();
 
             await repo.InsertAsync(measurement, userId);
 
@@ -111,13 +107,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(measurementId))
                 throw new ArgumentNullException(nameof(measurementId));
 
-            var metadata = await _metadata.GetTableMetadataAsync("MEASUREMENT_RECORD");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(MEASUREMENT_RECORD);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "MEASUREMENT_RECORD");
+            var repo = await CreateRepositoryAsync();
 
             var result = await repo.GetByIdAsync(measurementId);
             return result as MEASUREMENT_RECORD;
@@ -137,13 +127,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (start > end)
                 throw new ArgumentException("start must be <= end", nameof(start));
 
-            var metadata = await _metadata.GetTableMetadataAsync("MEASUREMENT_RECORD");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(MEASUREMENT_RECORD);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "MEASUREMENT_RECORD");
+            var repo = await CreateRepositoryAsync();
 
             var filters = new List<AppFilter>
             {
@@ -171,13 +155,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (start > end)
                 throw new ArgumentException("start must be <= end", nameof(start));
 
-            var metadata = await _metadata.GetTableMetadataAsync("MEASUREMENT_RECORD");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(MEASUREMENT_RECORD);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "MEASUREMENT_RECORD");
+            var repo = await CreateRepositoryAsync();
 
             var filters = new List<AppFilter>
             {
@@ -239,5 +217,15 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw;
             }
         }
+        private async Task<PPDMGenericRepository> CreateRepositoryAsync()
+        {
+            var connection = await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection))
+                throw new InvalidOperationException("A PRODUCTION database binding is required.");
+            return new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(MEASUREMENT_RECORD), connection, "MEASUREMENT_RECORD");
+        }
+
     }
 }

@@ -430,7 +430,7 @@ public class LifeCycleSeedService : ILifeCycleSeedService
         try
         {
             var sodEngine = new Processes.SodEvaluationEngine(
-                _editor, _commonColumnHandler, _defaults, _metadata, connectionName,
+                _editor, _commonColumnHandler, _defaults, _metadata, () => Task.FromResult(connectionName),
                 _logger as ILogger<Processes.SodEvaluationEngine>);
 
             result.SodRulesInserted += await sodEngine.SeedDefaultRulesWithCountAsync(userId);

@@ -11,7 +11,7 @@ namespace Beep.OilandGas.LifeCycle.Data.Tables;
 /// </summary>
 public class BUSINESS_EVENT_TRIGGER : ModelEntityBase
 {
-    [Key]
+    [Key, MaxLength(128)]
     public string TRIGGER_ID { get; set; } = Guid.NewGuid().ToString();
 
     /// <summary>Human-readable trigger name.</summary>

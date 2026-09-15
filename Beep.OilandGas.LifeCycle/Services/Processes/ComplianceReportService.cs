@@ -1,5 +1,4 @@
 using Beep.OilandGas.PPDM39.Core;
-using System.Text.Json;
 using Beep.OilandGas.LifeCycle.Data.Tables;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -13,7 +12,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes;
 
 /// <summary>
 /// Generates compliance reports for SOX ITGC, user access summaries, and role-permission matrices.
-/// All reports are generated from live data in the PPDM extension tables.
+/// Identity data comes from the repository reader; workflow data uses its bound module database.
 /// Part of Phase 4 governance & compliance.
 /// </summary>
 public interface IComplianceReportService
@@ -105,23 +104,26 @@ public class ComplianceReportService : IComplianceReportService
     private readonly ICommonColumnHandler _commonColumnHandler;
     private readonly IPPDM39DefaultsRepository _defaults;
     private readonly IPPDMMetadataRepository _metadata;
-    private readonly string _connectionName;
+    private readonly Func<Task<string>>? _resolveConnection;
     private readonly ILogger<ComplianceReportService> _logger;
+    private readonly IComplianceIdentityReader? _identity;
 
     public ComplianceReportService(
         IDMEEditor editor,
         ICommonColumnHandler commonColumnHandler,
         IPPDM39DefaultsRepository defaults,
         IPPDMMetadataRepository metadata,
-        string connectionName = "PPDM39",
-        ILogger<ComplianceReportService>? logger = null)
+        ILogger<ComplianceReportService>? logger = null,
+        IComplianceIdentityReader? identity = null,
+        Func<Task<string>>? resolveConnection = null)
     {
         _editor = editor;
         _commonColumnHandler = commonColumnHandler;
         _defaults = defaults;
         _metadata = metadata;
-        _connectionName = connectionName;
+        _resolveConnection = resolveConnection;
         _logger = logger;
+        _identity = identity;
     }
 
     public async Task<SoxItgcReport> GenerateSoxItgcReportAsync(DateTime periodStart, DateTime periodEnd)
@@ -131,15 +133,14 @@ public class ComplianceReportService : IComplianceReportService
         try
         {
             // Access Control
-            var userRepo = GetRepo<Beep.OilandGas.Models.Data.Security.USER>("USER");
-            var roleRepo = GetRepo<Beep.OilandGas.Models.Data.Security.ROLE>("ROLE");
-            var sodConflictRepo = GetRepo<SOD_CONFLICT>("SOD_CONFLICT");
-            var compControlRepo = GetRepo<COMPENSATING_CONTROL>("COMPENSATING_CONTROL");
+            var counts = await Identity.GetCountsAsync();
+            var connection = await ResolveConnectionAsync();
+            var sodConflictRepo = GetRepo<SOD_CONFLICT>("SOD_CONFLICT", connection);
+            var compControlRepo = GetRepo<COMPENSATING_CONTROL>("COMPENSATING_CONTROL", connection);
 
-            var users = (await userRepo.GetAsync(new List<AppFilter>())).ToList();
-            var roles = (await roleRepo.GetAsync(new List<AppFilter>())).ToList();
-            report.AccessControl.TotalUsers = users.Count;
-            report.AccessControl.TotalRoles = roles.Count;
+            report.AccessControl.TotalUsers = counts.Users;
+            report.AccessControl.TotalRoles = counts.Roles;
+            report.AccessControl.TotalPermissions = counts.Permissions;
 
             var conflicts = (await sodConflictRepo.GetAsync(new List<AppFilter>
             {
@@ -158,18 +159,18 @@ public class ComplianceReportService : IComplianceReportService
                     $"{conflicts.Count} active SoD conflicts require review");
 
             // Change Management
-            var versionRepo = GetRepo<WORKFLOW_VERSION>("WORKFLOW_VERSION");
+            var versionRepo = GetRepo<WORKFLOW_VERSION>("WORKFLOW_VERSION", connection);
             var versions = (await versionRepo.GetAsync(new List<AppFilter>())).ToList();
             var changesInPeriod = versions.OfType<WORKFLOW_VERSION>()
                 .Count(v => v.EFFECTIVE_DATE >= periodStart && v.EFFECTIVE_DATE <= periodEnd);
             report.ChangeManagement.WorkflowVersionChanges = changesInPeriod;
 
             // Computer Operations
-            var instanceRepo = GetRepo<PROCESS_INSTANCE>("PROCESS_INSTANCE");
+            var instanceRepo = GetRepo<PROCESS_INSTANCE>("PROCESS_INSTANCE", connection);
             var instances = (await instanceRepo.GetAsync(new List<AppFilter>())).ToList();
             report.ComputerOperations.TotalProcessInstances = instances.Count;
 
-            var historyRepo = GetRepo<PROCESS_HISTORY>("PROCESS_HISTORY");
+            var historyRepo = GetRepo<PROCESS_HISTORY>("PROCESS_HISTORY", connection);
             var historyFilters = new List<AppFilter>
             {
                 new() { FieldName = "EVENT_TYPE", FilterValue = "SLA_BREACH" },
@@ -182,8 +183,8 @@ public class ComplianceReportService : IComplianceReportService
         }
         catch (Exception ex)
         {
-            report.Findings.Add($"Report generation error: {ex.Message}");
             _logger?.LogError(ex, "Failed to generate SOX ITGC report");
+            throw;
         }
 
         return report;
@@ -195,72 +196,23 @@ public class ComplianceReportService : IComplianceReportService
 
         try
         {
-            var users = (await GetRepo<Beep.OilandGas.Models.Data.Security.USER>("USER")
-                .GetAsync(new List<AppFilter>())).OfType<Beep.OilandGas.Models.Data.Security.USER>().ToList();
-
-            foreach (var user in users.Take(500)) // Limit for performance
-            {
-                var entry = new UserAccessEntry
-                {
-                    UserId = user.USER_ID,
-                    UserName = user.USER_NAME,
-                };
-                report.Users.Add(entry);
-            }
+            report.Users = await Identity.GetUsersAsync();
 
             report.SodSummary = await GetSodSummaryReportAsync();
         }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Failed to generate user access report");
+            throw;
         }
 
         return report;
     }
 
-    public async Task<string> GenerateRolePermissionMatrixJsonAsync()
-    {
-        try
-        {
-            var roles = (await GetRepo<Beep.OilandGas.Models.Data.Security.ROLE>("ROLE")
-                .GetAsync(new List<AppFilter>())).OfType<Beep.OilandGas.Models.Data.Security.ROLE>().ToList();
+    public Task<string> GenerateRolePermissionMatrixJsonAsync() => Identity.GetRolePermissionMatrixJsonAsync();
 
-            var rpRepo = GetRepo<Beep.OilandGas.Models.Data.Security.ROLE_PERMISSION>("ROLE_PERMISSION");
-            var permRepo = GetRepo<Beep.OilandGas.Models.Data.Security.PERMISSION>("PERMISSION");
-            var allPerms = (await permRepo.GetAsync(new List<AppFilter>()))
-                .OfType<Beep.OilandGas.Models.Data.Security.PERMISSION>().ToList();
-
-            var matrix = new Dictionary<string, object>();
-            foreach (var role in roles)
-            {
-                var rps = (await rpRepo.GetAsync(new List<AppFilter>
-                {
-                    new() { FieldName = "ROLE_ID", FilterValue = role.ROLE_ID }
-                })).OfType<Beep.OilandGas.Models.Data.Security.ROLE_PERMISSION>().ToList();
-
-                var permIds = rps.Select(r => r.PERMISSION_ID).ToHashSet();
-                var permCodes = allPerms
-                    .Where(p => permIds.Contains(p.PERMISSION_ID))
-                    .Select(p => p.PERMISSION_CODE)
-                    .OrderBy(c => c)
-                    .ToList();
-
-                matrix[role.ROLE_NAME] = new
-                {
-                    roleId = role.ROLE_ID,
-                    permissionCount = permCodes.Count,
-                    permissions = permCodes,
-                };
-            }
-
-            return JsonSerializer.Serialize(matrix, new JsonSerializerOptions { WriteIndented = true });
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogError(ex, "Failed to generate role-permission matrix");
-            return "{}";
-        }
-    }
+    private IComplianceIdentityReader Identity => _identity ??
+        throw new InvalidOperationException("Compliance reporting requires the Identity repository reader.");
 
     public async Task<SodSummaryReport> GetSodSummaryReportAsync()
     {
@@ -268,11 +220,12 @@ public class ComplianceReportService : IComplianceReportService
 
         try
         {
-            var rules = (await GetRepo<SOD_RULE>("SOD_RULE").GetAsync(new List<AppFilter>()))
+            var connection = await ResolveConnectionAsync();
+            var rules = (await GetRepo<SOD_RULE>("SOD_RULE", connection).GetAsync(new List<AppFilter>()))
                 .OfType<SOD_RULE>().ToList();
             report.TotalRules = rules.Count;
 
-            var conflicts = (await GetRepo<SOD_CONFLICT>("SOD_CONFLICT").GetAsync(new List<AppFilter>()))
+            var conflicts = (await GetRepo<SOD_CONFLICT>("SOD_CONFLICT", connection).GetAsync(new List<AppFilter>()))
                 .OfType<SOD_CONFLICT>().ToList();
 
             report.ActiveConflicts = conflicts.Count(c => c.CONFLICT_STATUS == "ACTIVE");
@@ -286,12 +239,20 @@ public class ComplianceReportService : IComplianceReportService
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Failed to generate SoD summary report");
+            throw;
         }
 
         return report;
     }
 
-    private PPDMGenericRepository GetRepo<T>(string tableName) =>
+    private async Task<string> ResolveConnectionAsync()
+    {
+        var connection = _resolveConnection is null ? null : await _resolveConnection();
+        return !string.IsNullOrWhiteSpace(connection) ? connection :
+            throw new InvalidOperationException("Compliance reporting requires a bound LIFECYCLE database.");
+    }
+
+    private PPDMGenericRepository GetRepo<T>(string tableName, string connection) =>
         new(_editor, _commonColumnHandler, _defaults, _metadata,
-            typeof(T), _connectionName, tableName, null);
+            typeof(T), connection, tableName, null);
 }

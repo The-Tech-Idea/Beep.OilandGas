@@ -2,3 +2,34 @@
     width: 180px;
     max-width: 35vw;
 }
+
+.app-logo-link {
+    flex: 0 0 auto;
+    width: auto;
+    max-width: 64px;
+    color: var(--mud-palette-primary-text);
+}
+
+.app-logo {
+    display: block;
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+.og-nav-wrapper {
+    display: flex;
+    align-items: center;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+}
+
+.og-main-content { min-height: calc(100vh - 144px); }
+.og-footer {
+    border-top: 1px solid var(--mud-palette-divider);
+    border-radius: 0;
+    background: var(--mud-palette-surface);
+}
+.og-footer .mud-stack { flex-wrap: wrap; }
+.og-footer-logo { height: 24px; width: 24px; object-fit: contain; }

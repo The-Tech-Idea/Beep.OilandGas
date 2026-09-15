@@ -26,6 +26,7 @@ public class ProductionAccountingServiceHardeningServiceTests
             new Mock<IPPDM39DefaultsRepository>().Object,
             new Mock<IPPDMMetadataRepository>().Object,
             new Mock<IAllocationEngine>().Object,
+            () => throw new InvalidOperationException("Validation must not access a database."),
             NullLogger<AllocationService>.Instance);
 
         var allocation = new ALLOCATION_RESULT
@@ -45,6 +46,7 @@ public class ProductionAccountingServiceHardeningServiceTests
             new Mock<ICommonColumnHandler>().Object,
             new Mock<IPPDM39DefaultsRepository>().Object,
             new Mock<IPPDMMetadataRepository>().Object,
+            () => throw new InvalidOperationException("Validation must not access a database."),
             NullLogger<InventoryService>.Instance);
 
         var inventory = new TANK_INVENTORY
@@ -63,6 +65,7 @@ public class ProductionAccountingServiceHardeningServiceTests
             new Mock<ICommonColumnHandler>().Object,
             new Mock<IPPDM39DefaultsRepository>().Object,
             new Mock<IPPDMMetadataRepository>().Object,
+            () => throw new InvalidOperationException("Validation must not access a database."),
             NullLogger<RevenueService>.Instance);
 
         var allocation = new REVENUE_ALLOCATION

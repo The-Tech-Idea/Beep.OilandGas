@@ -7,6 +7,7 @@ using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.ModuleSetup;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;
@@ -25,7 +26,7 @@ namespace Beep.OilandGas.ApiService.Tests;
 ///   [x] AllSucceeded=true only when every module reports Success
 ///   [x] Idempotency: two successive runs produce identical aggregate shapes
 ///   [x] RunSeedForModulesAsync filters to the requested module IDs
-///   [x] RunSeedForModulesAsync on an empty list falls back to RunSeedAsync
+///   [x] Empty or unknown module selections are rejected before seeding
 ///   [x] GetAllEntityTypes returns empty list when no modules registered
 /// </summary>
 public class ModuleSetupOrchestratorTests
@@ -341,7 +342,7 @@ public class ModuleSetupOrchestratorTests
     }
 
     [Fact]
-    public async Task RunSeedForModulesAsync_EmptyList_FallsBackToRunAll()
+    public async Task RunSeedForModulesAsync_EmptyListCannotRunAll()
     {
         var callLog = new List<string>();
 
@@ -349,24 +350,72 @@ public class ModuleSetupOrchestratorTests
             new OrderRecorder("A", 10, callLog),
             new OrderRecorder("B", 20, callLog));
 
-        var result = await sut.RunSeedForModulesAsync(
-            Array.Empty<string>(), "TEST", "user");
-
-        Assert.Contains("A", callLog);
-        Assert.Contains("B", callLog);
-        Assert.Equal(2, result.ModulesRun);
+        await Assert.ThrowsAsync<ArgumentException>(() => sut.RunSeedForModulesAsync(
+            Array.Empty<string>(), "TEST", "user"));
+        Assert.Empty(callLog);
     }
 
     [Fact]
-    public async Task RunSeedForModulesAsync_NoMatchingIds_ReturnsEmptyResult()
+    public async Task RunSeedForModulesAsync_NoMatchingIdsAreRejected()
     {
         var sut = Build(new OkModule("A", 10));
 
-        var result = await sut.RunSeedForModulesAsync(
-            new[] { "DOES_NOT_EXIST" }, "TEST", "user");
+        await Assert.ThrowsAsync<ArgumentException>(() => sut.RunSeedForModulesAsync(
+            new[] { "DOES_NOT_EXIST" }, "TEST", "user"));
+    }
 
-        Assert.Equal(0, result.ModulesRun);
-        Assert.Empty(result.ModuleResults);
+    [Theory]
+    [InlineData("UNKNOWN")]
+    [InlineData("")]
+    [InlineData("SECURITY")]
+    public async Task InvalidSelectionPreventsEvenValidModuleWrites(string invalid)
+    {
+        var calls = new List<string>();
+        var sut = Build(new OrderRecorder("A", 1, calls), new OrderRecorder("SECURITY", 2, calls));
+        await Assert.ThrowsAsync<ArgumentException>(() => sut.RunSeedForModulesAsync(["A", invalid], "db", "actor"));
+        Assert.Empty(calls);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task RepositoryEntitiesCannotBeSeededThroughRenamedModule(bool selective)
+    {
+        var calls = new List<string>();
+        var sut = Build(new OrderRecorder("A", 1, calls),
+            new OkModule("RENAMED", 2, 1, typeof(TheTechIdea.Data.OilGas.AppRoleExtension)));
+        await Assert.ThrowsAsync<ArgumentException>(() => selective
+            ? sut.RunSeedForModulesAsync(["A", "RENAMED"], "db", "actor")
+            : sut.RunSeedAsync("db", "actor"));
+        Assert.Empty(calls);
+    }
+
+    [Fact]
+    public async Task AmbiguousRegistrationCannotWrite()
+    {
+        var calls = new List<string>();
+        var sut = Build(new OrderRecorder("A", 1, calls), new OrderRecorder("a", 2, calls));
+        await Assert.ThrowsAsync<ArgumentException>(() => sut.RunSeedForModulesAsync(["A"], "db", "actor"));
+        Assert.Empty(calls);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task PartialErrorsCannotReportSuccessfulInstallation(bool selective)
+    {
+        var module = new Moq.Mock<IModuleSetup>();
+        module.SetupGet(m => m.ModuleId).Returns("A");
+        module.SetupGet(m => m.EntityTypes).Returns(Array.Empty<Type>());
+        module.Setup(m => m.SeedAsync("db", "actor", default)).ReturnsAsync(
+            new ModuleSetupResult { Success = true, RecordsInserted = 2, Errors = ["row failed"] });
+        var sut = Build(module.Object);
+        var result = selective ? await sut.RunSeedForModulesAsync(["A"], "db", "actor")
+            : await sut.RunSeedAsync("db", "actor");
+        Assert.False(result.AllSucceeded);
+        Assert.Equal(0, result.ModulesSucceeded);
+        Assert.Equal(2, result.TotalRecordsInserted);
+        Assert.False(Assert.Single(result.ModuleResults).Success);
     }
 
     // ──────────────────────────────────────────────────────────────────────────

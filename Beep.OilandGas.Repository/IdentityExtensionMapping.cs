@@ -13,6 +13,10 @@ internal static class IdentityExtensionMapping
             entity.ToTable("APP_USER");
             entity.HasKey(x => x.UserId);
             entity.Property(x => x.UserId).HasMaxLength(128);
+            entity.Property(x => x.PrimaryRoleId).HasMaxLength(128);
+            entity.Property(x => x.PreferredLayout).HasMaxLength(128);
+            entity.Property(x => x.PreferencesJson).HasMaxLength(4000);
+            entity.HasOne<IdentityRole>().WithMany().HasForeignKey(x => x.PrimaryRoleId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<OilGasUser>().WithOne().HasForeignKey<AppUserExtension>(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
         });
         builder.Entity<AppRoleExtension>(entity =>

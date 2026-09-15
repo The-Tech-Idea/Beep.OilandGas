@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Net.Mail;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TheTechIdea.Data.OilGas;
@@ -14,7 +15,7 @@ public sealed class RepositoryBootstrapService(
     public const string AdministratorRole = "Administrator";
 
     public async Task<BootstrapOutcome> BootstrapAsync(string issuer, string subject,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, ExternalRegistrationProfile? profile = null)
     {
         if (string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(subject)
             || subject.Length > 128)
@@ -32,13 +33,21 @@ public sealed class RepositoryBootstrapService(
         var loginProvider = ExternalLoginProvider(issuer);
         var user = await users.FindByLoginAsync(loginProvider, subject);
         if (user is not null)
+        {
+            var logins = await users.GetLoginsAsync(user);
+            if (!logins.Any(login => string.Equals(login.LoginProvider, loginProvider, StringComparison.Ordinal)
+                && string.Equals(login.ProviderKey, subject, StringComparison.Ordinal)))
+                return BootstrapOutcome.NotAllowed;
             return user.IsActive ? BootstrapOutcome.AlreadyCompleted : BootstrapOutcome.NotAllowed;
+        }
         if (user is null)
         {
-            user = new OilGasUser { UserName = $"external-{Guid.NewGuid():N}" };
+            var email = NormalizeEmail(profile?.Email);
+            user = new OilGasUser { UserName = $"external-{Guid.NewGuid():N}", Email = email,
+                EmailConfirmed = email is not null && profile?.EmailVerified == true };
             RequireSuccess(await users.CreateAsync(user));
             RequireSuccess(await users.AddLoginAsync(user, new UserLoginInfo(loginProvider, subject, "OIDC")));
-            context.Add(new AppUserExtension { UserId = user.Id, CreatedUtc = DateTime.UtcNow,
+            context.Add(new AppUserExtension { UserId = user.Id, FullName = NormalizeDisplayName(profile?.FullName), CreatedUtc = DateTime.UtcNow,
                 ChangedUtc = DateTime.UtcNow, ChangedBy = user.Id });
             await context.SaveChangesAsync(cancellationToken);
         }
@@ -84,6 +93,20 @@ public sealed class RepositoryBootstrapService(
 
     public static string ExternalLoginProvider(string issuer) =>
         "oidc:" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(issuer)));
+
+    private static string? NormalizeDisplayName(string? value)
+    {
+        value = value?.Trim();
+        return string.IsNullOrEmpty(value) || value.Length > 1000 || value.Any(char.IsControl) ? null : value;
+    }
+
+    private static string? NormalizeEmail(string? value)
+    {
+        value = value?.Trim();
+        if (string.IsNullOrEmpty(value) || value.Length > 256 || value.Any(char.IsControl)) return null;
+        return MailAddress.TryCreate(value, out var address) && string.Equals(address.Address, value, StringComparison.OrdinalIgnoreCase)
+            ? value : null;
+    }
 
     private static void RequireSuccess(IdentityResult result)
     {

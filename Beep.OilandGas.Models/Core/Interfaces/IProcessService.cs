@@ -23,6 +23,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<ProcessInstance> StartProcessAsync(string processId, string entityId, string entityType, string fieldId, string userId);
         Task<ProcessInstance?> GetProcessInstanceAsync(string instanceId);
         Task<List<ProcessInstance>> GetProcessInstancesForEntityAsync(string entityId, string entityType);
+        Task<List<ProcessInstance>> GetProcessInstancesForFieldAsync(string fieldId);
         Task<ProcessInstance?> GetCurrentProcessForEntityAsync(string entityId, string entityType);
         Task<bool> CancelProcessAsync(string instanceId, string reason, string userId);
 

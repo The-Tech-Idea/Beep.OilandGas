@@ -10,7 +10,7 @@ namespace Beep.OilandGas.LifeCycle.Data.Tables;
 /// </summary>
 public class CROSS_PERSONA_TASK : ModelEntityBase
 {
-    [Key]
+    [Key, MaxLength(128)]
     public string CROSS_TASK_ID { get; set; } = Guid.NewGuid().ToString();
 
     /// <summary>FK → PROCESS_INSTANCE.PROCESS_INSTANCE_ID.</summary>

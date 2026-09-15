@@ -1,13 +1,18 @@
 <Project>
   <PropertyGroup>
-    <UseBeepDMSource Condition="'$(UseBeepDMSource)' == ''">false</UseBeepDMSource>
+    <UseBeepDMSource Condition="'$(UseBeepDMSource)' == ''">true</UseBeepDMSource>
     <BeepDMSourceRoot Condition="'$(BeepDMSourceRoot)' == ''">$(MSBuildThisFileDirectory)..\BeepDM</BeepDMSourceRoot>
+    <BeepDataSourcesRoot Condition="'$(BeepDataSourcesRoot)' == ''">$(MSBuildThisFileDirectory)..\BeepDataSources</BeepDataSourcesRoot>
   </PropertyGroup>
   <ItemGroup Condition="'$(UseBeepDMSource)' == 'true'">
     <_BeepEngineReference Include="@(PackageReference->WithMetadataValue('Identity', 'TheTechIdea.Beep.DataManagementEngine'))" />
     <_BeepModelsReference Include="@(PackageReference->WithMetadataValue('Identity', 'TheTechIdea.Beep.DataManagementModels'))" />
-    <PackageReference Remove="@(_BeepEngineReference);@(_BeepModelsReference)" />
-    <ProjectReference Include="$(BeepDMSourceRoot)\DataManagementEngineStandard\DataManagementEngine.csproj" Condition="'@(_BeepEngineReference)' != ''" />
-    <ProjectReference Include="$(BeepDMSourceRoot)\DataManagementModelsStandard\DataManagementModels.csproj" Condition="'@(_BeepModelsReference)' != ''" />
+    <_BeepRdbReference Include="@(PackageReference->WithMetadataValue('Identity', 'TheTechIdea.Beep.RDBDataSource'))" />
+    <_BeepSqlServerReference Include="@(PackageReference->WithMetadataValue('Identity', 'TheTechIdea.Beep.SqlServerDataSourceCore'))" />
+    <PackageReference Remove="@(_BeepEngineReference);@(_BeepModelsReference);@(_BeepRdbReference);@(_BeepSqlServerReference)" />
+    <ProjectReference Include="$(BeepDMSourceRoot)\DataManagementEngineStandard\DataManagementEngine.csproj" Condition="'@(_BeepEngineReference)' != ''" AdditionalProperties="GeneratePackageOnBuild=false" />
+    <ProjectReference Include="$(BeepDMSourceRoot)\DataManagementModelsStandard\DataManagementModels.csproj" Condition="'@(_BeepModelsReference)' != ''" AdditionalProperties="GeneratePackageOnBuild=false" />
+    <ProjectReference Include="$(BeepDataSourcesRoot)\DataSourcesPlugins\RDBMSDataSource\RDBDataSource.csproj" Condition="'@(_BeepRdbReference)' != ''" AdditionalProperties="GeneratePackageOnBuild=false" />
+    <ProjectReference Include="$(BeepDataSourcesRoot)\DataSourcesPluginsCore\SQlServerDataSourceCore\SqlServerDataSourceCore.csproj" Condition="'@(_BeepSqlServerReference)' != ''" AdditionalProperties="GeneratePackageOnBuild=false" />
   </ItemGroup>
 </Project>

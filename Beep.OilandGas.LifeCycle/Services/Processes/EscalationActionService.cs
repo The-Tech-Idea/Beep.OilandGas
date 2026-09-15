@@ -50,7 +50,7 @@ public class EscalationActionService : IEscalationActionService
     private readonly ICommonColumnHandler _commonColumnHandler;
     private readonly IPPDM39DefaultsRepository _defaults;
     private readonly IPPDMMetadataRepository _metadata;
-    private readonly string _connectionName;
+    private readonly Func<Task<string>>? _resolveConnection;
     private readonly ILogger<EscalationActionService> _logger;
 
     // Default actions by step type
@@ -68,14 +68,14 @@ public class EscalationActionService : IEscalationActionService
         ICommonColumnHandler commonColumnHandler,
         IPPDM39DefaultsRepository defaults,
         IPPDMMetadataRepository metadata,
-        string connectionName = "PPDM39",
+        Func<Task<string>>? resolveConnection = null,
         ILogger<EscalationActionService>? logger = null)
     {
         _editor = editor;
         _commonColumnHandler = commonColumnHandler;
         _defaults = defaults;
         _metadata = metadata;
-        _connectionName = connectionName;
+        _resolveConnection = resolveConnection;
         _logger = logger;
     }
 
@@ -159,7 +159,7 @@ public class EscalationActionService : IEscalationActionService
 
     private async Task ReassignStepAsync(string stepInstanceId, string targetRoleOrUser, string userId)
     {
-        var repo = GetStepRepo();
+        var repo = GetStepRepo(await ResolveConnectionAsync());
         var filters = new List<AppFilter>
         {
             new() { FieldName = "PROCESS_STEP_INSTANCE_ID", FilterValue = stepInstanceId }
@@ -182,7 +182,7 @@ public class EscalationActionService : IEscalationActionService
 
     private async Task SuspendProcessAsync(string processInstanceId, string userId)
     {
-        var repo = GetInstanceRepo();
+        var repo = GetInstanceRepo(await ResolveConnectionAsync());
         var filters = new List<AppFilter>
         {
             new() { FieldName = "PROCESS_INSTANCE_ID", FilterValue = processInstanceId }
@@ -196,11 +196,19 @@ public class EscalationActionService : IEscalationActionService
         await repo.UpdateAsync(instance, userId);
     }
 
-    private PPDMGenericRepository GetStepRepo() =>
-        new(_editor, _commonColumnHandler, _defaults, _metadata,
-            typeof(PROCESS_STEP_INSTANCE), _connectionName, "PROCESS_STEP_INSTANCE", null);
+    private async Task<string> ResolveConnectionAsync()
+    {
+        var connection = _resolveConnection is null ? null : await _resolveConnection();
+        if (string.IsNullOrWhiteSpace(connection))
+            throw new InvalidOperationException("Escalation updates require a bound LIFECYCLE database.");
+        return connection;
+    }
 
-    private PPDMGenericRepository GetInstanceRepo() =>
+    private PPDMGenericRepository GetStepRepo(string connectionName) =>
         new(_editor, _commonColumnHandler, _defaults, _metadata,
-            typeof(PROCESS_INSTANCE), _connectionName, "PROCESS_INSTANCE", null);
+            typeof(PROCESS_STEP_INSTANCE), connectionName, "PROCESS_STEP_INSTANCE", null);
+
+    private PPDMGenericRepository GetInstanceRepo(string connectionName) =>
+        new(_editor, _commonColumnHandler, _defaults, _metadata,
+            typeof(PROCESS_INSTANCE), connectionName, "PROCESS_INSTANCE", null);
 }

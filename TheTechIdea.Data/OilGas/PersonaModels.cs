@@ -50,19 +50,19 @@ public sealed class AppPersonaAudit
 }
 
 public sealed record PersonaProfileUpdate(
-    [property: MaxLength(64)] string? PersonaCode,
-    [property: MaxLength(32)] string? Locale = null,
-    [property: MaxLength(128)] string? TimeZone = null,
-    [property: MaxLength(32)] string? UnitSystem = null,
-    [property: MaxLength(128)] string? DefaultFieldId = null,
-    [property: MaxLength(36)] string? ConcurrencyStamp = null);
+    [MaxLength(64)] string? PersonaCode,
+    [MaxLength(32)] string? Locale = null,
+    [MaxLength(128)] string? TimeZone = null,
+    [MaxLength(32)] string? UnitSystem = null,
+    [MaxLength(128)] string? DefaultFieldId = null,
+    [MaxLength(36)] string? ConcurrencyStamp = null);
 
 public sealed record PersonaPreferenceUpdate(
-    [property: MaxLength(4000)] string? Value,
-    [property: MaxLength(36)] string? ConcurrencyStamp = null);
+    [MaxLength(4000)] string? Value,
+    [MaxLength(36)] string? ConcurrencyStamp = null);
 
 public sealed record PersonaCatalogUpdate(
-    [property: Required, MaxLength(128)] string Name,
-    [property: MaxLength(1000)] string? Description = null,
-    [property: MaxLength(256)] string? DefaultRoute = null,
+    [Required, MaxLength(128)] string Name,
+    [MaxLength(1000)] string? Description = null,
+    [MaxLength(256)] string? DefaultRoute = null,
     bool IsActive = true, int DisplayOrder = 0);

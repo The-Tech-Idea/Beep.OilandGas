@@ -97,6 +97,7 @@ builder.Services.TryAddEnumerable(
 // ApiClient: Generic HTTP client for calling the API service
 var apiServiceUrl = builder.Configuration["ApiService:BaseUrl"] ?? "https://localhost:7001";
 builder.Services.AddHttpClient<RepositoryAccountClient>(client => client.BaseAddress = new Uri(apiServiceUrl));
+builder.Services.AddScoped<RepositorySignInService>();
 builder.Services.AddScoped<IClaimsTransformation, OilGasClaimsTransformation>();
 builder.Services.AddScoped<UserAdministrationClient>();
 builder.Services.AddScoped<ModuleDatabaseClient>();
@@ -117,13 +118,11 @@ const string OIDC_SCHEME = "oidc";
 builder.Services.AddCascadingAuthenticationState();
 
 // Register the OIDC-compatible AuthenticationStateProvider
-builder.Services.AddScoped<AuthenticationStateProvider, Beep.Foundation.IdentityServer.Shared.Authentication.OidcAuthenticationStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider, OilGasRevalidatingAuthenticationStateProvider>();
 
 // Get IdentityServer URL for OIDC configuration
 // Try Aspire service discovery first, then fallback to config
-var identityServerUrl = builder.Configuration["services:identityserver:https:0"] 
-    ?? builder.Configuration["IdentityServer:BaseUrl"] 
-    ?? "https://localhost:7062/";
+var identityServerUrl = IdentityServerConfiguration.ResolveAuthority(builder.Configuration);
 
 var oidcClientId = builder.Configuration["Authentication:Schemes:OpenIdConnect:ClientId"]
     ?? builder.Configuration["IdentityServer:ClientId"]
@@ -291,13 +290,10 @@ builder.Services.AddAuthentication(options =>
             // Store the token if we have one
             if (!string.IsNullOrEmpty(accessToken) && !string.IsNullOrEmpty(userId))
             {
-                var tokenProvider = context.HttpContext.RequestServices.GetRequiredService<Beep.Foundation.IdentityServer.Shared.Authentication.TokenProvider>();
-                tokenProvider.SetUserToken(userId, accessToken);
-                context.HttpContext.Items["OilGas.AccessToken"] = accessToken;
                 try
                 {
-                    var repository = context.HttpContext.RequestServices.GetRequiredService<RepositoryAccountClient>();
-                    await repository.RegisterAsync(accessToken, context.HttpContext.RequestAborted);
+                    var signIn = context.HttpContext.RequestServices.GetRequiredService<RepositorySignInService>();
+                    await signIn.RegisterAsync(userId, accessToken, context.HttpContext.RequestAborted);
                 }
                 catch (Exception exception)
                 {
@@ -305,6 +301,7 @@ builder.Services.AddAuthentication(options =>
                     context.Fail("OilGas registration could not complete.");
                     return;
                 }
+                context.HttpContext.Items["OilGas.AccessToken"] = accessToken;
                 logger.LogInformation("OIDC: ✓ Stored access token for user {UserId} in TokenProvider (length: {Length})", 
                     userId, accessToken.Length);
             }
@@ -360,10 +357,6 @@ builder.Services.AddAuthorization();
 // HttpClient for communicating with Identity Server (for branding registration)
 builder.Services.AddHttpClient("IdentityServer", client =>
 {
-    // Use Aspire service discovery URL if available, otherwise use config
-    var identityServerUrl = builder.Configuration["services:identityserver:https:0"] 
-        ?? builder.Configuration["IdentityServer:BaseUrl"] 
-        ?? "https://localhost:7062/";
     client.BaseAddress = new Uri(identityServerUrl);
     client.Timeout = TimeSpan.FromSeconds(30); // Increase timeout to 30 seconds
 })
@@ -537,6 +530,7 @@ app.UseTokenCapture();
 
 app.UseCors();
 app.UseStaticFiles();
+app.MapStaticAssets();
 app.UseRouting();
 
 // IMPORTANT: UseAntiforgery must be after UseRouting and before MapRazorComponents

@@ -28,13 +28,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly ILogger<PricingService> _logger;
-        private const string ConnectionName = "PPDM39";
+        private readonly Func<Task<string>> _resolveConnection;
 
         public PricingService(
             IDMEEditor editor,
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
+            Func<Task<string>> resolveConnection,
             ILogger<PricingService> logger = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
@@ -42,6 +43,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _logger = logger;
+            _resolveConnection = resolveConnection ?? throw new ArgumentNullException(nameof(resolveConnection));
         }
 
         /// <summary>
@@ -62,13 +64,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _logger?.LogInformation("Getting price for product {ProductId} on {Date}",
                 commodityType, date.ToShortDateString());
 
-            var metadata = await _metadata.GetTableMetadataAsync("PRICE_INDEX");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(PRICE_INDEX);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "PRICE_INDEX");
+            var repo = await CreateRepositoryAsync();
 
             var filters = new List<AppFilter>
             {
@@ -108,13 +104,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var commodityType = productId.Trim();
 
-            var metadata = await _metadata.GetTableMetadataAsync("PRICE_INDEX");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(PRICE_INDEX);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "PRICE_INDEX");
+            var repo = await CreateRepositoryAsync();
 
             var filters = new List<AppFilter>
             {
@@ -129,8 +119,18 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ?? new List<PRICE_INDEX>();
         }
 
+        private async Task<PPDMGenericRepository> CreateRepositoryAsync()
+        {
+            var connection = await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection))
+                throw new InvalidOperationException("A PRODUCTION database binding is required.");
+            return new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(PRICE_INDEX), connection, "PRICE_INDEX");
+        }
+
         /// <summary>
-        /// Calculates revenue: volume × price.
+        /// Calculates revenue: volume times price.
         /// </summary>
         public async Task<decimal> CalculateRevenueAsync(
             string productId,

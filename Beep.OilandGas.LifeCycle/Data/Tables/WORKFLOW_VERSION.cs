@@ -10,7 +10,9 @@ namespace Beep.OilandGas.LifeCycle.Data.Tables;
 /// </summary>
 public class WORKFLOW_VERSION : ModelEntityBase
 {
-    [Key]
+    public WORKFLOW_VERSION() => EFFECTIVE_DATE = DateTime.UtcNow;
+
+    [Key, MaxLength(128)]
     public string VERSION_ID { get; set; } = Guid.NewGuid().ToString();
 
     /// <summary>FK → PROCESS_DEFINITION.PROCESS_DEFINITION_ID.</summary>
@@ -27,9 +29,6 @@ public class WORKFLOW_VERSION : ModelEntityBase
 
     /// <summary>Full JSON snapshot of the process definition at this version.</summary>
     public string? PROCESS_CONFIG_SNAPSHOT { get; set; }
-
-    /// <summary>When this version became effective.</summary>
-    public DateTime EFFECTIVE_DATE { get; set; } = DateTime.UtcNow;
 
     /// <summary>JSON array of step IDs removed in this version.</summary>
     public string? DEPRECATED_STEP_IDS { get; set; }

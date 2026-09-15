@@ -10,7 +10,7 @@ namespace Beep.OilandGas.LifeCycle.Data.Tables;
 /// </summary>
 public class SOD_RULE : ModelEntityBase
 {
-    [Key]
+    [Key, MaxLength(128)]
     public string SOD_RULE_ID { get; set; } = Guid.NewGuid().ToString();
 
     /// <summary>Human-readable rule name, e.g. "AFE_CREATE_APPROVE".</summary>

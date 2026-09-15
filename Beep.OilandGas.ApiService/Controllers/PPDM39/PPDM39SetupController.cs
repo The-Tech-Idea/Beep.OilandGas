@@ -2528,82 +2528,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             }
         }
 
-        /// <summary>
-        /// POST /api/ppdm39/setup/seed/selected-modules
-        /// Runs only the specified IModuleSetup implementations, in their declared Order.
-        /// Request: { "moduleIds": ["CorePpdmModule", "SharedReferenceModule"], "connectionName": "PPDM39", "userId": "SYSTEM" }
-        /// </summary>
-        [HttpPost("seed/selected-modules")]
-        public async Task<ActionResult<Beep.OilandGas.Models.Core.DTOs.ModuleSeedingResponse>> SeedSelectedModules(
-            [FromBody] Beep.OilandGas.Models.Core.DTOs.ModuleSeedingRequest request)
-        {
-            try
-            {
-                if (request?.ModuleIds == null || request.ModuleIds.Count == 0)
-                {
-                    return BadRequest(new { error = "ModuleIds list cannot be empty." });
-                }
-
-                _logger.LogInformation(
-                    "Seeding {ModuleCount} selected modules: {Modules}",
-                    request.ModuleIds.Count,
-                    string.Join(", ", request.ModuleIds));
-
-                var connectionName = string.IsNullOrWhiteSpace(request.ConnectionName) 
-                    ? "PPDM39" 
-                    : request.ConnectionName;
-                var userId = string.IsNullOrWhiteSpace(request.UserId) 
-                    ? "SYSTEM" 
-                    : request.UserId;
-
-                var seedResult = await _setupService.SeedSelectedModulesAsync(
-                    request.ModuleIds,
-                    connectionName,
-                    userId);
-
-                var response = new Beep.OilandGas.Models.Core.DTOs.ModuleSeedingResponse
-                {
-                    Success = seedResult.Success,
-                    Message = seedResult.Message,
-                    TotalRecordsInserted = seedResult.TotalInserted,
-                    ModulesRun = request.ModuleIds.Count,
-                    ModulesSucceeded = seedResult.Success ? request.ModuleIds.Count : 0,
-                    ModuleDetails = new List<Beep.OilandGas.Models.Core.DTOs.ModuleExecutionDetail>(),
-                    Errors = seedResult.Errors,
-                    OperationId = request.OperationId
-                };
-
-                // Details contains formatted strings like "[ModuleId] ModuleName: X rows / Y tables"
-                // For the response, we parse these strings and include them in module details
-                if (seedResult.Details != null && seedResult.Details.Count > 0)
-                {
-                    foreach (var detail in seedResult.Details)
-                    {
-                        response.ModuleDetails.Add(new Beep.OilandGas.Models.Core.DTOs.ModuleExecutionDetail
-                        {
-                            ModuleId = ExtractModuleIdFromDetail(detail),
-                            ModuleName = ExtractModuleNameFromDetail(detail),
-                            Order = 0,
-                            Success = !seedResult.Errors.Any(e => e.StartsWith("[" + ExtractModuleIdFromDetail(detail) + "]")),
-                            RecordsInserted = 0,
-                            TablesSeeded = 0,
-                            SkipReason = detail.Contains("(skipped:") ? ExtractSkipReason(detail) : null,
-                            Errors = seedResult.Errors
-                                .Where(e => e.StartsWith("[" + ExtractModuleIdFromDetail(detail) + "]"))
-                                .Select(e => e.Substring(e.IndexOf(']') + 2))
-                                .ToList()
-                        });
-                    }
-                }
-
-                return seedResult.Success ? Ok(response) : StatusCode(207, response); // 207 Multi-Status for partial success
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error seeding selected modules");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
-        }
 
         // ─────────────────────────────────────────────────────────────────────
         // First-run wizard endpoints
@@ -3045,45 +2969,5 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             }
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // Helper methods for module seeding endpoints
-        // ─────────────────────────────────────────────────────────────────────
-
-        private string ExtractModuleIdFromDetail(string detail)
-        {
-            // Detail format: "[ModuleId] ModuleName: X rows / Y tables"
-            if (string.IsNullOrEmpty(detail) || !detail.StartsWith("["))
-                return string.Empty;
-
-            var endBracket = detail.IndexOf(']');
-            return endBracket > 0 ? detail.Substring(1, endBracket - 1) : string.Empty;
-        }
-
-        private string ExtractModuleNameFromDetail(string detail)
-        {
-            // Detail format: "[ModuleId] ModuleName: X rows / Y tables"
-            var endBracket = detail.IndexOf(']');
-            if (endBracket < 0 || endBracket + 2 >= detail.Length)
-                return string.Empty;
-
-            var remainder = detail.Substring(endBracket + 2); // Skip "] "
-            var colonIndex = remainder.IndexOf(':');
-            return colonIndex > 0 ? remainder.Substring(0, colonIndex).Trim() : string.Empty;
-        }
-
-        private string? ExtractSkipReason(string detail)
-        {
-            // Detail format: "[ModuleId] ModuleName: X rows / Y tables (skipped: reason)"
-            var startIdx = detail.IndexOf("(skipped:");
-            if (startIdx < 0)
-                return null;
-
-            var endIdx = detail.IndexOf(')', startIdx);
-            if (endIdx < 0)
-                return null;
-
-            var reason = detail.Substring(startIdx + 9, endIdx - startIdx - 9).Trim();
-            return string.IsNullOrEmpty(reason) ? null : reason;
-        }
     }
 }

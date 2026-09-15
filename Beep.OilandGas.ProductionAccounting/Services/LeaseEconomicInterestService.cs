@@ -26,13 +26,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly ILogger<LeaseEconomicInterestService> _logger;
-        private const string ConnectionName = "PPDM39";
+        private readonly Func<Task<string>> _resolveConnection;
 
         public LeaseEconomicInterestService(
             IDMEEditor editor,
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
+            Func<Task<string>> resolveConnection,
             ILogger<LeaseEconomicInterestService> logger = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
@@ -40,6 +41,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _logger = logger;
+            _resolveConnection = resolveConnection ?? throw new ArgumentNullException(nameof(resolveConnection));
         }
 
         public async Task<List<OWNERSHIP_INTEREST>> GetOwnershipInterestsAsync(
@@ -50,13 +52,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(propertyOrLeaseId))
                 throw new ArgumentNullException(nameof(propertyOrLeaseId));
 
-            var metadata = await _metadata.GetTableMetadataAsync("OWNERSHIP_INTEREST");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(OWNERSHIP_INTEREST);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "OWNERSHIP_INTEREST");
+            var repo = await CreateRepositoryAsync<OWNERSHIP_INTEREST>("OWNERSHIP_INTEREST");
 
             var filters = new List<AppFilter>
             {
@@ -78,13 +74,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(propertyOrLeaseId))
                 throw new ArgumentNullException(nameof(propertyOrLeaseId));
 
-            var metadata = await _metadata.GetTableMetadataAsync("ROYALTY_INTEREST");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(ROYALTY_INTEREST);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "ROYALTY_INTEREST");
+            var repo = await CreateRepositoryAsync<ROYALTY_INTEREST>("ROYALTY_INTEREST");
 
             var filters = new List<AppFilter>
             {
@@ -183,13 +173,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             DateTime? asOfDate,
             string connectionName)
         {
-            var metadata = await _metadata.GetTableMetadataAsync("DIVISION_ORDER");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(DIVISION_ORDER);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "DIVISION_ORDER");
+            var repo = await CreateRepositoryAsync<DIVISION_ORDER>("DIVISION_ORDER");
 
             var filters = new List<AppFilter>
             {
@@ -251,6 +235,15 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return value.Value > LeaseEconomicInterestFractionRules.PercentVersusFractionThreshold
                 ? value.Value / LeaseEconomicInterestFractionRules.PercentScaleDivisor
                 : value.Value;
+        }
+        private async Task<PPDMGenericRepository> CreateRepositoryAsync<T>(string tableName)
+        {
+            var connection = await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection))
+                throw new InvalidOperationException("A PRODUCTION database binding is required.");
+            return new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(T), connection, tableName);
         }
     }
 }

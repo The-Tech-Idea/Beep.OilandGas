@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.AccessControl;
@@ -10,10 +12,16 @@ using System.Threading.Tasks;
 namespace Beep.OilandGas.ApiService.Controllers.AccessControl
 {
     [ApiController]
+    [Authorize]
     [Route("api/[controller]")]
     public class AccessControlController : ControllerBase
     {
         private readonly IAccessControlService _accessControlService;
+        private bool IsLocalUser => User.Identity?.IsAuthenticated == true
+            && !string.IsNullOrWhiteSpace(User.FindFirstValue(ClaimTypes.NameIdentifier));
+        private bool IsAdministrator => IsLocalUser && User.IsInRole("Administrator");
+        private bool CanAccess(string userId) => IsLocalUser
+            && (User.FindFirstValue(ClaimTypes.NameIdentifier) == userId || IsAdministrator);
 
         public AccessControlController(IAccessControlService accessControlService)
         {
@@ -26,6 +34,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         [HttpPost("check-access")]
         public async Task<ActionResult<AccessCheckResponse>> CheckAssetAccess([FromBody] AccessCheckRequest request)
         {
+            if (!CanAccess(request.UserId)) return Forbid();
             try
             {
                 var response = await _accessControlService.CheckAssetAccessAsync(
@@ -51,6 +60,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             [FromQuery] string? organizationId = null,
             [FromQuery] bool includeInherited = true)
         {
+            if (!CanAccess(userId)) return Forbid();
             if (string.IsNullOrWhiteSpace(userId))
                 return BadRequest(new { error = "User ID is required." });
             try
@@ -73,6 +83,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             string userId, 
             [FromQuery] string? organizationId = null)
         {
+            if (!CanAccess(userId)) return Forbid();
             if (string.IsNullOrWhiteSpace(userId))
                 return BadRequest(new { error = "User ID is required." });
             try
@@ -95,6 +106,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             string permissionId, 
             [FromQuery] string? organizationId = null)
         {
+            if (!CanAccess(userId)) return Forbid();
             if (string.IsNullOrWhiteSpace(userId))
                 return BadRequest(new { error = "User ID is required." });
             if (string.IsNullOrWhiteSpace(permissionId))
@@ -114,8 +126,10 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// Grant access to an asset for a user
         /// </summary>
         [HttpPost("grant-access")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<bool>> GrantAssetAccess([FromBody] GrantAccessRequest request)
         {
+            if (!IsAdministrator) return Forbid();
             try
             {
                 var result = await _accessControlService.GrantAssetAccessAsync(
@@ -137,8 +151,10 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// Revoke access to an asset for a user
         /// </summary>
         [HttpPost("revoke-access")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<bool>> RevokeAssetAccess([FromBody] RevokeAccessRequest request)
         {
+            if (!IsAdministrator) return Forbid();
             try
             {
                 var result = await _accessControlService.RevokeAssetAccessAsync(
@@ -157,10 +173,12 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// Get all permissions for a role
         /// </summary>
         [HttpGet("role/{roleId}/permissions")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<List<string>>> GetRolePermissions(
             string roleId, 
             [FromQuery] string? organizationId = null)
         {
+            if (!IsAdministrator) return Forbid();
             if (string.IsNullOrWhiteSpace(roleId))
                 return BadRequest(new { error = "Role ID is required." });
             try
@@ -178,11 +196,13 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// Assign a permission to a role
         /// </summary>
         [HttpPost("role/{roleId}/permission/{permissionId}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<bool>> AssignPermissionToRole(
             string roleId, 
             string permissionId, 
             [FromQuery] string? organizationId = null)
         {
+            if (!IsAdministrator) return Forbid();
             if (string.IsNullOrWhiteSpace(roleId))
                 return BadRequest(new { error = "Role ID is required." });
             if (string.IsNullOrWhiteSpace(permissionId))
@@ -202,11 +222,13 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// Remove a permission from a role
         /// </summary>
         [HttpDelete("role/{roleId}/permission/{permissionId}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<bool>> RemovePermissionFromRole(
             string roleId, 
             string permissionId, 
             [FromQuery] string? organizationId = null)
         {
+            if (!IsAdministrator) return Forbid();
             if (string.IsNullOrWhiteSpace(roleId))
                 return BadRequest(new { error = "Role ID is required." });
             if (string.IsNullOrWhiteSpace(permissionId))

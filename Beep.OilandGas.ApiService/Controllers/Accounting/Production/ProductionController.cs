@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using Beep.OilandGas.ApiService.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,11 +17,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
     [Route("api/accounting/production")]
     public class ProductionController : ControllerBase
     {
-        private readonly ProductionAccountingService _service;
+        private readonly TankInventoryStore _service;
         private readonly ILogger<ProductionController> _logger;
 
         public ProductionController(
-            ProductionAccountingService service,
+            TankInventoryStore service,
             ILogger<ProductionController> logger)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
@@ -30,7 +32,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         /// Get tank inventory by ID.
         /// </summary>
         [HttpGet("inventory/{id}")]
-        public ActionResult<object> GetTankInventory(
+        public async Task<ActionResult<object>> GetTankInventory(
             string id,
             [FromQuery] string connectionName = "PPDM39")
         {
@@ -38,19 +40,19 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
                 return BadRequest(new { error = "Inventory ID is required." });
             try
             {
-                var inventory = _service.ProductionManager.GetTankInventory(id);
+                var inventory = await _service.GetAsync(id);
                 if (inventory == null)
                         return NotFound(new { error = $"Tank inventory with ID {id} not found." });
 
                 return Ok(new
                 {
-                    InventoryId = inventory.InventoryId,
-                    TankBatteryId = inventory.TankBatteryId,
-                    InventoryDate = inventory.InventoryDate,
-                    OpeningInventory = inventory.OpeningInventory,
-                    Receipts = inventory.Receipts,
-                    Deliveries = inventory.Deliveries,
-                    ClosingInventory = inventory.ClosingInventory
+                    InventoryId = inventory.TANK_INVENTORY_ID,
+                    TankBatteryId = inventory.TANK_BATTERY_ID,
+                    InventoryDate = inventory.INVENTORY_DATE,
+                    OpeningInventory = inventory.OPENING_INVENTORY,
+                    Receipts = inventory.RECEIPTS,
+                    Deliveries = inventory.DELIVERIES,
+                    ClosingInventory = inventory.ACTUAL_CLOSING_INVENTORY
                 });
             }
             catch (Exception ex)
@@ -64,7 +66,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         /// Create tank inventory.
         /// </summary>
         [HttpPost("inventory")]
-        public ActionResult<object> CreateTankInventory(
+        public async Task<ActionResult<object>> CreateTankInventory(
             [FromBody] CreateTankInventoryRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
@@ -73,15 +75,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var inventory = _service.ProductionManager.CreateTankInventory(
-                    request.TankBatteryId,
-                    request.InventoryDate ?? DateTime.UtcNow,
-                    request.OpeningInventory,
-                    request.Receipts,
-                    request.Deliveries,
-                    request.ActualClosingInventory);
+                var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (User.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(actor)) return Forbid();
+                var inventory = await _service.CreateAsync(request, actor);
 
-                return Ok(new { InventoryId = inventory.InventoryId });
+                return Ok(new { InventoryId = inventory.TANK_INVENTORY_ID });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
             }
             catch (Exception ex)
             {
@@ -92,4 +94,3 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
     }
 
 }
-

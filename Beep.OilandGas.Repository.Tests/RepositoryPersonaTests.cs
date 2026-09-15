@@ -9,6 +9,18 @@ namespace Beep.OilandGas.Repository.Tests;
 public class RepositoryPersonaTests
 {
     [Fact]
+    public async Task RecordParameterValidationAlsoProtectsDirectServiceCalls()
+    {
+        var service = new RepositoryPersonaService(null!);
+        await Assert.ThrowsAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>
+            service.SaveCatalogAsync("ENGINEER", new(""), "user"));
+        await Assert.ThrowsAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>
+            service.SaveAsync("user", new(null, Locale: new string('x', 33)), "user"));
+        await Assert.ThrowsAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>
+            service.SavePreferenceAsync("user", "ENGINEER", "view", new(new string('x', 4001)), "user"));
+    }
+
+    [Fact]
     public async Task ProfileAndPreferenceWritesAreAuditedWithoutGrantingRoles()
     {
         using var fixture = new Fixture();

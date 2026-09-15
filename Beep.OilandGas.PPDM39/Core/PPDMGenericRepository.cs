@@ -239,23 +239,68 @@ namespace Beep.OilandGas.PPDM39.Core
             if (result == null)
                 return Enumerable.Empty<object>();
 
+            if (result is System.Data.DataTable table)
+                return table.Rows.Cast<System.Data.DataRow>().Select(row => MapDataSourceRow(row, targetType)).ToList();
+            if (result is System.Data.DataRow || result is IDictionary<string, object>)
+                return new[] { MapDataSourceRow((object)result, targetType) };
+
             var list = new List<object>();
             if (result is System.Collections.IEnumerable enumerable)
             {
                 foreach (var item in enumerable)
                 {
-                    if (item != null && targetType.IsAssignableFrom(item.GetType()))
-                    {
-                        list.Add(item);
-                    }
+                    if (item != null) list.Add(MapDataSourceRow(item, targetType));
                 }
             }
-            else if (result != null && targetType.IsAssignableFrom(result.GetType()))
+            else if (result != null)
             {
-                list.Add(result);
+                list.Add(MapDataSourceRow(result, targetType));
             }
 
             return list;
+        }
+
+        private static object MapDataSourceRow(object row, Type targetType)
+        {
+            if (targetType.IsInstanceOfType(row)) return row;
+            var values = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+            if (row is System.Data.DataRow dataRow)
+            {
+                foreach (System.Data.DataColumn column in dataRow.Table.Columns) values[column.ColumnName] = dataRow[column];
+            }
+            else if (row is IDictionary<string, object> dictionary)
+            {
+                foreach (var pair in dictionary) values[pair.Key] = pair.Value;
+            }
+            else
+            {
+                foreach (var property in row.GetType().GetProperties().Where(p => p.CanRead && p.GetIndexParameters().Length == 0))
+                    values[property.Name] = property.GetValue(row);
+            }
+            var entity = Activator.CreateInstance(targetType)
+                ?? throw new InvalidOperationException($"Cannot create query entity {targetType.Name}.");
+            var mapped = 0;
+            foreach (var property in targetType.GetProperties().Where(p => p.CanWrite && p.GetIndexParameters().Length == 0))
+            {
+                if (!values.TryGetValue(property.Name, out var value)) continue;
+                var type = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+                if (value is null || value == DBNull.Value)
+                {
+                    if (property.PropertyType.IsValueType && Nullable.GetUnderlyingType(property.PropertyType) is null)
+                        throw new InvalidOperationException($"Null query value for {targetType.Name}.{property.Name}.");
+                    value = null;
+                }
+                else if (!type.IsInstanceOfType(value))
+                {
+                    if (type == typeof(Guid)) value = Guid.Parse(Convert.ToString(value, CultureInfo.InvariantCulture)!);
+                    else if (type.IsEnum) value = Enum.Parse(type, Convert.ToString(value, CultureInfo.InvariantCulture)!, true);
+                    else value = Convert.ChangeType(value, type, CultureInfo.InvariantCulture);
+                }
+                property.SetValue(entity, value);
+                mapped++;
+            }
+            if (mapped == 0) throw new InvalidOperationException($"Query row has no matching fields for {targetType.Name}.");
+            return entity;
         }
 
         /// <summary>
@@ -869,11 +914,27 @@ namespace Beep.OilandGas.PPDM39.Core
         /// </summary>
         public virtual async Task<object> GetByIdAsync(object id)
         {
-            var metadata = await GetTableMetadataAsync(_tableName);
-            var primaryKeyName = metadata.PrimaryKeyColumn;
-
-            // Format ID according to table's ID type configuration (PPDM uses string IDs)
-            var formattedId = _defaults.FormatIdForTable(_tableName, id);
+            ArgumentNullException.ThrowIfNull(id);
+            var declaredKeys = _entityType.GetProperties().Where(p =>
+                Attribute.IsDefined(p, typeof(System.ComponentModel.DataAnnotations.KeyAttribute))).ToArray();
+            if (declaredKeys.Length > 1)
+                throw new InvalidOperationException($"Table '{_tableName}' has a composite key; use explicit key filters.");
+            string primaryKeyName;
+            string formattedId;
+            if (declaredKeys.Length == 1)
+            {
+                primaryKeyName = declaredKeys[0].Name;
+                formattedId = Convert.ToString(id, CultureInfo.InvariantCulture)!;
+            }
+            else
+            {
+                var metadata = await GetTableMetadataAsync(_tableName)
+                    ?? throw new InvalidOperationException($"Table metadata not found for: {_tableName}");
+                primaryKeyName = metadata.PrimaryKeyColumn;
+                formattedId = _defaults.FormatIdForTable(_tableName, id);
+            }
+            if (string.IsNullOrWhiteSpace(primaryKeyName) || primaryKeyName.Contains(',') || string.IsNullOrWhiteSpace(formattedId))
+                throw new InvalidOperationException($"A single primary key and nonempty ID are required for '{_tableName}'.");
 
             var filters = new List<AppFilter>
             {

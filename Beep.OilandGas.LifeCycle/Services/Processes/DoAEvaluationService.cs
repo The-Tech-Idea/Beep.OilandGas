@@ -64,7 +64,7 @@ public class DoAEvaluationService : IDoAEvaluationService
     private readonly ICommonColumnHandler _commonColumnHandler;
     private readonly IPPDM39DefaultsRepository _defaults;
     private readonly IPPDMMetadataRepository _metadata;
-    private readonly string _connectionName;
+    private readonly Func<Task<string>>? _resolveConnection;
     private readonly ILogger<DoAEvaluationService> _logger;
 
     public DoAEvaluationService(
@@ -72,14 +72,14 @@ public class DoAEvaluationService : IDoAEvaluationService
         ICommonColumnHandler commonColumnHandler,
         IPPDM39DefaultsRepository defaults,
         IPPDMMetadataRepository metadata,
-        string connectionName = "PPDM39",
+        Func<Task<string>>? resolveConnection = null,
         ILogger<DoAEvaluationService>? logger = null)
     {
         _editor = editor;
         _commonColumnHandler = commonColumnHandler;
         _defaults = defaults;
         _metadata = metadata;
-        _connectionName = connectionName;
+        _resolveConnection = resolveConnection;
         _logger = logger;
     }
 
@@ -129,7 +129,7 @@ public class DoAEvaluationService : IDoAEvaluationService
 
     public async Task<DoaEscalationPath?> GetEscalationPathAsync(string doaId, string approvalLevel)
     {
-        var repo = GetRepo();
+        var repo = GetRepo(await ResolveConnectionAsync());
         var filters = new List<AppFilter>
         {
             new() { FieldName = "DOA_ID", FilterValue = doaId },
@@ -153,7 +153,7 @@ public class DoAEvaluationService : IDoAEvaluationService
     public async Task<List<DELEGATION_OF_AUTHORITY>> GetRulesForEntityAsync(
         string entityType, string? processType = null)
     {
-        var repo = GetRepo();
+        var repo = GetRepo(await ResolveConnectionAsync());
         var filters = new List<AppFilter>
         {
             new() { FieldName = "ENTITY_TYPE", FilterValue = entityType },
@@ -212,11 +212,19 @@ public class DoAEvaluationService : IDoAEvaluationService
         }
     }
 
-    private PPDMGenericRepository GetRepo()
+    private async Task<string> ResolveConnectionAsync()
+    {
+        var connection = _resolveConnection is null ? null : await _resolveConnection();
+        if (string.IsNullOrWhiteSpace(connection))
+            throw new InvalidOperationException("Delegation of authority requires a bound LIFECYCLE database.");
+        return connection;
+    }
+
+    private PPDMGenericRepository GetRepo(string connectionName)
     {
         return new PPDMGenericRepository(
             _editor, _commonColumnHandler, _defaults, _metadata,
             typeof(DELEGATION_OF_AUTHORITY),
-            _connectionName, "DELEGATION_OF_AUTHORITY", null);
+            connectionName, "DELEGATION_OF_AUTHORITY", null);
     }
 }

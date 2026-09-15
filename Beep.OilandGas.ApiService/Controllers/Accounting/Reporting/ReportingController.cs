@@ -23,15 +23,18 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
     {
         private readonly ProductionAccountingService _service;
         private readonly IReportingService _reportingService;
+        private readonly Beep.OilandGas.ApiService.Services.RunTicketStore _tickets;
         private readonly ILogger<ReportingController> _logger;
 
         public ReportingController(
             ProductionAccountingService service,
             IReportingService reportingService,
+            Beep.OilandGas.ApiService.Services.RunTicketStore tickets,
             ILogger<ReportingController> logger)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
             _reportingService = reportingService ?? throw new ArgumentNullException(nameof(reportingService));
+            _tickets = tickets ?? throw new ArgumentNullException(nameof(tickets));
             _logger = logger;
         }
 
@@ -223,7 +226,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         /// Generate lease report.
         /// </summary>
         [HttpPost("lease")]
-        public ActionResult<LEASE_REPORT> GenerateLeaseReport(
+        public async Task<ActionResult<LEASE_REPORT>> GenerateLeaseReport(
             [FromBody] GenerateLeaseReportRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
@@ -236,9 +239,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
                 if (lease == null)
                     return NotFound(new { error = $"Lease {request.LEASE_ID} not found." });
 
-                var runTickets = _service.ProductionManager.GetRunTicketsByLease(request.LEASE_ID)
-                    .Where(t => t.TicketDateTime >= request.StartDate && t.TicketDateTime <= request.EndDate)
-                    .ToList();
+                var runTickets = await _tickets.ListAsync(request.StartDate, request.EndDate, request.LEASE_ID);
 
                 var salesTransactions = new List<SalesTransaction>();
 
@@ -292,4 +293,3 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
     }
 
 }
-

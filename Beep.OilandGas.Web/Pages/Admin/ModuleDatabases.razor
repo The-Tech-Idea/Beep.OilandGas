@@ -1,4 +1,8 @@
 @page "/admin/module-databases"
+@page "/ppdm39/data-management/schema"
+@page "/ppdm39/create-database/modules"
+@page "/ppdm39/setup"
+@page "/ppdm39/setup/beep-wizard"
 @using TheTechIdea.Data.OilGas
 @using Beep.OilandGas.Web.Services
 @using Beep.OilandGas.Models.Data
@@ -76,6 +80,19 @@
         {
             <MudItem xs="12"><MudAlert Severity="@(_execution.Success ? Severity.Success : Severity.Error)">@_execution.Message (@_execution.CompletedSteps / @_execution.TotalSteps steps)</MudAlert></MudItem>
         }
+        <MudItem xs="12"><MudDivider Class="my-2" /></MudItem>
+        <MudItem xs="12">
+            <MudCheckBox T="bool" @bind-Value="_seedConfirmed" Disabled="@(_busy || !HasSavedBinding)"
+                         Label="Confirm seeding this module on the selected connection" />
+            <MudButton StartIcon="@Icons.Material.Filled.Storage" Variant="Variant.Outlined" Color="Color.Primary"
+                       Disabled="@(_busy || !HasSavedBinding || !_seedConfirmed)" OnClick="Seed">Seed Module</MudButton>
+        </MudItem>
+        @if (_seedResult is not null)
+        {
+            <MudItem xs="12"><MudAlert Severity="@(_seedResult.Success ? Severity.Success : Severity.Error)">
+                @_seedResult.RecordsInserted records inserted. @_seedResult.SkipReason
+            </MudAlert></MudItem>
+        }
     </MudGrid>
 </MudContainer>
 
@@ -89,6 +106,8 @@
     private SchemaMigrationExecuteResult? _execution;
     private ModulePlanRequest? _plannedOptions;
     private bool _approved, _confirmed, _riskAcknowledged, _attempted;
+    private bool _seedConfirmed;
+    private ModuleSeedSummary? _seedResult;
     private ModulePlanRequest CurrentOptions => new(_environment, _backup, _restore, _restore ? _evidence : null, Selected?.ConcurrencyStamp);
     private bool CanAct => !_busy && !_attempted && _confirmed && HasSavedBinding &&
         _reviewed is { Success: true, CanApply: true } && _reviewed.ConnectionName == _connection &&
@@ -115,7 +134,7 @@
         finally { _busy = false; }
     }
 
-    private void ClearPlan() { _plan = null; _reviewed = null; _execution = null; _approved = false; _confirmed = false; _riskAcknowledged = false; _attempted = false; }
+    private void ClearPlan() { _plan = null; _reviewed = null; _execution = null; _approved = false; _confirmed = false; _riskAcknowledged = false; _attempted = false; _seedConfirmed = false; _seedResult = null; }
     private void SelectModule(string id) { _moduleId = id; _connection = Selected?.ConnectionName ?? ""; ClearPlan(); }
     private void SelectConnection(string connection) { _connection = connection; ClearPlan(); }
 
@@ -160,6 +179,23 @@
         var current = (await Client.ListAsync()).SingleOrDefault(x => x.ModuleId == _moduleId);
         if (current?.ConcurrencyStamp != Selected?.ConcurrencyStamp || current?.ConnectionName != _connection)
             throw new InvalidOperationException("The binding changed.");
+    }
+
+    private async Task Seed()
+    {
+        if (_busy || !HasSavedBinding || !_seedConfirmed || Selected is null) return;
+        _busy = true;
+        _error = null;
+        _seedResult = null;
+        _seedConfirmed = false;
+        try
+        {
+            await VerifyBinding();
+            _seedResult = await Client.SeedAsync(_moduleId, new(Selected.ConcurrencyStamp!));
+            if (!_seedResult.Success) _error = "Module seeding reported errors. Check the database before retrying.";
+        }
+        catch { _error = "Seeding did not complete successfully. Check the binding, schema and server logs before retrying."; }
+        finally { _busy = false; }
     }
 
     private async Task Approve()

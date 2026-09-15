@@ -30,7 +30,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly IAllocationEngine _allocationEngine;
         private readonly ILogger<AllocationService> _logger;
-        private const string ConnectionName = "PPDM39";
+        private readonly Func<Task<string>> _resolveConnection;
 
         public AllocationService(
             IDMEEditor editor,
@@ -38,6 +38,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             IAllocationEngine allocationEngine,
+            Func<Task<string>> resolveConnection,
             ILogger<AllocationService> logger = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
@@ -46,6 +47,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _allocationEngine = allocationEngine ?? throw new ArgumentNullException(nameof(allocationEngine));
             _logger = logger;
+            _resolveConnection = resolveConnection ?? throw new ArgumentNullException(nameof(resolveConnection));
         }
 
         /// <summary>
@@ -72,6 +74,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (normalizedMethod == null)
                 throw new AllocationException($"Invalid allocation method: {method}");
 
+            connectionName = await ResolveConnectionAsync();
             var ALLOCATION_RESULT = await _allocationEngine.AllocateAsync(RUN_TICKET, normalizedMethod, userId, connectionName);
 
             _logger?.LogInformation("Allocation completed: {AllocationResultId}", ALLOCATION_RESULT.ALLOCATION_RESULT_ID);
@@ -86,13 +89,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(allocationId))
                 throw new ArgumentNullException(nameof(allocationId));
 
-            var metadata = await _metadata.GetTableMetadataAsync("ALLOCATION_RESULT");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(ALLOCATION_RESULT);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "ALLOCATION_RESULT");
+            var repo = await CreateRepositoryAsync<ALLOCATION_RESULT>("ALLOCATION_RESULT");
 
             var result = await repo.GetByIdAsync(allocationId);
             return result as ALLOCATION_RESULT;
@@ -106,13 +103,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(allocationId))
                 throw new ArgumentNullException(nameof(allocationId));
 
-            var metadata = await _metadata.GetTableMetadataAsync("ALLOCATION_DETAIL");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(ALLOCATION_DETAIL);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "ALLOCATION_DETAIL");
+            var repo = await CreateRepositoryAsync<ALLOCATION_DETAIL>("ALLOCATION_DETAIL");
 
             // Filter by allocation result ID
             var filters = new List<AppFilter>
@@ -133,13 +124,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(runTicketId))
                 throw new ArgumentNullException(nameof(runTicketId));
 
-            var metadata = await _metadata.GetTableMetadataAsync("ALLOCATION_RESULT");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(ALLOCATION_RESULT);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "ALLOCATION_RESULT");
+            var repo = await CreateRepositoryAsync<ALLOCATION_RESULT>("ALLOCATION_RESULT");
 
             // Filter by run ticket ID
             var filters = new List<AppFilter>
@@ -260,13 +245,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new AllocationException($"Allocation {allocationId} not found");
 
             // Get metadata and repository
-            var metadata = await _metadata.GetTableMetadataAsync("ALLOCATION_RESULT");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(ALLOCATION_RESULT);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "ALLOCATION_RESULT");
+            var repo = await CreateRepositoryAsync<ALLOCATION_RESULT>("ALLOCATION_RESULT");
 
             // Soft delete the allocation (sets ACTIVE_IND to 'N')
             await repo.SoftDeleteAsync(allocationId, userId);
@@ -275,13 +254,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var details = await GetDetailsAsync(allocationId, connectionName);
             if (details.Any())
             {
-                var detailMetadata = await _metadata.GetTableMetadataAsync("ALLOCATION_DETAIL");
-                var detailEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{detailMetadata.EntityTypeName}")
-                    ?? typeof(ALLOCATION_DETAIL);
-
-                var detailRepo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    detailEntityType, connectionName, "ALLOCATION_DETAIL");
+                var detailRepo = await CreateRepositoryAsync<ALLOCATION_DETAIL>("ALLOCATION_DETAIL");
 
                 foreach (var detail in details)
                 {
@@ -290,6 +263,21 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
 
             _logger?.LogInformation("Allocation {AllocationResultId} reversed successfully", allocationId);
+        }
+        private async Task<string> ResolveConnectionAsync()
+        {
+            var connection = await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection))
+                throw new InvalidOperationException("A PRODUCTION database binding is required.");
+            return connection;
+        }
+
+        private async Task<PPDMGenericRepository> CreateRepositoryAsync<T>(string tableName)
+        {
+            var connection = await ResolveConnectionAsync();
+            return new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(T), connection, tableName);
         }
     }
 }

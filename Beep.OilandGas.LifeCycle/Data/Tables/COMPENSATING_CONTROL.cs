@@ -11,7 +11,7 @@ namespace Beep.OilandGas.LifeCycle.Data.Tables;
 /// </summary>
 public class COMPENSATING_CONTROL : ModelEntityBase
 {
-    [Key]
+    [Key, MaxLength(128)]
     public string CONTROL_ID { get; set; } = Guid.NewGuid().ToString();
 
     /// <summary>FK → SOD_CONFLICT.SOD_CONFLICT_ID.</summary>

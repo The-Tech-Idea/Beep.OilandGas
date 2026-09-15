@@ -348,6 +348,31 @@ public class RepositoryRoleExtensionTests
     }
 
     [Fact]
+    public async Task InactiveUserRolesRemainManageableWithoutGrantingAccess()
+    {
+        using var fixture = new Fixture();
+        var user = new OilGasUser { UserName = "inactive-member" };
+        Assert.True((await fixture.Users.CreateAsync(user)).Succeeded);
+        Assert.True((await fixture.Users.AddLoginAsync(user, new UserLoginInfo(
+            RepositoryBootstrapService.ExternalLoginProvider("https://issuer"), "inactive-member", "OIDC"))).Succeeded);
+        var role = new IdentityRole("Reader");
+        Assert.True((await fixture.Roles.CreateAsync(role)).Succeeded);
+        await fixture.Service.AssignRoleAsync(user.Id, role.Id, "actor");
+        Assert.True(await fixture.UserService.DeleteAsync(user.Id));
+        Assert.Equal(new[] { "Reader" }, await fixture.UserService.GetRolesAsync(user.Id));
+
+        var access = await new RepositoryAccessService(fixture.Db).GetAccessAsync("https://issuer", "inactive-member");
+        Assert.NotNull(access);
+        Assert.False(access.IsActive);
+        Assert.Empty(access.Roles);
+        Assert.Empty(access.Permissions);
+
+        Assert.True(await fixture.UserService.RemoveFromRoleAsync(user.Id, "Reader"));
+        Assert.Empty(await fixture.UserService.GetRolesAsync(user.Id));
+        Assert.Empty(await fixture.Db.UserRoles.ToListAsync());
+    }
+
+    [Fact]
     public async Task LastAdministratorCannotBeDisabled()
     {
         using var fixture = new Fixture();

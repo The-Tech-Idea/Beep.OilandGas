@@ -7,6 +7,7 @@ using Xunit;
 using Xunit.Abstractions;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Data.Common;
+using System.Security.Claims;
 
 namespace Beep.OilandGas.Repository.Tests;
 
@@ -106,7 +107,7 @@ public sealed class LocalDbInstallationTests(ITestOutputHelper output)
         await using var scope = provider.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<RepositoryDbContext>();
         await db.Database.MigrateAsync();
-        Assert.Equal(4, (await db.Database.GetAppliedMigrationsAsync()).Count());
+        Assert.Equal(6, (await db.Database.GetAppliedMigrationsAsync()).Count());
         await db.Database.MigrateAsync();
         Assert.Empty(await db.Database.GetPendingMigrationsAsync());
 
@@ -114,6 +115,12 @@ public sealed class LocalDbInstallationTests(ITestOutputHelper output)
         Assert.Equal(BootstrapOutcome.Created, await bootstrap.BootstrapAsync("https://integration.invalid", "first"));
         Assert.Equal(BootstrapOutcome.Registered, await bootstrap.BootstrapAsync("https://integration.invalid", "second"));
         Assert.Equal(BootstrapOutcome.AlreadyCompleted, await bootstrap.BootstrapAsync("https://integration.invalid", "first"));
+        var exactSubjectAccess = new RepositoryAccessService(db);
+        Assert.Null(await exactSubjectAccess.GetAccessAsync("https://integration.invalid", "FIRST"));
+        Assert.Null(await exactSubjectAccess.GetAccessAsync("https://integration.invalid", "first "));
+        Assert.Equal(BootstrapOutcome.NotAllowed, await bootstrap.BootstrapAsync("https://integration.invalid", "FIRST"));
+        Assert.Equal(BootstrapOutcome.NotAllowed, await bootstrap.BootstrapAsync("https://integration.invalid", "first "));
+        Assert.Contains("Administrator", (await exactSubjectAccess.GetAccessAsync("https://integration.invalid", "first"))!.Roles);
 
         var users = scope.ServiceProvider.GetRequiredService<UserManager<OilGasUser>>();
         var first = await users.FindByLoginAsync(RepositoryBootstrapService.ExternalLoginProvider("https://integration.invalid"), "first");
@@ -131,6 +138,84 @@ public sealed class LocalDbInstallationTests(ITestOutputHelper output)
         Assert.Equal(1, await db.Set<AppUserRoleExtension>().CountAsync());
         Assert.Equal(RepositoryReadiness.Ready,
             await scope.ServiceProvider.GetRequiredService<IRepositoryReadinessService>().CheckAsync());
+
+        // A separately built provider cannot satisfy these reads from the bootstrap context's tracking cache.
+        var reopenedServices = new ServiceCollection();
+        reopenedServices.AddLogging();
+        reopenedServices.AddOilGasRepository(configuration);
+        await using var reopened = reopenedServices.BuildServiceProvider();
+        await using (var readScope = reopened.CreateAsyncScope())
+        {
+            var repository = readScope.ServiceProvider.GetRequiredService<RepositoryDbContext>();
+            await repository.Database.OpenConnectionAsync();
+            using var tablesQuery = repository.Database.GetDbConnection().CreateCommand();
+            tablesQuery.CommandText = "SELECT name FROM sys.tables ORDER BY name";
+            using var tableRows = await tablesQuery.ExecuteReaderAsync();
+            var tables = new List<string>();
+            while (await tableRows.ReadAsync()) tables.Add(tableRows.GetString(0));
+            Assert.Equal(new[] { "AspNetRoleClaims", "AspNetRoles", "AspNetUserClaims", "AspNetUserLogins",
+                "AspNetUserRoles", "AspNetUsers", "AspNetUserTokens" }.OrderBy(x => x, StringComparer.Ordinal),
+                tables.Where(x => x.StartsWith("AspNet", StringComparison.Ordinal)).OrderBy(x => x, StringComparer.Ordinal));
+            Assert.DoesNotContain("OIL_COMPOSITION", tables);
+            Assert.DoesNotContain("WELL", tables);
+            await tableRows.CloseAsync();
+
+            var access = readScope.ServiceProvider.GetRequiredService<IRepositoryAccessService>();
+            var persistedAdmin = await access.GetAccessAsync("https://integration.invalid", "first");
+            Assert.NotNull(persistedAdmin);
+            Assert.Equal(first.Id, persistedAdmin.UserId);
+            Assert.Equal(new[] { "Administrator" }, persistedAdmin.Roles);
+            var persistedUser = await access.GetAccessAsync("https://integration.invalid", "second");
+            Assert.NotNull(persistedUser);
+            Assert.Empty(persistedUser.Roles);
+
+            var roleManager = readScope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var readerRole = new IdentityRole("Reader");
+            Assert.True((await roleManager.CreateAsync(readerRole)).Succeeded);
+            Assert.True((await roleManager.AddClaimAsync(readerRole, new Claim("permission", "module.read"))).Succeeded);
+            var userManager = readScope.ServiceProvider.GetRequiredService<UserManager<OilGasUser>>();
+            var member = (await userManager.FindByIdAsync(second.Id))!;
+            Assert.True((await userManager.AddToRoleAsync(member, "Reader")).Succeeded);
+        }
+
+        await using (var revokeScope = reopened.CreateAsyncScope())
+        {
+            var access = revokeScope.ServiceProvider.GetRequiredService<IRepositoryAccessService>();
+            var assigned = await access.GetAccessAsync("https://integration.invalid", "second");
+            Assert.NotNull(assigned);
+            Assert.Equal(new[] { "Reader" }, assigned.Roles);
+            Assert.Equal(new[] { "module.read" }, assigned.Permissions);
+            var userManager = revokeScope.ServiceProvider.GetRequiredService<UserManager<OilGasUser>>();
+            var member = (await userManager.FindByIdAsync(second.Id))!;
+            Assert.True((await userManager.RemoveFromRoleAsync(member, "Reader")).Succeeded);
+        }
+
+        await using (var deactivateScope = reopened.CreateAsyncScope())
+        {
+            var access = deactivateScope.ServiceProvider.GetRequiredService<IRepositoryAccessService>();
+            var revoked = await access.GetAccessAsync("https://integration.invalid", "second");
+            Assert.NotNull(revoked);
+            Assert.Empty(revoked.Roles);
+            Assert.Empty(revoked.Permissions);
+            var userManager = deactivateScope.ServiceProvider.GetRequiredService<UserManager<OilGasUser>>();
+            var member = (await userManager.FindByIdAsync(second.Id))!;
+            Assert.True((await userManager.AddToRoleAsync(member, "Reader")).Succeeded);
+            member.IsActive = false;
+            Assert.True((await userManager.UpdateAsync(member)).Succeeded);
+        }
+
+        await using (var finalScope = reopened.CreateAsyncScope())
+        {
+            var access = finalScope.ServiceProvider.GetRequiredService<IRepositoryAccessService>();
+            var disabled = await access.GetAccessAsync("https://integration.invalid", "second");
+            Assert.NotNull(disabled);
+            Assert.False(disabled.IsActive);
+            Assert.Empty(disabled.Roles);
+            Assert.Empty(disabled.Permissions);
+            Assert.Equal(BootstrapOutcome.NotAllowed,
+                await finalScope.ServiceProvider.GetRequiredService<RepositoryBootstrapService>()
+                    .BootstrapAsync("https://integration.invalid", "second"));
+        }
     }
 }
 

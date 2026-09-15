@@ -11,6 +11,42 @@ namespace Beep.OilandGas.Web.Auth.Tests;
 
 public class WebRoleBridgeTests
 {
+    [Theory]
+    [InlineData("subject")]
+    [InlineData("issuer")]
+    [InlineData("token")]
+    [InlineData("missing-token")]
+    [InlineData("missing-subject")]
+    public async Task ChangedIdentityOrTokenCannotReuseResolvedRoles(string change)
+    {
+        using var handler = new Handler(HttpStatusCode.OK);
+        using var http = new HttpClient(handler) { BaseAddress = new Uri("https://api.example/") };
+        var context = new DefaultHttpContext();
+        context.Items["OilGas.AccessToken"] = "first-token";
+        var bridge = new OilGasClaimsTransformation(new RepositoryAccountClient(http), new TokenProvider(),
+            new HttpContextAccessor { HttpContext = context }, NullLogger<OilGasClaimsTransformation>.Instance);
+        var source = Principal();
+        Assert.True((await bridge.TransformAsync(source)).IsInRole("Viewer"));
+        handler.Status = HttpStatusCode.Forbidden;
+        var identity = (ClaimsIdentity)source.Identity!;
+        switch (change)
+        {
+            case "subject":
+                identity.RemoveClaim(identity.FindFirst("sub")!);
+                identity.AddClaim(new Claim("sub", "another-subject"));
+                break;
+            case "issuer": identity.AddClaim(new Claim("iss", "another-issuer")); break;
+            case "token": context.Items["OilGas.AccessToken"] = "second-token"; break;
+            case "missing-token": context.Items.Remove("OilGas.AccessToken"); break;
+            case "missing-subject": identity.RemoveClaim(identity.FindFirst("sub")!); break;
+        }
+        var result = await bridge.TransformAsync(source);
+        Assert.False(result.Identity!.IsAuthenticated);
+        Assert.False(result.IsInRole("Viewer"));
+        Assert.False(result.IsInRole("Administrator"));
+        Assert.Equal(change.StartsWith("missing-", StringComparison.Ordinal) ? 1 : 2, handler.Calls);
+    }
+
     [Fact]
     public async Task UsesApiRolesAndRechecksOnNextRequest()
     {
@@ -76,6 +112,7 @@ public class WebRoleBridgeTests
 
     private sealed class Handler(HttpStatusCode status) : HttpMessageHandler
     {
+        public HttpStatusCode Status { get; set; } = status;
         public int Calls { get; private set; }
         public string? Path { get; private set; }
         public HttpMethod? Method { get; private set; }
@@ -86,9 +123,11 @@ public class WebRoleBridgeTests
             Path = request.RequestUri!.AbsolutePath;
             Method = request.Method;
             Authorization = request.Headers.Authorization?.ToString();
-            return Task.FromResult(new HttpResponseMessage(status)
+            return Task.FromResult(new HttpResponseMessage(Status)
             {
-                Content = JsonContent.Create(new RepositoryUserAccess("local-user", true, ["Viewer"], []))
+                Content = Path == "/api/setup/repository/register"
+                    ? JsonContent.Create(new RepositoryRegistrationResponse("Registered"))
+                    : JsonContent.Create(new RepositoryUserAccess("local-user", true, ["Viewer"], []))
             });
         }
     }

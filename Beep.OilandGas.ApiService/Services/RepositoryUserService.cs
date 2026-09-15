@@ -88,7 +88,8 @@ public sealed class RepositoryUserService(RepositoryDbContext db, UserManager<Oi
     public async Task<IEnumerable<string>> GetRolesAsync(string userId)
     {
         var user = await users.FindByIdAsync(userId);
-        return user is null || !user.IsActive ? [] : await users.GetRolesAsync(user);
+        // Management shows stored assignments; RepositoryAccessService separately denies inactive accounts.
+        return user is null ? [] : await users.GetRolesAsync(user);
     }
 
     private string Actor => accessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier)

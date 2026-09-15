@@ -8,6 +8,7 @@ namespace Beep.OilandGas.Models.Data.LifeCycle
     public partial class DECOMMISSIONING_COST : ModelEntityBase
     {
         private System.String COST_IDValue;
+        [System.ComponentModel.DataAnnotations.Key, System.ComponentModel.DataAnnotations.MaxLength(128)]
         public System.String COST_ID
         {
             get => COST_IDValue;

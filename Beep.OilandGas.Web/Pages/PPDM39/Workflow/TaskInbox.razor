@@ -1,6 +1,8 @@
 @page "/ppdm39/tasks/inbox"
 @page "/tasks/inbox"
 @using Beep.OilandGas.Web.Services
+@using TheTechIdea.Data.OilGas
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @inject IUnifiedTaskInboxService InboxService
 @inject NavigationManager Nav
 @implements IDisposable
@@ -115,7 +117,7 @@
     private InboxCounts _counts = new();
     private string? _selectedTaskType;
     private bool _isLoading;
-    private string? _personaCode = "PRODUCTION_ENGINEER";
+    private string? _personaCode;
 
     protected override async Task OnInitializedAsync()
     {
@@ -147,6 +149,9 @@
         }
         catch (Exception ex)
         {
+            _criticalTasks.Clear();
+            _allTasks.Clear();
+            _counts = new();
             Snackbar.Add($"Failed to load tasks: {ex.Message}", Severity.Error);
         }
         finally

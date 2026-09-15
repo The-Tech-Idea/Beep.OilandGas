@@ -437,6 +437,76 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
                     b.ToTable("APP_ROLE_PERMISSION", (string)null);
                 });
 
+            modelBuilder.Entity("TheTechIdea.Data.OilGas.AppUserAssetAccess", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("AccessLevel")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
+                    b.Property<string>("AssetId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("AssetType")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("ChangedBy")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("ChangedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .HasColumnType("nvarchar(36)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DatabaseScope")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<bool>("Inherit")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("OrganizationId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "DatabaseScope");
+
+                    b.ToTable("APP_USER_ASSET_ACCESS", (string)null);
+                });
+
             modelBuilder.Entity("TheTechIdea.Data.OilGas.AppUserExtension", b =>
                 {
                     b.Property<string>("UserId")
@@ -467,12 +537,33 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
                         .HasColumnType("nvarchar(1000)")
                         .HasColumnName("FULL_NAME");
 
+                    b.Property<DateTime?>("LastLoginUtc")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LAST_LOGIN_UTC");
+
+                    b.Property<string>("PreferencesJson")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)")
+                        .HasColumnName("PREFERENCES_JSON");
+
+                    b.Property<string>("PreferredLayout")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasColumnName("PREFERRED_LAYOUT");
+
+                    b.Property<string>("PrimaryRoleId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasColumnName("PRIMARY_ROLE_ID");
+
                     b.Property<string>("TenantId")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)")
                         .HasColumnName("TENANT_ID");
 
                     b.HasKey("UserId");
+
+                    b.HasIndex("PrimaryRoleId");
 
                     b.ToTable("APP_USER", (string)null);
                 });
@@ -797,8 +888,22 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
                         .HasConstraintName("FK_APP_ROLE_PERMISSION_AspNe~1");
                 });
 
+            modelBuilder.Entity("TheTechIdea.Data.OilGas.AppUserAssetAccess", b =>
+                {
+                    b.HasOne("TheTechIdea.Data.OilGas.OilGasUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("TheTechIdea.Data.OilGas.AppUserExtension", b =>
                 {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                        .WithMany()
+                        .HasForeignKey("PrimaryRoleId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("TheTechIdea.Data.OilGas.OilGasUser", null)
                         .WithOne()
                         .HasForeignKey("TheTechIdea.Data.OilGas.AppUserExtension", "UserId")

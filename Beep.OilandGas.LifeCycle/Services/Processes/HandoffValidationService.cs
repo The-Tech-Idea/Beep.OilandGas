@@ -61,7 +61,7 @@ public class HandoffValidationService : IHandoffValidationService
     private readonly ICommonColumnHandler _commonColumnHandler;
     private readonly IPPDM39DefaultsRepository _defaults;
     private readonly IPPDMMetadataRepository _metadata;
-    private readonly string _connectionName;
+    private readonly Func<Task<string>>? _resolveConnection;
     private readonly ILogger<HandoffValidationService> _logger;
 
     public HandoffValidationService(
@@ -69,14 +69,14 @@ public class HandoffValidationService : IHandoffValidationService
         ICommonColumnHandler commonColumnHandler,
         IPPDM39DefaultsRepository defaults,
         IPPDMMetadataRepository metadata,
-        string connectionName = "PPDM39",
+        Func<Task<string>>? resolveConnection = null,
         ILogger<HandoffValidationService>? logger = null)
     {
         _editor = editor;
         _commonColumnHandler = commonColumnHandler;
         _defaults = defaults;
         _metadata = metadata;
-        _connectionName = connectionName;
+        _resolveConnection = resolveConnection;
         _logger = logger;
     }
 
@@ -89,11 +89,12 @@ public class HandoffValidationService : IHandoffValidationService
         Dictionary<string, object> entityFields)
     {
         var result = new HandoffValidationResult { IsValid = true, CanProceed = true };
+        var connectionName = await ResolveConnectionAsync();
 
         // Get process instance to find the process definition
         var instanceRepo = new PPDMGenericRepository(
             _editor, _commonColumnHandler, _defaults, _metadata,
-            typeof(PROCESS_INSTANCE), _connectionName, "PROCESS_INSTANCE", null);
+            typeof(PROCESS_INSTANCE), connectionName, "PROCESS_INSTANCE", null);
 
         var instanceFilters = new List<AppFilter>
         {
@@ -111,7 +112,7 @@ public class HandoffValidationService : IHandoffValidationService
         }
 
         var contract = await GetHandoffContractAsync(
-            instances[0].PROCESS_DEFINITION_ID, fromStepId);
+            instances[0].PROCESS_DEFINITION_ID, fromStepId, connectionName);
 
         if (contract is null)
         {
@@ -212,8 +213,12 @@ public class HandoffValidationService : IHandoffValidationService
 
     public async Task<ROLE_HANDOFF_CONTRACT?> GetHandoffContractAsync(
         string processDefinitionId, string fromStepId)
+        => await GetHandoffContractAsync(processDefinitionId, fromStepId, await ResolveConnectionAsync());
+
+    private async Task<ROLE_HANDOFF_CONTRACT?> GetHandoffContractAsync(
+        string processDefinitionId, string fromStepId, string connectionName)
     {
-        var repo = GetContractRepo();
+        var repo = GetContractRepo(connectionName);
         var filters = new List<AppFilter>
         {
             new() { FieldName = "PROCESS_DEFINITION_ID", FilterValue = processDefinitionId },
@@ -248,7 +253,15 @@ public class HandoffValidationService : IHandoffValidationService
         return missing;
     }
 
-    private PPDMGenericRepository GetContractRepo() =>
+    private async Task<string> ResolveConnectionAsync()
+    {
+        var connection = _resolveConnection is null ? null : await _resolveConnection();
+        if (string.IsNullOrWhiteSpace(connection))
+            throw new InvalidOperationException("Handoff validation requires a bound LIFECYCLE database.");
+        return connection;
+    }
+
+    private PPDMGenericRepository GetContractRepo(string connectionName) =>
         new(_editor, _commonColumnHandler, _defaults, _metadata,
-            typeof(ROLE_HANDOFF_CONTRACT), _connectionName, "ROLE_HANDOFF_CONTRACT", null);
+            typeof(ROLE_HANDOFF_CONTRACT), connectionName, "ROLE_HANDOFF_CONTRACT", null);
 }

@@ -109,6 +109,8 @@ namespace Beep.OilandGas.ProductionAccounting.Modules
             typeof(ROYALTY_INTEREST),
             typeof(OWNERSHIP_INTEREST),
             typeof(ACCOUNTING_COST),
+            typeof(ASSET_RETIREMENT_OBLIGATION),
+            typeof(LEASE_CONTRACT),
             typeof(ROYALTY_DEDUCTIONS),
             typeof(ROYALTY_OWNER),
             typeof(ROYALTY_PAYMENT),

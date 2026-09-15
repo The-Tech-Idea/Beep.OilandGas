@@ -10,7 +10,7 @@ namespace Beep.OilandGas.LifeCycle.Data.Tables;
 /// </summary>
 public class SOD_CONFLICT : ModelEntityBase
 {
-    [Key]
+    [Key, MaxLength(128)]
     public string SOD_CONFLICT_ID { get; set; } = Guid.NewGuid().ToString();
 
     /// <summary>FK → SOD_RULE.SOD_RULE_ID.</summary>

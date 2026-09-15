@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.AccessControl;
@@ -9,10 +11,16 @@ using System.Threading.Tasks;
 namespace Beep.OilandGas.ApiService.Controllers.AccessControl
 {
     [ApiController]
+    [Authorize]
     [Route("api/[controller]")]
     public class AssetHierarchyController : ControllerBase
     {
         private readonly IAssetHierarchyService _assetHierarchyService;
+        private bool IsLocalUser => User.Identity?.IsAuthenticated == true
+            && !string.IsNullOrWhiteSpace(User.FindFirstValue(ClaimTypes.NameIdentifier));
+        private bool IsAdministrator => IsLocalUser && User.IsInRole("Administrator");
+        private bool CanAccess(string userId) => IsLocalUser
+            && (User.FindFirstValue(ClaimTypes.NameIdentifier) == userId || IsAdministrator);
 
         public AssetHierarchyController(IAssetHierarchyService assetHierarchyService)
         {
@@ -23,11 +31,13 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// Get the asset hierarchy for an organization
         /// </summary>
         [HttpGet("organization/{organizationId}")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<AssetHierarchyNode>> GetAssetHierarchy(
             string organizationId,
             [FromQuery] string? rootAssetId = null,
             [FromQuery] string? rootAssetType = null)
         {
+            if (!IsAdministrator) return Forbid();
             if (string.IsNullOrWhiteSpace(organizationId))
                 return BadRequest(new { error = "Organization ID is required." });
             try
@@ -56,6 +66,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             [FromQuery] string? rootAssetId = null,
             [FromQuery] string? rootAssetType = null)
         {
+            if (!CanAccess(userId)) return Forbid();
             if (string.IsNullOrWhiteSpace(userId))
                 return BadRequest(new { error = "User ID is required." });
             try
@@ -78,11 +89,13 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// Get child assets of a given asset
         /// </summary>
         [HttpGet("asset/{assetId}/{assetType}/children")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<List<AssetHierarchyNode>>> GetAssetChildren(
             string assetId,
             string assetType,
             [FromQuery] string? organizationId = null)
         {
+            if (!IsAdministrator) return Forbid();
             if (string.IsNullOrWhiteSpace(assetId))
                 return BadRequest(new { error = "Asset ID is required." });
             if (string.IsNullOrWhiteSpace(assetType))
@@ -102,11 +115,13 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// Get the full path from root to a given asset
         /// </summary>
         [HttpGet("asset/{assetId}/{assetType}/path")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<List<AssetHierarchyNode>>> GetAssetPath(
             string assetId,
             string assetType,
             [FromQuery] string? organizationId = null)
         {
+            if (!IsAdministrator) return Forbid();
             if (string.IsNullOrWhiteSpace(assetId))
                 return BadRequest(new { error = "Asset ID is required." });
             if (string.IsNullOrWhiteSpace(assetType))
@@ -128,6 +143,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         [HttpPost("validate-access")]
         public async Task<ActionResult<bool>> ValidateAccess([FromBody] ValidateAccessRequest request)
         {
+            if (!CanAccess(request.UserId)) return Forbid();
             try
             {
                 var result = await _assetHierarchyService.ValidateAccessAsync(request.UserId, request.AssetPath);
@@ -143,8 +159,10 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// Get the hierarchy configuration for an organization
         /// </summary>
         [HttpGet("organization/{organizationId}/config")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<List<HierarchyConfig>>> GetHierarchyConfig(string organizationId)
         {
+            if (!IsAdministrator) return Forbid();
             if (string.IsNullOrWhiteSpace(organizationId))
                 return BadRequest(new { error = "Organization ID is required." });
             try
@@ -162,10 +180,12 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// Update the hierarchy configuration for an organization
         /// </summary>
         [HttpPut("organization/{organizationId}/config")]
+        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<bool>> UpdateHierarchyConfig(
             string organizationId,
             [FromBody] List<HierarchyConfig> config)
         {
+            if (!IsAdministrator) return Forbid();
             if (string.IsNullOrWhiteSpace(organizationId))
                 return BadRequest(new { error = "Organization ID is required." });
             try

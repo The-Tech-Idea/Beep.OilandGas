@@ -20,18 +20,18 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
     [Route("api/accounting/production/runtickets")]
     public class RunTicketController : ControllerBase
     {
-        private readonly ProductionAccountingService _service;
+        private readonly Beep.OilandGas.ApiService.Services.RunTicketStore _tickets;
         private readonly IProductionAccountingService _productionAccountingService;
         private readonly GLIntegrationService _glIntegration;
         private readonly ILogger<RunTicketController> _logger;
 
         public RunTicketController(
-            ProductionAccountingService service,
+            Beep.OilandGas.ApiService.Services.RunTicketStore tickets,
             IProductionAccountingService productionAccountingService,
             GLIntegrationService glIntegration,
             ILogger<RunTicketController> logger)
         {
-            _service = service ?? throw new ArgumentNullException(nameof(service));
+            _tickets = tickets ?? throw new ArgumentNullException(nameof(tickets));
             _productionAccountingService = productionAccountingService ?? throw new ArgumentNullException(nameof(productionAccountingService));
             _glIntegration = glIntegration ?? throw new ArgumentNullException(nameof(glIntegration));
             _logger = logger;
@@ -41,7 +41,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         /// Get all run tickets.
         /// </summary>
         [HttpGet]
-        public ActionResult<List<RUN_TICKET>> GetRunTickets(
+        public async Task<ActionResult<List<RUN_TICKET>>> GetRunTickets(
             [FromQuery] DateTime? startDate = null, 
             [FromQuery] DateTime? endDate = null,
             [FromQuery] string connectionName = "PPDM39")
@@ -50,7 +50,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             {
                 var start = startDate ?? DateTime.Now.AddMonths(-1);
                 var end = endDate ?? DateTime.Now;
-                var tickets = _service.ProductionManager.GetRunTicketsByDateRange(start, end).ToList();
+                if (end < start) return BadRequest(new { error = "End date must not precede start date." });
+                var tickets = await _tickets.ListAsync(start, end);
                 var dtos = tickets.Select(MapToRunTicketDto).ToList();
                 return Ok(dtos);
             }
@@ -65,13 +66,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         /// Get run ticket by ID.
         /// </summary>
         [HttpGet("{id}")]
-        public ActionResult<RUN_TICKET> GetRunTicket(string id, [FromQuery] string connectionName = "PPDM39")
+        public async Task<ActionResult<RUN_TICKET>> GetRunTicket(string id, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Run ticket ID is required." });
             try
             {
-                var ticket = _service.ProductionManager.GetRunTicket(id);
+                var ticket = await _tickets.GetAsync(id);
                 if (ticket == null)
                         return NotFound(new { error = $"Run ticket with ID {id} not found." });
 
@@ -100,25 +101,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var measurement = new MEASUREMENT_RECORD
-                {
-                    MeasurementId = Guid.NewGuid().ToString(),
-                    MeasurementDateTime = request.TICKET_DATE_TIME ?? DateTime.Now,
-                    Method = MeasurementMethod.Manual,
-                    Standard = MeasurementStandard.API,
-                    GrossVolume = request.GROSS_VOLUME,
-                    BSW = request.BSWPERCENTAGE,
-                    Temperature = request.TEMPERATURE,
-                    ApiGravity = request.API_GRAVITY
-                };
-
-                var ticket = _service.ProductionManager.CreateRunTicket(
-                    request.LEASE_ID,
-                    request.WELL_ID,
-                    request.TANK_BATTERY_ID,
-                    measurement,
-                    request.DISPOSITION_TYPE,
-                    request.PURCHASER);
+                var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (User.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(actor)) return Forbid();
+                var ticket = await _tickets.CreateAsync(request, actor);
 
                 // Post to GL if revenue amount provided
                 if (revenueAmount.HasValue && revenueAmount.Value > 0)
@@ -128,7 +113,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
                         revenueAmount.Value,
                         isCash: isCash,
                         transactionDate: ticket.TICKET_DATE_TIME,
-                        userId: userId ?? "system");
+                        userId: actor);
 
                     return Ok(new { Ticket = MapToRunTicketDto(ticket), JournalEntryId = journalEntryId });
                 }
@@ -160,10 +145,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
                 if (runTicket == null)
                     return BadRequest(new { error = "Run ticket payload is required." });
 
+                var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (User.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(actor)) return Forbid();
                 var processed = await _productionAccountingService.ProcessProductionCycleAsync(
                     runTicket,
-                    ResolveUserId(),
-                    connectionName ?? _service.DefaultConnectionName);
+                    actor,
+                    connectionName ?? "PPDM39");
 
                 return Ok(new { Processed = processed });
             }
@@ -189,7 +176,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
                 var status = await _productionAccountingService.GetAccountingStatusAsync(
                     fieldId,
                     asOfDate,
-                    connectionName ?? _service.DefaultConnectionName);
+                    connectionName ?? "PPDM39");
 
                 return Ok(status);
             }
@@ -219,7 +206,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
                     fieldId,
                     startDate,
                     endDate,
-                    connectionName ?? _service.DefaultConnectionName);
+                    connectionName ?? "PPDM39");
 
                 return Ok(transactions);
             }
@@ -230,17 +217,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             }
         }
 
-        private string ResolveUserId()
-        {
-            return User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub")
-                ?? "system";
-        }
-
         private RUN_TICKET MapToRunTicketDto(RUN_TICKET ticket)
         {
                 return new RUN_TICKET
                 {
+                    RUN_TICKET_ID = ticket.RUN_TICKET_ID,
                     RunTicketNumber = ticket.RUN_TICKET_NUMBER,
                     TicketDateTime = ticket.TICKET_DATE_TIME,
                     LeaseId = ticket.LEASE_ID,
@@ -258,4 +239,3 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         }
     }
 }
-

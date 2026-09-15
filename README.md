@@ -33,7 +33,7 @@ The solution follows a **three-layer architecture**:
 
 ### Key Principles
 
-- **Single Database**: All lifecycle data (Exploration/Development/Production/Decommissioning) in a unified PPDM39 schema.
+- **Default Repository and Module Databases**: ASP.NET Identity and account extensions live in the EF-managed default repository. Module schemas are installed through BeepDM into user-selected named connections. Local development uses SQL Server LocalDB. Runtime services are being audited to remove remaining global connection fallbacks; see [repository installation and verification notes](Beep.OilandGas.Repository/README.md).
 - **Field-Scoped Operations**: All business operations are scoped to a current field via `IFieldOrchestrator`.
 - **Metadata-Driven Data Access**: `PPDMGenericRepository` uses `IPPDMMetadataRepository` for table discovery and `AppFilter` for database-agnostic queries.
 - **No Mock Data**: Every page loads from live API endpoints. No hardcoded lists or TODO stubs.

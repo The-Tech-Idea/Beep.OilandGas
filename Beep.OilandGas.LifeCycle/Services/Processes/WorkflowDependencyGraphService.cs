@@ -59,7 +59,7 @@ public class WorkflowDependencyGraphService : IWorkflowDependencyGraphService
     private readonly ICommonColumnHandler _commonColumnHandler;
     private readonly IPPDM39DefaultsRepository _defaults;
     private readonly IPPDMMetadataRepository _metadata;
-    private readonly string _connectionName;
+    private readonly Func<Task<string>>? _resolveConnection;
     private readonly ILogger<WorkflowDependencyGraphService> _logger;
 
     public WorkflowDependencyGraphService(
@@ -67,14 +67,14 @@ public class WorkflowDependencyGraphService : IWorkflowDependencyGraphService
         ICommonColumnHandler commonColumnHandler,
         IPPDM39DefaultsRepository defaults,
         IPPDMMetadataRepository metadata,
-        string connectionName = "PPDM39",
+        Func<Task<string>>? resolveConnection = null,
         ILogger<WorkflowDependencyGraphService>? logger = null)
     {
         _editor = editor;
         _commonColumnHandler = commonColumnHandler;
         _defaults = defaults;
         _metadata = metadata;
-        _connectionName = connectionName;
+        _resolveConnection = resolveConnection;
         _logger = logger;
     }
 
@@ -94,7 +94,7 @@ public class WorkflowDependencyGraphService : IWorkflowDependencyGraphService
             DESCRIPTION = $"{dependentProcessDefId} depends on {prerequisiteProcessDefId}",
         };
 
-        var repo = GetRepo();
+        var repo = GetRepo(await ResolveConnectionAsync());
         await repo.InsertAsync(dep, userId);
 
         _logger?.LogInformation(
@@ -108,11 +108,12 @@ public class WorkflowDependencyGraphService : IWorkflowDependencyGraphService
         string processInstanceId, string? stepId)
     {
         var result = new DependencyCheckResult();
+        var connectionName = await ResolveConnectionAsync();
 
         // Get process instance to find the process definition
         var instanceRepo = new PPDMGenericRepository(
             _editor, _commonColumnHandler, _defaults, _metadata,
-            typeof(PROCESS_INSTANCE), _connectionName, "PROCESS_INSTANCE", null);
+            typeof(PROCESS_INSTANCE), connectionName, "PROCESS_INSTANCE", null);
 
         var instanceFilters = new List<AppFilter>
         {
@@ -127,7 +128,7 @@ public class WorkflowDependencyGraphService : IWorkflowDependencyGraphService
         var processDefId = instances[0].PROCESS_DEFINITION_ID;
 
         // Find all dependencies where this process/step is the dependent
-        var deps = await GetDependenciesAsync(processDefId);
+        var deps = await GetDependenciesAsync(processDefId, connectionName);
         if (!string.IsNullOrWhiteSpace(stepId))
         {
             deps = deps.Where(d =>
@@ -142,7 +143,7 @@ public class WorkflowDependencyGraphService : IWorkflowDependencyGraphService
         // Check each prerequisite
         var processRepo = new PPDMGenericRepository(
             _editor, _commonColumnHandler, _defaults, _metadata,
-            typeof(PROCESS_INSTANCE), _connectionName, "PROCESS_INSTANCE", null);
+            typeof(PROCESS_INSTANCE), connectionName, "PROCESS_INSTANCE", null);
 
         foreach (var dep in deps)
         {
@@ -191,8 +192,11 @@ public class WorkflowDependencyGraphService : IWorkflowDependencyGraphService
     }
 
     public async Task<List<WORKFLOW_DEPENDENCY>> GetDependenciesAsync(string processDefinitionId)
+        => await GetDependenciesAsync(processDefinitionId, await ResolveConnectionAsync());
+
+    private async Task<List<WORKFLOW_DEPENDENCY>> GetDependenciesAsync(string processDefinitionId, string connectionName)
     {
-        var repo = GetRepo();
+        var repo = GetRepo(connectionName);
         var filters = new List<AppFilter>
         {
             new() { FieldName = "DEPENDENT_PROCESS_DEF_ID", FilterValue = processDefinitionId },
@@ -204,7 +208,7 @@ public class WorkflowDependencyGraphService : IWorkflowDependencyGraphService
 
     public async Task<List<WORKFLOW_DEPENDENCY>> GetFullGraphAsync()
     {
-        var repo = GetRepo();
+        var repo = GetRepo(await ResolveConnectionAsync());
         var filters = new List<AppFilter>
         {
             new() { FieldName = "ACTIVE_IND", FilterValue = "Y" },
@@ -213,7 +217,15 @@ public class WorkflowDependencyGraphService : IWorkflowDependencyGraphService
         return results.OfType<WORKFLOW_DEPENDENCY>().ToList();
     }
 
-    private PPDMGenericRepository GetRepo() =>
+    private async Task<string> ResolveConnectionAsync()
+    {
+        var connection = _resolveConnection is null ? null : await _resolveConnection();
+        if (string.IsNullOrWhiteSpace(connection))
+            throw new InvalidOperationException("Workflow dependencies require a bound LIFECYCLE database.");
+        return connection;
+    }
+
+    private PPDMGenericRepository GetRepo(string connectionName) =>
         new(_editor, _commonColumnHandler, _defaults, _metadata,
-            typeof(WORKFLOW_DEPENDENCY), _connectionName, "WORKFLOW_DEPENDENCY", null);
+            typeof(WORKFLOW_DEPENDENCY), connectionName, "WORKFLOW_DEPENDENCY", null);
 }

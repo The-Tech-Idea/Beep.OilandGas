@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data;
 
@@ -7,6 +8,7 @@ namespace Beep.OilandGas.Models.Data.Common
     public partial class OIL_PROPERTY_RESULT : ModelEntityBase
     {
         private string CALCULATION_IDValue;
+        [Key, Required, MaxLength(128)]
         public string CALCULATION_ID
         {
             get { return this.CALCULATION_IDValue; }

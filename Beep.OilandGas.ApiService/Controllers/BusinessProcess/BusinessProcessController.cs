@@ -202,13 +202,11 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             try
             {
                 var summaries = new List<ProcessInstanceSummary>();
-                var entityTypes = new[] { "FIELD", "WELL", "FACILITY", "RESERVOIR", "PIPELINE", "GATE_REVIEW", "WORK_ORDER", "HSE", "COMPLIANCE" };
-                foreach (var entityType in entityTypes)
-                {
-                    var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, entityType);
+                var processService = await GetOperationServiceAsync();
+                    var instances = await processService.GetProcessInstancesForFieldAsync(fieldId);
                     if (instances != null)
                     {
-                        foreach (var inst in instances)
+                        foreach (var inst in instances.Where(IsCurrentField))
                         {
                             summaries.Add(new ProcessInstanceSummary
                             {
@@ -222,7 +220,6 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
                             });
                         }
                     }
-                }
                 return Ok(summaries);
             }
             catch (Exception ex)
@@ -246,6 +243,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
                 var instance = await _processService.GetProcessInstanceAsync(instanceId);
                 if (instance == null)
                     return NotFound(new { error = $"Process instance '{instanceId}' not found." });
+                if (!IsCurrentField(instance)) return Forbid();
                 return Ok(instance);
             }
             catch (Exception ex)
@@ -271,18 +269,22 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
                 if (string.IsNullOrWhiteSpace(request.Trigger))
                     return BadRequest(new { error = "Transition trigger is required." });
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (User.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(userId)) return Forbid();
 
             try
             {
-                var instance = await _processService.GetProcessInstanceAsync(instanceId);
-                var actualFromState = instance?.CurrentState ?? request.FromStateId;
+                var processService = await GetOperationServiceAsync();
+                var instance = await processService.GetProcessInstanceAsync(instanceId);
+                if (instance is null) return NotFound();
+                if (!await CanActOnStepAsync(processService, instance, instance.CurrentStepId, userId)) return Forbid();
+                var actualFromState = instance.CurrentState;
 
-                var canTransition = await _processService.CanTransitionAsync(instanceId, request.ToStateId);
+                var canTransition = await processService.CanTransitionAsync(instanceId, request.ToStateId);
                 if (!canTransition)
                     return UnprocessableEntity(new { error = $"Transition to '{request.ToStateId}' is not allowed from current state." });
 
-                var success = await _processService.TransitionStateAsync(instanceId, request.ToStateId, userId);
+                var success = await processService.TransitionStateAsync(instanceId, request.ToStateId, userId);
                 var result = new ProcessTransitionResult
                 {
                     Success = success,
@@ -313,7 +315,11 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 
             try
             {
-                var history = await _processService.GetProcessHistoryAsync(instanceId);
+                var processService = await GetOperationServiceAsync();
+                var instance = await processService.GetProcessInstanceAsync(instanceId);
+                if (instance is null) return NotFound();
+                if (!IsCurrentField(instance)) return Forbid();
+                var history = await processService.GetProcessHistoryAsync(instanceId);
                 return Ok(history ?? new List<ProcessHistoryEntry>());
             }
             catch (Exception ex)
@@ -337,11 +343,16 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
                 if (string.IsNullOrWhiteSpace(stepId))
                     return BadRequest(new { error = "Step ID is required." });
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (User.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(userId)) return Forbid();
 
             try
             {
-                var success = await _processService.ExecuteStepAsync(instanceId, stepId, stepData, userId);
+                var processService = await GetOperationServiceAsync();
+                var instance = await processService.GetProcessInstanceAsync(instanceId);
+                if (instance is null) return NotFound();
+                if (!await CanActOnStepAsync(processService, instance, stepId, userId)) return Forbid();
+                var success = await processService.ExecuteStepAsync(instanceId, stepId, stepData, userId);
                 if (!success)
                     return BadRequest(new { error = "Step update failed. Verify the instance and step are in a valid state." });
                 return NoContent();
@@ -364,12 +375,17 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrWhiteSpace(instanceId))
                     return BadRequest(new { error = "Instance ID is required." });
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (User.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(userId)) return Forbid();
             var reason = request?.Reason ?? "Closed by user.";
 
             try
             {
-                var success = await _processService.CancelProcessAsync(instanceId, reason, userId);
+                var processService = await GetOperationServiceAsync();
+                var instance = await processService.GetProcessInstanceAsync(instanceId);
+                if (instance is null) return NotFound();
+                if (!IsCurrentField(instance) || (instance.StartedBy != userId && !User.IsInRole("Administrator"))) return Forbid();
+                var success = await processService.CancelProcessAsync(instanceId, reason, userId);
                 if (!success)
                     return BadRequest(new { error = "Unable to close instance. It may already be closed or completed." });
                 return NoContent();
@@ -379,6 +395,30 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
                 _logger.LogError(ex, "Error closing process instance {InstanceId}", instanceId);
                 return StatusCode(500, new { error = "Error closing process instance." });
             }
+        }
+
+        private Task<IProcessService> GetOperationServiceAsync() => _processService is BoundProcessService bound
+            ? bound.CreateBoundServiceAsync() : Task.FromResult(_processService);
+
+        private bool IsCurrentField(ProcessInstance instance) =>
+            !string.IsNullOrWhiteSpace(_fieldOrchestrator.CurrentFieldId) &&
+            string.Equals(instance.FieldId, _fieldOrchestrator.CurrentFieldId, StringComparison.Ordinal);
+
+        private async Task<bool> CanActOnStepAsync(IProcessService service, ProcessInstance instance, string stepId, string userId)
+        {
+            if (!IsCurrentField(instance)) return false;
+            var step = instance.StepInstances?.SingleOrDefault(x => x.StepId == stepId);
+            if (step is null || instance.CurrentStepId != stepId) return false;
+            if (User.IsInRole("Administrator")) return true;
+            var assigned = !string.IsNullOrWhiteSpace(step.AssignedTo);
+            if (assigned && step.AssignedTo != userId && !User.IsInRole(step.AssignedTo!)) return false;
+            var definition = await service.GetProcessDefinitionAsync(instance.ProcessId);
+            var definitionStep = definition?.Steps?.SingleOrDefault(x => x.StepId == stepId);
+            if (definitionStep is null) return false;
+            var definitionRoles = definitionStep.RequiredRoles ?? new List<string>();
+            if (!string.IsNullOrWhiteSpace(step.RequiredRole) && !User.IsInRole(step.RequiredRole)) return false;
+            if (definitionRoles.Count > 0 && !definitionRoles.Any(User.IsInRole)) return false;
+            return assigned || !string.IsNullOrWhiteSpace(step.RequiredRole) || definitionRoles.Count > 0;
         }
 
         /// <summary>List all available seed process templates.</summary>

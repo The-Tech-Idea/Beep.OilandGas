@@ -31,7 +31,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly ILogger<PeriodClosingService> _logger;
-        private readonly IAccountingServices _accountingServices;
+        private readonly JournalEntryService _journalEntries;
+        private readonly Func<Task<string>> _resolveConnection;
         private readonly IAmortizationService _amortizationService;
         private readonly IFullCostService _fullCostService;
         private readonly IReserveAccountingService _reserveAccountingService;
@@ -51,8 +52,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
+            JournalEntryService journalEntries,
+            Func<Task<string>> resolveConnection,
             ILogger<PeriodClosingService> logger = null,
-            IAccountingServices accountingServices = null,
             IAmortizationService amortizationService = null,
             IFullCostService fullCostService = null,
             IReserveAccountingService reserveAccountingService = null,
@@ -71,7 +73,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _logger = logger;
-            _accountingServices = accountingServices;
+            _journalEntries = journalEntries ?? throw new ArgumentNullException(nameof(journalEntries));
+            _resolveConnection = resolveConnection ?? throw new ArgumentNullException(nameof(resolveConnection));
             _amortizationService = amortizationService;
             _fullCostService = fullCostService;
             _reserveAccountingService = reserveAccountingService;
@@ -99,6 +102,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new ArgumentNullException(nameof(fieldId));
             if (periodEnd == default)
                 throw new ArgumentException("periodEnd must be valid", nameof(periodEnd));
+
+            connectionName = await ResolveConnectionAsync();
 
             _logger?.LogInformation(
                 "Validating period closing readiness for field {FieldId} as of {PeriodEnd}",
@@ -194,6 +199,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new ArgumentNullException(nameof(userId));
             if (periodEnd == default)
                 throw new ArgumentException("periodEnd must be valid", nameof(periodEnd));
+
+            connectionName = await ResolveConnectionAsync();
 
             _logger?.LogInformation(
                 "Closing period for field {FieldId} as of {PeriodEnd} by user {UserId}",
@@ -341,6 +348,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (periodEnd == default)
                 throw new ArgumentException("periodEnd must be valid", nameof(periodEnd));
 
+            connectionName = await ResolveConnectionAsync();
+
             _logger?.LogInformation(
                 "Retrieving unreconciled items for field {FieldId} as of {PeriodEnd}",
                 fieldId, periodEnd.ToShortDateString());
@@ -465,13 +474,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("ALLOCATION_RESULT");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(ALLOCATION_RESULT);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "ALLOCATION_RESULT");
+                var repo = await CreateRepositoryAsync<ALLOCATION_RESULT>("ALLOCATION_RESULT");
 
                 var filters = new List<AppFilter>
                 {
@@ -482,13 +485,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var results = await repo.GetAsync(filters);
                 var allocResults = results.Cast<ALLOCATION_RESULT>().ToList();
 
-                var detailMetadata = await _metadata.GetTableMetadataAsync("ALLOCATION_DETAIL");
-                var detailEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{detailMetadata.EntityTypeName}")
-                    ?? typeof(ALLOCATION_DETAIL);
-
-                var detailRepo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    detailEntityType, connectionName, "ALLOCATION_DETAIL");
+                var detailRepo = await CreateRepositoryAsync<ALLOCATION_DETAIL>("ALLOCATION_DETAIL");
 
                 // Filter for incomplete allocations (missing details)
                 foreach (var alloc in allocResults)
@@ -541,13 +538,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("ROYALTY_CALCULATION");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(ROYALTY_CALCULATION);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "ROYALTY_CALCULATION");
+                var repo = await CreateRepositoryAsync<ROYALTY_CALCULATION>("ROYALTY_CALCULATION");
 
                 var filters = new List<AppFilter>
                 {
@@ -598,13 +589,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             try
             {
-                var transactionMetadata = await _metadata.GetTableMetadataAsync("REVENUE_TRANSACTION");
-                var transactionEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{transactionMetadata.EntityTypeName}")
-                    ?? typeof(REVENUE_TRANSACTION);
-
-                var transactionRepo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    transactionEntityType, connectionName, "REVENUE_TRANSACTION");
+                var transactionRepo = await CreateRepositoryAsync<REVENUE_TRANSACTION>("REVENUE_TRANSACTION");
 
                 var filters = new List<AppFilter>
                 {
@@ -616,13 +601,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var transactionResults = await transactionRepo.GetAsync(filters);
                 var transactions = transactionResults.Cast<REVENUE_TRANSACTION>().ToList();
 
-                var allocationMetadata = await _metadata.GetTableMetadataAsync("REVENUE_ALLOCATION");
-                var allocationEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{allocationMetadata.EntityTypeName}")
-                    ?? typeof(REVENUE_ALLOCATION);
-
-                var allocationRepo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    allocationEntityType, connectionName, "REVENUE_ALLOCATION");
+                var allocationRepo = await CreateRepositoryAsync<REVENUE_ALLOCATION>("REVENUE_ALLOCATION");
 
                 var allocationResults = await allocationRepo.GetAsync(new List<AppFilter>
                 {
@@ -679,13 +658,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("JOURNAL_ENTRY");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(JOURNAL_ENTRY);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "JOURNAL_ENTRY");
+                var repo = await CreateRepositoryAsync<JOURNAL_ENTRY>("JOURNAL_ENTRY");
 
                 var filters = new List<AppFilter>
                 {
@@ -740,13 +713,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 _logger?.LogInformation("Marking allocations closed for field {FieldId} as of {PeriodEnd}", fieldId, periodEnd.ToShortDateString());
 
-                var metadata = await _metadata.GetTableMetadataAsync("ALLOCATION_RESULT");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(ALLOCATION_RESULT);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "ALLOCATION_RESULT");
+                var repo = await CreateRepositoryAsync<ALLOCATION_RESULT>("ALLOCATION_RESULT");
 
                 // Get all unclosed allocations for this field up to period end
                 var filters = new List<AppFilter>
@@ -806,13 +773,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 _logger?.LogInformation("Marking royalties closed for field {FieldId} as of {PeriodEnd}", fieldId, periodEnd.ToShortDateString());
 
-                var metadata = await _metadata.GetTableMetadataAsync("ROYALTY_CALCULATION");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(ROYALTY_CALCULATION);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "ROYALTY_CALCULATION");
+                var repo = await CreateRepositoryAsync<ROYALTY_CALCULATION>("ROYALTY_CALCULATION");
 
                 // Get all royalties that still need accrual posting
                 var filters = new List<AppFilter>
@@ -874,13 +835,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 _logger?.LogInformation("Marking revenue closed for field {FieldId} as of {PeriodEnd}", fieldId, periodEnd.ToShortDateString());
 
-                var metadata = await _metadata.GetTableMetadataAsync("REVENUE_TRANSACTION");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(REVENUE_TRANSACTION);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "REVENUE_TRANSACTION");
+                var repo = await CreateRepositoryAsync<REVENUE_TRANSACTION>("REVENUE_TRANSACTION");
 
                 // Get all unrecognized revenue for this field up to period end
                 var filters = new List<AppFilter>
@@ -938,25 +893,22 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _logger?.LogInformation("Posting period close GL entry for field {FieldId} as of {PeriodEnd}", fieldId, periodEnd.ToShortDateString());
 
                 // Create a period closing journal entry to lock the period
-                var metadata = await _metadata.GetTableMetadataAsync("JOURNAL_ENTRY");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(JOURNAL_ENTRY);
+                var repo = await CreateRepositoryAsync<JOURNAL_ENTRY>("JOURNAL_ENTRY");
 
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "JOURNAL_ENTRY");
-
-                var entryNumber = $"PC-{fieldId}-{periodEnd:yyyyMM}";
-                var referenceNumber = $"CLOSE-{periodEnd:yyyyMM}";
+                var referenceNumber = $"CLOSE-{fieldId}-{periodEnd:yyyyMM}";
                 var existing = await repo.GetAsync(new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "ENTRY_NUMBER", Operator = "=", FilterValue = entryNumber },
-                    new AppFilter { FieldName = "ENTRY_TYPE", Operator = "=", FilterValue = JournalEntryTypeCodes.PeriodClose },
+                    new AppFilter { FieldName = "REFERENCE_NUMBER", Operator = "=", FilterValue = referenceNumber },
+                    new AppFilter { FieldName = "SOURCE_MODULE", Operator = "=", FilterValue = AccountingSourceModuleCodes.PeriodClosing },
                     new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 });
 
                 if (existing != null && existing.Any())
                 {
+                    if (existing.Cast<JOURNAL_ENTRY>().Any(entry =>
+                        !string.Equals(entry.STATUS, JournalEntryStatusCodes.Posted, StringComparison.OrdinalIgnoreCase)))
+                        throw new InvalidOperationException("An unfinished closing journal requires review before closing this period.");
+
                     _logger?.LogInformation(
                         "Period close entry already exists for field {FieldId} as of {PeriodEnd}",
                         fieldId, periodEnd.ToShortDateString());
@@ -975,24 +927,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var netIncome = grossRevenue - totalRoyalty;
                 var entryDescription = $"Period close summary for {periodEnd:MMMM yyyy} (Gross={grossRevenue}, Royalty={totalRoyalty})";
 
-                var closingEntry = new JOURNAL_ENTRY
-                {
-                    JOURNAL_ENTRY_ID = Guid.NewGuid().ToString(),
-                    ENTRY_NUMBER = entryNumber,
-                    ENTRY_DATE = periodEnd,
-                    ENTRY_TYPE = JournalEntryTypeCodes.PeriodClose,
-                    STATUS = JournalEntryStatusCodes.Posted,
-                    DESCRIPTION = entryDescription,
-                    SOURCE_MODULE = AccountingSourceModuleCodes.PeriodClosing,
-                    REFERENCE_NUMBER = referenceNumber,
-                    TOTAL_DEBIT = 0m,
-                    TOTAL_CREDIT = 0m,
-                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
-                    PPDM_GUID = Guid.NewGuid().ToString(),
-                    ROW_CREATED_BY = userId,
-                    ROW_CREATED_DATE = DateTime.UtcNow
-                };
-
                 var lines = new List<JOURNAL_ENTRY_LINE>();
                 var lineNumber = 1;
 
@@ -1001,7 +935,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     lines.Add(new JOURNAL_ENTRY_LINE
                     {
                         JOURNAL_ENTRY_LINE_ID = Guid.NewGuid().ToString(),
-                        JOURNAL_ENTRY_ID = closingEntry.JOURNAL_ENTRY_ID,
                         GL_ACCOUNT_ID = DefaultGlAccounts.Revenue,
                         LINE_NUMBER = lineNumber++,
                         DEBIT_AMOUNT = grossRevenue,
@@ -1019,7 +952,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     lines.Add(new JOURNAL_ENTRY_LINE
                     {
                         JOURNAL_ENTRY_LINE_ID = Guid.NewGuid().ToString(),
-                        JOURNAL_ENTRY_ID = closingEntry.JOURNAL_ENTRY_ID,
                         GL_ACCOUNT_ID = DefaultGlAccounts.RoyaltyExpense,
                         LINE_NUMBER = lineNumber++,
                         DEBIT_AMOUNT = 0m,
@@ -1039,7 +971,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     lines.Add(new JOURNAL_ENTRY_LINE
                     {
                         JOURNAL_ENTRY_LINE_ID = Guid.NewGuid().ToString(),
-                        JOURNAL_ENTRY_ID = closingEntry.JOURNAL_ENTRY_ID,
                         GL_ACCOUNT_ID = DefaultGlAccounts.RetainedEarnings,
                         LINE_NUMBER = lineNumber++,
                         DEBIT_AMOUNT = retainedDebit,
@@ -1052,48 +983,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     });
                 }
 
-                if (_accountingServices?.JournalEntries != null)
-                {
-                    var entry = await _accountingServices.JournalEntries.CreateEntryAsync(
-                        periodEnd,
-                        entryDescription,
-                        lines,
-                        userId,
-                        referenceNumber,
-                        "PERIOD_CLOSING");
-
-                    await _accountingServices.JournalEntries.PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId);
-
-                    _logger?.LogInformation(
-                        "Period close GL entry {EntryId} created via accounting services for field {FieldId} as of {PeriodEnd}",
-                        entry.JOURNAL_ENTRY_ID, fieldId, periodEnd.ToShortDateString());
-                    return;
-                }
-
-                await repo.InsertAsync(closingEntry, userId);
-
-                var lineMetadata = await _metadata.GetTableMetadataAsync("JOURNAL_ENTRY_LINE");
-                var lineEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{lineMetadata.EntityTypeName}")
-                    ?? typeof(JOURNAL_ENTRY_LINE);
-
-                var lineRepo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    lineEntityType, connectionName, "JOURNAL_ENTRY_LINE");
-
-                foreach (var line in lines)
-                {
-                    await lineRepo.InsertAsync(line, userId);
-                }
-
-                closingEntry.TOTAL_DEBIT = lines.Sum(l => l.DEBIT_AMOUNT ?? 0m);
-                closingEntry.TOTAL_CREDIT = lines.Sum(l => l.CREDIT_AMOUNT ?? 0m);
-                closingEntry.ROW_CHANGED_BY = userId;
-                closingEntry.ROW_CHANGED_DATE = DateTime.UtcNow;
-                await repo.UpdateAsync(closingEntry, userId);
+                var entry = await _journalEntries.CreateEntryAsync(
+                    periodEnd, entryDescription, lines, userId,
+                    referenceNumber, AccountingSourceModuleCodes.PeriodClosing);
+                await _journalEntries.PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId);
 
                 _logger?.LogInformation(
-                    "Period close GL entry {EntryId} created for field {FieldId} as of {PeriodEnd}",
-                    closingEntry.JOURNAL_ENTRY_ID, fieldId, periodEnd.ToShortDateString());
+                    "Period close GL entry {EntryId} posted for field {FieldId} as of {PeriodEnd}",
+                    entry.JOURNAL_ENTRY_ID, fieldId, periodEnd.ToShortDateString());
             }
             catch (OperationCanceledException)
             {
@@ -1143,13 +1040,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         {
             var periodStart = new DateTime(periodEnd.Year, periodEnd.Month, 1);
 
-            var measurementMetadata = await _metadata.GetTableMetadataAsync("MEASUREMENT_RECORD");
-            var measurementEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{measurementMetadata.EntityTypeName}")
-                ?? typeof(MEASUREMENT_RECORD);
-
-            var measurementRepo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                measurementEntityType, connectionName, "MEASUREMENT_RECORD");
+            var measurementRepo = await CreateRepositoryAsync<MEASUREMENT_RECORD>("MEASUREMENT_RECORD");
 
             var measurementFilters = new List<AppFilter>
             {
@@ -1163,13 +1054,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var measurements = measurementResults?.Cast<MEASUREMENT_RECORD>().ToList() ?? new List<MEASUREMENT_RECORD>();
             var productionVolume = measurements.Sum(m => m.NET_VOLUME ?? m.GROSS_VOLUME ?? 0m);
 
-            var revenueMetadata = await _metadata.GetTableMetadataAsync("REVENUE_TRANSACTION");
-            var revenueEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{revenueMetadata.EntityTypeName}")
-                ?? typeof(REVENUE_TRANSACTION);
-
-            var revenueRepo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                revenueEntityType, connectionName, "REVENUE_TRANSACTION");
+            var revenueRepo = await CreateRepositoryAsync<REVENUE_TRANSACTION>("REVENUE_TRANSACTION");
 
             var revenueFilters = new List<AppFilter>
             {
@@ -1193,13 +1078,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         {
             var periodStart = new DateTime(periodEnd.Year, periodEnd.Month, 1);
 
-            var revenueMetadata = await _metadata.GetTableMetadataAsync("REVENUE_TRANSACTION");
-            var revenueEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{revenueMetadata.EntityTypeName}")
-                ?? typeof(REVENUE_TRANSACTION);
-
-            var revenueRepo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                revenueEntityType, connectionName, "REVENUE_TRANSACTION");
+            var revenueRepo = await CreateRepositoryAsync<REVENUE_TRANSACTION>("REVENUE_TRANSACTION");
 
             var revenueFilters = new List<AppFilter>
             {
@@ -1213,13 +1092,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var revenues = revenueResults?.Cast<REVENUE_TRANSACTION>().ToList() ?? new List<REVENUE_TRANSACTION>();
             var grossRevenue = revenues.Sum(r => r.GROSS_REVENUE ?? 0m);
 
-            var royaltyMetadata = await _metadata.GetTableMetadataAsync("ROYALTY_CALCULATION");
-            var royaltyEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{royaltyMetadata.EntityTypeName}")
-                ?? typeof(ROYALTY_CALCULATION);
-
-            var royaltyRepo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                royaltyEntityType, connectionName, "ROYALTY_CALCULATION");
+            var royaltyRepo = await CreateRepositoryAsync<ROYALTY_CALCULATION>("ROYALTY_CALCULATION");
 
             var royaltyFilters = new List<AppFilter>
             {
@@ -1241,13 +1114,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(allocationRequestId))
                 return null;
 
-            var metadata = await _metadata.GetTableMetadataAsync("RUN_TICKET");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(RUN_TICKET);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "RUN_TICKET");
+            var repo = await CreateRepositoryAsync<RUN_TICKET>("RUN_TICKET");
 
             var filters = new List<AppFilter>
             {
@@ -1307,13 +1174,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 return;
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("ASSET_RETIREMENT_OBLIGATION");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(ASSET_RETIREMENT_OBLIGATION);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "ASSET_RETIREMENT_OBLIGATION");
+                var repo = await CreateRepositoryAsync<ASSET_RETIREMENT_OBLIGATION>("ASSET_RETIREMENT_OBLIGATION");
 
                 var filters = new List<AppFilter>
                 {
@@ -1377,13 +1238,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 return;
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("LEASE_CONTRACT");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(LEASE_CONTRACT);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "LEASE_CONTRACT");
+                var repo = await CreateRepositoryAsync<LEASE_CONTRACT>("LEASE_CONTRACT");
 
                 var filters = new List<AppFilter>
                 {
@@ -1422,13 +1277,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 return;
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("HEDGE_RELATIONSHIP");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(HEDGE_RELATIONSHIP);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "HEDGE_RELATIONSHIP");
+                var repo = await CreateRepositoryAsync<HEDGE_RELATIONSHIP>("HEDGE_RELATIONSHIP");
 
                 var filters = new List<AppFilter>
                 {
@@ -1473,13 +1322,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 return;
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("EMISSIONS_OBLIGATION");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(EMISSIONS_OBLIGATION);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "EMISSIONS_OBLIGATION");
+                var repo = await CreateRepositoryAsync<EMISSIONS_OBLIGATION>("EMISSIONS_OBLIGATION");
 
                 var filters = new List<AppFilter>
                 {
@@ -1524,13 +1367,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("INVENTORY_ITEM");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(INVENTORY_ITEM);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "INVENTORY_ITEM");
+                var repo = await CreateRepositoryAsync<INVENTORY_ITEM>("INVENTORY_ITEM");
 
                 var filters = new List<AppFilter>
                 {
@@ -1575,13 +1412,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("ACCOUNTING_COST");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(ACCOUNTING_COST);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "ACCOUNTING_COST");
+                var repo = await CreateRepositoryAsync<ACCOUNTING_COST>("ACCOUNTING_COST");
 
                 var filters = new List<AppFilter>
                 {
@@ -1651,13 +1482,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             DateTime periodEnd,
             string connectionName)
         {
-            var metadata = await _metadata.GetTableMetadataAsync("ACCOUNTING_COST");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(ACCOUNTING_COST);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "ACCOUNTING_COST");
+            var repo = await CreateRepositoryAsync<ACCOUNTING_COST>("ACCOUNTING_COST");
 
             var filters = new List<AppFilter>
             {
@@ -1672,6 +1497,21 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ?? new List<ACCOUNTING_COST>();
 
             return costs.Sum(c => c.AMOUNT);
+        }
+        private async Task<string> ResolveConnectionAsync()
+        {
+            var connection = await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection))
+                throw new InvalidOperationException("A PRODUCTION database binding is required.");
+            return connection;
+        }
+
+        private async Task<PPDMGenericRepository> CreateRepositoryAsync<T>(string tableName)
+        {
+            var connection = await ResolveConnectionAsync();
+            return new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(T), connection, tableName);
         }
     }
 }

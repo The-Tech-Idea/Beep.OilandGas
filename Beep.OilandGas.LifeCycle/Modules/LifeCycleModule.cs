@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.Common;
 using Beep.OilandGas.Models.Data.LifeCycle;
-using Beep.OilandGas.Models.Data.Security;
 using Beep.OilandGas.Models.Data.Decommissioning;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.ModuleSetup;
@@ -56,8 +55,6 @@ public sealed class LifeCycleModule : ModuleSetupBase
         // ── Decommissioning & environmental tables ─────────────────────────
         typeof(ENVIRONMENTAL_RESTORATION),
         typeof(DECOMMISSIONING_COST),
-        // ── Organization hierarchy ─────────────────────────────────────────
-        typeof(ORGANIZATION_HIERARCHY_CONFIG),
         // ── Lifecycle reference LOV table ──────────────────────────────────
         typeof(R_LIFECYCLE_STATE_REFERENCE),
         // ── Phase 2: Workflow engine enhancement tables ───────────────────
@@ -199,7 +196,7 @@ public sealed class LifeCycleModule : ModuleSetupBase
         allCodes.AddRange(fieldPhases);
         allCodes.AddRange(reservoirStates);
 
-        await SeedReferenceSetAsync("R_LIFECYCLE_STATE", allCodes, connectionName, userId, result, cancellationToken);
+        await SeedReferenceSetAsync(allCodes, connectionName, userId, result, cancellationToken);
     }
 
     private async Task SeedProcessStatusCodesAsync(
@@ -243,7 +240,7 @@ public sealed class LifeCycleModule : ModuleSetupBase
         allCodes.AddRange(stepStatuses);
         allCodes.AddRange(approvalStatuses);
 
-        await SeedReferenceSetAsync("R_PROCESS_STATUS", allCodes, connectionName, userId, result, cancellationToken);
+        await SeedReferenceSetAsync(allCodes, connectionName, userId, result, cancellationToken);
     }
 
     private async Task SeedTransitionConditionCodesAsync(
@@ -261,18 +258,17 @@ public sealed class LifeCycleModule : ModuleSetupBase
             ("TRANSITION_CONDITION", "EVENT_BASED", "Transition triggered by external event"),
         };
 
-        await SeedReferenceSetAsync("R_TRANSITION_CONDITION", conditions, connectionName, userId, result, cancellationToken);
+        await SeedReferenceSetAsync(conditions, connectionName, userId, result, cancellationToken);
     }
 
     private async Task SeedReferenceSetAsync(
-        string tableName,
         IReadOnlyList<(string referenceSet, string referenceCode, string longName)> codes,
         string connectionName,
         string userId,
         ModuleSetupResult result,
         CancellationToken cancellationToken)
     {
-        var repo = GetRepo<R_LIFECYCLE_STATE_REFERENCE>(tableName, connectionName);
+        var repo = GetRepo<R_LIFECYCLE_STATE_REFERENCE>(nameof(R_LIFECYCLE_STATE_REFERENCE), connectionName);
 
         foreach (var (refSet, refCode, longName) in codes)
         {

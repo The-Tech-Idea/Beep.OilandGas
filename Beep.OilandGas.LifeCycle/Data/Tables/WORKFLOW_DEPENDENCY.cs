@@ -11,7 +11,7 @@ namespace Beep.OilandGas.LifeCycle.Data.Tables;
 /// </summary>
 public class WORKFLOW_DEPENDENCY : ModelEntityBase
 {
-    [Key]
+    [Key, MaxLength(128)]
     public string DEPENDENCY_ID { get; set; } = Guid.NewGuid().ToString();
 
     /// <summary>The process definition that DEPENDS ON something else.</summary>

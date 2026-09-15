@@ -51,8 +51,8 @@ namespace Beep.OilandGas.Models.Data
 
             set { SetProperty(ref EFFECTIVE_DATEValue, value); }
         }
-        private System.String REMARKValue;
-        public System.String REMARK
+        private System.String? REMARKValue;
+        public System.String? REMARK
         {
             get
             {
@@ -61,8 +61,8 @@ namespace Beep.OilandGas.Models.Data
 
             set { SetProperty(ref REMARKValue, value); }
         }
-        private System.String SOURCEValue;
-        public System.String SOURCE
+        private System.String? SOURCEValue;
+        public System.String? SOURCE
         {
             get
             {

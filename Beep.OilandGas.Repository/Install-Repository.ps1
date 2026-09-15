@@ -10,6 +10,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'LocalDevelopmentConnection.ps1')
 $project = Join-Path $PSScriptRoot 'Beep.OilandGas.Repository.csproj'
 $contexts = @{
     SqlServer = 'SqlServerRepositoryDbContext'
@@ -28,9 +29,7 @@ if ($LocalDevelopment) {
     }
     $configPath = Join-Path $PSScriptRoot '../Beep.OilandGas.ApiService/appsettings.Development.json'
     $repository = (Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json).Repository
-    if ($repository.Provider -ne 'SqlServer' -or $repository.ConnectionString -notmatch '\(localdb\)') {
-        throw 'Development repository configuration must select SQL Server LocalDB.'
-    }
+    Assert-LocalDevelopmentConnection -Provider $repository.Provider -ConnectionString $repository.ConnectionString
     $connection = $repository.ConnectionString
 }
 if ([string]::IsNullOrWhiteSpace($connection)) {

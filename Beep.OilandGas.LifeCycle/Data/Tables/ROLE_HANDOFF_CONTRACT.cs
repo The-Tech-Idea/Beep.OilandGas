@@ -11,7 +11,7 @@ namespace Beep.OilandGas.LifeCycle.Data.Tables;
 /// </summary>
 public class ROLE_HANDOFF_CONTRACT : ModelEntityBase
 {
-    [Key]
+    [Key, MaxLength(128)]
     public string HANDOFF_CONTRACT_ID { get; set; } = Guid.NewGuid().ToString();
 
     /// <summary>FK → PROCESS_DEFINITION.PROCESS_DEFINITION_ID.</summary>

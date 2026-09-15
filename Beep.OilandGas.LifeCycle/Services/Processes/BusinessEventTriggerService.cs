@@ -54,32 +54,32 @@ public class BusinessEventTriggerService : IBusinessEventTriggerService
     private readonly ICommonColumnHandler _commonColumnHandler;
     private readonly IPPDM39DefaultsRepository _defaults;
     private readonly IPPDMMetadataRepository _metadata;
-    private readonly string _connectionName;
+    private readonly Func<Task<string>>? _resolveConnection;
     private readonly ILogger<BusinessEventTriggerService> _logger;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly Func<string, IProcessService> _createProcessService;
 
     public BusinessEventTriggerService(
         IDMEEditor editor,
         ICommonColumnHandler commonColumnHandler,
         IPPDM39DefaultsRepository defaults,
         IPPDMMetadataRepository metadata,
-        string connectionName,
+        Func<Task<string>>? resolveConnection,
         ILogger<BusinessEventTriggerService>? logger,
-        IServiceProvider serviceProvider)
+        Func<string, IProcessService> createProcessService)
     {
         _editor = editor;
         _commonColumnHandler = commonColumnHandler;
         _defaults = defaults;
         _metadata = metadata;
-        _connectionName = connectionName;
+        _resolveConnection = resolveConnection;
         _logger = logger;
-        _serviceProvider = serviceProvider;
+        _createProcessService = createProcessService ?? throw new ArgumentNullException(nameof(createProcessService));
     }
 
     public async Task<BUSINESS_EVENT_TRIGGER> RegisterTriggerAsync(
         BUSINESS_EVENT_TRIGGER trigger, string userId)
     {
-        var repo = GetRepo();
+        var repo = GetRepo(await ResolveConnectionAsync());
         await repo.InsertAsync(trigger, userId);
         _logger?.LogInformation("Registered business event trigger: {TriggerName} for {EntityType}",
             trigger.TRIGGER_NAME, trigger.ENTITY_TYPE);
@@ -89,7 +89,8 @@ public class BusinessEventTriggerService : IBusinessEventTriggerService
     public async Task<List<string>> OnBusinessEventAsync(BusinessEvent eventData, string userId)
     {
         var startedInstances = new List<string>();
-        var triggers = await GetTriggersForEntityAsync(eventData.EntityType);
+        var connectionName = await ResolveConnectionAsync();
+        var triggers = await GetTriggersForEntityAsync(eventData.EntityType, connectionName);
 
         foreach (var trigger in triggers.Where(t =>
             string.Equals(t.IS_ACTIVE, "Y", StringComparison.OrdinalIgnoreCase) &&
@@ -98,15 +99,9 @@ public class BusinessEventTriggerService : IBusinessEventTriggerService
             if (!MatchesCondition(trigger, eventData))
                 continue;
 
+            var processService = _createProcessService(connectionName);
             try
             {
-                var processService = _serviceProvider.GetService(typeof(IProcessService)) as IProcessService;
-                if (processService is null)
-                {
-                    _logger?.LogWarning("IProcessService not available for event trigger {TriggerId}", trigger.TRIGGER_ID);
-                    continue;
-                }
-
                 var instance = await processService.StartProcessAsync(
                     trigger.TARGET_PROCESS_DEF_ID,
                     eventData.EntityId,
@@ -131,8 +126,11 @@ public class BusinessEventTriggerService : IBusinessEventTriggerService
     }
 
     public async Task<List<BUSINESS_EVENT_TRIGGER>> GetTriggersForEntityAsync(string entityType)
+        => await GetTriggersForEntityAsync(entityType, await ResolveConnectionAsync());
+
+    private async Task<List<BUSINESS_EVENT_TRIGGER>> GetTriggersForEntityAsync(string entityType, string connectionName)
     {
-        var repo = GetRepo();
+        var repo = GetRepo(connectionName);
         var filters = new List<AppFilter>
         {
             new() { FieldName = "ENTITY_TYPE", FilterValue = entityType },
@@ -176,7 +174,15 @@ public class BusinessEventTriggerService : IBusinessEventTriggerService
         return true;
     }
 
-    private PPDMGenericRepository GetRepo() =>
+    private async Task<string> ResolveConnectionAsync()
+    {
+        var connection = _resolveConnection is null ? null : await _resolveConnection();
+        if (string.IsNullOrWhiteSpace(connection))
+            throw new InvalidOperationException("Business event triggers require a bound LIFECYCLE database.");
+        return connection;
+    }
+
+    private PPDMGenericRepository GetRepo(string connectionName) =>
         new(_editor, _commonColumnHandler, _defaults, _metadata,
-            typeof(BUSINESS_EVENT_TRIGGER), _connectionName, "BUSINESS_EVENT_TRIGGER", null);
+            typeof(BUSINESS_EVENT_TRIGGER), connectionName, "BUSINESS_EVENT_TRIGGER", null);
 }

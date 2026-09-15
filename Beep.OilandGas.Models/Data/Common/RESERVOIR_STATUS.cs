@@ -8,6 +8,7 @@ namespace Beep.OilandGas.Models.Data.Common
     public partial class RESERVOIR_STATUS : ModelEntityBase
     {
         private System.String RESERVOIR_STATUS_IDValue;
+        [System.ComponentModel.DataAnnotations.Key, System.ComponentModel.DataAnnotations.MaxLength(128)]
         public System.String RESERVOIR_STATUS_ID
         {
             get

@@ -8,6 +8,7 @@ namespace Beep.OilandGas.Models.Data.Decommissioning
     public partial class ABANDONMENT_STATUS : ModelEntityBase
     {
         private System.String ABANDONMENT_STATUS_IDValue;
+        [System.ComponentModel.DataAnnotations.Key, System.ComponentModel.DataAnnotations.MaxLength(128)]
         public System.String ABANDONMENT_STATUS_ID
         {
             get

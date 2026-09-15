@@ -11,6 +11,11 @@
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
     <MudText Typo="Typo.h5" Class="mb-4">Assign User Roles</MudText>
     <MudButton Href="/admin/access-control/users" StartIcon="@Icons.Material.Filled.People" Class="mb-4">Users</MudButton>
+    <MudTooltip Text="Reload user roles">
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" aria-label="Reload user roles"
+                       Disabled="@(_busy || string.IsNullOrEmpty(_selectedUserId))"
+                       OnClick="@(() => SelectUserAsync(_selectedUserId))" />
+    </MudTooltip>
     <MudGrid Class="mb-4">
         <MudItem xs="12" md="4"><MudTextField T="string" Label="New role name" @bind-Value="_newRole" MaxLength="256" Disabled="_busy" Variant="Variant.Outlined" /></MudItem>
         <MudItem xs="12" md="6"><MudTextField T="string" Label="Role description" @bind-Value="_roleDescription" MaxLength="1000" Disabled="_busy" Variant="Variant.Outlined" /></MudItem>
@@ -46,7 +51,7 @@
                 <MudButton Variant="Variant.Filled" 
                           Color="Color.Primary"
                           OnClick="AssignRole"
-                          Disabled="@(_busy || string.IsNullOrEmpty(_selectedUserId) || string.IsNullOrEmpty(_selectedRole))"
+                          Disabled="@(_busy || !_rolesLoaded || string.IsNullOrEmpty(_selectedUserId) || string.IsNullOrEmpty(_selectedRole))"
                           StartIcon="@Icons.Material.Filled.Assignment">
                     Assign Role
                 </MudButton>
@@ -110,6 +115,7 @@
     private List<string>? _userRoles;
     private List<TheTechIdea.Data.OilGas.RepositoryUserSummary> _users = new();
     private bool _busy;
+    private bool _rolesLoaded;
 
     protected override async Task OnInitializedAsync()
     {
@@ -125,6 +131,7 @@
 
     private async Task SelectUserAsync(string userId)
     {
+        if (_busy) return;
         _selectedUserId = userId;
         _userRoles = new();
         _busy = true;
@@ -134,11 +141,14 @@
 
     private async Task LoadUserRoles()
     {
+        _rolesLoaded = false;
+        _userRoles = new();
         if (string.IsNullOrEmpty(_selectedUserId)) return;
 
         try
         {
             _userRoles = await Users.GetUserRolesAsync(_selectedUserId);
+            _rolesLoaded = true;
         }
         catch (Exception)
         {
@@ -148,7 +158,7 @@
 
     private async Task AssignRole()
     {
-        if (_busy) return;
+        if (_busy || !_rolesLoaded) return;
         if (string.IsNullOrEmpty(_selectedUserId) || string.IsNullOrEmpty(_selectedRole))
         {
             Snackbar.Add("Please select a user and role", Severity.Warning);
@@ -171,7 +181,7 @@
 
     private async Task RemoveRole(string role)
     {
-        if (_busy) return;
+        if (_busy || !_rolesLoaded) return;
         _busy = true;
         try
         {

@@ -15,9 +15,10 @@ namespace Beep.OilandGas.LifeCycle.DependencyInjection;
 public static class LifeCycleServiceCollectionExtensions
 {
     public static IServiceCollection AddLifeCycleServices(
-        this IServiceCollection services, IConfiguration configuration)
+        this IServiceCollection services, IConfiguration configuration,
+        Func<IServiceProvider, CancellationToken, Task<string?>>? backgroundConnection = null,
+        Func<IServiceProvider, Task<string>>? workflowConnection = null)
     {
-        var connectionName = configuration.GetValue("BeepOg:DatabaseConnectionName", "PPDM39");
 
         services.AddScoped<IDoAEvaluationService>(sp =>
         {
@@ -26,7 +27,8 @@ public static class LifeCycleServiceCollectionExtensions
             var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
             var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
             var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<DoAEvaluationService>();
-            return new DoAEvaluationService(editor, cch, defaults, metadata, connectionName, logger);
+            return new DoAEvaluationService(editor, cch, defaults, metadata,
+                workflowConnection is null ? null : () => workflowConnection(sp), logger);
         });
 
         services.AddSingleton<IDynamicRoutingService>(sp =>
@@ -42,7 +44,8 @@ public static class LifeCycleServiceCollectionExtensions
             var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
             var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
             var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<EscalationActionService>();
-            return new EscalationActionService(editor, cch, defaults, metadata, connectionName, logger);
+            return new EscalationActionService(editor, cch, defaults, metadata,
+                workflowConnection is null ? null : () => workflowConnection(sp), logger);
         });
 
         services.AddScoped<IWorkflowVersioningService>(sp =>
@@ -52,7 +55,8 @@ public static class LifeCycleServiceCollectionExtensions
             var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
             var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
             var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<WorkflowVersioningService>();
-            return new WorkflowVersioningService(editor, cch, defaults, metadata, connectionName, logger);
+            return new WorkflowVersioningService(editor, cch, defaults, metadata,
+                workflowConnection is null ? null : () => workflowConnection(sp), logger);
         });
 
         services.AddScoped<ICrossPersonaTaskRouter>(sp =>
@@ -62,7 +66,9 @@ public static class LifeCycleServiceCollectionExtensions
             var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
             var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
             var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<CrossPersonaTaskRouter>();
-            return new CrossPersonaTaskRouter(editor, cch, defaults, metadata, connectionName, logger);
+            return new CrossPersonaTaskRouter(editor, cch, defaults, metadata,
+                workflowConnection is null ? null : () => workflowConnection(sp), logger,
+                sp.GetRequiredService<IRolePersonaReader>());
         });
 
         services.AddScoped<IHandoffValidationService>(sp =>
@@ -72,7 +78,8 @@ public static class LifeCycleServiceCollectionExtensions
             var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
             var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
             var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<HandoffValidationService>();
-            return new HandoffValidationService(editor, cch, defaults, metadata, connectionName, logger);
+            return new HandoffValidationService(editor, cch, defaults, metadata,
+                workflowConnection is null ? null : () => workflowConnection(sp), logger);
         });
 
         services.AddScoped<IWorkflowDependencyGraphService>(sp =>
@@ -82,7 +89,8 @@ public static class LifeCycleServiceCollectionExtensions
             var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
             var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
             var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<WorkflowDependencyGraphService>();
-            return new WorkflowDependencyGraphService(editor, cch, defaults, metadata, connectionName, logger);
+            return new WorkflowDependencyGraphService(editor, cch, defaults, metadata,
+                workflowConnection is null ? null : () => workflowConnection(sp), logger);
         });
 
         services.AddScoped<IBusinessEventTriggerService>(sp =>
@@ -92,7 +100,10 @@ public static class LifeCycleServiceCollectionExtensions
             var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
             var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
             var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<BusinessEventTriggerService>();
-            return new BusinessEventTriggerService(editor, cch, defaults, metadata, connectionName, logger, sp);
+            return new BusinessEventTriggerService(editor, cch, defaults, metadata,
+                workflowConnection is null ? null : () => workflowConnection(sp), logger,
+                selectedConnection => new PPDMProcessService(editor, cch, defaults, metadata, selectedConnection,
+                    sp.GetRequiredService<ILogger<PPDMProcessService>>()));
         });
 
         services.AddScoped<ISodEvaluationEngine>(sp =>
@@ -102,11 +113,14 @@ public static class LifeCycleServiceCollectionExtensions
             var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
             var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
             var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<SodEvaluationEngine>();
-            return new SodEvaluationEngine(editor, cch, defaults, metadata, connectionName, logger);
+            return new SodEvaluationEngine(editor, cch, defaults, metadata,
+                workflowConnection is null ? null : () => workflowConnection(sp), logger,
+                sp.GetRequiredService<ISodRolePermissionReader>());
         });
 
         // SLA Monitor background service
-        services.AddHostedService<SlaMonitorService>();
+        services.AddHostedService(sp => new SlaMonitorService(sp.GetRequiredService<IServiceScopeFactory>(),
+            sp.GetRequiredService<ILogger<SlaMonitorService>>(), resolveConnection: backgroundConnection));
 
         // Phase 3: Multi-entity workflow chain orchestrator
         services.AddScoped<IMultiEntityWorkflowOrchestrator>(sp =>
@@ -132,7 +146,9 @@ public static class LifeCycleServiceCollectionExtensions
             var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
             var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
             var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<ComplianceReportService>();
-            return new ComplianceReportService(editor, cch, defaults, metadata, connectionName, logger);
+            return new ComplianceReportService(editor, cch, defaults, metadata, logger,
+                sp.GetRequiredService<IComplianceIdentityReader>(),
+                workflowConnection is null ? null : () => workflowConnection(sp));
         });
 
         // Phase 4: Report templates (SOX ITGC, SEC reserves)

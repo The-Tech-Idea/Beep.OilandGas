@@ -65,7 +65,7 @@ public class WorkflowVersioningService : IWorkflowVersioningService
     private readonly ICommonColumnHandler _commonColumnHandler;
     private readonly IPPDM39DefaultsRepository _defaults;
     private readonly IPPDMMetadataRepository _metadata;
-    private readonly string _connectionName;
+    private readonly Func<Task<string>>? _resolveConnection;
     private readonly ILogger<WorkflowVersioningService> _logger;
 
     public WorkflowVersioningService(
@@ -73,21 +73,22 @@ public class WorkflowVersioningService : IWorkflowVersioningService
         ICommonColumnHandler commonColumnHandler,
         IPPDM39DefaultsRepository defaults,
         IPPDMMetadataRepository metadata,
-        string connectionName = "PPDM39",
+        Func<Task<string>>? resolveConnection = null,
         ILogger<WorkflowVersioningService>? logger = null)
     {
         _editor = editor;
         _commonColumnHandler = commonColumnHandler;
         _defaults = defaults;
         _metadata = metadata;
-        _connectionName = connectionName;
+        _resolveConnection = resolveConnection;
         _logger = logger;
     }
 
     public async Task<WORKFLOW_VERSION> CreateVersionAsync(
         ProcessDefinition definition, string changeDescription, string userId)
     {
-        var existingVersions = await GetVersionHistoryAsync(definition.ProcessId);
+        var connection = await ResolveConnectionAsync();
+        var existingVersions = await GetVersionHistoryAsync(definition.ProcessId, connection);
         var latestVersion = existingVersions.OrderByDescending(v =>
             ParseVersion(v.VERSION_NUMBER)).FirstOrDefault();
 
@@ -108,7 +109,7 @@ public class WorkflowVersioningService : IWorkflowVersioningService
             CREATED_BY = userId,
         };
 
-        var repo = GetRepo();
+        var repo = GetRepo(connection);
         await repo.InsertAsync(version, userId);
 
         // Update the process definition's version field
@@ -122,8 +123,11 @@ public class WorkflowVersioningService : IWorkflowVersioningService
     }
 
     public async Task<List<WORKFLOW_VERSION>> GetVersionHistoryAsync(string processDefinitionId)
+        => await GetVersionHistoryAsync(processDefinitionId, await ResolveConnectionAsync());
+
+    private async Task<List<WORKFLOW_VERSION>> GetVersionHistoryAsync(string processDefinitionId, string connection)
     {
-        var repo = GetRepo();
+        var repo = GetRepo(connection);
         var filters = new List<AppFilter>
         {
             new() { FieldName = "PROCESS_DEFINITION_ID", FilterValue = processDefinitionId },
@@ -149,7 +153,8 @@ public class WorkflowVersioningService : IWorkflowVersioningService
         try
         {
             // Get the target version
-            var repo = GetRepo();
+            var connection = await ResolveConnectionAsync();
+            var repo = GetRepo(connection);
             var versionFilters = new List<AppFilter>
             {
                 new() { FieldName = "VERSION_ID", FilterValue = targetVersionId },
@@ -168,7 +173,7 @@ public class WorkflowVersioningService : IWorkflowVersioningService
             result.ToVersion = targetVersion.VERSION_NUMBER;
 
             // Get current instance version from instance data
-            var currentVersion = await GetInstanceVersionAsync(processInstanceId);
+            var currentVersion = await GetInstanceVersionAsync(processInstanceId, connection);
             result.FromVersion = currentVersion;
 
             // Parse step remapping
@@ -187,7 +192,7 @@ public class WorkflowVersioningService : IWorkflowVersioningService
             // Get instance steps
             var stepRepo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(PROCESS_STEP_INSTANCE), _connectionName, "PROCESS_STEP_INSTANCE", null);
+                typeof(PROCESS_STEP_INSTANCE), connection, "PROCESS_STEP_INSTANCE", null);
 
             var stepFilters = new List<AppFilter>
             {
@@ -212,7 +217,7 @@ public class WorkflowVersioningService : IWorkflowVersioningService
             // Update instance to reference new version
             var instanceRepo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(PROCESS_INSTANCE), _connectionName, "PROCESS_INSTANCE", null);
+                typeof(PROCESS_INSTANCE), connection, "PROCESS_INSTANCE", null);
 
             var instanceFilters = new List<AppFilter>
             {
@@ -252,10 +257,13 @@ public class WorkflowVersioningService : IWorkflowVersioningService
     }
 
     public async Task<string?> GetInstanceVersionAsync(string processInstanceId)
+        => await GetInstanceVersionAsync(processInstanceId, await ResolveConnectionAsync());
+
+    private async Task<string?> GetInstanceVersionAsync(string processInstanceId, string connection)
     {
         var repo = new PPDMGenericRepository(
             _editor, _commonColumnHandler, _defaults, _metadata,
-            typeof(PROCESS_INSTANCE), _connectionName, "PROCESS_INSTANCE", null);
+            typeof(PROCESS_INSTANCE), connection, "PROCESS_INSTANCE", null);
 
         var filters = new List<AppFilter>
         {
@@ -278,9 +286,16 @@ public class WorkflowVersioningService : IWorkflowVersioningService
         }
     }
 
-    private PPDMGenericRepository GetRepo() =>
+    private async Task<string> ResolveConnectionAsync()
+    {
+        var connection = _resolveConnection is null ? null : await _resolveConnection();
+        return !string.IsNullOrWhiteSpace(connection) ? connection :
+            throw new InvalidOperationException("Workflow versioning requires a bound LIFECYCLE database.");
+    }
+
+    private PPDMGenericRepository GetRepo(string connection) =>
         new(_editor, _commonColumnHandler, _defaults, _metadata,
-            typeof(WORKFLOW_VERSION), _connectionName, "WORKFLOW_VERSION", null);
+            typeof(WORKFLOW_VERSION), connection, "WORKFLOW_VERSION", null);
 
     private static Version ParseVersion(string version)
     {

@@ -18,13 +18,16 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
     public class PricingController : ControllerBase
     {
         private readonly ProductionAccountingService _service;
+        private readonly Beep.OilandGas.ApiService.Services.RunTicketStore _tickets;
         private readonly ILogger<PricingController> _logger;
 
         public PricingController(
             ProductionAccountingService service,
+            Beep.OilandGas.ApiService.Services.RunTicketStore tickets,
             ILogger<PricingController> logger)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
+            _tickets = tickets ?? throw new ArgumentNullException(nameof(tickets));
             _logger = logger;
         }
 
@@ -116,7 +119,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
         /// Value a run ticket.
         /// </summary>
         [HttpPost("valuateticket")]
-        public ActionResult<RUN_TICKET_VALUATION> ValueRunTicket(
+        public async Task<ActionResult<RUN_TICKET_VALUATION>> ValueRunTicket(
             [FromBody] ValueRunTicketRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
@@ -125,7 +128,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var ticket = _service.ProductionManager.GetRunTicket(request.RunTicketNumber);
+                var ticket = await _tickets.GetAsync(request.RunTicketNumber);
                 if (ticket == null)
                     return NotFound(new { error = $"Run ticket {request.RunTicketNumber} not found." });
 
@@ -167,4 +170,3 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
     }
 
 }
-

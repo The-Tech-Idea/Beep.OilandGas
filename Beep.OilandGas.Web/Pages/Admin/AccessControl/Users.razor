@@ -86,6 +86,8 @@
         if (_busy) return;
         _busy = true;
         _error = null;
+        _users = [];
+        Cancel();
         try
         {
             _users = await Accounts.GetUsersAsync();

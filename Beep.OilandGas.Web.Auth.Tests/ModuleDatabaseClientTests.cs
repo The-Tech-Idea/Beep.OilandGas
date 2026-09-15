@@ -9,9 +9,38 @@ namespace Beep.OilandGas.Web.Auth.Tests;
 public class ModuleDatabaseClientTests
 {
     [Fact]
+    public async Task SeedingUsesSelectedModuleVersionWithoutActorOrConnectionOverride()
+    {
+        using var handler = new Handler(HttpStatusCode.OK,
+            "{\"moduleId\":\"LIFECYCLE\",\"success\":true,\"recordsInserted\":3,\"tablesSeeded\":1,\"errors\":[]}");
+        using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
+        var client = new ModuleDatabaseClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
+        var result = await client.SeedAsync("LIFECYCLE", new("saved-version"));
+        Assert.True(result.Success);
+        Assert.Equal(3, result.RecordsInserted);
+        Assert.Equal(HttpMethod.Post, handler.Method);
+        Assert.Equal("/api/setup/modules/LIFECYCLE/seed", handler.Path);
+        using var body = JsonDocument.Parse(handler.Body!);
+        Assert.Equal("saved-version", body.RootElement.GetProperty("concurrencyStamp").GetString());
+        Assert.Single(body.RootElement.EnumerateObject());
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.Conflict)]
+    [InlineData(HttpStatusCode.BadRequest)]
+    [InlineData(HttpStatusCode.Forbidden)]
+    public async Task FailedSeedingIsNotReportedAsSuccess(HttpStatusCode status)
+    {
+        using var handler = new Handler(status, "{}");
+        using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
+        var client = new ModuleDatabaseClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
+        await Assert.ThrowsAsync<HttpRequestException>(() => client.SeedAsync("LIFECYCLE", new("saved-version")));
+    }
+
+    [Fact]
     public async Task ExecutionCarriesReviewedHashesAndDoesNotChooseAnActor()
     {
-        using var handler = new Handler(HttpStatusCode.OK, "{\"success\":true}");
+        using var handler = new Handler(HttpStatusCode.OK, "{\"success\":true,\"planId\":\"reviewed-plan\",\"planHash\":\"plan-hash\",\"manifestHash\":\"manifest-hash\"}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
         var client = new ModuleDatabaseClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
         await client.ExecuteAsync(new() { PlanId = "reviewed-plan", PlanHash = "plan-hash", ManifestHash = "manifest-hash" }, true);
@@ -28,7 +57,7 @@ public class ModuleDatabaseClientTests
     [Fact]
     public async Task ApprovalUsesReviewedPlanWithoutClientActor()
     {
-        using var handler = new Handler(HttpStatusCode.OK, "{\"success\":true}");
+        using var handler = new Handler(HttpStatusCode.OK, "{\"success\":true,\"planId\":\"reviewed-plan\"}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
         var client = new ModuleDatabaseClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
         await client.ApproveAsync("reviewed-plan");
@@ -76,6 +105,51 @@ public class ModuleDatabaseClientTests
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
         var client = new ModuleDatabaseClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
         await Assert.ThrowsAsync<HttpRequestException>(() => client.BindAsync("GAS_LIFT", new("gas-db", "stale")));
+    }
+
+    [Theory]
+    [InlineData("planId", "different")]
+    [InlineData("planId", "")]
+    [InlineData("planHash", "different")]
+    [InlineData("planHash", "")]
+    [InlineData("manifestHash", "different")]
+    [InlineData("manifestHash", "")]
+    public async Task SuccessfulExecutionMustMatchReviewedIdentity(string key, string value)
+    {
+        var reply = new Dictionary<string, object>
+        {
+            ["success"] = true, ["planId"] = "reviewed-plan",
+            ["planHash"] = "plan-hash", ["manifestHash"] = "manifest-hash"
+        };
+        reply[key] = value;
+        using var handler = new Handler(HttpStatusCode.OK, JsonSerializer.Serialize(reply));
+        using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
+        var client = new ModuleDatabaseClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => client.ExecuteAsync(
+            new() { PlanId = "reviewed-plan", PlanHash = "plan-hash", ManifestHash = "manifest-hash" }, false));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("different")]
+    [InlineData("REVIEWED-PLAN")]
+    public async Task SuccessfulApprovalMustIdentifyTheRequestedPlan(string id)
+    {
+        using var handler = new Handler(HttpStatusCode.OK, JsonSerializer.Serialize(new { success = true, planId = id }));
+        using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
+        var client = new ModuleDatabaseClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => client.ApproveAsync("reviewed-plan"));
+    }
+
+    [Fact]
+    public async Task FailedExecutionPreservesTheServerDiagnosticWithoutClaimingSuccess()
+    {
+        using var handler = new Handler(HttpStatusCode.OK, "{\"success\":false,\"message\":\"Plan expired\"}");
+        using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
+        var client = new ModuleDatabaseClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
+        var result = await client.ExecuteAsync(new() { PlanId = "plan", PlanHash = "hash", ManifestHash = "manifest" }, false);
+        Assert.False(result.Success);
+        Assert.Equal("Plan expired", result.Message);
     }
 
     private sealed class Handler(HttpStatusCode status, string response) : HttpMessageHandler

@@ -3,14 +3,16 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Accounting.Constants;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.Accounting.Services
 {
     /// <summary>
     /// GL integration service — posts accounting transactions to the General Ledger.
-    /// TODO: Implement actual GL posting via IJournalEntryService and GLAccountMappingService.
-    /// Currently returns placeholder journal entry IDs. Real implementation should:
+    /// Production and revenue posting use IJournalEntryService; other posting methods still return placeholders.
+    /// Remaining implementations should:
     ///   1. Resolve GL accounts via _accountMapping
     ///   2. Create journal entries via _journalEntryService
     ///   3. Return the actual journal entry ID
@@ -59,8 +61,9 @@ namespace Beep.OilandGas.Accounting.Services
             DateTime transactionDate,
             string userId)
         {
-            _logger.LogWarning("GLIntegrationService.PostRevenueToGL is a stub — returning placeholder ID. Transaction: {TransactionId}, Amount: {Amount}", transactionId, amount);
-            return Task.FromResult(Guid.NewGuid().ToString());
+            ArgumentException.ThrowIfNullOrWhiteSpace(transactionId);
+            return PostRevenueEntryAsync(transactionId, amount, isCash, transactionDate, userId,
+                "REVENUE", $"Revenue for transaction {transactionId}");
         }
 
         public Task<string> PostProductionToGL(
@@ -70,8 +73,31 @@ namespace Beep.OilandGas.Accounting.Services
             DateTime? transactionDate,
             string userId)
         {
-            _logger.LogWarning("GLIntegrationService.PostProductionToGL is a stub — returning placeholder ID. Ticket: {TicketNumber}, Amount: {Amount}", ticketNumber, amount);
-            return Task.FromResult(Guid.NewGuid().ToString());
+            ArgumentException.ThrowIfNullOrWhiteSpace(ticketNumber);
+            return PostRevenueEntryAsync(ticketNumber, amount, isCash, transactionDate ?? DateTime.UtcNow,
+                userId, "PRODUCTION", $"Production revenue for ticket {ticketNumber}");
+        }
+
+        private async Task<string> PostRevenueEntryAsync(string referenceNumber, decimal amount, bool isCash,
+            DateTime transactionDate, string userId, string sourceModule, string description)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+            if (amount <= 0m) throw new ArgumentOutOfRangeException(nameof(amount), "Amount must be positive.");
+
+            var lines = new List<JOURNAL_ENTRY_LINE>
+            {
+                new() { GL_ACCOUNT_ID = isCash ? DefaultGlAccounts.Cash : DefaultGlAccounts.AccountsReceivable,
+                    DEBIT_AMOUNT = amount, CREDIT_AMOUNT = 0m, DESCRIPTION = description },
+                new() { GL_ACCOUNT_ID = DefaultGlAccounts.Revenue,
+                    DEBIT_AMOUNT = 0m, CREDIT_AMOUNT = amount, DESCRIPTION = description }
+            };
+            var entry = await _journalEntryService.CreateEntryAsync(transactionDate,
+                description, lines, userId, referenceNumber, sourceModule, null);
+            if (entry == null || string.IsNullOrWhiteSpace(entry.JOURNAL_ENTRY_ID))
+                throw new InvalidOperationException("Journal creation did not return a persisted entry ID.");
+            if (!await _journalEntryService.PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId))
+                throw new InvalidOperationException($"Journal {entry.JOURNAL_ENTRY_ID} was not posted.");
+            return entry.JOURNAL_ENTRY_ID;
         }
 
         public Task<string> PostFinancialAccountingToGL(

@@ -67,6 +67,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup
             string userId,
             CancellationToken cancellationToken = default)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(connectionName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+            ValidateModules(_modules);
             var aggregate = new OrchestratorSetupResult();
 
             _logger.LogInformation(
@@ -116,6 +119,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup
                 aggregate.ModuleResults.Add(moduleResult);
                 aggregate.ModulesRun++;
 
+                moduleResult.Success = moduleResult.Success && moduleResult.Errors.Count == 0;
                 if (moduleResult.Success)
                     aggregate.ModulesSucceeded++;
 
@@ -159,25 +163,19 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup
             string userId,
             CancellationToken cancellationToken = default)
         {
-            if (selectedModuleIds == null || selectedModuleIds.Count == 0)
-            {
-                _logger.LogWarning("RunSeedForModulesAsync: empty module list — running all modules instead");
-                return await RunSeedAsync(connectionName, userId, cancellationToken);
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(connectionName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+            if (selectedModuleIds == null || selectedModuleIds.Count == 0 || selectedModuleIds.Any(string.IsNullOrWhiteSpace))
+                throw new ArgumentException("Select at least one named module.", nameof(selectedModuleIds));
 
             var selectedSet = new HashSet<string>(selectedModuleIds, StringComparer.OrdinalIgnoreCase);
             var selectedModules = _modules
                 .Where(m => selectedSet.Contains(m.ModuleId))
                 .ToList();
 
-            if (selectedModules.Count == 0)
-            {
-                _logger.LogWarning(
-                    "RunSeedForModulesAsync: no matching modules found for {Count} requested IDs",
-                    selectedModuleIds.Count);
-
-                return new OrchestratorSetupResult();
-            }
+            ValidateModules(selectedModules);
+            if (selectedModules.Count != selectedSet.Count)
+                throw new ArgumentException("Every selected module must have a unique registration.", nameof(selectedModuleIds));
 
             _logger.LogInformation(
                 "ModuleSetupOrchestrator: starting selective seed for {Count} of {Total} modules on connection {Conn}",
@@ -227,6 +225,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup
                 aggregate.ModuleResults.Add(moduleResult);
                 aggregate.ModulesRun++;
 
+                moduleResult.Success = moduleResult.Success && moduleResult.Errors.Count == 0;
                 if (moduleResult.Success)
                     aggregate.ModulesSucceeded++;
 
@@ -258,6 +257,16 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup
                 aggregate.ModulesSucceeded, aggregate.ModulesRun, aggregate.TotalRecordsInserted);
 
             return aggregate;
+        }
+
+        private static void ValidateModules(IReadOnlyList<IModuleSetup> modules)
+        {
+            if (modules.Any(m => string.IsNullOrWhiteSpace(m.ModuleId) ||
+                string.Equals(m.ModuleId, "SECURITY", StringComparison.OrdinalIgnoreCase)))
+                throw new ArgumentException("Security is installed only in the default EF repository.");
+            if (modules.Select(m => m.ModuleId).Distinct(StringComparer.OrdinalIgnoreCase).Count() != modules.Count)
+                throw new ArgumentException("Module registrations must have unique IDs.");
+            ModuleSchemaBoundary.Validate(modules.SelectMany(m => m.EntityTypes));
         }
 
         /// <summary>

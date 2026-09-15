@@ -218,6 +218,19 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             }
         }
 
+        public override async Task<List<ProcessInstance>> GetProcessInstancesForFieldAsync(string fieldId)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(fieldId);
+            var results = await GetProcessInstanceRepository().GetAsync(new List<AppFilter>
+            {
+                new() { FieldName = "FIELD_ID", FilterValue = fieldId, Operator = "=" },
+                new() { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
+            });
+            return results.OfType<PROCESS_INSTANCE>()
+                .Where(x => x.FIELD_ID == fieldId && x.ACTIVE_IND == "Y")
+                .Select(ConvertToProcessInstance).ToList();
+        }
+
         public override async Task<ProcessInstance?> GetCurrentProcessForEntityAsync(string entityId, string entityType)
         {
             try
@@ -1130,4 +1143,3 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         #endregion
     }
 }
-

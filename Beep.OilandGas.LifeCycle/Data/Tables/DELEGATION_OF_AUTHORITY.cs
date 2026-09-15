@@ -10,7 +10,7 @@ namespace Beep.OilandGas.LifeCycle.Data.Tables;
 /// </summary>
 public class DELEGATION_OF_AUTHORITY : ModelEntityBase
 {
-    [Key]
+    [Key, MaxLength(128)]
     public string DOA_ID { get; set; } = Guid.NewGuid().ToString();
 
     /// <summary>Human-readable name for this DOA rule set, e.g. "AFE Standard Approval Limits".</summary>

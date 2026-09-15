@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using TheTechIdea.Data.OilGas;
@@ -9,7 +10,7 @@ public sealed class RepositoryPersonaService(RepositoryDbContext db)
 {
     public async Task<AppPersona> SaveCatalogAsync(string code, PersonaCatalogUpdate request, string actor, CancellationToken token = default)
     {
-        Validator.ValidateObject(request, new ValidationContext(request), true);
+        ValidateRequest(request);
         if (!System.Text.RegularExpressions.Regex.IsMatch(code, "^[A-Z0-9_]{1,64}$"))
             throw new ArgumentException("Persona code must contain uppercase letters, digits or underscores.");
         if (request.DefaultRoute is not null && (!request.DefaultRoute.StartsWith('/') ||
@@ -37,7 +38,7 @@ public sealed class RepositoryPersonaService(RepositoryDbContext db)
 
     public async Task<AppUserPersona> SaveAsync(string userId, PersonaProfileUpdate request, string actor, CancellationToken token = default)
     {
-        Validator.ValidateObject(request, new ValidationContext(request), true);
+        ValidateRequest(request);
         await ValidateUserAsync(userId, actor, token);
         await ValidatePersonaAsync(request.PersonaCode, token);
         var profile = await db.Set<AppUserPersona>().SingleOrDefaultAsync(x => x.UserId == userId, token);
@@ -64,7 +65,7 @@ public sealed class RepositoryPersonaService(RepositoryDbContext db)
     public async Task<AppPersonaPreference> SavePreferenceAsync(string userId, string personaCode, string viewKey,
         PersonaPreferenceUpdate request, string actor, CancellationToken token = default)
     {
-        Validator.ValidateObject(request, new ValidationContext(request), true);
+        ValidateRequest(request);
         if (string.IsNullOrWhiteSpace(viewKey) || viewKey.Length > 128) throw new ArgumentException("Invalid view key.");
         if (string.IsNullOrWhiteSpace(personaCode)) throw new ArgumentException("Persona is required.");
         await ValidateUserAsync(userId, actor, token);
@@ -84,6 +85,18 @@ public sealed class RepositoryPersonaService(RepositoryDbContext db)
         Audit(userId, actor, "PreferenceSaved", before, preference);
         await db.SaveChangesAsync(token);
         return preference;
+    }
+
+    private static void ValidateRequest<T>(T request) where T : class
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        // MVC record validation uses constructor attributes; retain the same rules for service callers.
+        foreach (var parameter in typeof(T).GetConstructors().Single().GetParameters())
+        {
+            var value = typeof(T).GetProperty(parameter.Name!)!.GetValue(request);
+            Validator.ValidateValue(value, new ValidationContext(request) { MemberName = parameter.Name },
+                parameter.GetCustomAttributes<ValidationAttribute>());
+        }
     }
 
     private async Task ValidateUserAsync(string userId, string actor, CancellationToken token)

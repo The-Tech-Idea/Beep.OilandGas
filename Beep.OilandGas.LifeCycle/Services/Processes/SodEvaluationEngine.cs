@@ -71,7 +71,8 @@ public class SodEvaluationEngine : ISodEvaluationEngine
     private readonly ICommonColumnHandler _commonColumnHandler;
     private readonly IPPDM39DefaultsRepository _defaults;
     private readonly IPPDMMetadataRepository _metadata;
-    private readonly string _connectionName;
+    private readonly Func<Task<string>>? _resolveConnection;
+    private readonly ISodRolePermissionReader? _rolePermissions;
     private readonly ILogger<SodEvaluationEngine> _logger;
 
     public SodEvaluationEngine(
@@ -79,14 +80,16 @@ public class SodEvaluationEngine : ISodEvaluationEngine
         ICommonColumnHandler commonColumnHandler,
         IPPDM39DefaultsRepository defaults,
         IPPDMMetadataRepository metadata,
-        string connectionName = "PPDM39",
-        ILogger<SodEvaluationEngine>? logger = null)
+        Func<Task<string>>? resolveConnection = null,
+        ILogger<SodEvaluationEngine>? logger = null,
+        ISodRolePermissionReader? rolePermissions = null)
     {
         _editor = editor;
         _commonColumnHandler = commonColumnHandler;
         _defaults = defaults;
         _metadata = metadata;
-        _connectionName = connectionName;
+        _resolveConnection = resolveConnection;
+        _rolePermissions = rolePermissions;
         _logger = logger;
     }
 
@@ -166,7 +169,7 @@ public class SodEvaluationEngine : ISodEvaluationEngine
 
     public async Task<List<SOD_RULE>> GetAllRulesAsync(string? category = null)
     {
-        var repo = GetRepo();
+        var repo = GetRepo(await ResolveConnectionAsync());
         var filters = new List<AppFilter>
         {
             new() { FieldName = "ACTIVE_IND", FilterValue = "Y" },
@@ -187,7 +190,7 @@ public class SodEvaluationEngine : ISodEvaluationEngine
     public async Task<int> SeedDefaultRulesWithCountAsync(string userId)
     {
         var inserted = 0;
-        var repo = GetRepo();
+        var repo = GetRepo(await ResolveConnectionAsync());
         var existing = (await repo.GetAsync(new List<AppFilter>()))
             .OfType<SOD_RULE>()
             .ToDictionary(r => r.RULE_NAME, StringComparer.OrdinalIgnoreCase);
@@ -247,44 +250,20 @@ public class SodEvaluationEngine : ISodEvaluationEngine
 
     private async Task<HashSet<string>> GetPermissionsForRoleAsync(string roleName)
     {
-        var permRepo = new PPDMGenericRepository(
-            _editor, _commonColumnHandler, _defaults, _metadata,
-            typeof(Beep.OilandGas.Models.Data.Security.PERMISSION),
-            _connectionName, "PERMISSION", null);
-
-        var rpRepo = new PPDMGenericRepository(
-            _editor, _commonColumnHandler, _defaults, _metadata,
-            typeof(Beep.OilandGas.Models.Data.Security.ROLE_PERMISSION),
-            _connectionName, "ROLE_PERMISSION", null);
-
-        var roleRepo = new PPDMGenericRepository(
-            _editor, _commonColumnHandler, _defaults, _metadata,
-            typeof(Beep.OilandGas.Models.Data.Security.ROLE),
-            _connectionName, "ROLE", null);
-
-        var roles = (await roleRepo.GetAsync(new List<AppFilter>
-        {
-            new() { FieldName = "ROLE_NAME", FilterValue = roleName }
-        })).OfType<Beep.OilandGas.Models.Data.Security.ROLE>().ToList();
-
-        if (roles.Count == 0) return new HashSet<string>();
-
-        var roleId = roles[0].ROLE_ID;
-        var rps = (await rpRepo.GetAsync(new List<AppFilter>
-        {
-            new() { FieldName = "ROLE_ID", FilterValue = roleId }
-        })).OfType<Beep.OilandGas.Models.Data.Security.ROLE_PERMISSION>().ToList();
-
-        var permIds = rps.Select(rp => rp.PERMISSION_ID).ToHashSet();
-        var allPerms = (await permRepo.GetAsync(new List<AppFilter>()))
-            .OfType<Beep.OilandGas.Models.Data.Security.PERMISSION>().ToList();
-
-        return allPerms.Where(p => permIds.Contains(p.PERMISSION_ID))
-            .Select(p => p.PERMISSION_CODE)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (_rolePermissions is null)
+            throw new InvalidOperationException("SoD role checks require the default repository permission reader.");
+        return await _rolePermissions.GetPermissionsAsync(roleName);
     }
 
-    private PPDMGenericRepository GetRepo() =>
+    private async Task<string> ResolveConnectionAsync()
+    {
+        var connection = _resolveConnection is null ? null : await _resolveConnection();
+        if (string.IsNullOrWhiteSpace(connection))
+            throw new InvalidOperationException("SoD rules require a bound LIFECYCLE database.");
+        return connection;
+    }
+
+    private PPDMGenericRepository GetRepo(string connectionName) =>
         new(_editor, _commonColumnHandler, _defaults, _metadata,
-            typeof(SOD_RULE), _connectionName, "SOD_RULE", null);
+            typeof(SOD_RULE), connectionName, "SOD_RULE", null);
 }

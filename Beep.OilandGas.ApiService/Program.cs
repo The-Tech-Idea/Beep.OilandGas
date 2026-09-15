@@ -77,99 +77,12 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// ============================================
-// ADD AUTHENTICATION WITH JWT BEARER
-// ============================================
-// Add Authentication with JWT Bearer
+// Validate the selected token mode before starting the API.
+var bearerScheme = ApiBearerAuthentication.Configure(builder.Services, builder.Configuration);
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.MapInboundClaims = false;
-    // Use Aspire service discovery in development, or config-based URL in production
-    // Aspire provides: services:identityserver:https:0 or services:identityserver:http:0
-    var identityServerUrl = builder.Configuration["services:identityserver:https:0"] 
-        ?? builder.Configuration["IdentityServer:Authority"] 
-        ?? "https://localhost:7062/";
-    
-    options.Authority = identityServerUrl;
-    options.Audience = builder.Configuration["IdentityServer:Audience"] ?? "beep-api";
-    options.SaveToken = false;
-    options.IncludeErrorDetails = builder.Environment.IsDevelopment();
-    options.TokenValidationParameters.ValidateAudience = true;
-    options.TokenValidationParameters.ValidAudience = builder.Configuration["IdentityServer:Audience"] ?? "beep-api";
-    options.TokenValidationParameters.ValidateIssuer = true;
-    options.TokenValidationParameters.ValidateLifetime = true;
-    options.TokenValidationParameters.RequireExpirationTime = true;
-    options.TokenValidationParameters.ClockSkew = TimeSpan.FromMinutes(2);
-    
-    // In development, we might need to disable HTTPS requirement if running on HTTP
-    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-    
-    // For development with self-signed certs
-    if (builder.Environment.IsDevelopment())
-    {
-        options.BackchannelHttpHandler = new HttpClientHandler
-        {
-            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-        };
-    }
-    
-    // Add JWT Bearer events for debugging
-    options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
-    {
-        OnMessageReceived = context =>
-        {
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("JwtBearer");
-            
-            var hasAuthHeader = context.Request.Headers.ContainsKey("Authorization");
-            
-            Log.Information("JWT: OnMessageReceived - Path: {Path}, HasAuthHeader: {HasAuth}", 
-                context.Request.Path, 
-                hasAuthHeader);
-            
-            return Task.CompletedTask;
-        },
-        OnAuthenticationFailed = context =>
-        {
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("JwtBearer");
-            
-            Log.Error(context.Exception, "JWT: Authentication failed - {Message}", context.Exception.Message);
-            
-            return Task.CompletedTask;
-        },
-        OnTokenValidated = context =>
-        {
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("JwtBearer");
-            
-            var userId = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                ?? context.Principal?.FindFirst("sub")?.Value;
-            var claimCount = context.Principal?.Claims.Count() ?? 0;
-            
-            Log.Information("JWT: Token validated successfully - UserId: {UserId}, ClaimCount: {ClaimCount}", 
-                userId, claimCount);
-            
-            return Task.CompletedTask;
-        },
-        OnChallenge = context =>
-        {
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("JwtBearer");
-            
-            Log.Warning("JWT: Challenge triggered - Path: {Path}, Error: {Error}, ErrorDescription: {Desc}", 
-                context.Request.Path,
-                context.Error ?? "(none)",
-                context.ErrorDescription ?? "(none)");
-            
-            return Task.CompletedTask;
-        }
-    };
+    options.DefaultAuthenticateScheme = bearerScheme;
+    options.DefaultChallengeScheme = bearerScheme;
 });
 
 // ============================================
@@ -323,8 +236,10 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IProcessService
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var logger = loggerFactory.CreateLogger<Beep.OilandGas.LifeCycle.Services.Processes.PPDMProcessService>();
-    return new Beep.OilandGas.LifeCycle.Services.Processes.PPDMProcessService(
-        editor, commonColumnHandler, defaults, metadata, connectionName, logger);
+    return new Beep.OilandGas.LifeCycle.Services.Processes.BoundProcessService(
+        () => sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync("LIFECYCLE"),
+        selectedConnection => new Beep.OilandGas.LifeCycle.Services.Processes.PPDMProcessService(
+            editor, commonColumnHandler, defaults, metadata, selectedConnection, logger));
 });
 
 // Exploration Service (data queries — separate from process service)
@@ -497,6 +412,20 @@ builder.Services.AddScoped<IAccountingService>(sp =>
 });
 
 // Production Accounting Services
+builder.Services.AddScoped<RunTicketStore>(sp => new RunTicketStore(
+    sp.GetRequiredService<IDMEEditor>(),
+    sp.GetRequiredService<ICommonColumnHandler>(),
+    sp.GetRequiredService<IPPDM39DefaultsRepository>(),
+    sp.GetRequiredService<IPPDMMetadataRepository>(),
+    () => sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync("PRODUCTION")));
+
+builder.Services.AddScoped<TankInventoryStore>(sp => new TankInventoryStore(
+    sp.GetRequiredService<IDMEEditor>(),
+    sp.GetRequiredService<ICommonColumnHandler>(),
+    sp.GetRequiredService<IPPDM39DefaultsRepository>(),
+    sp.GetRequiredService<IPPDMMetadataRepository>(),
+    () => sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync("PRODUCTION")));
+
 builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IAllocationEngine>(sp =>
 {
     var editor = sp.GetRequiredService<IDMEEditor>();
@@ -506,6 +435,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IAllocationEngi
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     return new Beep.OilandGas.ProductionAccounting.Services.AllocationEngine(
         editor, commonColumnHandler, defaults, metadata,
+        () => sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync("PRODUCTION"),
         loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.AllocationEngine>());
 });
 
@@ -519,6 +449,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IAllocationServ
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     return new Beep.OilandGas.ProductionAccounting.Services.AllocationService(
         editor, commonColumnHandler, defaults, metadata, allocationEngine,
+        () => sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync("PRODUCTION"),
         loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.AllocationService>());
 });
 
@@ -606,6 +537,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IRevenueService
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     return new Beep.OilandGas.ProductionAccounting.Services.RevenueService(
         editor, commonColumnHandler, defaults, metadata,
+        () => sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync("PRODUCTION"),
         loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.RevenueService>(),
         leaseEconomicInterestService);
 });
@@ -619,6 +551,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IMeasurementSer
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     return new Beep.OilandGas.ProductionAccounting.Services.MeasurementService(
         editor, commonColumnHandler, defaults, metadata,
+        () => sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync("PRODUCTION"),
         loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.MeasurementService>());
 });
 
@@ -631,6 +564,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPricingService
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     return new Beep.OilandGas.ProductionAccounting.Services.PricingService(
         editor, commonColumnHandler, defaults, metadata,
+        () => sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync("PRODUCTION"),
         loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.PricingService>());
 });
 
@@ -643,6 +577,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IInventoryServi
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     return new Beep.OilandGas.ProductionAccounting.Services.InventoryService(
         editor, commonColumnHandler, defaults, metadata,
+        () => sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync("PRODUCTION"),
         loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.InventoryService>());
 });
 
@@ -653,7 +588,6 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPeriodClosingS
     var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-    var accountingServices = sp.GetService<Beep.OilandGas.Accounting.Services.IAccountingServices>();
     var amortizationService = sp.GetService<Beep.OilandGas.Models.Core.Interfaces.IAmortizationService>();
     var fullCostService = sp.GetService<Beep.OilandGas.Models.Core.Interfaces.IFullCostService>();
     var reserveAccountingService = sp.GetService<Beep.OilandGas.Models.Core.Interfaces.IReserveAccountingService>();
@@ -666,8 +600,9 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPeriodClosingS
     var reserveDisclosureService = sp.GetService<Beep.OilandGas.Models.Core.Interfaces.IReserveDisclosureService>();
     return new Beep.OilandGas.ProductionAccounting.Services.PeriodClosingService(
         editor, commonColumnHandler, defaults, metadata,
+        sp.GetRequiredService<Beep.OilandGas.Accounting.Services.JournalEntryService>(),
+        () => sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync("PRODUCTION"),
         loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.PeriodClosingService>(),
-        accountingServices,
         amortizationService,
         fullCostService,
         reserveAccountingService,
@@ -701,6 +636,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.ILeaseEconomicI
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     return new Beep.OilandGas.ProductionAccounting.Services.LeaseEconomicInterestService(
         editor, commonColumnHandler, defaults, metadata,
+        () => sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync("PRODUCTION"),
         loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.LeaseEconomicInterestService>());
 });
 
@@ -1104,15 +1040,6 @@ builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.ProductionEng
 // Role-Based Aggregation — Executive (Phase 3)
 builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.ExecutiveAggregationService>(connectionName);
 
-// PPDM Module Seeding Service — runs all IModuleSetup seeders after BeepDM setup wizard
-builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.PpdmModuleSeedingService>(sp =>
-{
-    var modules = sp.GetServices<Beep.OilandGas.PPDM39.Core.Interfaces.IModuleSetup>();
-    var editor = sp.GetRequiredService<IDMEEditor>();
-    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<Beep.OilandGas.ApiService.Services.PpdmModuleSeedingService>();
-    return new Beep.OilandGas.ApiService.Services.PpdmModuleSeedingService(modules, editor, connectionName, logger);
-});
-
 // Role-Based Aggregation Services — HSE + Reservoir (Phase 4-5)
 builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.HseAggregationService>(connectionName);
 builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.ReservoirAggregationService>(connectionName);
@@ -1126,6 +1053,9 @@ builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.DataImportService>
 // BeepDM Sync Service — multi-instance PPDM synchronization with CDC, conflict resolution (Phase 5A)
 builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.BeepSyncService>();
 
+builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.AccessControl.IApplicationAuthorizationReader, RepositoryApplicationAuthorizationReader>();
+builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.AccessControl.IApplicationRolePermissionStore, RepositoryApplicationRolePermissionStore>();
+builder.Services.AddScoped<TheTechIdea.Data.OilGas.IUserAssetAccessStore, RepositoryAssetAccessStore>();
 builder.Services.AddScoped<IAccessControlService>(sp =>
 {
     var editor = sp.GetRequiredService<IDMEEditor>();
@@ -1134,7 +1064,11 @@ builder.Services.AddScoped<IAccessControlService>(sp =>
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
     var mappingService = sp.GetRequiredService<PPDMMappingService>();
     return new Beep.OilandGas.LifeCycle.Services.AccessControl.UserAssetAccessService(
-        editor, commonColumnHandler, defaults, metadata, mappingService, connectionName);
+        editor, commonColumnHandler, defaults, metadata, mappingService,
+        sp.GetRequiredService<Beep.OilandGas.LifeCycle.Services.AccessControl.IApplicationAuthorizationReader>(),
+        sp.GetRequiredService<Beep.OilandGas.LifeCycle.Services.AccessControl.IApplicationRolePermissionStore>(),
+        sp.GetRequiredService<TheTechIdea.Data.OilGas.IUserAssetAccessStore>(),
+        () => sp.GetRequiredService<ModuleConnectionResolver>().ResolveAssetScopeAsync());
 });
 
 builder.Services.AddScoped<IAssetHierarchyService>(sp =>
@@ -1145,21 +1079,18 @@ builder.Services.AddScoped<IAssetHierarchyService>(sp =>
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
     var mappingService = sp.GetRequiredService<PPDMMappingService>();
     var accessControlService = sp.GetRequiredService<IAccessControlService>();
-    return new Beep.OilandGas.LifeCycle.Services.AccessControl.AssetHierarchyService(
-        editor, commonColumnHandler, defaults, metadata, mappingService, accessControlService, connectionName);
+    return new BoundAssetHierarchyService(
+        () => sp.GetRequiredService<ModuleConnectionResolver>().ResolveAssetScopeAsync(), scope =>
+        {
+            var source = editor.GetDataSource(scope.ConnectionName)
+                ?? throw new InvalidOperationException("The asset hierarchy datasource is unavailable.");
+            Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup.MigrationConnectionTarget.Validate(editor, source, scope.ConnectionName);
+            return new Beep.OilandGas.LifeCycle.Services.AccessControl.AssetHierarchyService(
+                editor, commonColumnHandler, defaults, metadata, mappingService, accessControlService, scope.ConnectionName);
+        });
 });
 
-builder.Services.AddScoped<IUserProfileService>(sp =>
-{
-    var editor = sp.GetRequiredService<IDMEEditor>();
-    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
-    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
-    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
-    var mappingService = sp.GetRequiredService<PPDMMappingService>();
-    var accessControlService = sp.GetRequiredService<IAccessControlService>();
-    return new Beep.OilandGas.LifeCycle.Services.AccessControl.UserProfileService(
-        editor, commonColumnHandler, defaults, metadata, mappingService, accessControlService, connectionName);
-});
+builder.Services.AddScoped<IUserProfileService, RepositoryUserProfileService>();
 
 // ============================================
 // REGISTER IDENTITY/PERSONA SERVICES (W11-05)
@@ -1196,7 +1127,13 @@ builder.Services.AddDiscoveredModuleSetups(type =>
     type != typeof(Beep.OilandGas.UserManagement.Modules.SecurityModule));
 
 // Phase 2-4: LifeCycle workflow services (DoA, routing, escalation, cross-role, governance)
-builder.Services.AddLifeCycleServices(builder.Configuration);
+builder.Services.AddScoped<WorkflowBackgroundConnection>();
+builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.Processes.IComplianceIdentityReader, ComplianceIdentityReader>();
+builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.Processes.ISodRolePermissionReader, RepositoryRolePermissionReader>();
+builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.Processes.IRolePersonaReader, RepositoryRolePersonaReader>();
+builder.Services.AddLifeCycleServices(builder.Configuration,
+    (sp, ct) => sp.GetRequiredService<WorkflowBackgroundConnection>().ResolveAsync(ct),
+    sp => sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync("LIFECYCLE"));
 
 builder.Services.AddScoped<Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup.ModuleSetupOrchestrator>();
 
@@ -1231,9 +1168,6 @@ builder.Services.AddScoped<PPDM39SetupService>(sp =>
 builder.Services.AddSingleton<Beep.OilandGas.ApiService.Services.ScopedBackgroundOperationQueue>();
 builder.Services.AddSingleton<IBackgroundOperationQueue>(sp => sp.GetRequiredService<Beep.OilandGas.ApiService.Services.ScopedBackgroundOperationQueue>());
 builder.Services.AddHostedService(sp => sp.GetRequiredService<Beep.OilandGas.ApiService.Services.ScopedBackgroundOperationQueue>());
-builder.Services.AddSingleton<Beep.OilandGas.ApiService.Services.SetupWizardCoordinator>();
-builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.SetupWizardJobRunner>();
-builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.ISetupWizardExecutor, Beep.OilandGas.ApiService.Services.SetupWizardExecutor>();
 builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.ICsvImportExecutor, Beep.OilandGas.ApiService.Services.CsvImportExecutor>();
 builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.CsvImportJobRunner>();
 builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPPDM39SetupService>(
@@ -1525,7 +1459,8 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IHeatMapService
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var logger = loggerFactory.CreateLogger<Beep.OilandGas.HeatMap.Services.HeatMapService>();
     return new Beep.OilandGas.HeatMap.Services.HeatMapService(
-        editor, commonColumnHandler, defaults, metadata, connectionName, logger);
+        editor, commonColumnHandler, defaults, metadata,
+        () => sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync("HEAT_MAP"), logger);
 });
 
 // Choke Analysis Service (single-phase gas choke math; used by ICalculationService choke path)
@@ -2579,13 +2514,6 @@ builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.Processes.ProcessVa
     return new Beep.OilandGas.LifeCycle.Services.Processes.ProcessValidator(logger);
 });
 
-builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.Processes.ProcessDefinitionInitializer>(sp =>
-{
-    var processService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IProcessService>();
-    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<Beep.OilandGas.LifeCycle.Services.Processes.ProcessDefinitionInitializer>();
-    return new Beep.OilandGas.LifeCycle.Services.Processes.ProcessDefinitionInitializer(processService, logger);
-});
-
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Add CORS
@@ -2740,24 +2668,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Seed process definitions on startup (non-fatal: app continues if seeding fails).
-try
-{
-    using (var seedScope = app.Services.CreateScope())
-    {
-        var initializer = seedScope.ServiceProvider
-            .GetService<Beep.OilandGas.LifeCycle.Services.Processes.ProcessDefinitionInitializer>();
-        if (initializer != null)
-        {
-            await initializer.InitializeDefaultProcessDefinitionsAsync("SYSTEM");
-            Log.Information("Process definitions initialized successfully");
-        }
-    }
-}
-catch (Exception ex)
-{
-    Log.Warning(ex, "Failed to seed process definitions on startup — process workflows may be unavailable");
-}
+// Business data is seeded explicitly through the administrator's selected module binding.
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
@@ -2773,7 +2684,7 @@ if (app.Environment.IsDevelopment())
 // Global exception handling — must be first to catch errors from all downstream middleware
 app.UseMiddleware<Beep.OilandGas.ApiService.Middleware.GlobalExceptionMiddleware>();
 
-// Setup gate — blocks all requests until PPDM39 datasource is configured (commercial best practice)
+// Repository readiness gates business requests independently of module database setup.
 app.UseMiddleware<Beep.OilandGas.ApiService.Middleware.SetupGateMiddleware>();
 
 app.UseRateLimiter();

@@ -6,6 +6,13 @@ namespace Beep.OilandGas.ApiService.Services;
 
 public sealed class ModuleConnectionResolver(RepositoryDbContext repository, IDMEEditor editor)
 {
+    public async Task<TheTechIdea.Data.OilGas.AssetDatabaseScope> ResolveAssetScopeAsync()
+    {
+        var connection = await ResolveAsync("PPDM_CORE");
+        var fingerprint = await GetMigrationBindingFingerprintAsync(new[] { "PPDM_CORE" }, connection);
+        return new(connection, fingerprint);
+    }
+
     public async Task<string> GetMigrationBindingFingerprintAsync(IReadOnlyList<string> moduleIds, string connectionName)
     {
         if (moduleIds.Count == 0) throw new InvalidOperationException("Select at least one module.");
@@ -22,19 +29,7 @@ public sealed class ModuleConnectionResolver(RepositoryDbContext repository, IDM
         var snapshot = bindings.OrderBy(x => x.ModuleId, StringComparer.Ordinal)
             .Select(x => new { x.ModuleId, x.ConnectionName, x.ConcurrencyStamp });
         // Retain only the digest in the process-local plan, never raw connection credentials.
-        var target = new
-        {
-            connection.GuidID, connection.DatabaseType, connection.Category,
-            connection.DriverName, connection.DriverVersion, connection.Host, connection.Port,
-            connection.Database, connection.SchemaName, connection.OracleSIDorService,
-            connection.FilePath, connection.FileName, connection.Url, connection.ConnectionString,
-            connection.UserID, connection.Password, connection.Parameters,
-            ParameterList = connection.ParameterList?.OrderBy(x => x.Key, StringComparer.Ordinal).ToArray(),
-            connection.IntegratedSecurity, connection.TrustedConnection, connection.UseWindowsAuthentication,
-            connection.ReadOnly, connection.IsInMemory, connection.IsComposite, connection.CompositeLayerName,
-            connection.UseSSL, connection.RequireSSL, connection.SSLMode, connection.EncryptConnection,
-            connection.TrustServerCertificate, connection.BypassServerCertificateValidation
-        };
+        var target = Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup.MigrationConnectionTarget.Fingerprint(connection);
         return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
             System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new { Bindings = snapshot, Target = target })));
     }

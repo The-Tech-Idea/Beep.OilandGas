@@ -23,6 +23,7 @@ public class SlaMonitorService : BackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<SlaMonitorService> _logger;
     private readonly TimeSpan _checkInterval;
+    private readonly Func<IServiceProvider, CancellationToken, Task<string?>>? _resolveConnection;
 
     // Track which breaches have already been escalated (prevents duplicate escalations)
     private readonly HashSet<string> _alreadyEscalated = new();
@@ -30,11 +31,13 @@ public class SlaMonitorService : BackgroundService
     public SlaMonitorService(
         IServiceScopeFactory scopeFactory,
         ILogger<SlaMonitorService>? logger = null,
-        TimeSpan? checkInterval = null)
+        TimeSpan? checkInterval = null,
+        Func<IServiceProvider, CancellationToken, Task<string?>>? resolveConnection = null)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _checkInterval = checkInterval ?? TimeSpan.FromMinutes(1);
+        _resolveConnection = resolveConnection;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -65,12 +68,16 @@ public class SlaMonitorService : BackgroundService
     private async Task CheckSlaBreachesAsync(CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
+        var connectionName = _resolveConnection is null ? null
+            : await _resolveConnection(scope.ServiceProvider, ct);
+        if (string.IsNullOrWhiteSpace(connectionName)) return;
+        ct.ThrowIfCancellationRequested();
         var editor = scope.ServiceProvider.GetRequiredService<IDMEEditor>();
         var commonCol = scope.ServiceProvider.GetRequiredService<ICommonColumnHandler>();
         var defaults = scope.ServiceProvider.GetRequiredService<IPPDM39DefaultsRepository>();
         var metadata = scope.ServiceProvider.GetRequiredService<IPPDMMetadataRepository>();
-        var escalationService = scope.ServiceProvider.GetRequiredService<IEscalationActionService>();
-        var connectionName = "PPDM39";
+        var escalationService = new EscalationActionService(editor, commonCol, defaults, metadata,
+            () => Task.FromResult(connectionName), scope.ServiceProvider.GetService<ILogger<EscalationActionService>>());
 
         var repo = new PPDMGenericRepository(
             editor, commonCol, defaults, metadata,
@@ -98,7 +105,7 @@ public class SlaMonitorService : BackgroundService
                 continue;
 
             // Already escalated — skip
-            var breachKey = $"{step.PROCESS_STEP_INSTANCE_ID}|SLA";
+            var breachKey = $"{connectionName}|{step.PROCESS_STEP_INSTANCE_ID}|SLA";
             if (_alreadyEscalated.Contains(breachKey))
                 continue;
 
@@ -111,14 +118,14 @@ public class SlaMonitorService : BackgroundService
                 // Determine escalation action from step data or use default
                 var action = ResolveEscalationAction(step, escalationService);
 
-                await escalationService.ExecuteEscalationAsync(
+                var escalation = await escalationService.ExecuteEscalationAsync(
                     step.PROCESS_INSTANCE_ID,
                     step.PROCESS_STEP_INSTANCE_ID,
                     action,
                     step.ASSIGNED_TO,
                     "SYSTEM");
 
-                _alreadyEscalated.Add(breachKey);
+                if (!escalation.Success) continue;
 
                 // Log to PROCESS_HISTORY
                 var historyRepo = new PPDMGenericRepository(
@@ -137,6 +144,7 @@ public class SlaMonitorService : BackgroundService
                 };
 
                 await historyRepo.InsertAsync(history, "SYSTEM");
+                _alreadyEscalated.Add(breachKey);
             }
             catch (Exception ex)
             {

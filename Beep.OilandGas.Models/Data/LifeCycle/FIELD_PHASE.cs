@@ -8,6 +8,7 @@ namespace Beep.OilandGas.Models.Data.LifeCycle
     public partial class FIELD_PHASE : ModelEntityBase
     {
         private System.String FIELD_PHASE_IDValue;
+        [System.ComponentModel.DataAnnotations.Key, System.ComponentModel.DataAnnotations.MaxLength(128)]
         public System.String FIELD_PHASE_ID
         {
             get

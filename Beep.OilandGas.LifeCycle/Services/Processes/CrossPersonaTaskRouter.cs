@@ -12,7 +12,7 @@ using TheTechIdea.Beep.Report;
 namespace Beep.OilandGas.LifeCycle.Services.Processes;
 
 /// <summary>
-/// Routes workflow tasks to the correct persona inboxes based on role-to-persona mappings.
+/// Routes workflow tasks to persona inboxes represented by active members of the assigned role.
 /// When a step is assigned to a role, this service determines which persona(s) should see it
 /// and creates CROSS_PERSONA_TASK records for each.
 /// Part of Phase 3 cross-role orchestration.
@@ -21,7 +21,7 @@ public interface ICrossPersonaTaskRouter
 {
     /// <summary>
     /// When a step becomes active and is assigned to a role, create task records
-    /// for all personas that map to that role.
+    /// for the active personas of active users who hold that role.
     /// </summary>
     Task<List<CROSS_PERSONA_TASK>> RouteTaskAsync(
         string processInstanceId,
@@ -49,7 +49,8 @@ public class CrossPersonaTaskRouter : ICrossPersonaTaskRouter
     private readonly ICommonColumnHandler _commonColumnHandler;
     private readonly IPPDM39DefaultsRepository _defaults;
     private readonly IPPDMMetadataRepository _metadata;
-    private readonly string _connectionName;
+    private readonly Func<Task<string>>? _resolveConnection;
+    private readonly IRolePersonaReader? _personas;
     private readonly ILogger<CrossPersonaTaskRouter> _logger;
 
     public CrossPersonaTaskRouter(
@@ -57,14 +58,16 @@ public class CrossPersonaTaskRouter : ICrossPersonaTaskRouter
         ICommonColumnHandler commonColumnHandler,
         IPPDM39DefaultsRepository defaults,
         IPPDMMetadataRepository metadata,
-        string connectionName = "PPDM39",
-        ILogger<CrossPersonaTaskRouter>? logger = null)
+        Func<Task<string>>? resolveConnection = null,
+        ILogger<CrossPersonaTaskRouter>? logger = null,
+        IRolePersonaReader? personas = null)
     {
         _editor = editor;
         _commonColumnHandler = commonColumnHandler;
         _defaults = defaults;
         _metadata = metadata;
-        _connectionName = connectionName;
+        _resolveConnection = resolveConnection;
+        _personas = personas;
         _logger = logger;
     }
 
@@ -79,8 +82,10 @@ public class CrossPersonaTaskRouter : ICrossPersonaTaskRouter
     {
         var tasks = new List<CROSS_PERSONA_TASK>();
 
-        // Resolve which personas map to this role via PERSONA_ROLE table
-        var personaRoles = await GetPersonaRolesForRoleAsync(assignedRole);
+        var connectionName = await ResolveConnectionAsync();
+        if (_personas is null)
+            throw new InvalidOperationException("Task routing requires the default repository persona reader.");
+        var personaRoles = await _personas.GetActivePersonasAsync(assignedRole);
         if (personaRoles.Count == 0)
         {
             _logger?.LogWarning("No personas found for role {Role} — task not routed", assignedRole);
@@ -88,7 +93,7 @@ public class CrossPersonaTaskRouter : ICrossPersonaTaskRouter
         }
 
         // Get step info for SLA/due date
-        var step = await GetStepInstanceAsync(stepInstanceId);
+        var step = await GetStepInstanceAsync(stepInstanceId, connectionName);
         var dueDate = step?.SLA_HOURS.HasValue == true && step.STARTED_DATE.HasValue
             ? step.STARTED_DATE.Value.AddHours(step.SLA_HOURS.Value)
             : (DateTime?)null;
@@ -97,7 +102,7 @@ public class CrossPersonaTaskRouter : ICrossPersonaTaskRouter
         var taskType = step?.APPROVAL_REQUIRED == true ? "APPROVAL" : "REVIEW";
         var priority = DeterminePriority(step, dueDate);
 
-        var repo = GetTaskRepo();
+        var repo = GetTaskRepo(connectionName);
 
         foreach (var pr in personaRoles)
         {
@@ -105,7 +110,7 @@ public class CrossPersonaTaskRouter : ICrossPersonaTaskRouter
             {
                 PROCESS_INSTANCE_ID = processInstanceId,
                 PROCESS_STEP_INSTANCE_ID = stepInstanceId,
-                TARGET_PERSONA_CODE = pr.PERSONA_CODE,
+                TARGET_PERSONA_CODE = pr,
                 ASSIGNED_ROLE = assignedRole,
                 TASK_TYPE = taskType,
                 PRIORITY = priority,
@@ -138,7 +143,7 @@ public class CrossPersonaTaskRouter : ICrossPersonaTaskRouter
 
     public async Task<List<CROSS_PERSONA_TASK>> GetTasksForPersonaAsync(string personaCode)
     {
-        var repo = GetTaskRepo();
+        var repo = GetTaskRepo(await ResolveConnectionAsync());
         var filters = new List<AppFilter>
         {
             new() { FieldName = "TARGET_PERSONA_CODE", FilterValue = personaCode },
@@ -153,7 +158,7 @@ public class CrossPersonaTaskRouter : ICrossPersonaTaskRouter
 
     public async Task<Dictionary<string, int>> GetTaskCountsByPersonaAsync()
     {
-        var repo = GetTaskRepo();
+        var repo = GetTaskRepo(await ResolveConnectionAsync());
         var filters = new List<AppFilter>
         {
             new() { FieldName = "TASK_STATUS", FilterValue = "PENDING" },
@@ -164,30 +169,19 @@ public class CrossPersonaTaskRouter : ICrossPersonaTaskRouter
             .ToDictionary(g => g.Key, g => g.Count());
     }
 
-    private async Task<List<dynamic>> GetPersonaRolesForRoleAsync(string roleName)
+    private async Task<string> ResolveConnectionAsync()
     {
-        var repo = new PPDMGenericRepository(
-            _editor, _commonColumnHandler, _defaults, _metadata,
-            typeof(Beep.OilandGas.UserManagement.Models.Identity.PERSONA_ROLE),
-            _connectionName, "PERSONA_ROLE", null);
-
-        var filters = new List<AppFilter>
-        {
-            new() { FieldName = "ROLE_NAME", FilterValue = roleName },
-            new() { FieldName = "ACTIVE_IND", FilterValue = "Y" },
-        };
-
-        var results = await repo.GetAsync(filters);
-        return results.OfType<Beep.OilandGas.UserManagement.Models.Identity.PERSONA_ROLE>()
-            .Select(pr => (dynamic)new { pr.PERSONA_CODE, pr.IS_PRIMARY })
-            .ToList();
+        var connection = _resolveConnection is null ? null : await _resolveConnection();
+        if (string.IsNullOrWhiteSpace(connection))
+            throw new InvalidOperationException("Task routing requires a bound LIFECYCLE database.");
+        return connection;
     }
 
-    private async Task<PROCESS_STEP_INSTANCE?> GetStepInstanceAsync(string stepInstanceId)
+    private async Task<PROCESS_STEP_INSTANCE?> GetStepInstanceAsync(string stepInstanceId, string connectionName)
     {
         var repo = new PPDMGenericRepository(
             _editor, _commonColumnHandler, _defaults, _metadata,
-            typeof(PROCESS_STEP_INSTANCE), _connectionName, "PROCESS_STEP_INSTANCE", null);
+            typeof(PROCESS_STEP_INSTANCE), connectionName, "PROCESS_STEP_INSTANCE", null);
 
         var filters = new List<AppFilter>
         {
@@ -219,7 +213,7 @@ public class CrossPersonaTaskRouter : ICrossPersonaTaskRouter
         };
     }
 
-    private PPDMGenericRepository GetTaskRepo() =>
+    private PPDMGenericRepository GetTaskRepo(string connectionName) =>
         new(_editor, _commonColumnHandler, _defaults, _metadata,
-            typeof(CROSS_PERSONA_TASK), _connectionName, "CROSS_PERSONA_TASK", null);
+            typeof(CROSS_PERSONA_TASK), connectionName, "CROSS_PERSONA_TASK", null);
 }

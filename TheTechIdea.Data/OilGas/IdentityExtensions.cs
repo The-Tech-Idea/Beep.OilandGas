@@ -4,6 +4,10 @@ public sealed class AppUserExtension
 {
     public string UserId { get; set; } = "";
     public string? FullName { get; set; }
+    public string? PrimaryRoleId { get; set; }
+    public string? PreferredLayout { get; set; }
+    public string? PreferencesJson { get; set; }
+    public DateTime? LastLoginUtc { get; set; }
     public string? TenantId { get; set; }
     public string? BusinessAssociateId { get; set; }
     public string? ChangedBy { get; set; }

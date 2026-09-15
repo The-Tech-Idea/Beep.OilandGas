@@ -9,8 +9,8 @@
     
     <!-- MudBlazor -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
-    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
-    <link href="css/app.css" rel="stylesheet" />
+    <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" />
+    <link href="@Assets["css/app.css"]" rel="stylesheet" />
     
     <link rel="icon" type="image/x-icon" href="/imgs/BeepOGDM.ico" />
     <link rel="icon" type="image/png" sizes="32x32" href="/imgs/BeepOGDM.png" />
@@ -22,7 +22,7 @@
     <Routes @rendermode="InteractiveServer" />
     
     <!-- MudBlazor JS -->
-    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
-    <script src="_framework/blazor.web.js"></script>
+    <script src="@Assets["_content/MudBlazor/MudBlazor.min.js"]"></script>
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
 </body>
 </html>

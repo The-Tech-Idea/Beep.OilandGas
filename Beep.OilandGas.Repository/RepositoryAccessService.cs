@@ -14,11 +14,14 @@ public sealed class RepositoryAccessService(RepositoryDbContext context) : IRepo
         CancellationToken cancellationToken = default)
     {
         var provider = RepositoryBootstrapService.ExternalLoginProvider(issuer);
-        var user = await (from login in context.UserLogins.AsNoTracking()
+        var match = await (from login in context.UserLogins.AsNoTracking()
                           join account in context.Users.AsNoTracking() on login.UserId equals account.Id
                           where login.LoginProvider == provider && login.ProviderKey == subject
-                          select account).SingleOrDefaultAsync(cancellationToken);
-        if (user is null) return null;
+                          select new { Account = account, login.LoginProvider, login.ProviderKey }).SingleOrDefaultAsync(cancellationToken);
+        // External subjects are opaque identifiers; database collation and SQL padding must not alias them.
+        if (match is null || !string.Equals(match.LoginProvider, provider, StringComparison.Ordinal)
+            || !string.Equals(match.ProviderKey, subject, StringComparison.Ordinal)) return null;
+        var user = match.Account;
         if (!user.IsActive) return new(user.Id, false, [], []);
         var roles = await (from membership in context.UserRoles.AsNoTracking()
                            join role in context.Roles.AsNoTracking() on membership.RoleId equals role.Id

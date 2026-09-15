@@ -30,12 +30,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly ILogger<AllocationEngine> _logger;
+        private readonly Func<Task<string>> _resolveConnection;
 
         public AllocationEngine(
             IDMEEditor editor,
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
+            Func<Task<string>> resolveConnection,
             ILogger<AllocationEngine> logger = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
@@ -43,6 +45,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _logger = logger;
+            _resolveConnection = resolveConnection ?? throw new ArgumentNullException(nameof(resolveConnection));
         }
 
         /// <summary>
@@ -72,6 +75,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (volume <= 0)
                 throw new AllocationException($"Invalid volume: {volume}");
 
+            connectionName = await ResolveConnectionAsync();
+
             // Create allocation result
             var ALLOCATION_RESULT = new ALLOCATION_RESULT
             {
@@ -89,13 +94,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             };
 
             // Save allocation result to database
-            var metadata = await _metadata.GetTableMetadataAsync("ALLOCATION_RESULT");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(ALLOCATION_RESULT);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "ALLOCATION_RESULT");
+            var repo = CreateRepository<ALLOCATION_RESULT>("ALLOCATION_RESULT", connectionName);
 
             await repo.InsertAsync(ALLOCATION_RESULT, userId);
 
@@ -130,13 +129,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(allocationId))
                 throw new AllocationException("Allocation ID required");
 
-            var metadata = await _metadata.GetTableMetadataAsync("ALLOCATION_RESULT");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(ALLOCATION_RESULT);
+            connectionName = await ResolveConnectionAsync();
 
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "ALLOCATION_RESULT");
+            var repo = CreateRepository<ALLOCATION_RESULT>("ALLOCATION_RESULT", connectionName);
 
             var result = await repo.GetByIdAsync(allocationId);
             return result as ALLOCATION_RESULT;
@@ -149,13 +144,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(allocationId))
                 throw new AllocationException("Allocation ID required");
 
-            var metadata = await _metadata.GetTableMetadataAsync("ALLOCATION_DETAIL");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(ALLOCATION_DETAIL);
+            connectionName = await ResolveConnectionAsync();
 
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "ALLOCATION_DETAIL");
+            var repo = CreateRepository<ALLOCATION_DETAIL>("ALLOCATION_DETAIL", connectionName);
 
             var filters = new List<AppFilter>
             {
@@ -211,13 +202,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var divisionOrders = await GetDivisionOrdersAsync(RUN_TICKET, connectionName);
             ValidateDivisionOrders(ownerships, divisionOrders);
 
-            var detailsMetadata = await _metadata.GetTableMetadataAsync("ALLOCATION_DETAIL");
-            var detailsEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{detailsMetadata.EntityTypeName}")
-                ?? typeof(ALLOCATION_DETAIL);
-
-            var detailsRepo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                detailsEntityType, connectionName, "ALLOCATION_DETAIL");
+            var detailsRepo = CreateRepository<ALLOCATION_DETAIL>("ALLOCATION_DETAIL", connectionName);
 
             var totalVolume = ALLOCATION_RESULT.TOTAL_VOLUME ?? 0m;
             if (totalVolume <= 0m)
@@ -366,13 +351,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             RUN_TICKET RUN_TICKET,
             string connectionName)
         {
-            var metadata = await _metadata.GetTableMetadataAsync("OWNERSHIP_INTEREST");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(OWNERSHIP_INTEREST);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "OWNERSHIP_INTEREST");
+            var repo = CreateRepository<OWNERSHIP_INTEREST>("OWNERSHIP_INTEREST", connectionName);
 
             var propertyOrLeaseId = !string.IsNullOrWhiteSpace(RUN_TICKET.LEASE_ID)
                 ? RUN_TICKET.LEASE_ID
@@ -413,13 +392,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             RUN_TICKET RUN_TICKET,
             string connectionName)
         {
-            var metadata = await _metadata.GetTableMetadataAsync("DIVISION_ORDER");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(DIVISION_ORDER);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "DIVISION_ORDER");
+            var repo = CreateRepository<DIVISION_ORDER>("DIVISION_ORDER", connectionName);
 
             var propertyOrLeaseId = !string.IsNullOrWhiteSpace(RUN_TICKET.LEASE_ID)
                 ? RUN_TICKET.LEASE_ID
@@ -508,6 +481,20 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (missing.Count > 0)
                 throw new AllocationException(
                     $"Unapproved division orders: {string.Join(", ", missing)}");
+        }
+        private async Task<string> ResolveConnectionAsync()
+        {
+            var connection = await _resolveConnection();
+            if (string.IsNullOrWhiteSpace(connection))
+                throw new InvalidOperationException("A PRODUCTION database binding is required.");
+            return connection;
+        }
+
+        private PPDMGenericRepository CreateRepository<T>(string tableName, string connection)
+        {
+            return new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(T), connection, tableName);
         }
     }
 }

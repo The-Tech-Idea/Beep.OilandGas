@@ -26,11 +26,15 @@ public sealed class RepositoryBootstrapController(
             return Forbid();
         try
         {
-            var result = await bootstrap.BootstrapAsync(issuer, subject, cancellationToken);
+            var profile = new ExternalRegistrationProfile(
+                User.FindFirstValue("name") ?? User.FindFirstValue(ClaimTypes.Name),
+                User.FindFirstValue("email") ?? User.FindFirstValue(ClaimTypes.Email),
+                bool.TryParse(User.FindFirstValue("email_verified"), out var emailVerified) && emailVerified);
+            var result = await bootstrap.BootstrapAsync(issuer, subject, cancellationToken, profile);
             if (result == BootstrapOutcome.NotAllowed)
                 return Forbid();
             logger.LogInformation("Repository bootstrap outcome {Outcome}", result);
-            return Ok(new { Status = result.ToString() });
+            return Ok(new RepositoryRegistrationResponse(result.ToString()));
         }
         catch (DbUpdateException exception)
         {

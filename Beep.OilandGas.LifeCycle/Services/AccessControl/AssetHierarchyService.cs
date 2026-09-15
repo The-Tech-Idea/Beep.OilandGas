@@ -35,7 +35,7 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
             IPPDMMetadataRepository metadata,
             PPDMMappingService mappingService,
             IAccessControlService accessControlService,
-            string connectionName = "PPDM39")
+            string connectionName)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -43,6 +43,7 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _mappingService = mappingService ?? throw new ArgumentNullException(nameof(mappingService));
             _accessControlService = accessControlService ?? throw new ArgumentNullException(nameof(accessControlService));
+            ArgumentException.ThrowIfNullOrWhiteSpace(connectionName);
             _connectionName = connectionName;
         }
 
@@ -239,14 +240,21 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
 
         public async Task<bool> ValidateAccessAsync(string userId, List<AssetHierarchyNode> assetPath)
         {
-            // Check access for each node in the path
+            if (string.IsNullOrWhiteSpace(userId) || assetPath == null || assetPath.Count == 0
+                || assetPath.Any(node => node == null || string.IsNullOrWhiteSpace(node.AssetId)
+                    || string.IsNullOrWhiteSpace(node.AssetType)))
+                return false;
+
+            // A partial check must never authorize the complete path.
             foreach (var node in assetPath)
             {
-                var accessCheck = await _accessControlService.CheckAssetAccessAsync(userId, node.AssetId, node.AssetType);
-                if (!accessCheck.HasAccess)
+                try
                 {
-                    return false;
+                    var accessCheck = await _accessControlService.CheckAssetAccessAsync(userId, node.AssetId, node.AssetType);
+                    if (accessCheck?.HasAccess != true) return false;
                 }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception) { return false; }
             }
             return true;
         }

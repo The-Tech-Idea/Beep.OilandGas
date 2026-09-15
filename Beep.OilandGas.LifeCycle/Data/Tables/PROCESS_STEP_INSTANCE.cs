@@ -8,6 +8,7 @@ namespace Beep.OilandGas.LifeCycle.Data.Tables;
 public class PROCESS_STEP_INSTANCE : ModelEntityBase
 {
     private string PROCESS_STEP_INSTANCE_IDValue = string.Empty;
+    [System.ComponentModel.DataAnnotations.Key, System.ComponentModel.DataAnnotations.MaxLength(128)]
     public string PROCESS_STEP_INSTANCE_ID
     {
         get => PROCESS_STEP_INSTANCE_IDValue;

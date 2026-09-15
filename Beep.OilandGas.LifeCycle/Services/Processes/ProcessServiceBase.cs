@@ -55,6 +55,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         public abstract Task<ProcessDefinition> CreateProcessDefinitionAsync(ProcessDefinition definition, string userId);
         public abstract Task<ProcessDefinition> UpdateProcessDefinitionAsync(string processId, ProcessDefinition definition, string userId);
         public abstract Task<bool> DeleteProcessDefinitionAsync(string processId, string userId);
+        public abstract Task<List<ProcessInstance>> GetProcessInstancesForFieldAsync(string fieldId);
 
         // Process Instance Management - Base implementation
         public virtual async Task<ProcessInstance> StartProcessAsync(string processId, string entityId, string entityType, string fieldId, string userId)
@@ -490,4 +491,3 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         }
     }
 }
-
