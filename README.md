@@ -1,5 +1,7 @@
 # Beep.OilandGas
 
+Planning entry points: [master tracker](MASTER-TODO-TRACKER.md) and [framework/application review and phased enhancement plan](Plans/FrameworkAppEnhancement/README.md), updated 2026-09-21. These distinguish current source evidence, historical completion claims and proposed work.
+
 A comprehensive **Oil & Gas Engineering and Data Management Platform** built on the PPDM 3.9 data model. The system provides end-to-end lifecycle management for petroleum assets — from exploration and development through production, reservoir management, economics, HSE compliance, and decommissioning.
 
 ## Architecture

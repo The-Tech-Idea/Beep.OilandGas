@@ -44,6 +44,10 @@ public class CostAllocationTests
     [InlineData("zero")]
     [InlineData("unclassified")]
     [InlineData("amount")]
+    [InlineData("negative")]
+    [InlineData("duplicate")]
+    [InlineData("empty-id")]
+    [InlineData("no-costs")]
     public async Task RejectsIncompleteRulesOrSourceCosts(string failure)
     {
         var (service, _) = Create(failure);
@@ -71,6 +75,11 @@ public class CostAllocationTests
             new() { COST_CENTER_ID = "SUPPORT", AMOUNT = 60m, IS_CAPITALIZED = "Y" },
             new() { COST_CENTER_ID = "A", AMOUNT = 20m, IS_EXPENSED = "Y" }
         };
+        for (var i = 0; i < costs.Count; i++) costs[i].COST_TRANSACTION_ID = $"cost-{i}";
+        if (failure == "negative") costs[0].AMOUNT = -100m;
+        if (failure == "duplicate") costs[1].COST_TRANSACTION_ID = costs[0].COST_TRANSACTION_ID;
+        if (failure == "empty-id") costs[0].COST_TRANSACTION_ID = "";
+        if (failure == "no-costs") costs.Clear();
         var source = new Mock<IDataSource>();
         source.Setup(s => s.GetEntityAsync("COST_CENTER", It.IsAny<List<AppFilter>>()))
             .ReturnsAsync(ids.Select(id => new COST_CENTER { COST_CENTER_ID = id, COST_CENTER_NAME = id }).ToList());

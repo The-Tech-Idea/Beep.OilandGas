@@ -1,105 +1,65 @@
-@using System.Collections.Generic
-@using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.Accounting.Royalty
+@using Beep.OilandGas.Models.Data.ProductionAccounting
 
 <MudDialog>
     <DialogContent>
-        <MudContainer MaxWidth="MaxWidth.Medium">
-            <MudStack Spacing="3">
-                <MudTextField @bind-Value="@_poolId" 
-                             Label="Pool ID (Optional)" 
-                             Variant="Variant.Outlined" />
-
-                <MudDatePicker @bind-Date="@_calculationDate" 
-                              Label="Calculation Date" 
-                              Variant="Variant.Outlined" 
-                              Required="true" />
-
-                <MudTextField T="decimal?" @bind-Value="@_oilRoyaltyRate" 
-                             Label="Oil Royalty Rate (%)" 
-                             Variant="Variant.Outlined" 
-                             HelperText="Default: 12.5%" />
-
-                <MudTextField T="decimal?" @bind-Value="@_gasRoyaltyRate" 
-                             Label="Gas Royalty Rate (%)" 
-                             Variant="Variant.Outlined" 
-                             HelperText="Default: 12.5%" />
-
-                <MudTextField T="decimal?" @bind-Value="@_oilPrice" 
-                             Label="Oil Price" 
-                             Variant="Variant.Outlined" />
-
-                <MudTextField T="decimal?" @bind-Value="@_gasPrice" 
-                             Label="Gas Price" 
-                             Variant="Variant.Outlined" />
-            </MudStack>
-        </MudContainer>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.body2">Preview oil royalties using recorded allocations, lease interests and ticket prices. Previewing does not post obligations or journal entries.</MudText>
+            <MudDatePicker @bind-Date="_productionDate" Label="Production ticket date" Required="true" Disabled="_busy" Variant="Variant.Outlined" />
+            @if (_error is not null)
+            {
+                <MudAlert Severity="Severity.Error">@_error</MudAlert>
+            }
+            @if (_preview is not null)
+            {
+                @foreach (var row in _preview)
+                {
+                    <MudPaper Class="pa-3">
+                        <MudText Typo="Typo.subtitle2">Lease @row.PROPERTY_OR_LEASE_ID — Owner @row.ROYALTY_OWNER_ID</MudText>
+                        <MudText Typo="Typo.body2">Source allocation detail: @row.ALLOCATION_DETAIL_ID</MudText>
+                        <MudText Typo="Typo.body2">Volume: @row.GROSS_VOLUME BBL; recorded rate: @row.ROYALTY_INTEREST%</MudText>
+                        <MudText Typo="Typo.body2">Calculated royalty amount: @row.ROYALTY_AMOUNT?.ToString("N2")</MudText>
+                    </MudPaper>
+                }
+            }
+        </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Calculate">Calculate</MudButton>
+        <MudButton OnClick="Close" Disabled="_busy">Close</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Preview" Disabled="_busy">Preview royalties</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     [Inject] IAccountingServiceClient AccountingServiceClient { get; set; } = default!;
-    [Inject] ISnackbar Snackbar { get; set; } = default!;
     [Parameter] public string FieldId { get; set; } = string.Empty;
+    private DateTime? _productionDate = DateTime.Today;
+    private List<ROYALTY_CALCULATION>? _preview;
+    private string? _error;
+    private bool _busy;
+    private void Close() => MudDialog.Cancel();
 
-    private string _poolId = string.Empty;
-    private DateTime? _calculationDate = DateTime.Today;
-    private decimal? _oilRoyaltyRate = 12.5m;
-    private decimal? _gasRoyaltyRate = 12.5m;
-    private decimal? _oilPrice;
-    private decimal? _gasPrice;
-
-    private void Cancel()
+    private async Task Preview()
     {
-        MudDialog.Cancel();
-    }
-
-    private async Task Calculate()
-    {
-        if (!_calculationDate.HasValue)
+        _preview = null;
+        _error = null;
+        if (!_productionDate.HasValue || string.IsNullOrWhiteSpace(FieldId))
         {
-            Snackbar.Add("Calculation date is required", Severity.Warning);
+            _error = "Select an active field and production date.";
             return;
         }
-
-        if (string.IsNullOrWhiteSpace(FieldId))
-        {
-            Snackbar.Add("No active field is available for royalty calculation.", Severity.Error);
-            return;
-        }
-
+        _busy = true;
         try
         {
-            var request = new CalculateRoyaltyRequest
-            {
-                FieldId = FieldId,
-                CalculationDate = _calculationDate.Value,
-                PoolId = string.IsNullOrWhiteSpace(_poolId) ? null : _poolId,
-                OilRoyaltyRate = _oilRoyaltyRate,
-                GasRoyaltyRate = _gasRoyaltyRate,
-                OilPrice = _oilPrice,
-                GasPrice = _gasPrice
-            };
-
-            var succeeded = await AccountingServiceClient.CalculateRoyaltiesAsync(request);
-
-            if (!succeeded)
-            {
-                Snackbar.Add("Error calculating royalties.", Severity.Error);
-                return;
-            }
-
-            Snackbar.Add("Royalty calculation completed successfully", Severity.Success);
-            MudDialog.Close(DialogResult.Ok(true));
+            _preview = await AccountingServiceClient.PreviewRoyaltiesAsync(new PreviewRoyaltiesRequest
+                { FieldId = FieldId, ProductionDate = DateOnly.FromDateTime(_productionDate.Value) });
+            if (_preview.Count == 0) _error = "No royalty preview was returned.";
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error calculating royalties: {ex.Message}", Severity.Error);
+            _error = "Royalty preview failed. Verify recorded allocations, effective lease interests, ticket prices and deductions.";
         }
+        finally { _busy = false; }
     }
 }

@@ -64,7 +64,7 @@ public class ProductionAccountingServiceProcessCycleTests
 
         Assert.False(result);
         deps.RoyaltyService.Verify(
-            x => x.CalculateAsync(It.IsAny<ALLOCATION_DETAIL>(), It.IsAny<string>(), It.IsAny<string>()),
+            x => x.CalculateAsync(It.IsAny<string>(), It.IsAny<string>()),
             Times.Never);
     }
 
@@ -94,7 +94,7 @@ public class ProductionAccountingServiceProcessCycleTests
         var deps = CreateDependencies();
         SetupPreRoyaltySuccess(deps, "user-5", "AR-2");
         deps.RoyaltyService
-            .Setup(x => x.CalculateAsync(It.IsAny<ALLOCATION_DETAIL>(), "user-5", "PPDM39"))
+            .Setup(x => x.CalculateAsync(It.IsAny<string>(), "user-5"))
             .ReturnsAsync((ROYALTY_CALCULATION?)null);
 
         var service = CreateService(deps);
@@ -112,7 +112,7 @@ public class ProductionAccountingServiceProcessCycleTests
         var deps = CreateDependencies();
         SetupPreRoyaltySuccess(deps, "user-6", "AR-3");
         deps.RoyaltyService
-            .Setup(x => x.CalculateAsync(It.IsAny<ALLOCATION_DETAIL>(), "user-6", "PPDM39"))
+            .Setup(x => x.CalculateAsync(It.IsAny<string>(), "user-6"))
             .ReturnsAsync(new ROYALTY_CALCULATION());
         deps.RevenueService
             .Setup(x => x.RecognizeRevenueAsync(It.IsAny<ALLOCATION_DETAIL>(), "user-6", "PPDM39"))
@@ -133,7 +133,7 @@ public class ProductionAccountingServiceProcessCycleTests
         var deps = CreateDependencies();
         SetupPreRoyaltySuccess(deps, "user-7", "AR-4");
         deps.RoyaltyService
-            .Setup(x => x.CalculateAsync(It.IsAny<ALLOCATION_DETAIL>(), "user-7", "PPDM39"))
+            .Setup(x => x.CalculateAsync(It.IsAny<string>(), "user-7"))
             .ReturnsAsync(new ROYALTY_CALCULATION());
         deps.RevenueService
             .Setup(x => x.RecognizeRevenueAsync(It.IsAny<ALLOCATION_DETAIL>(), "user-7", "PPDM39"))

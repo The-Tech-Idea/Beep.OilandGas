@@ -191,14 +191,20 @@ namespace Beep.OilandGas.Accounting.Services
         /// <summary>
         /// Creates a balanced journal entry using explicit debit and credit accounts.
         /// </summary>
-        public async Task<JOURNAL_ENTRY> CreateBalancedEntryAsync(
-            string debitAccount,
-            string creditAccount,
-            decimal amount,
-            string description,
-            string userId,
-            string cn = "PPDM39",
-            string? bookId = null)
+        public Task<JOURNAL_ENTRY> CreateBalancedEntryAsync(string debitAccount, string creditAccount,
+            decimal amount, string description, string userId, string cn = "PPDM39", string? bookId = null)
+            => CreateBalancedEntryCoreAsync(debitAccount, creditAccount, amount, description, userId, null, bookId);
+
+        public Task<JOURNAL_ENTRY> CreateReferencedBalancedEntryAsync(string debitAccount, string creditAccount,
+            decimal amount, string description, string userId, string referenceNumber)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(referenceNumber);
+            if (referenceNumber.Length > 255) throw new ArgumentException("Journal source reference exceeds 255 characters.", nameof(referenceNumber));
+            return CreateBalancedEntryCoreAsync(debitAccount, creditAccount, amount, description, userId, referenceNumber, null);
+        }
+
+        private async Task<JOURNAL_ENTRY> CreateBalancedEntryCoreAsync(string debitAccount, string creditAccount,
+            decimal amount, string description, string userId, string? referenceNumber, string? bookId)
         {
             if (string.IsNullOrWhiteSpace(debitAccount))
                 throw new ArgumentNullException(nameof(debitAccount));
@@ -237,7 +243,7 @@ namespace Beep.OilandGas.Accounting.Services
                 description,
                 lines,
                 userId,
-                referenceNumber: null,
+                referenceNumber: referenceNumber,
                 sourceModule: "PRODUCTION_ACCOUNTING",
                 bookId: bookId);
 
@@ -629,6 +635,30 @@ namespace Beep.OilandGas.Accounting.Services
                 throw;
             }
         }
+        /// <summary>Read-only evidence from the journal service's bound database; provider failures propagate.</summary>
+        public async Task<List<JournalPostingEvidence>> GetPostingEvidenceAsync(string referenceNumber)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(referenceNumber);
+            var headers = await GetRepoAsync<JOURNAL_ENTRY>("JOURNAL_ENTRY");
+            var rows = await headers.GetAsync(new List<AppFilter> {
+                new() { FieldName = "REFERENCE_NUMBER", Operator = "=", FilterValue = referenceNumber },
+                new() { FieldName = "SOURCE_MODULE", Operator = "=", FilterValue = "PRODUCTION_ACCOUNTING" }
+            });
+            var result = new List<JournalPostingEvidence>();
+            foreach (var header in rows.OfType<JOURNAL_ENTRY>())
+            {
+                if (string.IsNullOrWhiteSpace(header.JOURNAL_ENTRY_ID))
+                    throw new InvalidOperationException("Journal evidence has no journal identity.");
+                var lines = await GetEntryLineItemsAsync(header.JOURNAL_ENTRY_ID);
+                var ledger = await GetRepoAsync<GL_ENTRY>("GL_ENTRY");
+                var entries = await ledger.GetAsync(new List<AppFilter> {
+                    new() { FieldName = "JOURNAL_ENTRY_ID", Operator = "=", FilterValue = header.JOURNAL_ENTRY_ID }
+                });
+                result.Add(new(header, lines, entries.OfType<GL_ENTRY>().ToList()));
+            }
+            return result;
+        }
+
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string cn = "PPDM39")
         {
             var connection = _resolveConnection is null ? cn ?? ConnectionName : await _resolveConnection();

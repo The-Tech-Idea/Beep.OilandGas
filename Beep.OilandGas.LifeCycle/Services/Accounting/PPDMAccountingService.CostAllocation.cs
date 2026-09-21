@@ -15,7 +15,7 @@ public partial class PPDMAccountingService
         ArgumentException.ThrowIfNullOrWhiteSpace(fieldId);
         if (fieldId.Contains(':'))
             throw new ArgumentException("Field IDs cannot contain the configuration path separator.", nameof(fieldId));
-        if (startDate.Date > endDate.Date || endDate.Date == DateTime.MaxValue.Date)
+        if (startDate.Date == DateTime.MinValue.Date || startDate.Date > endDate.Date || endDate.Date == DateTime.MaxValue.Date)
             throw new ArgumentException("A valid inclusive allocation date range is required.");
         if (!Enum.IsDefined(allocationMethod))
             throw new ArgumentException("Unknown allocation method.", nameof(allocationMethod));
@@ -52,6 +52,13 @@ public partial class PPDMAccountingService
             new() { FieldName = "TRANSACTION_DATE", Operator = ">=", FilterValue = startDate.Date.ToString("O", CultureInfo.InvariantCulture) },
             new() { FieldName = "TRANSACTION_DATE", Operator = "<", FilterValue = endDate.Date.AddDays(1).ToString("O", CultureInfo.InvariantCulture) }
         })).OfType<COST_TRANSACTION>().ToList();
+        if (costs.Count == 0)
+            throw new InvalidOperationException("No active cost transactions exist for the selected field and dates.");
+        if (costs.Any(c => string.IsNullOrWhiteSpace(c.COST_TRANSACTION_ID)) ||
+            costs.Select(c => c.COST_TRANSACTION_ID).Distinct(StringComparer.Ordinal).Count() != costs.Count)
+            throw new InvalidOperationException("Cost transactions require unique, nonempty IDs.");
+        if (costs.Any(c => c.AMOUNT < 0))
+            throw new InvalidOperationException("Negative costs require an explicit adjustment workflow.");
         var ids = configured.Select(c => c.CostCenterId).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (allocationMethod == CostAllocationMethod.ActivityBasedCosting &&
             (bases.Any(b => !configured.Any(c => c.CostCenterType == "SUPPORT" && c.CostCenterId == b.CostCenterId) ||

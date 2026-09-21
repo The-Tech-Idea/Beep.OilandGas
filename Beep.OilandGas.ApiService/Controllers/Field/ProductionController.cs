@@ -427,24 +427,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }
         }
 
-        /// <summary>GET /api/field/current/production/dashboard/summary</summary>
-        [HttpGet("dashboard/summary")]
-        public async Task<ActionResult<ProductionDashboardSummary>> GetDashboardSummaryAsync()
-        {
-            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            try
-            {
-                var summary = await _productionService.GetProductionDashboardSummaryAsync(fieldId);
-                return Ok(summary);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching production dashboard summary for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
-        }
-
         /// <summary>GET /api/field/current/production/dashboard/wells</summary>
         [HttpGet("dashboard/wells")]
         public async Task<ActionResult<List<ProductionWellStatusDto>>> GetDashboardWellsAsync()

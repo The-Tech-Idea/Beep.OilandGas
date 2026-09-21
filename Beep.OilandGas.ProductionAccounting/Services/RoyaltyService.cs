@@ -27,7 +27,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
     /// Formula: Royalty = (Net Revenue x Royalty Rate)
     /// Where: Net Revenue = Gross Revenue - Transportation - Ad Valorem Tax - Severance Tax
     /// </summary>
-    public class RoyaltyService : IRoyaltyService
+    public partial class RoyaltyService : IRoyaltyService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -79,10 +79,49 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// 8. Create ROYALTY_PAYMENT record (mark as Pending until payment made)
         /// 9. Update IMBALANCE tracking if production exceeds royalty
         /// </summary>
-        public async Task<ROYALTY_CALCULATION> CalculateAsync(
-            ALLOCATION_DETAIL detail,
-            string userId,
-            string connectionName = "PPDM39")
+        public async Task<ROYALTY_CALCULATION> CalculateAsync(string allocationDetailId, string userId)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+            var detail = await LoadAllocationDetailAsync(allocationDetailId);
+            var repo = await CreateRepositoryAsync<ROYALTY_CALCULATION>("ROYALTY_CALCULATION");
+            var existing = (await repo.GetAsync(new List<AppFilter> {
+                new() { FieldName = "ALLOCATION_DETAIL_ID", Operator = "=", FilterValue = allocationDetailId }
+            })).OfType<ROYALTY_CALCULATION>().ToList();
+            if (existing.Count != 0)
+            {
+                if (existing.Count == 1 && existing[0].ACTIVE_IND == _defaults.GetActiveIndicatorYes() &&
+                    existing[0].ROYALTY_STATUS is RoyaltyStatus.Accrued or RoyaltyStatus.Paid)
+                    return existing[0];
+                throw new RoyaltyException("This allocation already has an incomplete, reversed or ambiguous royalty calculation. Reconcile it before retrying.");
+            }
+            return await CalculateCoreAsync(detail, userId, await _resolveConnection(), persist: true);
+        }
+
+        private async Task<ALLOCATION_DETAIL> LoadAllocationDetailAsync(string id)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(id);
+            var repo = await CreateRepositoryAsync<ALLOCATION_DETAIL>("ALLOCATION_DETAIL");
+            var details = (await repo.GetAsync(new List<AppFilter> {
+                new() { FieldName = "ALLOCATION_DETAIL_ID", Operator = "=", FilterValue = id },
+                new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+            })).OfType<ALLOCATION_DETAIL>().ToList();
+            if (details.Count != 1) throw new RoyaltyException("Exactly one active stored allocation detail is required.");
+            return details[0];
+        }
+
+        public async Task<string> GetAllocationFieldAsync(string allocationDetailId)
+        {
+            var detail = await LoadAllocationDetailAsync(allocationDetailId);
+            var allocation = await GetAllocationResultAsync(detail.ALLOCATION_RESULT_ID, "");
+            var ticket = allocation is null ? null : await GetRunTicketAsync(allocation.ALLOCATION_REQUEST_ID, "");
+            if (string.IsNullOrWhiteSpace(ticket?.FIELD_ID)) throw new RoyaltyException("The stored allocation must resolve to a source-ticket field.");
+            return ticket.FIELD_ID;
+        }
+
+        public Task<ROYALTY_CALCULATION> PreviewAsync(ALLOCATION_DETAIL detail, string userId, string connectionName = "PPDM39")
+            => CalculateCoreAsync(detail, userId, connectionName, persist: false);
+
+        private async Task<ROYALTY_CALCULATION> CalculateCoreAsync(ALLOCATION_DETAIL detail, string userId, string connectionName, bool persist)
         {
             if (detail == null)
                 throw new RoyaltyException("Allocation detail cannot be null");
@@ -119,24 +158,26 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     RUN_TICKET?.TICKET_DATE_TIME,
                     connectionName);
 
-                var rawRate = ROYALTY_INTEREST?.ROYALTY_RATE ?? ROYALTY_INTEREST?.INTEREST_PERCENTAGE ?? 12.5m;
-                var royaltyRate = NormalizeRate(rawRate);
+                if (ROYALTY_INTEREST is null || string.IsNullOrWhiteSpace(ROYALTY_INTEREST.ROYALTY_INTEREST_ID))
+                    throw new RoyaltyException("A recorded effective royalty interest is required.");
+                var rawRate = ROYALTY_INTEREST.ROYALTY_RATE;
+                var royaltyRate = rawRate / 100m; // ROYALTY_RATE is explicitly stored in percentage points.
 
-                if (royaltyRate < 0 || royaltyRate > 0.5m)
+                if (royaltyRate < 0 || royaltyRate > 1m)
                 {
                     _logger?.LogWarning("Royalty rate outside normal range: {Rate}%", royaltyRate * 100);
-                    throw new RoyaltyException($"Royalty rate {royaltyRate * 100}% outside acceptable range (0-50%)");
+                    throw new RoyaltyException($"Royalty rate {royaltyRate * 100}% outside acceptable range (0-100%)");
                 }
                 _logger?.LogDebug("Royalty rate: {Rate}%", royaltyRate * 100);
 
                 // STEP 3: Calculate gross revenue (Volume x Commodity Price) (Volume x Commodity Price)
-                // Query PRICE_INDEX for commodity price at calculation date
-                // GetCommodityPriceAsync returns fallback $75/BBL if lookup fails
-                var priceDate = RUN_TICKET?.TICKET_DATE_TIME ?? DateTime.UtcNow;
-                decimal commodityPrice = RUN_TICKET?.PRICE_PER_BARREL > 0
-                    ? RUN_TICKET.PRICE_PER_BARREL.Value
-                    : await GetCommodityPriceAsync(RevenueLineProductCodes.Oil, priceDate, connectionName);
-                
+                // Use the source ticket valuation; no default or substitute market price.
+                // Missing recorded prices fail before any financial records are written.
+                var priceDate = RUN_TICKET?.TICKET_DATE_TIME ?? throw new RoyaltyException("The source ticket date is required.");
+                if (RUN_TICKET?.PRICE_PER_BARREL is not > 0 ||
+                    !string.Equals(RUN_TICKET.VOLUME_OUOM, "BBL", StringComparison.OrdinalIgnoreCase))
+                    throw new RoyaltyException("A positive recorded ticket price and BBL volume units are required.");
+                decimal commodityPrice = RUN_TICKET.PRICE_PER_BARREL.Value;
                 decimal grossRevenue = allocatedVolume * commodityPrice;
                 _logger?.LogDebug("Gross revenue: {Volume} BBL x ${Price}/BBL = ${GrossRevenue}", 
                     allocatedVolume, commodityPrice, grossRevenue);
@@ -148,10 +189,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     priceDate,
                     connectionName);
 
-                // Use database values if found, otherwise fall back to percentage-based
-                decimal transportationCost = dbTransportation > 0 ? dbTransportation : (grossRevenue * 0.08m);
-                decimal adValoremTax = dbAdValorem > 0 ? dbAdValorem : (grossRevenue * 0.02m);
-                decimal severanceTax = dbSeverance > 0 ? dbSeverance : (grossRevenue * 0.01m);
+                // Use recorded amounts only; never invent percentage deductions.
+                decimal transportationCost = dbTransportation;
+                decimal adValoremTax = dbAdValorem;
+                decimal severanceTax = dbSeverance;
                 decimal totalDeductions = transportationCost + adValoremTax + severanceTax;
                 
                 _logger?.LogDebug(
@@ -164,7 +205,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 {
                     _logger?.LogWarning("Net revenue is negative: Gross=${Gross}, Deductions=${Deductions}",
                         grossRevenue, totalDeductions);
-                    netRevenue = 0;  // Cannot have negative net revenue
+                    throw new RoyaltyException("Recorded deductions exceed gross revenue; review the source amounts.");
                 }
                 _logger?.LogInformation("Net revenue: ${NetRevenue}", netRevenue);
 
@@ -184,6 +225,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     ALLOCATION_DETAIL_ID = detail.ALLOCATION_DETAIL_ID,
                     CALCULATION_DATE = DateTime.UtcNow,
                     GROSS_REVENUE = grossRevenue,
+                    GROSS_VOLUME = allocatedVolume,
+                    GROSS_VOLUME_OUOM = "BBL",
+                    FLUID_TYPE = "OIL",
+                    PRICE_PER_UNIT = commodityPrice,
+                    PRODUCTION_PERIOD_START = priceDate.Date,
                     TRANSPORTATION_COST = transportationCost,
                     AD_VALOREM_TAX = adValoremTax,
                     SEVERANCE_TAX = severanceTax,
@@ -197,30 +243,43 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     ROW_CREATED_BY = userId
                 };
 
+                if (!persist)
+                {
+                    royaltyCalc.ROYALTY_STATUS = "PREVIEW";
+                    return royaltyCalc;
+                }
+
                 // Save ROYALTY_CALCULATION to database
                 var repo = await CreateRepositoryAsync<ROYALTY_CALCULATION>("ROYALTY_CALCULATION");
+
+                // The existing database primary key arbitrates concurrent attempts before any journal call.
+                // A correction requires a new allocation detail, not a second obligation for this detail.
+                var digest = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(
+                    "royalty-accrual:" + detail.ALLOCATION_DETAIL_ID));
+                royaltyCalc.ROYALTY_CALCULATION_ID = new Guid(digest.AsSpan(0, 16)).ToString();
 
                 await repo.InsertAsync(royaltyCalc, userId);
 
                 if (royaltyAmount > 0m)
                 {
-                    var accrualDescription = $"Royalty accrual for allocation {detail.ALLOCATION_DETAIL_ID}";
-                    var accrualEntry = await _glService.CreateBalancedEntryAsync(
+                    var accrualDescription = $"Royalty accrual {royaltyCalc.ROYALTY_CALCULATION_ID} for allocation {detail.ALLOCATION_DETAIL_ID}";
+                    var accrualEntry = await _glService.CreateReferencedBalancedEntryAsync(
                         DefaultGlAccounts.RoyaltyExpense,
                         DefaultGlAccounts.AccruedRoyalties,
                         royaltyAmount,
                         accrualDescription,
                         userId,
-                        connectionName);
+                        royaltyCalc.ROYALTY_CALCULATION_ID);
 
-                    if (accrualEntry != null)
-                    {
-                        royaltyCalc.ROYALTY_STATUS = RoyaltyStatus.Accrued;
-                        royaltyCalc.ROW_CHANGED_DATE = DateTime.UtcNow;
-                        royaltyCalc.ROW_CHANGED_BY = userId;
-                        await repo.UpdateAsync(royaltyCalc, userId);
-                    }
+                    if (accrualEntry is null || string.IsNullOrWhiteSpace(accrualEntry.JOURNAL_ENTRY_ID) || accrualEntry.STATUS != "POSTED")
+                        throw new RoyaltyException("The royalty journal was not confirmed posted. Reconcile the reserved calculation before retrying.");
+                    royaltyCalc.JOURNAL_ENTRY_ID = accrualEntry.JOURNAL_ENTRY_ID;
                 }
+
+                royaltyCalc.ROYALTY_STATUS = RoyaltyStatus.Accrued;
+                royaltyCalc.ROW_CHANGED_DATE = DateTime.UtcNow;
+                royaltyCalc.ROW_CHANGED_BY = userId;
+                await repo.UpdateAsync(royaltyCalc, userId);
 
                 _logger?.LogInformation(
                     "Royalty calculation saved: ID={RoyaltyId}, Amount=${Amount}",
@@ -287,70 +346,80 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// Creates ROYALTY_PAYMENT record and updates calculation status.
         /// Links calculation to actual payment made.
         /// </summary>
-        public async Task<ROYALTY_PAYMENT> RecordPaymentAsync(
-            ROYALTY_CALCULATION royalty,
-            decimal amount,
-            string userId,
-            string connectionName = "PPDM39")
+        public async Task<List<ROYALTY_PAYMENT>> GetPaymentsAsync(string royaltyId)
         {
-            if (royalty == null)
-                throw new RoyaltyException("Royalty calculation cannot be null");
-            if (amount <= 0)
-                throw new RoyaltyException($"Payment amount must be positive: {amount}");
-
-            _logger?.LogInformation("Recording royalty payment for royalty {RoyaltyId}, amount: {Amount}",
-                royalty.ROYALTY_CALCULATION_ID, amount);
-
-            // Validate payment amount doesn't exceed calculated (if calculated)
-            if (royalty.ROYALTY_AMOUNT.HasValue && amount > royalty.ROYALTY_AMOUNT)
-            {
-                _logger?.LogWarning(
-                    "Payment {Amount} exceeds calculated royalty {Calculated}",
-                    amount, royalty.ROYALTY_AMOUNT);
-            }
-
-            // Create payment record
-            var payment = new ROYALTY_PAYMENT
-            {
-                ROYALTY_PAYMENT_ID = Guid.NewGuid().ToString(),
-                ROYALTY_INTEREST_ID = royalty.ROYALTY_INTEREST_ID,
-                ROYALTY_OWNER_ID = royalty.ROYALTY_OWNER_ID,
-                PROPERTY_OR_LEASE_ID = royalty.PROPERTY_OR_LEASE_ID,
-                ROYALTY_AMOUNT = amount,
-                NET_PAYMENT_AMOUNT = amount,
-                PAYMENT_DATE = DateTime.UtcNow,
-                PAYMENT_METHOD = PaymentMethod.Check.ToString(),
-                STATUS = RoyaltyPaymentStatusCodes.Paid,
-                ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
-                PPDM_GUID = Guid.NewGuid().ToString(),
-                ROW_CREATED_DATE = DateTime.UtcNow,
-                ROW_CREATED_BY = userId
-            };
-
-            // Save payment to database
+            ArgumentException.ThrowIfNullOrWhiteSpace(royaltyId);
             var repo = await CreateRepositoryAsync<ROYALTY_PAYMENT>("ROYALTY_PAYMENT");
+            return (await repo.GetAsync(new List<AppFilter> {
+                new() { FieldName = "ROYALTY_CALCULATION_ID", Operator = "=", FilterValue = royaltyId }
+            })).OfType<ROYALTY_PAYMENT>().ToList();
+        }
 
-            await repo.InsertAsync(payment, userId);
-
-            _logger?.LogInformation("Royalty payment recorded: {PaymentId}, amount: {Amount}",
-                payment.ROYALTY_PAYMENT_ID, amount);
-
-            if (amount > 0m)
+        public async Task<ROYALTY_PAYMENT> RecordPaymentAsync(string royaltyId, Guid requestId, decimal amount, string userId)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+            if (requestId == Guid.Empty || amount <= 0 || decimal.Round(amount, 2) != amount)
+                throw new RoyaltyException("A request ID and a positive payment amount with at most two decimal places are required.");
+            var royalty = await GetAsync(royaltyId) ?? throw new RoyaltyException("Stored royalty calculation not found.");
+            if (royalty.ACTIVE_IND != _defaults.GetActiveIndicatorYes() ||
+                royalty.ROYALTY_STATUS is not (RoyaltyStatus.Accrued or RoyaltyStatus.Paid) ||
+                royalty.ROYALTY_AMOUNT is null or <= 0)
+                throw new RoyaltyException("An active accrued royalty obligation is required.");
+            var payments = await GetPaymentsAsync(royaltyId);
+            var retries = payments.Where(p => p.PAYMENT_REQUEST_ID == requestId.ToString()).ToList();
+            if (retries.Count != 0)
             {
-                var paymentDescription = $"Royalty payment for calculation {royalty.ROYALTY_CALCULATION_ID}";
-                await _glService.CreateBalancedEntryAsync(
-                    DefaultGlAccounts.AccruedRoyalties,
-                    DefaultGlAccounts.Cash,
-                    amount,
-                    paymentDescription,
-                    userId,
-                    connectionName);
+                if (retries.Count == 1 && retries[0].STATUS == RoyaltyPaymentStatusCodes.Paid &&
+                    retries[0].ACTIVE_IND == _defaults.GetActiveIndicatorYes() &&
+                    !string.IsNullOrWhiteSpace(retries[0].JOURNAL_ENTRY_ID) && retries[0].NET_PAYMENT_AMOUNT == amount)
+                    return retries[0];
+                throw new RoyaltyException("Payment request is changed or incomplete. Reconcile the recorded payment before retrying.");
             }
+            if (payments.Any(p => p.STATUS != RoyaltyPaymentStatusCodes.Paid ||
+                p.ACTIVE_IND != _defaults.GetActiveIndicatorYes() || p.NET_PAYMENT_AMOUNT <= 0 ||
+                string.IsNullOrWhiteSpace(p.JOURNAL_ENTRY_ID)) ||
+                payments.Select(p => p.ROYALTY_PAYMENT_ID).Distinct().Count() != payments.Count)
+                throw new RoyaltyException("Existing payments require reconciliation before another payment can be recorded.");
+            var paid = payments.Sum(p => p.NET_PAYMENT_AMOUNT);
+            if (royalty.ROYALTY_STATUS == RoyaltyStatus.Paid || amount > royalty.ROYALTY_AMOUNT.Value - paid)
+                throw new RoyaltyException("Payment exceeds the outstanding royalty balance.");
 
-            royalty.ROYALTY_STATUS = RoyaltyStatus.Paid;
-            await UpdateRoyaltyCalculationAsync(royalty, userId, connectionName);
-
-            return payment;
+            // Every contender for this next payment position gets the same existing primary key.
+            // Retain all reservations: deleting one would invalidate this serialization boundary.
+            var digest = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(
+                "royalty-payment:" + royaltyId + ":" + payments.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+            var payment = new ROYALTY_PAYMENT {
+                ROYALTY_PAYMENT_ID = new Guid(digest.AsSpan(0, 16)).ToString(),
+                ROYALTY_CALCULATION_ID = royaltyId, PAYMENT_REQUEST_ID = requestId.ToString(),
+                ROYALTY_INTEREST_ID = royalty.ROYALTY_INTEREST_ID, ROYALTY_OWNER_ID = royalty.ROYALTY_OWNER_ID,
+                PROPERTY_OR_LEASE_ID = royalty.PROPERTY_OR_LEASE_ID,
+                ROYALTY_AMOUNT = amount, NET_PAYMENT_AMOUNT = amount, PAYMENT_DATE = DateTime.UtcNow,
+                STATUS = RoyaltyPaymentStatusCodes.Pending, ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
+                PPDM_GUID = Guid.NewGuid().ToString(), ROW_CREATED_DATE = DateTime.UtcNow, ROW_CREATED_BY = userId
+            };
+            var repo = await CreateRepositoryAsync<ROYALTY_PAYMENT>("ROYALTY_PAYMENT");
+            try
+            {
+                await repo.InsertAsync(payment, userId);
+                var journal = await _glService.CreateReferencedBalancedEntryAsync(DefaultGlAccounts.AccruedRoyalties,
+                    DefaultGlAccounts.Cash, amount, $"Royalty payment {payment.ROYALTY_PAYMENT_ID} for calculation {royaltyId}",
+                    userId, payment.ROYALTY_PAYMENT_ID);
+                if (journal is null || journal.STATUS != "POSTED" || string.IsNullOrWhiteSpace(journal.JOURNAL_ENTRY_ID))
+                    throw new RoyaltyException("Payment journal was not confirmed posted. Reconcile the reserved payment.");
+                payment.JOURNAL_ENTRY_ID = journal.JOURNAL_ENTRY_ID;
+                // Keep the reservation pending until both calculation and payment writes succeed.
+                royalty.ROYALTY_STATUS = paid + amount == royalty.ROYALTY_AMOUNT.Value ? RoyaltyStatus.Paid : RoyaltyStatus.Accrued;
+                await UpdateRoyaltyCalculationAsync(royalty, userId, await _resolveConnection());
+                payment.STATUS = RoyaltyPaymentStatusCodes.Paid;
+                payment.ROW_CHANGED_BY = userId;
+                payment.ROW_CHANGED_DATE = DateTime.UtcNow;
+                await repo.UpdateAsync(payment, userId);
+                return payment;
+            }
+            catch (Exception ex)
+            {
+                throw new RoyaltyException("Payment could not be confirmed. Reconcile its recorded reservation before retrying.", ex);
+            }
         }
 
         /// <summary>
@@ -433,50 +502,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
-        /// <summary>
-        /// Gets commodity price from PRICE_INDEX table.
-        /// Falls back to <see cref="CommodityPricingFallbackDefaults.DefaultUnitPriceWhenIndexMissing"/> if not found.
-        /// </summary>
-        private async Task<decimal> GetCommodityPriceAsync(string commodity, DateTime asOfDate, string connectionName)
-        {
-            try
-            {
-                var repo = await CreateRepositoryAsync<PRICE_INDEX>("PRICE_INDEX");
-
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "COMMODITY_TYPE", Operator = "=", FilterValue = commodity },
-                    new AppFilter { FieldName = "PRICE_DATE", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                };
-
-                var prices = await repo.GetAsync(filters);
-                var priceList = prices?.Cast<PRICE_INDEX>().OrderByDescending(p => p.PRICE_DATE).ToList() 
-                    ?? new List<PRICE_INDEX>();
-
-                if (priceList.Any())
-                {
-                    var latestPrice = priceList.First();
-                    decimal price = latestPrice.PRICE_VALUE ?? CommodityPricingFallbackDefaults.DefaultUnitPriceWhenIndexMissing;
-                    _logger?.LogDebug(
-                        "Retrieved commodity price for {Commodity}: ${Price}/unit as of {Date}",
-                        commodity, price, latestPrice.PRICE_DATE);
-                    return price;
-                }
-
-                // No price found - log warning and use fallback
-                _logger?.LogWarning(
-                    "No price index found for commodity {Commodity} as of {Date}, using fallback unit price {FallbackPrice}",
-                    commodity, asOfDate.ToShortDateString(), CommodityPricingFallbackDefaults.DefaultUnitPriceWhenIndexMissing);
-                return CommodityPricingFallbackDefaults.DefaultUnitPriceWhenIndexMissing;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Error retrieving commodity price for {Commodity}, using fallback unit price {FallbackPrice}", commodity, CommodityPricingFallbackDefaults.DefaultUnitPriceWhenIndexMissing);
-                return CommodityPricingFallbackDefaults.DefaultUnitPriceWhenIndexMissing;
-            }
-        }
-
         private async Task<ALLOCATION_RESULT?> GetAllocationResultAsync(string allocationResultId, string connectionName)
         {
             var repo = await CreateRepositoryAsync<ALLOCATION_RESULT>("ALLOCATION_RESULT");
@@ -491,7 +516,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "ALLOCATION_REQUEST_ID", Operator = "=", FilterValue = allocationRequestId },
+                new AppFilter { FieldName = "RUN_TICKET_ID", Operator = "=", FilterValue = allocationRequestId },
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
@@ -514,117 +539,16 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
-            if (asOfDate.HasValue)
-            {
-                filters.Add(new AppFilter
-                {
-                    FieldName = "EFFECTIVE_START_DATE",
-                    Operator = "<=",
-                    FilterValue = asOfDate.Value.ToString("yyyy-MM-dd")
-                });
-                filters.Add(new AppFilter
-                {
-                    FieldName = "EFFECTIVE_END_DATE",
-                    Operator = ">=",
-                    FilterValue = asOfDate.Value.ToString("yyyy-MM-dd")
-                });
-            }
-
-            var results = await repo.GetAsync(filters);
-            var direct = results?.Cast<ROYALTY_INTEREST>()
-                .OrderByDescending(r => r.EFFECTIVE_DATE ?? r.EFFECTIVE_START_DATE)
-                .FirstOrDefault();
-            if (direct != null)
-                return direct;
-
-            var ownership = await GetOwnershipInterestAsync(leaseId, ownerId, asOfDate, connectionName);
-            if (ownership == null)
-                return null;
-
-            var royaltyRate = NormalizeFraction(ownership.ROYALTY_INTEREST) +
-                              NormalizeFraction(ownership.OVERRIDING_ROYALTY_INTEREST);
-
-            if (royaltyRate <= 0m && !string.IsNullOrWhiteSpace(ownership.DIVISION_ORDER_ID))
-            {
-                var DIVISION_ORDER = await GetDivisionOrderAsync(ownership.DIVISION_ORDER_ID, connectionName);
-                if (DIVISION_ORDER != null)
-                {
-                    royaltyRate = NormalizeFraction(DIVISION_ORDER.ROYALTY_INTEREST) +
-                                  NormalizeFraction(DIVISION_ORDER.OVERRIDING_ROYALTY_INTEREST);
-                }
-            }
-
-            if (royaltyRate <= 0m)
-                return null;
-
-            return new ROYALTY_INTEREST
-            {
-                ROYALTY_INTEREST_ID = Guid.NewGuid().ToString(),
-                ROYALTY_OWNER_ID = ownerId,
-                PROPERTY_OR_LEASE_ID = leaseId,
-                INTEREST_PERCENTAGE = royaltyRate,
-                EFFECTIVE_DATE = asOfDate?.Date ?? DateTime.UtcNow.Date,
-                ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
-                PPDM_GUID = Guid.NewGuid().ToString()
-            };
+            if (!asOfDate.HasValue) throw new RoyaltyException("The effective date for royalty terms is required.");
+            var date = asOfDate.Value.Date;
+            var matches = (await repo.GetAsync(filters)).OfType<ROYALTY_INTEREST>()
+                .Where(interest => (!interest.EFFECTIVE_START_DATE.HasValue || interest.EFFECTIVE_START_DATE.Value.Date <= date) &&
+                    (!interest.EFFECTIVE_END_DATE.HasValue || interest.EFFECTIVE_END_DATE.Value.Date >= date))
+                .ToList();
+            if (matches.Count != 1)
+                throw new RoyaltyException("Exactly one active, effective royalty interest must be recorded for the lease and owner.");
+            return matches[0];
         }
-
-        private async Task<OWNERSHIP_INTEREST?> GetOwnershipInterestAsync(
-            string leaseId,
-            string ownerId,
-            DateTime? asOfDate,
-            string connectionName)
-        {
-            var repo = await CreateRepositoryAsync<OWNERSHIP_INTEREST>("OWNERSHIP_INTEREST");
-
-            var filters = new List<AppFilter>
-            {
-                new AppFilter { FieldName = "PROPERTY_OR_LEASE_ID", Operator = "=", FilterValue = leaseId },
-                new AppFilter { FieldName = "OWNER_ID", Operator = "=", FilterValue = ownerId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-            };
-
-            var results = await repo.GetAsync(filters);
-            var interests = results?.Cast<OWNERSHIP_INTEREST>().ToList() ?? new List<OWNERSHIP_INTEREST>();
-
-            if (asOfDate.HasValue)
-            {
-                var date = asOfDate.Value.Date;
-                interests = interests
-                    .Where(o =>
-                        (!o.EFFECTIVE_START_DATE.HasValue || o.EFFECTIVE_START_DATE.Value.Date <= date) &&
-                        (!o.EFFECTIVE_END_DATE.HasValue || o.EFFECTIVE_END_DATE.Value.Date >= date))
-                    .ToList();
-            }
-
-            return interests.FirstOrDefault();
-        }
-
-        private async Task<DIVISION_ORDER?> GetDivisionOrderAsync(string divisionOrderId, string connectionName)
-        {
-            if (string.IsNullOrWhiteSpace(divisionOrderId))
-                return null;
-
-            var repo = await CreateRepositoryAsync<DIVISION_ORDER>("DIVISION_ORDER");
-
-            var result = await repo.GetByIdAsync(divisionOrderId);
-            var DIVISION_ORDER = result as DIVISION_ORDER;
-            if (DIVISION_ORDER == null)
-                return null;
-            if (!string.Equals(DIVISION_ORDER.STATUS, ApprovalWorkflowStatusCodes.Approved, StringComparison.OrdinalIgnoreCase))
-                return null;
-            return DIVISION_ORDER;
-        }
-
-        private static decimal NormalizeFraction(decimal? value)
-        {
-            if (!value.HasValue)
-                return 0m;
-            if (value.Value <= 0m)
-                return 0m;
-            return value.Value > 1m ? value.Value / 100m : value.Value;
-        }
-
         private async Task UpdateRoyaltyCalculationAsync(
             ROYALTY_CALCULATION royalty,
             string userId,
@@ -646,17 +570,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return costType.Contains(containsToken, StringComparison.OrdinalIgnoreCase);
         }
 
-        private static decimal NormalizeRate(decimal rawRate)
-        {
-            if (rawRate <= 0)
-                return 0m;
-
-            if (rawRate > 1m)
-                return rawRate / 100m;
-
-            return rawRate;
-        }
-
         /// <summary>
         /// Gets deductions (transportation, taxes) from cost records.
         /// </summary>
@@ -669,7 +582,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "LEASE_ID", Operator = "=", FilterValue = leaseId },
+                    new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = leaseId },
                     new AppFilter { FieldName = "COST_DATE", Operator = "<=", FilterValue = periodDate.ToString("yyyy-MM-dd") },
                     new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 };
@@ -677,7 +590,15 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var costs = await repo.GetAsync(filters);
                 var costList = costs?.Cast<ACCOUNTING_COST>().ToList() ?? new List<ACCOUNTING_COST>();
 
-                // Sum costs by type
+                // Lease-level costs lack an allocation-detail link and approval basis in this contract.
+                // Applying the entire lease amount to every owner would duplicate deductions.
+                if (costList.Any(c => c.AMOUNT != 0 &&
+                    (MatchesCostType(c.COST_TYPE, RoyaltyDeductionCostTypeCodes.Transportation, RoyaltyDeductionCostTypeCodes.TransportContainsToken) ||
+                     MatchesCostType(c.COST_TYPE, RoyaltyDeductionCostTypeCodes.AdValorem, RoyaltyDeductionCostTypeCodes.AdValoremContainsToken) ||
+                     MatchesCostType(c.COST_TYPE, RoyaltyDeductionCostTypeCodes.Severance, RoyaltyDeductionCostTypeCodes.SeveranceContainsToken))))
+                    throw new RoyaltyException("Recorded lease deductions require an approved allocation-specific deduction basis before calculation.");
+
+                // Sum only resolved amounts (currently explicit zero deductions).
                 decimal transportation = costList
                     .Where(c => MatchesCostType(c.COST_TYPE, RoyaltyDeductionCostTypeCodes.Transportation, RoyaltyDeductionCostTypeCodes.TransportContainsToken))
                     .Sum(c => c.AMOUNT);
@@ -699,7 +620,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             catch (Exception ex)
             {
                 _logger?.LogWarning(ex, "Error retrieving deductions for lease {LeaseId}", leaseId);
-                return (0, 0, 0);  // Return zeros if lookup fails - will trigger fallback in main logic
+                throw; // A failed lookup is not evidence of zero deductions.
             }
         }
         private async Task<PPDMGenericRepository> CreateRepositoryAsync<T>(string tableName)

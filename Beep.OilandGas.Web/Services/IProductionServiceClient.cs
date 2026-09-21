@@ -10,7 +10,7 @@ namespace Beep.OilandGas.Web.Services;
 
 public interface IProductionServiceClient
 {
-    Task<ProductionDashboardSummary?> GetDashboardSummaryAsync(CancellationToken cancellationToken = default);
+    Task<ProductionDashboardResponse> GetDashboardAsync(string fieldId, CancellationToken cancellationToken = default);
     Task<List<ProductionWellStatusDto>> GetDashboardWellsAsync(CancellationToken cancellationToken = default);
     Task<ReservoirDashboardSummary?> GetReservoirDashboardSummaryAsync(CancellationToken cancellationToken = default);
     Task<List<ReservoirPoolDto>> GetReservoirPoolsAsync(CancellationToken cancellationToken = default);

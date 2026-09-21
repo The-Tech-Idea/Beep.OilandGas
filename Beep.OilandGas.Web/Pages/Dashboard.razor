@@ -1,4 +1,5 @@
 @page "/dashboard"
+@implements IDisposable
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @inject ILifeCycleService LifeCycleService
 @inject IDataManagementService DataManagementService
@@ -36,191 +37,124 @@
     </MudStack>
 
     @* ── KPI Row ─────────────────────────────────────────────────────────── *@
-    <MudGrid Spacing="3" Class="mb-6">
-        <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Total Wells"
-                     Value="@_totalWells.ToString("N0")"
-                     ValueColor="Color.Primary"
-                     Icon="@Icons.Material.Filled.OilBarrel"
-                     TrendIcon="@Icons.Material.Filled.TrendingFlat"
-                     TrendColor="Color.Default"
-                     TrendText="No change today" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Active Fields"
-                     Value="@_activeFields.ToString()"
-                     ValueColor="Color.Success"
-                     Icon="@Icons.Material.Filled.Explore"
-                     TrendIcon="@Icons.Material.Filled.TrendingUp"
-                     TrendColor="Color.Success"
-                     TrendText="+2 this quarter" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Daily Production"
-                     Value="@_dailyProduction.ToString("N0")"
-                     Unit="bbl/d"
-                     ValueColor="Color.Info"
-                     Icon="@Icons.Material.Filled.TrendingUp"
-                     TrendIcon="@Icons.Material.Filled.TrendingUp"
-                     TrendColor="Color.Success"
-                     TrendText="+3.2% vs yesterday" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Facilities"
-                     Value="@_facilities.ToString()"
-                     ValueColor="Color.Warning"
-                     Icon="@Icons.Material.Filled.Factory"
-                     TrendIcon="@Icons.Material.Filled.TrendingFlat"
-                     TrendColor="Color.Default"
-                     TrendText="No change" />
-        </MudItem>
-    </MudGrid>
+    <MudButton OnClick="Reload" Disabled="@(_state?.Loading ?? true)" StartIcon="@Icons.Material.Filled.Refresh" Class="mb-3">Refresh field data</MudButton>
+    @if (_state?.Loading == true)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Loading field dashboard" />
+        <MudText Class="my-3">Loading selected field…</MudText>
+    }
+    else if (_state?.NeedsField == true)
+    {
+        <MudAlert Severity="Severity.Info" Class="mb-4">Select a field to see its operational data.</MudAlert>
+    }
+    else if (_state?.Error is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_state.Error</MudAlert>
+    }
+    else if (_state?.Dashboard is { } dashboard)
+    {
+        <MudText Typo="Typo.h6" Class="mb-3">@(string.IsNullOrWhiteSpace(dashboard.FieldName) ? dashboard.FieldId : dashboard.FieldName)</MudText>
+        <MudGrid Spacing="3" Class="mb-4">
+            @foreach (var phase in Phases(dashboard))
+            {
+                <MudItem xs="12" sm="6" md="3">
+                    <KpiCard Label="@phase.Label" Value="@(phase.Summary?.EntityCount.ToString("N0") ?? "Not available")" ValueColor="Color.Primary" />
+                </MudItem>
+            }
+        </MudGrid>
+        <MudText Typo="Typo.h6" Class="mb-3">Reported performance</MudText>
+        @if (dashboard.PerformanceMetrics is not { Count: > 0 })
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-4">No performance metrics have been reported for this field.</MudAlert>
+        }
+        else
+        {
+            <MudGrid Spacing="3" Class="mb-4">
+                @foreach (var metric in dashboard.PerformanceMetrics)
+                {
+                    <MudItem xs="12" sm="6" md="3">
+                        <KpiCard Label="@(string.IsNullOrWhiteSpace(metric.MetricLabel) ? metric.MetricName : metric.MetricLabel)"
+                                 Value="@FieldDashboardState.MetricValue(metric.CurrentValue)" Unit="@(metric.Unit ?? string.Empty)" ValueColor="Color.Info" />
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+    }
 
     @* ── Workflow Entry Points ────────────────────────────────────────────── *@
     <MudText Typo="Typo.h6" Class="mb-3">Start Work</MudText>
     <MudGrid Spacing="3" Class="mb-6">
-        <MudItem xs="6" sm="4" md="2">
-            <MudPaper Elevation="1" Class="pa-3 d-flex flex-column align-center gap-2 workflow-card" @onclick='() => NavigationManager.NavigateTo("/exploration")'>
-                <img src="/imgs/icons/process/exploration.svg" class="og-icon og-icon-xl" alt="Exploration" />
-                <MudText Typo="Typo.caption" Align="Align.Center">Exploration</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="6" sm="4" md="2">
-            <MudPaper Elevation="1" Class="pa-3 d-flex flex-column align-center gap-2 workflow-card" @onclick='() => NavigationManager.NavigateTo("/development")'>
-                <img src="/imgs/icons/process/drilling-rig.svg" class="og-icon og-icon-xl" alt="Development" />
-                <MudText Typo="Typo.caption" Align="Align.Center">Development</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="6" sm="4" md="2">
-            <MudPaper Elevation="1" Class="pa-3 d-flex flex-column align-center gap-2 workflow-card" @onclick='() => NavigationManager.NavigateTo("/production")'>
-                <img src="/imgs/icons/process/wellhead.svg" class="og-icon og-icon-xl" alt="Production" />
-                <MudText Typo="Typo.caption" Align="Align.Center">Production</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="6" sm="4" md="2">
-            <MudPaper Elevation="1" Class="pa-3 d-flex flex-column align-center gap-2 workflow-card" @onclick='() => NavigationManager.NavigateTo("/reservoir")'>
-                <img src="/imgs/icons/process/reservoir.svg" class="og-icon og-icon-xl" alt="Reservoir" />
-                <MudText Typo="Typo.caption" Align="Align.Center">Reservoir</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="6" sm="4" md="2">
-            <MudPaper Elevation="1" Class="pa-3 d-flex flex-column align-center gap-2 workflow-card" @onclick='() => NavigationManager.NavigateTo("/economics/afe")'>
-                <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Large" Color="Color.Primary" Class="my-1" />
-                <MudText Typo="Typo.caption" Align="Align.Center">Economics</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="6" sm="4" md="2">
-            <MudPaper Elevation="1" Class="pa-3 d-flex flex-column align-center gap-2 workflow-card" @onclick='() => NavigationManager.NavigateTo("/ppdm39/data-management")'>
-                <MudIcon Icon="@Icons.Material.Filled.Storage" Size="Size.Large" Color="Color.Secondary" Class="my-1" />
-                <MudText Typo="Typo.caption" Align="Align.Center">Data Mgmt</MudText>
-            </MudPaper>
-        </MudItem>
+        <MudItem xs="12" sm="6" md="2"><MudButton Href="/exploration" FullWidth="true" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Explore">Exploration</MudButton></MudItem>
+        <MudItem xs="12" sm="6" md="2"><MudButton Href="/development" FullWidth="true" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Construction">Development</MudButton></MudItem>
+        <MudItem xs="12" sm="6" md="2"><MudButton Href="/production" FullWidth="true" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.OilBarrel">Production</MudButton></MudItem>
+        <MudItem xs="12" sm="6" md="2"><MudButton Href="/reservoir" FullWidth="true" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Water">Reservoir</MudButton></MudItem>
+        <MudItem xs="12" sm="6" md="2"><MudButton Href="/economics/afe" FullWidth="true" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.AccountBalance">Economics</MudButton></MudItem>
+        <MudItem xs="12" sm="6" md="2"><MudButton Href="/ppdm39/data-management" FullWidth="true" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Storage">Data management</MudButton></MudItem>
     </MudGrid>
 
     @* ── Recent Activity ─────────────────────────────────────────────────── *@
-    <MudText Typo="Typo.h6" Class="mb-3">Recent Activity</MudText>
-    <MudPaper Elevation="2" Class="pa-4">
-        <MudDataGrid Items="@_recentActivities" Hover="true" Dense="true" ReadOnly="true">
-            <Columns>
-                <PropertyColumn Property="@(x => x.Type)" Title="Type" />
-                <PropertyColumn Property="@(x => x.Description)" Title="Description" />
-                <TemplateColumn Title="Date">
-                    <CellTemplate>
-                        <MudText>@context.Item.Timestamp.ToString("MMM dd, yyyy HH:mm")</MudText>
-                    </CellTemplate>
-                </TemplateColumn>
-            </Columns>
-        </MudDataGrid>
-    </MudPaper>
+    @if (_state?.Dashboard is { } activityDashboard)
+    {
+        <MudText Typo="Typo.h6" Class="mb-3">Recent activity</MudText>
+        @if (activityDashboard.RecentEvents is not { Count: > 0 })
+        {
+            <MudAlert Severity="Severity.Info">No recent activity was reported for this field.</MudAlert>
+        }
+        else
+        {
+            <MudTable T="FieldTimelineEvent" Items="@activityDashboard.RecentEvents.OrderByDescending(e => e.EventDate)" Hover="true" Breakpoint="Breakpoint.Sm">
+                <HeaderContent><MudTh>Type</MudTh><MudTh>Description</MudTh><MudTh>Date</MudTh></HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Type">@context.EventType</MudTd>
+                    <MudTd DataLabel="Description">@context.EventDescription</MudTd>
+                    <MudTd DataLabel="Date">@context.EventDate.ToString("dd MMM yyyy HH:mm")</MudTd>
+                </RowTemplate>
+                <PagerContent><MudTablePager /></PagerContent>
+            </MudTable>
+        }
+    }
 
 </MudContainer>
 @code {
     private BrandingConfig _branding = new();
-    private int _totalWells = 0;
-    private int _activeFields = 0;
-    private decimal _dailyProduction = 0;
-    private int _facilities = 0;
+    private FieldDashboardState? _state;
     private bool _personaLoaded;
     private string _personaLabel = string.Empty;
-    
-    private List<ActivityItem> _recentActivities = new();
-    
+    private bool _disposed;
     protected override void OnInitialized()
     {
         _branding = ThemeProvider.GetBranding();
+        _state = new(LifeCycleService.GetFieldDashboardAsync);
+        PersonaContext.Changed += PersonaChanged;
+        DataManagementService.CurrentFieldChanged += FieldChanged;
     }
-    
     protected override async Task OnInitializedAsync()
     {
-        await LoadDashboardData();
-
-        await PersonaContext.EnsureLoadedAsync();
-        _personaLoaded = true;
-        _personaLabel = PersonaContext.CurrentPersona?.Name
-            ?? PersonaContext.CurrentProfile?.PersonaCode
-            ?? string.Empty;
+        await Reload();
+        try { await PersonaContext.EnsureLoadedAsync(); }
+        catch { Snackbar.Add("Persona settings could not be loaded. Use Retry personas to refresh them.", Severity.Warning); }
+        UpdatePersonaLabel();
     }
-
-    private async Task LoadDashboardData()
+    private Task Reload() => _state!.LoadAsync(() => DataManagementService.GetCurrentFieldIdAsync());
+    private void FieldChanged(string fieldId)
     {
-        // Primary: single dashboard endpoint gives all KPIs
-        try
-        {
-            var dash = await LifeCycleService.GetFieldDashboardAsync();
-            if (dash != null)
-            {
-                // Total wells = development + production well counts
-                _totalWells  = (dash.DevelopmentSummary?.EntityCount  ?? 0)
-                             + (dash.ProductionSummary?.EntityCount    ?? 0);
-                _activeFields = dash.ProductionSummary?.EntityCountsByType
-                                   .GetValueOrDefault("ACTIVE_WELLS", 0) ?? 0;
-
-                // Daily production from performance metrics if present
-                var prodMetric = dash.PerformanceMetrics
-                    ?.FirstOrDefault(m => m.MetricName?.Contains("Production", StringComparison.OrdinalIgnoreCase) == true);
-                if (prodMetric != null)
-                    _dailyProduction = (decimal)(prodMetric.CurrentValue ?? 0);
-
-                // Facilities from development summary
-                _facilities = dash.DevelopmentSummary?.EntityCountsByType
-                                 .GetValueOrDefault("FACILITIES", 0) ?? 0;
-
-                // Recent events from the dashboard payload
-                _recentActivities = dash.RecentEvents?
-                    .Take(10)
-                    .Select(e => new ActivityItem
-                    {
-                        Type        = e.EventType ?? "Event",
-                        Description = e.EventDescription ?? $"Activity on {e.EntityType}",
-                        Timestamp   = e.EventDate
-                    })
-                    .ToList() ?? new();
-
-                return; // skip fallback
-            }
-        }
-        catch { /* no active field yet — fall through to individual calls */ }
-
-        // Fallback: individual endpoints when dashboard summary is unavailable
-        try
-        {
-            var events = await DataManagementService.GetRecentAuditEventsAsync();
-            _recentActivities = events?
-                .Select(e => new ActivityItem
-                {
-                    Type        = e.AccessType ?? "Data",
-                    Description = $"{e.AccessType ?? "Access"}: {e.TableName}",
-                    Timestamp   = e.AccessDate
-                })
-                .ToList() ?? new();
-        }
-        catch { /* audit service may not be configured yet */ }
+        if (!_disposed) _ = InvokeAsync(async () => {
+            if (_disposed) return;
+            var load = _state!.LoadAsync(() => Task.FromResult<string?>(fieldId));
+            StateHasChanged(); await load;
+            if (!_disposed) StateHasChanged();
+        });
     }
-    
-    private class ActivityItem
+    private void UpdatePersonaLabel() { _personaLoaded = true; _personaLabel = PersonaContext.CurrentPersona?.Name ?? string.Empty; }
+    private void PersonaChanged() { if (!_disposed) _ = InvokeAsync(() => { if (_disposed) return; UpdatePersonaLabel(); StateHasChanged(); }); }
+    private static IEnumerable<(string Label, FieldDashboardPhaseSummary? Summary)> Phases(FieldDashboard dashboard) => new[] {
+        ("Exploration records", dashboard.ExplorationSummary), ("Development records", dashboard.DevelopmentSummary),
+        ("Production records", dashboard.ProductionSummary), ("Decommissioning records", dashboard.DecommissioningSummary)
+    };
+    public void Dispose()
     {
-        public string Type { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public DateTime Timestamp { get; set; }
+        _disposed = true; _state?.Dispose();
+        PersonaContext.Changed -= PersonaChanged;
+        DataManagementService.CurrentFieldChanged -= FieldChanged;
     }
 }

@@ -39,7 +39,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         }
 
         /// <summary>
-        /// Allocate costs to entities.
+        /// Calculate a read-only breakdown from recorded costs and direct assignments.
         /// </summary>
         [HttpPost("allocate")]
         public async Task<ActionResult<CostAllocationComputationResult>> AllocateCosts(
@@ -58,6 +58,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
                 if (!Enum.TryParse<CostAllocationMethod>(request.AllocationMethod, true, out var allocationMethod) || !Enum.IsDefined(allocationMethod))
                     return BadRequest(new { error = $"Invalid allocation method: {request.AllocationMethod}" });
 
+                if (request.TotalOperatingCosts.HasValue || request.TotalCapitalCosts.HasValue)
+                    return BadRequest(new { error = "Totals are derived from recorded costs and cannot be overridden." });
+
                 var startDate = request.AllocationDate.Date;
                 var endDate = request.AllocationDate.Date;
 
@@ -68,32 +71,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
                     allocationMethod,
                     connectionName);
 
-                var totalOperatingCosts = result.TotalOperatingCosts ?? 0m;
-                var totalCapitalCosts = result.TotalCapitalCosts ?? 0m;
-                var totalCosts = totalOperatingCosts + totalCapitalCosts;
-
-                var costAllocation = new COST_ALLOCATION
-                {
-                    COST_ALLOCATION_ID = Guid.NewGuid().ToString(),
-                    PROPERTY_ID = request.FieldId,
-                    ALLOCATION_METHOD = request.AllocationMethod,
-                    ALLOCATED_AMOUNT = totalCosts,
-                    ROW_EFFECTIVE_DATE = request.AllocationDate,
-                    ACTIVE_IND = "Y",
-                    ROW_CREATED_DATE = DateTime.UtcNow,
-                    ROW_CREATED_BY = ResolveUserId()
-                };
-
-                var connName = connectionName ?? _service.DefaultConnectionName;
-                var repository = _service.GetRepository(typeof(COST_ALLOCATION), connName, "COST_ALLOCATION");
-                await repository.InsertAsync(costAllocation, ResolveUserId());
-
-                result.TotalOperatingCosts = totalOperatingCosts;
-                result.TotalCapitalCosts = totalCapitalCosts;
-                result.AllocationDetails ??= new List<CostAllocationBreakdown>();
-
                 return Ok(result);
             }
+            catch (NotSupportedException ex) { return BadRequest(new { error = ex.Message }); }
+            catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+            catch (InvalidOperationException ex) { return UnprocessableEntity(new { error = ex.Message }); }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error allocating costs");

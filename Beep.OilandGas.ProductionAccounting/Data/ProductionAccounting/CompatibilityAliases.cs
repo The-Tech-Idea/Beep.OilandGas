@@ -269,6 +269,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set => NET_PAYMENT = value;
         }
 
+        [System.Text.Json.Serialization.JsonIgnore]
         public string Status
         {
             get => STATUS;

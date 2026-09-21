@@ -28,12 +28,12 @@ namespace Beep.OilandGas.Web.Services
             try
             {
                 _logger.LogDebug("GET {Endpoint}", endpoint);
-                var response = await _httpClient.GetAsync(endpoint, cancellationToken);
+                using var response = await _httpClient.GetAsync(endpoint, cancellationToken);
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
                     _logger.LogWarning("GET {Endpoint} returned status {StatusCode}. Body: {Body}", endpoint, (int)response.StatusCode, errorBody);
-                    throw new HttpRequestException(BuildHttpErrorMessage(response, errorBody, endpoint));
+                    throw new HttpRequestException(BuildHttpErrorMessage(response, errorBody, endpoint), null, response.StatusCode);
                 }
 
                 var content = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -57,12 +57,12 @@ namespace Beep.OilandGas.Web.Services
                 var json = System.Text.Json.JsonSerializer.Serialize(data, JsonOptions);
                 var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
                 
-                var response = await _httpClient.PostAsync(endpoint, content, cancellationToken);
+                using var response = await _httpClient.PostAsync(endpoint, content, cancellationToken);
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
                     _logger.LogWarning("POST {Endpoint} returned status {StatusCode}. Body: {Body}", endpoint, (int)response.StatusCode, errorBody);
-                    throw new HttpRequestException(BuildHttpErrorMessage(response, errorBody, endpoint));
+                    throw new HttpRequestException(BuildHttpErrorMessage(response, errorBody, endpoint), null, response.StatusCode);
                 }
 
                 var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);

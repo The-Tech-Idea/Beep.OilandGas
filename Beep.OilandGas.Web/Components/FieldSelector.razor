@@ -1,127 +1,53 @@
-@using Beep.OilandGas.Models.Data
 @implements IDisposable
 @inject IDataManagementService DataManagementService
 @inject ApiClient ApiClient
-@inject NavigationManager NavigationManager
-@inject ISnackbar Snackbar
 
-<MudSelect T="string" 
-           Label="Active Field" 
-           Variant="Variant.Outlined"
-           @bind-Value="_selectedFieldId"
-           @bind-Value:after="OnFieldChanged"
-           Required="false"
-           Margin="Margin.Dense">
-    @if (_fields.Any())
-    {
-        @foreach (var field in _fields)
-        {
-            <MudSelectItem Value="@field.FieldId">@field.FieldName</MudSelectItem>
-        }
-    }
-    else if (!_loading)
-    {
-        <MudSelectItem Value="@string.Empty" Disabled="true">No fields available</MudSelectItem>
-    }
-</MudSelect>
-
-@if (_loading)
+<MudGrid AlignItems="AlignItems.Center" Spacing="2">
+    <MudItem xs="12" sm="8" md="6">
+        <MudSelect T="string" Label="Active field" Variant="Variant.Outlined" Margin="Margin.Dense"
+                   Value="@_state?.SelectedId" ValueChanged="Select" Disabled="@(_state is null || _state.Loading || _state.Saving || !_state.Loaded || _state.Fields.Count == 0)"
+                   HelperText="Sets the field used by dashboards and field workbenches.">
+            @if (_state is not null)
+            {
+                @foreach (var field in _state.Fields)
+                {
+                    <MudSelectItem T="string" Value="@field.FieldId">@(string.IsNullOrWhiteSpace(field.FieldName) ? field.FieldId : field.FieldName)</MudSelectItem>
+                }
+            }
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12" sm="4" md="3">
+        <MudButton OnClick="Reload" Disabled="@(_state is null || _state.Loading || _state.Saving)" StartIcon="@Icons.Material.Filled.Refresh">Refresh fields</MudButton>
+    </MudItem>
+</MudGrid>
+@if (_state?.Loading == true || _state?.Saving == true)
 {
-    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-2" />
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Updating field selection" />
+}
+@if (_state?.Error is not null)
+{
+    <MudAlert Severity="Severity.Warning" Class="mt-2">@_state.Error</MudAlert>
+}
+else if (_state?.Loaded == true && _state.Fields.Count == 0)
+{
+    <MudAlert Severity="Severity.Info" Class="mt-2">No fields are available to select. Contact your administrator if you expect access to a field.</MudAlert>
+}
+@if (_state?.Confirmation is not null)
+{
+    <MudText Typo="Typo.caption" role="status">@_state.Confirmation</MudText>
 }
 
 @code {
-    private List<FieldListItem> _fields = new List<FieldListItem>();
-    private string? _selectedFieldId;
-    private bool _loading = false;
-
+    private FieldSelectionState? _state;
+    private bool _disposed;
     protected override async Task OnInitializedAsync()
     {
-        await LoadFields();
-        await LoadCurrentField();
-        
-        // Subscribe to field change events
-        DataManagementService.CurrentFieldChanged += OnCurrentFieldChanged;
+        _state = new(ApiClient, DataManagementService);
+        _state.Changed += Changed;
+        await Reload();
     }
-
-    void IDisposable.Dispose()
-    {
-        DataManagementService.CurrentFieldChanged -= OnCurrentFieldChanged;
-    }
-
-    private async Task LoadFields()
-    {
-        try
-        {
-            _loading = true;
-            var fields = await ApiClient.GetAsync<List<FieldListItem>>("/api/field/fields");
-            _fields = fields ?? new List<FieldListItem>();
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Error loading fields: {ex.Message}", Severity.Error);
-            _fields = new List<FieldListItem>();
-        }
-        finally
-        {
-            _loading = false;
-        }
-    }
-
-    private async Task LoadCurrentField()
-    {
-        try
-        {
-            var currentFieldId = await DataManagementService.GetCurrentFieldIdAsync();
-            _selectedFieldId = currentFieldId;
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Error loading current field: {ex.Message}", Severity.Error);
-        }
-    }
-
-    private async Task OnFieldChanged()
-    {
-        var fieldId = _selectedFieldId;
-        if (string.IsNullOrWhiteSpace(fieldId))
-            return;
-
-        try
-        {
-            var success = await DataManagementService.SetCurrentFieldAsync(fieldId);
-            if (success)
-            {
-                _selectedFieldId = fieldId;
-                Snackbar.Add($"Active field set to: {GetFieldName(fieldId)}", Severity.Success);
-            }
-            else
-            {
-                Snackbar.Add("Failed to set active field", Severity.Warning);
-                // Reload current field to revert
-                await LoadCurrentField();
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Error setting active field: {ex.Message}", Severity.Error);
-            // Reload current field to revert
-            await LoadCurrentField();
-        }
-    }
-
-    private void OnCurrentFieldChanged(string? fieldId)
-    {
-        _selectedFieldId = fieldId;
-        InvokeAsync(StateHasChanged);
-    }
-
-    private string GetFieldName(string? fieldId)
-    {
-        if (string.IsNullOrWhiteSpace(fieldId))
-            return string.Empty;
-        
-        var field = _fields.FirstOrDefault(f => f.FieldId == fieldId);
-        return field?.FieldName ?? fieldId;
-    }
+    private Task Reload() => _state!.LoadAsync();
+    private Task Select(string id) => _state!.SelectAsync(id);
+    private void Changed() { if (!_disposed) _ = InvokeAsync(StateHasChanged); }
+    public void Dispose() { _disposed = true; if (_state is not null) { _state.Changed -= Changed; _state.Dispose(); } }
 }

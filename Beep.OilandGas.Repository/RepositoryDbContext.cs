@@ -17,6 +17,7 @@ public abstract class RepositoryDbContext(DbContextOptions options)
         IdentityExtensionMapping.Configure(builder);
         AssetAccessMapping.Configure(builder);
         PersonaMapping.Configure(builder);
+        FinancialOperationClaimMapping.Configure(builder);
         builder.HasAnnotation("Relational:MaxIdentifierLength", 30);
         builder.Entity<OilGasUser>().Property(x => x.Id).HasMaxLength(128);
         builder.Entity<IdentityRole>().Property(x => x.Id).HasMaxLength(128);

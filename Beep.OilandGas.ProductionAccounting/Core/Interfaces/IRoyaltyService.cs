@@ -12,11 +12,14 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// </summary>
     public interface IRoyaltyService
     {
-        Task<ROYALTY_CALCULATION> CalculateAsync(ALLOCATION_DETAIL detail, string userId, string connectionName = "PPDM39");
+        Task<ROYALTY_CALCULATION> CalculateAsync(string allocationDetailId, string userId);
+        Task<string> GetAllocationFieldAsync(string allocationDetailId);
+        Task<ROYALTY_CALCULATION> PreviewAsync(ALLOCATION_DETAIL detail, string userId, string connectionName = "PPDM39");
         Task<ROYALTY_CALCULATION?> GetAsync(string royaltyId, string connectionName = "PPDM39");
         Task<List<ROYALTY_CALCULATION>> GetByAllocationAsync(string allocationId, string connectionName = "PPDM39");
-        Task<ROYALTY_PAYMENT> RecordPaymentAsync(ROYALTY_CALCULATION royalty, decimal amount, string userId, string connectionName = "PPDM39");
+        Task<ROYALTY_PAYMENT> RecordPaymentAsync(string royaltyId, Guid requestId, decimal amount, string userId);
+        Task<List<ROYALTY_PAYMENT>> GetPaymentsAsync(string royaltyId);
+        Task<List<RoyaltyPostingReview>> ReviewPostingsAsync(string royaltyId);
         Task<bool> ValidateAsync(ROYALTY_CALCULATION royalty, string connectionName = "PPDM39");
     }
 }
-

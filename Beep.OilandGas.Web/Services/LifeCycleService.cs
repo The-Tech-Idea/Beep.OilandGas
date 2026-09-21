@@ -185,12 +185,12 @@ namespace Beep.OilandGas.Web.Services
             try
             {
                 var dashboard = await _apiClient.GetAsync<FieldDashboard>("/api/field/current/dashboard");
-                return dashboard ?? new FieldDashboard();
+                return dashboard ?? throw new InvalidOperationException("Field dashboard response was empty.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting field dashboard");
-                return new FieldDashboard();
+                throw;
             }
         }
 

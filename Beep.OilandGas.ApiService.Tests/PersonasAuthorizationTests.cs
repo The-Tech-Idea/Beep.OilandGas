@@ -13,6 +13,32 @@ namespace Beep.OilandGas.ApiService.Tests;
 
 public class PersonasAuthorizationTests
 {
+    [Fact]
+    public async Task NotificationPersonaReaderUsesActiveLocalProfileAndRechecksChanges()
+    {
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+        using var db = new TestContext(new DbContextOptionsBuilder<TestContext>().UseSqlite(connection).Options);
+        db.Database.EnsureCreated();
+        var user = new OilGasUser { Id = "local-user", UserName = "user", IsActive = true };
+        var persona = new AppPersona { Code = "ENGINEER", Name = "Engineer", IsActive = true };
+        db.Users.Add(user);
+        db.Add(persona);
+        db.Add(new AppUserPersona { UserId = user.Id, PersonaCode = persona.Code, ChangedBy = user.Id });
+        await db.SaveChangesAsync();
+        var reader = new Beep.OilandGas.ApiService.Hubs.RepositoryNotificationPersonaReader(db);
+        Assert.True(await reader.IsCurrentPersonaAsync(user.Id, persona.Code));
+        Assert.False(await reader.IsCurrentPersonaAsync("external-subject", persona.Code));
+        Assert.False(await reader.IsCurrentPersonaAsync(user.Id, "OTHER"));
+        persona.IsActive = false;
+        await db.SaveChangesAsync();
+        Assert.False(await reader.IsCurrentPersonaAsync(user.Id, persona.Code));
+        persona.IsActive = true;
+        user.IsActive = false;
+        await db.SaveChangesAsync();
+        Assert.False(await reader.IsCurrentPersonaAsync(user.Id, persona.Code));
+    }
+
     [Theory]
     [InlineData("other", false)]
     [InlineData(null, true)]

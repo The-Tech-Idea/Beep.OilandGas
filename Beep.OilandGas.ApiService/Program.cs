@@ -400,13 +400,11 @@ builder.Services.AddScoped<IAccountingService>(sp =>
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var logger = loggerFactory.CreateLogger<Beep.OilandGas.LifeCycle.Services.Accounting.PPDMAccountingService>();
     
-    // Optionally inject ProductionAccounting services
-            var royaltyService = sp.GetService<Beep.OilandGas.Models.Core.Interfaces.IRoyaltyService>();
-            var allocationService = sp.GetService<Beep.OilandGas.Models.Core.Interfaces.IAllocationService>();
-            var amortizationService = sp.GetService<Beep.OilandGas.Models.Core.Interfaces.IAmortizationService>();
     
     return new Beep.OilandGas.LifeCycle.Services.Accounting.PPDMAccountingService(
         editor, commonColumnHandler, defaults, metadata, connectionName, logger,
+        royaltyService: sp.GetRequiredService<IRoyaltyService>(), allocationService: sp.GetRequiredService<IAllocationService>(),
+        resolveProductionConnection: () => sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync("PRODUCTION"),
         configuration: sp.GetRequiredService<IConfiguration>(),
         costAllocationService: sp.GetRequiredService<Beep.OilandGas.Accounting.Services.CostAllocationService>());
 });
@@ -1035,7 +1033,6 @@ builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.IAuthorizationObse
 builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.HseEngineerAggregationService>(connectionName);
 builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.DrillingEngineerAggregationService>(connectionName);
 builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.ReservoirEngineerAggregationService>(connectionName);
-builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.ProductionEngineerAggregationService>(connectionName);
 
 // Role-Based Aggregation — Executive (Phase 3)
 builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.ExecutiveAggregationService>(connectionName);
@@ -1993,6 +1990,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IInvoiceService
 
 // SignalR for progress tracking
 builder.Services.AddSignalR();
+Beep.OilandGas.ApiService.Hubs.WorkflowNotificationServiceCollectionExtensions.AddWorkflowNotificationAuthorization(builder.Services);
 
 // Progress tracking service
 builder.Services.AddSingleton<ProgressTrackingService>();
@@ -2708,7 +2706,7 @@ app.MapControllers();
 app.MapHub<ProgressHub>("/progressHub");
 
 // SignalR hub for real-time workflow notifications (Phase 5)
-app.MapHub<Beep.OilandGas.ApiService.Hubs.WorkflowNotificationHub>("/hubs/workflow-notifications");
+app.MapHub<Beep.OilandGas.ApiService.Hubs.WorkflowNotificationHub>("/hubs/workflow-notifications", options => options.CloseOnAuthenticationExpiration = true);
 
 // Add authentication diagnostic endpoint
 app.MapGet("/api/auth-test", (HttpContext context) =>

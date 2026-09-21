@@ -1,319 +1,94 @@
-﻿@page "/production"
+@page "/production"
 @using Beep.OilandGas.Models.Data.Production
-@inject NavigationManager NavigationManager
-@inject ISnackbar Snackbar
-@inject ApiClient ApiClient
-@inject ILifeCycleService LifeCycleService
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IDisposable
+@inject IDataManagementService DataManagementService
 @inject IProductionServiceClient ProductionService
 
-<PageTitle>Daily Operations Center</PageTitle>
-
+<PageTitle>Production Dashboard</PageTitle>
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
-
-    @* ── Header ──────────────────────────────────────────────────────────── *@
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
-        <MudStack Spacing="0">
-            <MudText Typo="Typo.h5">Daily Operations Center</MudText>
-            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
-                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Real-time field production status — @DateTime.Today.ToString("dd MMM yyyy")</MudText>
-                <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.Circle">Field Online</MudChip>
-            </MudStack>
-        </MudStack>
-        <MudButton Variant="Variant.Outlined" Color="Color.Default" Size="Size.Small"
-                       StartIcon="@Icons.Material.Filled.Refresh"
-                       OnClick="RefreshDataAsync">Refresh</MudButton>
+        <MudText Typo="Typo.h5">Production Dashboard</MudText>
+        <MudButton OnClick="Reload" Disabled="@(_state?.Loading == true)" StartIcon="@Icons.Material.Filled.Refresh">Refresh</MudButton>
     </MudStack>
-
-    @* ── KPI Cards ────────────────────────────────────────────────────────── *@
-    <MudGrid Spacing="3" Class="mb-4">
-        <MudItem xs="12" sm="6" md="4" lg="2">
-            <KpiCard Label="Oil Rate" Value="@(_wells.Sum(w => w.OilRate).ToString("N0"))" Unit="BOPD"
-                     ValueColor="Color.Success" Icon="@Icons.Material.Filled.OilBarrel" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="4" lg="2">
-            <KpiCard Label="Gas Rate" Value="@(_wells.Sum(w => w.GasRate).ToString("N1"))" Unit="MMSCFD"
-                     ValueColor="Color.Success" Icon="@Icons.Material.Filled.LocalFireDepartment" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="4" lg="2">
-            <KpiCard Label="Water Cut" Value="@(_wells.Count > 0 ? (_wells.Average(w => w.WaterCut).ToString("N0")) : "—")" Unit="%"
-                     ValueColor="Color.Warning" Icon="@Icons.Material.Filled.Water" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="4" lg="2">
-            <KpiCard Label="Active Wells" Value="@_wells.Count(w => w.Status == "PRODUCING").ToString()" Unit="wells"
-                     ValueColor="Color.Success" Icon="@Icons.Material.Filled.CheckCircle" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="4" lg="2">
-            <KpiCard Label="Total Wells" Value="@_totalWells.ToString()" Unit="wells"
-                     ValueColor="Color.Default" Icon="@Icons.Material.Filled.OilBarrel" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="4" lg="2">
-            <KpiCard Label="Open Work Orders" Value="@_openWorkOrders.ToString()" Unit="items"
-                     ValueColor="Color.Warning" Icon="@Icons.Material.Filled.Build" />
-        </MudItem>
-    </MudGrid>
-
-    @* ── Main Content ─────────────────────────────────────────────────────── *@
-    <MudGrid Spacing="3">
-
-        @* LEFT — Well status grid (8 cols) *@
-        <MudItem xs="12" lg="8">
-            <MudStack Spacing="3">
-
-                @* Well status grid *@
-                <MudCard Elevation="2">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                <MudText Typo="Typo.subtitle1">Well Status — Today</MudText>
-                                <MudChip T="string" Size="Size.Small" Color="Color.Success">@_wells.Count(w => w.Status == "PRODUCING") producing</MudChip>
-                                <MudChip T="string" Size="Size.Small" Color="Color.Warning">@_wells.Count(w => w.Status == "SHUT-IN") shut-in</MudChip>
-                            </MudStack>
-                        </CardHeaderContent>
-                        <CardHeaderActions>
-                            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" OnClick="RefreshDataAsync" Title="Refresh data" />
-                        </CardHeaderActions>
-                    </MudCardHeader>
-                    <MudCardContent Class="pa-0">
-                        <MudDataGrid T="ProductionWellStatusDto" Items="@_wells" Dense="true" Hover="true"
-                                     RowClick="@OnWellRowClick" ReadOnly="true">
-                            <Columns>
-                                <PropertyColumn Property="w => w.WellName" Title="Well" />
-                                <TemplateColumn Title="Status">
-                                    <CellTemplate>
-                                        <StatusBadge Status="@context.Item.Status" />
-                                    </CellTemplate>
-                                </TemplateColumn>
-                                <PropertyColumn Property="w => w.OilRate" Title="Oil (BOPD)" Format="N0" />
-                                <PropertyColumn Property="w => w.GasRate" Title="Gas (MMSCFD)" Format="N2" />
-                                <PropertyColumn Property="w => w.WaterCut" Title="WC %" Format="N1" />
-                                <TemplateColumn Title="Action">
-                                    <CellTemplate>
-                                        @if (context.Item.Status != "PRODUCING")
-                                        {
-                                            <MudButton Size="Size.Small" Variant="Variant.Text"
-                                                       Color="Color.Warning"
-                                                       OnClick="@(() => CreateIntervention(context.Item.WellId))">
-                                                Intervene
-                                            </MudButton>
-                                        }
-                                        else
-                                        {
-                                            <MudButton Size="Size.Small" Variant="Variant.Text"
-                                                       Color="Color.Primary"
-                                                       OnClick="@(() => ViewWellPerformance(context.Item.WellId))">
-                                                Optimize
-                                            </MudButton>
-                                        }
-                                    </CellTemplate>
-                                </TemplateColumn>
-                            </Columns>
-                        </MudDataGrid>
-                    </MudCardContent>
-                </MudCard>
-
-                @* Production trend chart *@
-                <MudCard Elevation="2">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.subtitle1">30-Day Production Trend</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        @if (_loading)
-                        {
-                            <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
-                        }
-                        else
-                        {
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">No historical trend data available. Well test data will appear here once tests are recorded.</MudText>
-                        }
-                    </MudCardContent>
-                </MudCard>
-
-            </MudStack>
-        </MudItem>
-
-        @* RIGHT — Alerts + Open work orders (4 cols) *@
-        <MudItem xs="12" lg="4">
-            <MudStack Spacing="3">
-
-                @* Production alerts *@
-                <MudCard Elevation="2">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                                <MudIcon Icon="@Icons.Material.Filled.NotificationsActive" Color="Color.Warning" Size="Size.Small" />
-                                <MudText Typo="Typo.subtitle1">Active Alerts</MudText>
-                            </MudStack>
-                        </CardHeaderContent>
-                        <CardHeaderActions>
-                            <MudChip T="string" Color="Color.Warning" Size="Size.Small">@_alerts.Count</MudChip>
-                        </CardHeaderActions>
-                    </MudCardHeader>
-                    <MudCardContent Class="pa-0">
-                        <MudList T="ProductionAlert" Dense="true">
-                            @foreach (var alert in _alerts)
-                            {
-                                <MudListItem T="ProductionAlert" Value="alert">
-                                    <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
-                                        <MudIcon Icon="@AlertIcon(alert.Severity)"
-                                                 Color="@AlertColor(alert.Severity)"
-                                                 Size="Size.Small"
-                                                 Class="mt-1" />
-                                        <MudStack Spacing="0">
-                                            <MudText Typo="Typo.body2">@alert.Message</MudText>
-                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@alert.WellName · @alert.Time</MudText>
-                                        </MudStack>
-                                    </MudStack>
-                                </MudListItem>
-                                <MudDivider />
-                            }
-                        </MudList>
-                    </MudCardContent>
-                </MudCard>
-
-                @* Open work orders *@
-                <MudCard Elevation="2">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.subtitle1">Open Work Orders</MudText>
-                        </CardHeaderContent>
-                        <CardHeaderActions>
-                            <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
-                                       Href="/production/intervention">View All</MudButton>
-                        </CardHeaderActions>
-                    </MudCardHeader>
-                    <MudCardContent Class="pa-0">
-                        <MudList T="string" Dense="true">
-                            @if (_openWorkOrders == 0)
-                            {
-                                <MudListItem T="string" Value="@("none")">
-                                    <MudText Typo="Typo.body2" Color="Color.Secondary">No open work orders</MudText>
-                                </MudListItem>
-                            }
-                            else
-                            {
-                                <MudListItem T="string" Value="@("summary")">
-                                    <MudText Typo="Typo.body2">@_openWorkOrders open activities requiring attention</MudText>
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">View Intervention Decisions for details</MudText>
-                                </MudListItem>
-                            }
-                        </MudList>
-                    </MudCardContent>
-                </MudCard>
-
-                @* Quick actions *@
-                <MudCard Elevation="2">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.subtitle1">Quick Actions</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudStack Spacing="2">
-                            <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary"
-                                       StartIcon="@Icons.Material.Filled.Build"
-                                       Href="/production/intervention">
-                                Create Intervention
-                            </MudButton>
-                            <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Secondary"
-                                       StartIcon="@Icons.Material.Filled.PieChart"
-                                       Href="/production/allocation">
-                                Allocate Production
-                            </MudButton>
-                            <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Default"
-                                       StartIcon="@Icons.Material.Filled.Timeline"
-                                       Href="/production/forecasting">
-                                Review Forecast
-                            </MudButton>
-                        </MudStack>
-                    </MudCardContent>
-                </MudCard>
-
-            </MudStack>
-        </MudItem>
-
-    </MudGrid>
-
+    @if (_state?.Loading == true)
+    {
+        <MudProgressLinear Indeterminate="true" aria-label="Loading production data" Class="mb-4" />
+    }
+    @if (_state?.Error is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_state.Error</MudAlert>
+    }
+    @if (_state?.NeedsField == true)
+    {
+        <MudAlert Severity="Severity.Info" Class="mb-4">Choose an active field above to load production data.</MudAlert>
+    }
+    @if (_state?.Summary is { } summary)
+    {
+        <MudText Typo="Typo.h6" Class="mb-3">Field: @summary.FieldId</MudText>
+        <MudGrid Class="mb-4">
+            <MudItem xs="12" sm="6"><KpiCard Label="Active well records" Value="@summary.TotalWells.ToString("N0")" Icon="@Icons.Material.Filled.OilBarrel" /></MudItem>
+            <MudItem xs="12" sm="6"><KpiCard Label="Active activity records" Value="@summary.OpenWorkOrders.ToString("N0")" Icon="@Icons.Material.Filled.Build" /></MudItem>
+        </MudGrid>
+        <MudText Typo="Typo.subtitle1">Recorded well status</MudText>
+        <MudText Typo="Typo.body2" Class="mb-3">Status comes from well records. Water cut is from the latest dated well test; these are not live production readings.</MudText>
+        @if (_state.Wells.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-4">No well-status records were returned for this field.</MudAlert>
+        }
+        else
+        {
+            <MudDataGrid T="ProductionWellStatusDto" Items="@_state.Wells" Dense="true" Hover="true" ReadOnly="true" Class="mb-4">
+                <Columns>
+                    <PropertyColumn Property="w => w.WellName" Title="Well" />
+                    <PropertyColumn Property="w => w.WellId" Title="UWI" />
+                    <TemplateColumn Title="Recorded status"><CellTemplate><StatusBadge Status="@context.Item.Status" /></CellTemplate></TemplateColumn>
+                    <TemplateColumn Title="Water cut (%)"><CellTemplate>@(context.Item.LastTestDate.HasValue ? context.Item.WaterCut.ToString("N1") : "Not available")</CellTemplate></TemplateColumn>
+                    <TemplateColumn Title="Latest test date"><CellTemplate>@(context.Item.LastTestDate?.ToString("yyyy-MM-dd") ?? "Not available")</CellTemplate></TemplateColumn>
+                    <TemplateColumn Title="Review">
+                        <CellTemplate>
+                            <MudButton Size="Size.Small" Href="@($"/production/well-performance?wellId={Uri.EscapeDataString(context.Item.WellId)}")">Performance</MudButton>
+                            <MudButton Size="Size.Small" Href="@($"/production/intervention?wellId={Uri.EscapeDataString(context.Item.WellId)}")">Interventions</MudButton>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <PagerContent><MudDataGridPager T="ProductionWellStatusDto" /></PagerContent>
+            </MudDataGrid>
+        }
+    }
+    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+        <MudButton Variant="Variant.Outlined" Href="/production/intervention">Review interventions</MudButton>
+        <MudButton Variant="Variant.Outlined" Href="/production/allocation">Allocate production</MudButton>
+        <MudButton Variant="Variant.Outlined" Href="/production/forecasting">Review forecast</MudButton>
+        <MudButton Variant="Variant.Outlined" Href="/ppdm39/production/well-tests">Well tests</MudButton>
+        <MudButton Variant="Variant.Outlined" Href="/production/operations">Field metrics and alerts</MudButton>
+    </MudStack>
 </MudContainer>
 
 @code {
-    private string _fieldName = string.Empty;
-    private bool _loading = true;
-    private int _totalWells;
-    private int _openWorkOrders;
-
-    private List<ProductionWellStatusDto> _wells = new();
-
-    private record ProductionAlert(string Message, string WellName, string Time, string Severity);
-    private List<ProductionAlert> _alerts = new();
-
+    private ProductionDashboardState? _state;
+    private bool _disposed;
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
-            if (summary != null)
-                _fieldName = summary.FieldName ?? _fieldName;
-        }
-        catch { /* field name is non-critical */ }
-
-        _loading = true;
-        try
-        {
-            var summary = await ProductionService.GetDashboardSummaryAsync();
-            if (summary != null)
-            {
-                _totalWells    = summary.TotalWells;
-                _openWorkOrders = summary.OpenWorkOrders;
-            }
-
-            _wells = await ProductionService.GetDashboardWellsAsync();
-            _alerts = _wells
-                .Where(w => !string.Equals(w.Status, "PRODUCING", StringComparison.OrdinalIgnoreCase) || w.WaterCut >= 60)
-                .Select(w => new ProductionAlert(
-                    string.Equals(w.Status, "PRODUCING", StringComparison.OrdinalIgnoreCase)
-                        ? $"Elevated water cut detected ({w.WaterCut:N0}%)"
-                        : $"{w.Status} well requires operations review",
-                    w.WellName,
-                    w.LastTestDate?.ToString("dd MMM yyyy") ?? "Current",
-                    string.Equals(w.Status, "PRODUCING", StringComparison.OrdinalIgnoreCase) ? "MEDIUM" : "HIGH"))
-                .Take(6)
-                .ToList();
-        }
-        catch (Exception)
-        {
-            Snackbar.Add("Failed to load production data.", Severity.Warning);
-        }
-        finally { _loading = false; }
+        _state = new(fieldId => ProductionService.GetDashboardAsync(fieldId));
+        DataManagementService.CurrentFieldChanged += FieldChanged;
+        await Reload();
     }
-
-    private async Task RefreshDataAsync()
+    private Task Reload() => _state!.LoadAsync(DataManagementService.GetCurrentFieldIdAsync);
+    private void FieldChanged(string fieldId)
     {
-        await OnInitializedAsync();
-        Snackbar.Add("Production data refreshed", Severity.Info);
+        if (!_disposed) _ = InvokeAsync(async () =>
+        {
+            if (_disposed) return;
+            var load = Reload();
+            StateHasChanged(); await load;
+            if (!_disposed) StateHasChanged();
+        });
     }
-
-    private void OnWellRowClick(DataGridRowClickEventArgs<ProductionWellStatusDto> args) =>
-        NavigationManager.NavigateTo($"/production/well-performance?wellId={Uri.EscapeDataString(args.Item.WellId)}");
-
-    private void CreateIntervention(string wellId) =>
-        NavigationManager.NavigateTo($"/production/intervention?wellId={Uri.EscapeDataString(wellId)}");
-
-    private void ViewWellPerformance(string wellId) =>
-        NavigationManager.NavigateTo($"/production/well-performance?wellId={Uri.EscapeDataString(wellId)}");
-
-    private string AlertIcon(string severity) => severity switch
+    public void Dispose()
     {
-        "HIGH"   => Icons.Material.Filled.Error,
-        "MEDIUM" => Icons.Material.Filled.Warning,
-        _        => Icons.Material.Filled.Info,
-    };
-
-    private Color AlertColor(string severity) => severity switch
-    {
-        "HIGH"   => Color.Error,
-        "MEDIUM" => Color.Warning,
-        _        => Color.Info,
-    };
+        _disposed = true;
+        DataManagementService.CurrentFieldChanged -= FieldChanged;
+        _state?.Dispose();
+    }
 }

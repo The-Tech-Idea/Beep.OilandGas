@@ -330,7 +330,7 @@ namespace Beep.OilandGas.Web.Services
         private readonly IProgressTrackingClient? _progressTrackingClient;
         
         private string? _currentConnectionName;
-        private string? _currentFieldId;
+        private readonly SemaphoreSlim _fieldLock = new(1, 1);
         private List<DatabaseConnectionListItem> _connections = new();
         private readonly SemaphoreSlim _refreshLock = new(1, 1);
         private DateTime _lastRefreshTime = DateTime.MinValue;
@@ -1594,42 +1594,51 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<string?> GetCurrentFieldIdAsync()
         {
+            await _fieldLock.WaitAsync();
             try
             {
-                if (string.IsNullOrEmpty(_currentFieldId))
-                {
-                    var response = await _apiClient.GetAsync<FieldResponse>("/api/field/current");
-                    _currentFieldId = response?.FieldId;
-                }
-                return _currentFieldId;
+                var response = await _apiClient.GetAsync<FieldResponse>("/api/field/current")
+                    ?? throw new InvalidOperationException("Current field response was empty.");
+                return string.IsNullOrWhiteSpace(response.FieldId) ? null : response.FieldId;
             }
-            catch (Exception ex)
+            // This endpoint defines 404 as no active field, not a transport failure.
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                _logger.LogError(ex, "Error getting current field ID");
                 return null;
             }
+            finally { _fieldLock.Release(); }
         }
 
         public async Task<bool> SetCurrentFieldAsync(string fieldId)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(fieldId);
+            bool confirmed = false;
+            bool uncertain = false;
+            await _fieldLock.WaitAsync();
             try
             {
-                var request = new SetActiveFieldRequest { FieldId = fieldId };
                 var response = await _apiClient.PostAsync<SetActiveFieldRequest, SetActiveFieldResponse>(
-                    "/api/field/set-active", request);
-
-                if (response?.Success == true)
-                {
-                    _currentFieldId = fieldId;
-                    CurrentFieldChanged?.Invoke(fieldId);
-                    return true;
-                }
-                return false;
+                    "/api/field/set-active", new SetActiveFieldRequest { FieldId = fieldId })
+                    ?? throw new InvalidOperationException("Field selection was not confirmed.");
+                if (!response.Success) return false;
+                if (response.FieldId != fieldId) throw new InvalidOperationException("The confirmed field differs from the requested field.");
+                confirmed = true;
+                return true;
             }
-            catch (Exception ex)
+            catch { uncertain = true; throw; }
+            finally
             {
-                _logger.LogError(ex, "Error setting current field: {FieldId}", fieldId);
-                return false;
+                _fieldLock.Release();
+                if (confirmed || uncertain) PublishFieldChange(confirmed ? fieldId : string.Empty);
+            }
+        }
+
+        private void PublishFieldChange(string fieldId)
+        {
+            foreach (var handler in CurrentFieldChanged?.GetInvocationList() ?? Array.Empty<Delegate>())
+            {
+                try { ((Action<string>)handler)(fieldId); }
+                catch (Exception ex) { _logger.LogWarning(ex, "A field-change subscriber could not refresh."); }
             }
         }
     }

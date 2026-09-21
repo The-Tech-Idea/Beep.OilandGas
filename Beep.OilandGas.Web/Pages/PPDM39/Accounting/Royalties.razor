@@ -1,18 +1,20 @@
-﻿@page "/ppdm39/accounting/royalties"
+@page "/ppdm39/accounting/royalties"
+@attribute [Authorize]
 @using Beep.OilandGas.Models.Data.ProductionAccounting
 @inject IAccountingServiceClient AccountingServiceClient
 @inject ILifeCycleService LifeCycleService
-@inject ISnackbar Snackbar
+@inject IDataManagementService DataManagement
+@implements IDisposable
 @inject IDialogService DialogService
 
-<PageTitle>Calculate Field Royalties</PageTitle>
+<PageTitle>Field Royalty Records</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
 
     @* ─── Header *@
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
         <MudStack Spacing="0">
-            <MudText Typo="Typo.h5">Calculate Field Royalties</MudText>
+            <MudText Typo="Typo.h5">Field Royalty Records</MudText>
             <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
                 <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Production royalty obligations</MudText>
                 <MudChip T="string" Size="Size.Small" Color="Color.Warning"
@@ -21,7 +23,7 @@
         </MudStack>
         <MudButton Variant="Variant.Filled" Color="Color.Warning"
                    StartIcon="@Icons.Material.Filled.Calculate"
-                   OnClick="OpenCalculateDialog">Calculate Royalties</MudButton>
+                   Disabled="@(string.IsNullOrWhiteSpace(_fieldId))" OnClick="OpenPreviewDialog">Preview Royalties</MudButton>
     </MudStack>
 
     @* ─── Date Filter *@
@@ -29,10 +31,10 @@
         <MudCardContent>
             <MudGrid Spacing="2" AlignItems="AlignItems.Center">
                 <MudItem xs="12" sm="5">
-                    <MudDatePicker @bind-Date="@_filterStartDate" Label="From Date" Variant="Variant.Outlined" />
+                    <MudDatePicker @bind-Date="@_filterStartDate" Label="Calculated From" Variant="Variant.Outlined" />
                 </MudItem>
                 <MudItem xs="12" sm="5">
-                    <MudDatePicker @bind-Date="@_filterEndDate" Label="To Date" Variant="Variant.Outlined" />
+                    <MudDatePicker @bind-Date="@_filterEndDate" Label="Calculated Through" Variant="Variant.Outlined" />
                 </MudItem>
                 <MudItem xs="12" sm="2">
                     <MudButton Variant="Variant.Outlined" Color="Color.Primary"
@@ -49,6 +51,13 @@
     }
 
     @* ─── KPI Row *@
+    @if (_loadError is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-2">@_loadError</MudAlert>
+        <MudButton OnClick="LoadRoyalties" Disabled="@_isLoading" Class="mb-4">Retry records</MudButton>
+    }
+    @if (_royalties is not null && !_isLoading)
+    {
     <MudGrid Class="mb-4" Spacing="3">
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Label="Total Records" Value="@((_royalties?.Count ?? 0).ToString())"
@@ -64,6 +73,7 @@
                      TrendText="Sum of royalty amounts" />
         </MudItem>
     </MudGrid>
+    }
 
     @* ─── Royalties Grid *@
     <MudCard Elevation="2">
@@ -100,6 +110,12 @@
                                 <StatusBadge Status="@(context.Item.ROYALTY_STATUS ?? "\u2014")" />
                             </CellTemplate>
                         </TemplateColumn>
+                        <TemplateColumn Title="Details" Sortable="false" Filterable="false">
+                            <CellTemplate>
+                                <MudButton Href="@($"/ppdm39/accounting/royalties/{Uri.EscapeDataString(context.Item.ROYALTY_CALCULATION_ID)}")"
+                                           Color="Color.Primary" Size="Size.Small">View details</MudButton>
+                            </CellTemplate>
+                        </TemplateColumn>
                     </Columns>
                     <NoRecordsContent>
                         <MudStack AlignItems="AlignItems.Center" Class="pa-6">
@@ -109,15 +125,15 @@
                     </NoRecordsContent>
                 </MudDataGrid>
             }
-            else if (!_isLoading)
+            else if (!_isLoading && _loadError is null)
             {
                 <MudStack AlignItems="AlignItems.Center" Class="pa-8">
                     <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Color="Color.Secondary" Class="og-icon-xl" />
                     <MudText Typo="Typo.h6">No royalty records found</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">Adjust the date filter or run a new royalty calculation.</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">No recorded obligations match these calculation dates. Previewing does not create records.</MudText>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning"
                                StartIcon="@Icons.Material.Filled.Calculate"
-                               OnClick="OpenCalculateDialog" Class="mt-2">Calculate Royalties</MudButton>
+                               OnClick="OpenPreviewDialog" Class="mt-2">Preview Royalties</MudButton>
                 </MudStack>
             }
         </MudCardContent>
@@ -130,51 +146,89 @@
     private string _fieldName = string.Empty;
     private List<ROYALTY_CALCULATION>? _royalties;
     private bool _isLoading = false;
+    private string? _loadError;
+    private int _loadVersion;
+    private bool _disposed;
     private DateTime? _filterStartDate;
     private DateTime? _filterEndDate;
 
     protected override async Task OnInitializedAsync()
     {
+        DataManagement.CurrentFieldChanged += FieldChanged;
+        var version = _loadVersion;
         try
         {
-            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
-            if (summary != null)
-            {
-                _fieldId = summary.FieldId ?? string.Empty;
-                _fieldName = summary.FieldName ?? _fieldName;
-            }
+            var fieldId = await DataManagement.GetCurrentFieldIdAsync() ?? string.Empty;
+            if (_disposed || version != _loadVersion) return;
+            _fieldId = fieldId;
+            _fieldName = _fieldId;
         }
-        catch { /* field name is non-critical */ }
+        catch
+        {
+            _loadError = "The current field could not be loaded. Select a field and retry.";
+            return;
+        }
 
         await LoadRoyalties();
     }
 
     private async Task LoadRoyalties()
     {
+        var version = ++_loadVersion;
         _isLoading = true;
+        _royalties = null;
+        _loadError = null;
+        StateHasChanged();
         try
         {
-            _royalties = await AccountingServiceClient.GetRoyaltyCalculationsAsync(_fieldId, _filterStartDate, _filterEndDate);
+            if (string.IsNullOrWhiteSpace(_fieldId))
+            {
+                _loadError = "Select a field before loading royalty records.";
+                return;
+            }
+            if (_filterStartDate.HasValue && _filterEndDate.HasValue && _filterStartDate.Value.Date > _filterEndDate.Value.Date)
+            {
+                _loadError = "Calculated From must be on or before Calculated Through.";
+                return;
+            }
+            var records = await AccountingServiceClient.GetRoyaltyCalculationsAsync(_fieldId, _filterStartDate, _filterEndDate);
+            if (!_disposed && version == _loadVersion) _royalties = records;
         }
         catch (Exception)
         {
-            Snackbar.Add("Error loading royalty calculations.", Severity.Error);
-            _royalties = new List<ROYALTY_CALCULATION>();
+            if (!_disposed && version == _loadVersion)
+                _loadError = "Royalty records could not be loaded. Check field access and the selected dates, then retry.";
         }
         finally
         {
-            _isLoading = false;
+            if (!_disposed && version == _loadVersion) _isLoading = false;
         }
     }
 
-    private async Task OpenCalculateDialog()
+    private void FieldChanged(string fieldId) => _ = InvokeAsync(async () =>
+    {
+        if (_disposed) return;
+        _fieldId = fieldId;
+        _fieldName = fieldId;
+        await LoadRoyalties();
+        if (!_disposed) StateHasChanged();
+    });
+
+    public void Dispose()
+    {
+        _disposed = true;
+        ++_loadVersion;
+        DataManagement.CurrentFieldChanged -= FieldChanged;
+    }
+
+    private async Task OpenPreviewDialog()
     {
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var parameters = new DialogParameters
         {
             [nameof(RoyaltyCalculationDialog.FieldId)] = _fieldId
         };
-        var dialog = await DialogService.ShowAsync<RoyaltyCalculationDialog>("Calculate Royalties", parameters, options);
+        var dialog = await DialogService.ShowAsync<RoyaltyCalculationDialog>("Preview Royalties", parameters, options);
         var result = await dialog.Result;
 
         if (result?.Canceled == false)
@@ -183,45 +237,4 @@
         }
     }
 
-    private string GetPropertyValue(object obj, string propertyName)
-    {
-        if (obj is IDictionary<string, object> dict && dict.ContainsKey(propertyName))
-        {
-            return dict[propertyName]?.ToString() ?? "N/A";
-        }
-        return "N/A";
-    }
-
-    private string FormatDate(string? dateStr)
-    {
-        if (string.IsNullOrEmpty(dateStr) || dateStr == "N/A")
-            return "N/A";
-
-        if (DateTime.TryParse(dateStr, out var date))
-            return date.ToString("yyyy-MM-dd");
-
-        return dateStr;
-    }
-
-    private string FormatDecimal(string? valueStr)
-    {
-        if (string.IsNullOrEmpty(valueStr) || valueStr == "N/A")
-            return "N/A";
-
-        if (decimal.TryParse(valueStr, out var value))
-            return value.ToString("F2");
-
-        return valueStr;
-    }
-
-    private string FormatCurrency(string? valueStr)
-    {
-        if (string.IsNullOrEmpty(valueStr) || valueStr == "N/A")
-            return "N/A";
-
-        if (decimal.TryParse(valueStr, out var value))
-            return value.ToString("C2");
-
-        return valueStr;
-    }
 }

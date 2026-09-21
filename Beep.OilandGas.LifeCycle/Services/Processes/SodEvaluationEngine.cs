@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.LifeCycle.Data.Tables;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
@@ -39,7 +40,7 @@ public interface ISodEvaluationEngine
     /// <summary>
     /// Seed the 25 default SoD rules.
     /// </summary>
-    Task SeedDefaultRulesAsync(string userId);
+    Task<int> SeedDefaultRulesAsync(string userId, CancellationToken cancellationToken = default);
 }
 
 public class SodConflictResult
@@ -184,10 +185,7 @@ public class SodEvaluationEngine : ISodEvaluationEngine
         return results.OfType<SOD_RULE>().ToList();
     }
 
-    public async Task SeedDefaultRulesAsync(string userId)
-        => await SeedDefaultRulesWithCountAsync(userId);
-
-    public async Task<int> SeedDefaultRulesWithCountAsync(string userId)
+    public async Task<int> SeedDefaultRulesAsync(string userId, CancellationToken cancellationToken = default)
     {
         var inserted = 0;
         var repo = GetRepo(await ResolveConnectionAsync());
@@ -226,6 +224,7 @@ public class SodEvaluationEngine : ISodEvaluationEngine
 
         foreach (var (name, cat, permA, permB, severity, reg, desc) in rules)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (existing.ContainsKey(name)) continue;
 
             var rule = new SOD_RULE

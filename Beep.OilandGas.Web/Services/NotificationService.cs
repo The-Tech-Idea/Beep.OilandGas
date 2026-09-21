@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.AspNetCore.Components.Authorization;
+using Beep.Foundation.IdentityServer.Shared.Authentication;
 
 namespace Beep.OilandGas.Web.Services;
 
@@ -22,7 +24,12 @@ public interface INotificationService
     event Action<InboxCounts>? OnTaskCountsUpdated;
 
     /// <summary>Start the SignalR connection.</summary>
-    Task StartAsync(string userId, string personaCode);
+    Task StartAsync();
+    Task SubscribeToPersonaAsync(string personaCode, string fieldId);
+
+    bool IsConnected { get; }
+    string? LastError { get; }
+    event Action? OnStateChanged;
 
     /// <summary>Stop the SignalR connection.</summary>
     Task StopAsync();
@@ -44,90 +51,238 @@ public class NotificationModel
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 
-public class NotificationService : INotificationService, IAsyncDisposable
+public sealed class NotificationService : INotificationService, IAsyncDisposable
 {
-    private HubConnection? _connection;
+    private readonly AuthenticationStateProvider _authentication;
+    private readonly TokenProvider _tokens;
+    private readonly ILogger<NotificationService> _logger;
+    private readonly Uri _hubUri;
+    private readonly SemaphoreSlim _lifecycle = new(1, 1);
+    private readonly object _stateLock = new();
     private readonly List<NotificationModel> _recentNotifications = new();
-    private int _unreadCount;
+    private HubConnection? _connection;
+    private string? _userId;
+    private bool _disposed;
+    private sealed record PersonaSubscription(string Persona, string Field);
+    private volatile PersonaSubscription? _persona;
 
-    public int UnreadCount => _unreadCount;
-    public List<NotificationModel> RecentNotifications => _recentNotifications;
+    public NotificationService(AuthenticationStateProvider authentication, TokenProvider tokens,
+        IConfiguration configuration, ILogger<NotificationService> logger)
+    {
+        _authentication = authentication;
+        _tokens = tokens;
+        _logger = logger;
+        var baseUrl = configuration["ApiService:BaseUrl"] ?? "https://localhost:7001";
+        _hubUri = new Uri(baseUrl.TrimEnd('/') + "/hubs/workflow-notifications", UriKind.Absolute);
+        if (_hubUri.Scheme != Uri.UriSchemeHttp && _hubUri.Scheme != Uri.UriSchemeHttps)
+            throw new InvalidOperationException("The API URL must use HTTP or HTTPS.");
+        _authentication.AuthenticationStateChanged += AuthenticationChanged;
+    }
+
+    public int UnreadCount { get { lock (_stateLock) return _recentNotifications.Count(n => !n.IsRead); } }
+    public List<NotificationModel> RecentNotifications { get { lock (_stateLock) return _recentNotifications.ToList(); } }
+    public bool IsConnected => _connection?.State == HubConnectionState.Connected;
+    public string? LastError { get; private set; }
     public event Action<NotificationModel>? OnNotificationReceived;
     public event Action<InboxCounts>? OnTaskCountsUpdated;
+    public event Action? OnStateChanged;
 
-    public async Task StartAsync(string userId, string personaCode)
+    public async Task StartAsync()
     {
-        if (_connection is not null)
-            return;
-
+        await _lifecycle.WaitAsync();
         try
         {
-            _connection = new HubConnectionBuilder()
-                .WithUrl("/hubs/workflow-notifications")
+            if (_disposed) return;
+            var state = await _authentication.GetAuthenticationStateAsync();
+            var userId = state.User.Identity?.IsAuthenticated == true ? state.User.FindUserSubjectId() : null;
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                await StopCoreAsync();
+                return;
+            }
+            if (_userId == userId && _connection?.State is HubConnectionState.Connected or HubConnectionState.Reconnecting)
+                return;
+
+            await StopCoreAsync();
+            _userId = userId;
+            if (string.IsNullOrWhiteSpace(_tokens.GetUserToken(userId)))
+                throw new InvalidOperationException("No access token is available for the current user.");
+
+            var connection = new HubConnectionBuilder()
+                .WithUrl(_hubUri, options => options.AccessTokenProvider = async () =>
+                {
+                    var current = await _authentication.GetAuthenticationStateAsync();
+                    if (current.User.Identity?.IsAuthenticated != true || current.User.FindUserSubjectId() != userId)
+                        throw new InvalidOperationException("The notification user has changed.");
+                    return _tokens.GetUserToken(userId)
+                        ?? throw new InvalidOperationException("The current user's access token is unavailable.");
+                })
                 .WithAutomaticReconnect()
                 .Build();
-
-            _connection.On<NotificationModel>("Notification", notification =>
+            _connection = connection;
+            connection.On<NotificationModel>("Notification", notification => Receive(connection, notification));
+            connection.On<UnifiedTask>("TaskAssigned", task => Receive(connection, new NotificationModel
             {
-                notification.CreatedAt = DateTime.UtcNow;
-                _recentNotifications.Insert(0, notification);
-                if (_recentNotifications.Count > 100)
-                    _recentNotifications.RemoveAt(_recentNotifications.Count - 1);
-                _unreadCount++;
-                OnNotificationReceived?.Invoke(notification);
+                Title = $"New Task: {task.StepName}",
+                Body = $"{task.WorkflowName} — {task.EntityDescription}",
+                Category = task.TaskType,
+                Severity = task.Priority <= 1 ? "CRITICAL" : task.Priority <= 2 ? "WARNING" : "INFO",
+                ActionRoute = task.Route,
+                ActionLabel = $"View {task.TaskType.ToLowerInvariant()}"
+            }));
+            connection.On<InboxCounts>("TaskCountsUpdated", counts =>
+            {
+                if (ReferenceEquals(_connection, connection)) OnTaskCountsUpdated?.Invoke(counts);
             });
-
-            _connection.On<InboxCounts>("TaskCountsUpdated", counts =>
+            connection.Reconnecting += error =>
             {
-                OnTaskCountsUpdated?.Invoke(counts);
-            });
-
-            _connection.On<UnifiedTask>("TaskAssigned", task =>
-            {
-                var notification = new NotificationModel
+                if (ReferenceEquals(_connection, connection))
                 {
-                    Title = $"New Task: {task.StepName}",
-                    Body = $"{task.WorkflowName} — {task.EntityDescription}",
-                    Category = task.TaskType,
-                    Severity = task.Priority <= 1 ? "CRITICAL" : task.Priority <= 2 ? "WARNING" : "INFO",
-                    ActionRoute = task.Route,
-                    ActionLabel = $"View {task.TaskType.ToLower()}",
-                };
-                _recentNotifications.Insert(0, notification);
-                _unreadCount++;
-                OnNotificationReceived?.Invoke(notification);
-            });
-
-            await _connection.StartAsync();
-            await _connection.InvokeAsync("SubscribeToUser", userId);
-            await _connection.InvokeAsync("SubscribeToPersona", personaCode);
+                    LastError = "Notifications disconnected. Reconnecting…";
+                    OnStateChanged?.Invoke();
+                }
+                return Task.CompletedTask;
+            };
+            connection.Reconnected += async id =>
+            {
+                if (ReferenceEquals(_connection, connection))
+                {
+                    LastError = null;
+                    if (_persona is { } persona)
+                    {
+                        try { await connection.InvokeAsync("SubscribeToPersona", persona.Persona, persona.Field); }
+                        catch (Exception exception)
+                        {
+                            _persona = null;
+                            LastError = "Persona notifications are unavailable. Select an authorized persona and field.";
+                            _logger.LogWarning(exception, "Unable to restore persona notification subscription");
+                        }
+                    }
+                    OnStateChanged?.Invoke();
+                }
+                // The server joins the authenticated user again for the new connection.
+            };
+            connection.Closed += error =>
+            {
+                if (ReferenceEquals(_connection, connection))
+                {
+                    LastError = "Live notifications are unavailable. Retry to reconnect.";
+                    OnStateChanged?.Invoke();
+                }
+                return Task.CompletedTask;
+            };
+            await connection.StartAsync();
+            LastError = null;
         }
-        catch
+        catch (Exception exception)
         {
-            // SignalR unavailable — degrade gracefully
-            _connection = null;
+            await StopCoreAsync();
+            LastError = "Live notifications are unavailable. Retry to reconnect.";
+            _logger.LogWarning(exception, "Unable to connect workflow notifications");
         }
+        finally
+        {
+            _lifecycle.Release();
+            OnStateChanged?.Invoke();
+        }
+    }
+
+    public async Task SubscribeToPersonaAsync(string personaCode, string fieldId)
+    {
+        await _lifecycle.WaitAsync();
+        try
+        {
+            _persona = null;
+            if (_disposed) return;
+            if (_connection?.State == HubConnectionState.Reconnecting)
+            {
+                _persona = new(personaCode, fieldId);
+                return;
+            }
+            if (_connection?.State != HubConnectionState.Connected) return;
+            await _connection.InvokeAsync("SubscribeToPersona", personaCode, fieldId);
+            _persona = new(personaCode, fieldId);
+            LastError = null;
+        }
+        catch (Exception exception)
+        {
+            LastError = "Persona notifications are unavailable. Select an authorized persona and field.";
+            _logger.LogWarning(exception, "Persona notification subscription denied or unavailable");
+        }
+        finally { _lifecycle.Release(); }
+        OnStateChanged?.Invoke();
+    }
+
+    private void Receive(HubConnection connection, NotificationModel notification)
+    {
+        lock (_stateLock)
+        {
+            if (!ReferenceEquals(_connection, connection)) return;
+            // Replayed notifications must not increase unread counts twice.
+            if (_recentNotifications.Any(n => n.Id == notification.Id)) return;
+            _recentNotifications.Insert(0, notification);
+            if (_recentNotifications.Count > 100) _recentNotifications.RemoveAt(100);
+        }
+        OnNotificationReceived?.Invoke(notification);
+        OnStateChanged?.Invoke();
     }
 
     public async Task StopAsync()
     {
-        if (_connection is not null)
+        await _lifecycle.WaitAsync();
+        try { await StopCoreAsync(); }
+        finally { _lifecycle.Release(); }
+        OnStateChanged?.Invoke();
+    }
+
+    private async Task StopCoreAsync()
+    {
+        HubConnection? connection;
+        lock (_stateLock)
         {
-            await _connection.StopAsync();
-            await _connection.DisposeAsync();
+            connection = _connection;
             _connection = null;
+            _userId = null;
+            _persona = null;
+            _recentNotifications.Clear();
         }
+        LastError = null;
+        if (connection is not null) await connection.DisposeAsync();
     }
 
     public void MarkAllRead()
     {
-        _unreadCount = 0;
-        foreach (var n in _recentNotifications)
-            n.IsRead = true;
+        lock (_stateLock)
+            foreach (var notification in _recentNotifications) notification.IsRead = true;
+        OnStateChanged?.Invoke();
+    }
+
+    private void AuthenticationChanged(Task<AuthenticationState> state) => _ = RestartForAuthenticationAsync(state);
+
+    private async Task RestartForAuthenticationAsync(Task<AuthenticationState> state)
+    {
+        try
+        {
+            await state;
+            await StopAsync();
+            await StartAsync();
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(exception, "Unable to refresh notification authentication");
+            await StopAsync();
+        }
     }
 
     public async ValueTask DisposeAsync()
     {
-        await StopAsync();
+        _authentication.AuthenticationStateChanged -= AuthenticationChanged;
+        await _lifecycle.WaitAsync();
+        try
+        {
+            _disposed = true;
+            await StopCoreAsync();
+        }
+        finally { _lifecycle.Release(); }
     }
 }

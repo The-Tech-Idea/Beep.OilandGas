@@ -891,6 +891,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 ProcessType = processDef.PROCESS_TYPE ?? string.Empty,
                 EntityType = processDef.ENTITY_TYPE ?? string.Empty,
                 Description = processDef.DESCRIPTION ?? string.Empty,
+                Version = processDef.VERSION ?? "1.0",
                 IsActive = processDef.IS_ACTIVE == "Y",
                 CreatedDate = processDef.ROW_CREATED_DATE ?? DateTime.UtcNow,
                 CreatedBy = processDef.ROW_CREATED_BY ?? string.Empty,
@@ -937,6 +938,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 PROCESS_TYPE = definition.ProcessType,
                 ENTITY_TYPE = definition.EntityType ?? string.Empty,
                 DESCRIPTION = definition.Description,
+                VERSION = definition.Version,
                 IS_ACTIVE = definition.IsActive ? "Y" : "N"
             };
 

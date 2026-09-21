@@ -1,0 +1,95 @@
+@using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Web.Services
+@implements IDisposable
+@inject ILifeCycleService LifeCycleService
+@inject IDataManagementService DataManagementService
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+    <MudText Typo="Typo.h6">Active field overview</MudText>
+    <MudButton OnClick="Reload" Disabled="@(_state?.Loading == true)" StartIcon="@Icons.Material.Filled.Refresh">Refresh field data</MudButton>
+</MudStack>
+    @if (_state?.Loading == true)
+    {
+        <MudProgressLinear Indeterminate="true" Class="my-4" aria-label="Loading field workspace" />
+    }
+    @if (_state?.Error is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_state.Error</MudAlert>
+    }
+    @if (_state?.NeedsField == true)
+    {
+        <MudAlert Severity="Severity.Info" Class="mb-4">Choose an active field above to load its reported data.</MudAlert>
+    }
+    @if (_state?.Dashboard is { } dashboard)
+    {
+        <MudText Typo="Typo.h6">@(string.IsNullOrWhiteSpace(dashboard.FieldName) ? dashboard.FieldId : dashboard.FieldName)</MudText>
+        <MudText Typo="Typo.body2" Class="mb-3">Production records: @(dashboard.ProductionSummary?.EntityCount.ToString("N0") ?? "Not available")</MudText>
+        <MudText Typo="Typo.subtitle1">Reported field metrics</MudText>
+        @if (dashboard.PerformanceMetrics is { Count: > 0 })
+        {
+            <MudDataGrid T="FieldPerformanceMetric" Items="@dashboard.PerformanceMetrics" Dense="true" Class="mb-4">
+                <Columns>
+                    <PropertyColumn Property="m => m.MetricLabel" Title="Metric" />
+                    <PropertyColumn Property="m => m.Phase" Title="Phase" />
+                    <TemplateColumn Title="Value"><CellTemplate>@FieldDashboardState.MetricValue(context.Item.CurrentValue)</CellTemplate></TemplateColumn>
+                    <PropertyColumn Property="m => m.Unit" Title="Unit" />
+                    <TemplateColumn Title="As of"><CellTemplate>@(context.Item.AsOfDate?.ToString("yyyy-MM-dd HH:mm") ?? "Not available")</CellTemplate></TemplateColumn>
+                </Columns>
+                <PagerContent><MudDataGridPager T="FieldPerformanceMetric" /></PagerContent>
+            </MudDataGrid>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-4">No field performance metrics were reported.</MudAlert>
+        }
+        <MudText Typo="Typo.subtitle1">Reported field alerts</MudText>
+        @if (dashboard.Alerts?.Any(a => a.IsActive) == true)
+        {
+            @foreach (var alert in dashboard.Alerts.Where(a => a.IsActive).OrderByDescending(a => a.AlertDate))
+            {
+                <MudAlert Severity="@AlertSeverity(alert.AlertType)" Class="mb-2"><strong>@alert.Title:</strong> @alert.Message</MudAlert>
+            }
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="mb-4">No active field alerts were reported.</MudText>
+        }
+        <MudText Typo="Typo.caption" Class="mb-4 d-block">Data as of: @(dashboard.DashboardAsOfDate?.ToString("yyyy-MM-dd HH:mm") ?? "Not available")</MudText>
+    }
+
+@code {
+    private FieldDashboardState? _state;
+    private bool _disposed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _state = new(LifeCycleService.GetFieldDashboardAsync);
+        DataManagementService.CurrentFieldChanged += FieldChanged;
+        await Reload();
+    }
+    private Task Reload() => _state!.LoadAsync(DataManagementService.GetCurrentFieldIdAsync);
+    private void FieldChanged(string fieldId)
+    {
+        if (!_disposed) _ = InvokeAsync(async () =>
+        {
+            if (_disposed) return;
+            var load = _state!.LoadAsync(() => Task.FromResult<string?>(fieldId));
+            StateHasChanged();
+            await load;
+            if (!_disposed) StateHasChanged();
+        });
+    }
+    private static Severity AlertSeverity(string? type) => type?.ToUpperInvariant() switch
+    {
+        "ERROR" => Severity.Error,
+        "WARNING" => Severity.Warning,
+        "SUCCESS" => Severity.Success,
+        _ => Severity.Info
+    };
+    public void Dispose()
+    {
+        _disposed = true;
+        DataManagementService.CurrentFieldChanged -= FieldChanged;
+        _state?.Dispose();
+    }
+}

@@ -20,19 +20,12 @@ public sealed class ProductionServiceClient : IProductionServiceClient
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<ProductionDashboardSummary?> GetDashboardSummaryAsync(CancellationToken cancellationToken = default)
+    public async Task<ProductionDashboardResponse> GetDashboardAsync(string fieldId, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            return await _apiClient.GetAsync<ProductionDashboardSummary>(
-                "/api/field/current/production/dashboard/summary",
-                cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting production dashboard summary.");
-            throw;
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(fieldId);
+        return await _apiClient.GetAsync<ProductionDashboardResponse>(
+            $"/api/fields/{Uri.EscapeDataString(fieldId)}/production/dashboard", cancellationToken)
+            ?? throw new InvalidOperationException("Production dashboard response was empty.");
     }
 
     public async Task<List<ProductionWellStatusDto>> GetDashboardWellsAsync(CancellationToken cancellationToken = default)
@@ -43,7 +36,7 @@ public sealed class ProductionServiceClient : IProductionServiceClient
                 "/api/field/current/production/dashboard/wells",
                 cancellationToken);
 
-            return result ?? new List<ProductionWellStatusDto>();
+            return result ?? throw new InvalidOperationException("Production well response was empty.");
         }
         catch (Exception ex)
         {

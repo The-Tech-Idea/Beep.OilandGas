@@ -1,0 +1,140 @@
+@page "/ppdm39/accounting/royalties/{CalculationId}"
+@attribute [Authorize]
+@using Beep.OilandGas.Models.Data.ProductionAccounting
+@inject IAccountingServiceClient Accounting
+@inject IDataManagementService DataManagement
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<PageTitle>Royalty details</PageTitle>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+    <MudButton Href="/ppdm39/accounting/royalties" StartIcon="@Icons.Material.Filled.ArrowBack" Class="mb-3">Back to royalties</MudButton>
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+        <MudText Typo="Typo.h4">Royalty details</MudText>
+        <MudButton OnClick="Reload" Disabled="@(_state?.Loading ?? true)" StartIcon="@Icons.Material.Filled.Refresh">Refresh</MudButton>
+    </MudStack>
+    @if (_state?.Loading == true)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Loading royalty details" />
+        <MudText Class="my-3">Loading royalty and payment records�</MudText>
+    }
+    @if (_state?.Error is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_state.Error</MudAlert>
+        <MudButton OnClick="Reload" Variant="Variant.Outlined">Retry details</MudButton>
+    }
+    @if (_state?.Calculation is { } calculation && !_state.Loading)
+    {
+        <MudPaper Outlined="true" Class="pa-4 mb-4">
+            <MudStack Row="true" Spacing="3" Class="mb-3">
+                <MudText Typo="Typo.h6">Recorded obligation</MudText>
+                <StatusBadge Status="@calculation.ROYALTY_STATUS" />
+            </MudStack>
+            <MudGrid>
+                <MudItem xs="12" md="6"><MudText>Calculation: @calculation.ROYALTY_CALCULATION_ID</MudText></MudItem>
+                <MudItem xs="12" md="6"><MudText>Calculated: @Date(calculation.CALCULATION_DATE)</MudText></MudItem>
+                <MudItem xs="12" md="6"><MudText>Owner: @calculation.ROYALTY_OWNER_ID</MudText></MudItem>
+                <MudItem xs="12" md="6"><MudText>Property / lease: @calculation.PROPERTY_OR_LEASE_ID</MudText></MudItem>
+                <MudItem xs="12" md="4"><MudText>Gross revenue</MudText><MudText Typo="Typo.h6">@Amount(calculation.GROSS_REVENUE)</MudText></MudItem>
+                <MudItem xs="12" md="4"><MudText>Net revenue</MudText><MudText Typo="Typo.h6">@Amount(calculation.NET_REVENUE)</MudText></MudItem>
+                <MudItem xs="12" md="4"><MudText>Royalty amount</MudText><MudText Typo="Typo.h6">@Amount(calculation.ROYALTY_AMOUNT)</MudText></MudItem>
+            </MudGrid>
+        </MudPaper>
+        <MudText Typo="Typo.h5" Class="mb-3">Payment history</MudText>
+        @if (_state.PaymentError is not null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-3">@_state.PaymentError</MudAlert>
+            <MudButton OnClick="Reload" Class="mb-4">Retry payment history</MudButton>
+        }
+        else if (_state.Payments is { Count: 0 })
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-4">No payments have been recorded for this royalty.</MudAlert>
+        }
+        else if (_state.Payments is not null)
+        {
+            <MudTable T="ROYALTY_PAYMENT" Items="@_state.Payments" Hover="true" Breakpoint="Breakpoint.Sm" Class="mb-4">
+                <HeaderContent><MudTh>Payment date</MudTh><MudTh>Amount</MudTh><MudTh>Status</MudTh><MudTh>Payment reference</MudTh><MudTh>Journal</MudTh></HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Payment date">@Date(context.PAYMENT_DATE)</MudTd>
+                    <MudTd DataLabel="Amount">@Amount(context.NET_PAYMENT_AMOUNT)</MudTd>
+                    <MudTd DataLabel="Status"><StatusBadge Status="@context.STATUS" /></MudTd>
+                    <MudTd DataLabel="Payment reference">@context.ROYALTY_PAYMENT_ID</MudTd>
+                    <MudTd DataLabel="Journal">@(string.IsNullOrWhiteSpace(context.JOURNAL_ENTRY_ID) ? "Not confirmed" : context.JOURNAL_ENTRY_ID)</MudTd>
+                </RowTemplate>
+                <PagerContent><MudTablePager /></PagerContent>
+            </MudTable>
+        }
+        <MudPaper Outlined="true" Class="pa-4">
+            <MudText Typo="Typo.h5">Posting review</MudText>
+            <MudText Class="my-2">Check the journal evidence for this obligation and its payments. Reviewing does not post or change records.</MudText>
+            <MudButton OnClick="Review" Disabled="@_state.Reviewing" Variant="Variant.Outlined" Color="Color.Primary" Class="mb-3">
+                @(_state.Review is null ? "Review postings" : "Refresh posting review")
+            </MudButton>
+            @if (_state.Reviewing)
+            {
+                <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Loading posting review" />
+            }
+            @if (_state.ReviewError is not null)
+            {
+                <MudAlert Severity="Severity.Warning">@_state.ReviewError</MudAlert>
+            }
+            @if (_state.Review is { Count: 0 })
+            {
+                <MudAlert Severity="Severity.Info">No posting evidence was returned. Refresh the review or contact your accounting administrator.</MudAlert>
+            }
+            @if (_state.Review is { Count: > 0 })
+            {
+                <MudTable T="RoyaltyPostingReview" Items="@_state.Review" Breakpoint="Breakpoint.Sm" Hover="true">
+                    <HeaderContent><MudTh>Record</MudTh><MudTh>Amount</MudTh><MudTh>Finding</MudTh><MudTh>Next step</MudTh></HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Record"><MudText>@context.RecordKind � @context.RecordedStatus</MudText><MudText Typo="Typo.caption">@context.RecordId</MudText></MudTd>
+                        <MudTd DataLabel="Amount">@Amount(context.Amount)</MudTd>
+                        <MudTd DataLabel="Finding">@Finding(context.Finding)</MudTd>
+                        <MudTd DataLabel="Next step">@NextStep(context.Finding)</MudTd>
+                    </RowTemplate>
+                    <PagerContent><MudTablePager /></PagerContent>
+                </MudTable>
+            }
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public string CalculationId { get; set; } = "";
+    private RoyaltyDetailsState? _state;
+    private bool _disposed;
+    protected override void OnInitialized()
+    {
+        _state = new(Accounting);
+        DataManagement.CurrentFieldChanged += FieldChanged;
+    }
+    protected override Task OnParametersSetAsync() => Reload();
+    private Task Reload() => _state!.LoadAsync(CalculationId);
+    private Task Review() => _state!.LoadReviewAsync();
+    private void FieldChanged(string fieldId) => _ = InvokeAsync(() => {
+        if (_disposed) return;
+        _state?.Dispose();
+        Navigation.NavigateTo("/ppdm39/accounting/royalties");
+    });
+    private static string Date(DateTime? value) => value?.ToString("dd MMM yyyy") ?? "�";
+    private static string Amount(decimal? value) => value?.ToString("N2") ?? "�";
+    private static string Finding(RoyaltyPostingFinding value) => value switch {
+        RoyaltyPostingFinding.MatchingPostedEvidence => "Posted evidence matches",
+        RoyaltyPostingFinding.NoJournalRequired => "No journal required",
+        RoyaltyPostingFinding.MissingJournal => "Journal not found",
+        RoyaltyPostingFinding.AmbiguousJournals => "Multiple journals found",
+        RoyaltyPostingFinding.IncompletePosting => "Posting incomplete",
+        _ => "Journal does not match"
+    };
+    private static string NextStep(RoyaltyPostingFinding value) => value switch {
+        RoyaltyPostingFinding.MatchingPostedEvidence => "Compare the recorded status with the matching evidence before taking further action.",
+        RoyaltyPostingFinding.NoJournalRequired => "The recorded amount is zero.",
+        _ => "Ask your accounting administrator to reconcile this record before attempting another posting."
+    };
+    public void Dispose()
+    {
+        _disposed = true;
+        DataManagement.CurrentFieldChanged -= FieldChanged;
+        _state?.Dispose();
+    }
+}

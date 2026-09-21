@@ -71,10 +71,9 @@ namespace Beep.OilandGas.Models.Core.Interfaces
 
         Task<CostAllocationComputationResult> AllocateCostsAsync(string fieldId, DateTime startDate, DateTime endDate, CostAllocationMethod allocationMethod, string connectionName = "PPDM39");
 
-        Task<ProductionRoyaltyCalculationResult> CalculateRoyaltiesAsync(string fieldId, DateTime startDate, DateTime endDate, string? poolId = null, string connectionName = "PPDM39");
+        Task<List<ROYALTY_CALCULATION>> PreviewRoyaltiesAsync(string fieldId, DateTime startDate, DateTime endDate, string userId);
 
-        Task SaveRoyaltyCalculationAsync(ROYALTY_CALCULATION calculation, string userId, string connectionName = "PPDM39");
 
-        Task<List<ROYALTY_CALCULATION>> GetRoyaltyCalculationsAsync(string? fieldId = null, string? poolId = null, DateTime? startDate = null, DateTime? endDate = null, string connectionName = "PPDM39");
+        Task<List<ROYALTY_CALCULATION>> GetRoyaltyCalculationsAsync(string fieldId, DateTime? startDate = null, DateTime? endDate = null);
     }
 }

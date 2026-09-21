@@ -5,7 +5,8 @@ namespace Beep.OilandGas.UserManagement.Models.Identity;
 
 /// <summary>
 /// Explicit bridge between the Persona system (UI/UX layer) and the Role system (API authorization layer).
-/// When a user selects a persona, the roles mapped here become their effective permissions.
+/// Primary mappings define the app roles required to use the persona.
+/// Selecting a persona never grants a role or adds permissions to the user.
 /// </summary>
 public class PERSONA_ROLE : ModelEntityBase
 {

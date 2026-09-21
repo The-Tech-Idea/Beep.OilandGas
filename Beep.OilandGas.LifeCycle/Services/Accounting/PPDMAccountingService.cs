@@ -28,6 +28,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly string _connectionName;
+        private readonly Func<Task<string>>? _resolveProductionConnection;
         private readonly ILogger<PPDMAccountingService>? _logger;
         private readonly Beep.OilandGas.Models.Core.Interfaces.IRevenueService? _revenueService;
         private readonly Beep.OilandGas.Models.Core.Interfaces.IRoyaltyService? _royaltyService;
@@ -46,7 +47,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             Beep.OilandGas.Models.Core.Interfaces.IRoyaltyService? royaltyService = null,
             Beep.OilandGas.Models.Core.Interfaces.IAllocationService? allocationService = null,
             Microsoft.Extensions.Configuration.IConfiguration? configuration = null,
-            Beep.OilandGas.Accounting.Services.CostAllocationService? costAllocationService = null)
+            Beep.OilandGas.Accounting.Services.CostAllocationService? costAllocationService = null,
+            Func<Task<string>>? resolveProductionConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -59,6 +61,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             _allocationService = allocationService;
             _configuration = configuration;
             _costAllocationService = costAllocationService;
+            _resolveProductionConnection = resolveProductionConnection;
         }
 
         public async Task<SalesTransaction> CreateSalesTransactionAsync(CreateSalesTransactionRequest request, string userId, string connectionName = "PPDM39")
@@ -252,92 +255,70 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             return statement;
         }
 
+        /// <summary>Reconciles measured BBL run tickets against their active allocations, by inclusive calendar dates.</summary>
         public async Task<VolumeReconciliationResult> ReconcileVolumesAsync(string fieldId, DateTime startDate, DateTime endDate, string connectionName = "PPDM39")
         {
-            if (_allocationService is not null)
-            {
-                try
-                {
-                    // Delegate to ProductionAccounting allocation engine
-                    var allocations = await _allocationService.GetAsync(fieldId, connectionName);
-                    if (allocations?.ALLOCATED_VOLUME is decimal allocatedVolume)
-                    {
-                        return new VolumeReconciliationResult
-                        {
-                            Status = ReconciliationStatus.Matched,
-                            ALLOCATED_VOLUME = allocatedVolume,
-                            FieldProductionVolume = allocatedVolume,
-                            Discrepancy = 0m,
-                            DiscrepancyPercentage = 0m,
-                        };
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogWarning(ex, "Failed to reconcile volumes via allocation service for {FieldId}", fieldId);
-                }
-            }
-            return new VolumeReconciliationResult { Status = ReconciliationStatus.Matched };
-        }
-
-
-        public async Task<ProductionRoyaltyCalculationResult> CalculateRoyaltiesAsync(string fieldId, DateTime startDate, DateTime endDate, string? poolId = null, string connectionName = "PPDM39")
-        {
-            if (_royaltyService is not null)
-            {
-                try
-                {
-                    var calculations = await GetRoyaltyCalculationsAsync(fieldId, poolId, startDate, endDate, connectionName);
-                    if (calculations is { Count: > 0 })
-                    {
-                        var calc = calculations[0];
-                        return new ProductionRoyaltyCalculationResult
-                        {
-                            GrossOilVolume = calc.GROSS_VOLUME ?? 0m,
-                            RoyaltyOilVolume = calc.GROSS_VOLUME ?? 0m,
-                            OilRoyaltyRate = calc.ROYALTY_INTEREST ?? 0m,
-                            RoyaltyAmount = calc.ROYALTY_AMOUNT ?? 0m,
-                        };
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogWarning(ex, "Failed to calculate royalties for {FieldId}", fieldId);
-                }
-            }
-            return new ProductionRoyaltyCalculationResult();
-        }
-
-        public async Task SaveRoyaltyCalculationAsync(ROYALTY_CALCULATION calculation, string userId, string connectionName = "PPDM39")
-        {
-            if (calculation == null) throw new ArgumentNullException(nameof(calculation));
+            ArgumentException.ThrowIfNullOrWhiteSpace(fieldId);
+            if (startDate.Date == DateTime.MinValue.Date || startDate.Date > endDate.Date || endDate.Date == DateTime.MaxValue.Date)
+                throw new ArgumentException("A valid inclusive date range is required.");
+            if (_allocationService is null)
+                throw new InvalidOperationException("The allocation service is not configured.");
             var connName = connectionName ?? _connectionName;
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(ROYALTY_CALCULATION), connName, "ROYALTY_CALCULATION");
-            if (string.IsNullOrWhiteSpace(calculation.ROYALTY_CALCULATION_ID))
-                calculation.ROYALTY_CALCULATION_ID = _defaults.FormatIdForTable("ROYALTY_CALCULATION", Guid.NewGuid().ToString());
-            await repo.InsertAsync(calculation, userId);
-        }
-
-        public async Task<List<ROYALTY_CALCULATION>> GetRoyaltyCalculationsAsync(string? fieldId = null, string? poolId = null, DateTime? startDate = null, DateTime? endDate = null, string connectionName = "PPDM39")
-        {
-            var connName = connectionName ?? _connectionName;
-            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(ROYALTY_CALCULATION), connName, "ROYALTY_CALCULATION");
-            var filters = new List<AppFilter>
+                typeof(RUN_TICKET), connName, "RUN_TICKET");
+            var tickets = (await repo.GetAsync(new List<AppFilter>
             {
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-            };
-            if (!string.IsNullOrWhiteSpace(fieldId))
-                filters.Add(new AppFilter { FieldName = "PROPERTY_OR_LEASE_ID", Operator = "=", FilterValue = fieldId });
-            if (!string.IsNullOrWhiteSpace(poolId))
-                filters.Add(new AppFilter { FieldName = "ROYALTY_INTEREST_ID", Operator = "=", FilterValue = poolId });
-            if (startDate.HasValue)
-                filters.Add(new AppFilter { FieldName = "CALCULATION_DATE", Operator = ">=", FilterValue = startDate.Value.ToString("yyyy-MM-dd") });
-            if (endDate.HasValue)
-                filters.Add(new AppFilter { FieldName = "CALCULATION_DATE", Operator = "<=", FilterValue = endDate.Value.ToString("yyyy-MM-dd") });
-            var entities = await repo.GetAsync(filters);
-            return entities.OfType<ROYALTY_CALCULATION>().ToList();
+                new() { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId },
+                new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" },
+                new() { FieldName = "TICKET_DATE_TIME", Operator = ">=", FilterValue = startDate.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) },
+                new() { FieldName = "TICKET_DATE_TIME", Operator = "<", FilterValue = endDate.Date.AddDays(1).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) }
+            })).OfType<RUN_TICKET>().ToList();
+            var allocations = new Dictionary<string, List<ALLOCATION_RESULT>>(StringComparer.Ordinal);
+            foreach (var id in tickets.Select(ticket => ticket.RUN_TICKET_ID).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.Ordinal))
+                allocations[id] = await _allocationService.GetHistoryAsync(id, connName);
+            return RunTicketVolumeReconciler.Reconcile(tickets, allocations);
+        }
+        public async Task<List<ROYALTY_CALCULATION>> PreviewRoyaltiesAsync(string fieldId, DateTime startDate, DateTime endDate, string userId)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(fieldId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+            if (startDate.Date == DateTime.MinValue.Date || startDate.Date > endDate.Date || endDate.Date == DateTime.MaxValue.Date)
+                throw new ArgumentException("A valid inclusive production date range is required.");
+            if (_allocationService is null || _royaltyService is null)
+                throw new InvalidOperationException("Allocation and royalty services must be configured.");
+            var connName = await ResolveProductionConnectionAsync();
+            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(RUN_TICKET), connName, "RUN_TICKET");
+            var tickets = (await repo.GetAsync(new List<AppFilter>
+            {
+                new() { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId },
+                new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" },
+                new() { FieldName = "TICKET_DATE_TIME", Operator = ">=", FilterValue = startDate.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) },
+                new() { FieldName = "TICKET_DATE_TIME", Operator = "<", FilterValue = endDate.Date.AddDays(1).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) }
+            })).OfType<RUN_TICKET>().ToList();
+            if (tickets.Count == 0) throw new InvalidOperationException("No active source tickets exist for the selected field and production dates.");
+            var result = new List<ROYALTY_CALCULATION>();
+            var seenTickets = new HashSet<string>(StringComparer.Ordinal);
+            var seenDetails = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var ticket in tickets)
+            {
+                if (string.IsNullOrWhiteSpace(ticket.RUN_TICKET_ID) || !seenTickets.Add(ticket.RUN_TICKET_ID))
+                    throw new InvalidOperationException("Source ticket IDs must be unique and nonempty.");
+                var allocations = await _allocationService.GetHistoryAsync(ticket.RUN_TICKET_ID, connName);
+                if (allocations.Count != 1 || allocations[0].ALLOCATION_REQUEST_ID != ticket.RUN_TICKET_ID)
+                    throw new InvalidOperationException($"Ticket {ticket.RUN_TICKET_ID} requires exactly one active allocation.");
+                var allocationId = allocations[0].ALLOCATION_RESULT_ID;
+                var details = await _allocationService.GetDetailsAsync(allocationId, connName);
+                if (details.Count == 0) throw new InvalidOperationException($"Allocation {allocationId} has no details.");
+                foreach (var detail in details)
+                {
+                    if (string.IsNullOrWhiteSpace(detail.ALLOCATION_DETAIL_ID) || !seenDetails.Add(detail.ALLOCATION_DETAIL_ID) ||
+                        detail.ALLOCATION_RESULT_ID != allocationId)
+                        throw new InvalidOperationException("Allocation detail identity or ownership is ambiguous.");
+                    result.Add(await _royaltyService.PreviewAsync(detail, userId, connName));
+                }
+            }
+            return result;
         }
     }
 }

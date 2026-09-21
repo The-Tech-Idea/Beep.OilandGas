@@ -1,5 +1,7 @@
 # Workflow, Role & Privilege Architecture — Master Plan
 
+> 2026-09-21 review: the design/completion claims below are historical and were not reverified end-to-end. Use the [root master tracker](../MASTER-TODO-TRACKER.md) for current execution status and [Phase 1](FrameworkAppEnhancement/Phase-1-Boundaries-and-Identity.md) for the mandatory standard ASP.NET role bridge. Data ownership must follow AGENTS.md and the [ownership alignment work](FrameworkAppEnhancement/02-Architecture-and-Plan-Alignment.md) before adding shared models; the historical ownership table below is not an exception to those rules.
+
 > **Status:** Design Phase | **Created:** 2026-07-02 | **Target:** Production-grade RBAC + Workflow system
 > **Based on:** 80 existing process definitions, 177 permissions, 19 personas, 13 roles, 5 PROCESS_* tables
 

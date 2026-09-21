@@ -114,24 +114,25 @@ public sealed class AccountingServiceClient : IAccountingServiceClient
         }
     }
 
-    public async Task<List<ROYALTY_CALCULATION>> GetRoyaltyCalculationsAsync(string? fieldId = null, DateTime? startDate = null, DateTime? endDate = null, CancellationToken cancellationToken = default)
+    public async Task<List<ROYALTY_CALCULATION>> GetRoyaltyCalculationsAsync(string fieldId, DateTime? startDate = null, DateTime? endDate = null, CancellationToken cancellationToken = default)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(fieldId);
         try
         {
             var query = new List<string>();
             if (!string.IsNullOrWhiteSpace(fieldId))
                 query.Add($"fieldId={Uri.EscapeDataString(fieldId)}");
             if (startDate.HasValue)
-                query.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-dd"))}");
+                query.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture))}");
             if (endDate.HasValue)
-                query.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-dd"))}");
+                query.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture))}");
 
             var endpoint = "/api/accounting/royalty/calculations";
             if (query.Count > 0)
                 endpoint += "?" + string.Join("&", query);
 
             var result = await _apiClient.GetAsync<List<ROYALTY_CALCULATION>>(endpoint, cancellationToken);
-            return result ?? new List<ROYALTY_CALCULATION>();
+            return result ?? throw new InvalidOperationException("The royalty report response was empty.");
         }
         catch (Exception ex)
         {
@@ -140,16 +141,32 @@ public sealed class AccountingServiceClient : IAccountingServiceClient
         }
     }
 
-    public async Task<bool> CalculateRoyaltiesAsync(CalculateRoyaltyRequest request, CancellationToken cancellationToken = default)
+    public Task<ROYALTY_CALCULATION> GetRoyaltyAsync(string calculationId, CancellationToken cancellationToken = default)
+        => GetRequiredRoyaltyResourceAsync<ROYALTY_CALCULATION>(calculationId, "service/calculations", "", cancellationToken);
+
+    public Task<List<ROYALTY_PAYMENT>> GetRoyaltyPaymentsAsync(string calculationId, CancellationToken cancellationToken = default)
+        => GetRequiredRoyaltyResourceAsync<List<ROYALTY_PAYMENT>>(calculationId, "calculations", "/payments", cancellationToken);
+
+    public Task<List<RoyaltyPostingReview>> GetRoyaltyPostingReviewAsync(string calculationId, CancellationToken cancellationToken = default)
+        => GetRequiredRoyaltyResourceAsync<List<RoyaltyPostingReview>>(calculationId, "calculations", "/posting-review", cancellationToken);
+
+    private async Task<T> GetRequiredRoyaltyResourceAsync<T>(string id, string resource, string suffix, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        return await _apiClient.GetAsync<T>($"/api/accounting/royalty/{resource}/{Uri.EscapeDataString(id)}{suffix}", cancellationToken)
+            ?? throw new InvalidOperationException("The royalty response was empty.");
+    }
+
+    public async Task<List<ROYALTY_CALCULATION>> PreviewRoyaltiesAsync(PreviewRoyaltiesRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         try
         {
-            return await _apiClient.PostAsync(
-                "/api/accounting/royalty/calculate",
+            return await _apiClient.PostAsync<PreviewRoyaltiesRequest, List<ROYALTY_CALCULATION>>(
+                "/api/accounting/royalty/preview",
                 request,
-                cancellationToken);
+                cancellationToken) ?? throw new InvalidOperationException("The royalty preview response was empty.");
         }
         catch (Exception ex)
         {

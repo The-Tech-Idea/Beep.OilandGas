@@ -159,9 +159,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 foreach (var detail in allocationDetails)
                 {
                     var royalty = await _royaltyService.CalculateAsync(
-                        detail,
-                        userId,
-                        connectionName);
+                        detail.ALLOCATION_DETAIL_ID,
+                        userId);
                     if (royalty == null)
                     {
                         _logger?.LogError("Failed to calculate royalties for ticket {TicketId}", RUN_TICKET.RUN_TICKET_ID);

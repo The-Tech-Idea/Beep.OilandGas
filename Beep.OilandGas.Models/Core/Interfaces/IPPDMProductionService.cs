@@ -10,6 +10,9 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// </summary>
     public interface IPPDMProductionService
     {
+        Task<Beep.OilandGas.Models.Data.Production.ProductionDashboardSummary> GetProductionDashboardSummaryAsync(string fieldId);
+        Task<List<Beep.OilandGas.Models.Data.Production.ProductionWellStatusDto>> GetProductionWellStatusAsync(string fieldId);
+
         /// <summary>
         /// Gets fields
         /// </summary>

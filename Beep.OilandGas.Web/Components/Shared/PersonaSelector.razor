@@ -1,16 +1,20 @@
-@using TheTechIdea.Data.OilGas
-@using System.Security.Claims
-@inject PersonaClient Client
 @inject IPersonaContextService PersonaContext
-@inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
+@inject IDataManagementService DataManagement
+@inject INotificationService Notifications
+@implements IDisposable
 
-@if (_userId is not null && _personas.Count > 0)
+@if (_error is not null)
 {
-    <MudSelect T="string" Label="Persona" Value="@_profile?.PersonaCode" ValueChanged="SwitchPersona"
-               Disabled="@_busy" Margin="Margin.Dense" Class="persona-selector">
-        @foreach (var persona in _personas)
+    <MudButton OnClick="Reload" Disabled="@_busy" StartIcon="@Icons.Material.Filled.Refresh">Retry personas</MudButton>
+    <MudText Typo="Typo.caption" role="status">@_error</MudText>
+}
+else if (PersonaContext.Catalog.Count > 0)
+{
+    <MudSelect T="string" Label="Workspace persona" Value="@PersonaContext.CurrentProfile?.PersonaCode" ValueChanged="SwitchPersona"
+               Disabled="@_busy" Margin="Margin.Dense" Class="persona-selector" HelperText="Personalizes your workspace; access follows your app roles.">
+        @foreach (var persona in PersonaContext.Catalog)
         {
             <MudSelectItem T="string" Value="@persona.Code">@persona.Name</MudSelectItem>
         }
@@ -18,41 +22,42 @@
 }
 
 @code {
-    private string? _userId;
-    private AppUserPersona? _profile;
-    private List<AppPersona> _personas = [];
     private bool _busy;
-
+    private bool _disposed;
+    private string? _error;
     protected override async Task OnInitializedAsync()
     {
-        var user = (await AuthProvider.GetAuthenticationStateAsync()).User;
-        _userId = user.Identity?.IsAuthenticated == true ? user.FindFirstValue(ClaimTypes.NameIdentifier) : null;
-        if (_userId is null) return;
-        try
-        {
-            _profile = await Client.GetAsync(_userId);
-            _personas = await Client.CatalogAsync();
-        }
-        catch { Snackbar.Add("Persona settings could not be loaded.", Severity.Warning); }
+        PersonaContext.Changed += Changed;
+        await Reload();
     }
-
+    private async Task Reload()
+    {
+        _busy = true; _error = null;
+        try { await PersonaContext.ReloadAsync(); }
+        catch { _error = "Persona settings could not be loaded."; }
+        finally { _busy = false; }
+    }
     private async Task SwitchPersona(string code)
     {
-        if (_busy || _userId is null || code == _profile?.PersonaCode) return;
+        if (_busy || code == PersonaContext.CurrentProfile?.PersonaCode) return;
         _busy = true;
         try
         {
-            _profile = await Client.SaveAsync(_userId, new(code, _profile?.Locale, _profile?.TimeZone,
-                _profile?.UnitSystem, _profile?.DefaultFieldId, _profile?.ConcurrencyStamp));
-            await PersonaContext.ReloadAsync();
-            var route = _personas.FirstOrDefault(x => x.Code == code)?.DefaultRoute;
-            Nav.NavigateTo(string.IsNullOrWhiteSpace(route) ? "/dashboard" : route);
-        }
-        catch
-        {
-            Snackbar.Add("Persona was not changed. Reload settings before retrying.", Severity.Error);
-            try { _profile = await Client.GetAsync(_userId); } catch { }
+            try { await PersonaContext.SwitchAsync(code); }
+            catch
+            {
+                if (!_disposed) _error = "The change could not be confirmed. Reload persona settings before retrying.";
+                return;
+            }
+            if (_disposed || PersonaContext.CurrentPersona is not { } persona) return;
+            Snackbar.Add($"Workspace changed to {persona.Name}.", Severity.Success);
+            try { await Notifications.SubscribeToPersonaAsync(persona.Code, await DataManagement.GetCurrentFieldIdAsync() ?? string.Empty); }
+            catch { if (!_disposed) Snackbar.Add("Your persona is saved. Notifications could not reconnect; refresh the page to retry.", Severity.Warning); }
+            if (!_disposed && PersonaContext.CurrentPersona?.Code == persona.Code)
+                Nav.NavigateTo(PersonaNavigation.HomeRoute(persona.DefaultRoute));
         }
         finally { _busy = false; }
     }
+    private void Changed() { if (!_disposed) _ = InvokeAsync(StateHasChanged); }
+    public void Dispose() { _disposed = true; PersonaContext.Changed -= Changed; }
 }

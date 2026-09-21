@@ -2,7 +2,9 @@
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Web.Services
 @inject ApiClient ApiClient
-@inject ILifeCycleService LifeCycleService
+@inject IDataManagementService DataManagementService
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IDisposable
 @inject ISnackbar Snackbar
 @inject IClientFileExportService ExportService
 
@@ -15,7 +17,7 @@
         <MudStack Spacing="0">
             <MudText Typo="Typo.h5">Compare Well Properties</MudText>
             <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
-                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Side-by-side well attribute comparison</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Compare explicit well UWIs. Results are not filtered by the active field.</MudText>
                 <MudChip T="string" Size="Size.Small" Color="Color.Primary"
                          Icon="@Icons.Material.Filled.CompareArrows">Well</MudChip>
             </MudStack>
@@ -33,13 +35,13 @@
         <MudCardContent>
             <MudGrid Spacing="2">
                 <MudItem xs="12" md="4">
-                    <MudTextField @bind-Value="_well1Uwi" Label="Well 1 UWI" Variant="Variant.Outlined" />
+                    <MudTextField @bind-Value="_well1Uwi" @bind-Value:after="InputsChanged" Immediate="true" Disabled="@_isLoading" Label="Well 1 UWI" Variant="Variant.Outlined" />
                 </MudItem>
                 <MudItem xs="12" md="4">
-                    <MudTextField @bind-Value="_well2Uwi" Label="Well 2 UWI" Variant="Variant.Outlined" />
+                    <MudTextField @bind-Value="_well2Uwi" @bind-Value:after="InputsChanged" Immediate="true" Disabled="@_isLoading" Label="Well 2 UWI" Variant="Variant.Outlined" />
                 </MudItem>
                 <MudItem xs="12" md="4">
-                    <MudTextField @bind-Value="_well3Uwi" Label="Well 3 UWI (Optional)" Variant="Variant.Outlined" />
+                    <MudTextField @bind-Value="_well3Uwi" @bind-Value:after="InputsChanged" Immediate="true" Disabled="@_isLoading" Label="Well 3 UWI (Optional)" Variant="Variant.Outlined" />
                 </MudItem>
             </MudGrid>
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
@@ -54,7 +56,16 @@
         <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
     }
 
-    @* ─── Results Grid ─── *@
+    @if (_state?.Error is not null)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-4">@_state.Error</MudAlert>
+    }
+    @if (_comparison is not null && _comparison.ComparisonFields.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">No comparable attributes were returned for these wells.</MudAlert>
+    }
+
+    @* Results Grid *@
     @if (_comparison != null)
     {
         <ComparisonGridCard TItem="ComparisonField"
@@ -91,56 +102,39 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = string.Empty;
     private string _well1Uwi = string.Empty;
     private string _well2Uwi = string.Empty;
     private string _well3Uwi = string.Empty;
-    private WellComparisonData? _comparison;
-    private bool _isLoading = false;
+    private WellComparisonState? _state;
+    private WellComparisonData? _comparison => _state?.Result;
+    private bool _isLoading => _state?.Loading == true;
+    private bool _disposed;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        try
-        {
-            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
-            if (summary != null)
-                _fieldName = summary.FieldName ?? _fieldName;
-        }
-        catch { /* field name is non-critical */ }
+        _state = new(request => ApiClient.PostAsync<CompareWellsRequest, WellComparisonData>("/api/well/compare", request));
+        DataManagementService.CurrentFieldChanged += FieldChanged;
     }
 
-    private async Task PerformComparison()
+    private void InputsChanged() => _state?.Reset();
+    private Task PerformComparison() => _state!.CompareAsync(_well1Uwi, _well2Uwi, _well3Uwi);
+
+    private void FieldChanged(string fieldId)
     {
-        var wellIdentifiers = new List<string>();
-        if (!string.IsNullOrWhiteSpace(_well1Uwi)) wellIdentifiers.Add(_well1Uwi);
-        if (!string.IsNullOrWhiteSpace(_well2Uwi)) wellIdentifiers.Add(_well2Uwi);
-        if (!string.IsNullOrWhiteSpace(_well3Uwi)) wellIdentifiers.Add(_well3Uwi);
+        if (!_disposed) _ = InvokeAsync(() =>
+        {
+            if (_disposed) return;
+            _state?.Reset();
+            _well1Uwi = _well2Uwi = _well3Uwi = string.Empty;
+            StateHasChanged();
+        });
+    }
 
-        if (wellIdentifiers.Count < 2)
-        {
-            Snackbar.Add("Please enter at least 2 UWIs to compare", Severity.Warning);
-            return;
-        }
-
-        _isLoading = true;
-        try
-        {
-            var request = new { WellIdentifiers = wellIdentifiers, FieldNames = (List<string>?)null };
-            _comparison = await ApiClient.PostAsync<object, WellComparisonData>("/api/well/compare", request);
-            
-            if (_comparison != null)
-            {
-                Snackbar.Add($"Compared {_comparison.Wells.Count} wells", Severity.Success);
-            }
-        }
-        catch (Exception)
-        {
-            Snackbar.Add("Error comparing wells.", Severity.Error);
-        }
-        finally
-        {
-            _isLoading = false;
-        }
+    public void Dispose()
+    {
+        _disposed = true;
+        DataManagementService.CurrentFieldChanged -= FieldChanged;
+        _state?.Dispose();
     }
 
     private async Task ExportComparisonAsync()
@@ -155,10 +149,7 @@
         {
             ExportType = "WellComparisonPackage",
             ExportedAtUtc = DateTime.UtcNow,
-            FieldName = _fieldName,
-            RequestedWells = new[] { _well1Uwi, _well2Uwi, _well3Uwi }
-                .Where(value => !string.IsNullOrWhiteSpace(value))
-                .ToArray(),
+            RequestedWells = _state!.RequestedWells.ToArray(),
             Wells = _comparison.Wells.Select(well => new
             {
                 well.WellIdentifier,
@@ -174,8 +165,15 @@
             }).ToList()
         };
 
-        await ExportService.DownloadJsonAsync($"well-comparison-{DateTime.UtcNow:yyyyMMdd-HHmmss}", payload);
-        Snackbar.Add("Well comparison package exported.", Severity.Success);
+        try
+        {
+            await ExportService.DownloadJsonAsync($"well-comparison-{DateTime.UtcNow:yyyyMMdd-HHmmss}", payload);
+            Snackbar.Add("Well comparison package exported.", Severity.Success);
+        }
+        catch
+        {
+            Snackbar.Add("The comparison could not be exported. Try again.", Severity.Error);
+        }
     }
 }
 

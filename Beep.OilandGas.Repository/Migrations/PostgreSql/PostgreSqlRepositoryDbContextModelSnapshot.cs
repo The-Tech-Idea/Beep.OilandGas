@@ -671,6 +671,37 @@ namespace Beep.OilandGas.Repository.Migrations.PostgreSql
                     b.ToTable("APP_USER_ROLE", (string)null);
                 });
 
+            modelBuilder.Entity("TheTechIdea.Data.OilGas.FinancialOperationClaim", b =>
+                {
+                    b.Property<string>("OperationKey")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ChangedBy")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTime>("ChangedUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("OwnerId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Token")
+                        .HasMaxLength(36)
+                        .HasColumnType("character varying(36)");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("OperationKey");
+
+                    b.ToTable("FINANCIAL_OPERATION_CLAIM", (string)null);
+                });
+
             modelBuilder.Entity("TheTechIdea.Data.OilGas.ModuleDatabaseBinding", b =>
                 {
                     b.Property<string>("ModuleId")

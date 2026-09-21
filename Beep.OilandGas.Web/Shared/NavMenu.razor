@@ -1,6 +1,14 @@
 @inject Beep.OilandGas.Web.Services.IPersonaContextService PersonaContext
+@implements IDisposable
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="og-h-full">
+
+    @if (PersonaContext.CurrentPersona is { } persona)
+    {
+        <MudButton Href="@PersonaNavigation.HomeRoute(persona.DefaultRoute)" StartIcon="@Icons.Material.Filled.Badge" Class="nav-menu-btn">
+            My workspace: @persona.Name
+        </MudButton>
+    }
 
     <!-- ─── Dashboard ──────────────────────────────────────────── -->
     <MudButton Variant="Variant.Text" Href="/dashboard"
@@ -406,3 +414,10 @@
 
 </MudStack>
 
+
+@code {
+    private bool _disposed;
+    protected override void OnInitialized() => PersonaContext.Changed += PersonaChanged;
+    private void PersonaChanged() { if (!_disposed) _ = InvokeAsync(StateHasChanged); }
+    public void Dispose() { _disposed = true; PersonaContext.Changed -= PersonaChanged; }
+}

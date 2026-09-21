@@ -66,7 +66,10 @@ public class LifeCycleSeedService : ILifeCycleSeedService
             await SeedSodRulesAsync(connectionName, userId, result, cancellationToken);
 
             result.Success = result.Errors.Count == 0;
-            result.TablesSeeded = result.TotalRecordsInserted > 0 ? 5 : 0;
+            result.TablesSeeded = new[] { result.LifecycleStatesInserted, result.ProcessDefinitionsInserted,
+                result.ProcessStepsInserted, result.SlaTemplatesInserted, result.ApprovalChainsInserted,
+                result.DelegationRulesInserted, result.BusinessEventTriggersInserted, result.SodRulesInserted }
+                .Count(count => count > 0);
 
             _logger?.LogInformation(
                 "Lifecycle seed completed. States={States}, Definitions={Defs}, Steps={Steps}, Total={Total}",
@@ -433,11 +436,13 @@ public class LifeCycleSeedService : ILifeCycleSeedService
                 _editor, _commonColumnHandler, _defaults, _metadata, () => Task.FromResult(connectionName),
                 _logger as ILogger<Processes.SodEvaluationEngine>);
 
-            result.SodRulesInserted += await sodEngine.SeedDefaultRulesWithCountAsync(userId);
+            result.SodRulesInserted = await sodEngine.SeedDefaultRulesAsync(userId, ct);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
         catch (Exception ex)
         {
-            _logger?.LogWarning(ex, "SoD rule seeding skipped (may already exist): {Message}", ex.Message);
+            result.Errors.Add($"SoD rule seeding failed: {ex.Message}");
+            _logger?.LogError(ex, "SoD rule seeding failed");
         }
     }
 

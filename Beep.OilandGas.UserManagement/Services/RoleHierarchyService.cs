@@ -1,3 +1,4 @@
+using TheTechIdea.Beep.Report;
 using System.Collections.Concurrent;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core;

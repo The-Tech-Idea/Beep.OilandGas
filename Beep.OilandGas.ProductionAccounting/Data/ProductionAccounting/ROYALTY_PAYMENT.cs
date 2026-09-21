@@ -8,6 +8,13 @@ using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class ROYALTY_PAYMENT : ModelEntityBase {
+        private string ROYALTY_CALCULATION_IDValue;
+        public string ROYALTY_CALCULATION_ID { get => ROYALTY_CALCULATION_IDValue; set => SetProperty(ref ROYALTY_CALCULATION_IDValue, value); }
+        private string PAYMENT_REQUEST_IDValue;
+        public string PAYMENT_REQUEST_ID { get => PAYMENT_REQUEST_IDValue; set => SetProperty(ref PAYMENT_REQUEST_IDValue, value); }
+        private string JOURNAL_ENTRY_IDValue;
+        public string JOURNAL_ENTRY_ID { get => JOURNAL_ENTRY_IDValue; set => SetProperty(ref JOURNAL_ENTRY_IDValue, value); }
+
         private System.String ROYALTY_PAYMENT_IDValue;
         public System.String ROYALTY_PAYMENT_ID
         {

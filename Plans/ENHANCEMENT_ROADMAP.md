@@ -1,5 +1,7 @@
 # Beep.OilandGas Calculation Projects Enhancement Roadmap
 
+> Historical calculation roadmap. For the 2026-09-21 source review and execution priorities, see the [root master tracker](../MASTER-TODO-TRACKER.md) and [engineering quality phase](FrameworkAppEnhancement/Phase-3-Engineering-Quality.md). Completion percentages below were not reverified. DCA/Arps source now exists under `Beep.OilandGas.ProductionForecasting/DCA/AdvancedDeclineMethods/ArpsDeclineMethods.cs`; do not recreate the separate DCA project proposed below.
+
 ## Executive Summary
 
 This document outlines a comprehensive enhancement strategy for the Beep.OilandGas calculation projects. After analyzing 10 major calculation projects (~2,500+ lines of code), we've identified critical gaps, optimization opportunities, and enhancement priorities.
@@ -530,4 +532,3 @@ Expected total effort: **50-59 hours** across all phases.
 | Date | Version | Author | Changes |
 |------|---------|--------|---------|
 | 2025-01-16 | 1.0 | Analysis Agent | Initial comprehensive analysis |
-

@@ -1,40 +1,75 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using System.Security.Claims;
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.UserManagement.Contracts.Services;
 
 namespace Beep.OilandGas.ApiService.Hubs;
 
 /// <summary>
 /// SignalR hub for real-time workflow notifications.
-/// Clients subscribe to user-specific and persona-specific channels.
+/// Connections join their authenticated user channel automatically; persona and
+/// process channels require app-owned role and resource access checks.
 /// Server pushes task updates, SLA alerts, and approval notifications.
 /// Part of Phase 5 experience & integration.
 /// </summary>
 [Authorize]
 public class WorkflowNotificationHub : Hub
 {
-    /// <summary>Subscribe to notifications for a specific user.</summary>
-    public async Task SubscribeToUser(string userId)
+    private readonly WorkflowNotificationAuthorization _authorization;
+
+    public WorkflowNotificationHub(WorkflowNotificationAuthorization authorization)
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, $"user:{userId}");
+        _authorization = authorization;
     }
 
-    /// <summary>Subscribe to notifications for a persona (all users with that persona).</summary>
-    public async Task SubscribeToPersona(string personaCode)
+    private string Subject() => Context.User?.Identity?.IsAuthenticated == true
+        ? Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? throw new HubException("An authenticated subject is required.")
+        : throw new HubException("An authenticated subject is required.");
+
+    public async Task SubscribeToPersona(string personaCode, string fieldId)
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, $"persona:{personaCode}");
+        var userId = Subject();
+        // Drop the previous subscription even if the new context is denied.
+        if (Context.Items.Remove("persona-group", out var previous) && previous is string oldGroup)
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, oldGroup, Context.ConnectionAborted);
+        if (string.IsNullOrWhiteSpace(personaCode) || string.IsNullOrWhiteSpace(fieldId))
+            throw new HubException("Persona and field are required.");
+        if (!await _authorization.CanAccessPersonaAsync(userId, personaCode, fieldId))
+            throw new HubException("Persona subscription denied.");
+
+        var group = WorkflowNotificationHubExtensions.PersonaGroup(personaCode, fieldId);
+        await Groups.AddToGroupAsync(Context.ConnectionId, group, Context.ConnectionAborted);
+        Context.Items["persona-group"] = group;
     }
 
-    /// <summary>Subscribe to notifications for a process instance.</summary>
     public async Task SubscribeToProcess(string processInstanceId)
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, $"process:{processInstanceId}");
+        var userId = Subject();
+        if (Context.Items.Remove("process-group", out var previous) && previous is string oldGroup)
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, oldGroup, Context.ConnectionAborted);
+        if (string.IsNullOrWhiteSpace(processInstanceId)) throw new HubException("Process is required.");
+        if (!await _authorization.CanAccessProcessAsync(userId, processInstanceId))
+            throw new HubException("Process subscription denied.");
+        await Groups.AddToGroupAsync(Context.ConnectionId,
+            WorkflowNotificationHubExtensions.ProcessGroup(processInstanceId), Context.ConnectionAborted);
+        Context.Items["process-group"] = WorkflowNotificationHubExtensions.ProcessGroup(processInstanceId);
     }
 
-    /// <summary>Unsubscribe from all groups on disconnect.</summary>
-    public override async Task OnDisconnectedAsync(Exception? exception)
+    public override async Task OnConnectedAsync()
     {
-        // Groups are automatically removed on disconnect — no cleanup needed
-        await base.OnDisconnectedAsync(exception);
+        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (Context.User?.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(userId))
+        {
+            Context.Abort();
+            throw new HubException("An authenticated subject is required.");
+        }
+
+        // A reconnect gets a new connection ID and repeats this identity check.
+        // User subscriptions are never selected by a client-supplied identifier.
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"user:{userId}", Context.ConnectionAborted);
+        await base.OnConnectedAsync();
     }
 }
 
@@ -44,30 +79,38 @@ public class WorkflowNotificationHub : Hub
 /// </summary>
 public static class WorkflowNotificationHubExtensions
 {
+    internal static string PersonaGroup(string personaCode, string fieldId) =>
+        $"persona:{Uri.EscapeDataString(personaCode)}:field:{Uri.EscapeDataString(fieldId)}";
+
+    internal static string ProcessGroup(string processId) => $"process:{Uri.EscapeDataString(processId)}";
+
+    public static Task NotifyPersonaAsync(this IHubContext<WorkflowNotificationHub> hubContext,
+        string personaCode, string fieldId, string requiredRole, string method, object payload)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(personaCode);
+        ArgumentException.ThrowIfNullOrWhiteSpace(fieldId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(requiredRole);
+        return hubContext.Clients.Group(PersonaGroup(personaCode, fieldId)).SendAsync(method, new RoleNotification(requiredRole, payload));
+    }
+
+    public static Task NotifyProcessAsync(this IHubContext<WorkflowNotificationHub> hubContext,
+        string processId, string method, object payload)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(processId);
+        return hubContext.Clients.Group(ProcessGroup(processId)).SendAsync(method, payload);
+    }
+
     public static async Task NotifyUserAsync(
         this IHubContext<WorkflowNotificationHub> hubContext,
         string userId,
         string method,
         object payload)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        // Publishers must resolve the recipient from app-owned RBAC/resource access
+        // before sending business data. IdentityServer roles are not authority.
         await hubContext.Clients.Group($"user:{userId}").SendAsync(method, payload);
     }
-
-    public static async Task NotifyPersonaAsync(
-        this IHubContext<WorkflowNotificationHub> hubContext,
-        string personaCode,
-        string method,
-        object payload)
-    {
-        await hubContext.Clients.Group($"persona:{personaCode}").SendAsync(method, payload);
-    }
-
-    public static async Task NotifyProcessAsync(
-        this IHubContext<WorkflowNotificationHub> hubContext,
-        string processInstanceId,
-        string method,
-        object payload)
-    {
-        await hubContext.Clients.Group($"process:{processInstanceId}").SendAsync(method, payload);
-    }
 }
+
+internal sealed record RoleNotification(string RequiredRole, object Payload);

@@ -29,7 +29,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
         public decimal FieldProductionVolume { get; set; }
         public decimal ALLOCATED_VOLUME { get; set; }
         public decimal Discrepancy { get; set; }
-        public decimal DiscrepancyPercentage { get; set; }
+        public decimal? DiscrepancyPercentage { get; set; }
         public VolumeBreakdownResult? OilVolume { get; set; }
         public VolumeBreakdownResult? GasVolume { get; set; }
         public List<VolumeReconciliationIssue> Issues { get; set; } = new();
@@ -52,14 +52,4 @@ namespace Beep.OilandGas.Models.Data.Accounting
         public List<CostAllocationBreakdown> AllocationDetails { get; set; } = new();
     }
 
-    public class ProductionRoyaltyCalculationResult : ModelEntityBase
-    {
-        public decimal? RoyaltyAmount { get; set; }
-        public decimal? GrossOilVolume { get; set; }
-        public decimal? GrossGasVolume { get; set; }
-        public decimal? RoyaltyOilVolume { get; set; }
-        public decimal? RoyaltyGasVolume { get; set; }
-        public decimal? OilRoyaltyRate { get; set; }
-        public decimal? GasRoyaltyRate { get; set; }
-    }
 }

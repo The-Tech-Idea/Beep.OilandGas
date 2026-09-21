@@ -50,7 +50,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
                     request.FieldId,
                     request.StartDate,
                     request.EndDate,
-                    null);
+                    connectionName);
 
                 result.Issues ??= new List<VolumeReconciliationIssue>();
 
@@ -123,4 +123,3 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
         }
     }
 }
-

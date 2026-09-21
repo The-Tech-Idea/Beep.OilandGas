@@ -1,4 +1,4 @@
-﻿@page "/ppdm39/accounting/cost-allocation"
+@page "/ppdm39/accounting/cost-allocation"
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.Accounting
 @using CostAllocationRequestDto = Beep.OilandGas.Models.Data.Accounting.Cost.CostAllocationRequest
@@ -6,15 +6,15 @@
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
 
-<PageTitle>Allocate Field Operating Costs</PageTitle>
+<PageTitle>Preview Cost Allocation</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
 
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
         <MudStack Spacing="0">
-            <MudText Typo="Typo.h5">Allocate Field Operating Costs</MudText>
+            <MudText Typo="Typo.h5">Preview Cost Allocation</MudText>
             <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
-                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Allocate and attribute costs to wells and facilities</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Recorded transactions and configured cost-center bases; no posting</MudText>
                 <MudChip T="string" Size="Size.Small" Color="Color.Warning" Icon="@Icons.Material.Filled.AccountBalance">Accounting</MudChip>
             </MudStack>
         </MudStack>
@@ -23,24 +23,16 @@
     <MudPaper Class="pa-4">
         <MudStack Spacing="3" Class="mb-4">
             <MudSelect T="CostAllocationMethod" @bind-Value="@_allocationMethod" Label="Allocation Method" Variant="Variant.Outlined">
-                <MudSelectItem Value="@CostAllocationMethod.DirectAllocation">Direct Allocation</MudSelectItem>
-                <MudSelectItem Value="@CostAllocationMethod.ActivityBasedCosting">Activity Based Costing</MudSelectItem>
-                <MudSelectItem Value="@CostAllocationMethod.StepDown">Step Down</MudSelectItem>
-                <MudSelectItem Value="@CostAllocationMethod.Reciprocal">Reciprocal</MudSelectItem>
+                @foreach (var method in Enum.GetValues<CostAllocationMethod>())
+                {
+                    <MudSelectItem Value="@method">@method</MudSelectItem>
+                }
             </MudSelect>
 
             <MudDatePicker @bind-Date="@_allocationDate" Label="Allocation Date" Variant="Variant.Outlined" Required="true" />
 
-            <MudTextField T="decimal?" @bind-Value="@_totalOperatingCosts" 
-                         Label="Total Operating Costs" 
-                         Variant="Variant.Outlined" />
-
-            <MudTextField T="decimal?" @bind-Value="@_totalCapitalCosts" 
-                         Label="Total Capital Costs" 
-                         Variant="Variant.Outlined" />
-
             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Calculate" OnClick="AllocateCosts">
-                Allocate Costs
+                Calculate Breakdown
             </MudButton>
         </MudStack>
 
@@ -134,8 +126,6 @@
     private string _fieldName = string.Empty;
     private CostAllocationMethod _allocationMethod = CostAllocationMethod.DirectAllocation;
     private DateTime? _allocationDate = DateTime.Today;
-    private decimal? _totalOperatingCosts;
-    private decimal? _totalCapitalCosts;
     private bool _isLoading = false;
     private CostAllocationComputationResult? _allocationResult;
 
@@ -167,6 +157,7 @@
             return;
         }
 
+        _allocationResult = null;
         _isLoading = true;
         try
         {
@@ -177,15 +168,11 @@
                 AllocationMethod = _allocationMethod.ToString()
             };
 
-            if (_totalOperatingCosts.HasValue)
-                request.TotalOperatingCosts = _totalOperatingCosts.Value;
-
-            if (_totalCapitalCosts.HasValue)
-                request.TotalCapitalCosts = _totalCapitalCosts.Value;
-
             _allocationResult = await AccountingServiceClient.AllocateCostsAsync(request);
 
-            Snackbar.Add("Cost allocation completed", Severity.Success);
+            if (_allocationResult is null)
+                throw new InvalidOperationException("No cost breakdown was returned.");
+            Snackbar.Add("Cost breakdown calculated", Severity.Success);
         }
         catch (Exception)
         {

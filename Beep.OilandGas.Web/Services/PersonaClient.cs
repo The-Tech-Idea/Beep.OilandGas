@@ -5,9 +5,9 @@ namespace Beep.OilandGas.Web.Services;
 public sealed class PersonaClient(ApiClient api)
 {
     private static string Segment(string value) => Uri.EscapeDataString(value);
-    public async Task<List<AppPersona>> CatalogAsync() => await api.GetAsync<List<AppPersona>>("/api/personas") ?? [];
+    public async Task<List<AppPersona>> CatalogAsync() => await api.GetAsync<List<AppPersona>>("/api/personas") ?? throw new InvalidOperationException("Persona catalog response was empty.");
     public async Task<AppUserPersona?> GetAsync(string userId) =>
-        (await api.GetAsync<PersonaProfileResult>($"/api/personas/users/{Segment(userId)}"))?.Profile;
+        (await api.GetAsync<PersonaProfileResult>($"/api/personas/users/{Segment(userId)}") ?? throw new InvalidOperationException("Persona profile response was empty.")).Profile;
     public async Task<AppUserPersona> SaveAsync(string userId, PersonaProfileUpdate request) =>
         await api.PutAsync<PersonaProfileUpdate, AppUserPersona>($"/api/personas/users/{Segment(userId)}", request)
         ?? throw new InvalidOperationException("Profile save returned no result.");

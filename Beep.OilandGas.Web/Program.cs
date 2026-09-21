@@ -438,7 +438,7 @@ builder.Services.AddBeepOilandGasAppRemote(builder.Configuration);
 
         // ── Phase 5: Workflow Notifications & Task Inbox ─────────────────
         builder.Services.AddScoped<IUnifiedTaskInboxService, UnifiedTaskInboxService>();
-        builder.Services.AddSingleton<INotificationService, NotificationService>();
+        builder.Services.AddScoped<INotificationService, NotificationService>();
         builder.Services.AddSingleton<IEmailNotificationProvider, EmailNotificationProvider>();
         builder.Services.AddSingleton<IExternalWebhookTriggerService>(sp =>
         {

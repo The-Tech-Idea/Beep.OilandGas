@@ -115,6 +115,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                         Status = i == 0 ? StepStatus.PENDING : StepStatus.BLOCKED,
                         RequiredRole = step.RequiredRoles.Count > 0 ? step.RequiredRoles[0] : null,
                         ApprovalRequired = step.RequiresApproval,
+                        SlaHours = step.SlaHours,
                         StepData = new PROCESS_STEP_DATA(),
                         Approvals = new List<ApprovalRecord>(),
                         ValidationResults = new List<ValidationResult>()

@@ -1,6 +1,14 @@
 @using Beep.OilandGas.Web.Services
 @implements IDisposable
 
+@if (NotificationService.LastError is not null || _contextError is not null)
+{
+    <MudAlert Severity="Severity.Warning" Dense="true">
+        @(NotificationService.LastError ?? _contextError)
+        <MudButton OnClick="RetryAsync">Retry</MudButton>
+    </MudAlert>
+}
+
 <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
     <ActivatorContent>
         <MudIconButton Icon="@Icons.Material.Filled.Notifications"
@@ -65,15 +73,52 @@
 @code {
     [Inject] private INotificationService NotificationService { get; set; } = default!;
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+    [Inject] private IPersonaContextService PersonaContext { get; set; } = default!;
+    [Inject] private IDataManagementService DataManagement { get; set; } = default!;
+    [Inject] private ILogger<NotificationCenter> Logger { get; set; } = default!;
 
     private List<NotificationModel> _notifications = new();
     private int _unreadCount;
+    private string? _contextError;
 
     protected override void OnInitialized()
     {
         NotificationService.OnNotificationReceived += OnNotification;
+        NotificationService.OnStateChanged += RefreshState;
+        DataManagement.CurrentFieldChanged += FieldChanged;
         RefreshState();
     }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await RetryAsync();
+    }
+
+    private async Task RetryAsync()
+    {
+        try
+        {
+            _contextError = null;
+            await NotificationService.StartAsync();
+            if (!NotificationService.IsConnected) return;
+            await PersonaContext.EnsureLoadedAsync();
+            var fieldId = await DataManagement.GetCurrentFieldIdAsync();
+            if (PersonaContext.CurrentPersona is { } persona && !string.IsNullOrWhiteSpace(fieldId))
+                await NotificationService.SubscribeToPersonaAsync(persona.Code, fieldId);
+        }
+        catch (Exception exception)
+        {
+            _contextError = "Unable to load the persona notification context. Retry to reload.";
+            Logger.LogWarning(exception, "Unable to load notification context");
+        }
+        finally { await InvokeAsync(StateHasChanged); }
+    }
+
+    private void FieldChanged(string fieldId) => _ = InvokeAsync(async () =>
+    {
+        if (PersonaContext.CurrentPersona is { } persona)
+            await NotificationService.SubscribeToPersonaAsync(persona.Code, fieldId);
+    });
 
     private void OnNotification(NotificationModel notification)
     {
@@ -82,9 +127,12 @@
 
     private void RefreshState()
     {
-        _notifications = NotificationService.RecentNotifications;
-        _unreadCount = NotificationService.UnreadCount;
-        InvokeAsync(StateHasChanged);
+        _ = InvokeAsync(() =>
+        {
+            _notifications = NotificationService.RecentNotifications;
+            _unreadCount = NotificationService.UnreadCount;
+            StateHasChanged();
+        });
     }
 
     private void HandleClick(NotificationModel notification)
@@ -106,5 +154,7 @@
     public void Dispose()
     {
         NotificationService.OnNotificationReceived -= OnNotification;
+        NotificationService.OnStateChanged -= RefreshState;
+        DataManagement.CurrentFieldChanged -= FieldChanged;
     }
 }

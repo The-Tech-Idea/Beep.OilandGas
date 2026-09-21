@@ -1,8 +1,9 @@
 ﻿@page "/ppdm39/field/dashboard"
 @using Beep.OilandGas.Models.Data
 @inject ILifeCycleService LifeCycleService
-@inject ISnackbar Snackbar
-@inject NavigationManager NavigationManager
+@inject IDataManagementService DataManagementService
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IDisposable
 
 <PageTitle>Field Lifecycle Overview</PageTitle>
 
@@ -13,14 +14,14 @@
         <MudStack Spacing="0">
             <MudText Typo="Typo.h5">Field Lifecycle Overview</MudText>
             <MudText Typo="Typo.body2" Color="Color.Secondary">
-                @_fieldName — Cross-phase asset summary — @DateTime.Today.ToString("dd MMM yyyy")
+                @(_dashboard?.FieldName ?? _dashboard?.FieldId ?? "Select an active field above") — Cross-phase asset summary
             </MudText>
         </MudStack>
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
             <MudButton Variant="Variant.Text"
                        StartIcon="@Icons.Material.Filled.Refresh"
                        Color="Color.Default"
-                       OnClick="LoadDashboard">
+                       OnClick="LoadDashboard" Disabled="@_isLoading">
                 Refresh
             </MudButton>
             <MudButton Variant="Variant.Filled"
@@ -37,18 +38,20 @@
         <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
     }
 
-    @if (_dashboard == null && !_isLoading)
+    @if (_state?.Error is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_state.Error</MudAlert>
+    }
+
+    @if (_state?.NeedsField == true && !_isLoading)
     {
         <MudPaper Elevation="0" Class="pa-6 d-flex flex-column align-center gap-4">
             <MudIcon Icon="@Icons.Material.Filled.LocationOff" Size="Size.Large" Color="Color.Warning" Class="og-icon-xl" />
             <MudText Typo="Typo.h6">No Active Field Selected</MudText>
             <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">
-                Select a field to view its lifecycle summary across all phases.
+                Use Active field above to view its lifecycle summary across all phases.
             </MudText>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                       StartIcon="@Icons.Material.Filled.Map" Href="/dashboard">
-                Go to Field Selection
-            </MudButton>
+
         </MudPaper>
     }
 
@@ -74,7 +77,7 @@
                 {
                     <MudItem xs="12" sm="6" md="4" lg="2">
                         <KpiCard Label="@kpi.Key"
-                                 Value="@(kpi.Value?.ToString() ?? "—")"
+                                 Value="@FieldDashboardState.MetricValue(kpi.Value)"
                                  ValueColor="Color.Primary"
                                  Icon="@Icons.Material.Filled.Analytics" />
                     </MudItem>
@@ -95,20 +98,14 @@
                         </CardHeaderAvatar>
                         <CardHeaderContent>
                             <MudText Typo="Typo.subtitle1">Exploration</MudText>
-                            @if (_dashboard.ExplorationSummary != null)
-                            {
-                                <MudChip T="string" Size="Size.Small"
-                                         Color="@GetPhaseColor(_dashboard.ExplorationSummary)">
-                                    @GetPhaseStatus(_dashboard.ExplorationSummary)
-                                </MudChip>
-                            }
+
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
                         @if (_dashboard.ExplorationSummary != null)
                         {
                             <MudText Typo="Typo.h4" Color="Color.Info">@_dashboard.ExplorationSummary.EntityCount</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">Active entities</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Records</MudText>
                             @if (_dashboard.ExplorationSummary.LastActivityDate.HasValue)
                             {
                                 <MudText Typo="Typo.body2" Class="mt-2" Color="Color.Secondary">
@@ -118,7 +115,7 @@
                         }
                         else
                         {
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">No data</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Not available</MudText>
                         }
                     </MudCardContent>
                     <MudCardActions>
@@ -139,20 +136,14 @@
                         </CardHeaderAvatar>
                         <CardHeaderContent>
                             <MudText Typo="Typo.subtitle1">Development</MudText>
-                            @if (_dashboard.DevelopmentSummary != null)
-                            {
-                                <MudChip T="string" Size="Size.Small"
-                                         Color="@GetPhaseColor(_dashboard.DevelopmentSummary)">
-                                    @GetPhaseStatus(_dashboard.DevelopmentSummary)
-                                </MudChip>
-                            }
+
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
                         @if (_dashboard.DevelopmentSummary != null)
                         {
                             <MudText Typo="Typo.h4" Color="Color.Warning">@_dashboard.DevelopmentSummary.EntityCount</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">Active entities</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Records</MudText>
                             @if (_dashboard.DevelopmentSummary.LastActivityDate.HasValue)
                             {
                                 <MudText Typo="Typo.body2" Class="mt-2" Color="Color.Secondary">
@@ -162,7 +153,7 @@
                         }
                         else
                         {
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">No data</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Not available</MudText>
                         }
                     </MudCardContent>
                     <MudCardActions>
@@ -183,20 +174,14 @@
                         </CardHeaderAvatar>
                         <CardHeaderContent>
                             <MudText Typo="Typo.subtitle1">Production</MudText>
-                            @if (_dashboard.ProductionSummary != null)
-                            {
-                                <MudChip T="string" Size="Size.Small"
-                                         Color="@GetPhaseColor(_dashboard.ProductionSummary)">
-                                    @GetPhaseStatus(_dashboard.ProductionSummary)
-                                </MudChip>
-                            }
+
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
                         @if (_dashboard.ProductionSummary != null)
                         {
                             <MudText Typo="Typo.h4" Color="Color.Success">@_dashboard.ProductionSummary.EntityCount</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">Active entities</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Records</MudText>
                             @if (_dashboard.ProductionSummary.LastActivityDate.HasValue)
                             {
                                 <MudText Typo="Typo.body2" Class="mt-2" Color="Color.Secondary">
@@ -206,7 +191,7 @@
                         }
                         else
                         {
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">No data</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Not available</MudText>
                         }
                     </MudCardContent>
                     <MudCardActions>
@@ -227,20 +212,14 @@
                         </CardHeaderAvatar>
                         <CardHeaderContent>
                             <MudText Typo="Typo.subtitle1">Decommissioning</MudText>
-                            @if (_dashboard.DecommissioningSummary != null)
-                            {
-                                <MudChip T="string" Size="Size.Small"
-                                         Color="@GetPhaseColor(_dashboard.DecommissioningSummary)">
-                                    @GetPhaseStatus(_dashboard.DecommissioningSummary)
-                                </MudChip>
-                            }
+
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
                         @if (_dashboard.DecommissioningSummary != null)
                         {
                             <MudText Typo="Typo.h4" Color="Color.Error">@_dashboard.DecommissioningSummary.EntityCount</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">Active entities</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Records</MudText>
                             @if (_dashboard.DecommissioningSummary.LastActivityDate.HasValue)
                             {
                                 <MudText Typo="Typo.body2" Class="mt-2" Color="Color.Secondary">
@@ -250,7 +229,7 @@
                         }
                         else
                         {
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">No data</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Not available</MudText>
                         }
                     </MudCardContent>
                     <MudCardActions>
@@ -283,7 +262,10 @@
                                 <Columns>
                                     <PropertyColumn Property="m => m.MetricLabel" Title="Metric" />
                                     <PropertyColumn Property="m => m.Phase" Title="Phase" />
-                                    <PropertyColumn Property="m => m.CurrentValue" Title="Value" />
+                                    <TemplateColumn Title="Value">
+                                        <CellTemplate>@FieldDashboardState.MetricValue(context.Item.CurrentValue)</CellTemplate>
+                                    </TemplateColumn>
+                                    <PropertyColumn Property="m => m.Unit" Title="Unit" />
                                     <TemplateColumn Title="As Of">
                                         <CellTemplate>
                                             <MudText Typo="Typo.body2">
@@ -349,39 +331,37 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = string.Empty;
-    private Beep.OilandGas.Models.Data.FieldDashboard? _dashboard;
-    private bool _isLoading = false;
+    private FieldDashboardState? _state;
+    private Beep.OilandGas.Models.Data.FieldDashboard? _dashboard => _state?.Dashboard;
+    private bool _isLoading => _state?.Loading == true;
+    private bool _disposed;
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
-            if (summary != null)
-                _fieldName = summary.FieldName ?? _fieldName;
-        }
-        catch { /* field name is non-critical */ }
-
+        _state = new(LifeCycleService.GetFieldDashboardAsync);
+        DataManagementService.CurrentFieldChanged += FieldChanged;
         await LoadDashboard();
     }
 
-    private async Task LoadDashboard()
+    private Task LoadDashboard() => _state!.LoadAsync(DataManagementService.GetCurrentFieldIdAsync);
+
+    private void FieldChanged(string fieldId)
     {
-        _isLoading = true;
-        try
+        if (!_disposed) _ = InvokeAsync(async () =>
         {
-            _dashboard = await LifeCycleService.GetFieldDashboardAsync();
-        }
-        catch (Exception)
-        {
-            Snackbar.Add("Error loading field dashboard.", Severity.Error);
-            _dashboard = null;
-        }
-        finally
-        {
-            _isLoading = false;
-        }
+            if (_disposed) return;
+            var load = _state!.LoadAsync(() => Task.FromResult<string?>(fieldId));
+            StateHasChanged();
+            await load;
+            if (!_disposed) StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        DataManagementService.CurrentFieldChanged -= FieldChanged;
+        _state?.Dispose();
     }
 
     private Severity GetSeverity(string? severity)
@@ -396,29 +376,4 @@
         };
     }
 
-    private string GetPhaseStatus(FieldDashboardPhaseSummary phase)
-    {
-        if (phase.EntityCount > 0 && phase.LastActivityDate.HasValue)
-        {
-            var daysSinceActivity = (DateTime.UtcNow - phase.LastActivityDate.Value).Days;
-            if (daysSinceActivity < 30)   return "Active";
-            if (daysSinceActivity < 90)   return "Quiet";
-            return "Inactive";
-        }
-        return phase.EntityCount > 0 ? "Active" : "No Data";
-    }
-
-    private Color GetPhaseColor(FieldDashboardPhaseSummary phase)
-    {
-        var status = GetPhaseStatus(phase);
-        return status switch
-        {
-            "Active"   => Color.Success,
-            "Quiet"    => Color.Warning,
-            "Inactive" => Color.Default,
-            _          => Color.Default
-        };
-    }
 }
-
-

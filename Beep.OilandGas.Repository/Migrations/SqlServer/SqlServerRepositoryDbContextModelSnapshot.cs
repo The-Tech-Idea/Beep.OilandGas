@@ -672,6 +672,37 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
                     b.ToTable("APP_USER_ROLE", (string)null);
                 });
 
+            modelBuilder.Entity("TheTechIdea.Data.OilGas.FinancialOperationClaim", b =>
+                {
+                    b.Property<string>("OperationKey")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("ChangedBy")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("ChangedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("OwnerId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("Token")
+                        .HasMaxLength(36)
+                        .HasColumnType("nvarchar(36)");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("OperationKey");
+
+                    b.ToTable("FINANCIAL_OPERATION_CLAIM", (string)null);
+                });
+
             modelBuilder.Entity("TheTechIdea.Data.OilGas.ModuleDatabaseBinding", b =>
                 {
                     b.Property<string>("ModuleId")
