@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using TheTechIdea.Beep.Report;
 
@@ -13,6 +13,16 @@ namespace Beep.OilandGas.ApiService.Middleware
     /// </summary>
     public class AssetAccessMiddleware
     {
+        /// <summary>
+        /// The caller's own account (<c>/api/auth</c>) and the repository's setup (<c>/api/setup</c>) read no asset data,
+        /// so their requests are not asked which assets the caller may reach. Asking there made a fresh repository impossible
+        /// to set up: resolving asset access needs the PPDM_CORE binding, binding it is an <c>/api/setup</c> request, and
+        /// every such request failed until it was bound — as did the account endpoints, so nobody's roles loaded and account
+        /// deletion refused (found 2026-09-25). <see cref="SetupGateMiddleware"/> runs earlier and answers a different
+        /// question — whether the repository itself is installed — so it still gates <c>/api/setup/modules</c>.
+        /// </summary>
+        private static readonly PathString[] NoAssetDataPaths = ["/api/auth", "/api/setup"];
+
         private readonly RequestDelegate _next;
 
         public AssetAccessMiddleware(RequestDelegate next)
@@ -22,11 +32,10 @@ namespace Beep.OilandGas.ApiService.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Get user ID from claims
-            var userId = context.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? context.User?.Identity?.Name;
+            var userId = context.User.FindActingUserId();
 
-            if (!string.IsNullOrEmpty(userId))
+            if (!string.IsNullOrEmpty(userId)
+                && !NoAssetDataPaths.Any(path => context.Request.Path.StartsWithSegments(path, StringComparison.OrdinalIgnoreCase)))
             {
                 // Get access control service from DI
                 var accessControlService = context.RequestServices

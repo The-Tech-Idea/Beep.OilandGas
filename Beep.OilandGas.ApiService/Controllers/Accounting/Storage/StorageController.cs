@@ -2,8 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Storage;
 using Beep.OilandGas.Models.Data.Inventory;
@@ -105,6 +105,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
             [FromBody] StorageTankInventoryUpdateRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -115,7 +116,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
                 var result = await _inventoryService.UpdateInventoryAsync(
                     tankId,
                     request.VolumeDelta,
-                    ResolveUserId(),
+                    userId,
                     connectionName ?? _service.DefaultConnectionName);
 
                 return Ok(result);
@@ -161,6 +162,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
             [FromBody] StorageInventoryValuationRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -172,7 +174,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
                     inventoryItemId,
                     request.ValuationDate,
                     request.Method,
-                    ResolveUserId(),
+                    userId,
                     connectionName ?? _service.DefaultConnectionName);
 
                 return Ok(result);
@@ -191,6 +193,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
             [FromBody] StorageReconciliationReportRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -202,7 +205,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
                     inventoryItemId,
                     request.PeriodStart,
                     request.PeriodEnd,
-                    ResolveUserId(),
+                    userId,
                     connectionName ?? _service.DefaultConnectionName);
 
                 return Ok(result);
@@ -212,13 +215,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
                 _logger.LogError(ex, "Error generating storage reconciliation report for {InventoryItemId}", inventoryItemId);
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
-        }
-
-        private string ResolveUserId()
-        {
-            return User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub")
-                ?? "system";
         }
     }
 

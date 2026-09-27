@@ -8,6 +8,7 @@ using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.ApiService.Services;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
 {
@@ -35,9 +36,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
         [HttpPost("allocate")]
         public async Task<ActionResult<object>> AllocateRevenue(
             [FromBody] RevenueAllocationRequest request,
-            [FromQuery] string connectionName = "PPDM39",
-            [FromQuery] string? userId = null)
+            [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -67,10 +68,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
                             ROW_EFFECTIVE_DATE = request.AllocationDate,
                             ACTIVE_IND = "Y",
                             ROW_CREATED_DATE = DateTime.UtcNow,
-                            ROW_CREATED_BY = userId ?? "system"
+                            ROW_CREATED_BY = userId
                         };
 
-                        await repository.InsertAsync(allocation, userId ?? "system");
+                        await repository.InsertAsync(allocation, userId);
 
                         allocations.Add(new
                         {

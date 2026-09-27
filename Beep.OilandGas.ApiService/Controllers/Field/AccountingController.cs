@@ -3,10 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Security.Claims;
 using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.ApiService.Attributes;
+using Beep.OilandGas.ApiService.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
@@ -136,6 +136,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("close-period")]
         public async Task<IActionResult> ClosePeriodAsync([FromBody] CloseAccountingPeriodRequest request)
         {
+            var userId = User.ActingUserId();
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
             if (request == null || request.PeriodEnd == default)
@@ -143,7 +144,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
             try
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
                 var succeeded = await _productionAccountingService.ClosePeriodAsync(fieldId, request.PeriodEnd.Date, userId);
                 if (!succeeded)
                     return StatusCode(500, new { error = "Period close failed." });

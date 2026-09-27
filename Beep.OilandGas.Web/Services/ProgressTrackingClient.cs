@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
+using Duende.AccessTokenManagement.OpenIdConnect;
 using Microsoft.Extensions.Configuration;
 
 namespace Beep.OilandGas.Web.Services
@@ -29,29 +30,27 @@ namespace Beep.OilandGas.Web.Services
     /// </summary>
     public class ProgressTrackingClient : IProgressTrackingClient, IAsyncDisposable
     {
-        private readonly string _hubUrl;
+        private readonly Uri _hubUri;
+        private readonly AuthenticationStateProvider _authentication;
+        private readonly IUserTokenManager _tokens;
         private HubConnection? _hubConnection;
-        private readonly ILogger<ProgressTrackingClient>? _logger;
+        private readonly ILogger<ProgressTrackingClient> _logger;
 
         public bool IsConnected => _hubConnection?.State == HubConnectionState.Connected;
         public event Action<ProgressUpdate>? OnProgressUpdate;
 
-        public ProgressTrackingClient(NavigationManager navigationManager, IConfiguration? configuration = null, ILogger<ProgressTrackingClient>? logger = null)
+        /// <remarks>
+        /// The hub is on the OilGas API, which admits only a signed-in person with an active account, so the connection
+        /// carries the person's own access token. It connected with none — every connection refused — and fell back to
+        /// <c>https://localhost:7001</c> when the API's address was not configured.
+        /// </remarks>
+        public ProgressTrackingClient(AuthenticationStateProvider authentication, IUserTokenManager tokens,
+            OilGasApiAddress api, ILogger<ProgressTrackingClient> logger)
         {
-            // Get API base URL from configuration - this should match the ApiClient base URL
-            // In Blazor Server, SignalR hub runs on the API server
-            var apiBaseUrl = configuration?["ApiService:BaseUrl"] 
-                ?? configuration?["ApiSettings:BaseUrl"]
-                ?? "https://localhost:7001"; // Default to API service default port
-            
-            // Ensure URL doesn't end with slash
-            apiBaseUrl = apiBaseUrl.TrimEnd('/');
-            
-            // SignalR hub is on the API server
-            _hubUrl = $"{apiBaseUrl}/progressHub";
+            _authentication = authentication;
+            _tokens = tokens;
             _logger = logger;
-            
-            _logger?.LogDebug("ProgressTrackingClient initialized with hub URL: {HubUrl}", _hubUrl);
+            _hubUri = api.For("progressHub");
         }
 
         public async Task ConnectAsync()
@@ -64,7 +63,15 @@ namespace Beep.OilandGas.Web.Services
             try
             {
                 _hubConnection = new HubConnectionBuilder()
-                    .WithUrl(_hubUrl)
+                    .WithUrl(_hubUri, options => options.AccessTokenProvider = async () =>
+                    {
+                        // The person's own token from the identity server's client library, refreshed when it is due.
+                        var state = await _authentication.GetAuthenticationStateAsync();
+                        var token = await _tokens.GetAccessTokenAsync(state.User);
+                        return token.WasSuccessful(out var user, out var failure)
+                            ? user.AccessToken.ToString()
+                            : throw new InvalidOperationException($"The signed-in person's access token is unavailable ({failure.Error}).");
+                    })
                     .WithAutomaticReconnect()
                     .Build();
 
@@ -77,7 +84,7 @@ namespace Beep.OilandGas.Web.Services
                     }
                     catch (Exception ex)
                     {
-                        _logger?.LogError(ex, "Error handling progress update");
+                        _logger.LogError(ex, "Error handling progress update");
                     }
                 });
 
@@ -102,7 +109,7 @@ namespace Beep.OilandGas.Web.Services
                     }
                     catch (Exception ex)
                     {
-                        _logger?.LogError(ex, "Error handling workflow progress update");
+                        _logger.LogError(ex, "Error handling workflow progress update");
                     }
                 });
 
@@ -127,35 +134,35 @@ namespace Beep.OilandGas.Web.Services
                     }
                     catch (Exception ex)
                     {
-                        _logger?.LogError(ex, "Error handling multi-operation progress update");
+                        _logger.LogError(ex, "Error handling multi-operation progress update");
                     }
                 });
 
                 // Handle reconnection
                 _hubConnection.Reconnecting += (error) =>
                 {
-                    _logger?.LogWarning("Progress hub reconnecting: {Error}", error?.Message);
+                    _logger.LogWarning("Progress hub reconnecting: {Error}", error?.Message);
                     return Task.CompletedTask;
                 };
 
                 _hubConnection.Reconnected += (connectionId) =>
                 {
-                    _logger?.LogInformation("Progress hub reconnected: {ConnectionId}", connectionId);
+                    _logger.LogInformation("Progress hub reconnected: {ConnectionId}", connectionId);
                     return Task.CompletedTask;
                 };
 
                 _hubConnection.Closed += (error) =>
                 {
-                    _logger?.LogWarning("Progress hub closed: {Error}", error?.Message);
+                    _logger.LogWarning("Progress hub closed: {Error}", error?.Message);
                     return Task.CompletedTask;
                 };
 
                 await _hubConnection.StartAsync();
-                _logger?.LogInformation("Connected to progress hub");
+                _logger.LogInformation("Connected to progress hub");
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Failed to connect to progress hub");
+                _logger.LogError(ex, "Failed to connect to progress hub");
                 throw;
             }
         }
@@ -167,7 +174,7 @@ namespace Beep.OilandGas.Web.Services
                 await _hubConnection.StopAsync();
                 await _hubConnection.DisposeAsync();
                 _hubConnection = null;
-                _logger?.LogInformation("Disconnected from progress hub");
+                _logger.LogInformation("Disconnected from progress hub");
             }
         }
 
@@ -179,7 +186,7 @@ namespace Beep.OilandGas.Web.Services
             }
 
             await _hubConnection!.InvokeAsync("JoinOperationGroup", operationId);
-            _logger?.LogDebug("Joined operation group: {OperationId}", operationId);
+            _logger.LogDebug("Joined operation group: {OperationId}", operationId);
         }
 
         public async Task LeaveOperationAsync(string operationId)
@@ -187,7 +194,7 @@ namespace Beep.OilandGas.Web.Services
             if (_hubConnection?.State == HubConnectionState.Connected)
             {
                 await _hubConnection.InvokeAsync("LeaveOperationGroup", operationId);
-                _logger?.LogDebug("Left operation group: {OperationId}", operationId);
+                _logger.LogDebug("Left operation group: {OperationId}", operationId);
             }
         }
 
@@ -199,7 +206,7 @@ namespace Beep.OilandGas.Web.Services
             }
 
             await _hubConnection!.InvokeAsync("JoinWorkflowGroup", workflowId);
-            _logger?.LogDebug("Joined workflow group: {WorkflowId}", workflowId);
+            _logger.LogDebug("Joined workflow group: {WorkflowId}", workflowId);
         }
 
         public async Task LeaveWorkflowAsync(string workflowId)
@@ -207,7 +214,7 @@ namespace Beep.OilandGas.Web.Services
             if (_hubConnection?.State == HubConnectionState.Connected)
             {
                 await _hubConnection.InvokeAsync("LeaveWorkflowGroup", workflowId);
-                _logger?.LogDebug("Left workflow group: {WorkflowId}", workflowId);
+                _logger.LogDebug("Left workflow group: {WorkflowId}", workflowId);
             }
         }
 

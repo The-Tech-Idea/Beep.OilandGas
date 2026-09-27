@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Security.Claims;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Beep.OilandGas.ApiService.Controllers.Field;
@@ -9,6 +10,7 @@ using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ProspectIdentification;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -26,7 +28,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "alice"
         };
 
         var processInstance = new ProcessInstance
@@ -63,6 +64,7 @@ public class ExplorationControllerWorkflowConflictTests
             explorationService.Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("alice");
 
         var action = await controller.ProspectToDiscoveryRiskAssessment(request, CancellationToken.None);
 
@@ -86,7 +88,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "bob"
         };
 
         var processInstance = new ProcessInstance
@@ -123,6 +124,7 @@ public class ExplorationControllerWorkflowConflictTests
             explorationService.Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("bob");
 
         var action = await controller.DiscoveryToDevelopmentApprove(request, CancellationToken.None);
 
@@ -146,7 +148,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "scope-user"
         };
 
         var processInstance = new ProcessInstance
@@ -183,6 +184,7 @@ public class ExplorationControllerWorkflowConflictTests
             explorationService.Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("scope-user");
 
         var action = await controller.ProspectToDiscoveryRiskAssessment(request, CancellationToken.None);
 
@@ -200,7 +202,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "scope-user-2"
         };
 
         var processInstance = new ProcessInstance
@@ -237,6 +238,7 @@ public class ExplorationControllerWorkflowConflictTests
             explorationService.Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("scope-user-2");
 
         var action = await controller.DiscoveryToDevelopmentApprove(request, CancellationToken.None);
 
@@ -254,7 +256,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "ok-user-1",
             StepData = new Dictionary<string, object> { ["risk"] = "set" }
         };
 
@@ -281,7 +282,7 @@ public class ExplorationControllerWorkflowConflictTests
                 instanceId,
                 ExplorationReferenceCodes.StepRiskAssessment,
                 It.IsAny<PROCESS_STEP_DATA>(),
-                request.UserId))
+                "ok-user-1"))
             .ReturnsAsync(true);
 
         var explorationProcessService = new ExplorationProcessService(
@@ -299,6 +300,7 @@ public class ExplorationControllerWorkflowConflictTests
             explorationService.Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("ok-user-1");
 
         var action = await controller.ProspectToDiscoveryRiskAssessment(request, CancellationToken.None);
 
@@ -315,7 +317,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "ok-user-2"
         };
 
         var processInstance = new ProcessInstance
@@ -341,7 +342,7 @@ public class ExplorationControllerWorkflowConflictTests
                 instanceId,
                 ExplorationReferenceCodes.StepDevelopmentApproval,
                 ExplorationReferenceCodes.OutcomeApproved,
-                request.UserId))
+                "ok-user-2"))
             .ReturnsAsync(true);
 
         var explorationProcessService = new ExplorationProcessService(
@@ -359,6 +360,7 @@ public class ExplorationControllerWorkflowConflictTests
             explorationService.Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("ok-user-2");
 
         var action = await controller.DiscoveryToDevelopmentApprove(request, CancellationToken.None);
 
@@ -377,7 +379,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "payload-user-1",
             StepData = new Dictionary<string, object>
             {
                 ["StepType"] = "ANALYSIS",
@@ -413,7 +414,7 @@ public class ExplorationControllerWorkflowConflictTests
                 instanceId,
                 ExplorationReferenceCodes.StepRiskAssessment,
                 It.IsAny<PROCESS_STEP_DATA>(),
-                request.UserId))
+                "payload-user-1"))
             .Callback<string, string, PROCESS_STEP_DATA, string>((_, _, data, _) => captured = data)
             .ReturnsAsync(true);
 
@@ -430,6 +431,7 @@ public class ExplorationControllerWorkflowConflictTests
             new Mock<IFieldExplorationService>(MockBehavior.Loose).Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("payload-user-1");
 
         var action = await controller.ProspectToDiscoveryRiskAssessment(request, CancellationToken.None);
 
@@ -453,7 +455,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "payload-user-2",
             StepData = new Dictionary<string, object>
             {
                 ["StepType"] = "APPRAISAL",
@@ -489,7 +490,7 @@ public class ExplorationControllerWorkflowConflictTests
                 instanceId,
                 ExplorationReferenceCodes.StepAppraisal,
                 It.IsAny<PROCESS_STEP_DATA>(),
-                request.UserId))
+                "payload-user-2"))
             .Callback<string, string, PROCESS_STEP_DATA, string>((_, _, data, _) => captured = data)
             .ReturnsAsync(true);
 
@@ -506,6 +507,7 @@ public class ExplorationControllerWorkflowConflictTests
             new Mock<IFieldExplorationService>(MockBehavior.Loose).Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("payload-user-2");
 
         var action = await controller.DiscoveryToDevelopmentAppraisal(request, CancellationToken.None);
 
@@ -527,7 +529,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "null-payload-user",
             StepData = null
         };
 
@@ -555,7 +556,7 @@ public class ExplorationControllerWorkflowConflictTests
                 instanceId,
                 ExplorationReferenceCodes.StepRiskAssessment,
                 It.IsAny<PROCESS_STEP_DATA>(),
-                request.UserId))
+                "null-payload-user"))
             .Callback<string, string, PROCESS_STEP_DATA, string>((_, _, data, _) => captured = data)
             .ReturnsAsync(true);
 
@@ -572,6 +573,7 @@ public class ExplorationControllerWorkflowConflictTests
             new Mock<IFieldExplorationService>(MockBehavior.Loose).Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("null-payload-user");
 
         var action = await controller.ProspectToDiscoveryRiskAssessment(request, CancellationToken.None);
 
@@ -590,7 +592,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "empty-payload-user",
             StepData = new Dictionary<string, object>()
         };
 
@@ -618,7 +619,7 @@ public class ExplorationControllerWorkflowConflictTests
                 instanceId,
                 ExplorationReferenceCodes.StepRiskAssessment,
                 It.IsAny<PROCESS_STEP_DATA>(),
-                request.UserId))
+                "empty-payload-user"))
             .Callback<string, string, PROCESS_STEP_DATA, string>((_, _, data, _) => captured = data)
             .ReturnsAsync(true);
 
@@ -635,6 +636,7 @@ public class ExplorationControllerWorkflowConflictTests
             new Mock<IFieldExplorationService>(MockBehavior.Loose).Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("empty-payload-user");
 
         var action = await controller.ProspectToDiscoveryRiskAssessment(request, CancellationToken.None);
 
@@ -653,7 +655,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "d2d-null-payload-user",
             StepData = null
         };
 
@@ -681,7 +682,7 @@ public class ExplorationControllerWorkflowConflictTests
                 instanceId,
                 ExplorationReferenceCodes.StepAppraisal,
                 It.IsAny<PROCESS_STEP_DATA>(),
-                request.UserId))
+                "d2d-null-payload-user"))
             .Callback<string, string, PROCESS_STEP_DATA, string>((_, _, data, _) => captured = data)
             .ReturnsAsync(true);
 
@@ -698,6 +699,7 @@ public class ExplorationControllerWorkflowConflictTests
             new Mock<IFieldExplorationService>(MockBehavior.Loose).Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("d2d-null-payload-user");
 
         var action = await controller.DiscoveryToDevelopmentAppraisal(request, CancellationToken.None);
 
@@ -716,7 +718,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "d2d-empty-payload-user",
             StepData = new Dictionary<string, object>()
         };
 
@@ -744,7 +745,7 @@ public class ExplorationControllerWorkflowConflictTests
                 instanceId,
                 ExplorationReferenceCodes.StepAppraisal,
                 It.IsAny<PROCESS_STEP_DATA>(),
-                request.UserId))
+                "d2d-empty-payload-user"))
             .Callback<string, string, PROCESS_STEP_DATA, string>((_, _, data, _) => captured = data)
             .ReturnsAsync(true);
 
@@ -761,6 +762,7 @@ public class ExplorationControllerWorkflowConflictTests
             new Mock<IFieldExplorationService>(MockBehavior.Loose).Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("d2d-empty-payload-user");
 
         var action = await controller.DiscoveryToDevelopmentAppraisal(request, CancellationToken.None);
 
@@ -779,7 +781,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "d2d-approve-null-user",
             StepData = null
         };
 
@@ -806,7 +807,7 @@ public class ExplorationControllerWorkflowConflictTests
                 instanceId,
                 ExplorationReferenceCodes.StepDevelopmentApproval,
                 ExplorationReferenceCodes.OutcomeApproved,
-                request.UserId))
+                "d2d-approve-null-user"))
             .ReturnsAsync(true);
 
         var explorationProcessService = new ExplorationProcessService(
@@ -822,6 +823,7 @@ public class ExplorationControllerWorkflowConflictTests
             new Mock<IFieldExplorationService>(MockBehavior.Loose).Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("d2d-approve-null-user");
 
         var action = await controller.DiscoveryToDevelopmentApprove(request, CancellationToken.None);
 
@@ -838,7 +840,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "d2d-approve-empty-user",
             StepData = new Dictionary<string, object>()
         };
 
@@ -865,7 +866,7 @@ public class ExplorationControllerWorkflowConflictTests
                 instanceId,
                 ExplorationReferenceCodes.StepDevelopmentApproval,
                 ExplorationReferenceCodes.OutcomeApproved,
-                request.UserId))
+                "d2d-approve-empty-user"))
             .ReturnsAsync(true);
 
         var explorationProcessService = new ExplorationProcessService(
@@ -881,6 +882,7 @@ public class ExplorationControllerWorkflowConflictTests
             new Mock<IFieldExplorationService>(MockBehavior.Loose).Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("d2d-approve-empty-user");
 
         var action = await controller.DiscoveryToDevelopmentApprove(request, CancellationToken.None);
 
@@ -897,7 +899,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "p2d-ready-null-user",
             StepData = null
         };
 
@@ -917,7 +918,7 @@ public class ExplorationControllerWorkflowConflictTests
                 instanceId,
                 ExplorationReferenceCodes.StepProspectCreation,
                 It.IsAny<PROCESS_STEP_DATA>(),
-                request.UserId))
+                "p2d-ready-null-user"))
             .Callback<string, string, PROCESS_STEP_DATA, string>((_, _, data, _) => captured = data)
             .ReturnsAsync(true);
         processService
@@ -925,7 +926,7 @@ public class ExplorationControllerWorkflowConflictTests
                 instanceId,
                 ExplorationReferenceCodes.StepProspectCreation,
                 ExplorationReferenceCodes.OutcomeSuccess,
-                request.UserId))
+                "p2d-ready-null-user"))
             .ReturnsAsync(true);
 
         var explorationProcessService = new ExplorationProcessService(
@@ -941,6 +942,7 @@ public class ExplorationControllerWorkflowConflictTests
             new Mock<IFieldExplorationService>(MockBehavior.Loose).Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("p2d-ready-null-user");
 
         var action = await controller.ProspectToDiscoveryProspectReadiness(request, CancellationToken.None);
 
@@ -959,7 +961,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "p2d-ready-empty-user",
             StepData = new Dictionary<string, object>()
         };
 
@@ -979,7 +980,7 @@ public class ExplorationControllerWorkflowConflictTests
                 instanceId,
                 ExplorationReferenceCodes.StepProspectCreation,
                 It.IsAny<PROCESS_STEP_DATA>(),
-                request.UserId))
+                "p2d-ready-empty-user"))
             .Callback<string, string, PROCESS_STEP_DATA, string>((_, _, data, _) => captured = data)
             .ReturnsAsync(true);
         processService
@@ -987,7 +988,7 @@ public class ExplorationControllerWorkflowConflictTests
                 instanceId,
                 ExplorationReferenceCodes.StepProspectCreation,
                 ExplorationReferenceCodes.OutcomeSuccess,
-                request.UserId))
+                "p2d-ready-empty-user"))
             .ReturnsAsync(true);
 
         var explorationProcessService = new ExplorationProcessService(
@@ -1003,6 +1004,7 @@ public class ExplorationControllerWorkflowConflictTests
             new Mock<IFieldExplorationService>(MockBehavior.Loose).Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("p2d-ready-empty-user");
 
         var action = await controller.ProspectToDiscoveryProspectReadiness(request, CancellationToken.None);
 
@@ -1021,7 +1023,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "scope-ready-user"
         };
 
         var processInstance = new ProcessInstance
@@ -1048,6 +1049,7 @@ public class ExplorationControllerWorkflowConflictTests
             new Mock<IFieldExplorationService>(MockBehavior.Loose).Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("scope-ready-user");
 
         var action = await controller.ProspectToDiscoveryProspectReadiness(request, CancellationToken.None);
 
@@ -1066,7 +1068,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "ok-ready-user"
         };
 
         var processInstance = new ProcessInstance
@@ -1084,14 +1085,14 @@ public class ExplorationControllerWorkflowConflictTests
                 instanceId,
                 ExplorationReferenceCodes.StepProspectCreation,
                 It.IsAny<PROCESS_STEP_DATA>(),
-                request.UserId))
+                "ok-ready-user"))
             .ReturnsAsync(true);
         processService
             .Setup(p => p.CompleteStepAsync(
                 instanceId,
                 ExplorationReferenceCodes.StepProspectCreation,
                 ExplorationReferenceCodes.OutcomeSuccess,
-                request.UserId))
+                "ok-ready-user"))
             .ReturnsAsync(true);
 
         var explorationProcessService = new ExplorationProcessService(
@@ -1107,6 +1108,7 @@ public class ExplorationControllerWorkflowConflictTests
             new Mock<IFieldExplorationService>(MockBehavior.Loose).Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("ok-ready-user");
 
         var action = await controller.ProspectToDiscoveryProspectReadiness(request, CancellationToken.None);
 
@@ -1123,7 +1125,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "exec-fail-user"
         };
 
         var processInstance = new ProcessInstance
@@ -1141,7 +1142,7 @@ public class ExplorationControllerWorkflowConflictTests
                 instanceId,
                 ExplorationReferenceCodes.StepProspectCreation,
                 It.IsAny<PROCESS_STEP_DATA>(),
-                request.UserId))
+                "exec-fail-user"))
             .ReturnsAsync(false);
 
         var explorationProcessService = new ExplorationProcessService(
@@ -1157,6 +1158,7 @@ public class ExplorationControllerWorkflowConflictTests
             new Mock<IFieldExplorationService>(MockBehavior.Loose).Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("exec-fail-user");
 
         var action = await controller.ProspectToDiscoveryProspectReadiness(request, CancellationToken.None);
 
@@ -1173,7 +1175,6 @@ public class ExplorationControllerWorkflowConflictTests
         var request = new ExplorationWorkflowStepRequest
         {
             InstanceId = instanceId,
-            UserId = "complete-fail-user"
         };
 
         var processInstance = new ProcessInstance
@@ -1191,14 +1192,14 @@ public class ExplorationControllerWorkflowConflictTests
                 instanceId,
                 ExplorationReferenceCodes.StepProspectCreation,
                 It.IsAny<PROCESS_STEP_DATA>(),
-                request.UserId))
+                "complete-fail-user"))
             .ReturnsAsync(true);
         processService
             .Setup(p => p.CompleteStepAsync(
                 instanceId,
                 ExplorationReferenceCodes.StepProspectCreation,
                 ExplorationReferenceCodes.OutcomeSuccess,
-                request.UserId))
+                "complete-fail-user"))
             .ReturnsAsync(false);
 
         var explorationProcessService = new ExplorationProcessService(
@@ -1214,6 +1215,7 @@ public class ExplorationControllerWorkflowConflictTests
             new Mock<IFieldExplorationService>(MockBehavior.Loose).Object,
             CreateDummyProductionAccountingService(),
             NullLogger<ExplorationController>.Instance);
+        controller.ControllerContext = SignedIn("complete-fail-user");
 
         var action = await controller.ProspectToDiscoveryProspectReadiness(request, CancellationToken.None);
 
@@ -1221,6 +1223,14 @@ public class ExplorationControllerWorkflowConflictTests
         Assert.Equal(false, ok.Value);
         processService.VerifyAll();
     }
+
+    private static ControllerContext SignedIn(string partyId) => new()
+    {
+        HttpContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("party_id", partyId)], "TestAuth"))
+        }
+    };
 
     private static ProductionAccountingService CreateDummyProductionAccountingService() =>
         (ProductionAccountingService)RuntimeHelpers.GetUninitializedObject(typeof(ProductionAccountingService));

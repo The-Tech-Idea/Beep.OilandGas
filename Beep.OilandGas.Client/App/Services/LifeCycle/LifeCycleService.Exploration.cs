@@ -42,16 +42,11 @@ namespace Beep.OilandGas.Client.App.Services.LifeCycle
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<EXPLORATION_PROGRAM> SaveExplorationResultAsync(EXPLORATION_PROGRAM result, string? userId = null, CancellationToken cancellationToken = default)
+        public async Task<EXPLORATION_PROGRAM> SaveExplorationResultAsync(EXPLORATION_PROGRAM result, CancellationToken cancellationToken = default)
         {
             if (result == null) throw new ArgumentNullException(nameof(result));
             if (AccessMode == ServiceAccessMode.Remote)
-            {
-                var queryParams = new Dictionary<string, string>();
-                if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
-                var endpoint = BuildRequestUriWithParams("/api/lifecycle/exploration/result", queryParams);
-                return await PostAsync<EXPLORATION_PROGRAM, EXPLORATION_PROGRAM>(endpoint, result, cancellationToken);
-            }
+                return await PostAsync<EXPLORATION_PROGRAM, EXPLORATION_PROGRAM>("/api/lifecycle/exploration/result", result, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

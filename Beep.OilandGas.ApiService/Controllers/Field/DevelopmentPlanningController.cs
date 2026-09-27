@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.ApiService.Attributes;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.DevelopmentPlanning.Services;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.DevelopmentPlanning;
@@ -63,7 +63,7 @@ public class DevelopmentPlanningController : ControllerBase
     [HttpPost("plans/{planId}/approve")]
     public async Task<ActionResult<DevelopmentPlan>> ApprovePlanAsync(string planId)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub") ?? "system";
+        var userId = User.ActingUserId();
         var approved = await _service.ApproveDevelopmentPlanAsync(planId, userId);
         return Ok(approved);
     }
@@ -78,7 +78,7 @@ public class DevelopmentPlanningController : ControllerBase
     [HttpPost("maintenance")]
     public async Task<ActionResult<WELL_MAINTENANCE_PLAN>> CreateMaintenanceAsync([FromBody] CreateWellMaintenancePlan request)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub") ?? "system";
+        var userId = User.ActingUserId();
         var created = await _service.CreateWellMaintenancePlanAsync(request, userId);
         return Ok(created);
     }
@@ -86,7 +86,7 @@ public class DevelopmentPlanningController : ControllerBase
     [HttpPost("service-jobs")]
     public async Task<ActionResult<WELL_SERVICE_JOB>> CreateServiceJobAsync([FromBody] CreateWellServiceJob request)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub") ?? "system";
+        var userId = User.ActingUserId();
         var created = await _service.CreateWellServiceJobAsync(request, userId);
         return Ok(created);
     }

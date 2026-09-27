@@ -13,7 +13,7 @@ namespace Beep.OilandGas.Web.Services
     {
         // Heat Map Operations
         Task<HeatMapResult> GenerateHeatMapAsync(List<HEAT_MAP_DATA_POINT> dataPoints, HEAT_MAP_CONFIGURATION configuration);
-        Task<string> SaveHeatMapConfigurationAsync(HeatMapConfigurationRecord configuration, string? userId = null);
+        Task<string> SaveHeatMapConfigurationAsync(HeatMapConfigurationRecord configuration);
         Task<HeatMapConfigurationRecord?> GetHeatMapConfigurationAsync(string heatMapId);
         Task<HeatMapResult> GenerateProductionHeatMapAsync(string fieldId, DateTime startDate, DateTime endDate);
     }

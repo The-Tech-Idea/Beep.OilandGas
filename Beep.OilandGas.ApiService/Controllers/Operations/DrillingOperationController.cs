@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Drilling;
@@ -60,9 +61,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         [HttpPost("operations")]
         public async Task<ActionResult<DRILLING_OPERATION>> CreateDrillingOperation([FromBody] CREATE_DRILLING_OPERATION createDto)
         {
+            var userId = User.ActingUserId();
             try
             {
-                var result = await _service.CreateDrillingOperationAsync(createDto, userId: GetUserId());
+                var result = await _service.CreateDrillingOperationAsync(createDto, userId: userId);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -75,10 +77,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         [HttpPut("operations/{operationId}")]
         public async Task<ActionResult<DRILLING_OPERATION>> UpdateDrillingOperation(string operationId, [FromBody] UpdateDrillingOperation updateDto)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(operationId)) return BadRequest(new { error = "Operation ID is required." });
             try
             {
-                var result = await _service.UpdateDrillingOperationAsync(operationId, updateDto, userId: GetUserId());
+                var result = await _service.UpdateDrillingOperationAsync(operationId, updateDto, userId: userId);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -107,10 +110,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         [HttpPost("operations/{operationId}/reports")]
         public async Task<ActionResult<DRILLING_REPORT>> CreateDrillingReport(string operationId, [FromBody] CreateDrillingReport createDto)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(operationId)) return BadRequest(new { error = "Operation ID is required." });
             try
             {
-                var result = await _service.CreateDrillingReportAsync(operationId, createDto, userId: GetUserId());
+                var result = await _service.CreateDrillingReportAsync(operationId, createDto, userId: userId);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -119,7 +123,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
-
-        private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
     }
 }

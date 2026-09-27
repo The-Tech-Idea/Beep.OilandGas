@@ -20,14 +20,12 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
 
         #region Batch Operations
 
-        public async Task<List<T>> InsertBatchAsync<T>(string tableName, List<T> entities, string userId, int batchSize = 100, CancellationToken cancellationToken = default)
+        public async Task<List<T>> InsertBatchAsync<T>(string tableName, List<T> entities, int batchSize = 100, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
             if (entities == null || entities.Count == 0)
                 throw new ArgumentException("Entities cannot be null or empty", nameof(entities));
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
             if (AccessMode == ServiceAccessMode.Remote)
             {
@@ -35,7 +33,6 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                 {
                     tableName,
                     entities,
-                    userId,
                     batchSize
                 };
 
@@ -46,14 +43,12 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<List<T>> UpdateBatchAsync<T>(string tableName, List<T> entities, string userId, int batchSize = 100, CancellationToken cancellationToken = default)
+        public async Task<List<T>> UpdateBatchAsync<T>(string tableName, List<T> entities, int batchSize = 100, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
             if (entities == null || entities.Count == 0)
                 throw new ArgumentException("Entities cannot be null or empty", nameof(entities));
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
             if (AccessMode == ServiceAccessMode.Remote)
             {
@@ -61,7 +56,6 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                 {
                     tableName,
                     entities,
-                    userId,
                     batchSize
                 };
 
@@ -72,14 +66,12 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<int> DeleteBatchAsync(string tableName, List<string> ids, string userId, bool softDelete = true, int batchSize = 100, CancellationToken cancellationToken = default)
+        public async Task<int> DeleteBatchAsync(string tableName, List<string> ids, bool softDelete = true, int batchSize = 100, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
             if (ids == null || ids.Count == 0)
                 throw new ArgumentException("IDs cannot be null or empty", nameof(ids));
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
             if (AccessMode == ServiceAccessMode.Remote)
             {
@@ -87,7 +79,6 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                 {
                     tableName,
                     ids,
-                    userId,
                     softDelete,
                     batchSize
                 };
@@ -103,14 +94,12 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<List<T>> UpsertBatchAsync<T>(string tableName, List<T> entities, string userId, int batchSize = 100, CancellationToken cancellationToken = default)
+        public async Task<List<T>> UpsertBatchAsync<T>(string tableName, List<T> entities, int batchSize = 100, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
             if (entities == null || entities.Count == 0)
                 throw new ArgumentException("Entities cannot be null or empty", nameof(entities));
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
             if (AccessMode == ServiceAccessMode.Remote)
             {
@@ -118,7 +107,6 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                 {
                     tableName,
                     entities,
-                    userId,
                     batchSize
                 };
 
@@ -133,14 +121,12 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
 
         #region Import/Export
 
-        public async Task<ImportResult> ImportFromCsvAsync(string tableName, string csvFilePath, string userId, Dictionary<string, string>? columnMapping = null, bool skipHeaderRow = true, bool validateForeignKeys = true, CancellationToken cancellationToken = default)
+        public async Task<ImportResult> ImportFromCsvAsync(string tableName, string csvFilePath, Dictionary<string, string>? columnMapping = null, bool skipHeaderRow = true, bool validateForeignKeys = true, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
             if (string.IsNullOrWhiteSpace(csvFilePath))
                 throw new ArgumentException("CSV file path cannot be null or empty", nameof(csvFilePath));
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
             if (AccessMode == ServiceAccessMode.Remote)
             {
@@ -150,7 +136,6 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                 {
                     tableName,
                     csvFilePath,
-                    userId,
                     columnMapping = columnMapping ?? new Dictionary<string, string>(),
                     skipHeaderRow,
                     validateForeignKeys

@@ -1,0 +1,38 @@
+@page "/Error"
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
+@layout PlainLayout
+
+@* Where UseExceptionHandler("/Error") sends a request that failed outside a page. Static, never interactive: it must
+   render in the request that failed. The reference is the one the failure was stored under (DIAG-01), which the
+   administrator's failure list and the log line both carry; it was the request's TraceIdentifier, which only the log
+   line knew. It was Pages/Error.cshtml, a Razor Page the application never mapped, so production answered its errors
+   with a 404. *@
+
+<PageTitle>Error - Beep Oil & Gas</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="py-16">
+    <MudPaper Outlined="true" Class="pa-8 text-center">
+        <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Large" Color="Color.Error" Class="mb-4" />
+        <MudText Typo="Typo.h4" HtmlTag="h1">Something went wrong</MudText>
+        <MudText Color="Color.Secondary" Class="mt-2 mb-4">
+            The request could not be completed. Try again in a moment.
+        </MudText>
+        @if (!string.IsNullOrEmpty(_reference))
+        {
+            <MudText Typo="Typo.body2" Class="mb-6" data-error-reference>If it keeps happening, quote reference @_reference.</MudText>
+        }
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/" StartIcon="@Icons.Material.Filled.Home">
+            Return home
+        </MudButton>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+
+    private string? _reference;
+
+    protected override void OnInitialized() =>
+        _reference = HttpContext is null ? null : TheTechIdeaWeb.Diagnostics.Handlers.FailureReference.Of(HttpContext);
+}

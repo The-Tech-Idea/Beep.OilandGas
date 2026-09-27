@@ -1,4 +1,4 @@
-using System.Security.Claims;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,8 +19,7 @@ public sealed class RepositoryRolesController(RepositoryRoleCatalogService catal
     [HttpPost]
     public async Task<IActionResult> Create(RepositoryRoleRequest request, CancellationToken cancellationToken)
     {
-        var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrWhiteSpace(actor)) return Forbid();
+        var actor = User.ActingUserId();
         try
         {
             var role = await catalog.CreateAsync(request, cancellationToken);

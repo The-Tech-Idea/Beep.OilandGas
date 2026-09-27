@@ -175,14 +175,14 @@ public sealed class DevelopmentServiceClient : IDevelopmentServiceClient
         }
     }
 
-    public async Task<POOL?> CreatePoolAsync(PoolRequest request, string? userId = null, CancellationToken cancellationToken = default)
+    public async Task<POOL?> CreatePoolAsync(PoolRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         try
         {
             return await _apiClient.PostAsync<PoolRequest, POOL>(
-                BuildUserScopedEndpoint("/api/field/current/development/pools", userId),
+                "/api/field/current/development/pools",
                 request,
                 cancellationToken);
         }
@@ -193,7 +193,7 @@ public sealed class DevelopmentServiceClient : IDevelopmentServiceClient
         }
     }
 
-    public async Task<POOL?> UpdatePoolAsync(string poolId, PoolRequest request, string? userId = null, CancellationToken cancellationToken = default)
+    public async Task<POOL?> UpdatePoolAsync(string poolId, PoolRequest request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(poolId))
             throw new ArgumentException("Pool ID is required.", nameof(poolId));
@@ -203,7 +203,7 @@ public sealed class DevelopmentServiceClient : IDevelopmentServiceClient
         try
         {
             return await _apiClient.PutAsync<PoolRequest, POOL>(
-                BuildUserScopedEndpoint($"/api/field/current/development/pools/{Uri.EscapeDataString(poolId)}", userId),
+                $"/api/field/current/development/pools/{Uri.EscapeDataString(poolId)}",
                 request,
                 cancellationToken);
         }
@@ -231,14 +231,14 @@ public sealed class DevelopmentServiceClient : IDevelopmentServiceClient
         }
     }
 
-    public async Task<FacilityResponse?> CreateFacilityAsync(FacilityRequest request, string? userId = null, CancellationToken cancellationToken = default)
+    public async Task<FacilityResponse?> CreateFacilityAsync(FacilityRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         try
         {
             return await _apiClient.PostAsync<FacilityRequest, FacilityResponse>(
-                BuildUserScopedEndpoint("/api/field/current/development/facilities", userId),
+                "/api/field/current/development/facilities",
                 request,
                 cancellationToken);
         }
@@ -249,7 +249,7 @@ public sealed class DevelopmentServiceClient : IDevelopmentServiceClient
         }
     }
 
-    public async Task<FacilityResponse?> UpdateFacilityAsync(string facilityId, FacilityRequest request, string? userId = null, CancellationToken cancellationToken = default)
+    public async Task<FacilityResponse?> UpdateFacilityAsync(string facilityId, FacilityRequest request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(facilityId))
             throw new ArgumentException("Facility ID is required.", nameof(facilityId));
@@ -259,7 +259,7 @@ public sealed class DevelopmentServiceClient : IDevelopmentServiceClient
         try
         {
             return await _apiClient.PutAsync<FacilityRequest, FacilityResponse>(
-                BuildUserScopedEndpoint($"/api/field/current/development/facilities/{Uri.EscapeDataString(facilityId)}", userId),
+                $"/api/field/current/development/facilities/{Uri.EscapeDataString(facilityId)}",
                 request,
                 cancellationToken);
         }
@@ -268,12 +268,5 @@ public sealed class DevelopmentServiceClient : IDevelopmentServiceClient
             _logger.LogError(ex, "Error updating development facility {FacilityId}.", facilityId);
             throw;
         }
-    }
-
-    private static string BuildUserScopedEndpoint(string endpoint, string? userId)
-    {
-        return string.IsNullOrWhiteSpace(userId)
-            ? endpoint
-            : $"{endpoint}?userId={Uri.EscapeDataString(userId)}";
     }
 }

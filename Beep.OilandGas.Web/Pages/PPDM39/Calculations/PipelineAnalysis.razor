@@ -1,11 +1,9 @@
 ﻿@page "/ppdm39/calculations/pipelineanalysis"
 @using Beep.OilandGas.Models.Data.Calculations
 @using Beep.OilandGas.Models.Data
-@using System.Security.Claims
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject ICalculationServiceClient CalculationService
-@inject AuthenticationStateProvider AuthStateProvider
 @inject ILifeCycleService LifeCycleService
 
 <PageTitle>Analyse Pipeline Flow</PageTitle>
@@ -69,7 +67,6 @@
     private bool _isCalculating = false;
     private bool _isLoading = false;
     private PipelineAnalysisResult? _analysisResult;
-    private string? _currentUserId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -83,9 +80,6 @@
                     _fieldName = summary.FieldName ?? _fieldName;
             }
             catch { /* field name is non-critical */ }
-
-            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
         }
         finally
         {
@@ -107,7 +101,7 @@
             _analysisResult = await CalculationService.AnalyzePipelineFlowAsync(_pipelineId, _flowRate, _inletPressure);
             
             // Save the result
-            await CalculationService.SavePipelineAnalysisResultAsync(_analysisResult, _currentUserId);
+            await CalculationService.SavePipelineAnalysisResultAsync(_analysisResult);
             
             Snackbar.Add("Pipeline flow analysis completed", Severity.Success);
         }

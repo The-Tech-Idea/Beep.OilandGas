@@ -18,7 +18,7 @@ public class UserProfileAuthorizationTests
     public async Task UnauthenticatedUnregisteredAndOtherUsersCannotAccessProfiles(bool authenticated, bool localId)
     {
         var service = new Mock<IUserProfileService>(MockBehavior.Strict);
-        var claims = localId ? new[] { new Claim(ClaimTypes.NameIdentifier, "other") } : Array.Empty<Claim>();
+        var claims = localId ? new[] { new Claim("party_id", "other") } : Array.Empty<Claim>();
         var controller = new UserProfileController(service.Object)
         {
             ControllerContext = new() { HttpContext = new DefaultHttpContext
@@ -32,7 +32,42 @@ public class UserProfileAuthorizationTests
         Assert.IsType<ForbidResult>((await controller.UpdateUserPreferences("target", new())).Result);
         Assert.IsType<ForbidResult>((await controller.UpdateUserPrimaryRole("target", new())).Result);
         Assert.IsType<ForbidResult>((await controller.UpdateUserPreferredLayout("target", new())).Result);
-        Assert.IsType<ForbidResult>(await controller.RecordUserLogin("target"));
+        service.VerifyNoOtherCalls();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task LoginIsRecordedOnlyForTheSignedInAccount(bool administrator)
+    {
+        var service = new Mock<IUserProfileService>(MockBehavior.Strict);
+        service.Setup(x => x.RecordUserLoginAsync("owner")).Returns(Task.CompletedTask);
+        var claims = new List<Claim> { new("party_id", "owner") };
+        if (administrator) claims.Add(new(ClaimTypes.Role, "Administrator"));
+        var controller = new UserProfileController(service.Object)
+        {
+            ControllerContext = new() { HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(claims, "test"))
+            } }
+        };
+        Assert.IsType<OkObjectResult>(await controller.RecordUserLogin());
+        service.VerifyAll();
+        service.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task LoginWithoutAnAccountIsRefusedBeforeStorage()
+    {
+        var service = new Mock<IUserProfileService>(MockBehavior.Strict);
+        var controller = new UserProfileController(service.Object)
+        {
+            ControllerContext = new() { HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, "owner") }, "test"))
+            } }
+        };
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => controller.RecordUserLogin());
         service.VerifyNoOtherCalls();
     }
 
@@ -44,7 +79,7 @@ public class UserProfileAuthorizationTests
         {
             ControllerContext = new() { HttpContext = new DefaultHttpContext
             {
-                User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, "owner") }, "test"))
+                User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim("party_id", "owner") }, "test"))
             } }
         };
         Assert.IsType<ForbidResult>((await controller.UpdateUserPrimaryRole("owner", new())).Result);
@@ -58,7 +93,7 @@ public class UserProfileAuthorizationTests
     {
         var service = new Mock<IUserProfileService>(MockBehavior.Strict);
         service.Setup(x => x.UpdateUserPreferencesAsync("target", "{}")).ReturnsAsync(true);
-        var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, administrator ? "admin" : "target") };
+        var claims = new List<Claim> { new("party_id", administrator ? "admin" : "target") };
         if (administrator) claims.Add(new(ClaimTypes.Role, "Administrator"));
         var controller = new UserProfileController(service.Object)
         {

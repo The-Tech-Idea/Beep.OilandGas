@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
@@ -11,6 +10,7 @@ using Beep.OilandGas.Models.Data.Accounting.Reporting;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.ApiService.Services;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
 {
@@ -46,6 +46,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromBody] GenerateOperationalReportRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -53,7 +54,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
                 
                 var result = await _reportingService.GenerateOperationalReportAsync(
                     request,
-                    ResolveUserId(),
+                    userId,
                     connectionName);
                 return Ok(result);
             }
@@ -70,6 +71,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromBody] GenerateFinancialReportRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -77,7 +79,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
 
                 var result = await _reportingService.GenerateFinancialReportAsync(
                     request,
-                    ResolveUserId(),
+                    userId,
                     connectionName);
                 return Ok(result);
             }
@@ -94,6 +96,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromBody] GenerateRoyaltyStatementRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -101,7 +104,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
 
                 var result = await _reportingService.GenerateRoyaltyStatementAsync(
                     request,
-                    ResolveUserId(),
+                    userId,
                     connectionName);
                 return Ok(result);
             }
@@ -118,6 +121,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromBody] GenerateJIBStatementRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -125,7 +129,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
 
                 var result = await _reportingService.GenerateJIBStatementAsync(
                     request,
-                    ResolveUserId(),
+                    userId,
                     connectionName);
                 return Ok(result);
             }
@@ -142,6 +146,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromBody] ScheduleReportRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -149,7 +154,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
 
                 var schedule = await _reportingService.ScheduleReportAsync(
                     request,
-                    ResolveUserId(),
+                    userId,
                     connectionName);
                 return Ok(schedule);
             }
@@ -183,6 +188,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromBody] ReportDistributionRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -191,7 +197,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
                 var distribution = await _reportingService.DistributeReportAsync(
                     reportId,
                     request,
-                    ResolveUserId(),
+                    userId,
                     connectionName);
                 return Ok(distribution);
             }
@@ -282,13 +288,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
                 ReportPeriodEnd = report.REPORT_PERIOD_END,
                 GeneratedDate = report.GenerationDate
             };
-        }
-
-        private string ResolveUserId()
-        {
-            return User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub")
-                ?? "system";
         }
     }
 

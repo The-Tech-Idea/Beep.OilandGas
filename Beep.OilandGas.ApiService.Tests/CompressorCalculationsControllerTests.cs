@@ -1,8 +1,10 @@
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.ApiService.Controllers;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Calculations;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -19,13 +21,9 @@ public class CompressorCalculationsControllerTests
     public async Task PerformCompressorAnalysis_ReturnsBadRequest_WhenBodyMissing()
     {
         var calc = new Mock<ICalculationService>(MockBehavior.Strict);
-        var controller = new CalculationsController(
-            calc.Object,
-            fieldOrchestrator: null,
-            progressTracking: null,
-            NullLogger<CalculationsController>.Instance);
+        var controller = CreateController(calc.Object);
 
-        var actionResult = await controller.PerformCompressorAnalysis(request: null!, userId: null);
+        var actionResult = await controller.PerformCompressorAnalysis(request: null!);
 
         Assert.IsType<BadRequestObjectResult>(actionResult.Result);
         calc.VerifyNoOtherCalls();
@@ -46,14 +44,10 @@ public class CompressorCalculationsControllerTests
         calc.Setup(s => s.PerformCompressorAnalysisAsync(It.IsAny<CompressorAnalysisRequest>()))
             .ReturnsAsync(expected);
 
-        var controller = new CalculationsController(
-            calc.Object,
-            fieldOrchestrator: null,
-            progressTracking: null,
-            NullLogger<CalculationsController>.Instance);
+        var controller = CreateController(calc.Object);
 
         var request = new CompressorAnalysisRequest { FacilityId = "FAC-1" };
-        var actionResult = await controller.PerformCompressorAnalysis(request, userId: null);
+        var actionResult = await controller.PerformCompressorAnalysis(request);
 
         var wrapped = Assert.IsType<ActionResult<CompressorAnalysisResult>>(actionResult);
         var okResult = Assert.IsType<OkObjectResult>(wrapped.Result);
@@ -63,7 +57,7 @@ public class CompressorCalculationsControllerTests
     }
 
     [Fact]
-    public async Task PerformCompressorAnalysis_AppliesQueryUserId_WhenProvided()
+    public async Task PerformCompressorAnalysis_RecordsTheSignedInAccount_NotTheUserIdTheBodyNames()
     {
         var calc = new Mock<ICalculationService>(MockBehavior.Strict);
         CompressorAnalysisRequest? captured = null;
@@ -71,14 +65,10 @@ public class CompressorCalculationsControllerTests
             .Callback<CompressorAnalysisRequest>(r => captured = r)
             .ReturnsAsync(new CompressorAnalysisResult());
 
-        var controller = new CalculationsController(
-            calc.Object,
-            fieldOrchestrator: null,
-            progressTracking: null,
-            NullLogger<CalculationsController>.Instance);
+        var controller = CreateController(calc.Object, "user-99");
 
-        var request = new CompressorAnalysisRequest();
-        await controller.PerformCompressorAnalysis(request, userId: "user-99");
+        var request = new CompressorAnalysisRequest { UserId = "someone-else" };
+        await controller.PerformCompressorAnalysis(request);
 
         Assert.NotNull(captured);
         Assert.Equal("user-99", captured.UserId);
@@ -91,14 +81,22 @@ public class CompressorCalculationsControllerTests
         calc.Setup(s => s.PerformCompressorAnalysisAsync(It.IsAny<CompressorAnalysisRequest>()))
             .ThrowsAsync(new OperationCanceledException());
 
-        var controller = new CalculationsController(
-            calc.Object,
-            fieldOrchestrator: null,
-            progressTracking: null,
-            NullLogger<CalculationsController>.Instance);
+        var controller = CreateController(calc.Object);
 
         var request = new CompressorAnalysisRequest { FacilityId = "FAC-1" };
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => controller.PerformCompressorAnalysis(request, userId: null));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => controller.PerformCompressorAnalysis(request));
     }
+
+    private static CalculationsController CreateController(ICalculationService calculationService, string userId = "user-1") =>
+        new(calculationService, fieldOrchestrator: null, progressTracking: null, NullLogger<CalculationsController>.Instance)
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("party_id", userId)], "TestAuth"))
+                }
+            }
+        };
 }

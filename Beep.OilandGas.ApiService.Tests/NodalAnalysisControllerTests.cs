@@ -139,16 +139,16 @@ public class NodalAnalysisControllerTests
     public async Task SaveResult_ReturnsBadRequest_WhenWellUwiMissing()
     {
         var core = new Mock<INodalAnalysisService>(MockBehavior.Strict);
-        var controller = new NodalAnalysisController(core.Object, NullLogger<NodalAnalysisController>.Instance);
+        var controller = SignedIn(new NodalAnalysisController(core.Object, NullLogger<NodalAnalysisController>.Instance), "user-1");
 
-        var result = await controller.SaveResult(new NodalAnalysisRunResult { WellUWI = "  ", AnalysisId = "A-1" }, userId: "user-1");
+        var result = await controller.SaveResult(new NodalAnalysisRunResult { WellUWI = "  ", AnalysisId = "A-1" });
 
         Assert.IsType<BadRequestObjectResult>(result);
         core.VerifyNoOtherCalls();
     }
 
     [Fact]
-    public async Task SaveResult_ReturnsOk_WhenExplicitUserIdProvided()
+    public async Task SaveResult_ReturnsOk_RecordingTheSignedInAccount()
     {
         var core = new Mock<INodalAnalysisService>(MockBehavior.Strict);
         var payload = new NodalAnalysisRunResult { AnalysisId = "A-42", WellUWI = "UWI-1" };
@@ -156,9 +156,9 @@ public class NodalAnalysisControllerTests
                 It.Is<NodalAnalysisRunResult>(r => r.AnalysisId == "A-42" && r.WellUWI == "UWI-1"),
                 "user-1"))
             .Returns(Task.CompletedTask);
-        var controller = new NodalAnalysisController(core.Object, NullLogger<NodalAnalysisController>.Instance);
+        var controller = SignedIn(new NodalAnalysisController(core.Object, NullLogger<NodalAnalysisController>.Instance), "user-1");
 
-        var result = await controller.SaveResult(payload, userId: "user-1");
+        var result = await controller.SaveResult(payload);
 
         Assert.IsType<OkObjectResult>(result);
         core.VerifyAll();
@@ -171,9 +171,9 @@ public class NodalAnalysisControllerTests
         var payload = new NodalAnalysisRunResult { AnalysisId = "A-1", WellUWI = "UWI-1" };
         core.Setup(s => s.SaveAnalysisResultAsync(It.IsAny<NodalAnalysisRunResult>(), "user-1"))
             .ThrowsAsync(new ArgumentException("Persist rejected for test."));
-        var controller = new NodalAnalysisController(core.Object, NullLogger<NodalAnalysisController>.Instance);
+        var controller = SignedIn(new NodalAnalysisController(core.Object, NullLogger<NodalAnalysisController>.Instance), "user-1");
 
-        var result = await controller.SaveResult(payload, userId: "user-1");
+        var result = await controller.SaveResult(payload);
 
         Assert.IsType<BadRequestObjectResult>(result);
         core.VerifyAll();
@@ -186,29 +186,24 @@ public class NodalAnalysisControllerTests
         var payload = new NodalAnalysisRunResult { AnalysisId = "A-1", WellUWI = "UWI-1" };
         core.Setup(s => s.SaveAnalysisResultAsync(It.IsAny<NodalAnalysisRunResult>(), "user-1"))
             .ThrowsAsync(new OperationCanceledException());
-        var controller = new NodalAnalysisController(core.Object, NullLogger<NodalAnalysisController>.Instance);
+        var controller = SignedIn(new NodalAnalysisController(core.Object, NullLogger<NodalAnalysisController>.Instance), "user-1");
 
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
-            controller.SaveResult(payload, userId: "user-1"));
+            controller.SaveResult(payload));
 
         core.VerifyAll();
     }
 
     [Fact]
-    public async Task SaveResult_UsesUserFromClaims_WhenUserIdMissing()
+    public async Task SaveResult_RecordsTheSignedInAccount()
     {
         var core = new Mock<INodalAnalysisService>(MockBehavior.Strict);
         core.Setup(s => s.SaveAnalysisResultAsync(It.IsAny<NodalAnalysisRunResult>(), "user-99"))
             .Returns(Task.CompletedTask);
-        var controller = new NodalAnalysisController(core.Object, NullLogger<NodalAnalysisController>.Instance);
-        var http = new DefaultHttpContext();
-        http.User = new ClaimsPrincipal(new ClaimsIdentity(
-            [new Claim(ClaimTypes.NameIdentifier, "user-99")],
-            authenticationType: "Test"));
-        controller.ControllerContext = new ControllerContext { HttpContext = http };
+        var controller = SignedIn(new NodalAnalysisController(core.Object, NullLogger<NodalAnalysisController>.Instance), "user-99");
         var payload = new NodalAnalysisRunResult { AnalysisId = "A-1", WellUWI = "UWI-1" };
 
-        var result = await controller.SaveResult(payload, userId: null);
+        var result = await controller.SaveResult(payload);
 
         Assert.IsType<OkObjectResult>(result);
         core.VerifyAll();
@@ -494,9 +489,9 @@ public class NodalAnalysisControllerTests
     public async Task SaveResult_ReturnsBadRequest_WhenBodyMissing()
     {
         var core = new Mock<INodalAnalysisService>(MockBehavior.Strict);
-        var controller = new NodalAnalysisController(core.Object, NullLogger<NodalAnalysisController>.Instance);
+        var controller = SignedIn(new NodalAnalysisController(core.Object, NullLogger<NodalAnalysisController>.Instance), "user-1");
 
-        var result = await controller.SaveResult(null, userId: "user-1");
+        var result = await controller.SaveResult(null);
 
         Assert.IsType<BadRequestObjectResult>(result);
         core.VerifyNoOtherCalls();
@@ -714,5 +709,17 @@ public class NodalAnalysisControllerTests
             AnalysisParameters = parameters
         }));
         core.VerifyAll();
+    }
+
+    private static NodalAnalysisController SignedIn(NodalAnalysisController controller, string userId)
+    {
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("party_id", userId)], "TestAuth"))
+            }
+        };
+        return controller;
     }
 }

@@ -261,9 +261,21 @@ public class MyController : ControllerBase
     [HttpPost("operation")]
     public async Task<IActionResult> DoOperationAsync([FromBody] OperationRequest request)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var result = await _service.ExecuteAsync(request, userId);
+        var result = await _service.ExecuteAsync(request, User.ActingUserId());
         return Ok(result);
     }
 }
 ```
+
+**Who is acting comes from the signed-in principal, and only from it** (S3-06):
+
+- `User.ActingUserId()` (`ApiService/Services/ActingUser.cs`) is the OilGas account id — the `party_id` this API
+  stamped when it resolved the person (`PartyIdClaims.Find`). A `party_id` a token carried is not it, and neither is
+  `sub` or `ClaimTypes.NameIdentifier`: `sub` is Beep.IdentityServer's subject, which it may re-mint. No signed-in
+  account → `UnauthorizedAccessException`, answered 403 by `GlobalExceptionMiddleware`.
+- **Never take the actor from a query string or a request body** (`?userId=`, `request.UserId`) and never fall back to
+  `"system"` for a person's request: either lets a caller write as somebody else. `ActingUser.System` is for work the
+  server does on its own (seeding, background jobs).
+- Sign-in, sign-up and the account page are Beep.IdentityServer's, reached through the SDK
+  (`BeepClientEndpoints.LoginWithReturn`, `RegisterWithReturn`, `Manage`). Roles are OilGas's own
+  (`RepositoryRolesClaimsTransformation`), never a token's. Logging is Microsoft's (`ILogger<T>`) — no Serilog.

@@ -6,7 +6,6 @@
 @inject ApiClient ApiClient
 @inject IAccountingServiceClient AccountingClient
 @inject ILifeCycleService LifeCycleService
-@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Run Economic Analysis</PageTitle>
 
@@ -90,7 +89,6 @@
     private double? _irr;
     private EconomicResult? _economicResult;
     private CashFlow[] _cashFlows = Array.Empty<CashFlow>();
-    private string? _currentUserId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -107,9 +105,6 @@
 
             try
             {
-                var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-                _currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
-
                 var summary = await AccountingClient.GetProductionSummaryAsync();
                 if (summary != null && summary.NetRevenue > 0)
                 {
@@ -201,7 +196,7 @@
             _economicResult = await CalculationServiceClient.AnalyzeEconomicAsync(_cashFlows, _discountRate);
 
             var analysisId = Guid.NewGuid().ToString();
-            var saved = await CalculationServiceClient.SaveEconomicAnalysisResultAsync(analysisId, _economicResult, _currentUserId);
+            var saved = await CalculationServiceClient.SaveEconomicAnalysisResultAsync(analysisId, _economicResult);
             if (saved)
             {
                 Snackbar.Add("Economic analysis completed and saved", Severity.Success);

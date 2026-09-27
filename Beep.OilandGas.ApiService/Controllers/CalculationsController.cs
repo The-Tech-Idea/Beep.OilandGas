@@ -1,3 +1,4 @@
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.PPDM39.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -48,8 +49,9 @@ namespace Beep.OilandGas.ApiService.Controllers
         /// Perform Decline Curve Analysis
         /// </summary>
         [HttpPost("dca")]
-        public async Task<ActionResult<object>> PerformDCAAnalysis([FromBody] DCARequest request, [FromQuery] string? userId = null)
+        public async Task<ActionResult<object>> PerformDCAAnalysis([FromBody] DCARequest request)
         {
+            var userId = User.ActingUserId();
             string? operationId = null;
             try
             {
@@ -59,10 +61,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                     request.FieldId = _fieldOrchestrator.CurrentFieldId;
                 }
 
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    request.UserId = userId;
-                }
+                request.UserId = userId;
 
                 // Start progress tracking
                 operationId = _progressTracking?.StartOperation("DCA", $"DCA Analysis for Well {request.WellId ?? "N/A"}");
@@ -172,16 +171,14 @@ namespace Beep.OilandGas.ApiService.Controllers
         /// Perform Choke Analysis.
         /// </summary>
         [HttpPost("choke")]
-        public async Task<ActionResult<ChokeAnalysisResult>> PerformChokeAnalysis([FromBody] ChokeAnalysisRequest request, [FromQuery] string? userId = null)
+        public async Task<ActionResult<ChokeAnalysisResult>> PerformChokeAnalysis([FromBody] ChokeAnalysisRequest request)
         {
+            var userId = User.ActingUserId();
             if (request == null)
                 return BadRequest(new { error = "Request body is required." });
             try
             {
-                if (!string.IsNullOrWhiteSpace(userId))
-                {
-                    request.UserId = userId;
-                }
+                request.UserId = userId;
 
                 var result = await _calculationService.PerformChokeAnalysisAsync(request);
                 return Ok(result);
@@ -212,17 +209,15 @@ namespace Beep.OilandGas.ApiService.Controllers
         /// <see cref="CalculationRunStatus.Failed"/> and <see cref="CompressorAnalysisResult.ErrorMessage"/> populated (same pattern as other packaged calculators).
         /// </summary>
         [HttpPost("compressor")]
-        public async Task<ActionResult<CompressorAnalysisResult>> PerformCompressorAnalysis([FromBody] CompressorAnalysisRequest request, [FromQuery] string? userId = null)
+        public async Task<ActionResult<CompressorAnalysisResult>> PerformCompressorAnalysis([FromBody] CompressorAnalysisRequest request)
         {
+            var userId = User.ActingUserId();
             if (request == null)
                 return BadRequest(new { error = "Request body is required." });
 
             try
             {
-                if (!string.IsNullOrWhiteSpace(userId))
-                {
-                    request.UserId = userId;
-                }
+                request.UserId = userId;
 
                 var result = await _calculationService.PerformCompressorAnalysisAsync(request);
                 return Ok(result);
@@ -251,8 +246,9 @@ namespace Beep.OilandGas.ApiService.Controllers
         /// Perform Economic Analysis
         /// </summary>
         [HttpPost("economic")]
-        public async Task<ActionResult<EconomicAnalysisResult>> PerformEconomicAnalysis([FromBody] EconomicAnalysisRequest request, [FromQuery] string? userId = null)
+        public async Task<ActionResult<EconomicAnalysisResult>> PerformEconomicAnalysis([FromBody] EconomicAnalysisRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 // Set field context if available
@@ -261,10 +257,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                     request.FieldId = _fieldOrchestrator.CurrentFieldId;
                 }
 
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    request.UserId = userId;
-                }
+                request.UserId = userId;
 
                 var result = await _calculationService.PerformEconomicAnalysisAsync(request);
                 return Ok(result);
@@ -348,8 +341,9 @@ namespace Beep.OilandGas.ApiService.Controllers
         /// Prefer <c>/api/nodalanalysis/*</c> (<see cref="NodalAnalysisHttpRoutes"/>) for <c>NodalAnalysisRunResult</c> workflows (analyze, save, history, diagnostics).
         /// </remarks>
         [HttpPost("nodal")]
-        public async Task<ActionResult<NodalAnalysisResult>> PerformNodalAnalysis([FromBody] NodalAnalysisRequest request, [FromQuery] string? userId = null)
+        public async Task<ActionResult<NodalAnalysisResult>> PerformNodalAnalysis([FromBody] NodalAnalysisRequest request)
         {
+            var userId = User.ActingUserId();
             if (request == null)
                 return BadRequest(new { error = "Request body is required." });
             try
@@ -360,10 +354,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                     request.FieldId = _fieldOrchestrator.CurrentFieldId;
                 }
 
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    request.UserId = userId;
-                }
+                request.UserId = userId;
 
                 var result = await _calculationService.PerformNodalAnalysisAsync(request);
                 return Ok(result);
@@ -462,8 +453,9 @@ namespace Beep.OilandGas.ApiService.Controllers
         /// Perform Well Test Analysis
         /// </summary>
         [HttpPost("well-test")]
-        public async Task<ActionResult<WELL_TEST_ANALYSIS_RESULT>> PerformWellTestAnalysis([FromBody] WellTestAnalysisCalculationRequest request, [FromQuery] string? userId = null)
+        public async Task<ActionResult<WELL_TEST_ANALYSIS_RESULT>> PerformWellTestAnalysis([FromBody] WellTestAnalysisCalculationRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (request == null)
@@ -471,10 +463,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                     return BadRequest(new { error = "Well test analysis request body is required." });
                 }
 
-                if (!string.IsNullOrWhiteSpace(userId))
-                {
-                    request.UserId = userId;
-                }
+                request.UserId = userId;
 
                 var result = await _calculationService.PerformWellTestAnalysisAsync(request);
                 return Ok(result);

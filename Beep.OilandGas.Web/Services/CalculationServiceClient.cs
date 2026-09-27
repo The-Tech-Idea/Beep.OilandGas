@@ -279,15 +279,11 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveFlashResultAsync(FlashResult result, string? userId = null)
+        public async Task<bool> SaveFlashResultAsync(FlashResult result)
         {
             try
             {
                 var endpoint = "/api/flashcalculation/result";
-                if (!string.IsNullOrWhiteSpace(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
 
                 return await _apiClient.PostAsync(endpoint, result);
             }
@@ -375,15 +371,11 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<CompositionSaveResponse?> SaveGasCompositionAsync(GasComposition composition, string? userId = null)
+        public async Task<CompositionSaveResponse?> SaveGasCompositionAsync(GasComposition composition)
         {
             try
             {
                 var endpoint = "/api/gasproperties/composition";
-                if (!string.IsNullOrWhiteSpace(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
 
                 return await _apiClient.PostAsync<GasComposition, CompositionSaveResponse>(endpoint, composition);
             }
@@ -427,15 +419,11 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<CompositionSaveResponse?> SaveOilCompositionAsync(OilComposition composition, string? userId = null)
+        public async Task<CompositionSaveResponse?> SaveOilCompositionAsync(OilComposition composition)
         {
             try
             {
                 var endpoint = "/api/oilproperties/composition";
-                if (!string.IsNullOrWhiteSpace(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
 
                 return await _apiClient.PostAsync<OilComposition, CompositionSaveResponse>(endpoint, composition);
             }
@@ -475,15 +463,11 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<CalculationSaveResponse?> SaveOilPropertyResultAsync(OilPropertyResult result, string? userId = null)
+        public async Task<CalculationSaveResponse?> SaveOilPropertyResultAsync(OilPropertyResult result)
         {
             try
             {
                 var endpoint = "/api/oilproperties/result";
-                if (!string.IsNullOrWhiteSpace(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
 
                 return await _apiClient.PostAsync<OilPropertyResult, CalculationSaveResponse>(endpoint, result);
             }
@@ -552,15 +536,11 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveGasLiftDesignAsync(GAS_LIFT_DESIGN design, string? userId = null, CancellationToken cancellationToken = default)
+        public async Task<bool> SaveGasLiftDesignAsync(GAS_LIFT_DESIGN design, CancellationToken cancellationToken = default)
         {
             try
             {
                 var endpoint = "/api/gaslift/design";
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
                 return await _apiClient.PostAsync(endpoint, design, cancellationToken);
             }
             catch (Exception ex)
@@ -645,17 +625,13 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveNodalAnalysisResultAsync(NodalAnalysisRunResult result, string? userId = null)
+        public async Task<bool> SaveNodalAnalysisResultAsync(NodalAnalysisRunResult result)
         {
             if (result == null)
                 throw new ArgumentNullException(nameof(result));
             try
             {
                 var endpoint = NodalAnalysisHttpRoutes.Result;
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
                 return await _apiClient.PostAsync(endpoint, result);
             }
             catch (OperationCanceledException)
@@ -859,15 +835,11 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveForecastAsync(ProductionForecastResult forecast, string? userId = null)
+        public async Task<bool> SaveForecastAsync(ProductionForecastResult forecast)
         {
             try
             {
                 var endpoint = "/api/productionforecasting/forecast";
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
                 return await _apiClient.PostAsync(endpoint, forecast);
             }
             catch (Exception ex)
@@ -938,15 +910,11 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SavePipelineAnalysisResultAsync(PipelineAnalysisResult result, string? userId = null)
+        public async Task<bool> SavePipelineAnalysisResultAsync(PipelineAnalysisResult result)
         {
             try
             {
                 var endpoint = "/api/pipelineanalysis/result";
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
                 return await _apiClient.PostAsync(endpoint, result);
             }
             catch (Exception ex)
@@ -1044,7 +1012,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveEconomicAnalysisResultAsync(string analysisId, EconomicResult result, string? userId = null)
+        public async Task<bool> SaveEconomicAnalysisResultAsync(string analysisId, EconomicResult result)
         {
             try
             {
@@ -1054,10 +1022,6 @@ namespace Beep.OilandGas.Web.Services
                     Result = result
                 };
                 var endpoint = "/api/economicanalysis/result";
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
                 return await _apiClient.PostAsync(endpoint, request);
             }
             catch (Exception ex)

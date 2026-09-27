@@ -2,10 +2,11 @@
 @page "/"
 @using TheTechIdea.Data.OilGas
 @using Beep.OilandGas.Web.Services
-@using System.Security.Claims
+@using Beep.Foundation.IdentityServer.Shared.Identity
 @inject PersonaClient IdentityClient
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Nav
+@inject ILogger<Landing> Logger
 
 @if (_isLoading)
 {
@@ -42,13 +43,20 @@ else if (_errorMessage != null)
         {
             // Get current user
             var authState = await AuthProvider.GetAuthenticationStateAsync();
-            _userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            // If user is not authenticated, redirect to login
+            // Somebody signed out is sent to sign in and brought back here.
+            if (authState.User.Identity?.IsAuthenticated != true)
+            {
+                Nav.NavigateTo(BeepClientEndpoints.LoginWithReturn(new Uri(Nav.Uri).PathAndQuery), forceLoad: true);
+                return;
+            }
+
+            // Signed in, but the OilGas API did not resolve their account for this request (an outage: a refused account is
+            // signed out by the identity server's client library). Sending them to sign in would sign them straight back.
+            _userId = PartyIdClaims.Find(authState.User);
             if (string.IsNullOrEmpty(_userId))
             {
-                var returnUrl = Uri.EscapeDataString(Nav.Uri);
-                Nav.NavigateTo($"/login?returnUrl={returnUrl}");
+                _errorMessage = "Your OilGas account could not be loaded just now. Try again shortly.";
                 return;
             }
 
@@ -76,8 +84,10 @@ else if (_errorMessage != null)
                 Nav.NavigateTo("/dashboard");
             }
         }
-        catch (Exception)
+        catch (Exception exception) when (exception is HttpRequestException or System.Text.Json.JsonException or InvalidOperationException)
         {
+            // Handled: the persona settings could not be read from the API; the page says so and offers the dashboard.
+            Logger.LogWarning(exception, "The signed-in person's persona settings could not be loaded.");
             _errorMessage = "Persona settings could not be loaded.";
         }
         finally

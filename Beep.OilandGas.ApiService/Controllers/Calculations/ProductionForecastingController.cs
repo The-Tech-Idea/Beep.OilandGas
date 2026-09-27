@@ -1,4 +1,4 @@
-using System.Security.Claims;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Calculations;
 using GenerateForecastRequest = Beep.OilandGas.Models.Data.ProductionForecasting.GenerateForecastRequest;
@@ -81,14 +81,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("forecast")]
-        public async Task<ActionResult> SaveForecast([FromBody] ProductionForecastResult? forecast, [FromQuery] string? userId = null)
+        public async Task<ActionResult> SaveForecast([FromBody] ProductionForecastResult? forecast)
         {
+            var userId = User.ActingUserId();
             if (forecast is null)
                 return BadRequest(new { error = "Forecast body is required." });
 
             try
             {
-                await _service.SaveForecastAsync(forecast, userId ?? GetUserId());
+                await _service.SaveForecastAsync(forecast, userId);
                 return Ok(new { message = "Production forecast saved successfully", forecastId = forecast.ForecastId });
             }
             catch (OperationCanceledException)
@@ -105,10 +106,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
-
-        private string GetUserId() =>
-            User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? User.FindFirst("sub")?.Value
-            ?? "SYSTEM";
     }
 }

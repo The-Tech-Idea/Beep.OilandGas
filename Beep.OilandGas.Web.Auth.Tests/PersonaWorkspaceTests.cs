@@ -13,7 +13,12 @@ public class PersonaWorkspaceTests
 {
     private sealed class Auth : AuthenticationStateProvider
     {
-        public ClaimsPrincipal User = new(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, "local"), new Claim(ClaimTypes.Role, "Reader") }, "test"));
+        // The Web's principal after its claims transformation: the OilGas account the API resolved (party_id, issued here).
+        public ClaimsPrincipal User = new(new ClaimsIdentity(new[]
+        {
+            new Claim(Beep.Foundation.IdentityServer.Shared.Identity.PartyIdClaimsTransformation<string>.ClaimType, "local"),
+            new Claim(ClaimTypes.Role, "Reader")
+        }, "test"));
         public override Task<AuthenticationState> GetAuthenticationStateAsync() => Task.FromResult(new AuthenticationState(User));
         public void SignOut() { User = new(new ClaimsIdentity()); NotifyAuthenticationStateChanged(GetAuthenticationStateAsync()); }
     }

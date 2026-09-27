@@ -101,11 +101,12 @@ namespace Beep.OilandGas.ProductionOperations.Services
             return pden;
         }
 
-        public async Task<PDEN> CreateProductionOperationAsync(CreateProductionOperationRequest createRequest, CancellationToken cancellationToken = default)
+        public async Task<PDEN> CreateProductionOperationAsync(CreateProductionOperationRequest createRequest, string userId, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (createRequest == null)
                 throw new ArgumentNullException(nameof(createRequest));
+            ArgumentException.ThrowIfNullOrWhiteSpace(userId);
 
             var repo = await RepoAsync<PDEN>("PDEN", cancellationToken);
             var operationDate = createRequest.OperationDate ?? DateTime.UtcNow;
@@ -127,8 +128,8 @@ namespace Beep.OilandGas.ProductionOperations.Services
             };
 
             if (pden is IPPDMEntity entity)
-                _commonColumnHandler.PrepareForInsert(entity, "SYSTEM");
-            await repo.InsertAsync(pden, "SYSTEM");
+                _commonColumnHandler.PrepareForInsert(entity, userId);
+            await repo.InsertAsync(pden, userId);
 
             return pden;
         }

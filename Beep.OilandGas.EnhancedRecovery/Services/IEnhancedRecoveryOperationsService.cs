@@ -25,7 +25,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         /// <summary>
         /// Creates a new enhanced recovery operation (PDEN-backed).
         /// </summary>
-        Task<EnhancedRecoveryOperation> CreateEnhancedRecoveryOperationAsync(CreateEnhancedRecoveryOperation createDto, CancellationToken cancellationToken = default);
+        Task<EnhancedRecoveryOperation> CreateEnhancedRecoveryOperationAsync(CreateEnhancedRecoveryOperation createDto, string userId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets injection operations.

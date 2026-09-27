@@ -1,3 +1,4 @@
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.ProductionOperations.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -50,6 +51,7 @@ public class FacilityWorkOrderController : ControllerBase
         [FromQuery] string facilityType,
         CancellationToken cancellationToken)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
         if (workOrder == null)
@@ -60,7 +62,7 @@ public class FacilityWorkOrderController : ControllerBase
         try
         {
             var row = await _facilities
-                .CreateFacilityWorkOrderAsync(workOrder, facilityId, facilityType.Trim(), FacilityUserHelper.ResolveUserId(User), cancellationToken)
+                .CreateFacilityWorkOrderAsync(workOrder, facilityId, facilityType.Trim(), userId, cancellationToken)
                 .ConfigureAwait(false);
             return Ok(row);
         }

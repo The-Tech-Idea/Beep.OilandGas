@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Beep.OilandGas.Repository;
@@ -80,9 +79,9 @@ public sealed class RepositoryAssetAccessStore(RepositoryDbContext repository, I
     private async Task<string> RequireAdministratorAsync()
     {
         var principal = httpContext.HttpContext?.User;
-        var actor = principal?.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (principal?.Identity?.IsAuthenticated != true || !principal.IsInRole("Administrator") || string.IsNullOrWhiteSpace(actor))
+        if (principal?.Identity?.IsAuthenticated != true || !principal.IsInRole("Administrator"))
             throw new UnauthorizedAccessException("A local Administrator is required.");
+        var actor = principal.ActingUserId();
         var allowed = await (from user in repository.Users
                              join membership in repository.UserRoles on user.Id equals membership.UserId
                              join role in repository.Roles on membership.RoleId equals role.Id

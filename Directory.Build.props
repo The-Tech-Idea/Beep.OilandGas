@@ -2,5 +2,14 @@
   <PropertyGroup>
     <BeepDMVersion>3.1.1</BeepDMVersion>
     <NoWarn>$(NoWarn);NU1605</NoWarn>
+    <!-- The identity server's client library and the shared theme library, from their sibling checkouts; one definition
+         for every project that references them (the Web and the API). -->
+    <IdentitySharedProject Condition="'$(IdentitySharedProject)' == ''">$(MSBuildThisFileDirectory)..\Beep.IdentityServer\Beep.Foundation.IdentityServer.Shared\Beep.Foundation.IdentityServer.Shared.csproj</IdentitySharedProject>
+    <AccountManagementProject Condition="'$(AccountManagementProject)' == ''">$(MSBuildThisFileDirectory)..\Beep.IdentityServer\TheTechIdeaWeb.AccountManagement\TheTechIdeaWeb.AccountManagement.csproj</AccountManagementProject>
+    <ThemeBrandingProject Condition="'$(ThemeBrandingProject)' == ''">$(MSBuildThisFileDirectory)..\Beep.Web\TheTechIdeaWeb.ThemeBranding\TheTechIdeaWeb.ThemeBranding.csproj</ThemeBrandingProject>
+    <!-- The log-and-failure service every client application of the identity server uses (DIAG-01), and the contract's
+         shared rules (what counts as a template placeholder). -->
+    <DiagnosticsProject Condition="'$(DiagnosticsProject)' == ''">$(MSBuildThisFileDirectory)..\Beep.Web\TheTechIdeaWeb.Diagnostics\TheTechIdeaWeb.Diagnostics.csproj</DiagnosticsProject>
+    <IdentityContractsProject Condition="'$(IdentityContractsProject)' == ''">$(MSBuildThisFileDirectory)..\Beep.IdentityServer\Beep.IdentityServer.Contracts\Beep.IdentityServer.Contracts.csproj</IdentityContractsProject>
   </PropertyGroup>
 </Project>

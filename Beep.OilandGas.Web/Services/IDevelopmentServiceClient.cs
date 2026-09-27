@@ -21,11 +21,11 @@ public interface IDevelopmentServiceClient
     Task<FdpStatusResponse?> GetFdpStatusAsync(CancellationToken cancellationToken = default);
     Task<SubmitFdpDraftResponse?> SubmitFdpAsync(SubmitFdpDraftRequest request, CancellationToken cancellationToken = default);
     Task<List<POOL>> GetPoolsAsync(CancellationToken cancellationToken = default);
-    Task<POOL?> CreatePoolAsync(PoolRequest request, string? userId = null, CancellationToken cancellationToken = default);
-    Task<POOL?> UpdatePoolAsync(string poolId, PoolRequest request, string? userId = null, CancellationToken cancellationToken = default);
+    Task<POOL?> CreatePoolAsync(PoolRequest request, CancellationToken cancellationToken = default);
+    Task<POOL?> UpdatePoolAsync(string poolId, PoolRequest request, CancellationToken cancellationToken = default);
     Task<List<FACILITY>> GetFacilitiesAsync(CancellationToken cancellationToken = default);
-    Task<FacilityResponse?> CreateFacilityAsync(FacilityRequest request, string? userId = null, CancellationToken cancellationToken = default);
-    Task<FacilityResponse?> UpdateFacilityAsync(string facilityId, FacilityRequest request, string? userId = null, CancellationToken cancellationToken = default);
+    Task<FacilityResponse?> CreateFacilityAsync(FacilityRequest request, CancellationToken cancellationToken = default);
+    Task<FacilityResponse?> UpdateFacilityAsync(string facilityId, FacilityRequest request, CancellationToken cancellationToken = default);
 }
 
 public sealed class DevelopmentConstructionProgressDto

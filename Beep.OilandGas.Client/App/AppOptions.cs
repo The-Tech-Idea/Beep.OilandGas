@@ -18,16 +18,6 @@ namespace Beep.OilandGas.Client.App
         public string? ApiBaseUrl { get; set; }
 
         /// <summary>
-        /// Username for authentication (Remote mode with credentials)
-        /// </summary>
-        public string? Username { get; set; }
-
-        /// <summary>
-        /// Password for authentication (Remote mode with credentials)
-        /// </summary>
-        public string? Password { get; set; }
-
-        /// <summary>
         /// Default connection name
         /// </summary>
         public string DefaultConnectionName { get; set; } = Beep.OilandGas.Models.Constants.ConnectionNames.PPDM39;
@@ -36,21 +26,6 @@ namespace Beep.OilandGas.Client.App
         /// Use local services if available (for Auto mode)
         /// </summary>
         public bool UseLocalServices { get; set; } = true;
-
-        /// <summary>
-        /// Client ID for authentication
-        /// </summary>
-        public string? ClientId { get; set; }
-
-        /// <summary>
-        /// Client secret for authentication
-        /// </summary>
-        public string? ClientSecret { get; set; }
-
-        /// <summary>
-        /// Identity server URL (for token acquisition)
-        /// </summary>
-        public string? IdentityServerUrl { get; set; }
 
         /// <summary>
         /// Request timeout

@@ -1,13 +1,23 @@
+@implements IDisposable
+@inject ThemeState Theme
+
+@* One MudThemeProvider and one set of MudBlazor providers for the whole application, drawn from this circuit's choice
+   (ThemeState). Each layout had its own, so the account pages ignored the dark mode chosen on the others (S3-06 §8). No
+   MudRTLProvider: OilGas is English only, so no right-to-left culture is offered. *@
+<MudThemeProvider Theme="@Theme.Theme" IsDarkMode="@Theme.IsDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
 <Router AppAssembly="@typeof(Routes).Assembly">
     <Found Context="routeData">
         <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
             <NotAuthorized Context="authenticationState">
                 @if (authenticationState.User.Identity?.IsAuthenticated == true)
                 {
-                    <PageTitle>Access Denied</PageTitle>
-                    <MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
-                        <MudAlert Severity="Severity.Error">You do not have permission to access this page.</MudAlert>
-                    </MudContainer>
+                    @* The access-denied page itself, so the refusal a signed-in person meets here and the one the cookie
+                       sends them to say the same thing. *@
+                    <Beep.OilandGas.Web.Components.Pages.Account.AccessDenied />
                 }
                 else
                 {
@@ -40,3 +50,20 @@
         </LayoutView>
     </NotFound>
 </Router>
+
+@code {
+    protected override void OnInitialized() => Theme.Changed += OnThemeChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Local storage is reachable only once the circuit has rendered.
+        if (firstRender)
+        {
+            await Theme.RestoreAsync();
+        }
+    }
+
+    private Task OnThemeChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Theme.Changed -= OnThemeChanged;
+}

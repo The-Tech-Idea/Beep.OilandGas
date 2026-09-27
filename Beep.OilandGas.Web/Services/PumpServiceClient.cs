@@ -65,15 +65,11 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveHydraulicPumpDesignAsync(HydraulicPumpDesign design, string? userId = null)
+        public async Task<bool> SaveHydraulicPumpDesignAsync(HydraulicPumpDesign design)
         {
             try
             {
                 var endpoint = "/api/hydraulicpump/design/save";
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
                 return await _apiClient.PostAsync(endpoint, design);
             }
             catch (Exception ex)
@@ -138,15 +134,11 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SavePlungerLiftDesignAsync(PlungerLiftDesign design, string? userId = null)
+        public async Task<bool> SavePlungerLiftDesignAsync(PlungerLiftDesign design)
         {
             try
             {
                 var endpoint = "/api/plungerlift/design/save";
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
                 return await _apiClient.PostAsync(endpoint, design);
             }
             catch (Exception ex)
@@ -196,15 +188,11 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveSuckerRodPumpDesignAsync(SuckerRodPumpDesign design, string? userId = null)
+        public async Task<bool> SaveSuckerRodPumpDesignAsync(SuckerRodPumpDesign design)
         {
             try
             {
                 var endpoint = "/api/suckerrodpumping/design/save";
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
                 return await _apiClient.PostAsync(endpoint, design);
             }
             catch (Exception ex)

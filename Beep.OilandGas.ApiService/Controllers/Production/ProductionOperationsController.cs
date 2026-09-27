@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.ProductionOperations;
@@ -40,11 +41,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
         [HttpPost("create")]
         public async Task<ActionResult<PRODUCTION_COSTS>> CreateOperation([FromBody] PRODUCTION_COSTS request)
         {
+            var userId = User.ActingUserId();
             if (request == null) return BadRequest(new { error = "Request body is required." });
 
             try
             {
-                var created = await _service.CreateOperationAsync(request, GetUserId());
+                var created = await _service.CreateOperationAsync(request, userId);
                 return Ok(created);
             }
             catch (ArgumentException ex)
@@ -62,6 +64,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
         [HttpPost("/api/productionoperations/create")]
         public async Task<ActionResult<ProductionOperation>> CreateOperationCompatibility([FromBody] ProductionOperation request)
         {
+            var userId = User.ActingUserId();
             if (request == null) return BadRequest(new { error = "Request body is required." });
 
             try
@@ -73,7 +76,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
                     Status = string.IsNullOrWhiteSpace(request.Status) ? null : request.Status,
                     AssignedTo = string.IsNullOrWhiteSpace(request.AssignedTo) ? null : request.AssignedTo,
                     Remarks = string.IsNullOrWhiteSpace(request.Remarks) ? null : request.Remarks
-                }, HttpContext.RequestAborted);
+                }, userId, HttpContext.RequestAborted);
 
                 return Ok(MapToLegacyOperation(created, request));
             }
@@ -122,12 +125,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
         [HttpPut("{operationId}")]
         public async Task<ActionResult<PRODUCTION_COSTS>> UpdateOperation(string operationId, [FromBody] PRODUCTION_COSTS request)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(operationId)) return BadRequest(new { error = "Operation ID is required." });
             if (request == null) return BadRequest(new { error = "Request body is required." });
 
             try
             {
-                var updated = await _service.UpdateOperationAsync(operationId, request, GetUserId());
+                var updated = await _service.UpdateOperationAsync(operationId, request, userId);
                 return Ok(updated);
             }
             catch (ArgumentException ex)
@@ -212,15 +216,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
 
         [HttpPost("/api/production/record")]
         public async Task<ActionResult<PRODUCTION_ALLOCATION>> RecordProductionCompatibility(
-            [FromBody] PRODUCTION_ALLOCATION productionRecord,
-            [FromQuery] string? userId = null)
+            [FromBody] PRODUCTION_ALLOCATION productionRecord)
         {
+            var userId = User.ActingUserId();
             if (productionRecord == null) return BadRequest(new { error = "Request body is required." });
 
             try
             {
                 var productionData = MapFromAllocation(productionRecord);
-                await _service.RecordProductionDataAsync(productionData, userId ?? GetUserId());
+                await _service.RecordProductionDataAsync(productionData, userId);
 
                 return Ok(MapToAllocation(productionData, productionRecord));
             }
@@ -258,11 +262,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
         }
 
         [HttpPost("data")]
-        public async Task<ActionResult> RecordProductionData([FromBody] ProductionData productionData, [FromQuery] string? userId = null)
+        public async Task<ActionResult> RecordProductionData([FromBody] ProductionData productionData)
         {
+            var userId = User.ActingUserId();
             try
             {
-                await _service.RecordProductionDataAsync(productionData, userId ?? GetUserId());
+                await _service.RecordProductionDataAsync(productionData, userId);
                 return Ok(new { message = "Production data recorded successfully", productionId = productionData.ProductionId });
             }
             catch (Exception ex)
@@ -376,8 +381,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
                 return null;
             }
         }
-
-        private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
 
         private sealed class ProductionAllocationPayload
         {

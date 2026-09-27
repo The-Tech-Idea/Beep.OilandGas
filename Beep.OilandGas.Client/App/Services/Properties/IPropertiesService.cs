@@ -21,10 +21,10 @@ namespace Beep.OilandGas.Client.App.Services.Properties
         Task<decimal> CalculateOilDensityAsync(OIL_PROPERTY_CONDITIONS request, CancellationToken cancellationToken = default);
         Task<decimal> CalculateOilViscosityAsync(OIL_PROPERTY_CONDITIONS request, CancellationToken cancellationToken = default);
         Task<OilPropertyResult> CalculateOilPropertiesAsync(OIL_PROPERTY_CONDITIONS request, CancellationToken cancellationToken = default);
-        Task<OIL_COMPOSITION> SaveOilCompositionAsync(OIL_COMPOSITION composition, string? userId = null, CancellationToken cancellationToken = default);
+        Task<OIL_COMPOSITION> SaveOilCompositionAsync(OIL_COMPOSITION composition, CancellationToken cancellationToken = default);
         Task<OIL_COMPOSITION> GetOilCompositionAsync(string compositionId, CancellationToken cancellationToken = default);
         Task<List<OIL_PROPERTY_RESULT>> GetOilPropertyHistoryAsync(string compositionId, CancellationToken cancellationToken = default);
-        Task<OIL_PROPERTY_RESULT> SaveOilResultAsync(OIL_PROPERTY_RESULT result, string? userId = null, CancellationToken cancellationToken = default);
+        Task<OIL_PROPERTY_RESULT> SaveOilResultAsync(OIL_PROPERTY_RESULT result, CancellationToken cancellationToken = default);
 
         #endregion
 
@@ -33,7 +33,7 @@ namespace Beep.OilandGas.Client.App.Services.Properties
         Task<decimal> CalculateGasZFactorAsync(GasComposition request, CancellationToken cancellationToken = default);
         Task<decimal> CalculateGasDensityAsync(GasComposition request, CancellationToken cancellationToken = default);
         Task<decimal> CalculateGasFormationVolumeFactorAsync(GasComposition request, CancellationToken cancellationToken = default);
-        Task<GAS_COMPOSITION> SaveGasCompositionAsync(GAS_COMPOSITION composition, string? userId = null, CancellationToken cancellationToken = default);
+        Task<GAS_COMPOSITION> SaveGasCompositionAsync(GAS_COMPOSITION composition, CancellationToken cancellationToken = default);
         Task<GAS_COMPOSITION> GetGasCompositionAsync(string compositionId, CancellationToken cancellationToken = default);
 
         #endregion
@@ -41,7 +41,7 @@ namespace Beep.OilandGas.Client.App.Services.Properties
         #region Heat Map
 
         Task<List<HEAT_MAP_DATA_POINT>> GenerateHeatMapAsync(HEAT_MAP_CONFIGURATION request, CancellationToken cancellationToken = default);
-        Task<HEAT_MAP_CONFIGURATION> SaveHeatMapConfigurationAsync(HEAT_MAP_CONFIGURATION configuration, string? userId = null, CancellationToken cancellationToken = default);
+        Task<HEAT_MAP_CONFIGURATION> SaveHeatMapConfigurationAsync(HEAT_MAP_CONFIGURATION configuration, CancellationToken cancellationToken = default);
         Task<HEAT_MAP_CONFIGURATION> GetHeatMapConfigurationAsync(string heatMapId, CancellationToken cancellationToken = default);
         Task<List<HEAT_MAP_DATA_POINT>> GenerateProductionHeatMapAsync(HEAT_MAP_CONFIGURATION request, CancellationToken cancellationToken = default);
 

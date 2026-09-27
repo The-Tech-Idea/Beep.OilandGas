@@ -1,55 +1,71 @@
 using System.Security.Claims;
-using Beep.Foundation.IdentityServer.Shared.Authentication;
+using Beep.Foundation.IdentityServer.Shared.Identity;
 using Microsoft.AspNetCore.Authentication;
 
 namespace Beep.OilandGas.Web.Services;
 
-public sealed class OilGasClaimsTransformation(
-    RepositoryAccountClient client,
-    TokenProvider tokens,
-    IHttpContextAccessor accessor,
-    ILogger<OilGasClaimsTransformation> logger) : IClaimsTransformation
+/// <summary>
+/// Puts the OilGas repository's own roles and permissions on each request, as the API reports them for the signed-in
+/// person, with the account's id as <c>party_id</c> — the claims <c>[Authorize(Roles = …)]</c> and
+/// <c>&lt;AuthorizeView&gt;</c> read. The identity server authenticates only: a role, permission or account claim its
+/// tokens carry counts for nothing and is removed from every identity.
+/// </summary>
+/// <remarks>
+/// <para>
+/// The Web holds no user store, so it asks the API (<see cref="RepositoryAccountClient"/>), with the person's own access
+/// token from the identity server's client library. It read that token from a dictionary the library no longer has.
+/// </para>
+/// <para>
+/// Fails closed: an account the API refuses or could not answer about holds no role and no key for this request.
+/// Whether the person may stay signed in is <see cref="OilGasAccountAdmission"/>'s question, asked by the library.
+/// </para>
+/// </remarks>
+public sealed class OilGasClaimsTransformation(RepositoryAccountClient repository) : IClaimsTransformation
 {
-    private readonly object _requestCacheKey = new();
-    private sealed record ResolvedAccess(string? Issuer, string Subject, string? AuthenticationType,
-        string Token, ClaimsPrincipal Principal);
+    /// <summary>Marks a principal whose roles were resolved in this request.</summary>
+    public const string ResolvedMarker = "oilgas:roles-resolved";
+
+    private static readonly HashSet<string> AuthorizationClaimTypes =
+    [
+        "role", "roles", ClaimTypes.Role, "permission", "permissions", "elevated_permissions",
+        ClaimTypes.NameIdentifier, PartyIdClaimsTransformation<string>.ClaimType, ResolvedMarker
+    ];
 
     public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
     {
-        if (principal.Identity?.IsAuthenticated != true) return principal;
-        var context = accessor.HttpContext;
-        var subject = principal.FindFirstValue("sub");
-        if (string.IsNullOrWhiteSpace(subject)) return new ClaimsPrincipal(new ClaimsIdentity());
-        var issuer = principal.FindFirstValue("iss");
-        var token = context?.Items["OilGas.AccessToken"] as string
-            ?? tokens.GetUserToken(subject);
-        if (string.IsNullOrWhiteSpace(token)) return new ClaimsPrincipal(new ClaimsIdentity());
-        if (context?.Items[_requestCacheKey] is ResolvedAccess cached && cached.Issuer == issuer
-            && cached.Subject == subject && cached.Token == token
-            && cached.AuthenticationType == principal.Identity.AuthenticationType)
-            return cached.Principal;
-        try
+        if (principal.Identity is not ClaimsIdentity identity || !identity.IsAuthenticated
+            || identity.HasClaim(claim => claim.Type == ResolvedMarker && PartyIdClaims.IsIssuedHere(claim)))
         {
-            var access = await client.GetAccessAsync(token, context?.RequestAborted ?? default);
-            if (!access.IsActive) return new ClaimsPrincipal(new ClaimsIdentity());
-            var claims = principal.Claims.Where(claim => claim.Type != "role" && claim.Type != "roles"
-                && claim.Type != ClaimTypes.Role && claim.Type != "permission"
-                && claim.Type != "permissions" && claim.Type != "elevated_permissions"
-                && claim.Type != ClaimTypes.NameIdentifier && claim.Type != "oilgas:roles-resolved");
-            var identity = new ClaimsIdentity(claims, principal.Identity.AuthenticationType, "name", ClaimTypes.Role);
-            identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, access.UserId));
-            foreach (var role in access.Roles) identity.AddClaim(new Claim(ClaimTypes.Role, role));
-            foreach (var permission in access.Permissions) identity.AddClaim(new Claim("permission", permission));
-            identity.AddClaim(new Claim("oilgas:roles-resolved", "true", ClaimValueTypes.Boolean, "OilGas"));
-            var result = new ClaimsPrincipal(identity);
-            if (context is not null) context.Items[_requestCacheKey] = new ResolvedAccess(
-                issuer, subject, principal.Identity.AuthenticationType, token, result);
-            return result;
+            return principal;
         }
-        catch (Exception exception)
+
+        var granted = new List<Claim>();
+        var answer = await repository.GetAccountAsync(principal);
+        if (answer is { State: RepositoryAccountState.Active, Access: { } access })
         {
-            logger.LogWarning(exception, "OilGas role resolution failed; denying access");
-            return new ClaimsPrincipal(new ClaimsIdentity());
+            granted.Add(new Claim(PartyIdClaimsTransformation<string>.ClaimType, access.UserId));
+            granted.AddRange(access.Roles.Select(role => new Claim(ClaimTypes.Role, role)));
+            granted.AddRange(access.Permissions.Select(permission => new Claim("permission", permission)));
         }
+
+        granted.Add(new Claim(ResolvedMarker, "true"));
+
+        var primary = new ClaimsIdentity(
+            identity.Claims.Where(claim => !AuthorizationClaimTypes.Contains(claim.Type)).Concat(granted),
+            identity.AuthenticationType,
+            "name",
+            ClaimTypes.Role);
+
+        var rebuilt = new ClaimsPrincipal(primary);
+        foreach (var other in principal.Identities.Where(other => !ReferenceEquals(other, identity)))
+        {
+            rebuilt.AddIdentity(new ClaimsIdentity(
+                other.Claims.Where(claim => !AuthorizationClaimTypes.Contains(claim.Type)),
+                other.AuthenticationType,
+                other.NameClaimType,
+                other.RoleClaimType));
+        }
+
+        return rebuilt;
     }
 }

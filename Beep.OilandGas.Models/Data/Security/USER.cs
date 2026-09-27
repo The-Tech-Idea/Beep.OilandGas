@@ -43,6 +43,11 @@ namespace Beep.OilandGas.Models.Data.Security
             set => SetProperty(ref EMAILValue, value);
         }
 
+        // NOT READ — sign-in is Beep.IdentityServer's (S3-06 §6). PASSWORD_HASH, FAILED_LOGIN_COUNT, LOCKED_IND,
+        // LOCKOUT_UNTIL_UTC, LAST_PASSWORD_CHANGE_UTC, MAX_PASSWORD_AGE_DAYS and the two PASSWORD_RESET_* columns belonged to a
+        // local login that has been removed; nothing in OilGas sets or checks them. They stay only because the shipped DDL
+        // (Models/Scripts/*/Security/USER_TAB.sql, six dialects) still creates them, and that schema is not edited from
+        // here; removing them is recorded for the security schema's owner. Never read one as a credential.
         private string PASSWORD_HASHValue = string.Empty;
         public string PASSWORD_HASH
         {

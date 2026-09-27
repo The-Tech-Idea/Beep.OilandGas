@@ -11,6 +11,7 @@ using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
+using Beep.OilandGas.ApiService.Services;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
 {
@@ -110,14 +111,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         /// Create a new invoice.
         /// </summary>
         [HttpPost]
-        public async Task<ActionResult<object>> CreateInvoice([FromBody] CreateInvoiceRequest request, [FromQuery] string? userId = null)
+        public async Task<ActionResult<object>> CreateInvoice([FromBody] CreateInvoiceRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var invoice = _service.TraditionalAccounting.Invoice.CreateInvoice(request, userId ?? "system");
+                var invoice = _service.TraditionalAccounting.Invoice.CreateInvoice(request, userId);
 
                 // Post to GL: Debit AR, Credit Revenue
                 var lines = new List<JournalEntryLineData>
@@ -145,7 +147,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
                     "AR_Invoice",
                     lines,
                     invoice.INVOICE_DATE,
-                    userId ?? "system");
+                    userId);
 
                 return Ok(new { InvoiceId = invoice.INVOICE_ID, InvoiceNumber = invoice.INVOICE_NUMBER, JournalEntryId = journalEntryId });
             }

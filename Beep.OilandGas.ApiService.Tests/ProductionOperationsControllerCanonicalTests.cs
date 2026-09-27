@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers.Production;
 using Beep.OilandGas.Models.Data.ProductionOperations;
 using Beep.OilandGas.PPDM39.Models;
@@ -17,7 +18,7 @@ public class ProductionOperationsControllerCanonicalTests
     {
         var core = new Mock<Beep.OilandGas.Models.Core.Interfaces.IProductionOperationsService>(MockBehavior.Strict);
         var management = new Mock<IProductionManagementService>(MockBehavior.Loose);
-        var controller = new ProductionOperationsController(core.Object, management.Object, NullLogger<ProductionOperationsController>.Instance);
+        var controller = SignedIn(new ProductionOperationsController(core.Object, management.Object, NullLogger<ProductionOperationsController>.Instance));
 
         var result = await controller.CreateOperation(null!);
 
@@ -60,11 +61,10 @@ public class ProductionOperationsControllerCanonicalTests
         var request = new PRODUCTION_COSTS { PRODUCTION_COST_ID = "OP-200" };
         var updated = new PRODUCTION_COSTS { PRODUCTION_COST_ID = "OP-200" };
         var core = new Mock<Beep.OilandGas.Models.Core.Interfaces.IProductionOperationsService>(MockBehavior.Strict);
-        core.Setup(s => s.UpdateOperationAsync("OP-200", request, It.IsAny<string>())).ReturnsAsync(updated);
+        core.Setup(s => s.UpdateOperationAsync("OP-200", request, "ops-user")).ReturnsAsync(updated);
         var management = new Mock<IProductionManagementService>(MockBehavior.Loose);
 
-        var controller = new ProductionOperationsController(core.Object, management.Object, NullLogger<ProductionOperationsController>.Instance);
-        controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        var controller = SignedIn(new ProductionOperationsController(core.Object, management.Object, NullLogger<ProductionOperationsController>.Instance));
 
         var result = await controller.UpdateOperation("OP-200", request);
 
@@ -72,5 +72,17 @@ public class ProductionOperationsControllerCanonicalTests
         var payload = Assert.IsType<PRODUCTION_COSTS>(ok.Value);
         Assert.Equal("OP-200", payload.PRODUCTION_COST_ID);
         core.VerifyAll();
+    }
+
+    private static ProductionOperationsController SignedIn(ProductionOperationsController controller)
+    {
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("party_id", "ops-user")], "TestAuth"))
+            }
+        };
+        return controller;
     }
 }

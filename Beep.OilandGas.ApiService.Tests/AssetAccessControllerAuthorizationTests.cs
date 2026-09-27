@@ -68,7 +68,7 @@ public class AssetAccessControllerAuthorizationTests
     private static AccessControlController Create(IAccessControlService service, bool authenticated, string? userId, bool admin)
     {
         var claims = new List<Claim>();
-        if (userId is not null) claims.Add(new(ClaimTypes.NameIdentifier, userId));
+        if (userId is not null) claims.Add(new("party_id", userId));
         if (admin) claims.Add(new(ClaimTypes.Role, "Administrator"));
         return new(service) { ControllerContext = new() { HttpContext = new DefaultHttpContext
         {

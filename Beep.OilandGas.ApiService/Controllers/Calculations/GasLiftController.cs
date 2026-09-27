@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.GasLift.Exceptions;
 using Microsoft.AspNetCore.Mvc;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.Models.Data;
@@ -116,15 +117,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         [HttpPost("design")]
         public async Task<ActionResult> SaveDesign(
             [FromBody] GAS_LIFT_DESIGN design,
-            [FromQuery] string? userId = null,
             CancellationToken cancellationToken = default)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (design == null)
                     return BadRequest(new { error = "Design payload is required." });
                 cancellationToken.ThrowIfCancellationRequested();
-                await _service.SaveGasLiftDesignAsync(design, userId ?? GetUserId());
+                await _service.SaveGasLiftDesignAsync(design, userId);
                 return Ok(new { message = "Gas lift design saved successfully", designId = design.DESIGN_ID });
             }
             catch (OperationCanceledException)
@@ -180,7 +181,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
-
-        private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
     }
 }

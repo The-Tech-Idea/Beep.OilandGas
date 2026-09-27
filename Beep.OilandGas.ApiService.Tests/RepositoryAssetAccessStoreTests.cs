@@ -102,6 +102,6 @@ public class RepositoryAssetAccessStoreTests(ITestOutputHelper output)
 
     private static ClaimsPrincipal Principal(string id) => new(new ClaimsIdentity(new[]
     {
-        new Claim(ClaimTypes.NameIdentifier, id), new Claim(ClaimTypes.Role, "Administrator")
+        new Claim("party_id", id), new Claim(ClaimTypes.Role, "Administrator")
     }, "test"));
 }

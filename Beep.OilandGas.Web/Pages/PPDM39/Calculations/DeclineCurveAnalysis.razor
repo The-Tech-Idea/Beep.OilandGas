@@ -1,12 +1,10 @@
 @page "/ppdm39/calculations/dca"
 @page "/analysis/decline-curve"
 @using System.Linq
-@using System.Security.Claims
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.Calculations
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
-@inject AuthenticationStateProvider AuthStateProvider
 @inject ICalculationServiceClient CalculationService
 @inject IDevelopmentServiceClient DevelopmentClient
 @inject ILifeCycleService LifeCycleService
@@ -284,7 +282,6 @@
 
 @code {
     private string _fieldName = string.Empty;
-    private string? _currentUserId;
     private string? _selectedWellId;
     private string _productionFluidType = "OIL";
     private string _calculationType = "DCA_HYPERBOLIC";
@@ -330,7 +327,6 @@
         try
         {
             await LoadFieldContextAsync();
-            await LoadUserAsync();
             await LoadWellsAsync();
             await ReloadHistoryAsync();
         }
@@ -354,12 +350,6 @@
         {
             // Field name is non-critical.
         }
-    }
-
-    private async Task LoadUserAsync()
-    {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
     }
 
     private async Task LoadWellsAsync()
@@ -405,7 +395,6 @@
                 ProductionFluidType = _productionFluidType,
                 StartDate = _startDate,
                 EndDate = _endDate,
-                UserId = _currentUserId,
                 AdditionalParameters = new DcaAnalysisOptions
                 {
                     InitialQi = _initialQi,

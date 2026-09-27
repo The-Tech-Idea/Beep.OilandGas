@@ -1,6 +1,6 @@
 using System;
-using System.Security.Claims;
 using System.Threading.Tasks;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Microsoft.AspNetCore.Mvc;
@@ -34,6 +34,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Tax
             [FromBody] REVENUE_TRANSACTION revenueTransaction,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -41,7 +42,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Tax
 
                 var tax = await _productionTaxService.CalculateProductionTaxesAsync(
                     revenueTransaction,
-                    ResolveUserId(),
+                    userId,
                     connectionName ?? "PPDM39");
 
                 if (tax == null)
@@ -59,13 +60,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Tax
                 _logger.LogError(ex, "Error calculating production taxes");
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
-        }
-
-        private string ResolveUserId()
-        {
-            return User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub")
-                ?? "system";
         }
     }
 }

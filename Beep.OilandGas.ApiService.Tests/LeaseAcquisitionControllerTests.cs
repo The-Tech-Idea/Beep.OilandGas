@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers.Operations;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Lease;
@@ -17,7 +18,7 @@ public class LeaseAcquisitionControllerTests
     public async Task CreateLeaseAcquisition_ReturnsBadRequest_WhenBodyMissing()
     {
         var core = new Mock<ILeaseAcquisitionService>(MockBehavior.Strict);
-        var controller = new LeaseAcquisitionController(core.Object, NullLogger<LeaseAcquisitionController>.Instance);
+        var controller = SignedIn(new LeaseAcquisitionController(core.Object, NullLogger<LeaseAcquisitionController>.Instance));
 
         var result = await controller.CreateLeaseAcquisition(null);
 
@@ -29,7 +30,7 @@ public class LeaseAcquisitionControllerTests
     public async Task UpdateLeaseStatus_ReturnsBadRequest_WhenLeaseIdMissing()
     {
         var core = new Mock<ILeaseAcquisitionService>(MockBehavior.Strict);
-        var controller = new LeaseAcquisitionController(core.Object, NullLogger<LeaseAcquisitionController>.Instance);
+        var controller = SignedIn(new LeaseAcquisitionController(core.Object, NullLogger<LeaseAcquisitionController>.Instance));
 
         var result = await controller.UpdateLeaseStatus(string.Empty, new UpdateLeaseStatusRequest { Status = "ACTIVE" });
 
@@ -41,7 +42,7 @@ public class LeaseAcquisitionControllerTests
     public async Task UpdateLeaseStatus_ReturnsBadRequest_WhenBodyMissing()
     {
         var core = new Mock<ILeaseAcquisitionService>(MockBehavior.Strict);
-        var controller = new LeaseAcquisitionController(core.Object, NullLogger<LeaseAcquisitionController>.Instance);
+        var controller = SignedIn(new LeaseAcquisitionController(core.Object, NullLogger<LeaseAcquisitionController>.Instance));
 
         var result = await controller.UpdateLeaseStatus("L-1", null);
 
@@ -53,10 +54,9 @@ public class LeaseAcquisitionControllerTests
     public async Task UpdateLeaseStatus_ReturnsNotFound_WhenLeaseMissing()
     {
         var core = new Mock<ILeaseAcquisitionService>(MockBehavior.Strict);
-        core.Setup(s => s.UpdateLeaseStatusAsync("L-404", "INACTIVE", It.IsAny<string>()))
+        core.Setup(s => s.UpdateLeaseStatusAsync("L-404", "INACTIVE", "user-1"))
             .ThrowsAsync(new KeyNotFoundException("missing"));
-        var controller = new LeaseAcquisitionController(core.Object, NullLogger<LeaseAcquisitionController>.Instance);
-        controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        var controller = SignedIn(new LeaseAcquisitionController(core.Object, NullLogger<LeaseAcquisitionController>.Instance));
 
         var result = await controller.UpdateLeaseStatus("L-404", new UpdateLeaseStatusRequest { Status = "INACTIVE" });
 
@@ -68,10 +68,9 @@ public class LeaseAcquisitionControllerTests
     public async Task UpdateLeaseStatus_ReturnsBadRequest_WhenArgumentException()
     {
         var core = new Mock<ILeaseAcquisitionService>(MockBehavior.Strict);
-        core.Setup(s => s.UpdateLeaseStatusAsync("L-1", "INVALID_STATUS_XYZ", It.IsAny<string>()))
+        core.Setup(s => s.UpdateLeaseStatusAsync("L-1", "INVALID_STATUS_XYZ", "user-1"))
             .ThrowsAsync(new ArgumentException("bad status"));
-        var controller = new LeaseAcquisitionController(core.Object, NullLogger<LeaseAcquisitionController>.Instance);
-        controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        var controller = SignedIn(new LeaseAcquisitionController(core.Object, NullLogger<LeaseAcquisitionController>.Instance));
 
         var result = await controller.UpdateLeaseStatus("L-1", new UpdateLeaseStatusRequest { Status = "INVALID_STATUS_XYZ" });
 
@@ -91,5 +90,17 @@ public class LeaseAcquisitionControllerTests
 
         Assert.IsType<OkObjectResult>(result.Result);
         core.VerifyAll();
+    }
+
+    private static LeaseAcquisitionController SignedIn(LeaseAcquisitionController controller)
+    {
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("party_id", "user-1")], "TestAuth"))
+            }
+        };
+        return controller;
     }
 }

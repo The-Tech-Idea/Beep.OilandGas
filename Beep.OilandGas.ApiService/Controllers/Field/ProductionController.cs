@@ -13,6 +13,7 @@ using Beep.OilandGas.Models.Data.Production;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.WorkOrder;
 using Beep.OilandGas.ApiService.Attributes;
+using Beep.OilandGas.ApiService.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
@@ -116,11 +117,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("wells/{wellId}/analysis/deviation")]
         public async Task<ActionResult<PerformanceDeviationResult>> LogPerformanceDeviationAsync(string wellId, [FromBody] PerformanceDeviationRequest request)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(wellId)) return BadRequest(new { error = "Well ID is required." });
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
 
             try
             {
@@ -235,11 +235,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("intervention-candidates/{uwi}/transition-to-decommissioning")]
         public async Task<ActionResult<DecommissioningTriggerResult>> TransitionToDecommissioningAsync(string uwi, [FromBody] DecommissioningTriggerRequest request)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
 
             try
             {
@@ -336,11 +335,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("intervention-candidates/{uwi}/decision")]
         public async Task<ActionResult<InterventionDecisionResult>> PostInterventionDecisionAsync(string uwi, [FromBody] InterventionDecisionRequest request)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
 
             try
             {

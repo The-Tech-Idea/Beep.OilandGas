@@ -84,7 +84,7 @@ public class PersonasAuthorizationTests
     private static PersonasController Create(RepositoryPersonaService service, string? actor, bool admin)
     {
         var claims = new List<Claim>();
-        if (actor is not null) claims.Add(new Claim(ClaimTypes.NameIdentifier, actor));
+        if (actor is not null) claims.Add(new Claim("party_id", actor));
         if (admin) claims.Add(new Claim(ClaimTypes.Role, "Administrator"));
         return new(service) { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext
         { User = new ClaimsPrincipal(new ClaimsIdentity(claims, "repository")) } } };

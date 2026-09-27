@@ -83,20 +83,5 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref OriginalConnectionNameValue, value); }
 
         }
-
-        /// <summary>
-        /// User performing the operation
-        /// </summary>
-        private string? UserIdValue;
-
-        public string? UserId
-
-        {
-
-            get { return this.UserIdValue; }
-
-            set { SetProperty(ref UserIdValue, value); }
-
-        }
     }
 }

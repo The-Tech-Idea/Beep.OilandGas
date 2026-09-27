@@ -36,7 +36,7 @@ public sealed class ProductionManagementRoutingTests
         {
             "list" => service.GetProductionOperationsAsync(cancellationToken: token),
             "read" => service.GetProductionOperationAsync("operation", token),
-            "create" => service.CreateProductionOperationAsync(new(), token),
+            "create" => service.CreateProductionOperationAsync(new(), "user-1", token),
             "reports" => service.GetProductionReportsAsync(cancellationToken: token),
             "well" => service.GetWellOperationsAsync("well", token),
             "facility" => service.GetFacilityOperationsAsync("facility", token),

@@ -78,7 +78,7 @@ public class ModuleRepositorySeedingTests
     {
         using var fixture = new Fixture();
         fixture.Controller.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(
-            [new Claim(ClaimTypes.NameIdentifier, "forged-local-user")]));
+            [new Claim("party_id", "forged-local-user")]));
         Assert.IsType<ForbidResult>(await fixture.Controller.Seed("PRODUCTION", new("version"), default));
         fixture.Editor.VerifyNoOtherCalls();
     }
@@ -267,8 +267,9 @@ public class ModuleRepositorySeedingTests
     public async Task MissingLocalActorCannotSeed()
     {
         using var fixture = new Fixture();
-        fixture.Controller.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity("external"));
-        Assert.IsType<ForbidResult>(await fixture.Controller.Seed("PRODUCTION", new("version"), default));
+        fixture.Controller.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(
+            [new Claim(ClaimTypes.NameIdentifier, "external-subject"), new Claim("sub", "external-subject")], "external"));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => fixture.Controller.Seed("PRODUCTION", new("version"), default));
         fixture.Editor.VerifyNoOtherCalls();
     }
 
@@ -326,7 +327,7 @@ public class ModuleRepositorySeedingTests
             Resolver = new(db, Editor.Object);
             Controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext
             {
-                User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "local-user")], "repository"))
+                User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("party_id", "local-user")], "repository"))
             } };
         }
 

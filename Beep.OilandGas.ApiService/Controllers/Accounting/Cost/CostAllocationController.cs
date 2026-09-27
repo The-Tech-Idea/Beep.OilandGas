@@ -4,8 +4,8 @@ using Beep.OilandGas.Models.Data.Accounting.Cost;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -43,9 +43,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         /// </summary>
         [HttpPost("allocate")]
         public async Task<ActionResult<CostAllocationComputationResult>> AllocateCosts(
-            [FromBody] CostAllocationRequest request, 
-            [FromQuery] string connectionName = "PPDM39",
-            [FromQuery] string? userId = null)
+            [FromBody] CostAllocationRequest request,
+            [FromQuery] string connectionName = "PPDM39")
         {
             try
             {
@@ -89,6 +88,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             [FromBody] AllocateProductionRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -101,7 +101,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
                 var result = await _allocationService.AllocateAsync(
                     request.RunTicket,
                     request.Method,
-                    ResolveUserId(),
+                    userId,
                     connectionName ?? _service.DefaultConnectionName);
 
                 return Ok(result);
@@ -164,6 +164,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             string allocationId,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (string.IsNullOrWhiteSpace(allocationId))
@@ -171,7 +172,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
 
                 await _allocationService.ReverseAsync(
                     allocationId,
-                    ResolveUserId(),
+                    userId,
                     connectionName ?? _service.DefaultConnectionName);
 
                 return NoContent();
@@ -181,13 +182,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
                 _logger.LogError(ex, "Error reversing allocation {AllocationId}", allocationId);
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
-        }
-
-        private string ResolveUserId()
-        {
-            return User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub")
-                ?? "system";
         }
     }
 

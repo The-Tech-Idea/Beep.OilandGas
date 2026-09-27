@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -30,18 +31,20 @@ namespace Beep.OilandGas.ApiService.Controllers
         }
 
         /// <summary>
-        /// Create a demo database for a user
+        /// Create a demo database for the signed-in user
         /// </summary>
         [HttpPost("create")]
         public async Task<ActionResult<CreateDemoDatabaseResponse>> CreateDemoDatabase([FromBody] CreateDemoDatabaseRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
-                if (request == null || string.IsNullOrEmpty(request.UserId))
+                if (request == null)
                 {
-                        return BadRequest(new { error = "User ID is required." });
+                        return BadRequest(new { error = "Request is required." });
                 }
 
+                request.UserId = userId;
                 var response = await _demoDatabaseService.CreateDemoDatabaseAsync(request);
                 
                 if (response.Success)
@@ -55,7 +58,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating demo database for user {UserId}", request?.UserId);
+                _logger.LogError(ex, "Error creating demo database for user {UserId}", userId);
                 return StatusCode(500, new CreateDemoDatabaseResponse
                 {
                     Success = false,
@@ -69,15 +72,11 @@ namespace Beep.OilandGas.ApiService.Controllers
         /// Get demo databases for current user
         /// </summary>
         [HttpGet("my-databases")]
-        public ActionResult<List<DemoDatabaseMetadata>> GetMyDemoDatabases([FromQuery] string userId)
+        public ActionResult<List<DemoDatabaseMetadata>> GetMyDemoDatabases()
         {
+            var userId = User.ActingUserId();
             try
             {
-                if (string.IsNullOrEmpty(userId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
                 var databases = _demoDatabaseService.GetUserDemoDatabases(userId);
                 return Ok(databases);
             }

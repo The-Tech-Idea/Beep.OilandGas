@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.AccessControl;
@@ -17,10 +17,11 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
     {
         private readonly IAssetHierarchyService _assetHierarchyService;
         private bool IsLocalUser => User.Identity?.IsAuthenticated == true
-            && !string.IsNullOrWhiteSpace(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            && !string.IsNullOrWhiteSpace(User.FindActingUserId());
         private bool IsAdministrator => IsLocalUser && User.IsInRole("Administrator");
-        private bool CanAccess(string userId) => IsLocalUser
-            && (User.FindFirstValue(ClaimTypes.NameIdentifier) == userId || IsAdministrator);
+        // Self or Administrator: the route/body id names the subject whose hierarchy is read, never the actor.
+        private bool CanAccess(string targetUserId) => IsLocalUser
+            && (User.FindActingUserId() == targetUserId || IsAdministrator);
 
         public AssetHierarchyController(IAssetHierarchyService assetHierarchyService)
         {
@@ -59,20 +60,20 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// <summary>
         /// Get the asset hierarchy filtered by user access
         /// </summary>
-        [HttpGet("user/{userId}")]
+        [HttpGet("user/{targetUserId}")]
         public async Task<ActionResult<AssetHierarchyNode>> GetAssetHierarchyForUser(
-            string userId,
+            string targetUserId,
             [FromQuery] string? organizationId = null,
             [FromQuery] string? rootAssetId = null,
             [FromQuery] string? rootAssetType = null)
         {
-            if (!CanAccess(userId)) return Forbid();
-            if (string.IsNullOrWhiteSpace(userId))
+            if (!CanAccess(targetUserId)) return Forbid();
+            if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
             try
             {
                 var hierarchy = await _assetHierarchyService.GetAssetHierarchyForUserAsync(
-                    userId, organizationId, rootAssetId, rootAssetType);
+                    targetUserId, organizationId, rootAssetId, rootAssetType);
                 
                 if (hierarchy == null)
                     return NotFound(new { message = "Hierarchy not found" });

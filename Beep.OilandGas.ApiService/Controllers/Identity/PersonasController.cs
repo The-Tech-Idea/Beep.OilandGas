@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using System.Security.Claims;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,42 +13,52 @@ namespace Beep.OilandGas.ApiService.Controllers.Identity;
 [Authorize]
 public sealed class PersonasController(RepositoryPersonaService personas) : ControllerBase
 {
-    private string? Actor => User.FindFirstValue(ClaimTypes.NameIdentifier);
-    private bool CanAccess(string userId) => User.Identity?.IsAuthenticated == true && !string.IsNullOrWhiteSpace(Actor) &&
-        (string.Equals(Actor, userId, StringComparison.Ordinal) || User.IsInRole("Administrator"));
+    // Self or Administrator: the route id names the subject whose personas are read or changed; the actor is always the
+    // signed-in account.
+    private bool CanAccess(string targetUserId) => User.Identity?.IsAuthenticated == true
+        && !string.IsNullOrWhiteSpace(User.FindActingUserId())
+        && (string.Equals(User.FindActingUserId(), targetUserId, StringComparison.Ordinal) || User.IsInRole("Administrator"));
 
     [HttpGet]
     public async Task<IActionResult> Catalog(CancellationToken token) => Ok(await personas.CatalogAsync(token));
 
     [HttpPut("{code}")]
     [Authorize(Roles = "Administrator")]
-    public Task<IActionResult> SaveCatalog(string code, PersonaCatalogUpdate request, CancellationToken token) =>
-        string.IsNullOrWhiteSpace(Actor) ? Task.FromResult<IActionResult>(Forbid()) :
-        Write(async () => await personas.SaveCatalogAsync(code, request, Actor!, token));
-
-    [HttpGet("users/{userId}")]
-    public async Task<IActionResult> Profile(string userId, CancellationToken token)
+    public Task<IActionResult> SaveCatalog(string code, PersonaCatalogUpdate request, CancellationToken token)
     {
-        if (!CanAccess(userId)) return Forbid();
-        return Ok(new PersonaProfileResult(await personas.GetAsync(userId, token)));
+        var actor = User.ActingUserId();
+        return Write(async () => await personas.SaveCatalogAsync(code, request, actor, token));
     }
 
-    [HttpPut("users/{userId}")]
-    public Task<IActionResult> SaveProfile(string userId, PersonaProfileUpdate request, CancellationToken token) =>
-        !CanAccess(userId) ? Task.FromResult<IActionResult>(Forbid()) :
-        Write(async () => await personas.SaveAsync(userId, request, Actor!, token));
-
-    [HttpGet("users/{userId}/preferences/{code}")]
-    public async Task<IActionResult> Preferences(string userId, string code, CancellationToken token)
+    [HttpGet("users/{targetUserId}")]
+    public async Task<IActionResult> Profile(string targetUserId, CancellationToken token)
     {
-        if (!CanAccess(userId)) return Forbid();
-        return Ok(await personas.PreferencesAsync(userId, code, token));
+        if (!CanAccess(targetUserId)) return Forbid();
+        return Ok(new PersonaProfileResult(await personas.GetAsync(targetUserId, token)));
     }
 
-    [HttpPut("users/{userId}/preferences/{code}/{viewKey}")]
-    public Task<IActionResult> SavePreference(string userId, string code, string viewKey, PersonaPreferenceUpdate request, CancellationToken token) =>
-        !CanAccess(userId) ? Task.FromResult<IActionResult>(Forbid()) :
-        Write(async () => await personas.SavePreferenceAsync(userId, code, viewKey, request, Actor!, token));
+    [HttpPut("users/{targetUserId}")]
+    public Task<IActionResult> SaveProfile(string targetUserId, PersonaProfileUpdate request, CancellationToken token)
+    {
+        if (!CanAccess(targetUserId)) return Task.FromResult<IActionResult>(Forbid());
+        var actor = User.ActingUserId();
+        return Write(async () => await personas.SaveAsync(targetUserId, request, actor, token));
+    }
+
+    [HttpGet("users/{targetUserId}/preferences/{code}")]
+    public async Task<IActionResult> Preferences(string targetUserId, string code, CancellationToken token)
+    {
+        if (!CanAccess(targetUserId)) return Forbid();
+        return Ok(await personas.PreferencesAsync(targetUserId, code, token));
+    }
+
+    [HttpPut("users/{targetUserId}/preferences/{code}/{viewKey}")]
+    public Task<IActionResult> SavePreference(string targetUserId, string code, string viewKey, PersonaPreferenceUpdate request, CancellationToken token)
+    {
+        if (!CanAccess(targetUserId)) return Task.FromResult<IActionResult>(Forbid());
+        var actor = User.ActingUserId();
+        return Write(async () => await personas.SavePreferenceAsync(targetUserId, code, viewKey, request, actor, token));
+    }
 
     private async Task<IActionResult> Write(Func<Task<object>> save)
     {

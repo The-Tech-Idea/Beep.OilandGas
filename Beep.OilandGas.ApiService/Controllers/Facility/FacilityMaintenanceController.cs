@@ -1,3 +1,4 @@
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.ProductionOperations.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -53,6 +54,7 @@ public class FacilityMaintenanceController : ControllerBase
         [FromBody] FACILITY_MAINTAIN maintenance,
         CancellationToken cancellationToken)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
         if (maintenance == null)
@@ -62,7 +64,7 @@ public class FacilityMaintenanceController : ControllerBase
         {
             maintenance.FACILITY_ID ??= facilityId;
             var row = await _facilities
-                .CreateFacilityMaintenanceAsync(maintenance, FacilityUserHelper.ResolveUserId(User), cancellationToken)
+                .CreateFacilityMaintenanceAsync(maintenance, userId, cancellationToken)
                 .ConfigureAwait(false);
             return Ok(row);
         }

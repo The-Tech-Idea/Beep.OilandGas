@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers.Calculations;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -68,9 +70,9 @@ public class EconomicAnalysisControllerTests
             Result = new EconomicResult { NPV = 1.0, IRR = 0.2, DiscountRate = 0.1 }
         };
         service.Setup(s => s.SaveAnalysisResultAsync("EA-1", request.Result!, "u-1")).Returns(Task.CompletedTask);
-        var controller = new EconomicAnalysisController(service.Object, NullLogger<EconomicAnalysisController>.Instance);
+        var controller = SignedIn(new EconomicAnalysisController(service.Object, NullLogger<EconomicAnalysisController>.Instance), "u-1");
 
-        var result = await controller.SaveResult(request, "u-1");
+        var result = await controller.SaveResult(request);
 
         Assert.IsType<OkObjectResult>(result);
         service.VerifyAll();
@@ -80,13 +82,13 @@ public class EconomicAnalysisControllerTests
     public async Task SaveResult_ReturnsBadRequest_WhenResultMissing()
     {
         var service = new Mock<IEconomicAnalysisService>(MockBehavior.Strict);
-        var controller = new EconomicAnalysisController(service.Object, NullLogger<EconomicAnalysisController>.Instance);
+        var controller = SignedIn(new EconomicAnalysisController(service.Object, NullLogger<EconomicAnalysisController>.Instance), "u-1");
 
         var result = await controller.SaveResult(new SaveAnalysisResultRequest
         {
             AnalysisId = "EA-2",
             Result = null
-        }, "u-1");
+        });
 
         Assert.IsType<BadRequestObjectResult>(result);
         service.VerifyNoOtherCalls();
@@ -115,5 +117,17 @@ public class EconomicAnalysisControllerTests
 
         Assert.IsType<BadRequestObjectResult>(result.Result);
         service.VerifyNoOtherCalls();
+    }
+
+    private static EconomicAnalysisController SignedIn(EconomicAnalysisController controller, string userId)
+    {
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("party_id", userId)], "TestAuth"))
+            }
+        };
+        return controller;
     }
 }

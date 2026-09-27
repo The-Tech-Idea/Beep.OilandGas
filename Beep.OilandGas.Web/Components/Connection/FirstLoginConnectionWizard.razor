@@ -1,6 +1,5 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
-@inject AuthenticationStateProvider AuthStateProvider
 @inject IConnectionService ConnectionService
 
 <MudDialog>
@@ -198,27 +197,10 @@
     private ConnectionTestResult? _testResult;
     private bool _isSettingConnection = false;
     private bool _setupComplete = false;
-    private string? _userId;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadConnections();
-        await GetCurrentUserId();
-    }
-
-    private async Task GetCurrentUserId()
-    {
-        try
-        {
-            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            _userId = authState.User?.FindFirst("sub")?.Value 
-                   ?? authState.User?.Identity?.Name 
-                   ?? "system";
-        }
-        catch
-        {
-            _userId = "system";
-        }
     }
 
     private async Task LoadConnections()
@@ -344,7 +326,7 @@
 
         try
         {
-            var result = await ConnectionService.SetCurrentConnectionAsync(_selectedConnectionName, _userId);
+            var result = await ConnectionService.SetCurrentConnectionAsync(_selectedConnectionName);
             if (result.Success)
             {
                 _setupComplete = true;

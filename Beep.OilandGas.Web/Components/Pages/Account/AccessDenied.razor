@@ -1,0 +1,37 @@
+@page "/account/access-denied"
+@attribute [AllowAnonymous]
+
+@* BeepClientEndpoints.AccessDenied: where the sign-in cookie sends a request a page's policy refuses, where the library
+   sends a person who declined at the identity server, and where it sends a person OilGas refuses at sign-in
+   (IAccountAdmission, reason=account). The router renders it too, for a signed-in person a page does not admit. The reason
+   is a closed vocabulary: anything else reads as the general refusal. It was /access-denied, which the library does not
+   send anybody to. *@
+
+<PageTitle>Access denied - Beep Oil & Gas</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Outlined="true" Class="pa-6">
+        <MudText Typo="Typo.h5" HtmlTag="h1" Color="Color.Error" Class="mb-2">Access denied</MudText>
+        @if (AccountRefused)
+        {
+            <MudText Color="Color.Secondary" Class="mb-4" data-denied-reason="account">
+                This account cannot use Beep Oil &amp; Gas. Signing in again will not change that; ask an administrator to
+                restore it.
+            </MudText>
+        }
+        else
+        {
+            <MudText Color="Color.Secondary" Class="mb-4">You don't have permission to open this page.</MudText>
+        }
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/" StartIcon="@Icons.Material.Filled.Home">
+            Return home
+        </MudButton>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [SupplyParameterFromQuery(Name = BeepClientEndpoints.AccessDeniedReasonKey)]
+    private string? Reason { get; set; }
+
+    private bool AccountRefused => Reason == BeepClientEndpoints.AccessDeniedReasons.Account;
+}

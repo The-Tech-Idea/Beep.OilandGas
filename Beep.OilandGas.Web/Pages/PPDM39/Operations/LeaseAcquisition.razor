@@ -6,7 +6,6 @@
 @inject ILeaseServiceClient LeaseService
 @inject ApiClient ApiClient
 @inject ILifeCycleService LifeCycleService
-@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Manage Lease Acquisitions</PageTitle>
 
@@ -231,13 +230,9 @@
     private bool _createDialogVisible;
     private bool _isCreating;
     private bool _isCreateFormValid;
-    private string? _currentUserId;
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        _currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
-
         try
         {
             var field = await LifeCycleService.GetCurrentFieldAsync();
@@ -328,7 +323,7 @@
             _createLeaseRequest.PropertyId = _fieldId;
             _createLeaseRequest.EffectiveDate = _createEffectiveDate.Value;
             _createLeaseRequest.ExpirationDate = _createExpirationDate;
-            await LeaseService.CreateLeaseAcquisitionAsync(_createLeaseRequest, _currentUserId);
+            await LeaseService.CreateLeaseAcquisitionAsync(_createLeaseRequest);
             _createDialogVisible = false;
             Snackbar.Add("Lease acquisition created successfully", Severity.Success);
             await LoadLeases();
@@ -368,7 +363,7 @@
         {
             try
             {
-                var updated = await LeaseService.UpdateLeaseStatusAsync(leaseId, "Active", _currentUserId);
+                var updated = await LeaseService.UpdateLeaseStatusAsync(leaseId, "Active");
                 if (updated)
                 {
                     Snackbar.Add("Lease status updated successfully", Severity.Success);

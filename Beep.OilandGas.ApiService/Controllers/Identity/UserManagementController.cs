@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Beep.OilandGas.ApiService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,29 +11,31 @@ namespace Beep.OilandGas.ApiService.Controllers.Identity;
 [Authorize]
 public sealed class UserManagementController(RepositoryUserService users) : ControllerBase
 {
-    private string? Actor => User.FindFirstValue(ClaimTypes.NameIdentifier);
+    private bool IsLocalUser => !string.IsNullOrWhiteSpace(User.FindActingUserId());
     private bool IsAdministrator => User.IsInRole("Administrator");
-    private bool CanAccess(string id) => !string.IsNullOrWhiteSpace(Actor) && (Actor == id || IsAdministrator);
+    // Self or Administrator: the route id names the subject being read or changed; the actor is always the signed-in
+    // account (RepositoryUserService records it).
+    private bool CanAccess(string targetUserId) => IsLocalUser && (User.FindActingUserId() == targetUserId || IsAdministrator);
 
     [HttpGet]
     [Authorize(Policy = "Admin.ManageUsers")]
     public async Task<IActionResult> GetAllUsers() => Ok(await users.GetAllAsync());
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetUser(string id)
+    [HttpGet("{targetUserId}")]
+    public async Task<IActionResult> GetUser(string targetUserId)
     {
-        if (!CanAccess(id)) return Forbid();
-        var user = await users.GetByIdAsync(id);
+        if (!CanAccess(targetUserId)) return Forbid();
+        var user = await users.GetByIdAsync(targetUserId);
         return user is null ? NotFound() : Ok(user);
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser(string id, [FromBody] RepositoryUserUpdate request)
+    [HttpPut("{targetUserId}")]
+    public async Task<IActionResult> UpdateUser(string targetUserId, [FromBody] RepositoryUserUpdate request)
     {
-        if (!CanAccess(id) || (request.IsActive.HasValue && !IsAdministrator)) return Forbid();
+        if (!CanAccess(targetUserId) || (request.IsActive.HasValue && !IsAdministrator)) return Forbid();
         try
         {
-            var user = await users.UpdateAsync(id, request);
+            var user = await users.UpdateAsync(targetUserId, request);
             return user is null ? NotFound() : Ok(user);
         }
         catch (ArgumentException exception) { return BadRequest(new { error = exception.Message }); }
@@ -42,36 +43,36 @@ public sealed class UserManagementController(RepositoryUserService users) : Cont
         catch (InvalidOperationException exception) { return Conflict(new { error = exception.Message }); }
     }
 
-    [HttpGet("{id}/roles")]
-    public async Task<IActionResult> GetUserRoles(string id)
+    [HttpGet("{targetUserId}/roles")]
+    public async Task<IActionResult> GetUserRoles(string targetUserId)
     {
-        if (!CanAccess(id)) return Forbid();
-        return Ok(await users.GetRolesAsync(id));
+        if (!CanAccess(targetUserId)) return Forbid();
+        return Ok(await users.GetRolesAsync(targetUserId));
     }
 
-    [HttpPost("{id}/roles")]
+    [HttpPost("{targetUserId}/roles")]
     [Authorize(Policy = "Admin.AssignRoles")]
-    public async Task<IActionResult> AddRole(string id, [FromBody] UserRoleChangeRequest request)
+    public async Task<IActionResult> AddRole(string targetUserId, [FromBody] UserRoleChangeRequest request)
     {
-        if (string.IsNullOrWhiteSpace(Actor)) return Forbid();
+        if (!IsLocalUser) return Forbid();
         if (string.IsNullOrWhiteSpace(request.RoleName)) return BadRequest();
         try
         {
-            return await users.AddToRoleAsync(id, request.RoleName) ? NoContent() : NotFound();
+            return await users.AddToRoleAsync(targetUserId, request.RoleName) ? NoContent() : NotFound();
         }
         catch (ArgumentException exception) { return BadRequest(new { error = exception.Message }); }
         catch (DbUpdateException) { return Conflict(new { error = "The assignment changed. Reload before retrying." }); }
         catch (InvalidOperationException exception) { return Conflict(new { error = exception.Message }); }
     }
 
-    [HttpDelete("{id}/roles/{roleName}")]
+    [HttpDelete("{targetUserId}/roles/{roleName}")]
     [Authorize(Policy = "Admin.AssignRoles")]
-    public async Task<IActionResult> RemoveRole(string id, string roleName)
+    public async Task<IActionResult> RemoveRole(string targetUserId, string roleName)
     {
-        if (string.IsNullOrWhiteSpace(Actor)) return Forbid();
+        if (!IsLocalUser) return Forbid();
         try
         {
-            return await users.RemoveFromRoleAsync(id, roleName) ? NoContent() : NotFound();
+            return await users.RemoveFromRoleAsync(targetUserId, roleName) ? NoContent() : NotFound();
         }
         catch (DbUpdateException) { return Conflict(new { error = "The assignment changed. Reload before retrying." }); }
         catch (InvalidOperationException exception) { return Conflict(new { error = exception.Message }); }

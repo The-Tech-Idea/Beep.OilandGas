@@ -147,6 +147,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         public ChokeAnalysisOptions? AdditionalParameters { get; set; }
         private string? UserIdValue;
 
+        // Set by the API from the signed-in account; a value a client sends is overwritten.
         public string? UserId
 
         {

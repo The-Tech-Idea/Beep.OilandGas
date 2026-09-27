@@ -16,6 +16,7 @@ using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using TheTechIdea.Beep.Editor;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.ApiService.Services;
 
 namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
 {
@@ -57,9 +58,9 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
         [HttpPost("{workOrderId}/afe")]
         public async Task<ActionResult<object>> CreateOrLinkAFE(
             string workOrderId,
-            [FromQuery] string? userId = null,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(workOrderId))
                 return BadRequest(new { error = "Work order ID is required." });
 
@@ -94,7 +95,7 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
 
                 var afe = await _workOrderAccountingService.CreateOrLinkAFEAsync(
                     workOrderResponse,
-                    userId ?? "system");
+                    userId);
 
                 return Ok(new
                 {
@@ -130,9 +131,9 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
             [FromQuery] string? facilityId = null,
             [FromQuery] string? fieldId = null,
             [FromQuery] string? propertyId = null,
-            [FromQuery] string? userId = null,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(workOrderId))
                 return BadRequest(new { error = "Work order ID is required." });
 
@@ -150,7 +151,7 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
                     facilityId,
                     fieldId,
                     propertyId,
-                    userId ?? "system");
+                    userId);
 
                 return Ok(new
                 {

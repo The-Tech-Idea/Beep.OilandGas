@@ -1,5 +1,4 @@
 using System;
-using System.Security.Claims;
 using Beep.OilandGas.ApiService.Services;
 using System.IO;
 using System.Linq;
@@ -70,14 +69,12 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             string tableName,
             IFormFile file,
             [FromQuery] string? operationId = null,
-            [FromQuery] string userId = "SYSTEM",
             [FromQuery] string connectionName = "PPDM39",
             [FromQuery] bool validateForeignKeys = true)
         {
+            var actor = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(tableName) || string.IsNullOrWhiteSpace(connectionName))
                 return BadRequest(new { error = "Table and connection names are required." });
-            var actor = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-            if (string.IsNullOrWhiteSpace(actor)) return Unauthorized();
             if (!string.IsNullOrEmpty(operationId))
                 return BadRequest(new { error = "Import operation IDs are assigned by the server." });
             if (file == null || file.Length == 0)

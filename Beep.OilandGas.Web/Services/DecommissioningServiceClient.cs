@@ -48,12 +48,12 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<WellAbandonmentResponse?> AbandonWellAsync(string wellId, WellAbandonmentRequest request, string userId)
+        public async Task<WellAbandonmentResponse?> AbandonWellAsync(string wellId, WellAbandonmentRequest request)
         {
             try
             {
                 return await _apiClient.PostAsync<WellAbandonmentRequest, WellAbandonmentResponse>(
-                    $"/api/field/current/decommissioning/abandon-well?wellId={Uri.EscapeDataString(wellId)}&userId={Uri.EscapeDataString(userId)}",
+                    $"/api/field/current/decommissioning/abandon-well?wellId={Uri.EscapeDataString(wellId)}",
                     request);
             }
             catch (Exception ex)

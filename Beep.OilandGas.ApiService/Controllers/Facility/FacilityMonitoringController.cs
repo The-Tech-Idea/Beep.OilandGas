@@ -1,3 +1,4 @@
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Data.ProductionOperations;
 using Beep.OilandGas.ProductionOperations.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -58,6 +59,7 @@ public class FacilityMonitoringController : ControllerBase
         [FromQuery] string? facilityType,
         CancellationToken cancellationToken)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
         if (measurement == null)
@@ -70,7 +72,7 @@ public class FacilityMonitoringController : ControllerBase
                 measurement.FACILITY_TYPE = facilityType.Trim();
 
             var row = await _facilities
-                .RecordFacilityMeasurementAsync(measurement, FacilityUserHelper.ResolveUserId(User), cancellationToken)
+                .RecordFacilityMeasurementAsync(measurement, userId, cancellationToken)
                 .ConfigureAwait(false);
             return Ok(row);
         }
@@ -129,6 +131,7 @@ public class FacilityMonitoringController : ControllerBase
         [FromQuery] string? facilityType,
         CancellationToken cancellationToken)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
         if (string.IsNullOrWhiteSpace(equipmentId))
@@ -144,7 +147,7 @@ public class FacilityMonitoringController : ControllerBase
                 activity.FACILITY_TYPE = facilityType.Trim();
 
             var row = await _facilities
-                .RecordEquipmentActivityAsync(activity, FacilityUserHelper.ResolveUserId(User), cancellationToken)
+                .RecordEquipmentActivityAsync(activity, userId, cancellationToken)
                 .ConfigureAwait(false);
             return Ok(row);
         }

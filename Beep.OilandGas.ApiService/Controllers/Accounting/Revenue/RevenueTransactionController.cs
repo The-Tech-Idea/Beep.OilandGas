@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -10,6 +9,7 @@ using Beep.OilandGas.ApiService.Exceptions;
 using Beep.OilandGas.Models.Data.Accounting.Revenue;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.ApiService.Services;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
 {
@@ -44,9 +44,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
         public async Task<ActionResult<object>> CreateRevenueTransaction(
             [FromBody] CreateRevenueTransactionRequest request,
             [FromQuery] bool isCash = false,
-            [FromQuery] string? userId = null,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -64,17 +64,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
                     NET_REVENUE = request.RevenueAmount,
                     ACTIVE_IND = "Y",
                     ROW_CREATED_DATE = DateTime.UtcNow,
-                    ROW_CREATED_BY = userId ?? "system"
+                    ROW_CREATED_BY = userId
                 };
 
-                await repository.InsertAsync(transaction, userId ?? "system");
+                await repository.InsertAsync(transaction, userId);
 
                 var journalEntryId = await _glIntegration.PostRevenueToGL(
                     transaction.REVENUE_TRANSACTION_ID,
                     transaction.GROSS_REVENUE ?? 0m,
                     isCash: isCash,
                     transactionDate: transaction.TRANSACTION_DATE ?? DateTime.UtcNow,
-                    userId: userId ?? "system");
+                    userId: userId);
 
                 return Ok(new { TransactionId = transaction.REVENUE_TRANSACTION_ID, JournalEntryId = journalEntryId });
             }
@@ -98,6 +98,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
             [FromBody] ALLOCATION_DETAIL allocationDetail,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -107,7 +108,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
 
                 var result = await _revenueService.RecognizeRevenueAsync(
                     allocationDetail,
-                    ResolveUserId(),
+                    userId,
                     connectionName ?? _service.DefaultConnectionName);
 
                 return Ok(result);
@@ -145,13 +146,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
                 _logger.LogError(ex, "Error validating revenue allocation via service endpoint");
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
-        }
-
-        private string ResolveUserId()
-        {
-            return User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub")
-                ?? "system";
         }
     }
 

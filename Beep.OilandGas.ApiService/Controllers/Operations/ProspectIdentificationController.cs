@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.ProspectIdentification;
 using Beep.OilandGas.Models.Data.Operations;
@@ -44,12 +45,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         [HttpPost("/api/prospect/identify")]
         public async Task<ActionResult<PROSPECT>> IdentifyProspectCompatibility([FromBody] PROSPECT request)
         {
+            var userId = User.ActingUserId();
             if (request == null) return BadRequest(new { error = "Request body is required." });
 
             try
             {
                 var prospect = MapLegacyProspect(request);
-                var prospectId = await _service.CreateProspectAsync(prospect, GetUserId());
+                var prospectId = await _service.CreateProspectAsync(prospect, userId);
                 request.PROSPECT_ID = prospectId;
                 request.PROSPECT_STATUS = string.IsNullOrWhiteSpace(request.PROSPECT_STATUS) ? "New" : request.PROSPECT_STATUS;
                 return Ok(request);
@@ -225,11 +227,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         }
 
         [HttpPost]
-        public async Task<ActionResult<string>> CreateProspect([FromBody] Prospect prospect, [FromQuery] string? userId = null)
+        public async Task<ActionResult<string>> CreateProspect([FromBody] Prospect prospect)
         {
+            var userId = User.ActingUserId();
             try
             {
-                var prospectId = await _service.CreateProspectAsync(prospect, userId ?? GetUserId());
+                var prospectId = await _service.CreateProspectAsync(prospect, userId);
                 return Ok(new { message = "Prospect created successfully", prospectId });
             }
             catch (Exception ex)
@@ -463,8 +466,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
             if (riskScore >= 0.4m) return "MEDIUM";
             return "LOW";
         }
-
-        private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
     }
 }
 

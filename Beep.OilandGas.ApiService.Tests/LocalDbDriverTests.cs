@@ -116,7 +116,7 @@ public class LocalDbDriverTests(ITestOutputHelper output)
             using var repository = new SqlServerRepositoryDbContext(
                 new DbContextOptionsBuilder<SqlServerRepositoryDbContext>().UseSqlServer(repositoryConnection).Options);
             await repository.Database.MigrateAsync();
-            Assert.Equal(6, (await repository.Database.GetAppliedMigrationsAsync()).Count());
+            Assert.Equal(repository.Database.GetMigrations(), await repository.Database.GetAppliedMigrationsAsync());
             var resolver = new ModuleConnectionResolver(repository, editor.Object);
             var setup = new PPDM39SetupService(editor.Object, NullLogger<PPDM39SetupService>.Instance,
                 Mock.Of<Beep.OilandGas.Models.Core.Interfaces.ICommonColumnHandler>(),
@@ -420,7 +420,10 @@ public class LocalDbDriverTests(ITestOutputHelper output)
         {
             context.User = new ClaimsPrincipal(new ClaimsIdentity(new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, "test-admin"), new Claim(ClaimTypes.Role, "Administrator")
+                // An active OilGas administrator as the API's own resolution leaves one: party_id and the active-account
+                // marker issued here (RepositoryRolesClaimsTransformation), the repository's role.
+                new Claim(Beep.Foundation.IdentityServer.Shared.Identity.PartyIdClaimsTransformation<string>.ClaimType, "test-admin"),
+                new Claim(RepositoryRolesClaimsTransformation.ActiveAccount, "true"), new Claim(ClaimTypes.Role, "Administrator")
             }, "test"));
             await next();
         });

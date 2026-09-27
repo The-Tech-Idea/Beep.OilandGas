@@ -1,9 +1,9 @@
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.HSE;
 using Beep.OilandGas.ApiService.Attributes;
+using Beep.OilandGas.ApiService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.HSE;
@@ -23,7 +23,6 @@ public class HSEController : ControllerBase
         _logger = logger;
     }
 
-    private string UserId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
     private IFieldHSEService Hse => _fieldOrchestrator.GetHSEService();
 
     // ── Incidents ──────────────────────────────────────────────────────────────
@@ -85,10 +84,11 @@ public class HSEController : ControllerBase
     public async Task<ActionResult<HSEIncidentRecord>> ReportAsync(
         [FromBody] ReportIncidentRequest request)
     {
+        var userId = User.ActingUserId();
         if (request is null) return BadRequest(new { error = "Request body is required." });
         try
         {
-            var result = await Hse.ReportIncidentAsync(request, UserId);
+            var result = await Hse.ReportIncidentAsync(request, userId);
             return CreatedAtAction(nameof(GetIncidentAsync), new { incidentId = result.IncidentId }, result);
         }
         catch (OperationCanceledException)
@@ -110,11 +110,12 @@ public class HSEController : ControllerBase
     public async Task<ActionResult> TransitionAsync(
         string incidentId, [FromBody] TransitionIncidentRequest request)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
         if (request is null) return BadRequest(new { error = "Request body is required." });
         try
         {
-            var ok = await Hse.TransitionAsync(incidentId, request.Trigger, request.Reason, UserId);
+            var ok = await Hse.TransitionAsync(incidentId, request.Trigger, request.Reason, userId);
             return ok ? NoContent() : BadRequest(new { error = "Invalid transition." });
         }
         catch (OperationCanceledException)
@@ -140,10 +141,11 @@ public class HSEController : ControllerBase
     public async Task<ActionResult> UpdateTierAsync(
         string incidentId, [FromQuery] int tier)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
         try
         {
-            await Hse.UpdateTierAsync(incidentId, tier, UserId);
+            await Hse.UpdateTierAsync(incidentId, tier, userId);
             return NoContent();
         }
         catch (OperationCanceledException)
@@ -169,11 +171,12 @@ public class HSEController : ControllerBase
     public async Task<ActionResult> AssignInvestigatorAsync(
         string incidentId, [FromQuery] string baId)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
         if (string.IsNullOrWhiteSpace(baId)) return BadRequest(new { error = "Business associate ID is required." });
         try
         {
-            await Hse.AssignInvestigatorAsync(incidentId, baId, UserId);
+            await Hse.AssignInvestigatorAsync(incidentId, baId, userId);
             return NoContent();
         }
         catch (OperationCanceledException)
@@ -208,8 +211,9 @@ public class HSEController : ControllerBase
     public async Task<ActionResult> AddCauseAsync(
         string incidentId, [FromBody] AddCauseRequest request)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        await Hse.AddCauseAsync(incidentId, request, UserId);
+        await Hse.AddCauseAsync(incidentId, request, userId);
         return NoContent();
     }
 
@@ -233,8 +237,9 @@ public class HSEController : ControllerBase
     public async Task<ActionResult> AddBarrierAsync(
         string incidentId, [FromBody] AddBarrierRequest request)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        await Hse.AddBarrierAsync(incidentId, request, UserId);
+        await Hse.AddBarrierAsync(incidentId, request, userId);
         return NoContent();
     }
 
@@ -242,10 +247,11 @@ public class HSEController : ControllerBase
     public async Task<ActionResult> SetBarrierStatusAsync(
         string incidentId, string equipId, [FromQuery] string status)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
         if (string.IsNullOrWhiteSpace(equipId)) return BadRequest(new { error = "Equipment ID is required." });
         if (string.IsNullOrWhiteSpace(status)) return BadRequest(new { error = "Status is required." });
-        await Hse.SetBarrierStatusAsync(incidentId, equipId, status, UserId);
+        await Hse.SetBarrierStatusAsync(incidentId, equipId, status, userId);
         return NoContent();
     }
 
@@ -268,8 +274,9 @@ public class HSEController : ControllerBase
     [HttpPost("incidents/{incidentId}/ca-plan")]
     public async Task<ActionResult<string>> CreateCAPlanAsync(string incidentId)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        var id = await Hse.CreateCaPlanAsync(incidentId, UserId);
+        var id = await Hse.CreateCaPlanAsync(incidentId, userId);
         return Ok(id);
     }
 
@@ -277,8 +284,9 @@ public class HSEController : ControllerBase
     public async Task<ActionResult<string>> AddCAAsync(
         string incidentId, [FromBody] AddCARequest request)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        var id = await Hse.AddCorrectiveActionAsync(incidentId, request, UserId);
+        var id = await Hse.AddCorrectiveActionAsync(incidentId, request, userId);
         return Ok(id);
     }
 
@@ -286,8 +294,9 @@ public class HSEController : ControllerBase
     public async Task<ActionResult> CompleteCAAsync(
         string incidentId, int stepSeq, [FromQuery] string notes = "")
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        await Hse.RecordCompletionAsync(incidentId, stepSeq, notes, UserId);
+        await Hse.RecordCompletionAsync(incidentId, stepSeq, notes, userId);
         return NoContent();
     }
 
@@ -304,7 +313,8 @@ public class HSEController : ControllerBase
     public async Task<ActionResult<string>> CreateStudyAsync(
         [FromBody] CreateHAZOPStudyRequest request)
     {
-        var id = await Hse.CreateStudyAsync(request, UserId);
+        var userId = User.ActingUserId();
+        var id = await Hse.CreateStudyAsync(request, userId);
         return CreatedAtAction(nameof(GetStudySummaryAsync), new { studyId = id }, id);
     }
 
@@ -326,8 +336,9 @@ public class HSEController : ControllerBase
     public async Task<ActionResult<string>> AddNodeAsync(
         string studyId, [FromBody] AddNodeRequest request)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(studyId)) return BadRequest(new { error = "Study ID is required." });
-        var id = await Hse.AddNodeAsync(studyId, request, UserId);
+        var id = await Hse.AddNodeAsync(studyId, request, userId);
         return Ok(id);
     }
 
@@ -335,8 +346,9 @@ public class HSEController : ControllerBase
     public async Task<ActionResult<string>> AddDeviationAsync(
         string studyId, int nodeSeq, [FromBody] AddDeviationRequest request)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(studyId)) return BadRequest(new { error = "Study ID is required." });
-        var id = await Hse.AddDeviationAsync(studyId, nodeSeq, request, UserId);
+        var id = await Hse.AddDeviationAsync(studyId, nodeSeq, request, userId);
         return Ok(id);
     }
 
@@ -344,9 +356,10 @@ public class HSEController : ControllerBase
     public async Task<ActionResult> UpdateDeviationStatusAsync(
         string studyId, int nodeSeq, int condSeq, [FromQuery] string status)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(studyId)) return BadRequest(new { error = "Study ID is required." });
         if (string.IsNullOrWhiteSpace(status)) return BadRequest(new { error = "Status is required." });
-        await Hse.UpdateDeviationStatusAsync(studyId, nodeSeq, condSeq, status, UserId);
+        await Hse.UpdateDeviationStatusAsync(studyId, nodeSeq, condSeq, status, userId);
         return NoContent();
     }
 

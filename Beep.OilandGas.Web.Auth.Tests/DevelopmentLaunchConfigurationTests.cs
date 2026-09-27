@@ -23,25 +23,47 @@ public class DevelopmentLaunchConfigurationTests
 
         foreach (var file in new[] { "appsettings.json", "appsettings.Development.json" })
         {
-            using var web = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "Beep.OilandGas.Web", file)));
+            using var web = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "Beep.OilandGas.Web", file)),
+                new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip });
             Assert.False(web.RootElement.TryGetProperty("ConnectionStrings", out _));
             Assert.False(web.RootElement.TryGetProperty("Repository", out _));
         }
     }
 
     [Fact]
-    public void DevelopmentOidcDoesNotRequestExternalRoles()
+    public void DevelopmentSignInAsksForTheOilGasApiAndTheAccountScopesOnly()
     {
-        using var settings = JsonDocument.Parse(File.ReadAllText(Path.Combine(FindRepositoryRoot(),
-            "Beep.OilandGas.Web", "appsettings.Development.json")));
-        var scopes = settings.RootElement.GetProperty("Authentication").GetProperty("Schemes")
-            .GetProperty("OpenIdConnect").GetProperty("Scope").EnumerateArray()
-            .Select(value => value.GetString()).ToArray();
-        Assert.DoesNotContain("role", scopes);
-        Assert.DoesNotContain("roles", scopes);
-        Assert.Contains("openid", scopes);
-        Assert.Contains("beep-api", scopes);
-        Assert.Contains("offline_access", scopes);
+        var root = FindRepositoryRoot();
+        using var web = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "Beep.OilandGas.Web", "appsettings.Development.json")),
+            new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip });
+        using var api = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "Beep.OilandGas.ApiService", "appsettings.Development.json")),
+            new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip });
+        var identity = web.RootElement.GetProperty("IdentityServer");
+
+        // The Web asks for the API's own identifier — the audience the API validates — and nothing shared or role-bearing.
+        var apiScopes = identity.GetProperty("ApiScopes").EnumerateArray().Select(value => value.GetString()).ToArray();
+        Assert.Equal([api.RootElement.GetProperty("IdentityServer").GetProperty("Audience").GetString()], apiScopes);
+        var accountScopes = identity.GetProperty("AccountScopes").EnumerateArray().Select(value => value.GetString()!).ToArray();
+        Assert.NotEmpty(accountScopes);
+        Assert.All(accountScopes, scope => Assert.StartsWith("account.", scope, StringComparison.Ordinal));
+        Assert.DoesNotContain("beep-api", apiScopes.Concat(accountScopes));
+        Assert.DoesNotContain("role", apiScopes.Concat(accountScopes));
+        Assert.DoesNotContain("roles", apiScopes.Concat(accountScopes));
+
+        // Both hosts name the same identity server; the client id and secret are secrets of the machine (user-secrets).
+        Assert.Equal(identity.GetProperty("Authority").GetString(),
+            api.RootElement.GetProperty("IdentityServer").GetProperty("Authority").GetString());
+        foreach (var file in new[] { "appsettings.json", "appsettings.Development.json" })
+        {
+            using var settings = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "Beep.OilandGas.Web", file)),
+                new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip });
+            if (settings.RootElement.TryGetProperty("IdentityServer", out var section))
+            {
+                Assert.False(section.TryGetProperty("ClientId", out _), file);
+                Assert.False(section.TryGetProperty("ClientSecret", out _), file);
+            }
+            Assert.False(settings.RootElement.TryGetProperty("Authentication", out _), file);
+        }
     }
 
     private static string FindRepositoryRoot()
@@ -61,8 +83,8 @@ public class DevelopmentLaunchConfigurationTests
             root = root.Parent;
         Assert.NotNull(root);
         using var settings = JsonDocument.Parse(File.ReadAllText(Path.Combine(root.FullName,
-            "Beep.OilandGas.Web", "appsettings.Development.json")));
-        foreach (var (project, section) in new[] { ("Beep.OilandGas.ApiService", "ApiService"), ("Beep.OilandGas.Web", "WebApp") })
+            "Beep.OilandGas.Web", "appsettings.Development.json")), new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip });
+        foreach (var (project, section) in new[] { ("Beep.OilandGas.ApiService", "ApiService") })
         {
             using var launch = JsonDocument.Parse(File.ReadAllText(Path.Combine(root.FullName, project,
                 "Properties", "launchSettings.json")));

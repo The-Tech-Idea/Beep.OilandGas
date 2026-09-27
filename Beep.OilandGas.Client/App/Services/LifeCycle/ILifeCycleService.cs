@@ -20,7 +20,7 @@ namespace Beep.OilandGas.Client.App.Services.LifeCycle
         Task<List<PROSPECT>> GetProspectsAsync(string areaId, CancellationToken cancellationToken = default);
         Task<PROSPECT_SEIS_SURVEY> AnalyzeSeismicAsync(PROSPECT_SEIS_SURVEY request, CancellationToken cancellationToken = default);
         Task<EXPLORATION_PROGRAM> GetExplorationStatusAsync(string projectId, CancellationToken cancellationToken = default);
-        Task<EXPLORATION_PROGRAM> SaveExplorationResultAsync(EXPLORATION_PROGRAM result, string? userId = null, CancellationToken cancellationToken = default);
+        Task<EXPLORATION_PROGRAM> SaveExplorationResultAsync(EXPLORATION_PROGRAM result, CancellationToken cancellationToken = default);
 
         #endregion
 

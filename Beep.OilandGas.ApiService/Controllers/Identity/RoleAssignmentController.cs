@@ -2,7 +2,6 @@ using Beep.OilandGas.ApiService.Services;
 using TheTechIdea.Data.OilGas;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace Beep.OilandGas.ApiService.Controllers.Identity;
 
@@ -21,9 +20,6 @@ public class RoleAssignmentController : ControllerBase
         _roleService = roleService;
         _logger = logger;
     }
-
-    private string ActorUserId =>
-        User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
 
     // ── Catalog ─────────────────────────────────────────────────────────────
 
@@ -53,31 +49,31 @@ public class RoleAssignmentController : ControllerBase
 
     // ── Role assignments ─────────────────────────────────────────────────────
 
-    /// <summary>Get all active role assignments for a user.</summary>
-    [HttpGet("users/{userId}/assignments")]
-    public async Task<IActionResult> GetUserRoleAssignments(string userId)
+    /// <summary>Get all active role assignments for a user (Administrator; the route id names the subject).</summary>
+    [HttpGet("users/{targetUserId}/assignments")]
+    public async Task<IActionResult> GetUserRoleAssignments(string targetUserId)
     {
-        if (string.IsNullOrWhiteSpace(userId))
+        if (string.IsNullOrWhiteSpace(targetUserId))
             return BadRequest(new { error = "User ID is required." });
-        try { return Ok(await _roleService.GetUserRoleAssignmentsAsync(userId)); }
+        try { return Ok(await _roleService.GetUserRoleAssignmentsAsync(targetUserId)); }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get role assignments for user {UserId}", userId);
+            _logger.LogError(ex, "Failed to get role assignments for user {UserId}", targetUserId);
             return StatusCode(500, new { error = "An internal error occurred." });
         }
     }
 
-    /// <summary>Assign a role to a user.</summary>
-    [HttpPost("users/{userId}/assignments")]
-    public async Task<IActionResult> AssignRole(string userId, [FromBody] AssignRoleRequest request)
+    /// <summary>Assign a role to a user (Administrator; the route id names the subject, the actor is the caller).</summary>
+    [HttpPost("users/{targetUserId}/assignments")]
+    public async Task<IActionResult> AssignRole(string targetUserId, [FromBody] AssignRoleRequest request)
     {
-        if (string.IsNullOrWhiteSpace(ActorUserId)) return Forbid();
-        if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(request?.RoleId))
+        var actor = User.ActingUserId();
+        if (string.IsNullOrWhiteSpace(targetUserId) || string.IsNullOrWhiteSpace(request?.RoleId))
             return BadRequest(new { error = "User ID and RoleId are required." });
         try
         {
             var assignment = await _roleService.AssignRoleAsync(
-                userId, request.RoleId, ActorUserId, request.Reason);
+                targetUserId, request.RoleId, actor, request.Reason);
             return Ok(assignment);
         }
         catch (ArgumentException exception) { return BadRequest(new { error = exception.Message }); }
@@ -85,7 +81,7 @@ public class RoleAssignmentController : ControllerBase
         catch (InvalidOperationException exception) { return Conflict(new { error = exception.Message }); }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to assign role {RoleId} to user {UserId}", request?.RoleId, userId);
+            _logger.LogError(ex, "Failed to assign role {RoleId} to user {UserId}", request?.RoleId, targetUserId);
             return StatusCode(500, new { error = "An internal error occurred." });
         }
     }
@@ -94,12 +90,12 @@ public class RoleAssignmentController : ControllerBase
     [HttpDelete("assignments/{userRoleId}")]
     public async Task<IActionResult> RevokeRole(string userRoleId)
     {
-        if (string.IsNullOrWhiteSpace(ActorUserId)) return Forbid();
+        var actor = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(userRoleId))
             return BadRequest(new { error = "UserRoleId is required." });
         try
         {
-            var ok = await _roleService.RevokeRoleAsync(userRoleId, ActorUserId);
+            var ok = await _roleService.RevokeRoleAsync(userRoleId, actor);
             if (!ok) return NotFound(new { message = $"Assignment {userRoleId} not found." });
             return Ok(new { message = "Role assignment revoked." });
         }
@@ -133,13 +129,13 @@ public class RoleAssignmentController : ControllerBase
     [HttpPost("{roleId}/permissions")]
     public async Task<IActionResult> GrantPermission(string roleId, [FromBody] GrantPermissionRequest request)
     {
-        if (string.IsNullOrWhiteSpace(ActorUserId)) return Forbid();
+        var actor = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(roleId) || string.IsNullOrWhiteSpace(request?.PermissionId))
             return BadRequest(new { error = "Role ID and PermissionId are required." });
         try
         {
             var grant = await _roleService.GrantPermissionToRoleAsync(
-                roleId, request.PermissionId, ActorUserId);
+                roleId, request.PermissionId, actor);
             return Ok(grant);
         }
         catch (ArgumentException exception) { return BadRequest(new { error = exception.Message }); }
@@ -157,12 +153,12 @@ public class RoleAssignmentController : ControllerBase
     [HttpDelete("permissions/{rolePermissionId}")]
     public async Task<IActionResult> RevokePermission(string rolePermissionId)
     {
-        if (string.IsNullOrWhiteSpace(ActorUserId)) return Forbid();
+        var actor = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(rolePermissionId))
             return BadRequest(new { error = "RolePermissionId is required." });
         try
         {
-            var ok = await _roleService.RevokePermissionFromRoleAsync(rolePermissionId, ActorUserId);
+            var ok = await _roleService.RevokePermissionFromRoleAsync(rolePermissionId, actor);
             if (!ok) return NotFound(new { message = $"Grant {rolePermissionId} not found." });
             return Ok(new { message = "Permission grant revoked." });
         }

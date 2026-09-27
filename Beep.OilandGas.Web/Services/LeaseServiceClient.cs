@@ -47,16 +47,11 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<string> CreateLeaseAcquisitionAsync(CreateLeaseAcquisition leaseRequest, string? userId = null)
+        public async Task<string> CreateLeaseAcquisitionAsync(CreateLeaseAcquisition leaseRequest)
         {
             try
             {
                 var endpoint = "/api/leaseacquisition";
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
-
                 var response = await _apiClient.PostAsync<CreateLeaseAcquisition, dynamic>(endpoint, leaseRequest);
                 return response?.leaseId?.ToString() ?? throw new InvalidOperationException("Failed to create lease acquisition");
             }
@@ -67,16 +62,11 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> UpdateLeaseStatusAsync(string leaseId, string status, string? userId = null)
+        public async Task<bool> UpdateLeaseStatusAsync(string leaseId, string status)
         {
             try
             {
                 var endpoint = $"/api/leaseacquisition/{Uri.EscapeDataString(leaseId)}/status";
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
-
                 return await _apiClient.PutAsync(endpoint, new { Status = status });
             }
             catch (Exception ex)

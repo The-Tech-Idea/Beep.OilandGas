@@ -1,10 +1,8 @@
 @page "/ppdm39/calculations/gas-properties"
 @page "/analysis/gas-properties"
-@using System.Security.Claims
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.GasProperties
 @inject ApiClient ApiClient
-@inject AuthenticationStateProvider AuthStateProvider
 @inject ICalculationServiceClient CalculationService
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
@@ -139,7 +137,6 @@
 
 @code {
     private string _fieldName = string.Empty;
-    private string? _currentUserId;
     private string _compositionLookupId = string.Empty;
     private bool _isLoading = true;
     private bool _isRunning;
@@ -168,7 +165,6 @@
         try
         {
             await LoadFieldContextAsync();
-            await LoadUserAsync();
         }
         finally
         {
@@ -189,12 +185,6 @@
         catch
         {
         }
-    }
-
-    private async Task LoadUserAsync()
-    {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
     }
 
     private async Task AnalyzeAsync()
@@ -230,7 +220,7 @@
         _isSaving = true;
         try
         {
-            var response = await CalculationService.SaveGasCompositionAsync(_composition, _currentUserId);
+            var response = await CalculationService.SaveGasCompositionAsync(_composition);
             if (!string.IsNullOrWhiteSpace(response?.CompositionId))
             {
                 _composition.CompositionId = response.CompositionId;

@@ -8,6 +8,7 @@ using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.ApiService.Services;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
 {
@@ -70,15 +71,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         [HttpPost]
         public ActionResult<object> CreatePurchaseOrder(
             [FromBody] CreatePurchaseOrderRequest request,
-            [FromQuery] string? userId = null,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var po = _service.TraditionalAccounting.PurchaseOrder.CreatePurchaseOrder(request, userId ?? "system");
+                var po = _service.TraditionalAccounting.PurchaseOrder.CreatePurchaseOrder(request, userId);
                 // Note: PO creation doesn't post to GL until receipt
                 return Ok(new { PurchaseOrderId = po.PURCHASE_ORDER_ID, PoNumber = po.PO_NUMBER });
             }

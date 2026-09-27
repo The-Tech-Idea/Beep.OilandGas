@@ -77,24 +77,6 @@ namespace Beep.OilandGas.UserManagement.DependencyInjection
                 return new DefaultSecuritySeedService(editor, commonColumnHandler, defaults, metadata, connectionName, logger);
             });
 
-            // Register AuthService
-            services.AddScoped<Contracts.Services.IAuthService>(sp =>
-            {
-                var editor = sp.GetRequiredService<IDMEEditor>();
-                var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
-                var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
-                var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
-                var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<AuthService>>();
-                var config = sp.GetRequiredService<IConfiguration>();
-                var userService = sp.GetRequiredService<IUserService>();
-                var roleHierarchy = sp.GetService<IRoleHierarchyService>();
-                var tempElevation = sp.GetService<ITempRoleElevationService>();
-                var fieldAccess = sp.GetService<IFieldAccessService>();
-
-                return new AuthService(editor, commonColumnHandler, defaults, metadata, connectionName,
-                    logger, config, userService, roleHierarchy, tempElevation, fieldAccess);
-            });
-
             // Register RowLevelSecurityService
             services.AddScoped<IRowLevelSecurityService>(sp =>
             {

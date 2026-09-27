@@ -10,16 +10,13 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
     {
         #region Workflow
 
-        public async Task<WorkflowExecutionResult> StartWorkflowAsync(string workflowType, object request, string userId, CancellationToken cancellationToken = default)
+        public async Task<WorkflowExecutionResult> StartWorkflowAsync(string workflowType, object request, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(workflowType)) throw new ArgumentException("Workflow type is required", nameof(workflowType));
             if (request == null) throw new ArgumentNullException(nameof(request));
-            if (string.IsNullOrEmpty(userId)) throw new ArgumentException("User ID is required", nameof(userId));
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                var queryParams = new Dictionary<string, string> { ["userId"] = userId };
-                var endpoint = BuildRequestUriWithParams($"/api/ppdm39workflow/{Uri.EscapeDataString(workflowType)}/start", queryParams);
-                return await PostAsync<object, WorkflowExecutionResult>(endpoint, request, cancellationToken);
+                return await PostAsync<object, WorkflowExecutionResult>($"/api/ppdm39workflow/{Uri.EscapeDataString(workflowType)}/start", request, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }
@@ -32,29 +29,21 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<WorkflowExecutionResult> AdvanceWorkflowAsync(string workflowId, object action, string userId, CancellationToken cancellationToken = default)
+        public async Task<WorkflowExecutionResult> AdvanceWorkflowAsync(string workflowId, object action, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(workflowId)) throw new ArgumentException("Workflow ID is required", nameof(workflowId));
             if (action == null) throw new ArgumentNullException(nameof(action));
-            if (string.IsNullOrEmpty(userId)) throw new ArgumentException("User ID is required", nameof(userId));
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                var queryParams = new Dictionary<string, string> { ["userId"] = userId };
-                var endpoint = BuildRequestUriWithParams($"/api/ppdm39workflow/{Uri.EscapeDataString(workflowId)}/advance", queryParams);
-                return await PostAsync<object, WorkflowExecutionResult>(endpoint, action, cancellationToken);
+                return await PostAsync<object, WorkflowExecutionResult>($"/api/ppdm39workflow/{Uri.EscapeDataString(workflowId)}/advance", action, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<List<WorkflowExecutionResult>> GetPendingWorkflowsAsync(string? userId = null, CancellationToken cancellationToken = default)
+        public async Task<List<WorkflowExecutionResult>> GetPendingWorkflowsAsync(CancellationToken cancellationToken = default)
         {
             if (AccessMode == ServiceAccessMode.Remote)
-            {
-                var queryParams = new Dictionary<string, string>();
-                if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
-                var endpoint = BuildRequestUriWithParams("/api/ppdm39workflow/pending", queryParams);
-                return await GetAsync<List<WorkflowExecutionResult>>(endpoint, cancellationToken);
-            }
+                return await GetAsync<List<WorkflowExecutionResult>>("/api/ppdm39workflow/pending", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

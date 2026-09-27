@@ -45,15 +45,11 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<string> SaveHeatMapConfigurationAsync(HeatMapConfigurationRecord configuration, string? userId = null)
+        public async Task<string> SaveHeatMapConfigurationAsync(HeatMapConfigurationRecord configuration)
         {
             try
             {
                 var endpoint = "/api/heatmap/configuration";
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
                 var response = await _apiClient.PostAsync<HeatMapConfigurationRecord, dynamic>(endpoint, configuration);
                 return response?.heatMapId?.ToString() ?? throw new InvalidOperationException("Failed to save heat map configuration");
             }

@@ -1,11 +1,9 @@
 @page "/ppdm39/calculations/flash-calculations"
 @page "/analysis/flash-calculations"
 @using System.Linq
-@using System.Security.Claims
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.FlashCalculations
 @inject ApiClient ApiClient
-@inject AuthenticationStateProvider AuthStateProvider
 @inject ICalculationServiceClient CalculationService
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
@@ -334,7 +332,6 @@
 
 @code {
     private string _fieldName = string.Empty;
-    private string? _currentUserId;
     private bool _isLoading = true;
     private bool _isRunning;
     private bool _isSaving;
@@ -376,7 +373,6 @@
         try
         {
             await LoadFieldContextAsync();
-            await LoadUserAsync();
             await ReloadHistoryAsync();
         }
         finally
@@ -399,12 +395,6 @@
         {
             // Field summary is non-critical for flash calculations.
         }
-    }
-
-    private async Task LoadUserAsync()
-    {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
     }
 
     private void AddComponent()
@@ -504,7 +494,7 @@
         _isSaving = true;
         try
         {
-            var saved = await CalculationService.SaveFlashResultAsync(_currentResult, _currentUserId);
+            var saved = await CalculationService.SaveFlashResultAsync(_currentResult);
             if (!saved)
             {
                 Snackbar.Add("The flash result could not be saved.", Severity.Warning);

@@ -10,6 +10,7 @@ using Beep.OilandGas.Models.Data.LifeCycle;
 using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.ApiService.Attributes;
+using Beep.OilandGas.ApiService.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
@@ -111,9 +112,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("abandon-well")]
         public async Task<ActionResult<WellAbandonmentResponse>> AbandonWell(
             [FromQuery] string wellId,
-            [FromBody] WellAbandonmentRequest abandonmentData,
-            [FromQuery] string? userId)
+            [FromBody] WellAbandonmentRequest abandonmentData)
         {
+            var userId = User.ActingUserId();
             try
             {
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
@@ -127,10 +128,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Well ID is required." });
                 }
 
-                var resolvedUserId = userId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
-
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
-                var abandonment = await decommissioningService.AbandonWellForFieldAsync(currentFieldId, wellId, abandonmentData, resolvedUserId);
+                var abandonment = await decommissioningService.AbandonWellForFieldAsync(currentFieldId, wellId, abandonmentData, userId);
                 return Ok(abandonment);
             }
             catch (InvalidOperationException)
@@ -215,9 +214,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("facilities/{facilityId}/decommission")]
         public async Task<ActionResult<FacilityDecommissioningResponse>> DecommissionFacility(
             string facilityId,
-            [FromBody] FacilityDecommissioningRequest decommissionData,
-            [FromQuery] string? userId)
+            [FromBody] FacilityDecommissioningRequest decommissionData)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(facilityId)) return BadRequest(new { error = "Facility ID is required." });
             try
             {
@@ -227,10 +226,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "No active field selected." });
                 }
 
-                var resolvedUserId = userId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
-
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
-                var decommissioning = await decommissioningService.DecommissionFacilityForFieldAsync(currentFieldId, facilityId, decommissionData, resolvedUserId);
+                var decommissioning = await decommissioningService.DecommissionFacilityForFieldAsync(currentFieldId, facilityId, decommissionData, userId);
                 return Ok(decommissioning);
             }
             catch (InvalidOperationException)
@@ -278,9 +275,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         /// </summary>
         [HttpPost("environmental-activities")]
         public async Task<ActionResult<EnvironmentalRestorationResponse>> CreateEnvironmentalRestoration(
-            [FromBody] EnvironmentalRestorationRequest restorationData,
-            [FromQuery] string? userId)
+            [FromBody] EnvironmentalRestorationRequest restorationData)
         {
+            var userId = User.ActingUserId();
             try
             {
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
@@ -289,10 +286,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "No active field selected." });
                 }
 
-                var resolvedUserId = userId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
-
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
-                var restoration = await decommissioningService.CreateEnvironmentalRestorationForFieldAsync(currentFieldId, restorationData, resolvedUserId);
+                var restoration = await decommissioningService.CreateEnvironmentalRestorationForFieldAsync(currentFieldId, restorationData, userId);
                 return Ok(restoration);
             }
             catch (InvalidOperationException)
@@ -377,6 +372,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<Beep.OilandGas.Models.Processes.ProcessInstance>> StartWellAbandonmentProcess(
             [FromBody] StartWellAbandonmentRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
@@ -390,15 +386,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Well ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
                 var instance = await _decommissioningProcessService.StartWellAbandonmentProcessAsync(
                     request.WellId, 
                     currentFieldId, 
-                    request.UserId);
+                    userId);
                 
                 return Ok(instance);
             }
@@ -415,6 +406,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("workflows/plan-abandonment")]
         public async Task<ActionResult<bool>> PlanAbandonment([FromBody] PlanAbandonmentRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
@@ -422,15 +414,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Instance ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
                 var result = await _decommissioningProcessService.PlanAbandonmentAsync(
                     request.InstanceId, 
                     new PROCESS_STEP_DATA { Data = request.PlanData ?? new Dictionary<string, object>() }, 
-                    request.UserId);
+                    userId);
                 
                 return Ok(result);
             }
@@ -447,6 +434,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("workflows/obtain-regulatory-approval")]
         public async Task<ActionResult<bool>> ObtainRegulatoryApproval([FromBody] ObtainRegulatoryApprovalRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
@@ -454,12 +442,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Instance ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
-                var result = await _decommissioningProcessService.ObtainRegulatoryApprovalAsync(request.InstanceId, request.UserId);
+                var result = await _decommissioningProcessService.ObtainRegulatoryApprovalAsync(request.InstanceId, userId);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -475,6 +458,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("workflows/plug-well")]
         public async Task<ActionResult<bool>> PlugWell([FromBody] PlugWellRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
@@ -482,15 +466,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Instance ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
                 var result = await _decommissioningProcessService.PlugWellAsync(
                     request.InstanceId, 
                     new PROCESS_STEP_DATA { Data = request.PluggingData ?? new Dictionary<string, object>() }, 
-                    request.UserId);
+                    userId);
                 
                 return Ok(result);
             }
@@ -507,6 +486,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("workflows/restore-site")]
         public async Task<ActionResult<bool>> RestoreSite([FromBody] RestoreSiteRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
@@ -514,15 +494,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Instance ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
                 var result = await _decommissioningProcessService.RestoreSiteAsync(
                     request.InstanceId, 
                     new PROCESS_STEP_DATA { Data = request.RestorationData ?? new Dictionary<string, object>() }, 
-                    request.UserId);
+                    userId);
                 
                 return Ok(result);
             }
@@ -539,6 +514,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("workflows/complete-abandonment")]
         public async Task<ActionResult<bool>> CompleteAbandonment([FromBody] CompleteAbandonmentRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
@@ -546,12 +522,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Instance ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
-                var result = await _decommissioningProcessService.CompleteAbandonmentAsync(request.InstanceId, request.UserId);
+                var result = await _decommissioningProcessService.CompleteAbandonmentAsync(request.InstanceId, userId);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -572,6 +543,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<Beep.OilandGas.Models.Processes.ProcessInstance>> StartFacilityDecommissioningProcess(
             [FromBody] StartFacilityDecommissioningRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
@@ -585,15 +557,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Facility ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
                 var instance = await _decommissioningProcessService.StartFacilityDecommissioningProcessAsync(
                     request.FacilityId, 
                     currentFieldId, 
-                    request.UserId);
+                    userId);
                 
                 return Ok(instance);
             }
@@ -610,6 +577,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("workflows/plan-decommissioning")]
         public async Task<ActionResult<bool>> PlanDecommissioning([FromBody] PlanDecommissioningRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
@@ -617,15 +585,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Instance ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
                 var result = await _decommissioningProcessService.PlanDecommissioningAsync(
                     request.InstanceId, 
                     new PROCESS_STEP_DATA { Data = request.PlanData ?? new Dictionary<string, object>() }, 
-                    request.UserId);
+                    userId);
                 
                 return Ok(result);
             }
@@ -642,6 +605,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("workflows/remove-equipment")]
         public async Task<ActionResult<bool>> RemoveEquipment([FromBody] RemoveEquipmentRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
@@ -649,15 +613,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Instance ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
                 var result = await _decommissioningProcessService.RemoveEquipmentAsync(
                     request.InstanceId, 
                     new PROCESS_STEP_DATA { Data = request.RemovalData ?? new Dictionary<string, object>() }, 
-                    request.UserId);
+                    userId);
                 
                 return Ok(result);
             }
@@ -674,6 +633,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("workflows/cleanup-site")]
         public async Task<ActionResult<bool>> CleanupSite([FromBody] CleanupSiteRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
@@ -681,15 +641,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Instance ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
                 var result = await _decommissioningProcessService.CleanupSiteAsync(
                     request.InstanceId, 
                     new PROCESS_STEP_DATA { Data = request.CleanupData ?? new Dictionary<string, object>() }, 
-                    request.UserId);
+                    userId);
                 
                 return Ok(result);
             }
@@ -706,6 +661,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("workflows/obtain-regulatory-closure")]
         public async Task<ActionResult<bool>> ObtainRegulatoryClosure([FromBody] ObtainRegulatoryClosureRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
@@ -713,12 +669,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Instance ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
-                var result = await _decommissioningProcessService.ObtainRegulatoryClosureAsync(request.InstanceId, request.UserId);
+                var result = await _decommissioningProcessService.ObtainRegulatoryClosureAsync(request.InstanceId, userId);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -734,6 +685,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("workflows/complete-decommissioning")]
         public async Task<ActionResult<bool>> CompleteDecommissioning([FromBody] CompleteDecommissioningRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
@@ -741,12 +693,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Instance ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
-                var result = await _decommissioningProcessService.CompleteDecommissioningAsync(request.InstanceId, request.UserId);
+                var result = await _decommissioningProcessService.CompleteDecommissioningAsync(request.InstanceId, userId);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -764,10 +711,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPatch("wells-abandoned/{id}/approve")]
         public async Task<ActionResult> ApprovePAAsync(string id)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "ID is required." });
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
             try
             {
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();

@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -28,10 +27,27 @@ public sealed class RepositoryUserService(RepositoryDbContext db, UserManager<Oi
             .Select(user => Map(user, metadata.GetValueOrDefault(user.Id))).ToList();
     }
 
+    /// <summary>
+    /// Whether this account is active, an administrator, and the only active one — the rule <see cref="UpdateAsync"/>
+    /// applies to switching one off, asked before a person deletes their own account: the identity server deletes first,
+    /// and OilGas could afterwards only refuse to switch its account off.
+    /// </summary>
+    public async Task<bool> IsLastActiveAdministratorAsync(string id)
+    {
+        var user = await users.FindByIdAsync(id);
+        if (user is not { IsActive: true } || !await users.IsInRoleAsync(user, "Administrator")) return false;
+        var role = (await roles.FindByNameAsync("Administrator"))!;
+        return await ActiveAdministratorCountAsync(role.Id) <= 1;
+    }
+
+    private Task<int> ActiveAdministratorCountAsync(string administratorRoleId) =>
+        (from membership in db.UserRoles join account in db.Users on membership.UserId equals account.Id
+         where membership.RoleId == administratorRoleId && account.IsActive select account.Id).CountAsync();
+
     public async Task<RepositoryUserSummary?> UpdateAsync(string id, RepositoryUserUpdate input)
     {
         if (input.FullName?.Length > 1000) throw new ArgumentException("Full name exceeds 1000 characters.");
-        var actor = Actor;
+        var actor = (accessor.HttpContext?.User).ActingUserId();
         var user = await users.FindByIdAsync(id);
         if (user is null) return null;
         if (string.IsNullOrWhiteSpace(input.ConcurrencyStamp) || input.ConcurrencyStamp != user.ConcurrencyStamp)
@@ -42,9 +58,8 @@ public sealed class RepositoryUserService(RepositoryDbContext db, UserManager<Oi
         {
             var role = (await roles.FindByNameAsync("Administrator"))!;
             Require(await roles.UpdateAsync(role));
-            var count = await (from membership in db.UserRoles join account in db.Users on membership.UserId equals account.Id
-                               where membership.RoleId == role.Id && account.IsActive select account.Id).CountAsync();
-            if (count <= 1) throw new InvalidOperationException("The last active administrator cannot be disabled.");
+            if (await ActiveAdministratorCountAsync(role.Id) <= 1)
+                throw new InvalidOperationException("The last active administrator cannot be disabled.");
         }
         user.IsActive = active;
         Require(await users.UpdateAsync(user));
@@ -73,7 +88,7 @@ public sealed class RepositoryUserService(RepositoryDbContext db, UserManager<Oi
     {
         var role = await roles.FindByNameAsync(roleName);
         if (role is null) return false;
-        await assignments.AssignRoleAsync(userId, role.Id, Actor);
+        await assignments.AssignRoleAsync(userId, role.Id, (accessor.HttpContext?.User).ActingUserId());
         return true;
     }
 
@@ -82,7 +97,7 @@ public sealed class RepositoryUserService(RepositoryDbContext db, UserManager<Oi
         var role = await roles.FindByNameAsync(roleName);
         if (role is null) return false;
         var assignment = (await assignments.GetUserRoleAssignmentsAsync(userId)).SingleOrDefault(x => x.RoleId == role.Id);
-        return assignment is not null && await assignments.RevokeRoleAsync(assignment.UserRoleId, Actor);
+        return assignment is not null && await assignments.RevokeRoleAsync(assignment.UserRoleId, (accessor.HttpContext?.User).ActingUserId());
     }
 
     public async Task<IEnumerable<string>> GetRolesAsync(string userId)
@@ -91,9 +106,6 @@ public sealed class RepositoryUserService(RepositoryDbContext db, UserManager<Oi
         // Management shows stored assignments; RepositoryAccessService separately denies inactive accounts.
         return user is null ? [] : await users.GetRolesAsync(user);
     }
-
-    private string Actor => accessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier)
-        ?? throw new InvalidOperationException("A local actor is required for user management.");
 
     private static RepositoryUserSummary Map(OilGasUser user, AppUserExtension? metadata) =>
         new(user.Id, user.UserName ?? "", user.Email, metadata?.FullName, user.IsActive, user.ConcurrencyStamp ?? "");

@@ -9,6 +9,7 @@ using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.ApiService.Services;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
 {
@@ -107,15 +108,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         [HttpPost("accounts")]
         public ActionResult<GLAccount> CreateAccount(
             [FromBody] CreateGLAccountRequest request,
-            [FromQuery] string? userId = null,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var account = _service.TraditionalAccounting.GeneralLedger.CreateAccount(request, userId ?? "system");
+                var account = _service.TraditionalAccounting.GeneralLedger.CreateAccount(request, userId);
 
                 var dto = new GLAccount
                 {
@@ -146,9 +147,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         [HttpPost("journal-entries")]
         public ActionResult<object> CreateJournalEntry(
             [FromBody] CreateJournalEntryRequest request,
-            [FromQuery] string? userId = null,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -168,7 +169,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
                     request.EntryType ?? "Manual",
                     request.Description ?? "",
                     lines,
-                    userId ?? "system");
+                    userId);
 
                 return Ok(new { JournalEntryId = entry.JOURNAL_ENTRY_ID, EntryNumber = entry.ENTRY_NUMBER });
             }
@@ -185,14 +186,14 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         [HttpPost("journal-entries/{id}/post")]
         public ActionResult PostJournalEntry(
             string id,
-            [FromQuery] string? userId = null,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Journal entry ID is required." });
             try
             {
-                _service.TraditionalAccounting.JournalEntry.PostJournalEntry(id, userId ?? "system");
+                _service.TraditionalAccounting.JournalEntry.PostJournalEntry(id, userId);
                 return Ok(new { message = "Journal entry posted successfully" });
             }
             catch (Exception ex)

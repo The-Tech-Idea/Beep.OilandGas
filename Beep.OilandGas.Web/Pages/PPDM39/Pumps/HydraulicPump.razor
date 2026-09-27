@@ -3,13 +3,11 @@
 @using Beep.OilandGas.Models.Data.HydraulicPumps
 @using Beep.OilandGas.Client.App
 @using Beep.OilandGas.PPDM39.Models
-@using System.Security.Claims
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IDevelopmentServiceClient DevelopmentClient
 @inject IPumpServiceClient PumpService
 @inject ILifeCycleService LifeCycleService
-@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Design Hydraulic Pump System</PageTitle>
 
@@ -133,7 +131,6 @@
     private bool _isLoading = false;
     private HydraulicPumpDesign? _pumpDesign;
     private PumpPerformanceAnalysis? _performanceAnalysis;
-    private string? _currentUserId;
 
     private sealed class WellDto
     {
@@ -155,9 +152,6 @@
                     _fieldName = summary.FieldName ?? _fieldName;
             }
             catch { /* field name is non-critical */ }
-
-            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            _currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
 
             try
             {
@@ -227,7 +221,7 @@
 
         try
         {
-            var saved = await PumpService.SaveHydraulicPumpDesignAsync(_pumpDesign, _currentUserId);
+            var saved = await PumpService.SaveHydraulicPumpDesignAsync(_pumpDesign);
             if (saved)
             {
                 Snackbar.Add("Pump design saved successfully", Severity.Success);

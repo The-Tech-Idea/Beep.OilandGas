@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Calculations;
 using Microsoft.AspNetCore.Authorization;
@@ -59,11 +60,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("result")]
-        public async Task<ActionResult> SaveResult([FromBody] PipelineAnalysisResult result, [FromQuery] string? userId = null)
+        public async Task<ActionResult> SaveResult([FromBody] PipelineAnalysisResult result)
         {
+            var userId = User.ActingUserId();
             try
             {
-                await _service.SaveAnalysisResultAsync(result, userId ?? GetUserId());
+                await _service.SaveAnalysisResultAsync(result, userId);
                 return Ok(new { message = "Pipeline analysis result saved successfully", analysisId = result.AnalysisId });
             }
             catch (Exception ex)
@@ -72,8 +74,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
-
-        private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
     }
 }
 

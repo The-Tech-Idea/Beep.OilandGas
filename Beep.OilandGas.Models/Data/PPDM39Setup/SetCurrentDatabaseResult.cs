@@ -41,20 +41,5 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref ErrorDetailsValue, value); }
 
         }
-
-        /// <summary>
-        /// If true, client must log out to apply the change
-        /// </summary>
-        private bool RequiresLogoutValue = false;
-
-        public bool RequiresLogout
-
-        {
-
-            get { return this.RequiresLogoutValue; }
-
-            set { SetProperty(ref RequiresLogoutValue, value); }
-
-        }
     }
 }

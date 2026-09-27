@@ -1,51 +1,68 @@
 using System.Security.Claims;
+using Beep.Foundation.IdentityServer.Shared.Identity;
 using Beep.OilandGas.ApiService.Controllers;
 using Beep.OilandGas.ApiService.Services;
-using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;
 
+/// <summary>
+/// <see cref="RepositoryAuthorization"/>: every endpoint admits an active OilGas account — both of its claims issued by
+/// this API — and <c>/api/auth/repository/me</c> admits anybody signed in, so it can say what state their account is in.
+/// </summary>
 public class RepositoryAuthorizationTests
 {
+    private const string Issuer = "https://idp.oilgas.test/";
+
     [Theory]
-    [InlineData(false, true, false)]
-    [InlineData(true, true, true)]
-    [InlineData(true, false, false)]
-    public async Task BusinessPoliciesRequireActiveRepositoryAccount(bool registered, bool active, bool allowed)
+    [InlineData("active", true)]
+    [InlineData("inactive", false)]
+    [InlineData("unresolved", false)]
+    [InlineData("claims-from-a-token", false)]
+    [InlineData("inactive-with-a-token-s-marker", false)]
+    [InlineData("anonymous", false)]
+    public async Task Business_endpoints_admit_only_an_active_account_this_API_resolved(string caller, bool allowed)
     {
         using var services = CreateServices();
-        var principal = await Transform(registered, active);
         var policies = services.GetRequiredService<IAuthorizationPolicyProvider>();
         var authorization = services.GetRequiredService<IAuthorizationService>();
 
         var defaultPolicy = await AuthorizationPolicy.CombineAsync(policies, [new AuthorizeAttribute()]);
-        var fallbackPolicy = await AuthorizationPolicy.CombineAsync(policies, []);
-        Assert.NotNull(defaultPolicy);
-        Assert.NotNull(fallbackPolicy);
-        Assert.Equal(allowed, (await authorization.AuthorizeAsync(principal, null, defaultPolicy)).Succeeded);
-        Assert.Equal(allowed, (await authorization.AuthorizeAsync(principal, null, fallbackPolicy)).Succeeded);
+        var fallbackPolicy = await policies.GetFallbackPolicyAsync();
+
+        Assert.Equal(allowed, (await authorization.AuthorizeAsync(Caller(caller), null, defaultPolicy!)).Succeeded);
+        Assert.Equal(allowed, (await authorization.AuthorizeAsync(Caller(caller), null, fallbackPolicy!)).Succeeded);
     }
 
     [Theory]
-    [InlineData(typeof(RepositoryBootstrapController))]
-    [InlineData(typeof(RepositoryAccountController))]
-    public async Task RegistrationAndLookupAcceptUnregisteredExternalAccount(Type controller)
+    [InlineData("active", true)]
+    [InlineData("inactive", true)]
+    [InlineData("unresolved", true)]
+    [InlineData("anonymous", false)]
+    public async Task The_account_lookup_admits_anybody_signed_in(string caller, bool allowed)
     {
         using var services = CreateServices();
-        var attributes = controller.GetCustomAttributes(typeof(AuthorizeAttribute), true).Cast<AuthorizeAttribute>();
-        var policy = await AuthorizationPolicy.CombineAsync(
-            services.GetRequiredService<IAuthorizationPolicyProvider>(), attributes);
-        Assert.NotNull(policy);
+        var attributes = typeof(RepositoryAccountController).GetCustomAttributes(typeof(AuthorizeAttribute), true).Cast<AuthorizeAttribute>();
+        var policy = await AuthorizationPolicy.CombineAsync(services.GetRequiredService<IAuthorizationPolicyProvider>(), attributes);
+
+        Assert.Equal(allowed, (await services.GetRequiredService<IAuthorizationService>()
+            .AuthorizeAsync(Caller(caller), null, policy!)).Succeeded);
+    }
+
+    [Theory]
+    [InlineData("Admin.ManageUsers")]
+    [InlineData("Admin.AssignRoles")]
+    public async Task Administration_needs_the_repository_s_Administrator_role_on_an_active_account(string name)
+    {
+        using var services = CreateServices();
         var authorization = services.GetRequiredService<IAuthorizationService>();
-        Assert.True((await authorization.AuthorizeAsync(await Transform(false, true), null, policy)).Succeeded);
-        Assert.False((await authorization.AuthorizeAsync(new ClaimsPrincipal(new ClaimsIdentity()), null, policy)).Succeeded);
-        Assert.False((await authorization.AuthorizeAsync(await Transform(true, false), null, policy)).Succeeded);
+
+        Assert.True((await authorization.AuthorizeAsync(Caller("active", "Administrator"), null, name)).Succeeded);
+        Assert.False((await authorization.AuthorizeAsync(Caller("active"), null, name)).Succeeded);
+        Assert.False((await authorization.AuthorizeAsync(Caller("inactive", "Administrator"), null, name)).Succeeded);
+        Assert.False((await authorization.AuthorizeAsync(Caller("claims-from-a-token", "Administrator"), null, name)).Succeeded);
     }
 
     private static ServiceProvider CreateServices()
@@ -56,16 +73,38 @@ public class RepositoryAuthorizationTests
         return services.BuildServiceProvider();
     }
 
-    private static Task<ClaimsPrincipal> Transform(bool registered, bool active)
+    /// <summary>
+    /// A caller after the API's transformations: <c>active</c> carries the account and the active marker issued here;
+    /// <c>inactive</c> the account only; <c>unresolved</c> neither; <c>claims-from-a-token</c> both, issued by the identity
+    /// server rather than this API; <c>inactive-with-a-token-s-marker</c> the account this API resolved and an active marker
+    /// the token carried.
+    /// </summary>
+    private static ClaimsPrincipal Caller(string kind, params string[] roles)
     {
-        var access = new Mock<IRepositoryAccessService>();
-        access.Setup(x => x.GetAccessAsync("https://issuer", "subject", default))
-            .ReturnsAsync(registered ? new RepositoryUserAccess("local-id", active, [], []) : null);
-        var transform = new RepositoryClaimsTransformation(access.Object, NullLogger<RepositoryClaimsTransformation>.Instance);
-        return transform.TransformAsync(new ClaimsPrincipal(new ClaimsIdentity(new[]
+        if (kind == "anonymous")
+            return new ClaimsPrincipal(new ClaimsIdentity());
+
+        var claims = new List<Claim> { new("sub", "subject", ClaimValueTypes.String, Issuer) };
+        switch (kind)
         {
-            new Claim("iss", "https://issuer"), new Claim("sub", "subject"),
-            new Claim(ClaimTypes.NameIdentifier, "forged-local-id")
-        }, "Bearer")));
+            case "active":
+                claims.Add(new Claim(PartyIdClaimsTransformation<string>.ClaimType, "local-id"));
+                claims.Add(new Claim(RepositoryRolesClaimsTransformation.ActiveAccount, "true"));
+                break;
+            case "inactive":
+                claims.Add(new Claim(PartyIdClaimsTransformation<string>.ClaimType, "local-id"));
+                break;
+            case "inactive-with-a-token-s-marker":
+                claims.Add(new Claim(PartyIdClaimsTransformation<string>.ClaimType, "local-id"));
+                claims.Add(new Claim(RepositoryRolesClaimsTransformation.ActiveAccount, "true", ClaimValueTypes.String, Issuer));
+                break;
+            case "claims-from-a-token":
+                claims.Add(new Claim(PartyIdClaimsTransformation<string>.ClaimType, "local-id", ClaimValueTypes.String, Issuer));
+                claims.Add(new Claim(RepositoryRolesClaimsTransformation.ActiveAccount, "true", ClaimValueTypes.String, Issuer));
+                break;
+        }
+
+        claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+        return new ClaimsPrincipal(new ClaimsIdentity(claims, "Bearer", "name", ClaimTypes.Role));
     }
 }

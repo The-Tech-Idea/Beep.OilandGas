@@ -72,7 +72,7 @@ namespace Beep.OilandGas.ApiService.Services
                 progress?.Report(new PassedArgs { Messege = $"Seeding {_module.ModuleName}..." });
 
                 // Safe: runs on ThreadPool thread via WebApiSetupWizardAdapter (no sync context = no deadlock)
-                var result = _module.SeedAsync(_connectionName, "SYSTEM", CancellationToken.None)
+                var result = _module.SeedAsync(_connectionName, ActingUser.System, CancellationToken.None)
                     .ConfigureAwait(false).GetAwaiter().GetResult();
 
                 if (!result.Success)

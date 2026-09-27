@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TheTechIdea.Data.OilGas;
@@ -59,9 +60,8 @@ public class RepositoryBootstrapTests
     [Fact]
     public async Task CompletionFailureRollsBackAccountRoleAndMembership()
     {
-        using var fixture = new Fixture();
-        await fixture.Context.Database.ExecuteSqlRawAsync(
-            "CREATE TRIGGER FailBootstrap BEFORE INSERT ON RepositoryBootstrap BEGIN SELECT RAISE(ABORT, 'test failure'); END;");
+        // The bootstrap row's insert fails (an EF interceptor, not SQL — rule 5a); everything written before it rolls back.
+        using var fixture = new Fixture(failBootstrapInsert: true);
         await Assert.ThrowsAsync<DbUpdateException>(() =>
             fixture.Service.BootstrapAsync("https://issuer.example", "first-admin"));
         fixture.Context.ChangeTracker.Clear();
@@ -88,22 +88,34 @@ public class RepositoryBootstrapTests
 
     private sealed class TestContext(DbContextOptions<TestContext> options) : RepositoryDbContext(options);
 
+    /// <summary>Refuses any save that adds the bootstrap row, as a database failure would.</summary>
+    private sealed class FailBootstrapInsert : SaveChangesInterceptor
+    {
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default) =>
+            eventData.Context!.ChangeTracker.Entries<RepositoryBootstrap>().Any(entry => entry.State == EntityState.Added)
+                ? throw new DbUpdateException("test failure")
+                : base.SavingChangesAsync(eventData, result, cancellationToken);
+    }
+
     [Fact]
-    public async Task AccessLookupUsesIssuerSubjectAndReflectsRevocation()
+    public async Task AccessLookupUsesTheAccountIdAndReflectsRevocation()
     {
         using var fixture = new Fixture();
         await fixture.Service.BootstrapAsync("https://issuer.example", "first-admin");
+        var user = await fixture.Users.FindByLoginAsync(
+            RepositoryBootstrapService.ExternalLoginProvider("https://issuer.example"), "first-admin");
+        Assert.NotNull(user);
         var access = new RepositoryAccessService(fixture.Context);
-        var result = await access.GetAccessAsync("https://issuer.example", "first-admin");
+        var result = await access.GetAccessAsync(user.Id);
         Assert.NotNull(result);
         Assert.Contains("Administrator", result.Roles);
-        Assert.Null(await access.GetAccessAsync("https://other.example", "first-admin"));
-        var user = await fixture.Users.FindByIdAsync(result.UserId);
-        Assert.True((await fixture.Users.RemoveFromRoleAsync(user!, "Administrator")).Succeeded);
-        Assert.Empty((await access.GetAccessAsync("https://issuer.example", "first-admin"))!.Roles);
-        user!.IsActive = false;
+        Assert.Null(await access.GetAccessAsync("no-such-account"));
+        Assert.True((await fixture.Users.RemoveFromRoleAsync(user, "Administrator")).Succeeded);
+        Assert.Empty((await access.GetAccessAsync(user.Id))!.Roles);
+        user.IsActive = false;
         Assert.True((await fixture.Users.UpdateAsync(user)).Succeeded);
-        Assert.False((await access.GetAccessAsync("https://issuer.example", "first-admin"))!.IsActive);
+        Assert.False((await access.GetAccessAsync(user.Id))!.IsActive);
     }
 
     private sealed class Fixture : IDisposable
@@ -115,12 +127,16 @@ public class RepositoryBootstrapTests
         public UserManager<OilGasUser> Users { get; }
         public RepositoryBootstrapService Service { get; }
 
-        public Fixture()
+        public Fixture(bool failBootstrapInsert = false)
         {
             _connection.Open();
             var services = new ServiceCollection();
             services.AddLogging();
-            services.AddDbContext<TestContext>(options => options.UseSqlite(_connection));
+            services.AddDbContext<TestContext>(options =>
+            {
+                options.UseSqlite(_connection);
+                if (failBootstrapInsert) options.AddInterceptors(new FailBootstrapInsert());
+            });
             services.AddScoped<RepositoryDbContext>(sp => sp.GetRequiredService<TestContext>());
             services.AddIdentityCore<OilGasUser>().AddRoles<IdentityRole>().AddEntityFrameworkStores<RepositoryDbContext>();
             services.AddScoped<RepositoryBootstrapService>();

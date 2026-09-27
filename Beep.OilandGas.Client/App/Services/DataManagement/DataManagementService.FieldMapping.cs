@@ -17,14 +17,12 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<object> SaveFieldMappingAsync(object mapping, string userId = "SYSTEM", CancellationToken cancellationToken = default)
+        public async Task<object> SaveFieldMappingAsync(object mapping, CancellationToken cancellationToken = default)
         {
             if (mapping == null) throw new ArgumentNullException(nameof(mapping));
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                var queryParams = new System.Collections.Generic.Dictionary<string, string> { ["userId"] = userId };
-                var endpoint = BuildRequestUriWithParams("/api/ppdm39mapping", queryParams);
-                return await PostAsync<object, object>(endpoint, mapping, cancellationToken);
+                return await PostAsync<object, object>("/api/ppdm39mapping", mapping, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }

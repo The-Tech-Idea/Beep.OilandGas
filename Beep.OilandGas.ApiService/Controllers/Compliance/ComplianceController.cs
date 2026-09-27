@@ -1,9 +1,10 @@
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Compliance;
 using Beep.OilandGas.ApiService.Attributes;
+using Beep.OilandGas.ApiService.Services;
+using RoyaltySummary = Beep.OilandGas.Models.Data.Compliance.RoyaltySummary;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace Beep.OilandGas.ApiService.Controllers.Compliance;
 
@@ -29,8 +30,6 @@ public class ComplianceController : ControllerBase
         _ghg               = ghg;
         _fieldOrchestrator = fieldOrchestrator;
     }
-
-    private string UserId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
 
     // ── Obligations ───────────────────────────────────────────────────────────
 
@@ -70,7 +69,8 @@ public class ComplianceController : ControllerBase
     public async Task<ActionResult<string>> CreateAsync(
         [FromBody] CreateObligationRequest request)
     {
-        var id = await _compliance.CreateObligationAsync(request, UserId);
+        var userId = User.ActingUserId();
+        var id = await _compliance.CreateObligationAsync(request, userId);
         return CreatedAtAction(nameof(GetByIdAsync), new { obligationId = id }, id);
     }
 
@@ -78,8 +78,9 @@ public class ComplianceController : ControllerBase
     public async Task<ActionResult> SubmitAsync(
         string obligationId, [FromQuery] DateTime? submitDate)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(obligationId)) return BadRequest(new { error = "Obligation ID is required." });
-        await _compliance.MarkSubmittedAsync(obligationId, submitDate ?? DateTime.UtcNow, UserId);
+        await _compliance.MarkSubmittedAsync(obligationId, submitDate ?? DateTime.UtcNow, userId);
         return NoContent();
     }
 
@@ -87,8 +88,9 @@ public class ComplianceController : ControllerBase
     public async Task<ActionResult> WaiveAsync(
         string obligationId, [FromQuery] string reason)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(obligationId)) return BadRequest(new { error = "Obligation ID is required." });
-        await _compliance.WaiveObligationAsync(obligationId, reason, UserId);
+        await _compliance.WaiveObligationAsync(obligationId, reason, userId);
         return NoContent();
     }
 
@@ -96,8 +98,9 @@ public class ComplianceController : ControllerBase
     public async Task<ActionResult> RecordPaymentAsync(
         string obligationId, [FromBody] RecordPaymentRequest request)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(obligationId)) return BadRequest(new { error = "Obligation ID is required." });
-        await _compliance.RecordPaymentAsync(obligationId, request, UserId);
+        await _compliance.RecordPaymentAsync(obligationId, request, userId);
         return NoContent();
     }
 
@@ -115,16 +118,18 @@ public class ComplianceController : ControllerBase
     public async Task<ActionResult<RoyaltySummary>> CalculateUSARoyaltyAsync(
         [FromQuery] int year, [FromQuery] int month)
     {
+        var userId = User.ActingUserId();
         var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-        return Ok(await _royalty.CalculateUSARoyaltyAsync(fieldId, year, month, UserId));
+        return Ok(await _royalty.CalculateUSARoyaltyAsync(fieldId, year, month, userId));
     }
 
     [HttpPost("royalty/canada")]
     public async Task<ActionResult<RoyaltySummary>> CalculateCanadaRoyaltyAsync(
         [FromQuery] int year, [FromQuery] int quarter)
     {
+        var userId = User.ActingUserId();
         var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-        return Ok(await _royalty.CalculateAlbertaCrownRoyaltyAsync(fieldId, year, quarter, UserId));
+        return Ok(await _royalty.CalculateAlbertaCrownRoyaltyAsync(fieldId, year, quarter, userId));
     }
 
     [HttpGet("royalty/variance")]
@@ -141,8 +146,9 @@ public class ComplianceController : ControllerBase
     public async Task<ActionResult<GHGEmissionReport>> GenerateGHGReportAsync(
         [FromQuery] int year, [FromQuery] string jurisdiction = "USA")
     {
+        var userId = User.ActingUserId();
         var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-        return Ok(await _ghg.GenerateAnnualReportAsync(fieldId, year, jurisdiction, UserId));
+        return Ok(await _ghg.GenerateAnnualReportAsync(fieldId, year, jurisdiction, userId));
     }
 
     [HttpGet("ghg/total")]

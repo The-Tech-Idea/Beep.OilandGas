@@ -86,7 +86,8 @@ public class RepositoryRoleExtensionTests
         var savedRole = await fixture.Db.Roles.SingleAsync();
         Assert.Equal(role.Id, savedRole.Id);
         Assert.Equal("Administrator", savedRole.Name);
-        var access = await new RepositoryAccessService(fixture.Db).GetAccessAsync("https://issuer", "first-user");
+        var firstUser = await fixture.Users.FindByLoginAsync(RepositoryBootstrapService.ExternalLoginProvider("https://issuer"), "first-user");
+        var access = await new RepositoryAccessService(fixture.Db).GetAccessAsync(firstUser!.Id);
         Assert.Equal("Administrator", Assert.Single(access!.Roles));
         Assert.Equal(role.Id, (await fixture.Db.Set<AppRoleExtension>().SingleAsync()).RoleId);
     }
@@ -361,7 +362,7 @@ public class RepositoryRoleExtensionTests
         Assert.True(await fixture.UserService.DeleteAsync(user.Id));
         Assert.Equal(new[] { "Reader" }, await fixture.UserService.GetRolesAsync(user.Id));
 
-        var access = await new RepositoryAccessService(fixture.Db).GetAccessAsync("https://issuer", "inactive-member");
+        var access = await new RepositoryAccessService(fixture.Db).GetAccessAsync(user.Id);
         Assert.NotNull(access);
         Assert.False(access.IsActive);
         Assert.Empty(access.Roles);
@@ -482,7 +483,7 @@ public class RepositoryRoleExtensionTests
                 HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext
                 {
                     User = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(new[]
-                    { new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, "actor") }, "test"))
+                    { new System.Security.Claims.Claim("party_id", "actor") }, "test"))
                 }
             });
             services.AddScoped<RepositoryUserService>();

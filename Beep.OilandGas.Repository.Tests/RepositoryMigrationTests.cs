@@ -15,7 +15,9 @@ public class RepositoryMigrationTests
     public void InitialMigrationGeneratesProviderSqlWithoutConnecting(string provider, string expected, string forbidden)
     {
         using var context = Create(provider);
-        Assert.Equal(6, context.Database.GetMigrations().Count());
+        // Every provider carries the same migrations, in order (a count pinned here went stale on the next one added).
+        using var reference = Create("SqlServer");
+        Assert.Equal(Names(reference), Names(context));
         Assert.False(context.Database.HasPendingModelChanges());
         var script = context.GetService<IMigrator>().GenerateScript();
         Assert.Contains(expected, script);
@@ -47,6 +49,10 @@ public class RepositoryMigrationTests
         Assert.Contains("AspNetUsers", script);
         Assert.Contains("AssetAccessExtensions", script);
     }
+
+    /// <summary>A migration's name without its timestamp, which each provider's generation stamps differently.</summary>
+    private static string[] Names(RepositoryDbContext context) =>
+        context.Database.GetMigrations().Select(id => id[(id.IndexOf('_') + 1)..]).ToArray();
 
     private static RepositoryDbContext Create(string provider) => provider switch
     {

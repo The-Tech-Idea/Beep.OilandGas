@@ -23,7 +23,6 @@ public sealed class CreateDatabaseWizardState
     public List<SelectableModule> OptionalModules { get; set; } = new();
 
     public string TargetMode { get; set; } = TargetNewConnection;
-    public string UserId { get; set; } = "wizard";
     public string ActiveConnectionName { get; set; } = string.Empty;
     public string? SelectedExistingConnection { get; set; }
     public string SelectedDatabaseType { get; set; } = "SqlServer";
@@ -53,7 +52,7 @@ public sealed class CreateDatabaseWizardState
     public bool CanPrepareTarget => TargetMode switch
     {
         TargetExistingConnection => !string.IsNullOrWhiteSpace(SelectedExistingConnection),
-        TargetDemoDatabase => !string.IsNullOrWhiteSpace(UserId),
+        TargetDemoDatabase => true,
         _ => !string.IsNullOrWhiteSpace(SelectedDatabaseType) &&
              !string.IsNullOrWhiteSpace(ConnectionName) &&
              (!string.IsNullOrWhiteSpace(ConnectionString) || !string.IsNullOrWhiteSpace(Database))

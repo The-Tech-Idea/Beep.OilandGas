@@ -14,13 +14,14 @@ namespace Beep.OilandGas.ApiService.Tests;
 public class RoyaltyPostingReviewAuthorizationTests
 {
     [Theory]
-    [InlineData(false, true)]
-    [InlineData(true, false)]
-    public async Task RequiresAuthenticatedLocalIdentity(bool local, bool authenticated)
+    [InlineData(false, null)]
+    [InlineData(true, "https://idp.example.test/")]
+    public async Task RequiresTheAccountThisApiResolved(bool local, string? issuer)
     {
         var royalties = new Mock<IRoyaltyService>(MockBehavior.Strict);
         var access = new Mock<IAccessControlService>(MockBehavior.Strict);
-        Assert.IsType<UnauthorizedResult>((await Controller(royalties.Object, access.Object, local, authenticated).ReviewPostings("royalty")));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            Controller(royalties.Object, access.Object, local, issuer).ReviewPostings("royalty"));
         royalties.VerifyNoOtherCalls();
         access.VerifyNoOtherCalls();
     }
@@ -55,12 +56,14 @@ public class RoyaltyPostingReviewAuthorizationTests
     }
 
     private static RoyaltyController Controller(IRoyaltyService royalties, IAccessControlService access,
-        bool local = true, bool authenticated = true)
+        bool local = true, string? issuer = null)
     {
+        // Without an account this API resolved, the caller carries only what a token or another scheme could name.
         var claims = new List<Claim> { new("sub", "external"), new(ClaimTypes.Role, "Administrator") };
-        if (local) claims.Add(new(ClaimTypes.NameIdentifier, "local"));
+        claims.Add(!local ? new Claim(ClaimTypes.NameIdentifier, "local")
+            : issuer is null ? new Claim("party_id", "local") : new Claim("party_id", "local", ClaimValueTypes.String, issuer));
         return new(royalties, access, NullLogger<RoyaltyController>.Instance) { ControllerContext = new() {
-            HttpContext = new DefaultHttpContext { User = new(new ClaimsIdentity(claims, authenticated ? "test" : null)) }
+            HttpContext = new DefaultHttpContext { User = new(new ClaimsIdentity(claims, "test")) }
         } };
     }
 }

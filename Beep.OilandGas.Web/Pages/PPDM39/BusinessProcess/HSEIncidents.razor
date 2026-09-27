@@ -7,6 +7,7 @@
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject ILogger<HSEIncidents> Logger
 
 <PageTitle>Manage HSE Incidents</PageTitle>
 
@@ -301,19 +302,19 @@
             _requiresLogin = true;
             _loadWarning = "Sign in to load HSE incidents and workflow status for the current field.";
         }
-        catch
+        catch (Exception exception)
         {
+            // Handled: any failure to load (the API, its payload, a lifecycle lookup) leaves the page empty and says so.
+            Logger.LogWarning(exception, "HSE incidents could not be loaded.");
             _requiresLogin = false;
             _loadWarning = "Could not load HSE incidents.";
             Snackbar.Add("Could not load HSE incidents.", Severity.Warning);
         }
     }
 
-    private string BuildLoginUrl()
-    {
-        var returnUrl = Uri.EscapeDataString(NavigationManager.Uri);
-        return $"/login?returnUrl={returnUrl}";
-    }
+    // Sign-in starts at the identity server's client library and comes back here; it went to /login, a page that no
+    // longer exists.
+    private string BuildLoginUrl() => BeepClientEndpoints.LoginWithReturn(new Uri(NavigationManager.Uri).PathAndQuery);
 
     // ── Report-incident dialog state ─────────────────────────────────────
     private bool     _showReportDialog  = false;

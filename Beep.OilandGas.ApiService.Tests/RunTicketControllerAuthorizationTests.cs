@@ -18,11 +18,13 @@ namespace Beep.OilandGas.ApiService.Tests;
 public sealed class RunTicketControllerAuthorizationTests
 {
     [Theory]
-    [InlineData("sub", true, false)]
-    [InlineData(ClaimTypes.NameIdentifier, false, false)]
-    [InlineData("sub", true, true)]
-    [InlineData(ClaimTypes.NameIdentifier, false, true)]
-    public async Task WritesRejectMissingLocalAuthentication(string claimType, bool authenticated, bool cycle)
+    [InlineData("sub", null, false)]
+    [InlineData(ClaimTypes.NameIdentifier, null, false)]
+    [InlineData("party_id", "https://idp.example.test/", false)]
+    [InlineData("sub", null, true)]
+    [InlineData(ClaimTypes.NameIdentifier, null, true)]
+    [InlineData("party_id", "https://idp.example.test/", true)]
+    public async Task WritesRejectACallerWithoutTheAccountThisApiResolved(string claimType, string? issuer, bool cycle)
     {
         var production = new Mock<IProductionAccountingService>(MockBehavior.Strict);
         var journal = new Mock<IJournalEntryService>(MockBehavior.Strict);
@@ -41,16 +43,17 @@ public sealed class RunTicketControllerAuthorizationTests
             {
                 HttpContext = new DefaultHttpContext
                 {
-                    User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(claimType, "actor")],
-                        authenticated ? "test" : null))
+                    User = new ClaimsPrincipal(new ClaimsIdentity([issuer is null
+                        ? new Claim(claimType, "actor")
+                        : new Claim(claimType, "actor", ClaimValueTypes.String, issuer)], "test"))
                 }
             }
         };
 
         if (cycle)
-            Assert.IsType<ForbidResult>(await controller.ProcessProductionCycleAsync(new RUN_TICKET()));
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => controller.ProcessProductionCycleAsync(new RUN_TICKET()));
         else
-            Assert.IsType<ForbidResult>((await controller.CreateRunTicket(new CreateRunTicketRequest(), userId: "forged-admin")).Result);
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => controller.CreateRunTicket(new CreateRunTicketRequest()));
 
         production.VerifyNoOtherCalls();
         journal.VerifyNoOtherCalls();

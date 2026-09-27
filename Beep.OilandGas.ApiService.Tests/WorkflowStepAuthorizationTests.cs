@@ -49,7 +49,7 @@ public class WorkflowStepAuthorizationTests
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext
             {
-                User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, "actor"),
+                User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim("party_id", "actor"),
                     new Claim(ClaimTypes.Role, role) }, "Test"))
             } }
         };
@@ -94,7 +94,7 @@ public class WorkflowStepAuthorizationTests
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext
             {
-                User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, "actor"),
+                User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim("party_id", "actor"),
                     new Claim(ClaimTypes.Role, role) }, "Test"))
             } }
         };

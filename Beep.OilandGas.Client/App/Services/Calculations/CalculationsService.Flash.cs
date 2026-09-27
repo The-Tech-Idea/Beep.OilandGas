@@ -26,14 +26,12 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<FLASH_CALCULATION_RESULT> SaveFlashResultAsync(FLASH_CALCULATION_RESULT result, string? userId = null, CancellationToken cancellationToken = default)
+        public async Task<FLASH_CALCULATION_RESULT> SaveFlashResultAsync(FLASH_CALCULATION_RESULT result, CancellationToken cancellationToken = default)
         {
             if (result == null) throw new ArgumentNullException(nameof(result));
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                var queryParams = new Dictionary<string, string>();
-                if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
-                var endpoint = BuildRequestUriWithParams("/api/flashcalculation/result", queryParams);
+                var endpoint = "/api/flashcalculation/result";
                 return await PostAsync<FLASH_CALCULATION_RESULT, FLASH_CALCULATION_RESULT>(endpoint, result, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");

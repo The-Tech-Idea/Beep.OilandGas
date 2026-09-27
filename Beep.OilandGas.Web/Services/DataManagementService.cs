@@ -227,17 +227,17 @@ namespace Beep.OilandGas.Web.Services
         /// <summary>
         /// Insert an entity
         /// </summary>
-        Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> entityData, string userId, string connectionName = "PPDM39");
+        Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> entityData, string connectionName = "PPDM39");
 
         /// <summary>
         /// Update an entity
         /// </summary>
-        Task<GenericEntityResponse> UpdateEntityAsync(string tableName, string entityId, Dictionary<string, object> entityData, string userId, string connectionName = "PPDM39");
+        Task<GenericEntityResponse> UpdateEntityAsync(string tableName, string entityId, Dictionary<string, object> entityData, string connectionName = "PPDM39");
 
         /// <summary>
         /// Delete an entity
         /// </summary>
-        Task<GenericEntityResponse> DeleteEntityAsync(string tableName, object id, string userId, string connectionName = "PPDM39");
+        Task<GenericEntityResponse> DeleteEntityAsync(string tableName, object id, string connectionName = "PPDM39");
 
         // ============================================
         // Import/Export Operations
@@ -246,7 +246,7 @@ namespace Beep.OilandGas.Web.Services
         /// <summary>
         /// Import data from CSV file
         /// </summary>
-        Task<OperationStartResponse> ImportFromCsvAsync(string tableName, Stream csvStream, string fileName, string userId, Dictionary<string, string>? columnMapping = null, bool validateForeignKeys = true, string connectionName = "PPDM39", Action<ProgressUpdate>? onProgress = null);
+        Task<OperationStartResponse> ImportFromCsvAsync(string tableName, Stream csvStream, string fileName, Dictionary<string, string>? columnMapping = null, bool validateForeignKeys = true, string connectionName = "PPDM39", Action<ProgressUpdate>? onProgress = null);
 
         /// <summary>
         /// Export data to CSV file
@@ -293,7 +293,7 @@ namespace Beep.OilandGas.Web.Services
         /// <summary>
         /// Create a version snapshot of an entity
         /// </summary>
-        Task<VersioningResult> CreateVersionAsync(string tableName, string entityId, Dictionary<string, object>? entityData, string userId, string? versionLabel = null, string connectionName = "PPDM39");
+        Task<VersioningResult> CreateVersionAsync(string tableName, string entityId, Dictionary<string, object>? entityData, string? versionLabel = null, string connectionName = "PPDM39");
 
         /// <summary>
         /// Get version history for an entity
@@ -303,7 +303,7 @@ namespace Beep.OilandGas.Web.Services
         /// <summary>
         /// Restore an entity to a specific version
         /// </summary>
-        Task<VersioningResult> RestoreVersionAsync(string tableName, string entityId, string versionId, string userId, string connectionName = "PPDM39");
+        Task<VersioningResult> RestoreVersionAsync(string tableName, string entityId, string versionId, string connectionName = "PPDM39");
 
         // ============================================
         // Defaults Operations
@@ -1251,7 +1251,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> entityData, string userId, string connectionName = "PPDM39")
+        public async Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> entityData, string connectionName = "PPDM39")
         {
             try
             {
@@ -1263,7 +1263,7 @@ namespace Beep.OilandGas.Web.Services
                         EntityData = entityData,
                         ConnectionName = connectionName
                     };
-                    var url = $"/api/ppdm39/data/{tableName}/insert?userId={Uri.EscapeDataString(userId)}";
+                    var url = $"/api/ppdm39/data/{tableName}/insert";
                     return await _apiClient.PostAsync<GenericEntityRequest, GenericEntityResponse>(url, request) 
                         ?? new GenericEntityResponse { Success = false };
                 }, $"InsertEntityAsync({tableName})");
@@ -1275,7 +1275,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<GenericEntityResponse> UpdateEntityAsync(string tableName, string entityId, Dictionary<string, object> entityData, string userId, string connectionName = "PPDM39")
+        public async Task<GenericEntityResponse> UpdateEntityAsync(string tableName, string entityId, Dictionary<string, object> entityData, string connectionName = "PPDM39")
         {
             try
             {
@@ -1287,7 +1287,7 @@ namespace Beep.OilandGas.Web.Services
                         EntityData = entityData,
                         ConnectionName = connectionName
                     };
-                    var url = $"/api/ppdm39/data/{tableName}/{entityId}?userId={Uri.EscapeDataString(userId)}";
+                    var url = $"/api/ppdm39/data/{tableName}/{entityId}";
                     return await _apiClient.PutAsync<GenericEntityRequest, GenericEntityResponse>(url, request) 
                         ?? new GenericEntityResponse { Success = false };
                 }, $"UpdateEntityAsync({tableName}, {entityId})");
@@ -1299,13 +1299,13 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<GenericEntityResponse> DeleteEntityAsync(string tableName, object id, string userId, string connectionName = "PPDM39")
+        public async Task<GenericEntityResponse> DeleteEntityAsync(string tableName, object id, string connectionName = "PPDM39")
         {
             try
             {
-                var url = $"/api/ppdm39/data/{tableName}/{id}?userId={Uri.EscapeDataString(userId)}";
+                var url = $"/api/ppdm39/data/{tableName}/{id}";
                 if (!string.IsNullOrEmpty(connectionName))
-                    url += $"&connectionName={Uri.EscapeDataString(connectionName)}";
+                    url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
                 
                 return await _apiClient.DeleteAsync<GenericEntityResponse>(url) ?? new GenericEntityResponse { Success = false };
             }
@@ -1320,7 +1320,7 @@ namespace Beep.OilandGas.Web.Services
         // Import/Export Operations Implementation
         // ============================================
 
-        public async Task<OperationStartResponse> ImportFromCsvAsync(string tableName, Stream csvStream, string fileName, string userId, Dictionary<string, string>? columnMapping = null, bool validateForeignKeys = true, string connectionName = "PPDM39", Action<ProgressUpdate>? onProgress = null)
+        public async Task<OperationStartResponse> ImportFromCsvAsync(string tableName, Stream csvStream, string fileName, Dictionary<string, string>? columnMapping = null, bool validateForeignKeys = true, string connectionName = "PPDM39", Action<ProgressUpdate>? onProgress = null)
         {
             try
             {
@@ -1330,7 +1330,7 @@ namespace Beep.OilandGas.Web.Services
                 streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/csv");
                 content.Add(streamContent, "file", fileName);
 
-                var url = $"/api/ppdm39/import-export/csv/{tableName}?userId={Uri.EscapeDataString(userId)}&validateForeignKeys={validateForeignKeys}";
+                var url = $"/api/ppdm39/import-export/csv/{tableName}?validateForeignKeys={validateForeignKeys}";
                 if (!string.IsNullOrEmpty(connectionName))
                     url += $"&connectionName={Uri.EscapeDataString(connectionName)}";
 
@@ -1486,7 +1486,7 @@ namespace Beep.OilandGas.Web.Services
         // Versioning Operations Implementation
         // ============================================
 
-        public async Task<VersioningResult> CreateVersionAsync(string tableName, string entityId, Dictionary<string, object>? entityData, string userId, string? versionLabel = null, string connectionName = "PPDM39")
+        public async Task<VersioningResult> CreateVersionAsync(string tableName, string entityId, Dictionary<string, object>? entityData, string? versionLabel = null, string connectionName = "PPDM39")
         {
             try
             {
@@ -1494,11 +1494,10 @@ namespace Beep.OilandGas.Web.Services
                 {
                     TableName = tableName,
                     EntityId = entityId,
-                    UserId = userId,
                     ConnectionName = connectionName
                 };
                 return await _apiClient.PostAsync<VersioningRequest, VersioningResult>(
-                    $"/api/ppdm39/versioning/{tableName}/{entityId}/create-version?userId={Uri.EscapeDataString(userId)}", request) 
+                    $"/api/ppdm39/versioning/{tableName}/{entityId}/create-version", request) 
                     ?? new VersioningResult { Success = false };
             }
             catch (Exception ex)
@@ -1525,7 +1524,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<VersioningResult> RestoreVersionAsync(string tableName, string entityId, string versionId, string userId, string connectionName = "PPDM39")
+        public async Task<VersioningResult> RestoreVersionAsync(string tableName, string entityId, string versionId, string connectionName = "PPDM39")
         {
             try
             {
@@ -1534,11 +1533,10 @@ namespace Beep.OilandGas.Web.Services
                     TableName = tableName,
                     EntityId = entityId,
                     VersionId = versionId,
-                    UserId = userId,
                     ConnectionName = connectionName
                 };
                 return await _apiClient.PostAsync<RestoreVersionRequest, VersioningResult>(
-                    $"/api/ppdm39/versioning/{tableName}/{entityId}/restore?userId={Uri.EscapeDataString(userId)}", request) 
+                    $"/api/ppdm39/versioning/{tableName}/{entityId}/restore", request) 
                     ?? new VersioningResult { Success = false };
             }
             catch (Exception ex)

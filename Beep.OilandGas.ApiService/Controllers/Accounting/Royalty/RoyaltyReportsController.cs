@@ -1,4 +1,4 @@
-using System.Security.Claims;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Accounting.Royalty;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
@@ -19,8 +19,7 @@ public sealed class RoyaltyReportsController(IAccountingService accounting, ILog
         [FromBody] PreviewRoyaltiesRequest request,
         [FromServices] IAccessControlService access)
     {
-        var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (User.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(actor)) return Unauthorized();
+        var actor = User.ActingUserId();
         if (!ModelState.IsValid) return BadRequest(ModelState);
         if (string.IsNullOrWhiteSpace(request.FieldId)) return BadRequest(new { error = "Field ID is required." });
         try
@@ -49,8 +48,7 @@ public sealed class RoyaltyReportsController(IAccountingService accounting, ILog
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null)
     {
-        var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (User.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(actor)) return Unauthorized();
+        var actor = User.ActingUserId();
         if (!ModelState.IsValid) return BadRequest(ModelState);
         if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest(new { error = "Field ID is required." });
         try

@@ -1,4 +1,4 @@
-using System.Security.Claims;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.ProductionAccounting.Exceptions;
@@ -16,8 +16,7 @@ public sealed class RoyaltyAccrualController(IRoyaltyService royalties, IAccessC
     [HttpPost("allocations/{allocationDetailId}/accrue")]
     public async Task<ActionResult<ROYALTY_CALCULATION>> Accrue(string allocationDetailId)
     {
-        var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (User.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(actor)) return Unauthorized();
+        var actor = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(allocationDetailId)) return BadRequest();
         try
         {

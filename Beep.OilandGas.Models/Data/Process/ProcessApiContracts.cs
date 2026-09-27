@@ -111,6 +111,7 @@ namespace Beep.OilandGas.Models.Data.Process
         public List<string>? CorrectiveActions { get; set; }
         public string CorrectiveActionType { get; set; } = string.Empty;
         public DateTime? CorrectiveActionDueDate { get; set; }
+        // Names the subject (who the corrective actions are assigned to), not the actor.
         public string? AssignedToUserId { get; set; }
     }
 

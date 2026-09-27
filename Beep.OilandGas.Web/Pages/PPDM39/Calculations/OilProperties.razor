@@ -1,10 +1,8 @@
 @page "/ppdm39/calculations/oil-properties"
 @page "/analysis/oil-properties"
 @using System.Linq
-@using System.Security.Claims
 @using Beep.OilandGas.Models.Data
 @inject ApiClient ApiClient
-@inject AuthenticationStateProvider AuthStateProvider
 @inject ICalculationServiceClient CalculationService
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
@@ -187,7 +185,6 @@
 
 @code {
     private string _fieldName = string.Empty;
-    private string? _currentUserId;
     private string _compositionLookupId = string.Empty;
     private bool _isLoading = true;
     private bool _isRunning;
@@ -204,7 +201,6 @@
         try
         {
             await LoadFieldContextAsync();
-            await LoadUserAsync();
         }
         finally
         {
@@ -225,12 +221,6 @@
         catch
         {
         }
-    }
-
-    private async Task LoadUserAsync()
-    {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
     }
 
     private async Task CalculateAsync()
@@ -273,7 +263,7 @@
         _isSaving = true;
         try
         {
-            var response = await CalculationService.SaveOilCompositionAsync(_composition, _currentUserId);
+            var response = await CalculationService.SaveOilCompositionAsync(_composition);
             if (!string.IsNullOrWhiteSpace(response?.CompositionId))
             {
                 _composition.CompositionId = response.CompositionId;
@@ -346,7 +336,7 @@
             _currentResult.CompositionId = _composition.CompositionId;
             _currentResult.CalculationDate = _currentResult.CalculationDate == default ? DateTime.UtcNow : _currentResult.CalculationDate;
 
-            var response = await CalculationService.SaveOilPropertyResultAsync(_currentResult, _currentUserId);
+            var response = await CalculationService.SaveOilPropertyResultAsync(_currentResult);
             if (!string.IsNullOrWhiteSpace(response?.CalculationId))
             {
                 _currentResult.CalculationId = response.CalculationId;

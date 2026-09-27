@@ -26,14 +26,12 @@ namespace Beep.OilandGas.Client.App.Services.Pumps
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<PLUNGER_LIFT_CYCLE_RESULT> SavePlungerLiftDesignAsync(PLUNGER_LIFT_CYCLE_RESULT design, string? userId = null, CancellationToken cancellationToken = default)
+        public async Task<PLUNGER_LIFT_CYCLE_RESULT> SavePlungerLiftDesignAsync(PLUNGER_LIFT_CYCLE_RESULT design, CancellationToken cancellationToken = default)
         {
             if (design == null) throw new ArgumentNullException(nameof(design));
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                var queryParams = new Dictionary<string, string>();
-                if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
-                var endpoint = BuildRequestUriWithParams("/api/plungerlift/design/save", queryParams);
+                var endpoint = "/api/plungerlift/design/save";
                 return await PostAsync<PLUNGER_LIFT_CYCLE_RESULT, PLUNGER_LIFT_CYCLE_RESULT>(endpoint, design, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");

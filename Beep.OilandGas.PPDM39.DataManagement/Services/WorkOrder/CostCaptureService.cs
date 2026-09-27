@@ -4,7 +4,6 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
 using Microsoft.Extensions.Logging;
-using Serilog;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 
@@ -37,7 +36,7 @@ public class CostCaptureService : ICostCaptureService
 
     public async Task UpsertAFEAsync(string instanceId, decimal budgetAmount, string userId)
     {
-        Log.Information("UpsertAFE WO {InstanceId} budget {Budget}", instanceId, budgetAmount);
+        _logger.LogInformation("UpsertAFE WO {InstanceId} budget {Budget}", instanceId, budgetAmount);
         try
         {
             var meta       = await _metadata.GetTableMetadataAsync("FINANCE");
@@ -71,7 +70,7 @@ public class CostCaptureService : ICostCaptureService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "UpsertAFE failed for WO {InstanceId}", instanceId);
+            _logger.LogError(ex, "UpsertAFE failed for WO {InstanceId}", instanceId);
             throw;
         }
     }
@@ -100,7 +99,7 @@ public class CostCaptureService : ICostCaptureService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "AddCostLine failed for WO {InstanceId}", instanceId);
+            _logger.LogError(ex, "AddCostLine failed for WO {InstanceId}", instanceId);
             throw;
         }
     }
@@ -132,7 +131,7 @@ public class CostCaptureService : ICostCaptureService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "UpdateActualCost failed for WO {InstanceId}", instanceId);
+            _logger.LogError(ex, "UpdateActualCost failed for WO {InstanceId}", instanceId);
             throw;
         }
     }
@@ -167,7 +166,7 @@ public class CostCaptureService : ICostCaptureService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "GetVarianceSummary failed for WO {InstanceId}", instanceId);
+            _logger.LogError(ex, "GetVarianceSummary failed for WO {InstanceId}", instanceId);
             return new();
         }
     }

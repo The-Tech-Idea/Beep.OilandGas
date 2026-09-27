@@ -15,9 +15,10 @@ public sealed class RoleAdministrationAuthorizationTests
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
         };
-        Assert.IsType<ForbidResult>(await controller.AssignRole("user", new("role", null)));
-        Assert.IsType<ForbidResult>(await controller.RevokeRole("assignment"));
-        Assert.IsType<ForbidResult>(await controller.GrantPermission("role", new("permission")));
-        Assert.IsType<ForbidResult>(await controller.RevokePermission("grant"));
+        // No account on the request: refused by the acting-user accessor before the (null) storage is reached.
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => controller.AssignRole("user", new("role", null)));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => controller.RevokeRole("assignment"));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => controller.GrantPermission("role", new("permission")));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => controller.RevokePermission("grant"));
     }
 }

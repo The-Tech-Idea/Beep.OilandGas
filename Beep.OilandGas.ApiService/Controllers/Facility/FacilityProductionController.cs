@@ -1,3 +1,4 @@
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.ProductionOperations.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -29,13 +30,14 @@ public class FacilityProductionController : ControllerBase
         [FromQuery] string? facilityType,
         CancellationToken cancellationToken)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
 
         try
         {
             var pdenId = await _facilities
-                .EnsureFacilityPdenAsync(facilityId, facilityType, FacilityUserHelper.ResolveUserId(User), cancellationToken)
+                .EnsureFacilityPdenAsync(facilityId, facilityType, userId, cancellationToken)
                 .ConfigureAwait(false);
             return Ok(new { pdenId });
         }
@@ -85,6 +87,7 @@ public class FacilityProductionController : ControllerBase
         [FromQuery] string? facilityType,
         CancellationToken cancellationToken)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
         if (volume == null)
@@ -95,13 +98,13 @@ public class FacilityProductionController : ControllerBase
             if (string.IsNullOrWhiteSpace(volume.PDEN_ID))
             {
                 var pdenId = await _facilities
-                    .EnsureFacilityPdenAsync(facilityId, facilityType, FacilityUserHelper.ResolveUserId(User), cancellationToken)
+                    .EnsureFacilityPdenAsync(facilityId, facilityType, userId, cancellationToken)
                     .ConfigureAwait(false);
                 volume.PDEN_ID = pdenId;
             }
 
             var row = await _facilities
-                .RecordFacilityProductionVolumeAsync(volume, FacilityUserHelper.ResolveUserId(User), cancellationToken)
+                .RecordFacilityProductionVolumeAsync(volume, userId, cancellationToken)
                 .ConfigureAwait(false);
             return Ok(row);
         }

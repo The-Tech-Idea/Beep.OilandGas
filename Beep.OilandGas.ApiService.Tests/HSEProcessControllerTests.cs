@@ -220,7 +220,7 @@ public class HSEProcessControllerTests
             {
                 User = new ClaimsPrincipal(new ClaimsIdentity(
                 [
-                    new Claim(ClaimTypes.NameIdentifier, userId)
+                    new Claim("party_id", userId)
                 ], "TestAuth"))
             }
         };

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Security.Claims;
+using Beep.OilandGas.ApiService.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -99,7 +100,7 @@ public sealed class WorkflowNotificationLifetimeManager(
                         try
                         {
                             await using var scope = scopeFactory.CreateAsyncScope();
-                            var subject = state.Connection.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                            var subject = state.Connection.User.FindActingUserId();
                             if (subject is null || !await scope.ServiceProvider.GetRequiredService<WorkflowNotificationAuthorization>()
                                 .HasRoleAsync(subject, notification.RequiredRole)) continue;
                         }
@@ -119,7 +120,7 @@ public sealed class WorkflowNotificationLifetimeManager(
 
     private async Task<bool> CanDeliverAsync(ClaimsPrincipal? user, string group)
     {
-        var subject = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var subject = user.FindActingUserId();
         if (user?.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(subject)) return false;
         if (group.StartsWith("user:", StringComparison.Ordinal)) return group[5..] == subject;
 

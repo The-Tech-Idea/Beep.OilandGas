@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Calculations;
@@ -85,15 +86,16 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("result")]
-        public async Task<ActionResult> SaveResult([FromBody] NodalAnalysisRunResult? result, [FromQuery] string? userId = null)
+        public async Task<ActionResult> SaveResult([FromBody] NodalAnalysisRunResult? result)
         {
+            var userId = User.ActingUserId();
             if (result is null)
                 return BadRequest(new { error = "Result body is required." });
             if (string.IsNullOrWhiteSpace(result.WellUWI))
                 return BadRequest(new { error = "Well UWI is required." });
             try
             {
-                await _service.SaveAnalysisResultAsync(result, userId ?? GetUserId());
+                await _service.SaveAnalysisResultAsync(result, userId);
                 return Ok(new { message = "Nodal analysis result saved successfully", analysisId = result.AnalysisId });
             }
             catch (OperationCanceledException)
@@ -327,7 +329,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
-
-        private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
     }
 }

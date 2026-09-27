@@ -1,13 +1,11 @@
 ﻿@page "/ppdm39/decommissioning/well-abandonment"
 @using Beep.OilandGas.Models.Data
-@using System.Security.Claims
 @inject ApiClient ApiClient
 @inject IDecommissioningServiceClient DecommissioningClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject ILifeCycleService LifeCycleService
-@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Record Well Abandonments</PageTitle>
 
@@ -161,7 +159,6 @@
     private List<WellAbandonmentResponse>? _abandonedWells;
     private WellAbandonmentResponse? _selectedAbandonment;
     private bool _isLoading = false;
-    private string? _currentUserId;
 
     private bool HasHandoffContext =>
         !string.IsNullOrWhiteSpace(WellId)
@@ -179,8 +176,6 @@
         }
         catch { /* field name is non-critical */ }
 
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
         await LoadAbandonedWells();
     }
 
@@ -235,8 +230,7 @@
 
                 var created = await DecommissioningClient.AbandonWellAsync(
                     wellId,
-                    BuildAbandonmentRequest(resultData, wellId),
-                    _currentUserId ?? "system");
+                    BuildAbandonmentRequest(resultData, wellId));
                 
                 Snackbar.Add("Well abandonment recorded successfully", Severity.Success);
                 if (created != null)

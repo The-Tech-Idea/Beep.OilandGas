@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.AccessControl;
@@ -17,9 +17,10 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
     {
         private readonly IUserProfileService _userProfileService;
 
-        private bool CanAccess(string userId) => User.Identity?.IsAuthenticated == true
-            && !string.IsNullOrWhiteSpace(User.FindFirstValue(ClaimTypes.NameIdentifier))
-            && (User.FindFirstValue(ClaimTypes.NameIdentifier) == userId || User.IsInRole("Administrator"));
+        // Self or Administrator: the route id names the subject whose profile is read or changed, never the actor.
+        private bool CanAccess(string targetUserId) => User.Identity?.IsAuthenticated == true
+            && !string.IsNullOrWhiteSpace(User.FindActingUserId())
+            && (User.FindActingUserId() == targetUserId || User.IsInRole("Administrator"));
 
         public UserProfileController(IUserProfileService userProfileService)
         {
@@ -29,15 +30,15 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// <summary>
         /// Get a user's profile
         /// </summary>
-        [HttpGet("{userId}")]
-        public async Task<ActionResult<UserProfile>> GetUserProfile(string userId)
+        [HttpGet("{targetUserId}")]
+        public async Task<ActionResult<UserProfile>> GetUserProfile(string targetUserId)
         {
-            if (!CanAccess(userId)) return Forbid();
-            if (string.IsNullOrWhiteSpace(userId))
+            if (!CanAccess(targetUserId)) return Forbid();
+            if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
             try
             {
-                var profile = await _userProfileService.GetUserProfileAsync(userId);
+                var profile = await _userProfileService.GetUserProfileAsync(targetUserId);
                 
                 if (profile == null)
                     return NotFound(new { message = "User profile not found" });
@@ -57,17 +58,17 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// <summary>
         /// Get all roles for a user
         /// </summary>
-        [HttpGet("{userId}/roles")]
+        [HttpGet("{targetUserId}/roles")]
         public async Task<ActionResult<List<string>>> GetUserRoles(
-            string userId,
+            string targetUserId,
             [FromQuery] string? organizationId = null)
         {
-            if (!CanAccess(userId)) return Forbid();
-            if (string.IsNullOrWhiteSpace(userId))
+            if (!CanAccess(targetUserId)) return Forbid();
+            if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
             try
             {
-                var roles = await _userProfileService.GetUserRolesAsync(userId, organizationId);
+                var roles = await _userProfileService.GetUserRolesAsync(targetUserId, organizationId);
                 return Ok(roles);
             }
             catch (System.Exception exception) when (exception is System.ArgumentException or System.Text.Json.JsonException or System.NotSupportedException)
@@ -83,15 +84,15 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// <summary>
         /// Get the default layout for a user based on their primary role
         /// </summary>
-        [HttpGet("{userId}/default-layout")]
-        public async Task<ActionResult<string>> GetUserDefaultLayout(string userId)
+        [HttpGet("{targetUserId}/default-layout")]
+        public async Task<ActionResult<string>> GetUserDefaultLayout(string targetUserId)
         {
-            if (!CanAccess(userId)) return Forbid();
-            if (string.IsNullOrWhiteSpace(userId))
+            if (!CanAccess(targetUserId)) return Forbid();
+            if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
             try
             {
-                var layout = await _userProfileService.GetUserDefaultLayoutAsync(userId);
+                var layout = await _userProfileService.GetUserDefaultLayoutAsync(targetUserId);
                 return Ok(layout ?? "DefaultLayout");
             }
             catch (System.Exception exception) when (exception is System.ArgumentException or System.Text.Json.JsonException or System.NotSupportedException)
@@ -107,17 +108,17 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// <summary>
         /// Update user preferences
         /// </summary>
-        [HttpPut("{userId}/preferences")]
+        [HttpPut("{targetUserId}/preferences")]
         public async Task<ActionResult<bool>> UpdateUserPreferences(
-            string userId,
+            string targetUserId,
             [FromBody] UpdatePreferencesRequest request)
         {
-            if (!CanAccess(userId)) return Forbid();
-            if (string.IsNullOrWhiteSpace(userId))
+            if (!CanAccess(targetUserId)) return Forbid();
+            if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
             try
             {
-                var result = await _userProfileService.UpdateUserPreferencesAsync(userId, request.PreferencesJson);
+                var result = await _userProfileService.UpdateUserPreferencesAsync(targetUserId, request.PreferencesJson);
                 return Ok(result);
             }
             catch (System.Exception exception) when (exception is System.ArgumentException or System.Text.Json.JsonException or System.NotSupportedException)
@@ -133,18 +134,18 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// <summary>
         /// Update user's primary role
         /// </summary>
-        [HttpPut("{userId}/primary-role")]
+        [HttpPut("{targetUserId}/primary-role")]
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<bool>> UpdateUserPrimaryRole(
-            string userId,
+            string targetUserId,
             [FromBody] UpdatePrimaryRoleRequest request)
         {
-            if (!CanAccess(userId) || !User.IsInRole("Administrator")) return Forbid();
-            if (string.IsNullOrWhiteSpace(userId))
+            if (!CanAccess(targetUserId) || !User.IsInRole("Administrator")) return Forbid();
+            if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
             try
             {
-                var result = await _userProfileService.UpdateUserPrimaryRoleAsync(userId, request.PrimaryRole);
+                var result = await _userProfileService.UpdateUserPrimaryRoleAsync(targetUserId, request.PrimaryRole);
                 return Ok(result);
             }
             catch (System.Exception exception) when (exception is System.ArgumentException or System.Text.Json.JsonException or System.NotSupportedException)
@@ -160,17 +161,17 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// <summary>
         /// Update user's preferred layout
         /// </summary>
-        [HttpPut("{userId}/preferred-layout")]
+        [HttpPut("{targetUserId}/preferred-layout")]
         public async Task<ActionResult<bool>> UpdateUserPreferredLayout(
-            string userId,
+            string targetUserId,
             [FromBody] UpdatePreferredLayoutRequest request)
         {
-            if (!CanAccess(userId)) return Forbid();
-            if (string.IsNullOrWhiteSpace(userId))
+            if (!CanAccess(targetUserId)) return Forbid();
+            if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
             try
             {
-                var result = await _userProfileService.UpdateUserPreferredLayoutAsync(userId, request.PreferredLayout);
+                var result = await _userProfileService.UpdateUserPreferredLayoutAsync(targetUserId, request.PreferredLayout);
                 return Ok(result);
             }
             catch (System.Exception exception) when (exception is System.ArgumentException or System.Text.Json.JsonException or System.NotSupportedException)
@@ -184,14 +185,13 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         }
 
         /// <summary>
-        /// Record user login
+        /// Record the signed-in user's own login. Only the account that signed in is recorded; a login is never recorded
+        /// for somebody else.
         /// </summary>
-        [HttpPost("{userId}/login")]
-        public async Task<ActionResult> RecordUserLogin(string userId)
+        [HttpPost("login")]
+        public async Task<ActionResult> RecordUserLogin()
         {
-            if (!CanAccess(userId)) return Forbid();
-            if (string.IsNullOrWhiteSpace(userId))
-                return BadRequest(new { error = "User ID is required." });
+            var userId = User.ActingUserId();
             try
             {
                 await _userProfileService.RecordUserLoginAsync(userId);

@@ -1,12 +1,12 @@
-@inject NavigationManager NavigationManager
+@inject NavigationManager Navigation
+
+@* Starts sign-in at the identity server and returns to the page that asked. The library's endpoint accepts only a local
+   return address, so the page's own path and query are what is sent. It went to /login, an application page that then
+   started a sign-in of its own through an endpoint that passed any return address on (S3-06 §3). *@
 
 @code {
-    protected override void OnInitialized()
-    {
-        // Route through the app's login page so client-side navigation
-        // never falls into a NotFound state for /authentication/login.
-        var returnUrl = Uri.EscapeDataString(NavigationManager.Uri);
-        NavigationManager.NavigateTo($"/login?returnUrl={returnUrl}");
-    }
+    protected override void OnInitialized() =>
+        Navigation.NavigateTo(
+            BeepClientEndpoints.LoginWithReturn(new Uri(Navigation.Uri).PathAndQuery),
+            forceLoad: true);
 }
-

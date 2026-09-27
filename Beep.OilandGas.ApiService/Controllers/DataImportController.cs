@@ -13,6 +13,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpPost("csv/{tableName}")][RequestSizeLimit(100_000_000)]
         public async Task<IActionResult> ImportCsv(string tableName,IFormFile file,CancellationToken token)
         {
+            var userId=User.ActingUserId();
             if(file==null||file.Length==0)return BadRequest(new{error="No file uploaded."});
             if(!file.FileName.EndsWith(".csv",StringComparison.OrdinalIgnoreCase))return BadRequest(new{error="Only .csv files accepted."});
             var tempDir=Path.Combine(Path.GetTempPath(),"BeepDataImport");Directory.CreateDirectory(tempDir);
@@ -20,7 +21,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             try{
                 await using var stream=new FileStream(tempPath,FileMode.Create);await file.CopyToAsync(stream,token);
                 var progress=new Progress<int>(p=>_log.LogDebug("Import: {Pct}%",p));
-                var result=await _svc.ImportCsvAsync(tempPath,tableName,progress:progress,token:token);
+                var result=await _svc.ImportCsvAsync(tempPath,tableName,userId,progress:progress,token:token);
                 if(result.Success)return Ok(new{message="Import complete",recordsRead=result.RecordsRead,recordsInserted=result.RecordsInserted,recordsFailed=result.RecordsFailed});
                 return StatusCode(500,new{error=result.ErrorMessage??"Import failed",recordsRead=result.RecordsRead,recordsFailed=result.RecordsFailed});
             }

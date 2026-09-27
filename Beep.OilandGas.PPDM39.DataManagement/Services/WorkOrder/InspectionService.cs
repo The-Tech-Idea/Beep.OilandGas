@@ -4,7 +4,6 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
 using Microsoft.Extensions.Logging;
-using Serilog;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 
@@ -73,7 +72,7 @@ public class InspectionService : IInspectionService
     public async Task SeedChecklistAsync(
         string instanceId, string woType, string jurisdiction, string userId)
     {
-        Log.Information("Seeding checklist for WO {InstanceId} type {Type}", instanceId, woType);
+        _logger.LogInformation("Seeding checklist for WO {InstanceId} type {Type}", instanceId, woType);
         try
         {
             var items = woType switch
@@ -100,11 +99,11 @@ public class InspectionService : IInspectionService
                 item.ACTIVE_IND    = "Y";
                 await repo.InsertAsync(item, userId);
             }
-            Log.Information("Seeded {Count} checklist items for WO {InstanceId}", items.Count, instanceId);
+            _logger.LogInformation("Seeded {Count} checklist items for WO {InstanceId}", items.Count, instanceId);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "SeedChecklist failed for WO {InstanceId}", instanceId);
+            _logger.LogError(ex, "SeedChecklist failed for WO {InstanceId}", instanceId);
         }
     }
 
@@ -133,11 +132,11 @@ public class InspectionService : IInspectionService
             item.INSPECT_DATE = DateTime.UtcNow;
             await repo.UpdateAsync(item, userId);
 
-            Log.Information("Recorded {Result} for condition {Seq} on WO {InstanceId}", result, condSeq, instanceId);
+            _logger.LogInformation("Recorded {Result} for condition {Seq} on WO {InstanceId}", result, condSeq, instanceId);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "RecordResult failed for WO {InstanceId} condSeq {Seq}", instanceId, condSeq);
+            _logger.LogError(ex, "RecordResult failed for WO {InstanceId} condSeq {Seq}", instanceId, condSeq);
             throw;
         }
     }
@@ -183,7 +182,7 @@ public class InspectionService : IInspectionService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "GetChecklist failed for WO {InstanceId}", instanceId);
+            _logger.LogError(ex, "GetChecklist failed for WO {InstanceId}", instanceId);
             return new();
         }
     }

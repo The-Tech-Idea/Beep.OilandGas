@@ -107,7 +107,7 @@ public sealed class LocalDbInstallationTests(ITestOutputHelper output)
         await using var scope = provider.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<RepositoryDbContext>();
         await db.Database.MigrateAsync();
-        Assert.Equal(6, (await db.Database.GetAppliedMigrationsAsync()).Count());
+        Assert.Equal(db.Database.GetMigrations(), await db.Database.GetAppliedMigrationsAsync());
         await db.Database.MigrateAsync();
         Assert.Empty(await db.Database.GetPendingMigrationsAsync());
 
@@ -115,18 +115,15 @@ public sealed class LocalDbInstallationTests(ITestOutputHelper output)
         Assert.Equal(BootstrapOutcome.Created, await bootstrap.BootstrapAsync("https://integration.invalid", "first"));
         Assert.Equal(BootstrapOutcome.Registered, await bootstrap.BootstrapAsync("https://integration.invalid", "second"));
         Assert.Equal(BootstrapOutcome.AlreadyCompleted, await bootstrap.BootstrapAsync("https://integration.invalid", "first"));
-        var exactSubjectAccess = new RepositoryAccessService(db);
-        Assert.Null(await exactSubjectAccess.GetAccessAsync("https://integration.invalid", "FIRST"));
-        Assert.Null(await exactSubjectAccess.GetAccessAsync("https://integration.invalid", "first "));
         Assert.Equal(BootstrapOutcome.NotAllowed, await bootstrap.BootstrapAsync("https://integration.invalid", "FIRST"));
         Assert.Equal(BootstrapOutcome.NotAllowed, await bootstrap.BootstrapAsync("https://integration.invalid", "first "));
-        Assert.Contains("Administrator", (await exactSubjectAccess.GetAccessAsync("https://integration.invalid", "first"))!.Roles);
 
         var users = scope.ServiceProvider.GetRequiredService<UserManager<OilGasUser>>();
         var first = await users.FindByLoginAsync(RepositoryBootstrapService.ExternalLoginProvider("https://integration.invalid"), "first");
         var second = await users.FindByLoginAsync(RepositoryBootstrapService.ExternalLoginProvider("https://integration.invalid"), "second");
         Assert.NotNull(first);
         Assert.NotNull(second);
+        Assert.Contains("Administrator", (await new RepositoryAccessService(db).GetAccessAsync(first.Id))!.Roles);
         Assert.True(await users.IsInRoleAsync(first, "Administrator"));
         Assert.Empty(await users.GetRolesAsync(second));
         Assert.Null(first.PasswordHash);
@@ -146,26 +143,22 @@ public sealed class LocalDbInstallationTests(ITestOutputHelper output)
         await using var reopened = reopenedServices.BuildServiceProvider();
         await using (var readScope = reopened.CreateAsyncScope())
         {
+            // The schema is EF's relational model, which the applied migrations were generated from (rule 5a: no SQL).
             var repository = readScope.ServiceProvider.GetRequiredService<RepositoryDbContext>();
-            await repository.Database.OpenConnectionAsync();
-            using var tablesQuery = repository.Database.GetDbConnection().CreateCommand();
-            tablesQuery.CommandText = "SELECT name FROM sys.tables ORDER BY name";
-            using var tableRows = await tablesQuery.ExecuteReaderAsync();
-            var tables = new List<string>();
-            while (await tableRows.ReadAsync()) tables.Add(tableRows.GetString(0));
+            Assert.Empty(await repository.Database.GetPendingMigrationsAsync());
+            var tables = repository.Model.GetRelationalModel().Tables.Select(table => table.Name).ToList();
             Assert.Equal(new[] { "AspNetRoleClaims", "AspNetRoles", "AspNetUserClaims", "AspNetUserLogins",
                 "AspNetUserRoles", "AspNetUsers", "AspNetUserTokens" }.OrderBy(x => x, StringComparer.Ordinal),
                 tables.Where(x => x.StartsWith("AspNet", StringComparison.Ordinal)).OrderBy(x => x, StringComparer.Ordinal));
             Assert.DoesNotContain("OIL_COMPOSITION", tables);
             Assert.DoesNotContain("WELL", tables);
-            await tableRows.CloseAsync();
 
             var access = readScope.ServiceProvider.GetRequiredService<IRepositoryAccessService>();
-            var persistedAdmin = await access.GetAccessAsync("https://integration.invalid", "first");
+            var persistedAdmin = await access.GetAccessAsync(first.Id);
             Assert.NotNull(persistedAdmin);
             Assert.Equal(first.Id, persistedAdmin.UserId);
             Assert.Equal(new[] { "Administrator" }, persistedAdmin.Roles);
-            var persistedUser = await access.GetAccessAsync("https://integration.invalid", "second");
+            var persistedUser = await access.GetAccessAsync(second.Id);
             Assert.NotNull(persistedUser);
             Assert.Empty(persistedUser.Roles);
 
@@ -181,7 +174,7 @@ public sealed class LocalDbInstallationTests(ITestOutputHelper output)
         await using (var revokeScope = reopened.CreateAsyncScope())
         {
             var access = revokeScope.ServiceProvider.GetRequiredService<IRepositoryAccessService>();
-            var assigned = await access.GetAccessAsync("https://integration.invalid", "second");
+            var assigned = await access.GetAccessAsync(second.Id);
             Assert.NotNull(assigned);
             Assert.Equal(new[] { "Reader" }, assigned.Roles);
             Assert.Equal(new[] { "module.read" }, assigned.Permissions);
@@ -193,7 +186,7 @@ public sealed class LocalDbInstallationTests(ITestOutputHelper output)
         await using (var deactivateScope = reopened.CreateAsyncScope())
         {
             var access = deactivateScope.ServiceProvider.GetRequiredService<IRepositoryAccessService>();
-            var revoked = await access.GetAccessAsync("https://integration.invalid", "second");
+            var revoked = await access.GetAccessAsync(second.Id);
             Assert.NotNull(revoked);
             Assert.Empty(revoked.Roles);
             Assert.Empty(revoked.Permissions);
@@ -207,7 +200,7 @@ public sealed class LocalDbInstallationTests(ITestOutputHelper output)
         await using (var finalScope = reopened.CreateAsyncScope())
         {
             var access = finalScope.ServiceProvider.GetRequiredService<IRepositoryAccessService>();
-            var disabled = await access.GetAccessAsync("https://integration.invalid", "second");
+            var disabled = await access.GetAccessAsync(second.Id);
             Assert.NotNull(disabled);
             Assert.False(disabled.IsActive);
             Assert.Empty(disabled.Roles);

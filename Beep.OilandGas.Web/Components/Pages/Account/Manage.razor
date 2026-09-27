@@ -1,0 +1,25 @@
+@page "/account/manage"
+@attribute [Authorize]
+@inject OilGasAccountDeactivation Deactivation
+
+@* The person's account at the identity server — profile, password and second factor, sign-in providers, a copy of their
+   data, and deleting it — on OilGas's own page (BeepClientEndpoints.Manage), from the shared components. Each section
+   needs its account scope, permitted to OilGas in the identity server's console and listed in IdentityServer:AccountScopes.
+   Deleting the account there switches the OilGas account off too (OilGasAccountDeactivation): its records stay, the person
+   no longer signs in, and OilGas's only active administrator is refused beforehand, since the identity goes first.
+   It replaced /Account/Manage and five pages of its own, whose data page required a password,
+   deleted the identity and left the OilGas account active (S3-06 §7), and /account/dashboard, a copy of the profile tab. *@
+
+<PageTitle>My account - Beep Oil & Gas</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
+    <MudStack Spacing="4">
+        <div>
+            <MudText Typo="Typo.h4" HtmlTag="h1">My account</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                How you sign in, kept by the identity server and managed here.
+            </MudText>
+        </div>
+        <AccountManageTabs RefuseDeletion="@Deactivation.RefuseDeletionAsync" OnAccountDeleted="@Deactivation.DeactivateCurrentAsync" />
+    </MudStack>
+</MudContainer>

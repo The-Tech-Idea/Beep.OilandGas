@@ -5,6 +5,7 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
+@inject ILogger<DatabaseManagement> Logger
 @inject IProgressTrackingClient ProgressClient
 @inject IDataManagementService DataManagementService
 @using Beep.OilandGas.Web.Components
@@ -392,28 +393,22 @@
         {
             var result = await DataManagementService.SetCurrentConnectionAsync(connectionName);
 
+            // Accounts live in the repository, not the business database, so switching databases signs nobody out. A
+            // RequiresLogout flag (always false) sent the person to a sign-out route that did not exist.
             if (result?.Success == true)
             {
                 Snackbar.Add(result.Message, Severity.Success);
-                
-                if (result.RequiresLogout)
-                {
-                    Snackbar.Add("Switching databases requires you to log out. Redirecting...", Severity.Warning);
-                    await Task.Delay(2000);
-                    NavigationManager.NavigateTo("/authentication/logout?returnUrl=/", forceLoad: true);
-                }
-                else
-                {
-                    await LoadConnections();
-                }
+                await LoadConnections();
             }
             else
             {
                 Snackbar.Add($"Failed to set current connection: {result?.Message}", Severity.Error);
             }
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            // Handled: the switch failed or its result could not be read; the person is told and the list is unchanged.
+            Logger.LogError(exception, "The current connection could not be set to {ConnectionName}.", connectionName);
             Snackbar.Add("Error setting current connection.", Severity.Error);
         }
     }

@@ -1,7 +1,9 @@
 using System.Net;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
-using Beep.Foundation.IdentityServer.Shared.Authentication;
+using Beep.Foundation.IdentityServer.Shared.Identity;
+using Duende.AccessTokenManagement;
+using Duende.AccessTokenManagement.OpenIdConnect;
 using Beep.OilandGas.ApiService.Hubs;
 using Beep.OilandGas.Web.Services;
 using Microsoft.AspNetCore.Authentication;
@@ -51,6 +53,8 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
         _host = builder.Build();
         _host.UseAuthentication();
         _host.UseAuthorization();
+        // The API's progress hub, which its fallback policy admits only a signed-in account to.
+        _host.MapHub<Beep.OilandGas.ApiService.Services.ProgressHub>("/progressHub").RequireAuthorization();
         _host.MapHub<WorkflowNotificationHub>("/hubs/workflow-notifications",
             options => options.CloseOnAuthenticationExpiration = true);
         await _host.StartAsync();
@@ -63,7 +67,7 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
     [Fact]
     public async Task TwoUsers_ReceiveOnlyOwnMessages_AndHaveSeparateReadState()
     {
-        var tokens = new TokenProvider();
+        var tokens = new PersonTokens();
         await using var alice = CreateService(new TestAuthenticationState("alice"), tokens);
         await using var bob = CreateService(new TestAuthenticationState("bob"), tokens);
         await alice.StartAsync();
@@ -130,8 +134,8 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
     public async Task AccountSwitch_ClearsPreviousUserStateAndReconnectsWithNewToken()
     {
         var auth = new TestAuthenticationState("alice");
-        var tokens = new TokenProvider();
-        tokens.SetUserToken("bob", "bob");
+        var tokens = new PersonTokens();
+        tokens.Set("bob", "bob");
         await using var service = CreateService(auth, tokens);
         await service.StartAsync();
         await DeliverAsync("alice", "old-user", () => service.UnreadCount == 1);
@@ -280,6 +284,35 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
             hub.Clients.All.SendAsync("Notification", new NotificationModel { Id = "unscoped" }));
     }
 
+    /// <summary>
+    /// The Web's progress client connects with the signed-in person's own token. It connected with none, so every
+    /// connection to the API's hub was refused and no operation's progress ever arrived.
+    /// </summary>
+    [Fact]
+    public async Task ProgressConnection_CarriesThePersonsOwnToken()
+    {
+        var tokens = new PersonTokens();
+        tokens.Set("alice", "alice");
+        await using var progress = new ProgressTrackingClient(new TestAuthenticationState("alice"), tokens,
+            new OilGasApiAddress(new Uri(_baseUrl + "/")), NullLogger<ProgressTrackingClient>.Instance);
+
+        await progress.ConnectAsync();
+
+        Assert.True(progress.IsConnected);
+    }
+
+    [Fact]
+    public async Task ProgressConnection_WithoutThePersonsToken_IsRefused()
+    {
+        var tokens = new PersonTokens();
+        tokens.Set("bob", "bob");
+        await using var progress = new ProgressTrackingClient(new TestAuthenticationState("alice"), tokens,
+            new OilGasApiAddress(new Uri(_baseUrl + "/")), NullLogger<ProgressTrackingClient>.Instance);
+
+        await Assert.ThrowsAnyAsync<Exception>(progress.ConnectAsync);
+        Assert.False(progress.IsConnected);
+    }
+
     [Fact]
     public async Task AnonymousConnection_IsRejected()
     {
@@ -304,7 +337,7 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
     public async Task Logout_ClearsNotificationsAndStopsConnection()
     {
         var auth = new TestAuthenticationState("alice");
-        await using var service = CreateService(auth, new TokenProvider());
+        await using var service = CreateService(auth, new PersonTokens());
         await service.StartAsync();
         await DeliverAsync("alice", "before-logout", () => service.UnreadCount == 1);
         auth.SetUser(null);
@@ -315,8 +348,8 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
     [Fact]
     public async Task MissingCurrentUserToken_DoesNotUseAnotherUsersToken()
     {
-        var tokens = new TokenProvider();
-        tokens.SetUserToken("bob", "bob");
+        var tokens = new PersonTokens();
+        tokens.Set("bob", "bob");
         await using var service = CreateService(new TestAuthenticationState("alice"), tokens, seedToken: false);
         await service.StartAsync();
         Assert.False(service.IsConnected);
@@ -327,7 +360,7 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
     [Fact]
     public async Task NotificationBuffer_IsBounded_AndRepeatedIdsAreDeduplicated()
     {
-        await using var service = CreateService(new TestAuthenticationState("alice"), new TokenProvider());
+        await using var service = CreateService(new TestAuthenticationState("alice"), new PersonTokens());
         await service.StartAsync();
         await DeliverAsync("alice", "ready", () => service.UnreadCount == 1);
         var hub = _host.Services.GetRequiredService<IHubContext<WorkflowNotificationHub>>();
@@ -344,12 +377,13 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
         Assert.Equal(100, service.UnreadCount);
     }
 
-    private NotificationService CreateService(TestAuthenticationState auth, TokenProvider tokens, bool seedToken = true)
+    private NotificationService CreateService(TestAuthenticationState auth, PersonTokens tokens, bool seedToken = true)
     {
-        if (seedToken) tokens.SetUserToken(auth.UserId!, auth.UserId!);
-        return new NotificationService(auth, tokens,
-            new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-            { ["ApiService:BaseUrl"] = _baseUrl }).Build(), NullLogger<NotificationService>.Instance);
+        if (seedToken) tokens.Set(auth.UserId!, auth.UserId!);
+        // The address Program.cs resolves (https, from ApiService:BaseUrl) is handed over directly: the test hub is on a
+        // loopback address over plain HTTP.
+        return new NotificationService(auth, tokens, new OilGasApiAddress(new Uri(_baseUrl + "/")),
+            NullLogger<NotificationService>.Instance);
     }
 
     private HubConnection Client(string? userId) => new HubConnectionBuilder()
@@ -380,12 +414,39 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
         public string? UserId { get; private set; } = userId;
         public override Task<AuthenticationState> GetAuthenticationStateAsync() => Task.FromResult(
             new AuthenticationState(UserId is null ? new ClaimsPrincipal(new ClaimsIdentity())
-                : new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim("sub", UserId) }, "test"))));
+                : new ClaimsPrincipal(new ClaimsIdentity(new[]
+                {
+                    new Claim("sub", "external-" + UserId, ClaimValueTypes.String, "https://idp.oilgas.test/"),
+                    new Claim(PartyIdClaimsTransformation<string>.ClaimType, UserId)
+                }, "test"))));
         public void SetUser(string? id)
         {
             UserId = id;
             NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
         }
+    }
+
+    /// <summary>The identity server's client library: each person's token, by their OilGas account.</summary>
+    private sealed class PersonTokens : IUserTokenManager
+    {
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _tokens = new();
+
+        public void Set(string partyId, string token) => _tokens[partyId] = token;
+
+        public Task<TokenResult<UserToken>> GetAccessTokenAsync(ClaimsPrincipal user, UserTokenRequestParameters? parameters = null,
+            CancellationToken ct = default) =>
+            Task.FromResult<TokenResult<UserToken>>(PartyIdClaims.Find(user) is { } key && _tokens.TryGetValue(key, out var token)
+                ? new UserToken
+                {
+                    AccessToken = AccessToken.Parse(token),
+                    AccessTokenType = null,
+                    ClientId = ClientId.Parse("oilgas-web"),
+                    Expiration = DateTimeOffset.UtcNow.AddHours(1)
+                }
+                : new FailedResult("session_tokens_missing", "no tokens for this person"));
+
+        public Task RevokeRefreshTokenAsync(ClaimsPrincipal user, UserTokenRequestParameters? parameters = null,
+            CancellationToken ct = default) => Task.CompletedTask;
     }
 
     private sealed class TestIdentityHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -398,7 +459,10 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
                 return Task.FromResult(AuthenticateResult.NoResult());
             var subject = header[7..];
             var principal = new ClaimsPrincipal(new ClaimsIdentity(new[]
-            { new Claim("sub", "external-" + subject), new Claim(ClaimTypes.NameIdentifier, subject), new Claim(ClaimTypes.Role, "PetroleumEngineer") }, Scheme.Name));
+            {
+                new Claim("sub", "external-" + subject), new Claim(PartyIdClaimsTransformation<string>.ClaimType, subject),
+                new Claim(ClaimTypes.NameIdentifier, "forged-" + subject), new Claim(ClaimTypes.Role, "PetroleumEngineer")
+            }, Scheme.Name));
             return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme.Name)));
         }
     }

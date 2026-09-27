@@ -18,7 +18,7 @@ using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using System.Reflection;
-using System.Security.Claims;
+using Beep.OilandGas.ApiService.Services;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.ConfigUtil;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -428,8 +428,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 {
                     Success = false,
                     Message = "Failed to set current connection",
-                    ErrorDetails = "An internal error occurred.",
-                    RequiresLogout = false
+                    ErrorDetails = "An internal error occurred."
                 });
             }
         }
@@ -965,6 +964,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPost("seed/reference")]
         public async Task<ActionResult<SeedDataResponse>> SeedReferenceData([FromBody] SeedDataRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (request == null)
@@ -986,7 +986,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     connectionName, 
                     request.TableNames, 
                     request.SkipExisting, 
-                    request.UserId ?? "SYSTEM");
+                    userId);
 
                 return Ok(result);
             }
@@ -1007,6 +1007,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPost("seed/demo-full")]
         public async Task<ActionResult<SeedDataResponse>> SeedFullDemoDataset([FromBody] SeedDataRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (request == null)
@@ -1021,7 +1022,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     return BadRequest(new { error = "DemoDataSeeder is not available. Please ensure it is registered in dependency injection." });
                 }
 
-                var result = await _demoDataSeeder.SeedFullDemoDatasetAsync(request.UserId ?? "SYSTEM");
+                var result = await _demoDataSeeder.SeedFullDemoDatasetAsync(userId);
 
                 return Ok(new SeedDataResponse
                 {
@@ -1048,6 +1049,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPost("seed/category/{category}")]
         public async Task<ActionResult<SeedDataResponse>> SeedByCategory(string category, [FromBody] SeedDataRequest request)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(category)) return BadRequest(new { error = "Category is required." });
             try
             {
@@ -1071,7 +1073,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     connectionName, 
                     request.TableNames, 
                     request.SkipExisting, 
-                    request.UserId ?? "SYSTEM");
+                    userId);
 
                 return Ok(result);
             }
@@ -1110,6 +1112,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPost("seed/validate")]
         public async Task<ActionResult<SeedDataResponse>> ValidateSeedData([FromBody] SeedDataValidationRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (request == null)
@@ -1141,7 +1144,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     connectionName, 
                     request.TableNames, 
                     true, 
-                    "SYSTEM");
+                    userId);
 
                 return Ok(result);
             }
@@ -1162,6 +1165,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPost("seed/workflow/{workflowName}")]
         public async Task<ActionResult<SeedDataResponse>> SeedWorkflowData(string workflowName, [FromBody] SeedDataRequest request)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(workflowName)) return BadRequest(new { error = "Workflow name is required." });
             try
             {
@@ -1196,7 +1200,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     connectionName, 
                     request.TableNames ?? workflowRequirement.RequiredTables, 
                     request.SkipExisting, 
-                    request.UserId ?? "SYSTEM");
+                    userId);
 
                 return Ok(result);
             }
@@ -1749,8 +1753,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Add new LOV
         /// </summary>
         [HttpPost("lov")]
-        public async Task<ActionResult<LOVResponse>> AddLOV([FromBody] ListOfValue lovDto, [FromQuery] string? userId = null, [FromQuery] string connectionName = "PPDM39")
+        public async Task<ActionResult<LOVResponse>> AddLOV([FromBody] ListOfValue lovDto, [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (_lovManagementService == null)
@@ -1779,7 +1784,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     SOURCE = lovDto.Source ?? string.Empty
                 };
 
-                var result = await _lovManagementService.AddLOVAsync(lov, userId ?? "SYSTEM", connectionName ?? "PPDM39");
+                var result = await _lovManagementService.AddLOVAsync(lov, userId, connectionName ?? "PPDM39");
                 return Ok(new LOVResponse
                 {
                     Success = true,
@@ -1799,8 +1804,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Update LOV
         /// </summary>
         [HttpPut("lov/{id}")]
-        public async Task<ActionResult<LOVResponse>> UpdateLOV(string id, [FromBody] ListOfValue lovDto, [FromQuery] string? userId = null, [FromQuery] string connectionName = "PPDM39")
+        public async Task<ActionResult<LOVResponse>> UpdateLOV(string id, [FromBody] ListOfValue lovDto, [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "LOV ID is required." });
             try
             {
@@ -1830,7 +1836,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     SOURCE = lovDto.Source ?? string.Empty
                 };
 
-                var result = await _lovManagementService.UpdateLOVAsync(lov, userId ?? "SYSTEM", connectionName ?? "PPDM39");
+                var result = await _lovManagementService.UpdateLOVAsync(lov, userId, connectionName ?? "PPDM39");
                 return Ok(new LOVResponse
                 {
                     Success = true,
@@ -1850,8 +1856,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Delete LOV (soft delete)
         /// </summary>
         [HttpDelete("lov/{id}")]
-        public async Task<ActionResult<LOVResponse>> DeleteLOV(string id, [FromQuery] string? userId = null, [FromQuery] string connectionName = "PPDM39")
+        public async Task<ActionResult<LOVResponse>> DeleteLOV(string id, [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "LOV ID is required." });
             try
             {
@@ -1860,7 +1867,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                         return StatusCode(500, new { error = "LOVManagementService is not available." });
                 }
 
-                var result = await _lovManagementService.DeleteLOVAsync(id, userId ?? "SYSTEM", connectionName ?? "PPDM39");
+                var result = await _lovManagementService.DeleteLOVAsync(id, userId, connectionName ?? "PPDM39");
                 if (result)
                 {
                     return Ok(new LOVResponse
@@ -1888,6 +1895,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPost("lov/import")]
         public async Task<ActionResult<object>> ImportLOVs([FromBody] LOVImportRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (request == null || string.IsNullOrEmpty(request.FilePath))
@@ -1910,7 +1918,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                         request.FilePath, 
                         request.ColumnMapping, 
                         request.SkipExisting ?? true, 
-                        request.UserId ?? "SYSTEM",
+                        userId,
                         connectionName);
                 }
                 else
@@ -1920,7 +1928,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                         request.TargetTable, 
                         request.ColumnMapping, 
                         request.SkipExisting ?? true, 
-                        request.UserId ?? "SYSTEM",
+                        userId,
                         connectionName);
                 }
 
@@ -2432,12 +2440,13 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<Beep.OilandGas.PPDM39.DataManagement.SeedData.FacetSeedResult>> SeedWellStatusFacets(
             [FromQuery] string? operationId = null)
         {
+            var userId = User.ActingUserId();
             if (_wellStatusFacetSeeder == null)
                 return StatusCode(503, new { error = "WellStatusFacetSeeder is not available." });
             try
             {
                 _logger.LogInformation("Seeding WSC v3 well-status facets (operationId={OperationId})", operationId);
-                var result = await _wellStatusFacetSeeder.SeedAllAsync("SYSTEM");
+                var result = await _wellStatusFacetSeeder.SeedAllAsync(userId);
                 return result.Success ? Ok(result) : StatusCode(500, result);
             }
             catch (Exception ex)
@@ -2455,11 +2464,12 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<Beep.OilandGas.Models.Core.Interfaces.SeedingOperationResult>> SeedEnumReferenceData(
             [FromQuery] string? operationId = null)
         {
+            var userId = User.ActingUserId();
             try
             {
                 _logger.LogInformation("Seeding enum reference data (operationId={OperationId})", operationId);
                 var result = await _setupService.SeedEnumReferenceDataAsync(
-                    "PPDM39", "SYSTEM", operationId);
+                    "PPDM39", userId, operationId);
                 return result.Success ? Ok(result) : StatusCode(500, result);
             }
             catch (Exception ex)
@@ -2477,11 +2487,12 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<Beep.OilandGas.Models.Core.Interfaces.SeedingOperationResult>> SeedAllReferenceData(
             [FromQuery] string? operationId = null)
         {
+            var userId = User.ActingUserId();
             try
             {
                 _logger.LogInformation("Seeding all reference data (operationId={OperationId})", operationId);
                 var result = await _setupService.SeedAllReferenceDataAsync(
-                    "PPDM39", "SYSTEM", operationId);
+                    "PPDM39", userId, operationId);
                 return result.Success ? Ok(result) : StatusCode(207, result); // 207 Multi-Status for partial success
             }
             catch (Exception ex)
@@ -2605,9 +2616,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPost("schema/approve")]
         public async Task<ActionResult<SchemaMigrationApprovalResult>> ApproveSchemaMigration([FromBody] SchemaMigrationApprovalRequest request)
         {
-            var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrWhiteSpace(actor)) return Forbid();
-            request.ApprovedBy = actor;
+            request.ApprovedBy = User.ActingUserId();
             try
             {
                 var result = await _schemaMigrationService.ApproveSchemaMigrationPlanAsync(request);
@@ -2655,9 +2664,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPost("schema/execute")]
         public async Task<ActionResult<SchemaMigrationExecuteResult>> ExecuteSchemaMigration([FromBody] SchemaMigrationExecuteRequest request)
         {
-            var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrWhiteSpace(actor)) return Forbid();
-            request.ExecutedBy = actor;
+            request.ExecutedBy = User.ActingUserId();
             try
             {
                 var result = await _schemaMigrationService.ExecuteSchemaMigrationPlanAsync(request);
@@ -2681,9 +2688,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPost("schema/start")]
         public async Task<ActionResult<OperationStartResponse>> StartSchemaMigration([FromBody] SchemaMigrationExecuteRequest request)
         {
-            var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrWhiteSpace(actor)) return Forbid();
-            request.ExecutedBy = actor;
+            request.ExecutedBy = User.ActingUserId();
             try
             {
                 var result = await _schemaMigrationService.StartSchemaMigrationExecutionAsync(request);
@@ -2797,10 +2802,11 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<GenerateDummyDataResponse>> GenerateDummyDataAsync(
             [FromBody] GenerateDummyDataRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 _logger.LogInformation("Generate dummy data request: option={Option}, user={User}",
-                    request.SeedOption, request.UserId);
+                    request.SeedOption, userId);
 
                 // Resolve connection name from first registered connection (wizard already saved it)
                 var connectionName = _editor.ConfigEditor?.DataConnections?.FirstOrDefault()?.ConnectionName;
@@ -2820,7 +2826,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     wellServices, connectionName,
                     _logger as Microsoft.Extensions.Logging.ILogger<Beep.OilandGas.PPDM39.DataManagement.SeedData.DummyData.PPDM39DummyDataGenerator>);
 
-                var result = await generator.GenerateAsync(request.SeedOption, request.UserId ?? "SETUP");
+                var result = await generator.GenerateAsync(request.SeedOption, userId);
 
                 var response = new GenerateDummyDataResponse
                 {

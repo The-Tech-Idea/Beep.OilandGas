@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.HeatMap;
 using Beep.OilandGas.HeatMap.Configuration;
@@ -44,11 +45,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         }
 
         [HttpPost("configuration")]
-        public async Task<ActionResult<string>> SaveConfiguration([FromBody] HeatMapConfigurationRecord configuration, [FromQuery] string? userId = null)
+        public async Task<ActionResult<string>> SaveConfiguration([FromBody] HeatMapConfigurationRecord configuration)
         {
+            var userId = User.ActingUserId();
             try
             {
-                var heatMapId = await _service.SaveHeatMapConfigurationAsync(configuration, userId ?? GetUserId());
+                var heatMapId = await _service.SaveHeatMapConfigurationAsync(configuration, userId);
                 return Ok(new { message = "Heat map configuration saved successfully", heatMapId });
             }
             catch (Exception ex)
@@ -92,8 +94,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
-
-        private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
     }
 }
 

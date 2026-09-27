@@ -14,8 +14,7 @@ using Beep.OilandGas.PPDM39.DataManagement.Repositories;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
-using Serilog;
-using Serilog.Events;
+using Beep.Foundation.IdentityServer.Shared.Identity;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.Logger;
 using TheTechIdea.Beep.Utils;
@@ -41,20 +40,12 @@ using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.UserManagement.Services;
 using Beep.OilandGas.DevelopmentPlanning.Services;
+using Beep.OilandGas.Diagnostics;
 using System.Reflection;
-
-// Configure Serilog
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-    .WriteTo.Console()
-    .WriteTo.File("logs/beep-oilgas-api-.txt", rollingInterval: RollingInterval.Day)
-    .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Use Serilog for existing Microsoft.Extensions.Logging consumers
-builder.Host.UseSerilog();
+// Logging is the framework's own (appsettings.json "Logging"); under IIS the console is the stdout log (web.config).
 
 // ── BeepDM Framework (v3.0.1) ──────────────────────────────────────────
 // DataManagementEngine v3.0.1 is installed. BeepLog and BeepAudit are available.
@@ -62,10 +53,17 @@ builder.Host.UseSerilog();
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddOilGasRepository(builder.Configuration);
+
+// Log and failures (DIAG-01): every failure logged and stored under the reference its caller is given — the identity
+// server's client library reports through this and does not start without it. The store's database is
+// Diagnostics:Provider / Diagnostics:ConnectionString; this host owns its schema (Diagnostics:MigrateOnStartup).
+builder.Services.AddOilGasDiagnostics(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<RepositoryUserService>();
-builder.Services.AddAuthorization(RepositoryAuthorization.Configure);
-builder.Services.AddScoped<Microsoft.AspNetCore.Authentication.IClaimsTransformation, RepositoryClaimsTransformation>();
+
+// Who a request is from and what OilGas lets them do: signed tokens validated for this API's own audience, each person's
+// OilGas account (party_id), its roles (ApiIdentity).
+builder.Services.AddOilGasApiIdentity(builder.Configuration);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -77,13 +75,6 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Validate the selected token mode before starting the API.
-var bearerScheme = ApiBearerAuthentication.Configure(builder.Services, builder.Configuration);
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = bearerScheme;
-    options.DefaultChallengeScheme = bearerScheme;
-});
 
 // ============================================
 // REGISTER BEEP FRAMEWORK SERVICES
@@ -103,8 +94,6 @@ builder.Services.AddBeepServices(options =>
     options.EnableConfigurationValidation = true;
 });
 
-// Log Beep configuration
-Log.Information("Beep Service Configuration: {Summary}", BeepServiceRegistration.GetConfigurationSummary());
 
 // ============================================
 // REGISTER PPDM39 SERVICES
@@ -117,8 +106,8 @@ builder.Services.AddSingleton<ICommonColumnHandler, CommonColumnHandler>();
 // Metadata Repository
 builder.Services.AddSingleton<IPPDMMetadataRepository>(sp =>
 {
-    Log.Information("Initializing PPDM Metadata Repository");
     var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<Beep.OilandGas.PPDM39.DataManagement.Core.Metadata.PPDMMetadataService>();
+    logger.LogInformation("Initializing PPDM Metadata Repository");
     return new Beep.OilandGas.PPDM39.DataManagement.Core.Metadata.PPDMMetadataService(logger);
 });
 
@@ -136,7 +125,8 @@ builder.Services.AddScoped<IPPDM39DefaultsRepository>(sp =>
     var editor = sp.GetRequiredService<IDMEEditor>();
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
     var defaultsManager = sp.GetService<TheTechIdea.Beep.Editor.Defaults.IDefaultsManager>();
-    Log.Debug("Creating PPDM39 Defaults Repository for connection: {ConnectionName}", connectionName);
+    sp.GetRequiredService<ILogger<PPDM39DefaultsRepository>>()
+        .LogDebug("Creating PPDM39 Defaults Repository for connection: {ConnectionName}", connectionName);
     return new PPDM39DefaultsRepository(editor, connectionName, metadata, defaultsManager: defaultsManager);
 });
 
@@ -2538,10 +2528,9 @@ builder.Services.AddCors(options =>
             }
             else
             {
-                // Fallback: allow only the Web project's URL
-                policy.WithOrigins(builder.Configuration["Web:BaseUrl"] ?? "https://localhost:7001")
-                      .AllowAnyMethod()
-                      .AllowAnyHeader();
+                // Required: it fell back to https://localhost:7001 — this API's own development address, not the Web's.
+                throw new InvalidOperationException(
+                    "Cors:AllowedOrigins is not configured. Name the origins that may call this API in appsettings.{Environment}.json.");
             }
         }
     });
@@ -2573,6 +2562,9 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
+var startupLog = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Beep.OilandGas.ApiService.Startup");
+startupLog.LogInformation("Beep Service Configuration: {Summary}", BeepServiceRegistration.GetConfigurationSummary());
+
 // ============================================
 // INITIALIZE BEEP FRAMEWORK
 // ============================================
@@ -2598,7 +2590,7 @@ using (var scope = app.Services.CreateScope())
         ? scope.ServiceProvider.GetService(beepServiceType)
         : null;
     
-    Log.Information("Loading Beep assemblies and configurations...");
+    startupLog.LogInformation("Loading Beep assemblies and configurations...");
     
     try
     {
@@ -2607,7 +2599,7 @@ using (var scope = app.Services.CreateScope())
         {
             var progress = new Progress<PassedArgs>(args =>
             {
-                Log.Debug("Assembly loading: {Message}", args.Messege);
+                startupLog.LogDebug("Assembly loading: {Message}", args.Messege);
             });
 
             var loadAssembliesAsync = beepSvc.GetType().GetMethod("LoadAssembliesAsync");
@@ -2629,8 +2621,8 @@ using (var scope = app.Services.CreateScope())
                 var configLoadedAssembliesProperty = configEditor?.GetType().GetProperty("LoadedAssemblies");
                 configLoadedAssembliesProperty?.SetValue(configEditor, loadedAssemblies);
 
-                Log.Information("Loaded {Count} assemblies", loadedAssemblies.Count);
-                Log.Debug("Registered assemblies: {AssemblyNames}",
+                startupLog.LogInformation("Loaded {Count} assemblies", loadedAssemblies.Count);
+                startupLog.LogDebug("Registered assemblies: {AssemblyNames}",
                     string.Join(", ", loadedAssemblies.Select(assembly => assembly.FullName)));
             }
         }
@@ -2638,35 +2630,39 @@ using (var scope = app.Services.CreateScope())
         // Validate Beep configuration
         if (BeepServiceRegistration.ValidateConfiguration())
         {
-            Log.Information("Beep configuration validated successfully");
+            startupLog.LogInformation("Beep configuration validated successfully");
         }
         else
         {
-            Log.Warning("Beep configuration validation failed - some features may not work correctly");
+            startupLog.LogWarning("Beep configuration validation failed - some features may not work correctly");
         }
         
         // Log DMEEditor status
         var editor = scope.ServiceProvider.GetRequiredService<IDMEEditor>();
-        Log.Information("DMEEditor initialized with {DataSourceCount} data sources", 
+        startupLog.LogInformation("DMEEditor initialized with {DataSourceCount} data sources", 
             editor.ConfigEditor?.DataConnections?.Count ?? 0);
             
         // Log available data source types
         if (editor.ConfigEditor?.DataDriversClasses?.Count > 0)
         {
-            Log.Information("Available data source drivers: {DriverCount}", 
+            startupLog.LogInformation("Available data source drivers: {DriverCount}", 
                 editor.ConfigEditor.DataDriversClasses.Count);
-            Log.Debug("Driver types: {DriverTypes}", 
+            startupLog.LogDebug("Driver types: {DriverTypes}", 
                 string.Join(", ", editor.ConfigEditor.DataDriversClasses.Select(d => d.classHandler)));
         }
     }
     catch (Exception ex)
     {
-        Log.Error(ex, "Failed to initialize Beep framework");
+        startupLog.LogError(ex, "Failed to initialize Beep framework");
         throw;
     }
 }
 
 // Business data is seeded explicitly through the administrator's selected module binding.
+
+// The failure store's schema, before anything can fail into it (Diagnostics:MigrateOnStartup). A failure here stops the
+// host: failures it could not store would be failures nobody could read.
+await app.Services.ApplyOilGasDiagnosticsSchemaAsync(app.Configuration);
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
@@ -2678,7 +2674,6 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Global exception handling — must be first to catch errors from all downstream middleware
 // Global exception handling — must be first to catch errors from all downstream middleware
 app.UseMiddleware<Beep.OilandGas.ApiService.Middleware.GlobalExceptionMiddleware>();
 
@@ -2708,43 +2703,6 @@ app.MapHub<ProgressHub>("/progressHub");
 // SignalR hub for real-time workflow notifications (Phase 5)
 app.MapHub<Beep.OilandGas.ApiService.Hubs.WorkflowNotificationHub>("/hubs/workflow-notifications", options => options.CloseOnAuthenticationExpiration = true);
 
-// Add authentication diagnostic endpoint
-app.MapGet("/api/auth-test", (HttpContext context) =>
-{
-    var user = context.User;
-    var authHeader = context.Request.Headers.Authorization.ToString();
-    
-    return Results.Ok(new { 
-        IsAuthenticated = user.Identity?.IsAuthenticated ?? false,
-        AuthenticationType = user.Identity?.AuthenticationType,
-        UserName = user.Identity?.Name,
-        UserId = user.FindFirst("sub")?.Value ?? user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
-        Claims = user.Claims.Select(c => new { c.Type, c.Value }).ToList(),
-        HasAuthHeader = !string.IsNullOrEmpty(authHeader),
-        AuthHeaderPrefix = authHeader.Length > 20 ? authHeader.Substring(0, 20) + "..." : authHeader,
-        Timestamp = DateTime.UtcNow
-    });
-})
-.RequireAuthorization() // This requires auth - will return 401 if no valid token
-.WithName("AuthTest");
-
-// Authentication diagnostics are protected by the repository fallback policy.
-app.MapGet("/api/auth-check", (HttpContext context) =>
-{
-    var user = context.User;
-    var authHeader = context.Request.Headers.Authorization.ToString();
-    
-    return Results.Ok(new { 
-        IsAuthenticated = user.Identity?.IsAuthenticated ?? false,
-        HasAuthHeader = !string.IsNullOrEmpty(authHeader),
-        AuthHeaderLength = authHeader.Length,
-        Message = user.Identity?.IsAuthenticated == true 
-            ? $"Authenticated as {user.FindFirst("sub")?.Value}" 
-            : "Not authenticated"
-    });
-})
-.WithName("AuthCheck");
-
 // Health check endpoint — returns setup status + connection health
 app.MapGet("/health", async (IDMEEditor editor, IRepositoryReadinessService readiness, CancellationToken cancellationToken) =>
 {
@@ -2761,7 +2719,7 @@ app.MapGet("/health", async (IDMEEditor editor, IRepositoryReadinessService read
 .AllowAnonymous()
 .WithName("HealthCheck");
 
-Log.Information("Beep Oil and Gas PPDM39 API started successfully");
+startupLog.LogInformation("Beep Oil and Gas PPDM39 API started successfully");
 
 app.MapGet("/health/repository", async (RepositoryReadinessService readiness, CancellationToken cancellationToken) =>
 {

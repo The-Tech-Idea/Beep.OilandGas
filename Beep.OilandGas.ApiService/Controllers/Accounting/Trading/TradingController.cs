@@ -6,6 +6,7 @@ using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.Trading;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.ApiService.Services;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
 {
@@ -59,15 +60,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
         [HttpPost("exchanges")]
         public async Task<ActionResult<EXCHANGE_CONTRACT>> CreateExchangeContract(
             [FromBody] CreateExchangeContractRequest request,
-            [FromQuery] string? userId = null,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var contract = await _service.TradingService.RegisterContractAsync(request, userId ?? "system", connectionName);
+                var contract = await _service.TradingService.RegisterContractAsync(request, userId, connectionName);
                 return Ok(MapToExchangeContractDto(contract));
             }
             catch (Exception ex)

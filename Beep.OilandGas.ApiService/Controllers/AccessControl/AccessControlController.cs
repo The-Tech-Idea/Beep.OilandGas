@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using TheTechIdea.Beep.Report;
+using Beep.OilandGas.ApiService.Services;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -18,10 +18,11 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
     {
         private readonly IAccessControlService _accessControlService;
         private bool IsLocalUser => User.Identity?.IsAuthenticated == true
-            && !string.IsNullOrWhiteSpace(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            && !string.IsNullOrWhiteSpace(User.FindActingUserId());
         private bool IsAdministrator => IsLocalUser && User.IsInRole("Administrator");
-        private bool CanAccess(string userId) => IsLocalUser
-            && (User.FindFirstValue(ClaimTypes.NameIdentifier) == userId || IsAdministrator);
+        // Self or Administrator: the route/body id names the subject whose access is read, never the actor.
+        private bool CanAccess(string targetUserId) => IsLocalUser
+            && (User.FindActingUserId() == targetUserId || IsAdministrator);
 
         public AccessControlController(IAccessControlService accessControlService)
         {
@@ -53,20 +54,20 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// <summary>
         /// Get all assets a user can access
         /// </summary>
-        [HttpGet("user/{userId}/assets")]
+        [HttpGet("user/{targetUserId}/assets")]
         public async Task<ActionResult<List<AssetAccess>>> GetUserAccessibleAssets(
-            string userId, 
+            string targetUserId, 
             [FromQuery] string? assetType = null, 
             [FromQuery] string? organizationId = null,
             [FromQuery] bool includeInherited = true)
         {
-            if (!CanAccess(userId)) return Forbid();
-            if (string.IsNullOrWhiteSpace(userId))
+            if (!CanAccess(targetUserId)) return Forbid();
+            if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
             try
             {
                 var assets = await _accessControlService.GetUserAccessibleAssetsAsync(
-                    userId, assetType, organizationId, includeInherited);
+                    targetUserId, assetType, organizationId, includeInherited);
                 return Ok(assets);
             }
             catch (System.Exception)
@@ -78,17 +79,17 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// <summary>
         /// Get all roles for a user
         /// </summary>
-        [HttpGet("user/{userId}/roles")]
+        [HttpGet("user/{targetUserId}/roles")]
         public async Task<ActionResult<List<string>>> GetUserRoles(
-            string userId, 
+            string targetUserId, 
             [FromQuery] string? organizationId = null)
         {
-            if (!CanAccess(userId)) return Forbid();
-            if (string.IsNullOrWhiteSpace(userId))
+            if (!CanAccess(targetUserId)) return Forbid();
+            if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
             try
             {
-                var roles = await _accessControlService.GetUserRolesAsync(userId, organizationId);
+                var roles = await _accessControlService.GetUserRolesAsync(targetUserId, organizationId);
                 return Ok(roles);
             }
             catch (System.Exception)
@@ -100,20 +101,20 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// <summary>
         /// Check if a user has a specific permission
         /// </summary>
-        [HttpGet("user/{userId}/permission/{permissionId}")]
+        [HttpGet("user/{targetUserId}/permission/{permissionId}")]
         public async Task<ActionResult<bool>> HasPermission(
-            string userId, 
+            string targetUserId, 
             string permissionId, 
             [FromQuery] string? organizationId = null)
         {
-            if (!CanAccess(userId)) return Forbid();
-            if (string.IsNullOrWhiteSpace(userId))
+            if (!CanAccess(targetUserId)) return Forbid();
+            if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
             if (string.IsNullOrWhiteSpace(permissionId))
                 return BadRequest(new { error = "Permission ID is required." });
             try
             {
-                var hasPermission = await _accessControlService.HasPermissionAsync(userId, permissionId, organizationId);
+                var hasPermission = await _accessControlService.HasPermissionAsync(targetUserId, permissionId, organizationId);
                 return Ok(hasPermission);
             }
             catch (System.Exception)

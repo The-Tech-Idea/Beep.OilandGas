@@ -8,6 +8,7 @@ using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
 using Microsoft.Extensions.Logging;
 using CeilingTestRequest = Beep.OilandGas.Models.Data.Accounting.Financial.CeilingTestRequest;
+using Beep.OilandGas.ApiService.Services;
 
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
@@ -39,9 +40,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         [HttpPost("exploration-costs")]
         public async Task<ActionResult<object>> RecordExplorationCosts(
             [FromBody] FullCostExplorationRequest request,
-            [FromQuery] string? userId = null,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -57,7 +58,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
                     isCapitalized: true,
                     isCash: false,
                     transactionDate: DateTime.UtcNow,
-                    userId: userId ?? "system");
+                    userId: userId);
 
                 return Ok(new { CostCenterId = request.CostCenterId, JournalEntryId = journalEntryId });
             }
@@ -79,9 +80,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         [HttpPost("development-costs")]
         public async Task<ActionResult<object>> RecordDevelopmentCosts(
             [FromBody] FullCostDevelopmentRequest request,
-            [FromQuery] string? userId = null,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -97,7 +98,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
                     isCapitalized: true,
                     isCash: false,
                     transactionDate: DateTime.UtcNow,
-                    userId: userId ?? "system");
+                    userId: userId);
 
                 return Ok(new { CostCenterId = request.CostCenterId, JournalEntryId = journalEntryId });
             }
@@ -119,9 +120,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         [HttpPost("acquisition-costs")]
         public async Task<ActionResult<object>> RecordAcquisitionCosts(
             [FromBody] FullCostAcquisitionRequest request,
-            [FromQuery] string? userId = null,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -145,7 +146,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
                     isCapitalized: true,
                     isCash: false,
                     transactionDate: DateTime.UtcNow,
-                    userId: userId ?? "system");
+                    userId: userId);
 
                 return Ok(new { CostCenterId = request.CostCenterId, JournalEntryId = journalEntryId });
             }

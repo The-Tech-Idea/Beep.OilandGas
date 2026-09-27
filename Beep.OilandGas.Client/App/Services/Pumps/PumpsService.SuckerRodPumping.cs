@@ -26,14 +26,12 @@ namespace Beep.OilandGas.Client.App.Services.Pumps
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<SUCKER_ROD_FLOW_RATE_POWER_RESULT> SaveSuckerRodPumpDesignAsync(SUCKER_ROD_FLOW_RATE_POWER_RESULT design, string? userId = null, CancellationToken cancellationToken = default)
+        public async Task<SUCKER_ROD_FLOW_RATE_POWER_RESULT> SaveSuckerRodPumpDesignAsync(SUCKER_ROD_FLOW_RATE_POWER_RESULT design, CancellationToken cancellationToken = default)
         {
             if (design == null) throw new ArgumentNullException(nameof(design));
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                var queryParams = new Dictionary<string, string>();
-                if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
-                var endpoint = BuildRequestUriWithParams("/api/suckerrodpumping/design/save", queryParams);
+                var endpoint = "/api/suckerrodpumping/design/save";
                 return await PostAsync<SUCKER_ROD_FLOW_RATE_POWER_RESULT, SUCKER_ROD_FLOW_RATE_POWER_RESULT>(endpoint, design, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");

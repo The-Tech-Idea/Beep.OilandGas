@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
@@ -100,8 +101,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Insert a new typed entity. Request body is the entity JSON (e.g. WELL, AREA, etc.).
         /// </summary>
         [HttpPost("{tableName}/insert")]
-        public async Task<ActionResult<EntityResult<object>>> InsertEntity(string tableName, [FromBody] JsonElement body, [FromQuery] string userId = "SYSTEM", [FromQuery] string connectionName = "PPDM39")
+        public async Task<ActionResult<EntityResult<object>>> InsertEntity(string tableName, [FromBody] JsonElement body, [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
               if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
             try
             {
@@ -139,8 +141,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Update an existing typed entity. Request body is the entity JSON.
         /// </summary>
         [HttpPut("{tableName}/{id}")]
-        public async Task<ActionResult<EntityResult<object>>> UpdateEntity(string tableName, string id, [FromBody] JsonElement body, [FromQuery] string userId = "SYSTEM", [FromQuery] string connectionName = "PPDM39")
+        public async Task<ActionResult<EntityResult<object>>> UpdateEntity(string tableName, string id, [FromBody] JsonElement body, [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
               if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
               if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "Entity ID is required." });
             try
@@ -179,8 +182,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Delete an entity
         /// </summary>
         [HttpDelete("{tableName}/{id}")]
-        public async Task<ActionResult<OperationResult>> DeleteEntity(string tableName, string id, [FromQuery] string userId = "SYSTEM", [FromQuery] string connectionName = "PPDM39")
+        public async Task<ActionResult<OperationResult>> DeleteEntity(string tableName, string id, [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
               if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
               if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "Entity ID is required." });
             try
@@ -260,9 +264,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<IActionResult> ImportCsv(
             string tableName,
             IFormFile file,
-            [FromQuery] string userId = "SYSTEM",
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
                 if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
             if (file == null || file.Length == 0)
                 return BadRequest(new { success = false, message = "No file provided." });

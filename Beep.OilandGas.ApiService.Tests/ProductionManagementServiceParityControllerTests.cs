@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers.Facility;
 using Beep.OilandGas.ApiService.Controllers.Production;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -90,8 +91,9 @@ public class ProductionManagementServiceParityControllerTests
         productionManagement
             .Setup(service => service.CreateProductionOperationAsync(
                 It.IsAny<CreateProductionOperationRequest>(),
+                "ops-actor",
                 It.IsAny<CancellationToken>()))
-            .Callback<CreateProductionOperationRequest, CancellationToken>((request, _) => captured = request)
+            .Callback<CreateProductionOperationRequest, string, CancellationToken>((request, _, _) => captured = request)
             .ReturnsAsync(pden);
 
         var coreService = new Mock<Beep.OilandGas.Models.Core.Interfaces.IProductionOperationsService>(MockBehavior.Loose);
@@ -99,7 +101,13 @@ public class ProductionManagementServiceParityControllerTests
             coreService.Object,
             productionManagement.Object,
             NullLogger<ProductionOperationsController>.Instance);
-        controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("party_id", "ops-actor")], "TestAuth"))
+            }
+        };
 
         var request = new ProductionOperation
         {
@@ -130,6 +138,7 @@ public class ProductionManagementServiceParityControllerTests
         productionManagement
             .Setup(service => service.CreateProductionOperationAsync(
                 It.IsAny<CreateProductionOperationRequest>(),
+                "ops-actor",
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Insert failed"));
 
@@ -138,7 +147,13 @@ public class ProductionManagementServiceParityControllerTests
             coreService.Object,
             productionManagement.Object,
             NullLogger<ProductionOperationsController>.Instance);
-        controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("party_id", "ops-actor")], "TestAuth"))
+            }
+        };
 
         var result = await controller.CreateOperationCompatibility(new ProductionOperation { OperationType = "PRODUCTION" });
 

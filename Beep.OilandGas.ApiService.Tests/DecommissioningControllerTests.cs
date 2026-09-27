@@ -30,7 +30,7 @@ public class DecommissioningControllerTests
     }
 
     [Fact]
-    public async Task AbandonWell_UsesClaimUser_WhenQueryUserMissing()
+    public async Task AbandonWell_RecordsTheSignedInAccount()
     {
         const string fieldId = "FIELD-D-1";
         const string wellId = "WELL-1";
@@ -47,7 +47,7 @@ public class DecommissioningControllerTests
         var process = CreateNoopProcessService();
         var controller = CreateController(orchestrator.Object, process.Object, "claim-user");
 
-        var result = await controller.AbandonWell(wellId, new WellAbandonmentRequest(), null);
+        var result = await controller.AbandonWell(wellId, new WellAbandonmentRequest());
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         Assert.IsType<WellAbandonmentResponse>(ok.Value);
@@ -71,7 +71,7 @@ public class DecommissioningControllerTests
             {
                 User = new ClaimsPrincipal(new ClaimsIdentity(
                 [
-                    new Claim(ClaimTypes.NameIdentifier, userId)
+                    new Claim("party_id", userId)
                 ], "TestAuth"))
             }
         };

@@ -14,7 +14,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         ConnectionInfo? GetConnection(string connectionName);
         Task<ConnectionTestResult> TestConnectionAsync(string connectionName);
         CurrentConnectionResponse GetCurrentConnection();
-        SetCurrentConnectionResult SetCurrentConnection(string connectionName, string? userId = null);
+        SetCurrentConnectionResult SetCurrentConnection(string connectionName);
     }
 }
 

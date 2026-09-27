@@ -1,3 +1,4 @@
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.ProductionOperations.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -100,13 +101,14 @@ public class FacilityController : ControllerBase
         [FromBody] FACILITY facility,
         CancellationToken cancellationToken)
     {
+        var userId = User.ActingUserId();
         if (facility == null)
             return BadRequest(new { error = "Request body is required." });
 
         try
         {
             var created = await _facilities
-                .CreateFacilityAsync(facility, FacilityUserHelper.ResolveUserId(User), cancellationToken)
+                .CreateFacilityAsync(facility, userId, cancellationToken)
                 .ConfigureAwait(false);
             return Ok(created);
         }
@@ -130,6 +132,7 @@ public class FacilityController : ControllerBase
         [FromBody] FACILITY facility,
         CancellationToken cancellationToken)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
         if (facility == null)
@@ -143,7 +146,7 @@ public class FacilityController : ControllerBase
 
             facility.FACILITY_ID = facilityId;
             await _facilities
-                .UpdateFacilityAsync(facility, FacilityUserHelper.ResolveUserId(User), cancellationToken)
+                .UpdateFacilityAsync(facility, userId, cancellationToken)
                 .ConfigureAwait(false);
             return NoContent();
         }
@@ -187,6 +190,7 @@ public class FacilityController : ControllerBase
         [FromQuery] string? facilityType,
         CancellationToken cancellationToken)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
         if (string.IsNullOrWhiteSpace(facilityClassType))
@@ -195,7 +199,7 @@ public class FacilityController : ControllerBase
         try
         {
             var row = await _facilities
-                .AddFacilityClassAsync(facilityId, facilityType, facilityClassType.Trim(), FacilityUserHelper.ResolveUserId(User), cancellationToken)
+                .AddFacilityClassAsync(facilityId, facilityType, facilityClassType.Trim(), userId, cancellationToken)
                 .ConfigureAwait(false);
             return Ok(row);
         }
@@ -238,6 +242,7 @@ public class FacilityController : ControllerBase
         [FromBody] FACILITY_COMPONENT component,
         CancellationToken cancellationToken)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
         if (component == null)
@@ -247,7 +252,7 @@ public class FacilityController : ControllerBase
         {
             component.FACILITY_ID ??= facilityId;
             var row = await _facilities
-                .AddFacilityComponentAsync(component, FacilityUserHelper.ResolveUserId(User), cancellationToken)
+                .AddFacilityComponentAsync(component, userId, cancellationToken)
                 .ConfigureAwait(false);
             return Ok(row);
         }
@@ -291,6 +296,7 @@ public class FacilityController : ControllerBase
         [FromQuery] bool enforceActiveLicenseForOperationalStatus = true,
         CancellationToken cancellationToken = default)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
         if (status == null)
@@ -300,7 +306,7 @@ public class FacilityController : ControllerBase
         {
             status.FACILITY_ID ??= facilityId;
             var row = await _facilities
-                .AddFacilityStatusAsync(status, FacilityUserHelper.ResolveUserId(User), enforceActiveLicenseForOperationalStatus, cancellationToken)
+                .AddFacilityStatusAsync(status, userId, enforceActiveLicenseForOperationalStatus, cancellationToken)
                 .ConfigureAwait(false);
             return Ok(row);
         }

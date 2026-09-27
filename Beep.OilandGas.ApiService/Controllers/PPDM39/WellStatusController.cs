@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Claims;
 using System.Threading.Tasks;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL;
 using Beep.OilandGas.PPDM39.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Serilog;
 
 namespace Beep.OilandGas.ApiService.Controllers.PPDM39
 {
@@ -83,7 +82,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error loading facet reference data");
+                _logger.LogError(ex, "Error loading facet reference data");
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
@@ -125,7 +124,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error loading facet reference for {StatusType}", statusType);
+                _logger.LogError(ex, "Error loading facet reference for {StatusType}", statusType);
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
@@ -148,7 +147,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error loading qualifiers for {StatusType}/{Status}", statusType, status);
+                _logger.LogError(ex, "Error loading qualifiers for {StatusType}/{Status}", statusType, status);
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
@@ -174,7 +173,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error loading qualifier values for {StatusType}/{Status}/{Qualifier}", statusType, status, qualifier);
+                _logger.LogError(ex, "Error loading qualifier values for {StatusType}/{Status}/{Qualifier}", statusType, status, qualifier);
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
@@ -199,7 +198,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error loading current status for UWI {UWI}", uwi);
+                _logger.LogError(ex, "Error loading current status for UWI {UWI}", uwi);
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
@@ -220,7 +219,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error loading facet page data for UWI {UWI}", uwi);
+                _logger.LogError(ex, "Error loading facet page data for UWI {UWI}", uwi);
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
@@ -240,7 +239,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error loading status history for UWI {UWI}", uwi);
+                _logger.LogError(ex, "Error loading status history for UWI {UWI}", uwi);
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
@@ -258,6 +257,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<WELL_STATUS>> SetFacet(
             string uwi, [FromBody] WellServices.SetFacetRequest request)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
             if (request == null)
                     return BadRequest(new { error = "Request body is required." });
@@ -265,16 +265,14 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             // Ensure UWI from route is used (prevents spoofing via body).
             request.UWI = uwi;
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "API";
-
             try
             {
-                Log.Information("Setting facet {StatusType}={Status} for UWI {UWI} by {UserId}",
+                _logger.LogInformation("Setting facet {StatusType}={Status} for UWI {UWI} by {UserId}",
                     request.StatusType, request.Status, uwi, userId);
 
                 var result = await _wellServices.SetFacetAsync(request, userId);
 
-                Log.Information("Facet {StatusType} set for UWI {UWI}", request.StatusType, uwi);
+                _logger.LogInformation("Facet {StatusType} set for UWI {UWI}", request.StatusType, uwi);
                 return Ok(result);
             }
             catch (ArgumentException)
@@ -283,7 +281,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error setting facet {StatusType} for UWI {UWI}", request.StatusType, uwi);
+                _logger.LogError(ex, "Error setting facet {StatusType} for UWI {UWI}", request.StatusType, uwi);
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }

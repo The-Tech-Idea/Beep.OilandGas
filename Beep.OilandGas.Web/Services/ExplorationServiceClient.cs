@@ -112,14 +112,14 @@ public sealed class ExplorationServiceClient : IExplorationServiceClient
         }
     }
 
-    public async Task<PROSPECT?> CreateProspectAsync(ProspectRequest request, string? userId = null, CancellationToken cancellationToken = default)
+    public async Task<PROSPECT?> CreateProspectAsync(ProspectRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         try
         {
             return await _apiClient.PostAsync<ProspectRequest, PROSPECT>(
-                BuildUserScopedEndpoint("/api/field/current/exploration/prospects", userId),
+                "/api/field/current/exploration/prospects",
                 request,
                 cancellationToken);
         }
@@ -130,7 +130,7 @@ public sealed class ExplorationServiceClient : IExplorationServiceClient
         }
     }
 
-    public async Task<PROSPECT?> UpdateProspectAsync(string prospectId, ProspectRequest request, string? userId = null, CancellationToken cancellationToken = default)
+    public async Task<PROSPECT?> UpdateProspectAsync(string prospectId, ProspectRequest request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(prospectId))
             throw new ArgumentException("Prospect ID is required.", nameof(prospectId));
@@ -140,7 +140,7 @@ public sealed class ExplorationServiceClient : IExplorationServiceClient
         try
         {
             return await _apiClient.PutAsync<ProspectRequest, PROSPECT>(
-                BuildUserScopedEndpoint($"/api/field/current/exploration/prospects/{Uri.EscapeDataString(prospectId)}", userId),
+                $"/api/field/current/exploration/prospects/{Uri.EscapeDataString(prospectId)}",
                 request,
                 cancellationToken);
         }
@@ -151,7 +151,7 @@ public sealed class ExplorationServiceClient : IExplorationServiceClient
         }
     }
 
-    public async Task<bool> DeleteProspectAsync(string prospectId, string? userId = null, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteProspectAsync(string prospectId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(prospectId))
             throw new ArgumentException("Prospect ID is required.", nameof(prospectId));
@@ -159,7 +159,7 @@ public sealed class ExplorationServiceClient : IExplorationServiceClient
         try
         {
             return await _apiClient.DeleteAsync(
-                BuildUserScopedEndpoint($"/api/field/current/exploration/prospects/{Uri.EscapeDataString(prospectId)}", userId),
+                $"/api/field/current/exploration/prospects/{Uri.EscapeDataString(prospectId)}",
                 cancellationToken);
         }
         catch (Exception ex)
@@ -186,14 +186,14 @@ public sealed class ExplorationServiceClient : IExplorationServiceClient
         }
     }
 
-    public async Task<SEIS_ACQTN_SURVEY?> CreateSeismicSurveyAsync(SeismicSurveyRequest request, string? userId = null, CancellationToken cancellationToken = default)
+    public async Task<SEIS_ACQTN_SURVEY?> CreateSeismicSurveyAsync(SeismicSurveyRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         try
         {
             return await _apiClient.PostAsync<SeismicSurveyRequest, SEIS_ACQTN_SURVEY>(
-                BuildUserScopedEndpoint("/api/field/current/exploration/seismic-surveys", userId),
+                "/api/field/current/exploration/seismic-surveys",
                 request,
                 cancellationToken);
         }
@@ -243,13 +243,6 @@ public sealed class ExplorationServiceClient : IExplorationServiceClient
             _logger.LogError(ex, "Error recording decision {Decision} for prospect {ProspectId}.", decision, prospectId);
             throw;
         }
-    }
-
-    private static string BuildUserScopedEndpoint(string endpoint, string? userId)
-    {
-        return string.IsNullOrWhiteSpace(userId)
-            ? endpoint
-            : $"{endpoint}?userId={Uri.EscapeDataString(userId)}";
     }
 
     private sealed class ProspectDecisionRequest

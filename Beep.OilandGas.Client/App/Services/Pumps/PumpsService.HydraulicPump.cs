@@ -34,14 +34,12 @@ namespace Beep.OilandGas.Client.App.Services.Pumps
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<HYDRAULIC_JET_PUMP_RESULT> SaveHydraulicPumpDesignAsync(HYDRAULIC_JET_PUMP_RESULT design, string? userId = null, CancellationToken cancellationToken = default)
+        public async Task<HYDRAULIC_JET_PUMP_RESULT> SaveHydraulicPumpDesignAsync(HYDRAULIC_JET_PUMP_RESULT design, CancellationToken cancellationToken = default)
         {
             if (design == null) throw new ArgumentNullException(nameof(design));
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                var queryParams = new Dictionary<string, string>();
-                if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
-                var endpoint = BuildRequestUriWithParams("/api/hydraulicpump/design/save", queryParams);
+                var endpoint = "/api/hydraulicpump/design/save";
                 return await PostAsync<HYDRAULIC_JET_PUMP_RESULT, HYDRAULIC_JET_PUMP_RESULT>(endpoint, design, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");

@@ -1,12 +1,8 @@
 using Beep.OilandGas.PPDM39.Core;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using MudBlazor.Services;
+using MudBlazor.Translations;
 using Blazored.LocalStorage;
 using System.Text;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -21,13 +17,10 @@ using Beep.OilandGas.Web.Theme;
 using Beep.OilandGas.Web.Services;
 using Beep.OilandGas.Client.DependencyInjection;
 using Microsoft.AspNetCore.Routing;
-using Beep.Foundation.IdentityServer.Shared.Authentication;
-using Beep.Foundation.IdentityServer.Shared.Services;
-
-// ============================================
-// OIDC AUTHENTICATION SCHEME
-// ============================================
-// const string OIDC_SCHEME = "oidc"; // Reserved for future OIDC authentication
+using Beep.Foundation.IdentityServer.Shared.Extensions;
+using Beep.Foundation.IdentityServer.Shared.Identity;
+using Duende.AccessTokenManagement.OpenIdConnect;
+using Beep.OilandGas.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,26 +38,23 @@ builder.WebHost.ConfigureKestrel(options =>
 // MUDBLAZOR & UI SERVICES
 // ============================================
 builder.Services.AddMudServices();
+// MudBlazor's own component texts (pager, pickers, data-grid filters) in the request's language: the MudBlazor
+// organisation's translations, as MudBlazor's localization documentation recommends. OilGas offers English only today;
+// a culture added below is served by MudBlazor's texts without further wiring.
+builder.Services.AddMudTranslations();
 
 // Beep.Razor.Components — shared data management UI components (setup wizard, CRUD, drivers, etc.)
 Beep.Razor.Components.Extensions.BeepStudioServiceCollectionExtensions.AddBeepBlazorStudio(builder.Services);
 
 builder.Services.AddBlazoredLocalStorage();
 
-// Configure request localization
+// English only (Fahad, 2026-09-23): the application has no resources for another language. It declared ar-SA with no
+// localization, so an Arabic browser got English laid out as if nothing was wrong (S3-06 §8).
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
     options.DefaultRequestCulture = new Microsoft.AspNetCore.Localization.RequestCulture("en-US");
-    options.SupportedCultures = new[]
-    {
-        new System.Globalization.CultureInfo("en-US"),
-        new System.Globalization.CultureInfo("ar-SA")
-    };
-    options.SupportedUICultures = new[]
-    {
-        new System.Globalization.CultureInfo("en-US"),
-        new System.Globalization.CultureInfo("ar-SA")
-    };
+    options.SupportedCultures = [new System.Globalization.CultureInfo("en-US")];
+    options.SupportedUICultures = [new System.Globalization.CultureInfo("en-US")];
 });
 
 // ============================================
@@ -76,317 +66,69 @@ builder.Services.AddRazorComponents()
 builder.Services.AddHttpContextAccessor();
 
 // ============================================
-// TOKEN MANAGEMENT SERVICES
+// SIGN-IN (the identity server) AND ROLES (the OilGas repository, through the API)
 // ============================================
-// TokenProvider is a SINGLETON that stores tokens per-user (using user ID as key)
-// This allows tokens to persist across SignalR reconnections for authenticated users
-builder.Services.AddSingleton<Beep.Foundation.IdentityServer.Shared.Authentication.TokenProvider>();
+// The identity server authenticates; everything a person may do is the OilGas repository's, which the API owns — the
+// Web holds no user store, so it asks the API with the person's own access token (RepositoryAccountClient). The library
+// signs people in (code + PKCE, the cookie, the person's tokens refreshed by Duende's token manager), maps /account/*
+// (sign-in, registration, sign-out, back-channel logout, the unavailable page) and refuses an account OilGas has switched
+// off at sign-in, on the cookie and on an open circuit (OilGasAccountAdmission).
+//
+// It replaced a hand-written OpenID Connect setup: a client id that fell back to "beep_oilgas_web" and a secret that fell
+// back to empty, the shared "beep-api" scope, a registration call that failed sign-in whenever the API did, a token
+// dictionary nothing refreshed, a /authentication/start-login endpoint that passed any return address on, and a sign-out
+// link to a route that did not exist (S3-06 §3). The client id and secret are the pair the identity server's console
+// generated (IdentityServer:ClientId / ClientSecret); IdentityServer:ApiScopes names the OilGas API's identifier and
+// IdentityServer:AccountScopes the scopes /account/manage uses.
+builder.AddBeepClientApp(options =>
+{
+    options.CookieName = ".Beep.OilGas.Auth";
+    options.UiLocales = () => System.Globalization.CultureInfo.CurrentUICulture.Name;
+});
 
-// Register TokenHandler for attaching access tokens to outgoing requests
-// Microsoft's official pattern uses Scoped (see BlazorWebAppOidcServer sample)
-builder.Services.AddScoped<Beep.Foundation.IdentityServer.Shared.Authentication.TokenHandler>();
-
-// Register UserService and UserCircuitHandler for maintaining user state across SignalR connections
-builder.Services.AddScoped<Beep.Foundation.IdentityServer.Shared.Authentication.UserService>();
-builder.Services.TryAddEnumerable(
-    ServiceDescriptor.Scoped<CircuitHandler, Beep.Foundation.IdentityServer.Shared.Authentication.UserCircuitHandler>());
+builder.Services.AddScoped<IAccountAdmission, OilGasAccountAdmission>();
+builder.Services.AddChainedClaimsTransformation<OilGasClaimsTransformation>();
 
 // ============================================
-// API CLIENT SERVICES
+// LOG AND FAILURES — every failure logged and stored under a reference the person is shown
 // ============================================
-// ApiClient: Generic HTTP client for calling the API service
-var apiServiceUrl = builder.Configuration["ApiService:BaseUrl"] ?? "https://localhost:7001";
-builder.Services.AddHttpClient<RepositoryAccountClient>(client => client.BaseAddress = new Uri(apiServiceUrl));
-builder.Services.AddScoped<RepositorySignInService>();
-builder.Services.AddScoped<IClaimsTransformation, OilGasClaimsTransformation>();
+// The identity server's client library reports every failure it catches through this, and does not start without it. A
+// request that fails is answered by /Error with the reference; a page that fails, by the layout's error boundary; the
+// administrator reads them at /admin/failures. The store is the API's too (Diagnostics:Provider /
+// Diagnostics:ConnectionString) — the API applies its schema, so this host never migrates it.
+builder.Services.AddOilGasDiagnostics(builder.Configuration);
+
+// ============================================
+// THE OILGAS API
+// ============================================
+// Every client carries the signed-in person's access token (the library's token manager, refreshed before it expires).
+var api = OilGasApiAddress.Resolve(builder.Configuration);
+builder.Services.AddSingleton(api);
+builder.Services.AddHttpClient<RepositoryAccountClient>(client => client.BaseAddress = api.Address);
+builder.Services.AddScoped<OilGasAccountDeactivation>();
 builder.Services.AddScoped<UserAdministrationClient>();
 builder.Services.AddScoped<ModuleDatabaseClient>();
 builder.Services.AddScoped<PersonaClient>();
 builder.Services.AddHttpClient<ApiClient>(client =>
 {
-    client.BaseAddress = new Uri(apiServiceUrl);
+    client.BaseAddress = api.Address;
     client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
 })
-.AddHttpMessageHandler<Beep.Foundation.IdentityServer.Shared.Authentication.TokenHandler>();
+.AddUserAccessTokenHandler();
 
 // ============================================
-// AUTHENTICATION CONFIGURATION
+// THEME
 // ============================================
-const string OIDC_SCHEME = "oidc";
-
-// Add cascading authentication state for Blazor
-builder.Services.AddCascadingAuthenticationState();
-
-// Register the OIDC-compatible AuthenticationStateProvider
-builder.Services.AddScoped<AuthenticationStateProvider, OilGasRevalidatingAuthenticationStateProvider>();
-
-// Get IdentityServer URL for OIDC configuration
-// Try Aspire service discovery first, then fallback to config
-var identityServerUrl = IdentityServerConfiguration.ResolveAuthority(builder.Configuration);
-
-var oidcClientId = builder.Configuration["Authentication:Schemes:OpenIdConnect:ClientId"]
-    ?? builder.Configuration["IdentityServer:ClientId"]
-    ?? "beep_oilgas_web";
-
-var oidcClientSecret = builder.Configuration["Authentication:Schemes:OpenIdConnect:ClientSecret"]
-    ?? Environment.GetEnvironmentVariable("BEEP_OILGAS_OIDC_CLIENT_SECRET")
-    ?? string.Empty;
-
-static string BuildLoginRedirectUrl(string? returnUrl, string? error = null)
-{
-    var normalizedReturnUrl = string.IsNullOrWhiteSpace(returnUrl) ? "/" : returnUrl;
-    var query = $"returnUrl={Uri.EscapeDataString(normalizedReturnUrl)}";
-
-    if (!string.IsNullOrWhiteSpace(error))
-        query += $"&error={Uri.EscapeDataString(error)}";
-
-    return $"/login?{query}";
-}
-
-// Configure Authentication: Cookie as DEFAULT scheme, OIDC for CHALLENGE
-builder.Services.AddAuthentication(options =>
-{
-    // Cookie is the default - this is what Blazor uses to check if user is authenticated
-    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    // OIDC is used when we need to challenge (redirect to login)
-    options.DefaultChallengeScheme = OIDC_SCHEME;
-    options.DefaultSignOutScheme = OIDC_SCHEME;
-})
-.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
-{
-    options.Cookie.Name = ".Beep.OilGas.Auth";
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.HttpOnly = true;
-    options.ExpireTimeSpan = TimeSpan.FromDays(14);
-    options.SlidingExpiration = true;
-    
-    // Unauthenticated users should land on the app's login page first.
-    // That page can then initiate the OIDC challenge explicitly.
-    options.LoginPath = "/login";
-    options.LogoutPath = "/authentication/logout";
-    options.AccessDeniedPath = "/access-denied";
-    options.Events.OnValidatePrincipal = context =>
-    {
-        var token = context.Properties.GetTokenValue("access_token");
-        if (!string.IsNullOrEmpty(token)) context.HttpContext.Items["OilGas.AccessToken"] = token;
-        return Task.CompletedTask;
-    };
-})
-.AddOpenIdConnect(OIDC_SCHEME, options =>
-{
-    // After OIDC login, create a cookie
-    options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    options.SignOutScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    
-    options.Authority = identityServerUrl;
-    options.ClientId = oidcClientId;
-    options.ClientSecret = oidcClientSecret;
-    options.ResponseType = OpenIdConnectResponseType.Code;
-    options.UsePkce = true;
-    
-    // Scopes - offline_access is required for refresh tokens
-    options.Scope.Clear();
-    options.Scope.Add("openid");
-    options.Scope.Add("profile");
-    options.Scope.Add("email");
-    options.Scope.Add("beep-api");
-    options.Scope.Add("offline_access"); // Required for token refresh
-    
-    // IMPORTANT: Configure claim mapping for Blazor
-    options.MapInboundClaims = false;
-    options.TokenValidationParameters.NameClaimType = "name";
-    options.TokenValidationParameters.RoleClaimType = System.Security.Claims.ClaimTypes.Role;
-    options.GetClaimsFromUserInfoEndpoint = true;
-    options.SaveTokens = true;
-    
-    // Callback paths
-    options.CallbackPath = "/signin-oidc";
-    options.SignedOutCallbackPath = "/signout-callback-oidc";
-    options.RemoteSignOutPath = "/signout-oidc";
-    
-    // Development settings
-    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-    
-    // Cookie settings to fix correlation issues
-    options.CorrelationCookie.SameSite = SameSiteMode.None;
-    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.NonceCookie.SameSite = SameSiteMode.None;
-    options.NonceCookie.SecurePolicy = CookieSecurePolicy.Always;
-    
-    options.Events = new OpenIdConnectEvents
-    {
-        OnRedirectToIdentityProvider = context =>
-        {
-            // Add client_id as a query parameter to the authorization request
-            // This allows IdentityServer to detect which client is requesting authentication
-            // and apply the appropriate branding (BeepOilGasTheme)
-            context.ProtocolMessage.SetParameter("client_id", oidcClientId);
-            return Task.CompletedTask;
-        },
-        
-        // Fired when token response is received from the authorization server
-        // This is the BEST place to capture the access token
-        OnTokenResponseReceived = context =>
-        {
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("OIDC.TokenResponse");
-            
-            var accessToken = context.TokenEndpointResponse?.AccessToken;
-            
-            logger.LogInformation("OIDC TokenResponseReceived - HasAccessToken: {HasToken}, TokenLength: {Length}", 
-                !string.IsNullOrEmpty(accessToken), accessToken?.Length ?? 0);
-            
-            // Store the raw access token in HttpContext.Items for later use
-            if (!string.IsNullOrEmpty(accessToken))
-            {
-                context.HttpContext.Items["RawAccessToken"] = accessToken;
-            }
-            
-            return Task.CompletedTask;
-        },
-        
-        OnTokenValidated = async context =>
-        {
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("OIDC.TokenValidated");
-            
-            var userId = context.Principal?.FindFirst("sub")?.Value;
-            var email = context.Principal?.FindFirst("email")?.Value;
-            var name = context.Principal?.FindFirst("name")?.Value;
-            
-            logger.LogInformation("OIDC Token validated for user: {UserId}, Email: {Email}, Name: {Name}", 
-                userId, email, name);
-            
-            // Try to get access token from multiple sources
-            string? accessToken = null;
-            
-            // Source 1: TokenEndpointResponse (available in authorization code flow)
-            if (context.TokenEndpointResponse is not null)
-            {
-                accessToken = context.TokenEndpointResponse.AccessToken;
-                logger.LogDebug("OIDC: Got token from TokenEndpointResponse");
-            }
-            
-            // Source 2: HttpContext.Items (set in OnTokenResponseReceived)
-            if (string.IsNullOrEmpty(accessToken) && 
-                context.HttpContext.Items.TryGetValue("RawAccessToken", out var rawToken) &&
-                rawToken is string token)
-            {
-                accessToken = token;
-                logger.LogDebug("OIDC: Got token from HttpContext.Items[RawAccessToken]");
-            }
-            
-            // Source 3: ProtocolMessage (for implicit flow)
-            if (string.IsNullOrEmpty(accessToken))
-            {
-                accessToken = context.ProtocolMessage?.AccessToken;
-                if (!string.IsNullOrEmpty(accessToken))
-                {
-                    logger.LogDebug("OIDC: Got token from ProtocolMessage");
-                }
-            }
-            
-            // Store the token if we have one
-            if (!string.IsNullOrEmpty(accessToken) && !string.IsNullOrEmpty(userId))
-            {
-                try
-                {
-                    var signIn = context.HttpContext.RequestServices.GetRequiredService<RepositorySignInService>();
-                    await signIn.RegisterAsync(userId, accessToken, context.HttpContext.RequestAborted);
-                }
-                catch (Exception exception)
-                {
-                    logger.LogError(exception, "OilGas registration failed");
-                    context.Fail("OilGas registration could not complete.");
-                    return;
-                }
-                context.HttpContext.Items["OilGas.AccessToken"] = accessToken;
-                logger.LogInformation("OIDC: ✓ Stored access token for user {UserId} in TokenProvider (length: {Length})", 
-                    userId, accessToken.Length);
-            }
-            else
-            {
-                logger.LogWarning("OIDC: ✗ Could not capture access token. UserId: {UserId}, HasToken: {HasToken}", 
-                    userId, !string.IsNullOrEmpty(accessToken));
-                context.Fail("An API access token is required for OilGas registration.");
-            }
-            
-        },
-        
-        OnRemoteFailure = context =>
-        {
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("OIDC");
-            logger.LogError(context.Failure, "OIDC remote failure: {Message}", context.Failure?.Message);
-            
-            context.Response.Redirect(BuildLoginRedirectUrl(
-                context.Properties?.RedirectUri,
-                context.Failure?.Message ?? "Authentication failed"));
-            context.HandleResponse();
-            return Task.CompletedTask;
-        },
-
-        OnAuthenticationFailed = context =>
-        {
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("OIDC");
-            logger.LogError(context.Exception, "OIDC authentication failed: {Message}", context.Exception.Message);
-
-            context.Response.Redirect(BuildLoginRedirectUrl(
-                context.Properties?.RedirectUri,
-                "Identity Server is currently unavailable. Try again after it is running."));
-            context.HandleResponse();
-            return Task.CompletedTask;
-        },
-        
-        OnAccessDenied = context =>
-        {
-            context.Response.Redirect("/access-denied");
-            context.HandleResponse();
-            return Task.CompletedTask;
-        }
-    };
-});
-
-builder.Services.AddAuthorization();
-
-// ============================================
-// IDENTITY SERVER HTTP CLIENT
-// ============================================
-// HttpClient for communicating with Identity Server (for branding registration)
-builder.Services.AddHttpClient("IdentityServer", client =>
-{
-    client.BaseAddress = new Uri(identityServerUrl);
-    client.Timeout = TimeSpan.FromSeconds(30); // Increase timeout to 30 seconds
-})
-.ConfigurePrimaryHttpMessageHandler(() => 
-{
-    var handler = new HttpClientHandler();
-    // In development, skip certificate validation for self-signed certs
-    if (builder.Environment.IsDevelopment())
-    {
-        handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
-    }
-    return handler;
-})
-.AddHttpMessageHandler<Beep.Foundation.IdentityServer.Shared.Authentication.TokenHandler>();
-
-// ============================================
-// THEME PROVIDER
-// ============================================
+// The theme is read once (singleton); light or dark is each person's, on their circuit (scoped).
 builder.Services.AddSingleton<IThemeProvider, ThemeProvider>();
-
-// ============================================
-// BRANDING REGISTRATION SERVICE
-// ============================================
-// Registers branding with Identity Server on startup so login/register pages show the correct theme
-builder.Services.AddHostedService<Beep.OilandGas.Web.Services.BrandingRegistrationService>();
+builder.Services.AddScoped<ThemeState>();
 
 // ============================================
 // APPLICATION SERVICES
 // ============================================
 // Register the Beep.OilandGas client app (auto-detect local/remote)
+// The client library's calls carry the signed-in person's access token (OilGasUserTokenProvider).
+builder.Services.AddScoped<Beep.OilandGas.Client.Authentication.IAuthenticationProvider, OilGasUserTokenProvider>();
 builder.Services.AddBeepOilandGasAppRemote(builder.Configuration);
 
     // Keep the Beep.OilandGas app facade registered for legacy flows.
@@ -476,36 +218,10 @@ builder.Services.AddScoped<IPPDMTreeBuilder>(sp =>
 //     return new PPDM39DefaultsRepository(editor, "PPDM39", metadata);
 // });
 
-// Theme provider - loads theme from Theme/OilGasTheme.json
-builder.Services.AddSingleton<IThemeProvider, Beep.OilandGas.Web.Theme.ThemeProvider>();
-
-// Register ICurrentUser service to get user info from OIDC claims
-builder.Services.AddScoped<Beep.Foundation.IdentityServer.Shared.Services.ICurrentUser, Beep.Foundation.IdentityServer.Shared.Services.CurrentUser>();
-
-// Register Account Management service for profile, password, 2FA management (IdentityServer)
-builder.Services.AddScoped<Beep.Foundation.IdentityServer.Shared.Services.IAccountManagementService, Beep.Foundation.IdentityServer.Shared.Services.AccountManagementService>();
-
-// Controllers support
-builder.Services.AddControllersWithViews();
-
-// Razor Pages support
-builder.Services.AddRazorPages();
-
-// Add CORS for static files (so IdentityServer can fetch logos)
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
-    });
-});
-
 var app = builder.Build();
 
 // ============================================
-// HTTP PIPELINE
+// HTTP PIPELINE — Microsoft's order
 // ============================================
 if (app.Environment.IsDevelopment())
 {
@@ -520,51 +236,21 @@ else
 app.UseRequestLocalization();
 app.UseHttpsRedirection();
 
-// IMPORTANT: Authentication must come before Authorization
-app.UseAuthentication();
-app.UseAuthorization();
-
-// Capture access token for authenticated users during HTTP request
-// This ensures the token is available for API calls during SignalR sessions
-app.UseTokenCapture();
-
-app.UseCors();
+// Files on disk before authentication, so a stylesheet or a script does not ask the API who the person is: authentication
+// used to run first, and every asset cost the role bridge an HTTP call (S3-06 §3).
 app.UseStaticFiles();
-app.MapStaticAssets();
-app.UseRouting();
 
-// IMPORTANT: UseAntiforgery must be after UseRouting and before MapRazorComponents
+// Authentication, authorization and the library's /account endpoints.
+app.UseBeepClientApp();
+
+// After authentication and authorization, as ASP.NET Core orders them: the sign-out form posts with its token.
 app.UseAntiforgery();
 
+app.MapStaticAssets();
 app.MapRazorComponents<Beep.OilandGas.Web.App>()
     .AddInteractiveServerRenderMode();
 
-app.MapGet("/authentication/start-login", async (HttpContext httpContext) =>
-{
-    var returnUrl = httpContext.Request.Query["returnUrl"].ToString();
-    var normalizedReturnUrl = string.IsNullOrWhiteSpace(returnUrl) ? "/" : returnUrl;
-
-    try
-    {
-        await httpContext.ChallengeAsync(OIDC_SCHEME, new AuthenticationProperties
-        {
-            RedirectUri = normalizedReturnUrl
-        });
-    }
-    catch (Exception ex)
-    {
-        var logger = httpContext.RequestServices.GetRequiredService<ILoggerFactory>()
-            .CreateLogger("OIDC");
-        logger.LogError(ex, "OIDC login challenge failed before redirect.");
-
-        httpContext.Response.Redirect(BuildLoginRedirectUrl(
-            normalizedReturnUrl,
-            "Identity Server is currently unavailable. Try again after it is running."));
-    }
-})
-.AllowAnonymous();
-
-// Map authentication endpoints (login/logout)
-app.MapGroup("/authentication").MapLoginAndLogout();
-
 app.Run();
+
+/// <summary>The entry point, visible to the test host.</summary>
+public partial class Program;

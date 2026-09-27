@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -36,9 +37,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<VersioningResult>> CreateVersion(
             string tableName,
             string entityId,
-            [FromBody] VersioningRequest request,
-            [FromQuery] string userId = "SYSTEM")
+            [FromBody] VersioningRequest request)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(tableName))
                     return BadRequest(new { error = "Table name is required." });
             if (string.IsNullOrWhiteSpace(entityId))
@@ -157,9 +158,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<VersioningResult>> RestoreVersion(
             string tableName,
             string entityId,
-            [FromBody] RestoreVersionRequest request,
-            [FromQuery] string userId = "SYSTEM")
+            [FromBody] RestoreVersionRequest request)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(tableName))
                     return BadRequest(new { error = "Table name is required." });
             if (string.IsNullOrWhiteSpace(entityId))
@@ -228,9 +229,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// </summary>
         [HttpPost("snapshots")]
         public async Task<ActionResult<VersioningResult>> CreateTableSnapshot(
-            [FromBody] TableSnapshotRequest request,
-            [FromQuery] string userId = "SYSTEM")
+            [FromBody] TableSnapshotRequest request)
         {
+            var userId = User.ActingUserId();
                 if (request == null)
                     return BadRequest(new { error = "Request body is required." });
                 if (string.IsNullOrWhiteSpace(request.TableName))
@@ -277,7 +278,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     .Select(v => new SnapshotSummary(
                         v.VersionLabel ?? $"{table} snapshot",
                         table,
-                        v.CreatedBy ?? "system",
+                        v.CreatedBy,
                         v.CreatedDate,
                         v.VersionNumber))
                     .OrderByDescending(s => s.CreatedAt)
@@ -292,6 +293,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         }
 
         public record TableSnapshotRequest(string TableName, string? Label);
-        public record SnapshotSummary(string Label, string Table, string CreatedBy, DateTime CreatedAt, int RowCount);
+        public record SnapshotSummary(string Label, string Table, string? CreatedBy, DateTime CreatedAt, int RowCount);
     }
 }

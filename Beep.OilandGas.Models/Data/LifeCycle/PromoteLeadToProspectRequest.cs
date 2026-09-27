@@ -16,14 +16,6 @@ public class PromoteLeadToProspectRequest : ModelEntityBase
         set => SetProperty(ref InstanceIdValue, value);
     }
 
-    private string UserIdValue = string.Empty;
-
-    public string UserId
-    {
-        get => UserIdValue;
-        set => SetProperty(ref UserIdValue, value);
-    }
-
     /// <summary>Optional payload for <c>PROSPECT_CREATION</c> (serialized to <c>PROCESS_STEP_DATA.DataJson</c>).</summary>
     public Dictionary<string, object>? ProspectData { get; set; }
 }

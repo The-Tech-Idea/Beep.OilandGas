@@ -55,7 +55,7 @@ public class ProductionDashboardControllerTests
         var access = new Mock<IAccessControlService>(MockBehavior.Strict);
         access.Setup(a => a.CheckAssetAccessAsync("user", "field-b", "FIELD", null)).ReturnsAsync(new AccessCheckResponse { HasAccess = allowed });
         using var services = new ServiceCollection().AddSingleton(access.Object).BuildServiceProvider();
-        var http = new DefaultHttpContext { RequestServices = services, User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, "user") }, "test")) };
+        var http = new DefaultHttpContext { RequestServices = services, User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim("party_id", "user") }, "test")) };
         var routes = new RouteData(); routes.Values["fieldId"] = "field-b";
         var context = new AuthorizationFilterContext(new ActionContext(http, routes, new ActionDescriptor()), new List<IFilterMetadata>());
         await guard.OnAuthorizationAsync(context);

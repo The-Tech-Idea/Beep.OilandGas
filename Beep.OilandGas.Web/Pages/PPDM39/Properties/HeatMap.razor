@@ -7,7 +7,6 @@
 @inject IPropertiesServiceClient PropertiesService
 @inject ApiClient ApiClient
 @inject ILifeCycleService LifeCycleService
-@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Generate Field Heat Map</PageTitle>
 
@@ -75,16 +74,12 @@
     private bool _isGenerating = false;
     private bool _isLoading = false;
     private HeatMapResult? _heatMapResult;
-    private string? _currentUserId;
 
     protected override async Task OnInitializedAsync()
     {
         _isLoading = true;
         try
         {
-            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            _currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
-
             var field = await LifeCycleService.GetCurrentFieldAsync();
             if (field != null)
             {
@@ -173,7 +168,7 @@
                 ConfigurationName = $"Production Heat Map — {_fieldName}"
             };
 
-            var heatMapId = await PropertiesService.SaveHeatMapConfigurationAsync(configuration, _currentUserId);
+            var heatMapId = await PropertiesService.SaveHeatMapConfigurationAsync(configuration);
             Snackbar.Add("Heat map configuration saved successfully", Severity.Success);
         }
         catch (Exception)

@@ -4,7 +4,6 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
 using Microsoft.Extensions.Logging;
-using Serilog;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 
@@ -43,7 +42,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.Analytics
 
         public async Task<WorkOrderKPISet> GetWorkOrderKPIsAsync(string fieldId, DateRangeFilter range)
         {
-            Log.Information("Computing WO KPIs for field {FieldId}, range {From}–{To}",
+            _logger.LogInformation("Computing WO KPIs for field {FieldId}, range {From}–{To}",
                 fieldId, range.From, range.To);
             try
             {
@@ -79,7 +78,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.Analytics
 
         public async Task<GateReviewKPISet> GetGateReviewKPIsAsync(string fieldId, DateRangeFilter range)
         {
-            Log.Information("Computing Gate KPIs for field {FieldId}", fieldId);
+            _logger.LogInformation("Computing Gate KPIs for field {FieldId}", fieldId);
             try
             {
                 var meta       = await _metadata.GetTableMetadataAsync("PROJECT_STATUS");
@@ -113,7 +112,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.Analytics
         public async Task<HSEKPISet> GetHSEKPIsAsync(
             string fieldId, DateRangeFilter range, double exposureHours)
         {
-            Log.Information("Computing HSE KPIs for field {FieldId}", fieldId);
+            _logger.LogInformation("Computing HSE KPIs for field {FieldId}", fieldId);
             try
             {
                 var meta       = await _metadata.GetTableMetadataAsync("HSE_INCIDENT");
@@ -151,7 +150,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.Analytics
 
         public async Task<ComplianceKPISet> GetComplianceKPIsAsync(string fieldId, DateRangeFilter range)
         {
-            Log.Information("Computing Compliance KPIs for field {FieldId}", fieldId);
+            _logger.LogInformation("Computing Compliance KPIs for field {FieldId}", fieldId);
             try
             {
                 var meta       = await _metadata.GetTableMetadataAsync("OBLIGATION");
@@ -182,7 +181,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.Analytics
 
         public async Task<ProductionKPISet> GetProductionKPIsAsync(string fieldId, DateRangeFilter range)
         {
-            Log.Information("Computing Production KPIs for field {FieldId}", fieldId);
+            _logger.LogInformation("Computing Production KPIs for field {FieldId}", fieldId);
             try
             {
                 var meta       = await _metadata.GetTableMetadataAsync("PDEN_VOL_SUMMARY");
@@ -227,7 +226,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.Analytics
         public async Task<List<KPITrendPoint>> GetProductionTrendAsync(
             string fieldId, DateRangeFilter range, string seriesName = "BOE")
         {
-            Log.Information("Computing production trend for field {FieldId}", fieldId);
+            _logger.LogInformation("Computing production trend for field {FieldId}", fieldId);
             var result = new List<KPITrendPoint>();
             try
             {
@@ -274,7 +273,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.Analytics
 
         public async Task<ReservesMaturationSummary> GetReservesMaturationAsync(string fieldId)
         {
-            Log.Information("Computing reserves maturation for field {FieldId}", fieldId);
+            _logger.LogInformation("Computing reserves maturation for field {FieldId}", fieldId);
             try
             {
                 var meta       = await _metadata.GetTableMetadataAsync("PDEN_VOL_SUMMARY");

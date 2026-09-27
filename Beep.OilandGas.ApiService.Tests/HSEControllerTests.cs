@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers.HSE;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.HSE;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -14,7 +16,7 @@ public class HSEControllerTests
     public async Task ReportAsync_ReturnsBadRequest_WhenBodyMissing()
     {
         var orchestrator = new Mock<IFieldOrchestrator>(MockBehavior.Strict);
-        var controller = new HSEController(orchestrator.Object, NullLogger<HSEController>.Instance);
+        var controller = SignedIn(new HSEController(orchestrator.Object, NullLogger<HSEController>.Instance));
 
         var result = await controller.ReportAsync(null!);
 
@@ -50,7 +52,7 @@ public class HSEControllerTests
         var orchestrator = new Mock<IFieldOrchestrator>(MockBehavior.Strict);
         orchestrator.Setup(s => s.GetHSEService()).Returns(hse.Object);
 
-        var controller = new HSEController(orchestrator.Object, NullLogger<HSEController>.Instance);
+        var controller = SignedIn(new HSEController(orchestrator.Object, NullLogger<HSEController>.Instance));
         var request = new TransitionIncidentRequest { Trigger = "investigate", Reason = null };
 
         var result = await controller.TransitionAsync(incidentId, request);
@@ -72,5 +74,17 @@ public class HSEControllerTests
 
         Assert.IsType<BadRequestObjectResult>(result.Result);
         orchestrator.VerifyAll();
+    }
+
+    private static HSEController SignedIn(HSEController controller)
+    {
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("party_id", "hse-user")], "TestAuth"))
+            }
+        };
+        return controller;
     }
 }

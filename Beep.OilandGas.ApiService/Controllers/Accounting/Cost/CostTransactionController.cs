@@ -7,6 +7,7 @@ using Beep.OilandGas.Models.Data.Accounting.Cost;
 using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
+using Beep.OilandGas.ApiService.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
@@ -38,9 +39,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         [HttpPost]
         public async Task<ActionResult<object>> CreateCostTransaction(
             [FromBody] CreateCostTransactionRequest request,
-            [FromQuery] string? userId = null,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -60,7 +61,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
                     COST_TYPE = request.IsCapitalized ? "Capital" : "Operating",
                     ACTIVE_IND = "Y",
                     ROW_CREATED_DATE = DateTime.UtcNow,
-                    ROW_CREATED_BY = userId ?? "system"
+                    ROW_CREATED_BY = userId
                 };
 
                 if (!string.IsNullOrEmpty(request.Description))
@@ -68,7 +69,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
                     transaction.REMARK = request.Description;
                 }
 
-                await repository.InsertAsync(transaction, userId ?? "system");
+                await repository.InsertAsync(transaction, userId);
 
                 var journalEntryId = await _glIntegration.PostCostToGL(
                     transaction.COST_TRANSACTION_ID,
@@ -76,7 +77,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
                     isCapitalized: request.IsCapitalized,
                     isCash: request.IsCash,
                     transactionDate: transaction.TRANSACTION_DATE ?? DateTime.UtcNow,
-                    userId: userId ?? "system");
+                    userId: userId);
 
                 return Ok(new { TransactionId = transaction.COST_TRANSACTION_ID, JournalEntryId = journalEntryId });
             }

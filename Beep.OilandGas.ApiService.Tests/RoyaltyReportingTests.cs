@@ -107,14 +107,14 @@ public class RoyaltyReportingTests
     }
 
     [Theory]
-    [InlineData(false, true)]
-    [InlineData(true, false)]
-    public async Task EndpointRequiresLocalAuthenticatedActor(bool local, bool authenticated)
+    [InlineData(false, null)]
+    [InlineData(true, "https://idp.example.test/")]
+    public async Task EndpointRequiresTheAccountThisApiResolved(bool local, string? issuer)
     {
         var accounting = new Mock<IAccountingService>(MockBehavior.Strict);
         var access = new Mock<IAccessControlService>(MockBehavior.Strict);
-        var controller = Controller(accounting.Object, local, authenticated);
-        Assert.IsType<UnauthorizedResult>((await controller.GetRoyaltyCalculations(access.Object, "field-a")).Result);
+        var controller = Controller(accounting.Object, local, issuer);
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => controller.GetRoyaltyCalculations(access.Object, "field-a"));
         accounting.VerifyNoOtherCalls();
         access.VerifyNoOtherCalls();
     }
@@ -125,7 +125,7 @@ public class RoyaltyReportingTests
         var accounting = new Mock<IAccountingService>(MockBehavior.Strict);
         var access = new Mock<IAccessControlService>(MockBehavior.Strict);
         access.Setup(a => a.CheckAssetAccessAsync("local", "field-a", "FIELD", null)).ReturnsAsync(new AccessCheckResponse { HasAccess = false });
-        var controller = Controller(accounting.Object, true, true);
+        var controller = Controller(accounting.Object, true);
         Assert.IsType<ForbidResult>((await controller.GetRoyaltyCalculations(access.Object, "field-a")).Result);
         accounting.VerifyNoOtherCalls();
         access.Setup(a => a.CheckAssetAccessAsync("local", "field-a", "FIELD", null)).ReturnsAsync(new AccessCheckResponse { HasAccess = true });
@@ -133,12 +133,13 @@ public class RoyaltyReportingTests
         Assert.IsType<OkObjectResult>((await controller.GetRoyaltyCalculations(access.Object, "field-a")).Result);
     }
 
-    private static RoyaltyReportsController Controller(IAccountingService accounting, bool local, bool authenticated)
+    private static RoyaltyReportsController Controller(IAccountingService accounting, bool local, string? issuer = null)
     {
         var claims = new List<Claim> { new("sub", "external") };
-        if (local) claims.Add(new(ClaimTypes.NameIdentifier, "local"));
+        claims.Add(!local ? new Claim(ClaimTypes.NameIdentifier, "local")
+            : issuer is null ? new Claim("party_id", "local") : new Claim("party_id", "local", ClaimValueTypes.String, issuer));
         return new(accounting, NullLogger<RoyaltyReportsController>.Instance) { ControllerContext = new() {
-            HttpContext = new DefaultHttpContext { User = new(new ClaimsIdentity(claims, authenticated ? "test" : null)) }
+            HttpContext = new DefaultHttpContext { User = new(new ClaimsIdentity(claims, "test")) }
         } };
     }
 }

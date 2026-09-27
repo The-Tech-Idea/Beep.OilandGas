@@ -17,8 +17,9 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// </summary>
         /// <param name="fieldId">Field identifier</param>
         /// <param name="eorMethod">EOR method to analyze</param>
+        /// <param name="userId">The account recorded as creating a new analysis entry</param>
         /// <returns>EOR analysis result</returns>
-        Task<EnhancedRecoveryOperation> AnalyzeEORPotentialAsync(string fieldId, string eorMethod, CancellationToken cancellationToken = default);
+        Task<EnhancedRecoveryOperation> AnalyzeEORPotentialAsync(string fieldId, string eorMethod, string userId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns the EOR operation with a **screening-level** incremental recovery factor estimate (% OOIP)
@@ -61,8 +62,9 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// </summary>
         /// <param name="injectionWellId">Injection well identifier</param>
         /// <param name="injectionRate">Injection rate</param>
+        /// <param name="userId">The account recorded as making the change</param>
         /// <returns>Injection operation result</returns>
-        Task<InjectionOperation> ManageInjectionAsync(string injectionWellId, decimal injectionRate, CancellationToken cancellationToken = default);
+        Task<InjectionOperation> ManageInjectionAsync(string injectionWellId, decimal injectionRate, string userId, CancellationToken cancellationToken = default);
     }
 }
 

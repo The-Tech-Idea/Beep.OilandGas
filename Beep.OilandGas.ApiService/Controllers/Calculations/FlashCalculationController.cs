@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.FlashCalculations;
 using Beep.OilandGas.Models.Data.Calculations;
@@ -83,11 +84,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("result")]
-        public async Task<ActionResult> SaveResult([FromBody] FlashResult result, [FromQuery] string? userId = null)
+        public async Task<ActionResult> SaveResult([FromBody] FlashResult result)
         {
+            var userId = User.ActingUserId();
             try
             {
-                await _service.SaveFlashResultAsync(result, userId ?? GetUserId());
+                await _service.SaveFlashResultAsync(result, userId);
                 return Ok(new { message = "Flash calculation result saved successfully" });
             }
             catch (Exception ex)
@@ -111,7 +113,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
-
-        private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
     }
 }

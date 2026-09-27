@@ -4,13 +4,14 @@
      <TargetFrameworks>net10.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <IdentitySharedProject Condition="'$(IdentitySharedProject)' == ''">$(MSBuildThisFileDirectory)..\..\Beep.IdentityServer\Beep.Foundation.IdentityServer.Shared\Beep.Foundation.IdentityServer.Shared.csproj</IdentitySharedProject>
-    <ThemeBrandingProject Condition="'$(ThemeBrandingProject)' == ''">$(MSBuildThisFileDirectory)..\..\Beep.Web\TheTechIdeaWeb.ThemeBranding\TheTechIdeaWeb.ThemeBranding.csproj</ThemeBrandingProject>
+    <UserSecretsId>oilgas-web-34951fb8-ca8a-4b1a-9bed-0fd0e11dee18</UserSecretsId>
     <!-- Suppress known analyzer/generated-code noise that is non-actionable in source -->
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MudBlazor" Version="9.5.0" />
+    <PackageReference Include="MudBlazor" Version="9.7.0" />
+    <!-- MudBlazor's own component texts in the request's language (MudBlazor 9.x pairs with 3.x). -->
+    <PackageReference Include="MudBlazor.Translations" Version="3.4.0" />
     <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.9" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.10" />
@@ -24,8 +25,19 @@
     <PackageReference Include="TheTechIdea.Beep.Vis.Loader" Version="1.0.7" />
   </ItemGroup>
 
+  <!-- Never published: the development file names this machine's services, the template is documentation, and the
+       server's own appsettings.Production.json is maintained on the server (placed there by the operator). -->
+  <ItemGroup>
+    <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
+    <Content Update="appsettings.Production.json" CopyToPublishDirectory="Never" />
+    <Content Update="appsettings.Production.template.json" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="$(IdentitySharedProject)" />
+    <!-- The failure store (DIAG-01): every failure logged and stored under the reference the person is shown. -->
+    <ProjectReference Include="..\Beep.OilandGas.Diagnostics\Beep.OilandGas.Diagnostics.csproj" />
+    <ProjectReference Include="$(AccountManagementProject)" />
     <ProjectReference Include="..\TheTechIdea.Data\TheTechIdea.Data.csproj" />
     <ProjectReference Include="$(ThemeBrandingProject)" />
     <ProjectReference Include="..\..\BeepWeb\Beep.Razor.Components\Beep.Razor.Components.csproj" />

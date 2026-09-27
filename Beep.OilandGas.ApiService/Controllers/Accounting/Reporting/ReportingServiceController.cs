@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Claims;
 using System.Threading.Tasks;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Reporting;
 using Microsoft.AspNetCore.Mvc;
@@ -32,8 +32,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromBody] GenerateOperationalReportRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             return await ExecuteAsync(
-                () => _reportingService.GenerateOperationalReportAsync(request, ResolveUserId(), connectionName),
+                () => _reportingService.GenerateOperationalReportAsync(request, userId, connectionName),
                 "Error generating operational report");
         }
 
@@ -42,8 +43,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromBody] GenerateFinancialReportRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             return await ExecuteAsync(
-                () => _reportingService.GenerateFinancialReportAsync(request, ResolveUserId(), connectionName),
+                () => _reportingService.GenerateFinancialReportAsync(request, userId, connectionName),
                 "Error generating financial report");
         }
 
@@ -52,8 +54,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromBody] GenerateRoyaltyStatementRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             return await ExecuteAsync(
-                () => _reportingService.GenerateRoyaltyStatementAsync(request, ResolveUserId(), connectionName),
+                () => _reportingService.GenerateRoyaltyStatementAsync(request, userId, connectionName),
                 "Error generating royalty statement");
         }
 
@@ -62,8 +65,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromBody] GenerateJIBStatementRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             return await ExecuteAsync(
-                () => _reportingService.GenerateJIBStatementAsync(request, ResolveUserId(), connectionName),
+                () => _reportingService.GenerateJIBStatementAsync(request, userId, connectionName),
                 "Error generating JIB statement");
         }
 
@@ -72,8 +76,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromBody] ScheduleReportRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             return await ExecuteAsync(
-                () => _reportingService.ScheduleReportAsync(request, ResolveUserId(), connectionName),
+                () => _reportingService.ScheduleReportAsync(request, userId, connectionName),
                 "Error scheduling report");
         }
 
@@ -91,8 +96,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromBody] ReportDistributionRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             return await ExecuteAsync(
-                () => _reportingService.DistributeReportAsync(reportId, request, ResolveUserId(), connectionName),
+                () => _reportingService.DistributeReportAsync(reportId, request, userId, connectionName),
                 "Error distributing report");
         }
 
@@ -133,13 +139,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
                 _logger.LogError(ex, "{Message}", logMessage);
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
-        }
-
-        private string ResolveUserId()
-        {
-            return User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub")
-                ?? "system";
         }
     }
 }

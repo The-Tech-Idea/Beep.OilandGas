@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -66,15 +66,15 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             [FromQuery] DateTime? from = null,
             [FromQuery] DateTime? to = null)
         {
+            var userId = User.ActingUserId();
             try
             {
                 var fromDate = from ?? DateTime.UtcNow.AddDays(-1);
                 var toDate   = to   ?? DateTime.UtcNow;
-                var userId   = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
                 _logger.LogInformation("Fetching recent audit events from {From} to {To}", fromDate, toDate);
 
-                var events = await _auditService.GetUserAccessHistoryAsync(userId ?? string.Empty, fromDate, toDate);
+                var events = await _auditService.GetUserAccessHistoryAsync(userId, fromDate, toDate);
                 return Ok(events ?? new List<DataAccessEvent>());
             }
             catch (Exception ex)

@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using System.Text.Json;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -77,8 +76,7 @@ public sealed class RepositoryUserProfileService(RepositoryDbContext repository,
     private async Task<bool> UpdateAsync(string userId, Action<AppUserExtension> update)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
-        var actor = accessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrWhiteSpace(actor)) throw new InvalidOperationException("An authenticated local actor is required.");
+        var actor = (accessor.HttpContext?.User).ActingUserId();
         if (!await repository.Users.AnyAsync(x => x.Id == userId && x.IsActive)) return false;
         var metadata = await repository.Set<AppUserExtension>().SingleOrDefaultAsync(x => x.UserId == userId);
         if (metadata is null)

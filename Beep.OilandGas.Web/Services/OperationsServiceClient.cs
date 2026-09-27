@@ -66,15 +66,11 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<string> CreateProspectAsync(Prospect prospect, string? userId = null)
+        public async Task<string> CreateProspectAsync(Prospect prospect)
         {
             try
             {
                 var endpoint = "/api/prospectidentification";
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
                 var response = await _apiClient.PostAsync<Prospect, dynamic>(endpoint, prospect);
                 // Extract prospectId from response
                 return response?.prospectId?.ToString() ?? throw new InvalidOperationException("Failed to create prospect");
@@ -212,15 +208,11 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<string> CreateLeaseAcquisitionAsync(CreateLeaseAcquisition leaseRequest, string? userId = null)
+        public async Task<string> CreateLeaseAcquisitionAsync(CreateLeaseAcquisition leaseRequest)
         {
             try
             {
                 var endpoint = "/api/leaseacquisition";
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
                 var response = await _apiClient.PostAsync<CreateLeaseAcquisition, dynamic>(endpoint, leaseRequest);
                 return response?.leaseId?.ToString() ?? throw new InvalidOperationException("Failed to create lease acquisition");
             }
@@ -231,16 +223,12 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> UpdateLeaseStatusAsync(string leaseId, string status, string? userId = null)
+        public async Task<bool> UpdateLeaseStatusAsync(string leaseId, string status)
         {
             try
             {
                 var request = new { Status = status };
                 var endpoint = $"/api/leaseacquisition/{Uri.EscapeDataString(leaseId)}/status";
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
                 return await _apiClient.PutAsync(endpoint, request);
             }
             catch (Exception ex)

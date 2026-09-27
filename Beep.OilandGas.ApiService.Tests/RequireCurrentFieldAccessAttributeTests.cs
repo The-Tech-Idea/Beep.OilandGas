@@ -105,7 +105,7 @@ public class RequireCurrentFieldAccessAttributeTests
     }
 
     [Fact]
-    public async Task OnAuthorizationAsync_WhenClaimAndIdentityNameDiffer_UsesNameIdentifierClaim()
+    public async Task OnAuthorizationAsync_UsesThePartyIdThisApplicationIssued()
     {
         var access = new TestAccessControlService
         {
@@ -116,7 +116,8 @@ public class RequireCurrentFieldAccessAttributeTests
 
         var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, "trusted-user-id"),
+            new("party_id", "trusted-user-id"),
+            new(ClaimTypes.NameIdentifier, "external-subject"),
             new(ClaimTypes.Name, "display-name")
         };
         var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth", ClaimTypes.Name, ClaimTypes.Role));
@@ -131,7 +132,7 @@ public class RequireCurrentFieldAccessAttributeTests
     }
 
     [Fact]
-    public async Task OnAuthorizationAsync_WhenNameIdentifierMissing_FallsBackToIdentityName()
+    public async Task OnAuthorizationAsync_WhenPartyIdMissing_NeverFallsBackToIdentityName()
     {
         var access = new TestAccessControlService
         {
@@ -151,8 +152,8 @@ public class RequireCurrentFieldAccessAttributeTests
 
         await attribute.OnAuthorizationAsync(context);
 
-        Assert.Null(context.Result);
-        Assert.Equal("fallback-name", access.LastUserId);
+        Assert.IsType<UnauthorizedResult>(context.Result);
+        Assert.Null(access.LastUserId);
     }
 
     private static AuthorizationFilterContext CreateContext(IServiceProvider? services, ClaimsPrincipal principal)
@@ -176,7 +177,7 @@ public class RequireCurrentFieldAccessAttributeTests
         var claims = new List<Claim>();
         if (!string.IsNullOrWhiteSpace(userId))
         {
-            claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
+            claims.Add(new Claim("party_id", userId));
         }
 
         var identity = new ClaimsIdentity(claims, authenticationType: "TestAuth", nameType: ClaimTypes.NameIdentifier, roleType: ClaimTypes.Role);

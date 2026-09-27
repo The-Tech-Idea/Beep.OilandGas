@@ -1,4 +1,4 @@
-using System.Security.Claims;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.LifeCycle.Services.Processes;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Authorization;
@@ -50,8 +50,7 @@ public sealed class WorkflowTasksController(RepositoryDbContext repository, ICro
 
     private async Task<List<UnifiedTask>?> VisibleTasksAsync(string? requestedPersona, CancellationToken token)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (User.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(userId)) return null;
+        var userId = User.ActingUserId();
         var persona = await (from user in repository.Users.AsNoTracking()
                              join profile in repository.Set<AppUserPersona>().AsNoTracking() on user.Id equals profile.UserId
                              join catalog in repository.Set<AppPersona>().AsNoTracking() on profile.PersonaCode equals catalog.Code

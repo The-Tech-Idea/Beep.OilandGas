@@ -50,6 +50,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         public string? IPRModel { get; set; }
         public int? NumberOfPoints { get; set; }
         public decimal? FlowRateRangeMax { get; set; }
+        // Set by the API from the signed-in account; a value a client sends is overwritten.
         public string? UserId { get; set; }
         public string AnalysisType { get; set; }
         public string FieldId { get; set; }

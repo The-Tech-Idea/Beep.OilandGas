@@ -4,7 +4,6 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
 using Microsoft.Extensions.Logging;
-using Serilog;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 
@@ -57,7 +56,7 @@ public class ContractorManagementService : IContractorManagementService
         string instanceId, string stepId, string baId,
         string roleCode, string userId)
     {
-        Log.Information("Assigning contractor {BaId} to step {StepId} on WO {InstanceId}",
+        _logger.LogInformation("Assigning contractor {BaId} to step {StepId} on WO {InstanceId}",
             baId, stepId, instanceId);
         try
         {
@@ -78,7 +77,7 @@ public class ContractorManagementService : IContractorManagementService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to assign contractor {BaId}", baId);
+            _logger.LogError(ex, "Failed to assign contractor {BaId}", baId);
             throw;
         }
     }
@@ -109,7 +108,7 @@ public class ContractorManagementService : IContractorManagementService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to remove contractor {BaId} from WO {InstanceId}", baId, instanceId);
+            _logger.LogError(ex, "Failed to remove contractor {BaId} from WO {InstanceId}", baId, instanceId);
             throw;
         }
     }
@@ -140,7 +139,7 @@ public class ContractorManagementService : IContractorManagementService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to get assignments for WO {InstanceId}", instanceId);
+            _logger.LogError(ex, "Failed to get assignments for WO {InstanceId}", instanceId);
             return new();
         }
     }
@@ -186,7 +185,7 @@ public class ContractorManagementService : IContractorManagementService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Qualification check failed for BA {BaId}", baId);
+            _logger.LogError(ex, "Qualification check failed for BA {BaId}", baId);
             return new ContractorQualificationResult(false, $"Validation error: {ex.Message}", null);
         }
     }

@@ -11,8 +11,8 @@ namespace Beep.OilandGas.Web.Services
     /// </summary>
     public interface IDemoDatabaseService
     {
-        Task<CreateDemoDatabaseResponse> CreateDemoDatabaseAsync(string userId, string seedDataOption, string connectionName = "PPDM39");
-        Task<List<DemoDatabaseMetadata>> GetMyDemoDatabasesAsync(string userId);
+        Task<CreateDemoDatabaseResponse> CreateDemoDatabaseAsync(string seedDataOption, string connectionName = "PPDM39");
+        Task<List<DemoDatabaseMetadata>> GetMyDemoDatabasesAsync();
         Task<bool> DeleteDemoDatabaseAsync(string connectionName);
     }
 
@@ -33,10 +33,9 @@ namespace Beep.OilandGas.Web.Services
         }
 
         /// <summary>
-        /// Create a demo database for a user
+        /// Create a demo database for the signed-in user (the API takes the owner from the caller's account)
         /// </summary>
         public async Task<CreateDemoDatabaseResponse> CreateDemoDatabaseAsync(
-            string userId, 
             string seedDataOption, 
             string connectionName = "PPDM39")
         {
@@ -44,7 +43,6 @@ namespace Beep.OilandGas.Web.Services
             {
                 var request = new CreateDemoDatabaseRequest
                 {
-                    UserId = userId,
                     SeedDataOption = seedDataOption,
                     ConnectionName = connectionName
                 };
@@ -60,7 +58,7 @@ namespace Beep.OilandGas.Web.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating demo database for user {UserId}", userId);
+                _logger.LogError(ex, "Error creating demo database");
                 return new CreateDemoDatabaseResponse
                 {
                     Success = false,
@@ -71,20 +69,19 @@ namespace Beep.OilandGas.Web.Services
         }
 
         /// <summary>
-        /// Get demo databases for a user
+        /// Get the signed-in user's demo databases
         /// </summary>
-        public async Task<List<DemoDatabaseMetadata>> GetMyDemoDatabasesAsync(string userId)
+        public async Task<List<DemoDatabaseMetadata>> GetMyDemoDatabasesAsync()
         {
             try
             {
-                var databases = await _apiClient.GetAsync<List<DemoDatabaseMetadata>>(
-                    $"/api/demo/my-databases?userId={Uri.EscapeDataString(userId)}");
+                var databases = await _apiClient.GetAsync<List<DemoDatabaseMetadata>>("/api/demo/my-databases");
 
                 return databases ?? new List<DemoDatabaseMetadata>();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting demo databases for user {UserId}", userId);
+                _logger.LogError(ex, "Error getting demo databases");
                 return new List<DemoDatabaseMetadata>();
             }
         }

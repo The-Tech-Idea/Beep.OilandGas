@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.HSE;
@@ -11,6 +10,7 @@ using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.LifeCycle.Services.Processes;
 using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.ApiService.Attributes;
+using Beep.OilandGas.ApiService.Services;
 
 namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 {
@@ -72,7 +72,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrEmpty(fieldId))
                  return BadRequest(new { error = "No active field selected." });
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+            var userId = User.ActingUserId();
 
             try
             {
@@ -213,7 +213,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrEmpty(fieldId))
                 return BadRequest(new { error = "No active field selected." });
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+            var userId = User.ActingUserId();
 
             try
             {
@@ -271,7 +271,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
                 if (string.IsNullOrWhiteSpace(request.RcaSummary))
                     return BadRequest(new { error = "RcaSummary is required." });
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+            var userId = User.ActingUserId();
 
             try
             {
@@ -349,7 +349,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
                 if (!request.CorrectiveActionDueDate.HasValue)
                     return BadRequest(new { error = "CorrectiveActionDueDate is required." });
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+            var userId = User.ActingUserId();
 
             try
             {
@@ -412,7 +412,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
                 if (string.IsNullOrWhiteSpace(actionId))
                     return BadRequest(new { error = "Action ID is required." });
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+            var userId = User.ActingUserId();
             var notes = request?.Notes ?? "Closed.";
 
             try
@@ -468,7 +468,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrWhiteSpace(incidentId))
                     return BadRequest(new { error = "Incident ID is required." });
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+            var userId = User.ActingUserId();
             var reason = request?.Reason ?? "Closed.";
 
             try

@@ -47,16 +47,13 @@ namespace Beep.OilandGas.Client.App.Services.Connection
             return new CurrentConnectionResponse { ConnectionName = CurrentConnectionName };
         }
 
-        public async Task<SetCurrentConnectionResult> SetCurrentConnectionAsync(string connectionName, string? userId = null, CancellationToken cancellationToken = default)
+        public async Task<SetCurrentConnectionResult> SetCurrentConnectionAsync(string connectionName, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(connectionName)) throw new ArgumentException("Connection name is required", nameof(connectionName));
             _app.SetCurrentConnectionInternal(connectionName);
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                var queryParams = new Dictionary<string, string>();
-                if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
-                var endpoint = BuildRequestUriWithParams($"/api/connection/current/{Uri.EscapeDataString(connectionName)}", queryParams);
-                return await PostAsync<object, SetCurrentConnectionResult>(endpoint, null!, cancellationToken);
+                return await PostAsync<object, SetCurrentConnectionResult>($"/api/connection/current/{Uri.EscapeDataString(connectionName)}", null!, cancellationToken);
             }
             return new SetCurrentConnectionResult { Success = true, Message = $"Current connection set to '{connectionName}'" };
         }

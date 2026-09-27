@@ -9,13 +9,5 @@ namespace Beep.OilandGas.Models.Data
             get => seedOptionValue;
             set => SetProperty(ref seedOptionValue, value);
         }
-
-        private string userIdValue = "SYSTEM";
-
-        public string UserId
-        {
-            get => userIdValue;
-            set => SetProperty(ref userIdValue, value);
-        }
     }
 }

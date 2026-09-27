@@ -1,5 +1,4 @@
 using System;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -24,8 +23,7 @@ public sealed class RequireCurrentFieldAccessAttribute : Attribute, IAsyncAuthor
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
         var principal = context.HttpContext.User;
-        var userId = principal?.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? principal?.Identity?.Name;
+        var userId = principal.FindActingUserId();
 
         var observability = context.HttpContext.RequestServices.GetService(typeof(IAuthorizationObservabilityService))
             as IAuthorizationObservabilityService;

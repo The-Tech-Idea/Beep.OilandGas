@@ -34,38 +34,34 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<object> CreateLOVAsync(object lovEntry, string userId = "SYSTEM", CancellationToken cancellationToken = default)
+        public async Task<object> CreateLOVAsync(object lovEntry, CancellationToken cancellationToken = default)
         {
             if (lovEntry == null) throw new ArgumentNullException(nameof(lovEntry));
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                var queryParams = new Dictionary<string, string> { ["userId"] = userId };
-                var endpoint = BuildRequestUriWithParams("/api/ppdm39lov", queryParams);
-                return await PostAsync<object, object>(endpoint, lovEntry, cancellationToken);
+                return await PostAsync<object, object>("/api/ppdm39lov", lovEntry, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<object> UpdateLOVAsync(string lovId, object lovEntry, string userId = "SYSTEM", CancellationToken cancellationToken = default)
+        public async Task<object> UpdateLOVAsync(string lovId, object lovEntry, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(lovId)) throw new ArgumentException("LOV ID is required", nameof(lovId));
             if (lovEntry == null) throw new ArgumentNullException(nameof(lovEntry));
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                var queryParams = new Dictionary<string, string> { ["userId"] = userId };
-                var endpoint = BuildRequestUriWithParams($"/api/ppdm39lov/{Uri.EscapeDataString(lovId)}", queryParams);
+                var endpoint = $"/api/ppdm39lov/{Uri.EscapeDataString(lovId)}";
                 return await PutAsync<object, object>(endpoint, lovEntry, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<object> DeleteLOVAsync(string lovId, string userId = "SYSTEM", CancellationToken cancellationToken = default)
+        public async Task<object> DeleteLOVAsync(string lovId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(lovId)) throw new ArgumentException("LOV ID is required", nameof(lovId));
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                var queryParams = new Dictionary<string, string> { ["userId"] = userId };
-                var endpoint = BuildRequestUriWithParams($"/api/ppdm39lov/{Uri.EscapeDataString(lovId)}", queryParams);
+                var endpoint = $"/api/ppdm39lov/{Uri.EscapeDataString(lovId)}";
                 return await DeleteAsync<object>(endpoint, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");

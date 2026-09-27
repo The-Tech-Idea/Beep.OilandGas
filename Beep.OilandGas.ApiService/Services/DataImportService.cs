@@ -19,10 +19,11 @@ namespace Beep.OilandGas.ApiService.Services
             string connectionName="PPDM39",ILogger<DataImportService>? logger=null)
         {_editor=editor;_commonColumnHandler=commonColumnHandler;_defaults=defaults;_metadata=metadata;_connectionName=connectionName;_logger=logger;}
 
-        public async Task<DataImportResult> ImportCsvAsync(string csvFilePath,string tableName,
+        public async Task<DataImportResult> ImportCsvAsync(string csvFilePath,string tableName,string userId,
             DataImportOptions? options=null,IProgress<int>? progress=null,CancellationToken token=default)
         {
             if(string.IsNullOrWhiteSpace(csvFilePath))throw new ArgumentException("CSV path required");
+            ArgumentException.ThrowIfNullOrWhiteSpace(userId);
             if(string.IsNullOrWhiteSpace(tableName))throw new ArgumentException("Table name required");
             if(!File.Exists(csvFilePath))throw new FileNotFoundException($"CSV not found: {csvFilePath}");
 
@@ -70,7 +71,7 @@ namespace Beep.OilandGas.ApiService.Services
                         // Run quality rules
                         bool passed=true;
                         foreach(var rule in qualityRules){if(!rule.Evaluate(entity)){failed++;passed=false;break;}}
-                        if(passed){await repo.InsertAsync(entity,"SYSTEM");inserted++;}
+                        if(passed){await repo.InsertAsync(entity,userId);inserted++;}
                     }
                     catch(Exception ex){_logger.LogWarning(ex,"Row {Row} failed",i+2);failed++;}
                 }

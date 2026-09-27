@@ -1,0 +1,11 @@
+@inherits LayoutComponentBase
+
+@* A page with nothing around it but the theme, for a page that must render when the rest of the application cannot —
+   the error page. The main layout asks the API for the repository's readiness and loads navigation, personas and
+   notifications, any of which may be what failed. *@
+
+<MudLayout>
+    <MudMainContent>
+        @Body
+    </MudMainContent>
+</MudLayout>

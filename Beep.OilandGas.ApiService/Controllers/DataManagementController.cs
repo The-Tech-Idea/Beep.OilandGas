@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Repositories;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
@@ -134,6 +135,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpPost("{tableName}")]
         public async Task<ActionResult<object>> CreateTableRecord(string tableName, [FromBody] JsonElement entityJson)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
             try
@@ -146,9 +148,6 @@ namespace Beep.OilandGas.ApiService.Controllers
                 var entity = await ConvertJsonToEntity(entityJson, repository.EntityType);
                 if (entity == null)
                     return BadRequest(new { error = "Invalid entity data." });
-
-                // Get user ID from request (or use default)
-                var userId = GetUserIdFromRequest() ?? "SYSTEM";
 
                 var createdEntity = await repository.InsertAsync(entity, userId);
                 var recordId = await GetRecordIdAsync(createdEntity, repository);
@@ -168,6 +167,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpPost("{tableName}/batch")]
         public async Task<ActionResult<List<object>>> CreateTableRecordsBatch(string tableName, [FromBody] List<JsonElement> entitiesJson)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
             try
@@ -191,9 +191,6 @@ namespace Beep.OilandGas.ApiService.Controllers
                 if (entities.Count == 0)
                     return BadRequest(new { error = "No valid entities to create." });
 
-                // Get user ID from request (or use default)
-                var userId = GetUserIdFromRequest() ?? "SYSTEM";
-
                 var createdEntities = await repository.InsertBatchAsync(entities, userId);
                 return Ok(createdEntities.ToList());
             }
@@ -211,6 +208,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpPut("{tableName}/{id}")]
         public async Task<ActionResult<object>> UpdateTableRecord(string tableName, string id, [FromBody] JsonElement entityJson)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
             if (string.IsNullOrWhiteSpace(id))
@@ -225,9 +223,6 @@ namespace Beep.OilandGas.ApiService.Controllers
                 var entity = await ConvertJsonToEntity(entityJson, repository.EntityType);
                 if (entity == null)
                     return BadRequest(new { error = "Invalid entity data." });
-
-                // Get user ID from request (or use default)
-                var userId = GetUserIdFromRequest() ?? "SYSTEM";
 
                 var updatedEntity = await repository.UpdateAsync(entity, userId);
                 return Ok(updatedEntity);
@@ -246,6 +241,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpPut("{tableName}")]
         public async Task<ActionResult<object>> UpdateTableRecordFull(string tableName, [FromBody] JsonElement entityJson)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
             try
@@ -258,9 +254,6 @@ namespace Beep.OilandGas.ApiService.Controllers
                 var entity = await ConvertJsonToEntity(entityJson, repository.EntityType);
                 if (entity == null)
                     return BadRequest(new { error = "Invalid entity data." });
-
-                // Get user ID from request (or use default)
-                var userId = GetUserIdFromRequest() ?? "SYSTEM";
 
                 var updatedEntity = await repository.UpdateAsync(entity, userId);
                 return Ok(updatedEntity);
@@ -764,22 +757,6 @@ namespace Beep.OilandGas.ApiService.Controllers
                 _logger.LogError(ex, "Error getting record ID from entity");
                 return null;
             }
-        }
-
-        /// <summary>
-        /// Gets user ID from validated JWT claims only. Never trusts request headers.
-        /// </summary>
-        private string? GetUserIdFromRequest()
-        {
-            // Only extract user ID from validated JWT claims — never from request headers.
-            if (User?.Identity?.IsAuthenticated == true)
-            {
-                return User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ??
-                       User.FindFirst("sub")?.Value ??
-                       User.Identity.Name;
-            }
-
-            return null;
         }
     }
 }

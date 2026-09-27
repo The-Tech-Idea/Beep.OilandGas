@@ -18,9 +18,9 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
 
         Task<List<T>> GetEntitiesAsync<T>(string tableName, object request, CancellationToken cancellationToken = default);
         Task<T> GetEntityAsync<T>(string tableName, string id, CancellationToken cancellationToken = default);
-        Task<T> InsertEntityAsync<T>(string tableName, T request, string userId = "SYSTEM", CancellationToken cancellationToken = default);
-        Task<T> UpdateEntityAsync<T>(string tableName, string id, T request, string userId = "SYSTEM", CancellationToken cancellationToken = default);
-        Task<bool> DeleteEntityAsync(string tableName, string id, string userId = "SYSTEM", CancellationToken cancellationToken = default);
+        Task<T> InsertEntityAsync<T>(string tableName, T request, CancellationToken cancellationToken = default);
+        Task<T> UpdateEntityAsync<T>(string tableName, string id, T request, CancellationToken cancellationToken = default);
+        Task<bool> DeleteEntityAsync(string tableName, string id, CancellationToken cancellationToken = default);
 
         #endregion
 
@@ -45,11 +45,11 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
 
         #region Versioning
 
-        Task<object> CreateVersionAsync(string tableName, object entity, string userId, string? versionLabel = null, CancellationToken cancellationToken = default);
+        Task<object> CreateVersionAsync(string tableName, object entity, string? versionLabel = null, CancellationToken cancellationToken = default);
         Task<List<object>> GetVersionsAsync(string tableName, object entityId, CancellationToken cancellationToken = default);
         Task<object> GetVersionAsync(string tableName, object entityId, int versionNumber, CancellationToken cancellationToken = default);
         Task<object> CompareVersionsAsync(string tableName, object entityId, int version1, int version2, CancellationToken cancellationToken = default);
-        Task<object> RollbackToVersionAsync(string tableName, object entityId, int versionNumber, string userId, CancellationToken cancellationToken = default);
+        Task<object> RollbackToVersionAsync(string tableName, object entityId, int versionNumber, CancellationToken cancellationToken = default);
 
         #endregion
 
@@ -67,9 +67,9 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
         Task<List<object>> GetLOVAsync(string lovType, CancellationToken cancellationToken = default);
         Task<List<object>> GetLOVsByTypeAsync(string lovType, CancellationToken cancellationToken = default);
         Task<object> GetLOVByCodeAsync(string lovType, string code, CancellationToken cancellationToken = default);
-        Task<object> CreateLOVAsync(object lovEntry, string userId = "SYSTEM", CancellationToken cancellationToken = default);
-        Task<object> UpdateLOVAsync(string lovId, object lovEntry, string userId = "SYSTEM", CancellationToken cancellationToken = default);
-        Task<object> DeleteLOVAsync(string lovId, string userId = "SYSTEM", CancellationToken cancellationToken = default);
+        Task<object> CreateLOVAsync(object lovEntry, CancellationToken cancellationToken = default);
+        Task<object> UpdateLOVAsync(string lovId, object lovEntry, CancellationToken cancellationToken = default);
+        Task<object> DeleteLOVAsync(string lovId, CancellationToken cancellationToken = default);
         Task<List<object>> GetReferenceTableDataAsync(string tableName, CancellationToken cancellationToken = default);
 
         #endregion
@@ -77,7 +77,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
         #region Field Mapping
 
         Task<object> GetFieldMappingsAsync(string sourceTable, string targetTable, CancellationToken cancellationToken = default);
-        Task<object> SaveFieldMappingAsync(object mapping, string userId = "SYSTEM", CancellationToken cancellationToken = default);
+        Task<object> SaveFieldMappingAsync(object mapping, CancellationToken cancellationToken = default);
         Task<object> ApplyFieldMappingAsync(string mappingId, object sourceEntity, CancellationToken cancellationToken = default);
 
         #endregion
@@ -109,10 +109,10 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
 
         #region Workflow
 
-        Task<WorkflowExecutionResult> StartWorkflowAsync(string workflowType, object request, string userId, CancellationToken cancellationToken = default);
+        Task<WorkflowExecutionResult> StartWorkflowAsync(string workflowType, object request, CancellationToken cancellationToken = default);
         Task<WorkflowStatus> GetWorkflowStatusAsync(string workflowId, CancellationToken cancellationToken = default);
-        Task<WorkflowExecutionResult> AdvanceWorkflowAsync(string workflowId, object action, string userId, CancellationToken cancellationToken = default);
-        Task<List<WorkflowExecutionResult>> GetPendingWorkflowsAsync(string? userId = null, CancellationToken cancellationToken = default);
+        Task<WorkflowExecutionResult> AdvanceWorkflowAsync(string workflowId, object action, CancellationToken cancellationToken = default);
+        Task<List<WorkflowExecutionResult>> GetPendingWorkflowsAsync(CancellationToken cancellationToken = default);
 
         #endregion
 
@@ -126,12 +126,12 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
 
         #region Defaults Management (Per Data Source)
 
-        Task<string?> GetDefaultValueAsync(string key, string databaseId, string? userId = null, CancellationToken cancellationToken = default);
-        Task SetDefaultValueAsync(string key, string value, string databaseId, string? userId = null, string category = "System", string valueType = "String", string? description = null, CancellationToken cancellationToken = default);
-        Task<Dictionary<string, string>> GetDefaultsByCategoryAsync(string category, string databaseId, string? userId = null, CancellationToken cancellationToken = default);
-        Task<Dictionary<string, string>> GetDefaultsForDatabaseAsync(string databaseId, string? userId = null, CancellationToken cancellationToken = default);
-        Task InitializeSystemDefaultsAsync(string databaseId, string userId = "SYSTEM", CancellationToken cancellationToken = default);
-        Task ResetToSystemDefaultsAsync(string databaseId, string userId, CancellationToken cancellationToken = default);
+        Task<string?> GetDefaultValueAsync(string key, string databaseId, CancellationToken cancellationToken = default);
+        Task SetDefaultValueAsync(string key, string value, string databaseId, string category = "System", string valueType = "String", string? description = null, CancellationToken cancellationToken = default);
+        Task<Dictionary<string, string>> GetDefaultsByCategoryAsync(string category, string databaseId, CancellationToken cancellationToken = default);
+        Task<Dictionary<string, string>> GetDefaultsForDatabaseAsync(string databaseId, CancellationToken cancellationToken = default);
+        Task InitializeSystemDefaultsAsync(string databaseId, CancellationToken cancellationToken = default);
+        Task ResetToSystemDefaultsAsync(string databaseId, CancellationToken cancellationToken = default);
         Task<Dictionary<string, string>> GetStandardDefaultsAsync(CancellationToken cancellationToken = default);
 
         #endregion
@@ -140,16 +140,16 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
 
         #region Batch Operations
 
-        Task<List<T>> InsertBatchAsync<T>(string tableName, List<T> entities, string userId, int batchSize = 100, CancellationToken cancellationToken = default);
-        Task<List<T>> UpdateBatchAsync<T>(string tableName, List<T> entities, string userId, int batchSize = 100, CancellationToken cancellationToken = default);
-        Task<int> DeleteBatchAsync(string tableName, List<string> ids, string userId, bool softDelete = true, int batchSize = 100, CancellationToken cancellationToken = default);
-        Task<List<T>> UpsertBatchAsync<T>(string tableName, List<T> entities, string userId, int batchSize = 100, CancellationToken cancellationToken = default);
+        Task<List<T>> InsertBatchAsync<T>(string tableName, List<T> entities, int batchSize = 100, CancellationToken cancellationToken = default);
+        Task<List<T>> UpdateBatchAsync<T>(string tableName, List<T> entities, int batchSize = 100, CancellationToken cancellationToken = default);
+        Task<int> DeleteBatchAsync(string tableName, List<string> ids, bool softDelete = true, int batchSize = 100, CancellationToken cancellationToken = default);
+        Task<List<T>> UpsertBatchAsync<T>(string tableName, List<T> entities, int batchSize = 100, CancellationToken cancellationToken = default);
 
         #endregion
 
         #region Import/Export
 
-        Task<ImportResult> ImportFromCsvAsync(string tableName, string csvFilePath, string userId, Dictionary<string, string>? columnMapping = null, bool skipHeaderRow = true, bool validateForeignKeys = true, CancellationToken cancellationToken = default);
+        Task<ImportResult> ImportFromCsvAsync(string tableName, string csvFilePath, Dictionary<string, string>? columnMapping = null, bool skipHeaderRow = true, bool validateForeignKeys = true, CancellationToken cancellationToken = default);
         Task<int> ExportToCsvAsync(string tableName, string csvFilePath, List<object>? filters = null, bool includeHeaders = true, CancellationToken cancellationToken = default);
 
         #endregion

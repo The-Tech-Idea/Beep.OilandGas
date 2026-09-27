@@ -1,5 +1,7 @@
+using System.Security.Claims;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -74,13 +76,13 @@ public class EconomicAnalysisFieldControllerTests
     public async Task SaveResult_ReturnsBadRequest_WhenAnalysisIdMissing()
     {
         var service = new Mock<IEconomicAnalysisService>(MockBehavior.Strict);
-        var controller = new FieldEconomicAnalysisController(service.Object, NullLogger<FieldEconomicAnalysisController>.Instance);
+        var controller = SignedIn(new FieldEconomicAnalysisController(service.Object, NullLogger<FieldEconomicAnalysisController>.Instance));
 
         var result = await controller.SaveResult(new SaveAnalysisResultRequest
         {
             AnalysisId = "",
             Result = new EconomicResult()
-        }, "u-1");
+        });
 
         Assert.IsType<BadRequestObjectResult>(result);
         service.VerifyNoOtherCalls();
@@ -90,15 +92,27 @@ public class EconomicAnalysisFieldControllerTests
     public async Task SaveResult_ReturnsBadRequest_WhenResultMissing()
     {
         var service = new Mock<IEconomicAnalysisService>(MockBehavior.Strict);
-        var controller = new FieldEconomicAnalysisController(service.Object, NullLogger<FieldEconomicAnalysisController>.Instance);
+        var controller = SignedIn(new FieldEconomicAnalysisController(service.Object, NullLogger<FieldEconomicAnalysisController>.Instance));
 
         var result = await controller.SaveResult(new SaveAnalysisResultRequest
         {
             AnalysisId = "EA-9",
             Result = null
-        }, "u-1");
+        });
 
         Assert.IsType<BadRequestObjectResult>(result);
         service.VerifyNoOtherCalls();
+    }
+
+    private static FieldEconomicAnalysisController SignedIn(FieldEconomicAnalysisController controller)
+    {
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("party_id", "u-1")], "TestAuth"))
+            }
+        };
+        return controller;
     }
 }

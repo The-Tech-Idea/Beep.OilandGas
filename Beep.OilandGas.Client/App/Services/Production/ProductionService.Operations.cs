@@ -53,14 +53,12 @@ namespace Beep.OilandGas.Client.App.Services.Production
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<PRODUCTION_ALLOCATION> RecordProductionAsync(PRODUCTION_ALLOCATION productionRecord, string? userId = null, CancellationToken cancellationToken = default)
+        public async Task<PRODUCTION_ALLOCATION> RecordProductionAsync(PRODUCTION_ALLOCATION productionRecord, CancellationToken cancellationToken = default)
         {
             if (productionRecord == null) throw new ArgumentNullException(nameof(productionRecord));
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                var queryParams = new Dictionary<string, string>();
-                if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
-                var endpoint = BuildRequestUriWithParams("/api/production/record", queryParams);
+                var endpoint = "/api/production/record";
                 return await PostAsync<PRODUCTION_ALLOCATION, PRODUCTION_ALLOCATION>(endpoint, productionRecord, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");

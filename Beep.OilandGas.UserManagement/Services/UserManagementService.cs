@@ -2,9 +2,7 @@ using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces.Security;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -20,11 +18,6 @@ namespace Beep.OilandGas.UserManagement.Services
 {
     public class UserManagementService : IUserService
     {
-        private const int PasswordSaltSizeBytes = 16;
-        private const int PasswordHashSizeBytes = 32;
-        private const int PasswordIterations = 120000;
-        private const string PasswordHashPrefix = "pbkdf2";
-
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
@@ -77,18 +70,15 @@ namespace Beep.OilandGas.UserManagement.Services
             return (await repo.GetAsync(new List<AppFilter>())).Cast<USER>();
         }
 
-        public async Task<USER> CreateAsync(USER user, string password)
+        // No password: people sign in at Beep.IdentityServer. This hashed and verified passwords of its own — a second
+        // sign-in nothing called (S3-06 §6).
+        public async Task<USER> CreateAsync(USER user)
         {
             var repo = GetRepo<USER>("USER");
 
-            ValidatePasswordComplexity(password);
-            
-            if (string.IsNullOrEmpty(user.USER_ID)) 
+            if (string.IsNullOrEmpty(user.USER_ID))
                 user.USER_ID = Guid.NewGuid().ToString();
 
-            // Hash password
-            user.PASSWORD_HASH = HashPassword(password);
-            
             await repo.InsertAsync(user, "system"); // Insert/Update
             return user;
         }
@@ -118,16 +108,6 @@ namespace Beep.OilandGas.UserManagement.Services
             // Hard delete or Soft delete? PPDM usually soft delete via Active Ind
             // Assuming hard delete for now or repo handles it
              await repo.SoftDeleteAsync(id, "system"); return true; 
-        }
-
-        public async Task<bool> CheckPasswordAsync(USER user, string password)
-        {
-            if (user == null) return false;
-
-            if (string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(user.PASSWORD_HASH))
-                return false;
-
-            return VerifyPassword(password, user.PASSWORD_HASH);
         }
 
         // Roles
@@ -291,87 +271,5 @@ namespace Beep.OilandGas.UserManagement.Services
              }
         }
 
-        private static string HashPassword(string password)
-        {
-            var salt = RandomNumberGenerator.GetBytes(PasswordSaltSizeBytes);
-            var hash = Rfc2898DeriveBytes.Pbkdf2(
-                password,
-                salt,
-                PasswordIterations,
-                HashAlgorithmName.SHA256,
-                PasswordHashSizeBytes);
-
-            return string.Join(
-                '$',
-                PasswordHashPrefix,
-                PasswordIterations.ToString(),
-                Convert.ToBase64String(salt),
-                Convert.ToBase64String(hash));
-        }
-
-        private static bool VerifyPassword(string password, string storedHash)
-        {
-            if (storedHash.StartsWith(PasswordHashPrefix + "$", StringComparison.OrdinalIgnoreCase))
-            {
-                var segments = storedHash.Split('$', StringSplitOptions.RemoveEmptyEntries);
-                if (segments.Length != 4)
-                    return false;
-
-                if (!int.TryParse(segments[1], out var iterations) || iterations <= 0)
-                    return false;
-
-                byte[] salt;
-                byte[] expectedHash;
-                try
-                {
-                    salt = Convert.FromBase64String(segments[2]);
-                    expectedHash = Convert.FromBase64String(segments[3]);
-                }
-                catch (FormatException)
-                {
-                    return false;
-                }
-
-                var actualHash = Rfc2898DeriveBytes.Pbkdf2(
-                    password,
-                    salt,
-                    iterations,
-                    HashAlgorithmName.SHA256,
-                    expectedHash.Length);
-
-                return CryptographicOperations.FixedTimeEquals(actualHash, expectedHash);
-            }
-
-            // Legacy fallback for existing SHA256 hashes.
-            using var sha = SHA256.Create();
-            var bytes = Encoding.UTF8.GetBytes(password);
-            var legacyHash = Convert.ToBase64String(sha.ComputeHash(bytes));
-            var expectedLegacy = Encoding.UTF8.GetBytes(storedHash);
-            var actualLegacy = Encoding.UTF8.GetBytes(legacyHash);
-
-            return expectedLegacy.Length == actualLegacy.Length
-                && CryptographicOperations.FixedTimeEquals(actualLegacy, expectedLegacy);
-        }
-
-        private static void ValidatePasswordComplexity(string password)
-        {
-            if (string.IsNullOrWhiteSpace(password))
-                throw new ArgumentException("Password is required.", nameof(password));
-
-            if (password.Length < 12)
-                throw new ArgumentException("Password must be at least 12 characters.", nameof(password));
-
-            if (!password.Any(char.IsUpper))
-                throw new ArgumentException("Password must include an uppercase letter.", nameof(password));
-
-            if (!password.Any(char.IsLower))
-                throw new ArgumentException("Password must include a lowercase letter.", nameof(password));
-
-            if (!password.Any(char.IsDigit))
-                throw new ArgumentException("Password must include a digit.", nameof(password));
-
-            if (!Regex.IsMatch(password, "[^a-zA-Z0-9]"))
-                throw new ArgumentException("Password must include a special character.", nameof(password));
-        }
     }
 }

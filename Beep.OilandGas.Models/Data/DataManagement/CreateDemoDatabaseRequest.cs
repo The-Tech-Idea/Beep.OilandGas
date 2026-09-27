@@ -9,7 +9,7 @@ namespace Beep.OilandGas.Models.Data.DataManagement
     {
         private string UserIdValue = string.Empty;
 
-        [Required(ErrorMessage = "UserId is required")]
+        // Set by the API from the signed-in account (the demo database's owner); a value a client sends is overwritten.
         public string UserId
 
         {

@@ -18,7 +18,7 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
 
         Task<FlashResult> PerformIsothermalFlashAsync(FLASH_CONDITIONS request, CancellationToken cancellationToken = default);
         Task<List<FlashResult>> PerformMultiStageFlashAsync(FLASH_CONDITIONS request, CancellationToken cancellationToken = default);
-        Task<FLASH_CALCULATION_RESULT> SaveFlashResultAsync(FLASH_CALCULATION_RESULT result, string? userId = null, CancellationToken cancellationToken = default);
+        Task<FLASH_CALCULATION_RESULT> SaveFlashResultAsync(FLASH_CALCULATION_RESULT result, CancellationToken cancellationToken = default);
         Task<List<FLASH_CALCULATION_RESULT>> GetFlashHistoryAsync(string compositionId, CancellationToken cancellationToken = default);
 
         #endregion
@@ -32,7 +32,7 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
         Task<OptimizationResult> OptimizeSystemAsync(string wellUWI, OptimizationGoals optimizationGoals, CancellationToken cancellationToken = default);
 
         /// <summary>Save nodal result — <see cref="NodalAnalysisHttpRoutes.Result"/>.</summary>
-        Task<bool> SaveNodalAnalysisResultAsync(NodalAnalysisRunResult result, string? userId = null, CancellationToken cancellationToken = default);
+        Task<bool> SaveNodalAnalysisResultAsync(NodalAnalysisRunResult result, CancellationToken cancellationToken = default);
 
         /// <summary>Nodal history — GET <see cref="NodalAnalysisHttpRoutes.Prefix"/>/history/{{wellUWI}}.</summary>
         Task<List<NodalAnalysisRunResult>> GetNodalAnalysisHistoryAsync(string wellId, CancellationToken cancellationToken = default);
@@ -63,7 +63,7 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
         Task<decimal> CalculateIRRAsync(List<CashFlow> request, CancellationToken cancellationToken = default);
         Task<EconomicResult> PerformEconomicAnalysisAsync(List<CashFlow> request, CancellationToken cancellationToken = default);
         Task<List<NPV_PROFILE_POINT>> GenerateNPVProfileAsync(List<ECONOMIC_CASH_FLOW> request, CancellationToken cancellationToken = default);
-        Task<ECONOMIC_ANALYSIS_RESULT> SaveEconomicResultAsync(ECONOMIC_ANALYSIS_RESULT result, string? userId = null, CancellationToken cancellationToken = default);
+        Task<ECONOMIC_ANALYSIS_RESULT> SaveEconomicResultAsync(ECONOMIC_ANALYSIS_RESULT result, CancellationToken cancellationToken = default);
         Task<ECONOMIC_ANALYSIS_RESULT> GetEconomicResultAsync(string resultId, CancellationToken cancellationToken = default);
 
         #endregion

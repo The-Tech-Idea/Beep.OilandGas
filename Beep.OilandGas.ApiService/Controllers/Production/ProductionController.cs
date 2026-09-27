@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Beep.OilandGas.ApiService.Services;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -83,9 +84,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
         /// </summary>
         [HttpPost("field/forecasts")]
         public async Task<ActionResult<ProductionForecastResponse>> CreateProductionForecast(
-            [FromBody] ProductionForecastRequest forecastData,
-            [FromQuery] string userId)
+            [FromBody] ProductionForecastRequest forecastData)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (_fieldOrchestrator == null)
@@ -98,11 +99,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
                 if (string.IsNullOrEmpty(currentFieldId))
                 {
                         return BadRequest(new { error = "No active field selected." });
-                }
-
-                if (string.IsNullOrWhiteSpace(userId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var productionService = _fieldOrchestrator.GetProductionService();

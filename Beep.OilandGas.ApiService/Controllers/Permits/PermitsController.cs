@@ -5,7 +5,7 @@ using Beep.OilandGas.PermitsAndApplications.Validation;
 using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using Beep.OilandGas.ApiService.Services;
 
 namespace Beep.OilandGas.ApiService.Controllers.Permits;
 
@@ -37,8 +37,6 @@ public class PermitsController : ControllerBase
         _statusHistory = statusHistory;
         _fieldOrchestrator = fieldOrchestrator;
     }
-
-    private string UserId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
 
     // ── Application CRUD ──────────────────────────────────────────────────────
 
@@ -106,6 +104,7 @@ public class PermitsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<string>> CreateAsync([FromBody] CreatePermitApplicationRequest request)
     {
+        var userId = User.ActingUserId();
         if (request == null)
             return BadRequest(new { error = "Request body is required." });
 
@@ -123,7 +122,7 @@ public class PermitsController : ControllerBase
             STATE_PROVINCE = StateProvince.Other
         };
 
-        var created = await _lifecycle.CreateAsync(application, UserId);
+        var created = await _lifecycle.CreateAsync(application, userId);
         return CreatedAtAction(nameof(GetByIdAsync), new { applicationId = created.PERMIT_APPLICATION_ID }, created.PERMIT_APPLICATION_ID);
     }
 
@@ -133,6 +132,7 @@ public class PermitsController : ControllerBase
     [HttpPut("{applicationId}")]
     public async Task<ActionResult> UpdateAsync(string applicationId, [FromBody] UpdatePermitApplicationRequest request)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(applicationId))
             return BadRequest(new { error = "Application ID is required." });
         if (request == null)
@@ -151,7 +151,7 @@ public class PermitsController : ControllerBase
         if (request.Description != null)
             existing.REMARKS = request.Description;
 
-        await _lifecycle.UpdateAsync(applicationId, existing, UserId);
+        await _lifecycle.UpdateAsync(applicationId, existing, userId);
         return NoContent();
     }
 
@@ -163,6 +163,7 @@ public class PermitsController : ControllerBase
     [HttpPost("{applicationId}/submit")]
     public async Task<ActionResult> SubmitAsync(string applicationId)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(applicationId))
             return BadRequest(new { error = "Application ID is required." });
 
@@ -170,7 +171,7 @@ public class PermitsController : ControllerBase
         if (existing == null)
             return NotFound(new { error = $"Permit application {applicationId} not found." });
 
-        var submitted = await _lifecycle.SubmitAsync(applicationId, UserId);
+        var submitted = await _lifecycle.SubmitAsync(applicationId, userId);
         return Ok(new { applicationId = submitted.PERMIT_APPLICATION_ID, status = submitted.STATUS.ToString() });
     }
 
@@ -182,6 +183,7 @@ public class PermitsController : ControllerBase
         string applicationId,
         [FromBody] PermitDecisionRequest request)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(applicationId))
             return BadRequest(new { error = "Application ID is required." });
         if (request == null || string.IsNullOrWhiteSpace(request.Decision))
@@ -191,7 +193,7 @@ public class PermitsController : ControllerBase
             applicationId,
             request.Decision,
             request.Remarks ?? string.Empty,
-            UserId);
+            userId);
 
         return Ok(new { applicationId = result.PERMIT_APPLICATION_ID, status = result.STATUS.ToString(), decision = result.DECISION });
     }

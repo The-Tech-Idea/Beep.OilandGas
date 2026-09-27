@@ -8,7 +8,7 @@ namespace Beep.OilandGas.Web.Services
     {
         Task<LeaseSummary> EvaluateLeaseAsync(string leaseId);
         Task<List<LeaseSummary>> GetAvailableLeasesAsync(Dictionary<string, string>? filters = null);
-        Task<string> CreateLeaseAcquisitionAsync(CreateLeaseAcquisition leaseRequest, string? userId = null);
-        Task<bool> UpdateLeaseStatusAsync(string leaseId, string status, string? userId = null);
+        Task<string> CreateLeaseAcquisitionAsync(CreateLeaseAcquisition leaseRequest);
+        Task<bool> UpdateLeaseStatusAsync(string leaseId, string status);
     }
 }

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using System.Security.Claims;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.UserManagement.Contracts.Services;
 
@@ -23,14 +23,9 @@ public class WorkflowNotificationHub : Hub
         _authorization = authorization;
     }
 
-    private string Subject() => Context.User?.Identity?.IsAuthenticated == true
-        ? Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? throw new HubException("An authenticated subject is required.")
-        : throw new HubException("An authenticated subject is required.");
-
     public async Task SubscribeToPersona(string personaCode, string fieldId)
     {
-        var userId = Subject();
+        var userId = Context.User.ActingUserId();
         // Drop the previous subscription even if the new context is denied.
         if (Context.Items.Remove("persona-group", out var previous) && previous is string oldGroup)
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, oldGroup, Context.ConnectionAborted);
@@ -46,7 +41,7 @@ public class WorkflowNotificationHub : Hub
 
     public async Task SubscribeToProcess(string processInstanceId)
     {
-        var userId = Subject();
+        var userId = Context.User.ActingUserId();
         if (Context.Items.Remove("process-group", out var previous) && previous is string oldGroup)
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, oldGroup, Context.ConnectionAborted);
         if (string.IsNullOrWhiteSpace(processInstanceId)) throw new HubException("Process is required.");
@@ -59,7 +54,7 @@ public class WorkflowNotificationHub : Hub
 
     public override async Task OnConnectedAsync()
     {
-        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = Context.User.FindActingUserId();
         if (Context.User?.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(userId))
         {
             Context.Abort();

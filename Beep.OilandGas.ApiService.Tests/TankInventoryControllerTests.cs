@@ -35,13 +35,15 @@ public sealed class TankInventoryControllerTests
     }
 
     [Theory]
-    [InlineData("sub", true)]
-    [InlineData(ClaimTypes.NameIdentifier, false)]
-    public async Task CreateRequiresAuthenticatedLocalIdentity(string claimType, bool authenticated)
+    [InlineData("sub", null)]
+    [InlineData(ClaimTypes.NameIdentifier, null)]
+    [InlineData("party_id", "https://idp.example.test/")]
+    public async Task CreateRequiresTheAccountThisApiResolved(string claimType, string? issuer)
     {
-        var identity = new ClaimsIdentity([new Claim(claimType, "actor")], authenticated ? "test" : null);
-        var result = await Controller(identity).CreateTankInventory(new CreateTankInventoryRequest { TankBatteryId = "tank" });
-        Assert.IsType<ForbidResult>(result.Result);
+        var claim = issuer is null ? new Claim(claimType, "actor") : new Claim(claimType, "actor", ClaimValueTypes.String, issuer);
+        var identity = new ClaimsIdentity([claim], "test");
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            Controller(identity).CreateTankInventory(new CreateTankInventoryRequest { TankBatteryId = "tank" }));
         Assert.Equal(0, _resolutions);
         _editor.VerifyNoOtherCalls();
         _metadata.VerifyNoOtherCalls();
@@ -68,5 +70,5 @@ public sealed class TankInventoryControllerTests
         _metadata.VerifyNoOtherCalls();
     }
 
-    private static ClaimsIdentity LocalIdentity() => new([new Claim(ClaimTypes.NameIdentifier, "local-user")], "test");
+    private static ClaimsIdentity LocalIdentity() => new([new Claim("party_id", "local-user")], "test");
 }

@@ -43,17 +43,6 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref SkipExistingValue, value); }
 
         }
-        private string? UserIdValue;
-
-        public string? UserId
-
-        {
-
-            get { return this.UserIdValue; }
-
-            set { SetProperty(ref UserIdValue, value); }
-
-        }
         private string? ConnectionNameValue;
 
         public string? ConnectionName

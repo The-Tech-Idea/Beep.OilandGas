@@ -46,10 +46,6 @@ namespace Beep.OilandGas.UserManagement.Modules
             typeof(Beep.OilandGas.UserManagement.Models.Audit.UserAccessAuditEvent),
             typeof(Beep.OilandGas.UserManagement.Models.Audit.SetupWizardLog),
             typeof(Beep.OilandGas.UserManagement.Models.Audit.AuthorizationDecisionTrace),
-            // ── MFA, Password History, Session Management ────────────────────
-            typeof(Beep.OilandGas.UserManagement.Contracts.Services.UserMfaConfig),
-            typeof(Beep.OilandGas.UserManagement.Contracts.Services.PasswordHistory),
-            typeof(Beep.OilandGas.UserManagement.Contracts.Services.UserSession),
             // ── RBAC hardening (Phase 1: Persona-Role bridge, hierarchy, elevation) ──
             typeof(PERSONA_ROLE),
             typeof(ROLE_HIERARCHY),

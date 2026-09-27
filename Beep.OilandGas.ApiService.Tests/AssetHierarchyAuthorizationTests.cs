@@ -67,7 +67,7 @@ public class AssetHierarchyAuthorizationTests
     private static AssetHierarchyController Create(IAssetHierarchyService service, string? userId, bool administrator)
     {
         var claims = new List<Claim>();
-        if (userId is not null) claims.Add(new(ClaimTypes.NameIdentifier, userId));
+        if (userId is not null) claims.Add(new("party_id", userId));
         if (administrator) claims.Add(new(ClaimTypes.Role, "Administrator"));
         return new(service) { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext
         {

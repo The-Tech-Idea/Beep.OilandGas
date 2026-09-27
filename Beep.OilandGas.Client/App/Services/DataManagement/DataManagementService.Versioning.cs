@@ -9,14 +9,13 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
     {
         #region Versioning
 
-        public async Task<object> CreateVersionAsync(string tableName, object entity, string userId, string? versionLabel = null, CancellationToken cancellationToken = default)
+        public async Task<object> CreateVersionAsync(string tableName, object entity, string? versionLabel = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(tableName)) throw new ArgumentException("Table name is required", nameof(tableName));
             if (entity == null) throw new ArgumentNullException(nameof(entity));
-            if (string.IsNullOrEmpty(userId)) throw new ArgumentException("User ID is required", nameof(userId));
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                var queryParams = new Dictionary<string, string> { ["userId"] = userId };
+                var queryParams = new Dictionary<string, string>();
                 if (!string.IsNullOrEmpty(versionLabel)) queryParams["versionLabel"] = versionLabel;
                 var endpoint = BuildRequestUriWithParams($"/api/ppdm39versioning/{Uri.EscapeDataString(tableName)}/version", queryParams);
                 return await PostAsync<object, object>(endpoint, entity, cancellationToken);
@@ -51,15 +50,13 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<object> RollbackToVersionAsync(string tableName, object entityId, int versionNumber, string userId, CancellationToken cancellationToken = default)
+        public async Task<object> RollbackToVersionAsync(string tableName, object entityId, int versionNumber, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(tableName)) throw new ArgumentException("Table name is required", nameof(tableName));
             if (entityId == null) throw new ArgumentNullException(nameof(entityId));
-            if (string.IsNullOrEmpty(userId)) throw new ArgumentException("User ID is required", nameof(userId));
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                var queryParams = new Dictionary<string, string> { ["userId"] = userId };
-                var endpoint = BuildRequestUriWithParams($"/api/ppdm39versioning/{Uri.EscapeDataString(tableName)}/entity/{Uri.EscapeDataString(entityId.ToString()!)}/rollback/{versionNumber}", queryParams);
+                var endpoint = $"/api/ppdm39versioning/{Uri.EscapeDataString(tableName)}/entity/{Uri.EscapeDataString(entityId.ToString()!)}/rollback/{versionNumber}";
                 return await PostAsync<object, object>(endpoint, new { }, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");

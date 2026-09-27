@@ -7,6 +7,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
+using Beep.OilandGas.ApiService.Services;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Unitization
 {
@@ -63,6 +64,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Unitization
             [FromBody] CreateUnitAgreementRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -79,7 +81,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Unitization
                     TERMS_AND_CONDITIONS = request.TermsAndConditions
                 };
 
-                await repository.InsertAsync(unit, "system");
+                await repository.InsertAsync(unit, userId);
 
                 return Ok(new { UnitId = unit.UNIT_ID, UnitName = unit.UNIT_NAME });
             }

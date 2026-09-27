@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.ApiService.Attributes;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.ApiService.Controllers.Common;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
@@ -98,13 +98,14 @@ public class EconomicAnalysisController : ControllerBase
     }
 
     [HttpPost("result")]
-    public async Task<ActionResult> SaveResult([FromBody] SaveAnalysisResultRequest request, [FromQuery] string? userId = null)
+    public async Task<ActionResult> SaveResult([FromBody] SaveAnalysisResultRequest request)
     {
+        var userId = User.ActingUserId();
         if (!EconomicAnalysisControllerHelpers.TryValidateSaveRequest(request, out var validationError))
             return BadRequest(new { error = validationError });
         try
         {
-            await _service.SaveAnalysisResultAsync(request.AnalysisId, request.Result!, userId ?? ResolveUserId());
+            await _service.SaveAnalysisResultAsync(request.AnalysisId, request.Result!, userId);
             return Ok(new { message = "Economic analysis result saved successfully", analysisId = request.AnalysisId });
         }
         catch (ArgumentException ex)
@@ -143,10 +144,4 @@ public class EconomicAnalysisController : ControllerBase
             return StatusCode(500, new { error = "An internal error occurred." });
         }
     }
-
-    private string ResolveUserId()
-        => User.FindFirstValue(ClaimTypes.NameIdentifier)
-           ?? User.FindFirstValue("sub")
-           ?? "SYSTEM";
-
 }

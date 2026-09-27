@@ -63,17 +63,13 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
 
         public async Task<bool> SaveNodalAnalysisResultAsync(
             NodalAnalysisRunResult result,
-            string? userId = null,
             CancellationToken cancellationToken = default)
         {
             if (result == null)
                 throw new ArgumentNullException(nameof(result));
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                var queryParams = new Dictionary<string, string>();
-                if (!string.IsNullOrEmpty(userId))
-                    queryParams["userId"] = userId;
-                var endpoint = BuildRequestUriWithParams(NodalAnalysisHttpRoutes.Result, queryParams);
+                var endpoint = NodalAnalysisHttpRoutes.Result;
                 var response = await PostAsync<NodalAnalysisRunResult, NodalAnalysisSaveApiResponse>(
                     endpoint, result, cancellationToken);
                 return response != null;

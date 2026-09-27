@@ -144,7 +144,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Set current connection
         /// </summary>
-        public SetCurrentConnectionResult SetCurrentConnection(string connectionName, string? userId = null)
+        public SetCurrentConnectionResult SetCurrentConnection(string connectionName)
         {
             try
             {

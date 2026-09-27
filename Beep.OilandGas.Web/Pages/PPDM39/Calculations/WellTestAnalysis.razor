@@ -2,12 +2,10 @@
 @page "/analysis/well-test"
 @using System.Linq
 @using System.Net.Http
-@using System.Security.Claims
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.WellTestAnalysis
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
-@inject AuthenticationStateProvider AuthStateProvider
 @inject ICalculationServiceClient CalculationService
 @inject IDevelopmentServiceClient DevelopmentClient
 @inject IProductionServiceClient ProductionClient
@@ -371,7 +369,6 @@
 @code {
     private string _fieldName = string.Empty;
     private string? _fieldId;
-    private string? _currentUserId;
     private string? _selectedWellId;
     private string? _selectedTestId;
     private bool _useStoredTestData = true;
@@ -437,7 +434,6 @@
         try
         {
             await LoadFieldContextAsync();
-            await LoadUserAsync();
             await LoadWellsAsync();
             await ReloadHistoryAsync();
         }
@@ -461,12 +457,6 @@
         catch
         {
         }
-    }
-
-    private async Task LoadUserAsync()
-    {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
     }
 
     private async Task LoadWellsAsync()
@@ -720,7 +710,6 @@
             GasSpecificGravity = _isGasWell ? _gasSpecificGravity : null,
             ReservoirTemperature = _reservoirTemperature,
             InitialReservoirPressure = _initialReservoirPressure,
-            UserId = _currentUserId,
             FieldId = ResolveEffectiveFieldId()
         };
     }

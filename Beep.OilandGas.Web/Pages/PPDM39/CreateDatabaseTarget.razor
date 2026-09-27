@@ -56,9 +56,6 @@
                 <MudItem xs="12" md="4">
                     <MudTextField @bind-Value="Wizard.DemoConnectionName" Label="Demo Connection Name" Variant="Variant.Outlined" />
                 </MudItem>
-                <MudItem xs="12" md="4">
-                    <MudTextField @bind-Value="Wizard.UserId" Label="User ID" Variant="Variant.Outlined" />
-                </MudItem>
             }
             else
             {
@@ -191,7 +188,6 @@
                     "/api/demo/create",
                     new CreateDemoDatabaseRequest
                     {
-                        UserId = Wizard.UserId,
                         ConnectionName = string.IsNullOrWhiteSpace(Wizard.DemoConnectionName) ? null : Wizard.DemoConnectionName,
                         SeedDataOption = "reference-only"
                     });
@@ -225,8 +221,7 @@
                 Connection = config.ToConnectionProperties(),
                 SetAsCurrent = true,
                 OpenAfterSave = true,
-                TestAfterSave = false,
-                UserId = Wizard.UserId
+                TestAfterSave = false
             });
 
             Wizard.TargetReady = saveResult.Success;

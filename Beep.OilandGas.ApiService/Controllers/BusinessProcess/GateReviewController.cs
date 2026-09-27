@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
@@ -11,6 +10,7 @@ using Beep.OilandGas.LifeCycle.Services.Processes;
 using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.ApiService.Attributes;
+using Beep.OilandGas.ApiService.Services;
 
 namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 {
@@ -57,7 +57,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrEmpty(fieldId))
                     return BadRequest(new { error = "No active field selected." });
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+            var userId = User.ActingUserId();
 
             try
             {
@@ -108,7 +108,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (request.Decision != GateDecision.Approve)
                     return BadRequest(new { error = "Decision must be 'Approve' for this endpoint." });
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+            var userId = User.ActingUserId();
 
             try
             {
@@ -159,7 +159,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (request.Decision != GateDecision.Reject)
                     return BadRequest(new { error = "Decision must be 'Reject' for this endpoint." });
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+            var userId = User.ActingUserId();
 
             try
             {
@@ -208,7 +208,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (request.Decision != GateDecision.Defer)
                     return BadRequest(new { error = "Decision must be 'Defer' for this endpoint." });
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+            var userId = User.ActingUserId();
             var deferNote = request.DeferTargetDate.HasValue
                 ? $"Deferred to {request.DeferTargetDate:yyyy-MM-dd}. {request.Comments}"
                 : request.Comments;

@@ -21,7 +21,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
         Task<COST_ALLOCATION> GetCostAllocationAsync(string entityId, CancellationToken cancellationToken = default);
         Task<REVENUE_DISTRIBUTION> GetRevenueDistributionAsync(string entityId, CancellationToken cancellationToken = default);
         Task<ALLOCATION_RESULT> GetProductionAllocationAsync(PRODUCTION_ALLOCATION request, CancellationToken cancellationToken = default);
-        Task<ALLOCATION_RESULT> SaveProductionAllocationAsync(ALLOCATION_RESULT allocation, string? userId = null, CancellationToken cancellationToken = default);
+        Task<ALLOCATION_RESULT> SaveProductionAllocationAsync(ALLOCATION_RESULT allocation, CancellationToken cancellationToken = default);
 
         #endregion
 
@@ -43,7 +43,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
         Task<PRODUCTION_COSTS> UpdateOperationAsync(string operationId, PRODUCTION_COSTS request, CancellationToken cancellationToken = default);
         Task<PRODUCTION_ALLOCATION> GetProductionDataAsync(string wellId, CancellationToken cancellationToken = default);
         Task<List<PRODUCTION_ALLOCATION>> GetProductionHistoryAsync(string wellId, DateRangeRequest dateRange, CancellationToken cancellationToken = default);
-        Task<PRODUCTION_ALLOCATION> RecordProductionAsync(PRODUCTION_ALLOCATION productionRecord, string? userId = null, CancellationToken cancellationToken = default);
+        Task<PRODUCTION_ALLOCATION> RecordProductionAsync(PRODUCTION_ALLOCATION productionRecord, CancellationToken cancellationToken = default);
 
         #endregion
     }

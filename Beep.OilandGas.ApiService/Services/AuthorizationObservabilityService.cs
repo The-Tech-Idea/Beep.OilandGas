@@ -120,7 +120,8 @@ public sealed class AuthorizationObservabilityService : IAuthorizationObservabil
                 SCOPE_CONTEXT = observation.Endpoint
             };
 
-            await auditRepo.InsertAsync(ev, observation.UserId ?? "system");
+            // The audit row is the server's own record of a decision; the person it concerns is USER_ID above.
+            await auditRepo.InsertAsync(ev, ActingUser.System);
         }
         catch (Exception ex)
         {

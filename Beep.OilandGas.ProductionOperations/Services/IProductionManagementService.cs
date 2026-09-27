@@ -37,7 +37,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
         /// <summary>
         /// Creates a new production operation.
         /// </summary>
-        Task<PDEN> CreateProductionOperationAsync(CreateProductionOperationRequest createRequest, CancellationToken cancellationToken = default);
+        Task<PDEN> CreateProductionOperationAsync(CreateProductionOperationRequest createRequest, string userId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets production reports.

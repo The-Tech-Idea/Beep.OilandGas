@@ -104,22 +104,19 @@ public class UnavailableExecutionTests
         controller.ControllerContext = new ControllerContext { HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext() };
         if (authenticatedLocally)
             controller.HttpContext.User = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(
-                [new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, "local-admin")], "repository"));
-        var approval = await controller.ApproveSchemaMigration(new() { ApprovedBy = "spoofed" });
-        var execution = await controller.ExecuteSchemaMigration(new() { ExecutedBy = "spoofed" });
-        var start = await controller.StartSchemaMigration(new() { ExecutedBy = "spoofed" });
+                [new System.Security.Claims.Claim("party_id", "local-admin")], "repository"));
         if (authenticatedLocally)
         {
-            Assert.IsType<OkObjectResult>(approval.Result);
-            Assert.IsType<OkObjectResult>(execution.Result);
-            Assert.IsType<OkObjectResult>(start.Result);
+            Assert.IsType<OkObjectResult>((await controller.ApproveSchemaMigration(new() { ApprovedBy = "spoofed" })).Result);
+            Assert.IsType<OkObjectResult>((await controller.ExecuteSchemaMigration(new() { ExecutedBy = "spoofed" })).Result);
+            Assert.IsType<OkObjectResult>((await controller.StartSchemaMigration(new() { ExecutedBy = "spoofed" })).Result);
             migration.VerifyAll();
         }
         else
         {
-            Assert.IsType<ForbidResult>(approval.Result);
-            Assert.IsType<ForbidResult>(execution.Result);
-            Assert.IsType<ForbidResult>(start.Result);
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => controller.ApproveSchemaMigration(new() { ApprovedBy = "spoofed" }));
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => controller.ExecuteSchemaMigration(new() { ExecutedBy = "spoofed" }));
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => controller.StartSchemaMigration(new() { ExecutedBy = "spoofed" }));
             migration.VerifyNoOtherCalls();
         }
     }

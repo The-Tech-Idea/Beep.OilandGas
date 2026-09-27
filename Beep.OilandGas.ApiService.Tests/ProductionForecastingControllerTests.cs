@@ -193,7 +193,7 @@ public class ProductionForecastingControllerTests
     public async Task SaveForecast_ReturnsBadRequest_WhenBodyMissing()
     {
         var core = new Mock<IProductionForecastingService>(MockBehavior.Strict);
-        var controller = new ProductionForecastingController(core.Object, NullLogger<ProductionForecastingController>.Instance);
+        var controller = SignedIn(new ProductionForecastingController(core.Object, NullLogger<ProductionForecastingController>.Instance), "user-42");
 
         var result = await controller.SaveForecast(null);
 
@@ -202,20 +202,15 @@ public class ProductionForecastingControllerTests
     }
 
     [Fact]
-    public async Task SaveForecast_ReturnsOk_WhenServiceSucceeds()
+    public async Task SaveForecast_ReturnsOk_RecordingTheSignedInAccount()
     {
         var core = new Mock<IProductionForecastingService>(MockBehavior.Strict);
         core.Setup(s => s.SaveForecastAsync(It.IsAny<ProductionForecastResult>(), It.IsAny<string>()))
             .Returns(Task.CompletedTask);
-        var controller = new ProductionForecastingController(core.Object, NullLogger<ProductionForecastingController>.Instance);
-        var http = new DefaultHttpContext();
-        http.User = new ClaimsPrincipal(new ClaimsIdentity(
-            [new Claim(ClaimTypes.NameIdentifier, "user-42")],
-            authenticationType: "Test"));
-        controller.ControllerContext = new ControllerContext { HttpContext = http };
+        var controller = SignedIn(new ProductionForecastingController(core.Object, NullLogger<ProductionForecastingController>.Instance), "user-42");
 
         var forecast = new ProductionForecastResult { ForecastId = "F-1" };
-        var result = await controller.SaveForecast(forecast, userId: null);
+        var result = await controller.SaveForecast(forecast);
 
         Assert.IsType<OkObjectResult>(result);
         core.Verify(s => s.SaveForecastAsync(forecast, "user-42"), Times.Once);
@@ -227,11 +222,23 @@ public class ProductionForecastingControllerTests
         var core = new Mock<IProductionForecastingService>(MockBehavior.Strict);
         core.Setup(s => s.SaveForecastAsync(It.IsAny<ProductionForecastResult>(), It.IsAny<string>()))
             .ThrowsAsync(new ArgumentException("bad forecast"));
-        var controller = new ProductionForecastingController(core.Object, NullLogger<ProductionForecastingController>.Instance);
+        var controller = SignedIn(new ProductionForecastingController(core.Object, NullLogger<ProductionForecastingController>.Instance), "u1");
 
-        var result = await controller.SaveForecast(new ProductionForecastResult { ForecastId = "F-1" }, userId: "u1");
+        var result = await controller.SaveForecast(new ProductionForecastResult { ForecastId = "F-1" });
 
         Assert.IsType<BadRequestObjectResult>(result);
         core.VerifyAll();
+    }
+
+    private static ProductionForecastingController SignedIn(ProductionForecastingController controller, string userId)
+    {
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("party_id", userId)], "TestAuth"))
+            }
+        };
+        return controller;
     }
 }

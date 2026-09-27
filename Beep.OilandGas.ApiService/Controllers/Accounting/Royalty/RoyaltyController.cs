@@ -1,4 +1,4 @@
-using System.Security.Claims;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Accounting.Royalty;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
@@ -33,8 +33,7 @@ public sealed class RoyaltyController(IRoyaltyService royalties, IAccessControlS
 
     private async Task<IActionResult> WithCalculation(string royaltyId, bool write, Func<string, Task<IActionResult>> action)
     {
-        var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (User.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(actor)) return Unauthorized();
+        var actor = User.ActingUserId();
         try
         {
             if (write && !await access.HasPermissionAsync(actor, "Accounting.PostJournal", null)) return Forbid();

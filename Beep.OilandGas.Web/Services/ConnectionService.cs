@@ -18,7 +18,7 @@ namespace Beep.OilandGas.Web.Services
         Task<ConnectionInfo?> GetConnectionAsync(string connectionName);
         Task<ConnectionTestResult> TestConnectionAsync(string connectionName);
         Task<CurrentConnectionResponse> GetCurrentConnectionAsync();
-        Task<SetCurrentConnectionResult> SetCurrentConnectionAsync(string connectionName, string? userId = null);
+        Task<SetCurrentConnectionResult> SetCurrentConnectionAsync(string connectionName);
     }
 
     /// <summary>
@@ -117,11 +117,11 @@ namespace Beep.OilandGas.Web.Services
         /// <summary>
         /// Set current connection for user
         /// </summary>
-        public async Task<SetCurrentConnectionResult> SetCurrentConnectionAsync(string connectionName, string? userId = null)
+        public async Task<SetCurrentConnectionResult> SetCurrentConnectionAsync(string connectionName)
         {
             try
             {
-                var request = new { ConnectionName = connectionName, UserId = userId };
+                var request = new { ConnectionName = connectionName };
                 var result = await _apiClient.PostAsync<object, SetCurrentConnectionResult>("/api/connections/set-current", request);
                 return result ?? new SetCurrentConnectionResult
                 {

@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Drilling;
 using Beep.OilandGas.ApiService.Attributes;
+using Beep.OilandGas.ApiService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -79,13 +79,14 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("operations")]
         public async Task<ActionResult<DRILLING_OPERATION>> CreateDrillingOperationAsync([FromBody] CREATE_DRILLING_OPERATION createDto)
         {
+            var userId = User.ActingUserId();
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrWhiteSpace(fieldId))
                 return BadRequest(new { error = "No active field selected." });
 
             try
             {
-                var result = await _service.CreateDrillingOperationAsync(createDto, fieldId, GetUserId());
+                var result = await _service.CreateDrillingOperationAsync(createDto, fieldId, userId);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -98,6 +99,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPut("operations/{operationId}")]
         public async Task<ActionResult<DRILLING_OPERATION>> UpdateDrillingOperationAsync(string operationId, [FromBody] UpdateDrillingOperation updateDto)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(operationId))
                 return BadRequest(new { error = "Operation ID is required." });
 
@@ -107,7 +109,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
             try
             {
-                var result = await _service.UpdateDrillingOperationAsync(operationId, updateDto, fieldId, GetUserId());
+                var result = await _service.UpdateDrillingOperationAsync(operationId, updateDto, fieldId, userId);
                 return Ok(result);
             }
             catch (KeyNotFoundException)
@@ -150,6 +152,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("operations/{operationId}/reports")]
         public async Task<ActionResult<DRILLING_REPORT>> CreateDrillingReportAsync(string operationId, [FromBody] CreateDrillingReport createDto)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(operationId))
                 return BadRequest(new { error = "Operation ID is required." });
 
@@ -159,7 +162,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
             try
             {
-                var result = await _service.CreateDrillingReportAsync(operationId, createDto, fieldId, GetUserId());
+                var result = await _service.CreateDrillingReportAsync(operationId, createDto, fieldId, userId);
                 return Ok(result);
             }
             catch (KeyNotFoundException)
@@ -172,9 +175,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
-
-        private string GetUserId() => User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? User.FindFirst("sub")?.Value
-            ?? "SYSTEM";
     }
 }

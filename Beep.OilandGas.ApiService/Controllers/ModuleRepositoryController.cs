@@ -1,3 +1,4 @@
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
@@ -8,7 +9,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Data.OilGas;
-using System.Security.Claims;
 using System.Data;
 
 namespace Beep.OilandGas.ApiService.Controllers;
@@ -91,8 +91,8 @@ public sealed class ModuleRepositoryController(RepositoryDbContext repository, I
     {
         var module = Find(moduleId);
         if (module is null) return BadRequest(new { Error = "Unknown module or repository-owned security module." });
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (User.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(userId)) return Forbid();
+        if (User.Identity?.IsAuthenticated != true) return Forbid();
+        var userId = User.ActingUserId();
         try { ModuleSchemaBoundary.Validate(module.EntityTypes); }
         catch (ArgumentException)
         {

@@ -12,6 +12,7 @@ using Beep.OilandGas.Models.Data;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.ApiService.Attributes;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.LifeCycle.Services.Exploration.Processes;
 using Beep.OilandGas.ProspectIdentification;
 using PROSPECT = Beep.OilandGas.Models.Data.ProspectIdentification.PROSPECT;
@@ -85,18 +86,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
         /// <summary>POST /api/field/current/exploration/prospects</summary>
         [HttpPost("prospects")]
-        public async Task<ActionResult<PROSPECT>> CreateProspectAsync([FromBody] ProspectRequest request, [FromQuery] string? userId = null)
+        public async Task<ActionResult<PROSPECT>> CreateProspectAsync([FromBody] ProspectRequest request)
         {
+            var userId = User.ActingUserId();
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
             if (request == null) return BadRequest(new { error = "Prospect payload is required." });
             if (string.IsNullOrWhiteSpace(request.ProspectName)) return BadRequest(new { error = "Prospect name is required." });
 
-            var effectiveUserId = userId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
-
             try
             {
-                var createdProspect = await _explorationService.CreateProspectForFieldAsync(fieldId, request, effectiveUserId);
+                var createdProspect = await _explorationService.CreateProspectForFieldAsync(fieldId, request, userId);
                 return Ok(createdProspect);
             }
             catch (Exception ex)
@@ -174,21 +174,20 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
         /// <summary>PUT /api/field/current/exploration/prospects/{id}</summary>
         [HttpPut("prospects/{id}")]
-        public async Task<ActionResult<PROSPECT>> UpdateProspectAsync(string id, [FromBody] ProspectRequest request, [FromQuery] string? userId = null)
+        public async Task<ActionResult<PROSPECT>> UpdateProspectAsync(string id, [FromBody] ProspectRequest request)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "Prospect ID is required." });
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
             if (request == null) return BadRequest(new { error = "Prospect payload is required." });
-
-            var effectiveUserId = userId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
 
             try
             {
                 var existing = await _explorationService.GetProspectForFieldAsync(fieldId, id);
                 if (existing == null) return NotFound(new { error = $"Prospect {id} not found in field {fieldId}." });
 
-                var updatedProspect = await _explorationService.UpdateProspectForFieldAsync(fieldId, id, request, effectiveUserId);
+                var updatedProspect = await _explorationService.UpdateProspectForFieldAsync(fieldId, id, request, userId);
                 return Ok(updatedProspect);
             }
             catch (Exception ex)
@@ -200,17 +199,16 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
         /// <summary>DELETE /api/field/current/exploration/prospects/{id}</summary>
         [HttpDelete("prospects/{id}")]
-        public async Task<IActionResult> DeleteProspectAsync(string id, [FromQuery] string? userId = null)
+        public async Task<IActionResult> DeleteProspectAsync(string id)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "Prospect ID is required." });
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
-            var effectiveUserId = userId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
-
             try
             {
-                var deleted = await _explorationService.DeleteProspectForFieldAsync(fieldId, id, effectiveUserId);
+                var deleted = await _explorationService.DeleteProspectForFieldAsync(fieldId, id, userId);
                 if (!deleted) return NotFound(new { error = $"Prospect {id} not found in field {fieldId}." });
                 return NoContent();
             }
@@ -241,18 +239,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
         /// <summary>POST /api/field/current/exploration/seismic-surveys</summary>
         [HttpPost("seismic-surveys")]
-        public async Task<ActionResult<SEIS_ACQTN_SURVEY>> CreateSeismicSurveyAsync([FromBody] SeismicSurveyRequest request, [FromQuery] string? userId = null)
+        public async Task<ActionResult<SEIS_ACQTN_SURVEY>> CreateSeismicSurveyAsync([FromBody] SeismicSurveyRequest request)
         {
+            var userId = User.ActingUserId();
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
             if (request == null) return BadRequest(new { error = "Seismic survey payload is required." });
             if (string.IsNullOrWhiteSpace(request.SurveyName)) return BadRequest(new { error = "Survey name is required." });
 
-            var effectiveUserId = userId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
-
             try
             {
-                var createdSurvey = await _explorationService.CreateSeismicSurveyForFieldAsync(fieldId, request, effectiveUserId);
+                var createdSurvey = await _explorationService.CreateSeismicSurveyForFieldAsync(fieldId, request, userId);
                 return Ok(createdSurvey);
             }
             catch (Exception ex)
@@ -350,6 +347,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             [FromBody] StartLeadToProspectRequest request,
             CancellationToken cancellationToken)
         {
+            var userId = User.ActingUserId();
             try
             {
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
@@ -363,15 +361,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Lead ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
                 if (!await _explorationService.EnsureLeadInFieldForWorkflowStartAsync(
                         currentFieldId,
                         request.LeadId,
-                        request.UserId).ConfigureAwait(false))
+                        userId).ConfigureAwait(false))
                 {
                     return NotFound(new
                     {
@@ -382,7 +375,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var instance = await _explorationProcessService.StartLeadToProspectProcessAsync(
                     request.LeadId,
                     currentFieldId,
-                    request.UserId,
+                    userId,
                     cancellationToken);
 
                 return Ok(instance);
@@ -406,16 +399,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             [FromBody] EvaluateLeadRequest request,
             CancellationToken cancellationToken)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                 {
                         return BadRequest(new { error = "Instance ID is required." });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
@@ -427,7 +416,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var result = await _explorationProcessService.EvaluateLeadAsync(
                     request.InstanceId,
                     new PROCESS_STEP_DATA { Data = request.EvaluationData ?? new Dictionary<string, object>() },
-                    request.UserId,
+                    userId,
                     cancellationToken);
 
                 return Ok(result);
@@ -451,16 +440,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             [FromBody] ApproveLeadRequest request,
             CancellationToken cancellationToken)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                 {
                         return BadRequest(new { error = "Instance ID is required." });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
                 }
 
                 var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
@@ -471,7 +456,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
                 var result = await _explorationProcessService.ApproveLeadAsync(
                     request.InstanceId,
-                    request.UserId,
+                    userId,
                     cancellationToken);
                 return Ok(result);
             }
@@ -494,12 +479,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             [FromBody] RejectLeadRequest request,
             CancellationToken cancellationToken)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                     return BadRequest(new { error = "Instance ID is required." });
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                    return BadRequest(new { error = "User ID is required." });
 
                 var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
                     request.InstanceId,
@@ -510,7 +494,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var result = await _explorationProcessService.RejectLeadAsync(
                     request.InstanceId,
                     request.Reason ?? string.Empty,
-                    request.UserId,
+                    userId,
                     cancellationToken);
                 return Ok(result);
             }
@@ -533,12 +517,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             [FromBody] PromoteLeadToProspectRequest request,
             CancellationToken cancellationToken)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                     return BadRequest(new { error = "Instance ID is required." });
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                    return BadRequest(new { error = "User ID is required." });
 
                 var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
                     request.InstanceId,
@@ -550,7 +533,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var ok = await _explorationProcessService.PromoteLeadToProspectAsync(
                     request.InstanceId,
                     stepData,
-                    request.UserId,
+                    userId,
                     cancellationToken);
                 return Ok(ok);
             }
@@ -573,6 +556,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             [FromBody] StartProspectToDiscoveryRequest request,
             CancellationToken cancellationToken)
         {
+            var userId = User.ActingUserId();
             try
             {
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
@@ -586,11 +570,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Prospect ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
                 if (await _explorationService.GetProspectForFieldAsync(currentFieldId, request.ProspectId).ConfigureAwait(false) == null)
                 {
                     return NotFound(new
@@ -602,7 +581,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var instance = await _explorationProcessService.StartProspectToDiscoveryProcessAsync(
                     request.ProspectId,
                     currentFieldId,
-                    request.UserId,
+                    userId,
                     cancellationToken);
 
                 return Ok(instance);
@@ -629,6 +608,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             CancellationToken cancellationToken) =>
             RunExplorationWorkflowStepAsync(
                 request,
+                User.ActingUserId(),
                 cancellationToken,
                 "Error completing prospect readiness step",
                 (id, data, user, ct) => _explorationProcessService.CompleteProspectReadinessStepAsync(id, data, user, ct));
@@ -640,6 +620,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             CancellationToken cancellationToken) =>
             RunExplorationWorkflowStepAsync(
                 request,
+                User.ActingUserId(),
                 cancellationToken,
                 "Error executing risk assessment step",
                 (id, data, user, ct) => _explorationProcessService.PerformRiskAssessmentAsync(id, data, user, ct));
@@ -651,6 +632,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             CancellationToken cancellationToken) =>
             RunExplorationWorkflowStepAsync(
                 request,
+                User.ActingUserId(),
                 cancellationToken,
                 "Error executing volume estimation step",
                 (id, data, user, ct) => _explorationProcessService.PerformVolumeEstimationAsync(id, data, user, ct));
@@ -662,6 +644,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             CancellationToken cancellationToken) =>
             RunExplorationWorkflowStepAsync(
                 request,
+                User.ActingUserId(),
                 cancellationToken,
                 "Error executing economic evaluation step",
                 (id, data, user, ct) => _explorationProcessService.PerformEconomicEvaluationAsync(id, data, user, ct));
@@ -673,6 +656,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             CancellationToken cancellationToken) =>
             RunExplorationWorkflowStepAsync(
                 request,
+                User.ActingUserId(),
                 cancellationToken,
                 "Error executing drilling decision step",
                 (id, data, user, ct) => _explorationProcessService.MakeDrillingDecisionAsync(id, data, user, ct));
@@ -684,6 +668,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             CancellationToken cancellationToken) =>
             RunExplorationWorkflowStepAsync(
                 request,
+                User.ActingUserId(),
                 cancellationToken,
                 "Error executing discovery recording step",
                 (id, data, user, ct) => _explorationProcessService.RecordDiscoveryAsync(id, data, user, ct));
@@ -696,6 +681,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             [FromBody] StartDiscoveryToDevelopmentRequest request,
             CancellationToken cancellationToken)
         {
+            var userId = User.ActingUserId();
             try
             {
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
@@ -709,11 +695,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Discovery ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
                 if (!await _explorationService.IsProspectDiscoveryInFieldAsync(currentFieldId, request.DiscoveryId).ConfigureAwait(false))
                 {
                     return NotFound(new
@@ -725,7 +706,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 var instance = await _explorationProcessService.StartDiscoveryToDevelopmentProcessAsync(
                     request.DiscoveryId,
                     currentFieldId,
-                    request.UserId,
+                    userId,
                     cancellationToken);
 
                 return Ok(instance);
@@ -748,6 +729,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             CancellationToken cancellationToken) =>
             RunExplorationWorkflowStepAsync(
                 request,
+                User.ActingUserId(),
                 cancellationToken,
                 "Error executing appraisal step",
                 (id, data, user, ct) => _explorationProcessService.PerformAppraisalAsync(id, data, user, ct));
@@ -759,6 +741,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             CancellationToken cancellationToken) =>
             RunExplorationWorkflowStepAsync(
                 request,
+                User.ActingUserId(),
                 cancellationToken,
                 "Error executing reserve estimation step",
                 (id, data, user, ct) => _explorationProcessService.EstimateReservesAsync(id, data, user, ct));
@@ -770,6 +753,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             CancellationToken cancellationToken) =>
             RunExplorationWorkflowStepAsync(
                 request,
+                User.ActingUserId(),
                 cancellationToken,
                 "Error executing development economic analysis step",
                 (id, data, user, ct) => _explorationProcessService.PerformDevelopmentEconomicAnalysisAsync(id, data, user, ct));
@@ -779,7 +763,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public Task<ActionResult<bool>> DiscoveryToDevelopmentApprove(
             [FromBody] ExplorationWorkflowStepRequest request,
             CancellationToken cancellationToken) =>
-            RunApproveDevelopmentWorkflowAsync(request, cancellationToken);
+            RunApproveDevelopmentWorkflowAsync(request, User.ActingUserId(), cancellationToken);
 
         /// <summary>POST /api/field/current/exploration/prospects/{id}/decision</summary>
         /// Records an approval gate decision (Approved / Deferred / Rejected) for an exploration well program.
@@ -787,13 +771,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("prospects/{id}/decision")]
         public async Task<IActionResult> PostProspectDecisionAsync(string id, [FromBody] ProspectDecisionRequest request)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "Prospect ID is required." });
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
             if (string.IsNullOrWhiteSpace(request.Decision))
                     return BadRequest(new { error = "Decision is required." });
 
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
             try
             {
                 var prospect = await _explorationService.GetProspectForFieldAsync(fieldId, id);
@@ -850,6 +834,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         /// </summary>
         private async Task<ActionResult<bool>> RunExplorationWorkflowStepAsync(
             ExplorationWorkflowStepRequest request,
+            string userId,
             CancellationToken cancellationToken,
             string errorLogMessage,
             Func<string, PROCESS_STEP_DATA, string, CancellationToken, Task<bool>> execute)
@@ -858,8 +843,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                     return BadRequest(new { error = "Instance ID is required." });
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                    return BadRequest(new { error = "User ID is required." });
 
                 var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
                     request.InstanceId,
@@ -878,7 +861,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                     Status = json.TryGetProperty("Status", out var status) && status.ValueKind == System.Text.Json.JsonValueKind.String
                         ? status.GetString() ?? string.Empty : string.Empty
                 };
-                var ok = await execute(request.InstanceId, stepData, request.UserId, cancellationToken);
+                var ok = await execute(request.InstanceId, stepData, userId, cancellationToken);
                 return Ok(ok);
             }
             catch (OperationCanceledException)
@@ -904,14 +887,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
         private async Task<ActionResult<bool>> RunApproveDevelopmentWorkflowAsync(
             ExplorationWorkflowStepRequest request,
+            string userId,
             CancellationToken cancellationToken)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
                     return BadRequest(new { error = "Instance ID is required." });
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                    return BadRequest(new { error = "User ID is required." });
 
                 var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
                     request.InstanceId,
@@ -921,7 +903,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
                 var ok = await _explorationProcessService.ApproveDevelopmentAsync(
                     request.InstanceId,
-                    request.UserId,
+                    userId,
                     cancellationToken);
                 return Ok(ok);
             }

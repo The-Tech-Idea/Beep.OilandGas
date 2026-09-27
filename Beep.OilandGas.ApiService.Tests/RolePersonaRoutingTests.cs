@@ -58,7 +58,7 @@ public class RolePersonaRoutingTests(ITestOutputHelper output)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity(new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, "u1"), new Claim(ClaimTypes.Role, "Administrator")
+                new Claim("party_id", "u1"), new Claim(ClaimTypes.Role, "Administrator")
             }, "Test")) } }
         };
         var inbox = Assert.IsType<UnifiedInbox>(Assert.IsType<OkObjectResult>(await controller.Inbox(null, default)).Value);

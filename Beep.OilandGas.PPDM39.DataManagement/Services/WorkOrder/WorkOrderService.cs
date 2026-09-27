@@ -4,7 +4,6 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
 using Microsoft.Extensions.Logging;
-using Serilog;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 
@@ -42,7 +41,7 @@ public class WorkOrderService : IWorkOrderService
 
     public async Task<WorkOrderSummary> CreateAsync(CreateWorkOrderRequest request, string userId)
     {
-        Log.Information("Creating work order {Name} type {Type} for field {Field}",
+        _logger.LogInformation("Creating work order {Name} type {Type} for field {Field}",
             request.InstanceName, request.WoSubType, request.FieldId);
         try
         {
@@ -70,12 +69,12 @@ public class WorkOrderService : IWorkOrderService
                 await _inspection.SeedChecklistAsync(
                     instanceId, request.WoSubType, request.Jurisdiction, userId);
 
-            Log.Information("Work order {InstanceId} created", instanceId);
+            _logger.LogInformation("Work order {InstanceId} created", instanceId);
             return MapToSummary(entity, instanceId);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to create work order {Name}", request.InstanceName);
+            _logger.LogError(ex, "Failed to create work order {Name}", request.InstanceName);
             throw;
         }
     }
@@ -112,7 +111,7 @@ public class WorkOrderService : IWorkOrderService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to get work order {InstanceId}", instanceId);
+            _logger.LogError(ex, "Failed to get work order {InstanceId}", instanceId);
             return null;
         }
     }
@@ -148,7 +147,7 @@ public class WorkOrderService : IWorkOrderService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to list work orders for field {FieldId}", fieldId);
+            _logger.LogError(ex, "Failed to list work orders for field {FieldId}", fieldId);
             return new();
         }
     }
@@ -159,7 +158,7 @@ public class WorkOrderService : IWorkOrderService
         string fieldId, string instanceId, string toState,
         string userId, string? notes = null)
     {
-        Log.Information("Transitioning WO {InstanceId} to {State}", instanceId, toState);
+        _logger.LogInformation("Transitioning WO {InstanceId} to {State}", instanceId, toState);
         try
         {
             var meta       = await _metadata.GetTableMetadataAsync("PROJECT");
@@ -204,7 +203,7 @@ public class WorkOrderService : IWorkOrderService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to transition WO {InstanceId} to {State}", instanceId, toState);
+            _logger.LogError(ex, "Failed to transition WO {InstanceId} to {State}", instanceId, toState);
             throw;
         }
     }
@@ -219,11 +218,11 @@ public class WorkOrderService : IWorkOrderService
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
             var repo       = BuildRepo(entityType, "PROJECT");
             await repo.SoftDeleteAsync(instanceId, userId);
-            Log.Information("Soft-deleted work order {InstanceId}", instanceId);
+            _logger.LogInformation("Soft-deleted work order {InstanceId}", instanceId);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to delete work order {InstanceId}", instanceId);
+            _logger.LogError(ex, "Failed to delete work order {InstanceId}", instanceId);
             throw;
         }
     }

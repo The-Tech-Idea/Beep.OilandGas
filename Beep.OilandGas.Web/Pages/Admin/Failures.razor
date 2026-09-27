@@ -1,0 +1,50 @@
+@page "/admin/failures"
+@using Beep.Foundation.IdentityServer.Shared.Identity
+@using TheTechIdeaWeb.Diagnostics.Components
+@attribute [Authorize(Roles = "Administrator")]
+
+@* DIAG-01. What went wrong in OilGas — the Web and the API alike — under the references people were shown, read without
+   access to the server. Who may read it is OilGas's own decision, made by its own role. *@
+
+<PageTitle>Failures - Beep Oil & Gas</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h5" HtmlTag="h1" Class="mb-1">Failures</MudText>
+    <MudText Typo="Typo.subtitle1" Color="Color.Secondary" Class="mb-6">
+        Everything that went wrong, newest first, under the reference the person was shown. Mark one resolved once it is dealt with.
+    </MudText>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (_actorId is null)
+    {
+        <MudAlert Severity="Severity.Warning">
+            Your OilGas account could not be loaded just now, so a resolution could not be recorded against it. Try again shortly.
+        </MudAlert>
+    }
+    else
+    {
+        <FailureLogView ActorId="@_actorId" />
+    }
+</MudContainer>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private bool _loading = true;
+
+    /// <summary>The operator's own OilGas account (<c>party_id</c>), which a resolution is recorded against — never a fabricated actor.</summary>
+    private string? _actorId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthenticationState is not null)
+        {
+            _actorId = PartyIdClaims.Find((await AuthenticationState).User);
+        }
+
+        _loading = false;
+    }
+}

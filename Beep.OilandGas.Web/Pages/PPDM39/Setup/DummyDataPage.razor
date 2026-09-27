@@ -4,9 +4,6 @@
 @inject IDataManagementService DataManagementService
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
-@inject AuthenticationStateProvider AuthStateProvider
-@using Microsoft.AspNetCore.Components.Authorization
-@using System.Security.Claims
 
 <PageTitle>Generate Demo Data — Beep Oil &amp; Gas</PageTitle>
 
@@ -125,16 +122,12 @@
 
         try
         {
-            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "setup";
-
             _statusText = "Generating assets — this may take a moment…";
             StateHasChanged();
 
             var request = new GenerateDummyDataRequest
             {
-                SeedOption = _seedOption,
-                UserId = userId
+                SeedOption = _seedOption
             };
             _result = await DataManagementService.GenerateDummyDataAsync(request);
 

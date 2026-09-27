@@ -16,7 +16,7 @@ public sealed class UserAdministrationAuthorizationTests
     public async Task UnauthorizedUserUpdatesAreRejectedBeforeStorage(string? actor, string? role, bool? active)
     {
         var claims = new List<Claim>();
-        if (actor is not null) claims.Add(new(ClaimTypes.NameIdentifier, actor));
+        if (actor is not null) claims.Add(new("party_id", actor));
         if (role is not null) claims.Add(new(ClaimTypes.Role, role));
         var controller = new UserManagementController(null!)
         {

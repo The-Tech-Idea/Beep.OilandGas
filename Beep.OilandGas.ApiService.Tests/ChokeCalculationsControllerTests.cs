@@ -1,8 +1,10 @@
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.ApiService.Controllers;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Calculations;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -19,13 +21,9 @@ public class ChokeCalculationsControllerTests
     public async Task PerformChokeAnalysis_ReturnsBadRequest_WhenBodyMissing()
     {
         var calc = new Mock<ICalculationService>(MockBehavior.Strict);
-        var controller = new CalculationsController(
-            calc.Object,
-            fieldOrchestrator: null,
-            progressTracking: null,
-            NullLogger<CalculationsController>.Instance);
+        var controller = CreateController(calc.Object);
 
-        var actionResult = await controller.PerformChokeAnalysis(request: null!, userId: null);
+        var actionResult = await controller.PerformChokeAnalysis(request: null!);
 
         Assert.IsType<BadRequestObjectResult>(actionResult.Result);
         calc.VerifyNoOtherCalls();
@@ -45,14 +43,10 @@ public class ChokeCalculationsControllerTests
         calc.Setup(s => s.PerformChokeAnalysisAsync(It.IsAny<ChokeAnalysisRequest>()))
             .ReturnsAsync(expected);
 
-        var controller = new CalculationsController(
-            calc.Object,
-            fieldOrchestrator: null,
-            progressTracking: null,
-            NullLogger<CalculationsController>.Instance);
+        var controller = CreateController(calc.Object);
 
         var request = new ChokeAnalysisRequest { AnalysisType = "DOWNHOLE" };
-        var actionResult = await controller.PerformChokeAnalysis(request, userId: null);
+        var actionResult = await controller.PerformChokeAnalysis(request);
 
         var ok = Assert.IsType<ActionResult<ChokeAnalysisResult>>(actionResult);
         var okResult = Assert.IsType<OkObjectResult>(ok.Result);
@@ -62,7 +56,7 @@ public class ChokeCalculationsControllerTests
     }
 
     [Fact]
-    public async Task PerformChokeAnalysis_AppliesQueryUserId_WhenProvided()
+    public async Task PerformChokeAnalysis_RecordsTheSignedInAccount_NotTheUserIdTheBodyNames()
     {
         var calc = new Mock<ICalculationService>(MockBehavior.Strict);
         ChokeAnalysisRequest? captured = null;
@@ -70,14 +64,10 @@ public class ChokeCalculationsControllerTests
             .Callback<ChokeAnalysisRequest>(r => captured = r)
             .ReturnsAsync(new ChokeAnalysisResult());
 
-        var controller = new CalculationsController(
-            calc.Object,
-            fieldOrchestrator: null,
-            progressTracking: null,
-            NullLogger<CalculationsController>.Instance);
+        var controller = CreateController(calc.Object, "user-42");
 
-        var request = new ChokeAnalysisRequest();
-        await controller.PerformChokeAnalysis(request, userId: "user-42");
+        var request = new ChokeAnalysisRequest { UserId = "someone-else" };
+        await controller.PerformChokeAnalysis(request);
 
         Assert.NotNull(captured);
         Assert.Equal("user-42", captured!.UserId);
@@ -90,13 +80,9 @@ public class ChokeCalculationsControllerTests
         calc.Setup(s => s.PerformChokeAnalysisAsync(It.IsAny<ChokeAnalysisRequest>()))
             .ThrowsAsync(new ArgumentException("bad"));
 
-        var controller = new CalculationsController(
-            calc.Object,
-            fieldOrchestrator: null,
-            progressTracking: null,
-            NullLogger<CalculationsController>.Instance);
+        var controller = CreateController(calc.Object);
 
-        var actionResult = await controller.PerformChokeAnalysis(new ChokeAnalysisRequest(), userId: null);
+        var actionResult = await controller.PerformChokeAnalysis(new ChokeAnalysisRequest());
 
         Assert.IsType<BadRequestObjectResult>(actionResult.Result);
     }
@@ -108,14 +94,22 @@ public class ChokeCalculationsControllerTests
         calc.Setup(s => s.PerformChokeAnalysisAsync(It.IsAny<ChokeAnalysisRequest>()))
             .ThrowsAsync(new OperationCanceledException());
 
-        var controller = new CalculationsController(
-            calc.Object,
-            fieldOrchestrator: null,
-            progressTracking: null,
-            NullLogger<CalculationsController>.Instance);
+        var controller = CreateController(calc.Object);
 
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
-            controller.PerformChokeAnalysis(new ChokeAnalysisRequest(), userId: null));
+            controller.PerformChokeAnalysis(new ChokeAnalysisRequest()));
         calc.VerifyAll();
     }
+
+    private static CalculationsController CreateController(ICalculationService calculationService, string userId = "user-1") =>
+        new(calculationService, fieldOrchestrator: null, progressTracking: null, NullLogger<CalculationsController>.Instance)
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("party_id", userId)], "TestAuth"))
+                }
+            }
+        };
 }

@@ -12,6 +12,7 @@ using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.PPDM39.Models;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.ApiService.Attributes;
+using Beep.OilandGas.ApiService.Services;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
 {
@@ -100,8 +101,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
         /// <summary>POST /api/field/current/development/pools</summary>
         [HttpPost("pools")]
-        public async Task<ActionResult<POOL>> CreatePoolAsync([FromBody] PoolRequest request, [FromQuery] string? userId = null)
+        public async Task<ActionResult<POOL>> CreatePoolAsync([FromBody] PoolRequest request)
         {
+            var userId = User.ActingUserId();
             if (request == null)
                 return BadRequest(new { error = "Pool request is required." });
             if (string.IsNullOrWhiteSpace(request.PoolName))
@@ -112,8 +114,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
             try
             {
-                var resolvedUserId = userId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
-                var pool = await _developmentService.CreatePoolForFieldAsync(fieldId, request, resolvedUserId);
+                var pool = await _developmentService.CreatePoolForFieldAsync(fieldId, request, userId);
                 return Ok(pool);
             }
             catch (Exception ex)
@@ -125,8 +126,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
         /// <summary>PUT /api/field/current/development/pools/{poolId}</summary>
         [HttpPut("pools/{poolId}")]
-        public async Task<ActionResult<POOL>> UpdatePoolAsync(string poolId, [FromBody] PoolRequest request, [FromQuery] string? userId = null)
+        public async Task<ActionResult<POOL>> UpdatePoolAsync(string poolId, [FromBody] PoolRequest request)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(poolId))
                 return BadRequest(new { error = "Pool ID is required." });
             if (request == null)
@@ -139,8 +141,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
             try
             {
-                var resolvedUserId = userId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
-                var pool = await _developmentService.UpdatePoolForFieldAsync(fieldId, poolId, request, resolvedUserId);
+                var pool = await _developmentService.UpdatePoolForFieldAsync(fieldId, poolId, request, userId);
                 return Ok(pool);
             }
             catch (InvalidOperationException ex)
@@ -157,8 +158,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
         /// <summary>POST /api/field/current/development/facilities</summary>
         [HttpPost("facilities")]
-        public async Task<ActionResult<FacilityResponse>> CreateFacilityAsync([FromBody] FacilityRequest request, [FromQuery] string? userId = null)
+        public async Task<ActionResult<FacilityResponse>> CreateFacilityAsync([FromBody] FacilityRequest request)
         {
+            var userId = User.ActingUserId();
             if (request == null)
                 return BadRequest(new { error = "Facility request is required." });
             if (string.IsNullOrWhiteSpace(request.FacilityName))
@@ -169,8 +171,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
             try
             {
-                var resolvedUserId = userId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
-                var facility = await _developmentService.CreateFacilityForFieldAsync(fieldId, request, resolvedUserId);
+                var facility = await _developmentService.CreateFacilityForFieldAsync(fieldId, request, userId);
                 return Ok(facility);
             }
             catch (Exception ex)
@@ -182,8 +183,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
         /// <summary>PUT /api/field/current/development/facilities/{facilityId}</summary>
         [HttpPut("facilities/{facilityId}")]
-        public async Task<ActionResult<FacilityResponse>> UpdateFacilityAsync(string facilityId, [FromBody] FacilityRequest request, [FromQuery] string? userId = null)
+        public async Task<ActionResult<FacilityResponse>> UpdateFacilityAsync(string facilityId, [FromBody] FacilityRequest request)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(facilityId))
                 return BadRequest(new { error = "Facility ID is required." });
             if (request == null)
@@ -196,8 +198,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
             try
             {
-                var resolvedUserId = userId ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
-                var facility = await _developmentService.UpdateFacilityForFieldAsync(fieldId, facilityId, request, resolvedUserId);
+                var facility = await _developmentService.UpdateFacilityForFieldAsync(fieldId, facilityId, request, userId);
                 return Ok(facility);
             }
             catch (InvalidOperationException ex)
@@ -246,6 +247,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<Beep.OilandGas.Models.Processes.ProcessInstance>> StartPoolDefinitionProcess(
             [FromBody] StartPoolDefinitionRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
@@ -259,15 +261,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Pool ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
                 var instance = await _developmentProcessService.StartPoolDefinitionProcessAsync(
                     request.PoolId, 
                     currentFieldId, 
-                    request.UserId);
+                    userId);
                 
                 return Ok(instance);
             }
@@ -284,6 +281,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("workflows/delineate-pool")]
         public async Task<ActionResult<bool>> DelineatePool([FromBody] DelineatePoolRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
@@ -291,15 +289,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Instance ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
                 var result = await _developmentProcessService.DelineatePoolAsync(
                     request.InstanceId, 
                     new PROCESS_STEP_DATA { Data = request.DelineationData ?? new Dictionary<string, object>() }, 
-                    request.UserId);
+                    userId);
                 
                 return Ok(result);
             }
@@ -316,6 +309,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("workflows/assign-reserves")]
         public async Task<ActionResult<bool>> AssignReserves([FromBody] AssignReservesRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
@@ -323,15 +317,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Instance ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
                 var result = await _developmentProcessService.AssignReservesAsync(
                     request.InstanceId, 
                     new PROCESS_STEP_DATA { Data = request.ReserveData ?? new Dictionary<string, object>() }, 
-                    request.UserId);
+                    userId);
                 
                 return Ok(result);
             }
@@ -348,6 +337,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("workflows/approve-pool")]
         public async Task<ActionResult<bool>> ApprovePool([FromBody] ApprovePoolRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
@@ -355,12 +345,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Instance ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
-                var result = await _developmentProcessService.ApprovePoolAsync(request.InstanceId, request.UserId);
+                var result = await _developmentProcessService.ApprovePoolAsync(request.InstanceId, userId);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -376,6 +361,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("workflows/activate-pool")]
         public async Task<ActionResult<bool>> ActivatePool([FromBody] ActivatePoolRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (string.IsNullOrWhiteSpace(request.InstanceId))
@@ -383,12 +369,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Instance ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
-                var result = await _developmentProcessService.ActivatePoolAsync(request.InstanceId, request.UserId);
+                var result = await _developmentProcessService.ActivatePoolAsync(request.InstanceId, userId);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -409,6 +390,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<Beep.OilandGas.Models.Processes.ProcessInstance>> StartFacilityDevelopmentProcess(
             [FromBody] StartFacilityDevelopmentRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
@@ -422,15 +404,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Facility ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
                 var instance = await _developmentProcessService.StartFacilityDevelopmentProcessAsync(
                     request.FacilityId, 
                     currentFieldId, 
-                    request.UserId);
+                    userId);
                 
                 return Ok(instance);
             }
@@ -452,6 +429,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<Beep.OilandGas.Models.Processes.ProcessInstance>> StartWellDevelopmentProcess(
             [FromBody] StartWellDevelopmentRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
@@ -465,15 +443,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Well ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
                 var instance = await _developmentProcessService.StartWellDevelopmentProcessAsync(
                     request.WellId, 
                     currentFieldId, 
-                    request.UserId);
+                    userId);
                 
                 return Ok(instance);
             }
@@ -495,6 +468,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<Beep.OilandGas.Models.Processes.ProcessInstance>> StartPipelineDevelopmentProcess(
             [FromBody] StartPipelineDevelopmentRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
@@ -508,15 +482,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                         return BadRequest(new { error = "Pipeline ID is required." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.UserId))
-                {
-                        return BadRequest(new { error = "User ID is required." });
-                }
-
                 var instance = await _developmentProcessService.StartPipelineDevelopmentProcessAsync(
                     request.PipelineId, 
                     currentFieldId, 
-                    request.UserId);
+                    userId);
                 
                 return Ok(instance);
             }
@@ -633,11 +602,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPut("wells/{uwi}/rig")]
         public async Task<ActionResult> AssignRigAsync(string uwi, [FromBody] AssignRigRequest request)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
             try
             {
                 var success = await _developmentService.AssignRigToWellAsync(fieldId, uwi, request.RigName, userId);
@@ -717,10 +686,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<SubmitFdpDraftResponse>> SubmitFdpAsync(
             [FromBody] SubmitFdpDraftRequest request)
         {
+            var userId = User.ActingUserId();
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
             try
             {
                 var instance = await _developmentProcessService.StartFdpGateProcessAsync(fieldId, userId);

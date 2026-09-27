@@ -1,12 +1,10 @@
 ﻿@page "/exploration/prospect-board"
-@using System.Security.Claims
 @inject ApiClient ApiClient
 @inject IExplorationServiceClient ExplorationService
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
-@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Advance Prospect Maturation</PageTitle>
 
@@ -129,7 +127,6 @@
     private string? _filterPlay;
     private string? _filterBasin;
     private bool _showArchived;
-    private string? _currentUserId;
 
     private List<string> _basins = new();
 
@@ -154,9 +151,6 @@
                 _fieldName = summary.FieldName ?? _fieldName;
         }
         catch { /* field name is non-critical */ }
-
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
 
         await LoadProspectsAsync();
     }
@@ -263,7 +257,7 @@
                 }
 
                 var request = BuildProspectUpdateRequest(currentProspect, transition);
-                await ExplorationService.UpdateProspectAsync(prospect.Id, request, _currentUserId);
+                await ExplorationService.UpdateProspectAsync(prospect.Id, request);
                 Snackbar.Add($"{prospect.Name} advanced to {nextStage.Name}", Severity.Success);
                 await LoadProspectsAsync();
                 StateHasChanged();

@@ -2,13 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
+using Beep.OilandGas.ApiService.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
@@ -93,16 +93,14 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             [FromBody] CreateRunTicketRequest request,
             [FromQuery] decimal? revenueAmount = null,
             [FromQuery] bool isCash = false,
-            [FromQuery] string? userId = null,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var actor = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (User.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(actor)) return Forbid();
                 var ticket = await _tickets.CreateAsync(request, actor);
 
                 // Post to GL if revenue amount provided
@@ -138,6 +136,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             [FromBody] RUN_TICKET runTicket,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var actor = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -145,8 +144,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
                 if (runTicket == null)
                     return BadRequest(new { error = "Run ticket payload is required." });
 
-                var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (User.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(actor)) return Forbid();
                 var processed = await _productionAccountingService.ProcessProductionCycleAsync(
                     runTicket,
                     actor,

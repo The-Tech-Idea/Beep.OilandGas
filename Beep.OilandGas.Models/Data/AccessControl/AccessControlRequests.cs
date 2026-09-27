@@ -2,6 +2,7 @@ namespace Beep.OilandGas.Models.Data.AccessControl
 {
     public class GrantAccessRequest : ModelEntityBase
     {
+        // Names the subject being granted access, not the actor (the actor is the signed-in Administrator).
         public string UserId { get; set; } = string.Empty;
         public string AssetId { get; set; } = string.Empty;
         public string AssetType { get; set; } = string.Empty;
@@ -12,6 +13,7 @@ namespace Beep.OilandGas.Models.Data.AccessControl
 
     public class RevokeAccessRequest : ModelEntityBase
     {
+        // Names the subject whose access is revoked, not the actor (the actor is the signed-in Administrator).
         public string UserId { get; set; } = string.Empty;
         public string AssetId { get; set; } = string.Empty;
         public string AssetType { get; set; } = string.Empty;

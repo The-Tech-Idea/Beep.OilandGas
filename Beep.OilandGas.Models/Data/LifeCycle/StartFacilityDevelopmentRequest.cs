@@ -17,16 +17,5 @@ namespace Beep.OilandGas.Models.Data.LifeCycle
             set { SetProperty(ref FacilityIdValue, value); }
 
         }
-        private string UserIdValue = string.Empty;
-
-        public string UserId
-
-        {
-
-            get { return this.UserIdValue; }
-
-            set { SetProperty(ref UserIdValue, value); }
-
-        }
     }
 }

@@ -44,14 +44,12 @@ namespace Beep.OilandGas.Client.App.Services.Properties
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<OIL_COMPOSITION> SaveOilCompositionAsync(OIL_COMPOSITION composition, string? userId = null, CancellationToken cancellationToken = default)
+        public async Task<OIL_COMPOSITION> SaveOilCompositionAsync(OIL_COMPOSITION composition, CancellationToken cancellationToken = default)
         {
             if (composition == null) throw new ArgumentNullException(nameof(composition));
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                var queryParams = new Dictionary<string, string>();
-                if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
-                var endpoint = BuildRequestUriWithParams("/api/oilproperties/composition/save", queryParams);
+                var endpoint = "/api/oilproperties/composition/save";
                 return await PostAsync<OIL_COMPOSITION, OIL_COMPOSITION>(endpoint, composition, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
@@ -73,14 +71,12 @@ namespace Beep.OilandGas.Client.App.Services.Properties
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<OIL_PROPERTY_RESULT> SaveOilResultAsync(OIL_PROPERTY_RESULT result, string? userId = null, CancellationToken cancellationToken = default)
+        public async Task<OIL_PROPERTY_RESULT> SaveOilResultAsync(OIL_PROPERTY_RESULT result, CancellationToken cancellationToken = default)
         {
             if (result == null) throw new ArgumentNullException(nameof(result));
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                var queryParams = new Dictionary<string, string>();
-                if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
-                var endpoint = BuildRequestUriWithParams("/api/oilproperties/result/save", queryParams);
+                var endpoint = "/api/oilproperties/result/save";
                 return await PostAsync<OIL_PROPERTY_RESULT, OIL_PROPERTY_RESULT>(endpoint, result, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");

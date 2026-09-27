@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Claims;
 using System.Threading.Tasks;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Royalty;
 using Microsoft.AspNetCore.Mvc;
@@ -32,8 +32,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
             [FromBody] ROYALTY_DISPUTE dispute,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             return await ExecuteAsync(
-                () => _disputeService.CreateDisputeAsync(dispute, ResolveUserId(), connectionName ?? "PPDM39"),
+                () => _disputeService.CreateDisputeAsync(dispute, userId, connectionName ?? "PPDM39"),
                 "Error creating royalty dispute");
         }
 
@@ -43,12 +44,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
             [FromBody] ResolveRoyaltyDisputeRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             return await ExecuteAsync(
                 () => _disputeService.ResolveDisputeAsync(
                     disputeId,
                     request.ResolutionDate ?? DateTime.UtcNow,
                     request.ResolutionNotes ?? string.Empty,
-                    ResolveUserId(),
+                    userId,
                     connectionName ?? "PPDM39"),
                 "Error resolving royalty dispute");
         }
@@ -89,13 +91,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
                 _logger.LogError(ex, "{Message}", logMessage);
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
-        }
-
-        private string ResolveUserId()
-        {
-            return User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub")
-                ?? "system";
         }
     }
 

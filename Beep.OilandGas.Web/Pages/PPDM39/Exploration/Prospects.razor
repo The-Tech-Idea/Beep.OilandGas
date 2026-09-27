@@ -1,13 +1,11 @@
 ﻿@page "/ppdm39/exploration/prospects"
 @using Beep.OilandGas.Models.Data
-@using System.Security.Claims
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
 @inject IExplorationServiceClient ExplorationService
 @inject ILifeCycleService LifeCycleService
-@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Evaluate Exploration Prospects</PageTitle>
 
@@ -138,7 +136,6 @@
     private string _fieldName = string.Empty;
     private List<ProspectListItem>? _prospects;
     private bool _isLoading = false;
-    private string? _currentUserId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -150,8 +147,6 @@
         }
         catch { /* field name is non-critical */ }
 
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
         await LoadProspects();
     }
 
@@ -202,7 +197,7 @@
                     RiskLevel = prospectData.ContainsKey("RISK_LEVEL") ? prospectData["RISK_LEVEL"]?.ToString() : null
                 };
 
-                await ExplorationService.CreateProspectAsync(prospect, _currentUserId);
+                await ExplorationService.CreateProspectAsync(prospect);
                 Snackbar.Add("Prospect created successfully", Severity.Success);
                 await LoadProspects();
             }
@@ -252,7 +247,7 @@
             try
             {
                 var request = BuildProspectRequest(prospectData, currentProspect);
-                await ExplorationService.UpdateProspectAsync(prospect.Id, request, _currentUserId);
+                await ExplorationService.UpdateProspectAsync(prospect.Id, request);
                 Snackbar.Add("Prospect updated successfully", Severity.Success);
                 await LoadProspects();
             }
@@ -274,7 +269,7 @@
         {
             try
             {
-                await ExplorationService.DeleteProspectAsync(prospect.Id, _currentUserId);
+                await ExplorationService.DeleteProspectAsync(prospect.Id);
                 Snackbar.Add("Prospect deleted successfully", Severity.Success);
                 await LoadProspects();
             }

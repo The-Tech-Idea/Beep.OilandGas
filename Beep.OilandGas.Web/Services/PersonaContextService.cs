@@ -1,4 +1,4 @@
-using System.Security.Claims;
+using Beep.Foundation.IdentityServer.Shared.Identity;
 using Microsoft.AspNetCore.Components.Authorization;
 using TheTechIdea.Data.OilGas;
 
@@ -47,7 +47,7 @@ public sealed class PersonaContextService : IPersonaContextService, IDisposable
         var version = _version;
         var user = (await _auth.GetAuthenticationStateAsync()).User;
         if (_disposed || version != _version) return;
-        var id = user.Identity?.IsAuthenticated == true ? user.FindFirstValue(ClaimTypes.NameIdentifier) : null;
+        var id = user.Identity?.IsAuthenticated == true ? PartyIdClaims.Find(user) : null;
         if (id is null) { Clear(); return; }
         if (_loadedUser == id) return;
         Clear();

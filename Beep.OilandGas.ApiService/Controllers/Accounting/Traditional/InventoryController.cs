@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Accounting;
@@ -13,6 +12,7 @@ using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.ApiService.Services;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
 {
@@ -46,9 +46,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         [HttpPost("transactions")]
         public async Task<ActionResult<object>> CreateTransaction(
             [FromBody] CreateInventoryTransactionRequest request,
-            [FromQuery] string? userId = null,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -61,7 +61,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
                     request.Quantity,
                     request.UnitCost,
                     request.Description ?? "",
-                    userId ?? "system");
+                    userId);
 
                 // Post to GL based on transaction type
                 // Receipt: Debit Inventory, Credit AP/Cash
@@ -114,7 +114,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
                         "Inventory",
                         lines,
                         transaction.TRANSACTION_DATE ?? DateTime.UtcNow,
-                        userId ?? "system");
+                        userId);
 
                     return Ok(new { TransactionId = transaction.INVENTORY_TRANSACTION_ID, JournalEntryId = journalEntryId });
                 }
@@ -174,6 +174,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             [FromBody] UpdateTankInventoryRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -184,7 +185,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
                 var inventory = await _inventoryService.UpdateInventoryAsync(
                     tankId,
                     request.VolumeDelta,
-                    ResolveUserId(),
+                    userId,
                     connectionName ?? _service.DefaultConnectionName);
 
                 return Ok(inventory);
@@ -256,6 +257,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             [FromBody] CalculateInventoryValuationRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -267,7 +269,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
                     inventoryItemId,
                     request.ValuationDate,
                     request.Method,
-                    ResolveUserId(),
+                    userId,
                     connectionName ?? _service.DefaultConnectionName);
 
                 return Ok(valuation);
@@ -286,6 +288,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             [FromBody] GenerateInventoryReconciliationReportRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -297,7 +300,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
                     inventoryItemId,
                     request.PeriodStart,
                     request.PeriodEnd,
-                    ResolveUserId(),
+                    userId,
                     connectionName ?? _service.DefaultConnectionName);
 
                 return Ok(report);
@@ -307,13 +310,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
                 _logger.LogError(ex, "Error generating reconciliation report for inventory item {InventoryItemId}", inventoryItemId);
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
-        }
-
-        private string ResolveUserId()
-        {
-            return User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub")
-                ?? "system";
         }
     }
 

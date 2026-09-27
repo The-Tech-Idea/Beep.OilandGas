@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.AspNetCore.Components.Authorization;
-using Beep.Foundation.IdentityServer.Shared.Authentication;
+using Beep.Foundation.IdentityServer.Shared.Identity;
+using Duende.AccessTokenManagement.OpenIdConnect;
 
 namespace Beep.OilandGas.Web.Services;
 
@@ -54,7 +55,7 @@ public class NotificationModel
 public sealed class NotificationService : INotificationService, IAsyncDisposable
 {
     private readonly AuthenticationStateProvider _authentication;
-    private readonly TokenProvider _tokens;
+    private readonly IUserTokenManager _tokens;
     private readonly ILogger<NotificationService> _logger;
     private readonly Uri _hubUri;
     private readonly SemaphoreSlim _lifecycle = new(1, 1);
@@ -66,16 +67,13 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
     private sealed record PersonaSubscription(string Persona, string Field);
     private volatile PersonaSubscription? _persona;
 
-    public NotificationService(AuthenticationStateProvider authentication, TokenProvider tokens,
-        IConfiguration configuration, ILogger<NotificationService> logger)
+    public NotificationService(AuthenticationStateProvider authentication, IUserTokenManager tokens,
+        OilGasApiAddress api, ILogger<NotificationService> logger)
     {
         _authentication = authentication;
         _tokens = tokens;
         _logger = logger;
-        var baseUrl = configuration["ApiService:BaseUrl"] ?? "https://localhost:7001";
-        _hubUri = new Uri(baseUrl.TrimEnd('/') + "/hubs/workflow-notifications", UriKind.Absolute);
-        if (_hubUri.Scheme != Uri.UriSchemeHttp && _hubUri.Scheme != Uri.UriSchemeHttps)
-            throw new InvalidOperationException("The API URL must use HTTP or HTTPS.");
+        _hubUri = api.For("hubs/workflow-notifications");
         _authentication.AuthenticationStateChanged += AuthenticationChanged;
     }
 
@@ -94,7 +92,9 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
         {
             if (_disposed) return;
             var state = await _authentication.GetAuthenticationStateAsync();
-            var userId = state.User.Identity?.IsAuthenticated == true ? state.User.FindUserSubjectId() : null;
+            // The OilGas account the API resolved for this person (party_id), which the hub groups by; without one the API
+            // would refuse the connection. It used the identity server's sub.
+            var userId = state.User.Identity?.IsAuthenticated == true ? PartyIdClaims.Find(state.User) : null;
             if (string.IsNullOrWhiteSpace(userId))
             {
                 await StopCoreAsync();
@@ -105,17 +105,18 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
 
             await StopCoreAsync();
             _userId = userId;
-            if (string.IsNullOrWhiteSpace(_tokens.GetUserToken(userId)))
-                throw new InvalidOperationException("No access token is available for the current user.");
 
             var connection = new HubConnectionBuilder()
                 .WithUrl(_hubUri, options => options.AccessTokenProvider = async () =>
                 {
                     var current = await _authentication.GetAuthenticationStateAsync();
-                    if (current.User.Identity?.IsAuthenticated != true || current.User.FindUserSubjectId() != userId)
+                    if (current.User.Identity?.IsAuthenticated != true || PartyIdClaims.Find(current.User) != userId)
                         throw new InvalidOperationException("The notification user has changed.");
-                    return _tokens.GetUserToken(userId)
-                        ?? throw new InvalidOperationException("The current user's access token is unavailable.");
+                    // The person's own token from the identity server's client library, refreshed when it is due.
+                    var token = await _tokens.GetAccessTokenAsync(current.User);
+                    return token.WasSuccessful(out var user)
+                        ? user.AccessToken.ToString()
+                        : throw new InvalidOperationException("The current user's access token is unavailable.");
                 })
                 .WithAutomaticReconnect()
                 .Build();

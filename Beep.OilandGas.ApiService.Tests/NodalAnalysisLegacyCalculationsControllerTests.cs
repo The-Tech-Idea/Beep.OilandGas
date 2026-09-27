@@ -1,9 +1,11 @@
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.ApiService.Controllers;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Calculations;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -20,13 +22,13 @@ public class NodalAnalysisLegacyCalculationsControllerTests
     public async Task LegacyPerformNodal_ReturnsBadRequest_WhenBodyMissing()
     {
         var calc = new Mock<ICalculationService>(MockBehavior.Strict);
-        var controller = new CalculationsController(
+        var controller = SignedIn(new CalculationsController(
             calc.Object,
             fieldOrchestrator: null,
             progressTracking: null,
-            NullLogger<CalculationsController>.Instance);
+            NullLogger<CalculationsController>.Instance));
 
-        var actionResult = await controller.PerformNodalAnalysis(request: null!, userId: null);
+        var actionResult = await controller.PerformNodalAnalysis(request: null!);
 
         Assert.IsType<BadRequestObjectResult>(actionResult.Result);
         calc.VerifyNoOtherCalls();
@@ -38,11 +40,11 @@ public class NodalAnalysisLegacyCalculationsControllerTests
         var calc = new Mock<ICalculationService>(MockBehavior.Strict);
         calc.Setup(s => s.PerformNodalAnalysisAsync(It.IsAny<NodalAnalysisRequest>()))
             .ThrowsAsync(new OperationCanceledException());
-        var controller = new CalculationsController(
+        var controller = SignedIn(new CalculationsController(
             calc.Object,
             fieldOrchestrator: null,
             progressTracking: null,
-            NullLogger<CalculationsController>.Instance);
+            NullLogger<CalculationsController>.Instance));
 
         var request = new NodalAnalysisRequest
         {
@@ -50,7 +52,7 @@ public class NodalAnalysisLegacyCalculationsControllerTests
             AnalysisParameters = new NodalAnalysisParameters()
         };
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => controller.PerformNodalAnalysis(request, userId: null));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => controller.PerformNodalAnalysis(request));
         calc.VerifyAll();
     }
 
@@ -84,5 +86,17 @@ public class NodalAnalysisLegacyCalculationsControllerTests
 
         await Assert.ThrowsAsync<OperationCanceledException>(() => controller.GetNodalAnalysisResults());
         calc.VerifyAll();
+    }
+
+    private static CalculationsController SignedIn(CalculationsController controller)
+    {
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("party_id", "user-1")], "TestAuth"))
+            }
+        };
+        return controller;
     }
 }

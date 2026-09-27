@@ -3,6 +3,7 @@
 @inject ApiClient ApiClient
 @inject AuthenticationStateProvider AuthStateProvider
 @using Microsoft.AspNetCore.Components.Authorization
+@using Beep.Foundation.IdentityServer.Shared.Identity
 
 <MudPaper Elevation="2" Class="pa-4">
     <MudText Typo="Typo.h6" Class="mb-4">Asset Hierarchy</MudText>
@@ -41,7 +42,8 @@
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        _userId = authState.User?.Identity?.Name;
+        // The signed-in account's own id (party_id): the API admits only the caller themself or an Administrator.
+        _userId = PartyIdClaims.Find(authState.User);
 
         if (string.IsNullOrEmpty(_userId))
         {

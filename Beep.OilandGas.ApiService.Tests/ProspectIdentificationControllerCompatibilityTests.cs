@@ -31,7 +31,13 @@ public class ProspectIdentificationControllerCompatibilityTests
             riskEconomic.Object,
             portfolio.Object,
             NullLogger<ProspectIdentificationController>.Instance);
-        sut.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        sut.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("party_id", "user-42")], "TestAuth"))
+            }
+        };
         return sut;
     }
 
@@ -50,7 +56,7 @@ public class ProspectIdentificationControllerCompatibilityTests
     public async Task IdentifyProspectCompatibility_CreatesProspect_ReturnsOkWithId()
     {
         var sut = CreateSut(out var prospect);
-        prospect.Setup(s => s.CreateProspectAsync(It.IsAny<Prospect>(), "SYSTEM"))
+        prospect.Setup(s => s.CreateProspectAsync(It.IsAny<Prospect>(), "user-42"))
             .ReturnsAsync("new-prospect-id");
 
         var body = new PROSPECT
@@ -67,7 +73,7 @@ public class ProspectIdentificationControllerCompatibilityTests
         Assert.Equal("Draft", returned.PROSPECT_STATUS);
         prospect.Verify(s => s.CreateProspectAsync(
             It.Is<Prospect>(p => p.ProspectName == "Wildcat A" && p.FieldId == "FIELD-1"),
-            "SYSTEM"), Times.Once);
+            "user-42"), Times.Once);
     }
 
     [Fact]
@@ -175,10 +181,7 @@ public class ProspectIdentificationControllerCompatibilityTests
         prospect.Setup(s => s.CreateProspectAsync(It.IsAny<Prospect>(), "user-42"))
             .ReturnsAsync("created-id");
 
-        var http = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, "user-42") })) };
-        sut.ControllerContext = new ControllerContext { HttpContext = http };
-
-        var actionResult = await sut.CreateProspect(new Prospect { ProspectName = "X", FieldId = "F" }, userId: null);
+        var actionResult = await sut.CreateProspect(new Prospect { ProspectName = "X", FieldId = "F" });
         var ok = Assert.IsType<OkObjectResult>(actionResult.Result);
         Assert.NotNull(ok.Value);
         prospect.Verify(s => s.CreateProspectAsync(It.IsAny<Prospect>(), "user-42"), Times.Once);

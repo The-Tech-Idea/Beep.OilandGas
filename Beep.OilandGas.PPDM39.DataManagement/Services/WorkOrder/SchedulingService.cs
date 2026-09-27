@@ -4,7 +4,6 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
 using Microsoft.Extensions.Logging;
-using Serilog;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 
@@ -39,7 +38,7 @@ public class SchedulingService : ISchedulingService
         string instanceId, string equipmentId,
         DateTime proposedStart, TimeSpan duration, string userId)
     {
-        Log.Information("Scheduling WO {InstanceId} equipment {Equip} start {Start}",
+        _logger.LogInformation("Scheduling WO {InstanceId} equipment {Equip} start {Start}",
             instanceId, equipmentId, proposedStart);
 
         var proposedEnd = proposedStart + duration;
@@ -49,7 +48,7 @@ public class SchedulingService : ISchedulingService
         {
             var suggestion = conflicts.Max(c => c.OverlapEnd).AddHours(1);
             var reason     = $"Conflict with {conflicts[0].ConflictingInstanceId} until {conflicts[0].OverlapEnd:g}";
-            Log.Warning("WO {InstanceId} conflict — suggested restart {Next}", instanceId, suggestion);
+            _logger.LogWarning("WO {InstanceId} conflict — suggested restart {Next}", instanceId, suggestion);
             return new ScheduleResult(false, proposedStart, proposedEnd, reason);
         }
 
@@ -83,11 +82,11 @@ public class SchedulingService : ISchedulingService
             plan.ACTIVE_IND      = "Y";
             await repo.InsertAsync(plan, userId);
 
-            Log.Information("WO {InstanceId} scheduled {Start}–{End}", instanceId, proposedStart, proposedEnd);
+            _logger.LogInformation("WO {InstanceId} scheduled {Start}–{End}", instanceId, proposedStart, proposedEnd);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to persist plan for WO {InstanceId}", instanceId);
+            _logger.LogError(ex, "Failed to persist plan for WO {InstanceId}", instanceId);
         }
 
         return new ScheduleResult(true, proposedStart, proposedEnd, null);
@@ -129,7 +128,7 @@ public class SchedulingService : ISchedulingService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Conflict check failed for equipment {EquipmentId}", equipmentId);
+            _logger.LogError(ex, "Conflict check failed for equipment {EquipmentId}", equipmentId);
             return new();
         }
     }
@@ -171,7 +170,7 @@ public class SchedulingService : ISchedulingService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Reschedule failed for WO {InstanceId}", instanceId);
+            _logger.LogError(ex, "Reschedule failed for WO {InstanceId}", instanceId);
             return new ScheduleResult(false, newStart, newStart, ex.Message);
         }
     }
@@ -232,7 +231,7 @@ public class SchedulingService : ISchedulingService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "GetFieldCalendar failed for field {FieldId}", fieldId);
+            _logger.LogError(ex, "GetFieldCalendar failed for field {FieldId}", fieldId);
             return new();
         }
     }

@@ -6,6 +6,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.Accounting.Ownership;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.ApiService.Services;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
 {
@@ -61,6 +62,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
             [FromBody] RegisterOwnershipInterestRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -80,7 +82,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
                     request.NET_REVENUE_INTEREST,
                     request.EFFECTIVE_DATE);
 
-                _service.OwnershipManager.ApproveDivisionOrder(DIVISION_ORDER.DIVISION_ORDER_ID, "system");
+                _service.OwnershipManager.ApproveDivisionOrder(DIVISION_ORDER.DIVISION_ORDER_ID, userId);
 
                 var interests = _service.OwnershipManager.GetOwnershipInterests(request.PROPERTY_OR_LEASE_ID, request.EFFECTIVE_DATE);
                 var interest = interests.FirstOrDefault(i => i.OWNER_ID == ownerInfo.OWNER_ID);

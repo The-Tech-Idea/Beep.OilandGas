@@ -30,7 +30,7 @@ public class RepositoryUserProfileTests(ITestOutputHelper output)
         await db.SaveChangesAsync();
         var accessor = new HttpContextAccessor { HttpContext = new DefaultHttpContext
         {
-            User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, "actor") }, "test"))
+            User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim("party_id", "actor") }, "test"))
         } };
         RepositoryUserProfileService Service(RepositoryDbContext context) => new(context,
             new RepositoryApplicationAuthorizationReader(context), new UpperInvariantLookupNormalizer(), accessor);

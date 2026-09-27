@@ -15,7 +15,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
     {
         #region Defaults Management (Per Data Source)
 
-        public async Task<string?> GetDefaultValueAsync(string key, string databaseId, string? userId = null, CancellationToken cancellationToken = default)
+        public async Task<string?> GetDefaultValueAsync(string key, string databaseId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentException("Key cannot be null or empty", nameof(key));
@@ -29,8 +29,6 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     { "key", key },
                     { "databaseId", databaseId }
                 };
-                if (!string.IsNullOrEmpty(userId))
-                    queryParams["userId"] = userId;
 
                 var endpoint = BuildRequestUriWithParams("/api/datamanagement/defaults/value", queryParams);
                 return await GetAsync<string?>(endpoint, cancellationToken);
@@ -39,7 +37,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task SetDefaultValueAsync(string key, string value, string databaseId, string? userId = null, string category = "System", string valueType = "String", string? description = null, CancellationToken cancellationToken = default)
+        public async Task SetDefaultValueAsync(string key, string value, string databaseId, string category = "System", string valueType = "String", string? description = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentException("Key cannot be null or empty", nameof(key));
@@ -55,7 +53,6 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     key,
                     value,
                     databaseId,
-                    userId,
                     category,
                     valueType,
                     description
@@ -69,7 +66,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             }
         }
 
-        public async Task<Dictionary<string, string>> GetDefaultsByCategoryAsync(string category, string databaseId, string? userId = null, CancellationToken cancellationToken = default)
+        public async Task<Dictionary<string, string>> GetDefaultsByCategoryAsync(string category, string databaseId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(category))
                 throw new ArgumentException("Category cannot be null or empty", nameof(category));
@@ -83,8 +80,6 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     { "category", category },
                     { "databaseId", databaseId }
                 };
-                if (!string.IsNullOrEmpty(userId))
-                    queryParams["userId"] = userId;
 
                 var endpoint = BuildRequestUriWithParams("/api/datamanagement/defaults/category", queryParams);
                 return await GetAsync<Dictionary<string, string>>(endpoint, cancellationToken) 
@@ -94,7 +89,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<Dictionary<string, string>> GetDefaultsForDatabaseAsync(string databaseId, string? userId = null, CancellationToken cancellationToken = default)
+        public async Task<Dictionary<string, string>> GetDefaultsForDatabaseAsync(string databaseId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(databaseId))
                 throw new ArgumentException("Database ID cannot be null or empty", nameof(databaseId));
@@ -105,8 +100,6 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                 {
                     { "databaseId", databaseId }
                 };
-                if (!string.IsNullOrEmpty(userId))
-                    queryParams["userId"] = userId;
 
                 var endpoint = BuildRequestUriWithParams("/api/datamanagement/defaults/database", queryParams);
                 return await GetAsync<Dictionary<string, string>>(endpoint, cancellationToken) 
@@ -116,19 +109,16 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task InitializeSystemDefaultsAsync(string databaseId, string userId = "SYSTEM", CancellationToken cancellationToken = default)
+        public async Task InitializeSystemDefaultsAsync(string databaseId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(databaseId))
                 throw new ArgumentException("Database ID cannot be null or empty", nameof(databaseId));
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
             if (AccessMode == ServiceAccessMode.Remote)
             {
                 var request = new
                 {
-                    databaseId,
-                    userId
+                    databaseId
                 };
 
                 await PostAsync<object, object>("/api/datamanagement/defaults/initialize", request, cancellationToken);
@@ -139,19 +129,16 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             }
         }
 
-        public async Task ResetToSystemDefaultsAsync(string databaseId, string userId, CancellationToken cancellationToken = default)
+        public async Task ResetToSystemDefaultsAsync(string databaseId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(databaseId))
                 throw new ArgumentException("Database ID cannot be null or empty", nameof(databaseId));
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
             if (AccessMode == ServiceAccessMode.Remote)
             {
                 var request = new
                 {
-                    databaseId,
-                    userId
+                    databaseId
                 };
 
                 await PostAsync<object, object>("/api/datamanagement/defaults/reset", request, cancellationToken);

@@ -174,8 +174,9 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                 ?? measurements.FirstOrDefault();
         }
 
-        private async Task UpsertFlowMeasurementAsync(PDEN pden, decimal flowRate, string? flowRateUnit, string productType = EnhancedRecoveryConstants.ProductTypeWater, CancellationToken cancellationToken = default)
+        private async Task UpsertFlowMeasurementAsync(PDEN pden, decimal flowRate, string? flowRateUnit, string userId, string productType = EnhancedRecoveryConstants.ProductTypeWater, CancellationToken cancellationToken = default)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(userId);
             if (string.IsNullOrWhiteSpace(pden.PDEN_ID))
                 throw new InvalidOperationException("Cannot persist a flow measurement without a PDEN ID.");
 
@@ -197,7 +198,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                 existing.FLOW_RATE = flowRate;
                 existing.FLOW_RATE_OUOM = normalizedUnit;
                 existing.PRODUCT_TYPE = string.IsNullOrWhiteSpace(existing.PRODUCT_TYPE) ? productType : existing.PRODUCT_TYPE;
-                existing.ROW_CHANGED_BY = "SYSTEM";
+                existing.ROW_CHANGED_BY = userId;
                 existing.ROW_CHANGED_DATE = now;
 
                 var updateResult = await measurementUow.UpdateDoc(existing);
@@ -226,9 +227,9 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                 MEASUREMENT_TYPE = "INJECTION_RATE",
                 FLOW_RATE = flowRate,
                 FLOW_RATE_OUOM = normalizedUnit,
-                ROW_CREATED_BY = "SYSTEM",
+                ROW_CREATED_BY = userId,
                 ROW_CREATED_DATE = now,
-                ROW_CHANGED_BY = "SYSTEM",
+                ROW_CHANGED_BY = userId,
                 ROW_CHANGED_DATE = now,
                 ROW_EFFECTIVE_DATE = now,
                 ROW_QUALITY = "GOOD"
@@ -279,7 +280,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             };
         }
 
-        private async Task<PDEN> CreateInjectionOperationAsync(string injectionWellId, decimal injectionRate, CancellationToken cancellationToken = default)
+        private async Task<PDEN> CreateInjectionOperationAsync(string injectionWellId, decimal injectionRate, string userId, CancellationToken cancellationToken = default)
         {
             var wellUow = await GetWellUnitOfWorkAsync();
             var well = wellUow.Read(injectionWellId) as WELL;
@@ -309,9 +310,9 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                 PDEN_SHORT_NAME = $"Injection {injectionWellId}",
                 PDEN_LONG_NAME = $"Injection operation for {injectionWellId}",
                 REMARK = $"Managed injection for {injectionWellId}",
-                ROW_CREATED_BY = "SYSTEM",
+                ROW_CREATED_BY = userId,
                 ROW_CREATED_DATE = now,
-                ROW_CHANGED_BY = "SYSTEM",
+                ROW_CHANGED_BY = userId,
                 ROW_CHANGED_DATE = now,
                 ROW_EFFECTIVE_DATE = now,
                 ROW_QUALITY = "GOOD"
@@ -322,7 +323,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                 throw new InvalidOperationException($"Failed to create injection operation: {insertResult.Message}");
 
             await pdenUow.Commit();
-            await UpsertFlowMeasurementAsync(pden, injectionRate, "BBL/D");
+            await UpsertFlowMeasurementAsync(pden, injectionRate, "BBL/D", userId);
 
             return pden;
         }
@@ -365,10 +366,11 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             return await MapEnhancedRecoveryOperationAsync(pden);
         }
 
-        public async Task<EnhancedRecoveryOperation> CreateEnhancedRecoveryOperationAsync(CreateEnhancedRecoveryOperation createDto, CancellationToken cancellationToken = default)
+        public async Task<EnhancedRecoveryOperation> CreateEnhancedRecoveryOperationAsync(CreateEnhancedRecoveryOperation createDto, string userId, CancellationToken cancellationToken = default)
         {
             if (createDto == null)
                 throw new ArgumentNullException(nameof(createDto));
+            ArgumentException.ThrowIfNullOrWhiteSpace(userId);
 
             var now = DateTime.UtcNow;
             var recoveryType = string.IsNullOrWhiteSpace(createDto.EORType) ? "EOR" : createDto.EORType;
@@ -390,9 +392,9 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                 PDEN_STATUS_TYPE = "STATUS",
                 PDEN_SHORT_NAME = $"{recoveryType} {createDto.FieldId}".Trim(),
                 PDEN_LONG_NAME = $"{recoveryType} operation {createDto.FieldId}".Trim(),
-                ROW_CREATED_BY = "SYSTEM",
+                ROW_CREATED_BY = userId,
                 ROW_CREATED_DATE = now,
-                ROW_CHANGED_BY = "SYSTEM",
+                ROW_CHANGED_BY = userId,
                 ROW_CHANGED_DATE = now,
                 ROW_EFFECTIVE_DATE = now,
                 ROW_QUALITY = "GOOD"
@@ -414,7 +416,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                     throw new InvalidOperationException($"Failed to update injection operation dates: {updateResult.Message}");
 
                 await pdenUow.Commit();
-                await UpsertFlowMeasurementAsync(pden, createDto.PlannedInjectionRate.Value, createDto.InjectionRateUnit);
+                await UpsertFlowMeasurementAsync(pden, createDto.PlannedInjectionRate.Value, createDto.InjectionRateUnit, userId);
             }
 
             return await MapEnhancedRecoveryOperationAsync(pden);

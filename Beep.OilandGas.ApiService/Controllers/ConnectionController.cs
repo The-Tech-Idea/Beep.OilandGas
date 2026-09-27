@@ -130,7 +130,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                         return BadRequest(new { error = "Connection name is required." });
                 }
 
-                var result = _connectionService.SetCurrentConnection(request.ConnectionName, request.UserId);
+                var result = _connectionService.SetCurrentConnection(request.ConnectionName);
                 return Ok(result);
             }
             catch (Exception ex)

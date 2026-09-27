@@ -35,7 +35,7 @@ public class AssetRolePermissionStoreTests(ITestOutputHelper output)
         {
             User = new ClaimsPrincipal(new ClaimsIdentity(new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, "actor"), new Claim(ClaimTypes.Role, "Administrator")
+                new Claim("party_id", "actor"), new Claim(ClaimTypes.Role, "Administrator")
             }, "test"))
         } };
         var services = new ServiceCollection();
@@ -77,7 +77,7 @@ public class AssetRolePermissionStoreTests(ITestOutputHelper output)
         await db.SaveChangesAsync();
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.RemovePermissionFromRoleAsync("reader", "permission-id"));
         Assert.Equal(2, await db.RoleClaims.CountAsync());
-        accessor.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, "member") }, "test"));
+        accessor.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim("party_id", "member") }, "test"));
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.AssignPermissionToRoleAsync("reader", "permission-id"));
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.RemovePermissionFromRoleAsync("reader", "permission-id"));
         editor.VerifyNoOtherCalls();

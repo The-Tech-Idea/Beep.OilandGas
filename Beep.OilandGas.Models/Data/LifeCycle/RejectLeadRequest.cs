@@ -15,14 +15,6 @@ public class RejectLeadRequest : ModelEntityBase
         set { SetProperty(ref InstanceIdValue, value); }
     }
 
-    private string UserIdValue = string.Empty;
-
-    public string UserId
-    {
-        get { return UserIdValue; }
-        set { SetProperty(ref UserIdValue, value); }
-    }
-
     /// <summary>Optional notes (logged today; reserved for process history).</summary>
     public string? Reason { get; set; }
 }

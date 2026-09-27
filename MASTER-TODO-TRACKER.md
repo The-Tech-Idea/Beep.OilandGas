@@ -14,6 +14,26 @@ The review and planning deliverables are complete. Implementation has started wi
 
 **Confirmed authorization requirement:** RBAC is owned by the oil and gas app itself. IdentityServer is authentication-only. FG-11 reads roles from the app's own RBAC through its API, uses standard ASP.NET role checks in Web, and independently enforces API access. IdentityServer roles are never application authorization authority; this boundary is not pending a decision.
 
+**Fixed 2026-09-25 (with Fahad's approval), setup deadlock:** a fresh repository could not be set up from the
+product. `AssetAccessMiddleware` ran on every authenticated API request and asked `UserAssetAccessService`, which throws
+"Configure a database binding for module PPDM_CORE" until that module is bound — and binding it is
+`PUT api/setup/modules/{id}/connection`, an authenticated Administrator request that met the same middleware. The
+account endpoints failed the same way (`api/auth/repository/me`, `me/deletion`, `me/deactivate` answered 409 through
+`GlobalExceptionMiddleware`), so on an unconfigured repository nobody's roles loaded and account deletion refused.
+The middleware now skips `/api/auth` and `/api/setup`, which read no asset data (`AssetAccessMiddlewareTests`, both
+exemptions mutation-tested). `SetupGateMiddleware` still gates `/api/setup/modules` until the repository is installed.
+Verified in Chrome: the account page's five tabs load, deletion is refused for the only administrator, and sign-out is a
+POST with its antiforgery token.
+
+**Open, found 2026-09-25 (the Web's own setup, not changed):** no LocalDB connection can be made from the product.
+`PPDM39DatabaseWizard` (`/ppdm39/database-management`) asks for a user name and password and offers no integrated
+security, and saves only after the legacy all-scripts step succeeds, while `/admin/module-databases` binds a module only
+to an existing BeepDM connection — in development that is `PPDM39`, a SQLite connection. So PPDM_CORE stays unbound
+locally, and personas and field settings in the header do not load. The development LocalDB repository had one pending
+migration (`FinancialOperationClaims`), applied with `dotnet ef database update` as the repository README documents.
+
+**IdentityServer integration, 2026-09-25 (done):** the account menu opens again — MudBlazor 9 requires a custom activator to call the menu's context, so sign-in, the account page and sign-out had been unreachable (MENU-01, `SignInSurfaceTests.The_sign_in_and_account_menu_opens`). Deleting the account is refused beforehand for OilGas's only active administrator (`GET api/auth/repository/me/deletion`, `RepositoryUserService.IsLastActiveAdministratorAsync`, the rule `UpdateAsync` already applied): the identity server deletes first, so `me/deactivate`'s refusal came too late (DELETE-01). Not changed, being the Web's own UI: the navigation and notification menus (`NavMenu`, `AccountantNavMenu`, `PetroleumEngineerNavMenu`, `NotificationCenter`) have the same MudBlazor 9 activator defect and do not open.
+
 ## Current verification evidence — 2026-09-21
 
 | Check | Outcome | Boundary / next action |

@@ -7,6 +7,7 @@ namespace Beep.OilandGas.Models.Data
     {
         private string UserIdValue = string.Empty;
 
+        // Names the subject whose access is checked, not the actor; the API admits only the caller themself or an Administrator.
         public string UserId
 
         {

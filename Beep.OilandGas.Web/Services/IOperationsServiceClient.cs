@@ -16,7 +16,7 @@ namespace Beep.OilandGas.Web.Services
         // Prospect Identification Operations
         Task<ProspectEvaluation> EvaluateProspectAsync(string prospectId);
         Task<List<Prospect>> GetProspectsAsync(Dictionary<string, string>? filters = null);
-        Task<string> CreateProspectAsync(Prospect prospect, string? userId = null);
+        Task<string> CreateProspectAsync(Prospect prospect);
         Task<List<ProspectRanking>> RankProspectsAsync(List<string> prospectIds, Dictionary<string, decimal> rankingCriteria);
 
         // Enhanced Recovery Operations
@@ -27,8 +27,8 @@ namespace Beep.OilandGas.Web.Services
         // Lease Acquisition Operations
         Task<LeaseSummary> EvaluateLeaseAsync(string leaseId);
         Task<List<LeaseSummary>> GetAvailableLeasesAsync(Dictionary<string, string>? filters = null);
-        Task<string> CreateLeaseAcquisitionAsync(CreateLeaseAcquisition leaseRequest, string? userId = null);
-        Task<bool> UpdateLeaseStatusAsync(string leaseId, string status, string? userId = null);
+        Task<string> CreateLeaseAcquisitionAsync(CreateLeaseAcquisition leaseRequest);
+        Task<bool> UpdateLeaseStatusAsync(string leaseId, string status);
     }
 }
 

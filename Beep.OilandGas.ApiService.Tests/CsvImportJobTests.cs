@@ -97,7 +97,7 @@ public class CsvImportJobTests
         NullLoggerFactory.Instance, progress, queue)
     {
         ControllerContext = new() { HttpContext = new DefaultHttpContext
-        { User = new ClaimsPrincipal(new ClaimsIdentity(actor ? new[] { new Claim("sub", "real-actor") } : Array.Empty<Claim>(), "test")) } }
+        { User = new ClaimsPrincipal(new ClaimsIdentity(actor ? new[] { new Claim("party_id", "real-actor") } : Array.Empty<Claim>(), "test")) } }
     };
 
     [Theory]
@@ -117,7 +117,7 @@ public class CsvImportJobTests
         using (var upload = new MemoryStream(new byte[] { 1, 2, 3 }))
         {
             var file = new FormFile(upload, 0, 3, "file", "../../untrusted.csv");
-            result = await Controller(queue.Object, progress.Object).ImportCsv("WELL", file, userId: "spoofed", connectionName: "selected", validateForeignKeys: false);
+            result = await Controller(queue.Object, progress.Object).ImportCsv("WELL", file, connectionName: "selected", validateForeignKeys: false);
         }
         Assert.Equal(accepted ? 200 : 503, Assert.IsAssignableFrom<ObjectResult>(result.Result).StatusCode);
         Assert.Equal("real-actor", received!.UserId);
@@ -127,8 +127,18 @@ public class CsvImportJobTests
         if (!accepted) progress.Verify(p => p.CompleteOperation("server-id", false, null, It.IsAny<string>()), Times.Once);
     }
 
+    [Fact]
+    public async Task RequestWithoutAnAccountIsRefusedBeforeQueueing()
+    {
+        var queue = new Mock<IBackgroundOperationQueue>(MockBehavior.Strict);
+        var file = new Mock<IFormFile>();
+        file.SetupGet(f => f.Length).Returns(1);
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            Controller(queue.Object, Mock.Of<IProgressTrackingService>(), actor: false).ImportCsv("WELL", file.Object));
+        queue.VerifyNoOtherCalls();
+    }
+
     [Theory]
-    [InlineData("actor", 401)]
     [InlineData("operation", 400)]
     [InlineData("size", 413)]
     [InlineData("table", 400)]
@@ -137,7 +147,7 @@ public class CsvImportJobTests
         var queue = new Mock<IBackgroundOperationQueue>(MockBehavior.Strict);
         var file = new Mock<IFormFile>();
         file.SetupGet(f => f.Length).Returns(scenario == "size" ? CsvImportJob.MaxUploadBytes + 1 : 1);
-        var result = await Controller(queue.Object, Mock.Of<IProgressTrackingService>(), scenario != "actor")
+        var result = await Controller(queue.Object, Mock.Of<IProgressTrackingService>())
             .ImportCsv(scenario == "table" ? "NOT_A_PPDM_TABLE" : "WELL", file.Object, operationId: scenario == "operation" ? "caller-id" : null);
         var code = result.Result is StatusCodeResult status ? status.StatusCode : ((ObjectResult)result.Result!).StatusCode;
         Assert.Equal(expected, code);

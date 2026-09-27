@@ -2,12 +2,10 @@
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.NodalAnalysis
 @using Beep.OilandGas.PPDM39.Models
-@using System.Security.Claims
 @using Microsoft.Extensions.Logging
 @inject ISnackbar Snackbar
 @inject ILogger<NodalAnalysis> Logger
 @inject ICalculationServiceClient CalculationService
-@inject AuthenticationStateProvider AuthStateProvider
 @inject IDevelopmentServiceClient DevelopmentClient
 @inject ILifeCycleService LifeCycleService
 
@@ -127,7 +125,6 @@
     private List<NodalAnalysisRunResult>? _analysisHistory;
     private bool _isLoading = false;
     private bool _initializationFinished;
-    private string? _currentUserId;
     private string? _selectedWellUWI;
     private List<WellOptionDto> _wells = new();
 
@@ -165,8 +162,6 @@
                 Logger.LogDebug(ex, "Field lifecycle summary unavailable for nodal analysis header");
             }
 
-            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
             try
             {
                 _wells = (await DevelopmentClient.GetWellsAsync()).Select(MapWell)
@@ -252,7 +247,7 @@
 
             var result = await CalculationService.PerformNodalAnalysisAsync(_selectedWellUWI, parameters);
 
-            var saved = await CalculationService.SaveNodalAnalysisResultAsync(result, _currentUserId);
+            var saved = await CalculationService.SaveNodalAnalysisResultAsync(result);
             if (!saved)
             {
                 Logger.LogWarning("Nodal analysis finished but save returned false for well {WellUWI}", _selectedWellUWI);

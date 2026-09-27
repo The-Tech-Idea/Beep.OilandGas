@@ -3,8 +3,6 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
 @inject IConnectionService ConnectionService
-@using Microsoft.AspNetCore.Components.Authorization
-@inject AuthenticationStateProvider AuthStateProvider
 
 <MudDialog MaxWidth="MaxWidth.Medium" FullWidth="true">
     <DialogContent>
@@ -146,27 +144,6 @@
     private SeedDataOption _selectedSeedOption = SeedDataOption.ReferenceAndSample;
     private bool _isCreatingDatabase = false;
     private CreateDemoDatabaseResponse? _createResult;
-    private string? _userId;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await GetCurrentUserId();
-    }
-
-    private async Task GetCurrentUserId()
-    {
-        try
-        {
-            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            _userId = authState.User?.FindFirst("sub")?.Value 
-                   ?? authState.User?.Identity?.Name 
-                   ?? "system";
-        }
-        catch
-        {
-            _userId = "system";
-        }
-    }
 
     private void NextStep()
     {
@@ -178,12 +155,6 @@
 
     private async Task CreateDatabase()
     {
-        if (string.IsNullOrEmpty(_userId))
-        {
-            Snackbar.Add("User ID is required", Severity.Warning);
-            return;
-        }
-
         _isCreatingDatabase = true;
         _createResult = null;
         StateHasChanged();
@@ -199,14 +170,14 @@
                 _ => "reference-sample"
             };
 
-            _createResult = await DemoDatabaseService.CreateDemoDatabaseAsync(_userId, seedOption);
+            _createResult = await DemoDatabaseService.CreateDemoDatabaseAsync(seedOption);
 
             if (_createResult.Success)
             {
                 Snackbar.Add("Demo database created successfully", Severity.Success);
                 
                 // Set as current connection
-                var setResult = await ConnectionService.SetCurrentConnectionAsync(_createResult.ConnectionName, _userId);
+                var setResult = await ConnectionService.SetCurrentConnectionAsync(_createResult.ConnectionName);
                 if (setResult.Success)
                 {
                     Snackbar.Add("Demo database set as current connection", Severity.Success);

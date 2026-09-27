@@ -13,7 +13,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         // Explicit implementations of Models.Core.Interfaces.IEnhancedRecoveryService
 
         async Task<EnhancedRecoveryOperation> Beep.OilandGas.Models.Core.Interfaces.IEnhancedRecoveryService.AnalyzeEORPotentialAsync(
-            string fieldId, string eorMethod, CancellationToken cancellationToken = default)
+            string fieldId, string eorMethod, string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
                 throw new ArgumentNullException(nameof(fieldId));
@@ -34,7 +34,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                 PlannedStartDate  = DateTime.UtcNow,
             };
 
-            return await CreateEnhancedRecoveryOperationAsync(dto);
+            return await CreateEnhancedRecoveryOperationAsync(dto, userId);
         }
 
         async Task<EnhancedRecoveryOperation> Beep.OilandGas.Models.Core.Interfaces.IEnhancedRecoveryService.CalculateRecoveryFactorAsync(
@@ -85,10 +85,11 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         }
 
         async Task<InjectionOperation> Beep.OilandGas.Models.Core.Interfaces.IEnhancedRecoveryService.ManageInjectionAsync(
-            string injectionWellId, decimal injectionRate, CancellationToken cancellationToken = default)
+            string injectionWellId, decimal injectionRate, string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(injectionWellId))
                 throw new ArgumentNullException(nameof(injectionWellId));
+            ArgumentException.ThrowIfNullOrWhiteSpace(userId);
 
             // Look for an existing active injection operation on this well
             var operations = await GetInjectionOperationsAsync(injectionWellId);
@@ -107,7 +108,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                 pden.PDEN_STATUS = "ACTIVE";
                 pden.CURRENT_STATUS_DATE = now;
                 pden.LAST_INJECTION_DATE = now;
-                pden.ROW_CHANGED_BY = "SYSTEM";
+                pden.ROW_CHANGED_BY = userId;
                 pden.ROW_CHANGED_DATE = now;
 
                 var updateResult = await pdenUow.UpdateDoc(pden);
@@ -115,12 +116,12 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                     throw new InvalidOperationException($"Failed to update injection operation {existing.OperationId}: {updateResult.Message}");
 
                 await pdenUow.Commit();
-                await UpsertFlowMeasurementAsync(pden, injectionRate, existing.InjectionRateUnit ?? "BBL/D");
+                await UpsertFlowMeasurementAsync(pden, injectionRate, existing.InjectionRateUnit ?? "BBL/D", userId);
 
                 return await MapInjectionOperationAsync(pden);
             }
 
-            var created = await CreateInjectionOperationAsync(injectionWellId, injectionRate);
+            var created = await CreateInjectionOperationAsync(injectionWellId, injectionRate, userId);
             return await MapInjectionOperationAsync(created);
         }
     }

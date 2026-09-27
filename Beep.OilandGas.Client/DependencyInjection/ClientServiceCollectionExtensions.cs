@@ -31,29 +31,16 @@ namespace Beep.OilandGas.Client.DependencyInjection
             services.AddSingleton(options);
             services.AddHttpClient();
 
-            // Register authentication provider if credentials provided
-            if (!string.IsNullOrEmpty(options.Username) && !string.IsNullOrEmpty(options.Password))
-            {
-                services.AddScoped<IAuthenticationProvider>(sp =>
-                {
-                    var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-                    var httpClient = httpClientFactory.CreateClient();
-                    return new CredentialsAuthenticationProvider(
-                        httpClient,
-                        options.IdentityServerUrl ?? throw new ArgumentException("IdentityServerUrl is required"),
-                        options.Username,
-                        options.Password,
-                        options.ClientId,
-                        options.ClientSecret);
-                });
-            }
-
-            // Register AppClass
+            // The API admits only signed-in people, so remote calls carry a person's access token, which the host supplies
+            // (IAuthenticationProvider — the Web's is the signed-in person's own). It signed in here with a username and
+            // password (the resource-owner password grant), which the identity server does not offer, or sent no token.
             services.AddScoped<IBeepOilandGasApp>(sp =>
             {
                 var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
                 var httpClient = httpClientFactory.CreateClient();
-                var authProvider = sp.GetService<IAuthenticationProvider>();
+                var authProvider = sp.GetService<IAuthenticationProvider>()
+                    ?? throw new InvalidOperationException(
+                        "The Beep Oil & Gas client in remote mode needs an IAuthenticationProvider supplying the signed-in person's access token; register one.");
                 var logger = sp.GetService<ILogger<BeepOilandGasApp>>();
                 return new BeepOilandGasApp(httpClient, options, authProvider, logger);
             });
@@ -110,19 +97,6 @@ namespace Beep.OilandGas.Client.DependencyInjection
             if (string.IsNullOrWhiteSpace(options.ApiBaseUrl))
             {
                 options.ApiBaseUrl = configuration["ApiService:BaseUrl"];
-            }
-
-            if (string.IsNullOrWhiteSpace(options.IdentityServerUrl))
-            {
-                options.IdentityServerUrl = configuration["IdentityServer:Authority"]
-                    ?? configuration["IdentityServer:BaseUrl"]
-                    ?? configuration["Authentication:Schemes:OpenIdConnect:Authority"];
-            }
-
-            if (string.IsNullOrWhiteSpace(options.ClientId))
-            {
-                options.ClientId = configuration["IdentityServer:ClientId"]
-                    ?? configuration["Authentication:Schemes:OpenIdConnect:ClientId"];
             }
 
             if (remoteOnly)

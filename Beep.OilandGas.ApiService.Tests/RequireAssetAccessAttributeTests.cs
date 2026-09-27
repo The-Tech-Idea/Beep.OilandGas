@@ -15,7 +15,7 @@ namespace Beep.OilandGas.ApiService.Tests;
 public class RequireAssetAccessAttributeTests
 {
     [Fact]
-    public async Task OnAuthorizationAsync_WhenNameIdentifierDiffersFromIdentity_UsesNameIdentifier()
+    public async Task OnAuthorizationAsync_UsesThePartyIdThisApplicationIssued()
     {
         var access = new TestAccessControlService
         {
@@ -24,7 +24,8 @@ public class RequireAssetAccessAttributeTests
 
         var context = CreateContext(CreateServices(access), new ClaimsPrincipal(new ClaimsIdentity(
         [
-            new Claim(ClaimTypes.NameIdentifier, "trusted-user"),
+            new Claim("party_id", "trusted-user"),
+            new Claim(ClaimTypes.NameIdentifier, "external-subject"),
             new Claim(ClaimTypes.Name, "display-name")
         ], "TestAuth", ClaimTypes.Name, ClaimTypes.Role)));
 
@@ -49,7 +50,7 @@ public class RequireAssetAccessAttributeTests
 
         var context = CreateContext(CreateServices(access), new ClaimsPrincipal(new ClaimsIdentity(
         [
-            new Claim(ClaimTypes.NameIdentifier, "user-1")
+            new Claim("party_id", "user-1")
         ], "TestAuth", ClaimTypes.Name, ClaimTypes.Role)));
 
         context.RouteData.Values["wellId"] = "WELL-9";

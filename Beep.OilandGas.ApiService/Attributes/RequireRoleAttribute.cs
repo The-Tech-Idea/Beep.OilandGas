@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using System.Security.Claims;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -25,9 +24,7 @@ namespace Beep.OilandGas.ApiService.Attributes
 
         public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
         {
-            // Get user ID from claims or context
-            var userId = context.HttpContext.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? context.HttpContext.User?.Identity?.Name;
+            var userId = context.HttpContext.User.FindActingUserId();
             var observability = context.HttpContext.RequestServices
                 .GetService(typeof(IAuthorizationObservabilityService))
                 as IAuthorizationObservabilityService;

@@ -90,8 +90,8 @@ namespace Beep.OilandGas.Web.Services
         Task<object> GetFieldTimelineAsync();
 
         // Work Order Operations
-        Task<AFEResponse> CreateOrLinkAFEAsync(string workOrderId, string? userId = null);
-        Task<WorkOrderCostResponse> RecordWorkOrderCostAsync(string workOrderId, WorkOrderCostRequest request, string? userId = null);
+        Task<AFEResponse> CreateOrLinkAFEAsync(string workOrderId);
+        Task<WorkOrderCostResponse> RecordWorkOrderCostAsync(string workOrderId, WorkOrderCostRequest request);
         Task<AFEResponse> GetAFEForWorkOrderAsync(string workOrderId);
     }
 
@@ -265,15 +265,11 @@ namespace Beep.OilandGas.Web.Services
         /// <summary>
         /// Create or link AFE for work order
         /// </summary>
-        public async Task<AFEResponse> CreateOrLinkAFEAsync(string workOrderId, string? userId = null)
+        public async Task<AFEResponse> CreateOrLinkAFEAsync(string workOrderId)
         {
             try
             {
                 var endpoint = $"/api/lifecycle/workorders/{Uri.EscapeDataString(workOrderId)}/afe";
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
                 var afe = await _apiClient.PostAsync<AFEResponse>(endpoint, (HttpContent?)null);
                 return afe ?? new AFEResponse();
             }
@@ -289,17 +285,12 @@ namespace Beep.OilandGas.Web.Services
         /// </summary>
         public async Task<WorkOrderCostResponse> RecordWorkOrderCostAsync(
             string workOrderId, 
-            WorkOrderCostRequest request, 
-            string? userId = null)
+            WorkOrderCostRequest request)
         {
             try
             {
                 request.WorkOrderId = workOrderId;
                 var endpoint = $"/api/lifecycle/workorders/{Uri.EscapeDataString(workOrderId)}/costs";
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    endpoint += $"?userId={Uri.EscapeDataString(userId)}";
-                }
                 var response = await _apiClient.PostAsync<WorkOrderCostRequest, WorkOrderCostResponse>(
                     endpoint, request);
                 return response ?? new WorkOrderCostResponse

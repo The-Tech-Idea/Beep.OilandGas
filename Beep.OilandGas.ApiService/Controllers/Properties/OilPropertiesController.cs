@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Microsoft.AspNetCore.Authorization;
@@ -95,11 +96,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         }
 
         [HttpPost("composition")]
-        public async Task<ActionResult> SaveComposition([FromBody] OilComposition composition, [FromQuery] string userId)
+        public async Task<ActionResult> SaveComposition([FromBody] OilComposition composition)
         {
+            var userId = User.ActingUserId();
             try
             {
-                await _service.SaveOilCompositionAsync(composition, userId ?? GetUserId());
+                await _service.SaveOilCompositionAsync(composition, userId);
                 return Ok(new { message = "Composition saved successfully", compositionId = composition.CompositionId });
             }
             catch (Exception ex)
@@ -146,11 +148,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         }
 
         [HttpPost("result")]
-        public async Task<ActionResult> SaveResult([FromBody] OilPropertyResult result, [FromQuery] string userId)
+        public async Task<ActionResult> SaveResult([FromBody] OilPropertyResult result)
         {
+            var userId = User.ActingUserId();
             try
             {
-                await _service.SaveOilPropertyResultAsync(result, userId ?? GetUserId());
+                await _service.SaveOilPropertyResultAsync(result, userId);
                 return Ok(new { message = "Result saved successfully", calculationId = result.CalculationId });
             }
             catch (Exception ex)
@@ -159,8 +162,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
-
-        private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
     }
 }
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Lease;
 using Beep.OilandGas.Models.Data.Operations;
@@ -76,12 +77,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         }
 
         [HttpPost]
-        public async Task<ActionResult<object>> CreateLeaseAcquisition([FromBody] CreateLeaseAcquisition? leaseRequest, [FromQuery] string? userId = null)
+        public async Task<ActionResult<object>> CreateLeaseAcquisition([FromBody] CreateLeaseAcquisition? leaseRequest)
         {
+            var userId = User.ActingUserId();
             if (leaseRequest is null) return BadRequest(new { error = "Request body is required." });
             try
             {
-                var leaseId = await _service.CreateLeaseAcquisitionAsync(leaseRequest, userId ?? GetUserId());
+                var leaseId = await _service.CreateLeaseAcquisitionAsync(leaseRequest, userId);
                 return Ok(new { message = "Lease acquisition created successfully", leaseId });
             }
             catch (OperationCanceledException)
@@ -100,13 +102,14 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         }
 
         [HttpPut("{leaseId}/status")]
-        public async Task<ActionResult> UpdateLeaseStatus(string leaseId, [FromBody] UpdateLeaseStatusRequest? request, [FromQuery] string? userId = null)
+        public async Task<ActionResult> UpdateLeaseStatus(string leaseId, [FromBody] UpdateLeaseStatusRequest? request)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(leaseId)) return BadRequest(new { error = "Lease ID is required." });
             if (request is null) return BadRequest(new { error = "Request body is required." });
             try
             {
-                await _service.UpdateLeaseStatusAsync(leaseId, request.Status, userId ?? GetUserId());
+                await _service.UpdateLeaseStatusAsync(leaseId, request.Status, userId);
                 return Ok(new { message = "Lease status updated successfully" });
             }
             catch (OperationCanceledException)
@@ -127,7 +130,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
-
-        private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
     }
 }

@@ -1,3 +1,4 @@
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.ProductionOperations.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -49,6 +50,7 @@ public class FacilityLicenseController : ControllerBase
         [FromBody] FACILITY_LICENSE license,
         CancellationToken cancellationToken)
     {
+        var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
         if (license == null)
@@ -58,7 +60,7 @@ public class FacilityLicenseController : ControllerBase
         {
             license.FACILITY_ID ??= facilityId;
             var row = await _facilities
-                .CreateFacilityLicenseAsync(license, FacilityUserHelper.ResolveUserId(User), cancellationToken)
+                .CreateFacilityLicenseAsync(license, userId, cancellationToken)
                 .ConfigureAwait(false);
             return Ok(row);
         }

@@ -1,17 +1,15 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
-using System.Text.Encodings.Web;
-using System.Text.Json;
 using Beep.OilandGas.ApiService.Controllers;
 using Beep.OilandGas.ApiService.Controllers.Identity;
 using Beep.OilandGas.ApiService.Services;
+using Beep.OilandGas.ApiService.Tests.Infrastructure;
 using Beep.OilandGas.Repository;
 using Beep.OilandGas.LifeCycle.Services.Processes;
 using Beep.OilandGas.LifeCycle.Data.Tables;
 using Microsoft.AspNetCore.Identity;
 using Moq;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
@@ -20,7 +18,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using TheTechIdea.Data.OilGas;
 using Xunit;
 using Xunit.Abstractions;
@@ -30,7 +27,7 @@ namespace Beep.OilandGas.ApiService.Tests;
 public class RepositoryRegistrationHttpTests(ITestOutputHelper output)
 {
     [LocalDbModuleFact]
-    public async Task RegistrationAndUserAdministrationUseLocalDbIdentityOverHttp()
+    public async Task FirstSightProvisioningAndUserAdministrationUseLocalDbIdentityOverHttp()
     {
         var database = $"BeepOilGas_Http_{Guid.NewGuid():N}";
         output.WriteLine($"Retained HTTP repository test database: {database}");
@@ -60,11 +57,9 @@ public class RepositoryRegistrationHttpTests(ITestOutputHelper output)
         builder.Services.AddScoped<RepositoryUserService>();
         builder.Services.AddScoped<RepositoryRoleAssignmentService>();
         builder.Services.AddScoped<RepositoryRoleCatalogService>();
-        builder.Services.AddScoped<IClaimsTransformation, RepositoryClaimsTransformation>();
-        builder.Services.AddAuthentication("TestExternal")
-            .AddScheme<AuthenticationSchemeOptions, ExternalHandler>("TestExternal", _ => { });
-        builder.Services.AddAuthorization(RepositoryAuthorization.Configure);
-        builder.Services.AddControllers().AddApplicationPart(typeof(RepositoryBootstrapController).Assembly)
+        // The API's own identity over signed tokens: each person is provisioned at first sight, the first administers.
+        builder.AddApiIdentity();
+        builder.Services.AddControllers().AddApplicationPart(typeof(RepositoryAccountController).Assembly)
             .ConfigureApplicationPartManager(parts => parts.FeatureProviders.Add(new AccountControllers()));
         await using var app = builder.Build();
         app.UseAuthentication();
@@ -76,40 +71,28 @@ public class RepositoryRegistrationHttpTests(ITestOutputHelper output)
         try
         {
             using var client = new HttpClient { BaseAddress = new Uri(app.Urls.Single()) };
-            using (var anonymous = await client.PostAsJsonAsync("/api/setup/repository/register", new { }))
+            using (var anonymous = await client.GetAsync("/api/auth/repository/me"))
                 Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
             using (var anonymousInbox = await client.GetAsync("/api/workflow/tasks/inbox"))
                 Assert.Equal(HttpStatusCode.Unauthorized, anonymousInbox.StatusCode);
 
+            // The first person to sign in administers; what their token says about roles or accounts counts for nothing.
             SetSubject(client, "first");
-            using (var unregisteredInbox = await client.GetAsync("/api/workflow/tasks/inbox"))
-                Assert.Equal(HttpStatusCode.Forbidden, unregisteredInbox.StatusCode);
-            using (var beforeRegistration = await client.GetAsync("/api/identity/users"))
-                Assert.Equal(HttpStatusCode.Forbidden, beforeRegistration.StatusCode);
-            using (var created = await client.PostAsJsonAsync("/api/setup/repository/register",
-                new { subject = "forged-subject", role = "Administrator", name = "Forged Name", email = "forged@example.invalid", email_verified = false }))
-            {
-                Assert.Equal(HttpStatusCode.OK, created.StatusCode);
-                Assert.Equal("Created", (await created.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("status").GetString());
-            }
             var admin = await client.GetFromJsonAsync<RepositoryUserAccess>("/api/auth/repository/me");
             Assert.NotNull(admin);
             Assert.Equal(new[] { "Administrator" }, admin.Roles);
+            Assert.NotEqual("forged-local-id", admin.UserId);
 
+            // A subject differing only in case is not the first person's (OIDC subjects are case-sensitive), and SQL
+            // Server's collation will not hold it beside theirs: it is refused, and no account is made for it.
             SetSubject(client, "FIRST");
             using (var aliasedAccount = await client.GetAsync("/api/auth/repository/me"))
-                Assert.Equal(HttpStatusCode.NotFound, aliasedAccount.StatusCode);
+                Assert.NotEqual(HttpStatusCode.OK, aliasedAccount.StatusCode);
             using (var aliasedAdmin = await client.GetAsync("/api/identity/users"))
                 Assert.Equal(HttpStatusCode.Forbidden, aliasedAdmin.StatusCode);
-            using (var aliasedRegistration = await client.PostAsJsonAsync("/api/setup/repository/register", new { }))
-                Assert.Equal(HttpStatusCode.Forbidden, aliasedRegistration.StatusCode);
 
+            // The next person is a member with no role.
             SetSubject(client, "second");
-            using (var registered = await client.PostAsJsonAsync("/api/setup/repository/register", new { }))
-            {
-                Assert.Equal(HttpStatusCode.OK, registered.StatusCode);
-                Assert.Equal("Registered", (await registered.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("status").GetString());
-            }
             var member = await client.GetFromJsonAsync<RepositoryUserAccess>("/api/auth/repository/me");
             Assert.NotNull(member);
             Assert.Empty(member.Roles);
@@ -151,7 +134,9 @@ public class RepositoryRegistrationHttpTests(ITestOutputHelper output)
             Assert.Equal(2, accounts.Count);
             Assert.Equal("External first", accounts.Single(x => x.UserId == admin.UserId).FullName);
             Assert.Equal("External second", accounts.Single(x => x.UserId == member.UserId).FullName);
-            Assert.All(accounts, account => Assert.Equal("shared@example.invalid", account.Email));
+            // Only an address the identity server verified is kept.
+            Assert.Equal("shared@example.invalid", accounts.Single(x => x.UserId == admin.UserId).Email);
+            Assert.Null(accounts.Single(x => x.UserId == member.UserId).Email);
             var memberSummary = accounts.Single(x => x.UserId == member.UserId);
             using (var invalidUser = await client.PutAsJsonAsync($"/api/identity/users/{member.UserId}",
                 new RepositoryUserUpdate(new string('x', 1001), false, memberSummary.ConcurrencyStamp)))
@@ -219,11 +204,6 @@ public class RepositoryRegistrationHttpTests(ITestOutputHelper output)
             using (var lastAdmin = await client.PutAsJsonAsync($"/api/identity/users/{admin.UserId}",
                 new RepositoryUserUpdate(administrator.FullName, false, administrator.ConcurrencyStamp)))
                 Assert.Equal(HttpStatusCode.Conflict, lastAdmin.StatusCode);
-            using (var replay = await client.PostAsJsonAsync("/api/setup/repository/register", new { }))
-            {
-                Assert.Equal(HttpStatusCode.OK, replay.StatusCode);
-                Assert.Equal("AlreadyCompleted", (await replay.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("status").GetString());
-            }
             SetSubject(client, "second");
             using (var disabled = await client.GetAsync("/api/auth/repository/me"))
                 Assert.Equal(HttpStatusCode.Forbidden, disabled.StatusCode);
@@ -231,8 +211,6 @@ public class RepositoryRegistrationHttpTests(ITestOutputHelper output)
                 Assert.Equal(HttpStatusCode.Forbidden, disabledInbox.StatusCode);
             taskRouter.Verify(x => x.GetTasksForPersonaAsync("ENGINEER"), Times.Exactly(3));
             taskRouter.VerifyNoOtherCalls();
-            using (var disabledRegistration = await client.PostAsJsonAsync("/api/setup/repository/register", new { }))
-                Assert.Equal(HttpStatusCode.Forbidden, disabledRegistration.StatusCode);
 
             await using var verify = app.Services.CreateAsyncScope();
             var db = verify.ServiceProvider.GetRequiredService<RepositoryDbContext>();
@@ -240,48 +218,30 @@ public class RepositoryRegistrationHttpTests(ITestOutputHelper output)
             Assert.Equal(2, await db.UserLogins.CountAsync());
             Assert.Equal(1, await db.UserRoles.CountAsync());
             Assert.Equal(admin.UserId, (await db.Bootstrap.SingleAsync()).AdministratorUserId);
-            Assert.False(await db.UserLogins.AnyAsync(x => x.ProviderKey == "forged-subject"));
             Assert.True((await db.Users.SingleAsync(x => x.Id == admin.UserId)).EmailConfirmed);
             Assert.False((await db.Users.SingleAsync(x => x.Id == member.UserId)).EmailConfirmed);
         }
         finally { await app.StopAsync(); }
     }
 
-    private static void SetSubject(HttpClient client, string subject)
-    {
-        client.DefaultRequestHeaders.Remove("X-Test-Subject");
-        client.DefaultRequestHeaders.Add("X-Test-Subject", subject);
-    }
+    /// <summary>
+    /// Signs <paramref name="subject"/> in with a token that also claims the Administrator role and another account — both
+    /// ignored. Only "first" has an address the identity server verified.
+    /// </summary>
+    private static void SetSubject(HttpClient client, string subject) =>
+        client.SignIn(SignedTokens.Person(subject, "shared@example.invalid", emailVerified: subject == "first",
+            name: $"External {subject}", extra: [("role", "Administrator"), (ClaimTypes.NameIdentifier, "forged-local-id")]));
 
     private sealed class AccountControllers : IApplicationFeatureProvider<ControllerFeature>
     {
         public void PopulateFeature(IEnumerable<ApplicationPart> parts, ControllerFeature feature)
         {
-            var allowed = new[] { typeof(RepositoryBootstrapController), typeof(RepositoryAccountController),
+            var allowed = new[] { typeof(RepositoryAccountController),
                 typeof(UserManagementController), typeof(RepositoryRolesController), typeof(PersonasController),
                 typeof(WorkflowTasksController), typeof(Beep.OilandGas.ApiService.Controllers.AccessControl.AccessControlController),
                 typeof(Beep.OilandGas.ApiService.Controllers.AccessControl.AssetHierarchyController) };
             foreach (var controller in feature.Controllers.Where(x => !allowed.Contains(x.AsType())).ToArray())
                 feature.Controllers.Remove(controller);
-        }
-    }
-
-    // Only the test host accepts this header; production bearer validation is unchanged.
-    private sealed class ExternalHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,
-        ILoggerFactory logger, UrlEncoder encoder) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
-    {
-        protected override Task<AuthenticateResult> HandleAuthenticateAsync()
-        {
-            var subject = Request.Headers["X-Test-Subject"].ToString();
-            if (string.IsNullOrEmpty(subject)) return Task.FromResult(AuthenticateResult.NoResult());
-            var principal = new ClaimsPrincipal(new ClaimsIdentity(new[]
-            {
-                new Claim("iss", "https://http-test.invalid"), new Claim("sub", subject),
-                new Claim("name", $"External {subject}"), new Claim("email", "shared@example.invalid"),
-                new Claim("email_verified", subject == "first" ? "true" : "false"),
-                new Claim(ClaimTypes.Role, "Administrator"), new Claim(ClaimTypes.NameIdentifier, "forged-local-id")
-            }, Scheme.Name));
-            return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme.Name)));
         }
     }
 }

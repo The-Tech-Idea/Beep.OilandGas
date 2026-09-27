@@ -15,14 +15,22 @@
     <link rel="icon" type="image/x-icon" href="/imgs/BeepOGDM.ico" />
     <link rel="icon" type="image/png" sizes="32x32" href="/imgs/BeepOGDM.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/imgs/BeepOGDM.png" />
-    <HeadOutlet @rendermode="InteractiveServer" />
+    <HeadOutlet @rendermode="PageRenderMode" />
 </head>
 
 <body>
-    <Routes @rendermode="InteractiveServer" />
+    <Routes @rendermode="PageRenderMode" />
     
     <!-- MudBlazor JS -->
     <script src="@Assets["_content/MudBlazor/MudBlazor.min.js"]"></script>
     <script src="@Assets["_framework/blazor.web.js"]"></script>
 </body>
 </html>
+
+@code {
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    // Interactive everywhere except a page excluded from interactive routing — the error page, which must render in the
+    // request that failed.
+    private IComponentRenderMode? PageRenderMode => HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null;
+}

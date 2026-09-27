@@ -7,6 +7,7 @@ using Beep.OilandGas.Models.Data.ProductionOperations;
 using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.ApiService.Services;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
 {
@@ -37,9 +38,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         [HttpPost("calculate")]
         public async Task<ActionResult<object>> CalculateAmortization(
             [FromBody] AmortizationCalculationRequest request,
-            [FromQuery] string? userId = null,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -57,7 +58,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
                     amortization,
                     isCash: false,
                     transactionDate: DateTime.UtcNow,
-                    userId: userId ?? "system");
+                    userId: userId);
 
                 return Ok(new { AmortizationAmount = amortization, JournalEntryId = journalEntryId });
             }
@@ -74,9 +75,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         [HttpPost("interest-capitalization")]
         public async Task<ActionResult<object>> CalculateInterestCapitalization(
             [FromBody] InterestCapitalizationData data,
-            [FromQuery] string? userId = null,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var userId = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
@@ -91,7 +92,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
                     capitalizedInterest,
                     isCash: false,
                     transactionDate: DateTime.UtcNow,
-                    userId: userId ?? "system");
+                    userId: userId);
 
                 return Ok(new { CapitalizedInterest = capitalizedInterest, JournalEntryId = journalEntryId });
             }

@@ -17,8 +17,12 @@
                 <MudButton StartIcon="@Icons.Material.Filled.Refresh" OnClick="Refresh" Variant="Variant.Outlined">Refresh</MudButton>
                 @if (_status == RepositoryReadiness.BootstrapRequired)
                 {
-                    <MudButton StartIcon="@Icons.Material.Filled.Login" Href="/authentication/start-login?returnUrl=%2Fdashboard"
-                               Variant="Variant.Filled" Color="Color.Primary">Register Administrator</MudButton>
+                    @* The first person to sign in becomes the administrator: the API provisions their account at first sight.
+                       This went to an endpoint of the Web's own that passed any return address on and posted a registration. *@
+                    <MudButton StartIcon="@Icons.Material.Filled.Login" Href="@BeepClientEndpoints.LoginWithReturn("/dashboard")"
+                               Variant="Variant.Filled" Color="Color.Primary">Sign in as the administrator</MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.PersonAdd" Href="@BeepClientEndpoints.RegisterWithReturn("/dashboard")"
+                               Variant="Variant.Outlined" Color="Color.Primary">Create an account</MudButton>
                 }
                 @if (_status == RepositoryReadiness.Ready)
                 {
@@ -36,7 +40,7 @@
     private string StatusText => _status switch
     {
         RepositoryReadiness.Ready => "Repository ready.",
-        RepositoryReadiness.BootstrapRequired => "Repository installed. First administrator registration pending.",
+        RepositoryReadiness.BootstrapRequired => "Repository installed. Nobody administers it yet: the first person to sign in becomes its administrator.",
         RepositoryReadiness.MigrationRequired => "Repository installation or migration required on the API server.",
         RepositoryReadiness.RecoveryRequired => "Repository administrator state requires operator recovery. First-user registration is unavailable.",
         _ => "Repository unavailable. Check the API service and repository connection."

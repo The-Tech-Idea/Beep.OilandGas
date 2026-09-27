@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Pumps;
@@ -59,11 +60,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
         }
 
         [HttpPost("design/save")]
-        public async Task<ActionResult> SavePumpDesign([FromBody] HydraulicPumpDesign design, [FromQuery] string? userId = null)
+        public async Task<ActionResult> SavePumpDesign([FromBody] HydraulicPumpDesign design)
         {
+            var userId = User.ActingUserId();
             try
             {
-                await _service.SavePumpDesignAsync(design, userId ?? GetUserId());
+                await _service.SavePumpDesignAsync(design, userId);
                 return Ok(new { message = "Hydraulic pump design saved successfully", designId = design.DesignId });
             }
             catch (Exception ex)
@@ -88,8 +90,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
-
-        private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
     }
 }
 

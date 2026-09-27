@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using Beep.OilandGas.Repository;
 using Microsoft.EntityFrameworkCore;
@@ -40,9 +39,8 @@ public sealed class RepositoryApplicationRolePermissionStore(RepositoryRoleAssig
     private string GetActor()
     {
         var user = accessor.HttpContext?.User;
-        var actor = user?.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (user?.Identity?.IsAuthenticated != true || !user.IsInRole("Administrator") || string.IsNullOrWhiteSpace(actor))
+        if (user?.Identity?.IsAuthenticated != true || !user.IsInRole("Administrator"))
             throw new UnauthorizedAccessException("A local administrator is required to change role permissions.");
-        return actor;
+        return user.ActingUserId();
     }
 }

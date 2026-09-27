@@ -9,7 +9,6 @@
 @inject ApiClient ApiClient
 @inject IDevelopmentServiceClient DevelopmentClient
 @inject ILifeCycleService LifeCycleService
-@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Design Plunger Lift System</PageTitle>
 
@@ -132,7 +131,6 @@
     private bool _isLoading = false;
     private PlungerLiftDesign? _plungerDesign;
     private PlungerLiftPerformance? _performance;
-    private string? _currentUserId;
 
     private sealed class WellDto
     {
@@ -157,9 +155,6 @@
 
             try
             {
-                var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-                _currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
-
                 var wells = (await DevelopmentClient.GetWellsAsync()).Select(MapWell).ToList();
                 if (wells.Count > 0)
                 {
@@ -236,7 +231,7 @@
 
         try
         {
-            var saved = await PumpService.SavePlungerLiftDesignAsync(_plungerDesign, _currentUserId);
+            var saved = await PumpService.SavePlungerLiftDesignAsync(_plungerDesign);
             if (saved)
             {
                 Snackbar.Add("Plunger lift design saved successfully", Severity.Success);

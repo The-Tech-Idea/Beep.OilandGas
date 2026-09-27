@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using Beep.OilandGas.ApiService.Services;
 using System;
 using System.Collections.Generic;
@@ -70,13 +69,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             [FromBody] CreateTankInventoryRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
+            var actor = User.ActingUserId();
             try
             {
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (User.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(actor)) return Forbid();
                 var inventory = await _service.CreateAsync(request, actor);
 
                 return Ok(new { InventoryId = inventory.TANK_INVENTORY_ID });

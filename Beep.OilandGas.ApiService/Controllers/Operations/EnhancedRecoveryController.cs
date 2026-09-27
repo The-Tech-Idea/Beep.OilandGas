@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Calculations;
@@ -28,9 +29,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         [HttpPost("analyze-eor")]
         public async Task<ActionResult<EnhancedRecoveryOperation>> AnalyzeEOR([FromBody] AnalyzeEORRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
-                var result = await _service.AnalyzeEORPotentialAsync(request.FieldId, request.EorMethod);
+                var result = await _service.AnalyzeEORPotentialAsync(request.FieldId, request.EorMethod, userId);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -116,9 +118,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         [HttpPost("injection")]
         public async Task<ActionResult<InjectionOperation>> ManageInjection([FromBody] ManageInjectionRequest request)
         {
+            var userId = User.ActingUserId();
             try
             {
-                var result = await _service.ManageInjectionAsync(request.InjectionWellId, request.InjectionRate);
+                var result = await _service.ManageInjectionAsync(request.InjectionWellId, request.InjectionRate, userId);
                 return Ok(result);
             }
             catch (InvalidOperationException ex)
@@ -132,8 +135,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
                 return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
-
-        private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
     }
 }
 
