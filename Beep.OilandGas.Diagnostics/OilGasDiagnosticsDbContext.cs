@@ -1,3 +1,4 @@
+using Beep.Foundation.IdentityServer.Shared.Authentication;
 using Microsoft.EntityFrameworkCore;
 using TheTechIdeaWeb.Diagnostics.Records;
 
@@ -17,6 +18,10 @@ namespace Beep.OilandGas.Diagnostics;
 /// <para>
 /// One subclass per engine, as the repository has, because each engine has its own migrations.
 /// </para>
+/// <para>
+/// SEC-BCL-01. It also keeps the back-channel logouts the identity server sends the Web, for the same reason the failures
+/// are here: the Web holds no other database, and those records have to outlive a restart.
+/// </para>
 /// </remarks>
 public abstract class OilGasDiagnosticsDbContext(DbContextOptions options) : DbContext(options)
 {
@@ -30,6 +35,7 @@ public abstract class OilGasDiagnosticsDbContext(DbContextOptions options) : DbC
         // The repository's limit, so an index name is shortened the same way on every engine.
         builder.HasAnnotation("Relational:MaxIdentifierLength", 30);
         builder.ApplyConfiguration(new FailureRecordConfiguration());
+        builder.ApplyConfiguration(new BackchannelLogoutRevocationConfiguration());
     }
 }
 

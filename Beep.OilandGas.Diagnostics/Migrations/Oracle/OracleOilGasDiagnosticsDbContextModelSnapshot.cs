@@ -22,6 +22,25 @@ namespace Beep.OilandGas.Diagnostics.Migrations.Oracle
 
             OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Beep.Foundation.IdentityServer.Shared.Authentication.BackchannelLogoutRevocation", b =>
+                {
+                    b.Property<string>("Subject")
+                        .HasMaxLength(256)
+                        .HasColumnType("NVARCHAR2(256)");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("TIMESTAMP(7)");
+
+                    b.Property<DateTime>("RevokedAtUtc")
+                        .HasColumnType("TIMESTAMP(7)");
+
+                    b.HasKey("Subject");
+
+                    b.HasIndex("ExpiresAtUtc");
+
+                    b.ToTable("BackchannelLogoutRevocations", (string)null);
+                });
+
             modelBuilder.Entity("TheTechIdeaWeb.Diagnostics.Records.FailureRecord", b =>
                 {
                     b.Property<long>("Id")

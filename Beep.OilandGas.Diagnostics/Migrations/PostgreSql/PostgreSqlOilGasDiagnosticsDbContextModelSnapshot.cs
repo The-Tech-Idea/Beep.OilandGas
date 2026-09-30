@@ -22,6 +22,25 @@ namespace Beep.OilandGas.Diagnostics.Migrations.PostgreSql
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Beep.Foundation.IdentityServer.Shared.Authentication.BackchannelLogoutRevocation", b =>
+                {
+                    b.Property<string>("Subject")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("RevokedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Subject");
+
+                    b.HasIndex("ExpiresAtUtc");
+
+                    b.ToTable("BackchannelLogoutRevocations", (string)null);
+                });
+
             modelBuilder.Entity("TheTechIdeaWeb.Diagnostics.Records.FailureRecord", b =>
                 {
                     b.Property<long>("Id")

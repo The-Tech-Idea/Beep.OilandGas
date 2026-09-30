@@ -56,6 +56,10 @@
                     @if (_isAuthenticated)
                     {
                         <MudMenuItem Href="@BeepClientEndpoints.Manage" Icon="@Icons.Material.Filled.Person">My account</MudMenuItem>
+                        @* DIAG-01. In this menu rather than the navigation's, whose menus do not open (MudBlazor 9's activator). *@
+                        <AuthorizeView Roles="Administrator" Context="failuresAdmin">
+                            <MudMenuItem Href="/admin/failures" Icon="@Icons.Material.Filled.ReportProblem">Failures</MudMenuItem>
+                        </AuthorizeView>
                         <MudDivider />
                         <div class="pa-2">
                             <SignOutButton FullWidth="true" Color="Color.Error" StartIcon="@Icons.Material.Filled.Logout">Sign out</SignOutButton>

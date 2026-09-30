@@ -98,6 +98,10 @@ builder.Services.AddChainedClaimsTransformation<OilGasClaimsTransformation>();
 // Diagnostics:ConnectionString) — the API applies its schema, so this host never migrates it.
 builder.Services.AddOilGasDiagnostics(builder.Configuration);
 
+// SEC-BCL-01. The sign-outs the identity server sends (back-channel logout), in the same store: a cookie session keeps no
+// state, so this record is what refuses a cookie the identity server ended, and it has to outlive a restart.
+builder.Services.AddBeepBackchannelLogoutStore<Beep.OilandGas.Diagnostics.OilGasDiagnosticsDbContext>();
+
 // ============================================
 // THE OILGAS API
 // ============================================
