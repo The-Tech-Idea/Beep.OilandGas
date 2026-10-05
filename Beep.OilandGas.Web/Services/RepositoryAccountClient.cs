@@ -5,6 +5,7 @@ using System.Security.Claims;
 using Duende.AccessTokenManagement.OpenIdConnect;
 using Microsoft.AspNetCore.Mvc;
 using TheTechIdea.Data.OilGas;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.Web.Services;
 
@@ -33,8 +34,12 @@ public sealed record RepositoryAccountAnswer(RepositoryAccountState State, Repos
 /// cannot resolve it in process). It read tokens from a dictionary the library no longer has, and answered a refused
 /// account and an outage alike by throwing.
 /// </remarks>
-public sealed class RepositoryAccountClient(HttpClient http, IUserTokenManager tokens, ILogger<RepositoryAccountClient> logger)
+public sealed class RepositoryAccountClient(
+    HttpClient http, IUserTokenManager tokens, ILogger<RepositoryAccountClient> logger, IFailureReporter failures)
 {
+    private const string ReadingReadiness = "reading the OilGas repository's readiness from the API";
+    private const string ReadingAccount = "asking the OilGas API about a person's account";
+
     public async Task<RepositoryReadiness> GetReadinessAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -52,12 +57,19 @@ public sealed class RepositoryAccountClient(HttpClient http, IUserTokenManager t
         }
         catch (Exception exception) when (exception is HttpRequestException or System.Text.Json.JsonException or NotSupportedException)
         {
-            logger.LogWarning(exception, "The OilGas API's readiness could not be read; it is treated as unavailable.");
+            failures.ReportHandled(
+                exception,
+                ReadingReadiness,
+                consequence: "the readiness could not be read; the repository is answered as unavailable and asked again");
             return RepositoryReadiness.Unavailable;
         }
+        // The caller's own cancellation propagates; this is the request timing out.
         catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
-            logger.LogWarning(exception, "The OilGas API's readiness check timed out; it is treated as unavailable.");
+            failures.ReportHandled(
+                exception,
+                ReadingReadiness,
+                consequence: "the readiness check timed out; the repository is answered as unavailable and asked again");
             return RepositoryReadiness.Unavailable;
         }
     }
@@ -103,12 +115,19 @@ public sealed class RepositoryAccountClient(HttpClient http, IUserTokenManager t
         }
         catch (Exception exception) when (exception is HttpRequestException or System.Text.Json.JsonException or NotSupportedException)
         {
-            logger.LogWarning(exception, "The OilGas API could not be asked about a person's account.");
+            failures.ReportHandled(
+                exception,
+                ReadingAccount,
+                consequence: "the account is answered as unknown: the person stays admitted for now and is asked about again");
             return new(RepositoryAccountState.Unavailable, null, "the API could not be reached");
         }
+        // The caller's own cancellation propagates; this is the request timing out.
         catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
-            logger.LogWarning(exception, "The OilGas API timed out answering about a person's account.");
+            failures.ReportHandled(
+                exception,
+                ReadingAccount,
+                consequence: "the API timed out; the account is answered as unknown and the person is asked about again");
             return new(RepositoryAccountState.Unavailable, null, "the API timed out");
         }
     }
@@ -164,19 +183,23 @@ public sealed class RepositoryAccountClient(HttpClient http, IUserTokenManager t
             $"The OilGas API did not switch the account off ({(int)response.StatusCode}): {problem?.Detail ?? "no reason given"}");
     }
 
-    private static async Task<string?> ReadTitleAsync(HttpResponseMessage response, CancellationToken cancellationToken) =>
+    private async Task<string?> ReadTitleAsync(HttpResponseMessage response, CancellationToken cancellationToken) =>
         (await ReadProblemAsync(response, cancellationToken))?.Title;
 
-    private static async Task<ProblemDetails?> ReadProblemAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    private async Task<ProblemDetails?> ReadProblemAsync(HttpResponseMessage response, CancellationToken cancellationToken)
     {
         try
         {
             return await response.Content.ReadFromJsonAsync<ProblemDetails>(cancellationToken);
         }
-        catch (System.Text.Json.JsonException)
+        // System.Text.Json has no question to ask first: an answer without the API's problem body.
+        catch (System.Text.Json.JsonException unreadable)
         {
-            // Handled: a 403 without the API's problem body is not one of its account refusals; the caller treats it as
-            // an outage and asks again.
+            failures.ReportHandled(
+                unreadable,
+                "reading the OilGas API's problem answer",
+                consequence: "the answer carries no reason the Web recognises; a 403 is treated as an outage and asked again, and any other answer is said without the API's reason",
+                FailureSeverity.Degraded);
             return null;
         }
     }

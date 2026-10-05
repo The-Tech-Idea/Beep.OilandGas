@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Beep.OilandGas.Repository;
@@ -30,7 +31,7 @@ public sealed class RepositoryAssetAccessStore(RepositoryDbContext repository, I
         organizationId = NormalizeOrganization(organizationId);
         accessLevel = accessLevel?.ToUpperInvariant() ?? "";
         if (accessLevel is not ("READ" or "WRITE" or "DELETE"))
-            throw new ArgumentException("Access level must be READ, WRITE, or DELETE.", nameof(accessLevel));
+            throw RefusalException.Invalid("Access level must be READ, WRITE, or DELETE.");
         if (!await repository.Users.AnyAsync(x => x.Id == userId && x.IsActive)) return false;
 
         // The deterministic primary key arbitrates concurrent creation on every provider.
@@ -80,14 +81,14 @@ public sealed class RepositoryAssetAccessStore(RepositoryDbContext repository, I
     {
         var principal = httpContext.HttpContext?.User;
         if (principal?.Identity?.IsAuthenticated != true || !principal.IsInRole("Administrator"))
-            throw new UnauthorizedAccessException("A local Administrator is required.");
+            throw RefusalException.Forbidden("A local Administrator is required.");
         var actor = principal.ActingUserId();
         var allowed = await (from user in repository.Users
                              join membership in repository.UserRoles on user.Id equals membership.UserId
                              join role in repository.Roles on membership.RoleId equals role.Id
                              where user.Id == actor && user.IsActive && role.NormalizedName == "ADMINISTRATOR"
                              select user.Id).AnyAsync();
-        if (!allowed) throw new UnauthorizedAccessException("The local Administrator assignment is no longer active.");
+        if (!allowed) throw RefusalException.Forbidden("The local Administrator assignment is no longer active.");
         return actor;
     }
 
@@ -103,7 +104,7 @@ public sealed class RepositoryAssetAccessStore(RepositoryDbContext repository, I
     {
         value = value?.ToUpperInvariant() ?? "";
         return value is "FIELD" or "WELL" or "POOL" or "FACILITY" ? value
-            : throw new ArgumentException("Unsupported asset type.", nameof(value));
+            : throw RefusalException.Invalid("Unsupported asset type.");
     }
 
     private static string? NormalizeOrganization(string? value)
@@ -116,6 +117,6 @@ public sealed class RepositoryAssetAccessStore(RepositoryDbContext repository, I
     private static void ValidateIdentifier(string value, string name)
     {
         if (string.IsNullOrWhiteSpace(value) || value.Length > 128 || value != value.Trim())
-            throw new ArgumentException("An identifier of up to 128 characters without surrounding whitespace is required.", name);
+            throw RefusalException.Invalid($"{name}: an identifier of up to 128 characters without surrounding whitespace is required.");
     }
 }

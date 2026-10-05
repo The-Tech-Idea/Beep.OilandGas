@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.PipelineAnalysis.Calculations
 {
@@ -69,9 +70,9 @@ namespace Beep.OilandGas.PipelineAnalysis.Calculations
             double specificHeatRatioK = 1.3,
             double isentropicEfficiency = 0.80)
         {
-            if (suctionPressurePsia <= 0)    throw new ArgumentOutOfRangeException(nameof(suctionPressurePsia));
-            if (dischargePressurePsia <= 0)  throw new ArgumentOutOfRangeException(nameof(dischargePressurePsia));
-            if (isentropicEfficiency <= 0)   throw new ArgumentOutOfRangeException(nameof(isentropicEfficiency));
+            if (suctionPressurePsia <= 0)    throw RefusalException.Invalid("Suction pressure must be greater than zero.");
+            if (dischargePressurePsia <= 0)  throw RefusalException.Invalid("Discharge pressure must be greater than zero.");
+            if (isentropicEfficiency <= 0)   throw RefusalException.Invalid("Isentropic efficiency must be greater than zero.");
 
             double T1  = suctionTempF + 459.67;  // °R
             double r   = dischargePressurePsia / suctionPressurePsia;
@@ -119,7 +120,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Calculations
             double specificHeatRatioK = 1.3,
             double isentropicEfficiency = 0.80)
         {
-            if (numberOfStages < 1) throw new ArgumentOutOfRangeException(nameof(numberOfStages));
+            if (numberOfStages < 1) throw RefusalException.Invalid("At least one compression stage is required.");
 
             double r_total  = overallDischargePressurePsia / overallSuctionPressurePsia;
             double r_stage  = Math.Pow(r_total, 1.0 / numberOfStages);
@@ -167,7 +168,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Calculations
             double engineHeatRateBtuPerHpHr = 8_500.0,
             double lhvBtuPerScf = 1_000.0)
         {
-            if (lhvBtuPerScf <= 0) throw new ArgumentOutOfRangeException(nameof(lhvBtuPerScf));
+            if (lhvBtuPerScf <= 0) throw RefusalException.Invalid("The fuel gas lower heating value must be greater than zero.");
             return stationHorsepowerHP * engineHeatRateBtuPerHpHr * 24.0
                    / (lhvBtuPerScf * 1_000_000.0);
         }

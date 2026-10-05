@@ -25,36 +25,20 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<List<DRILLING_OPERATION>> GetDrillingOperationsAsync(string? wellUWI = null)
         {
-            try
+            var endpoint = "/api/field/current/drilling/operations";
+            if (!string.IsNullOrEmpty(wellUWI))
             {
-                var endpoint = "/api/field/current/drilling/operations";
-                if (!string.IsNullOrEmpty(wellUWI))
-                {
-                    endpoint += $"?wellUWI={Uri.EscapeDataString(wellUWI)}";
-                }
+                endpoint += $"?wellUWI={Uri.EscapeDataString(wellUWI)}";
+            }
 
-                var result = await _apiClient.GetAsync<List<DRILLING_OPERATION>>(endpoint);
-                return result ?? new List<DRILLING_OPERATION>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting drilling operations");
-                return new List<DRILLING_OPERATION>();
-            }
+            var result = await _apiClient.GetAsync<List<DRILLING_OPERATION>>(endpoint);
+            return result ?? new List<DRILLING_OPERATION>();
         }
 
         public async Task<DRILLING_OPERATION?> GetDrillingOperationAsync(string operationId)
         {
-            try
-            {
-                return await _apiClient.GetAsync<DRILLING_OPERATION>(
-                    $"/api/field/current/drilling/operations/{Uri.EscapeDataString(operationId)}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting drilling operation {OperationId}", operationId);
-                return null;
-            }
+            return await _apiClient.GetAsync<DRILLING_OPERATION>(
+                $"/api/field/current/drilling/operations/{Uri.EscapeDataString(operationId)}");
         }
 
         public async Task<DRILLING_OPERATION> CreateDrillingOperationAsync(CREATE_DRILLING_OPERATION createDto)
@@ -89,17 +73,9 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<List<DRILLING_REPORT>> GetDrillingReportsAsync(string operationId)
         {
-            try
-            {
-                var result = await _apiClient.GetAsync<List<DRILLING_REPORT>>(
-                    $"/api/field/current/drilling/operations/{Uri.EscapeDataString(operationId)}/reports");
-                return result ?? new List<DRILLING_REPORT>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting drilling reports for operation {OperationId}", operationId);
-                return new List<DRILLING_REPORT>();
-            }
+            var result = await _apiClient.GetAsync<List<DRILLING_REPORT>>(
+                $"/api/field/current/drilling/operations/{Uri.EscapeDataString(operationId)}/reports");
+            return result ?? new List<DRILLING_REPORT>();
         }
 
         public async Task<DRILLING_REPORT> CreateDrillingReportAsync(string operationId, CreateDrillingReport createDto)

@@ -44,35 +44,24 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var accounting = _service.CreateSuccessfulEffortsAccounting(connectionName);
-                accounting.RecordAcquisition(property, connectionName);
+            var accounting = _service.CreateSuccessfulEffortsAccounting(connectionName);
+            accounting.RecordAcquisition(property, connectionName);
 
-                // Post to GL: Debit Unproved Property, Credit AP/Cash
-                var journalEntryId = await _glIntegration.PostFinancialAccountingToGL(
+            // Post to GL: Debit Unproved Property, Credit AP/Cash
+            var journalEntryId = await LedgerPosting.PostAsync(
+                () => _glIntegration.PostFinancialAccountingToGL(
                     property.PropertyId,
                     "UnprovedProperty",
                     property.AcquisitionCost,
                     isCash: false, // Typically AP
                     transactionDate: DateTime.UtcNow,
-                    userId: userId);
+                    userId: userId),
+                $"Acquisition of property {property.PropertyId}", property.PropertyId, "SUCCESSFUL_EFFORTS");
 
-                return Ok(new { PropertyId = property.PropertyId, JournalEntryId = journalEntryId });
-            }
-            catch (GLPostingException ex)
-            {
-                _logger.LogError(ex, "GL posting failed for acquisition {PropertyId}", property?.PropertyId);
-                    return StatusCode(500, new { error = "Transaction created but GL posting failed." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error recording acquisition");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { PropertyId = property.PropertyId, JournalEntryId = journalEntryId });
         }
 
         /// <summary>
@@ -84,36 +73,25 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var accounting = _service.CreateSuccessfulEffortsAccounting(connectionName);
-                accounting.RecordExplorationCosts(costs, connectionName);
+            var accounting = _service.CreateSuccessfulEffortsAccounting(connectionName);
+            accounting.RecordExplorationCosts(costs, connectionName);
 
-                // Post to GL: Debit Exploration Expense (if dry hole) or Unproved Property (if capitalized), Credit AP/Cash
-                var entryType = costs.IsDryHole ? "ExplorationExpense" : "UnprovedProperty";
-                var journalEntryId = await _glIntegration.PostFinancialAccountingToGL(
+            // Post to GL: Debit Exploration Expense (if dry hole) or Unproved Property (if capitalized), Credit AP/Cash
+            var entryType = costs.IsDryHole ? "ExplorationExpense" : "UnprovedProperty";
+            var journalEntryId = await LedgerPosting.PostAsync(
+                () => _glIntegration.PostFinancialAccountingToGL(
                     costs.PropertyId,
                     entryType,
                     costs.TotalExplorationCosts,
                     isCash: false,
                     transactionDate: DateTime.UtcNow,
-                    userId: userId);
+                    userId: userId),
+                $"Exploration costs for property {costs.PropertyId}", costs.PropertyId, "SUCCESSFUL_EFFORTS");
 
-                return Ok(new { PropertyId = costs.PropertyId, JournalEntryId = journalEntryId });
-            }
-            catch (GLPostingException ex)
-            {
-                _logger.LogError(ex, "GL posting failed for exploration costs {PropertyId}", costs?.PropertyId);
-                    return StatusCode(500, new { error = "Transaction created but GL posting failed." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error recording exploration costs");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { PropertyId = costs.PropertyId, JournalEntryId = journalEntryId });
         }
 
         /// <summary>
@@ -125,35 +103,24 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var accounting = _service.CreateSuccessfulEffortsAccounting(connectionName);
-                accounting.RecordDevelopmentCosts(costs, connectionName);
+            var accounting = _service.CreateSuccessfulEffortsAccounting(connectionName);
+            accounting.RecordDevelopmentCosts(costs, connectionName);
 
-                // Post to GL: Debit Proved Property, Credit AP/Cash
-                var journalEntryId = await _glIntegration.PostFinancialAccountingToGL(
+            // Post to GL: Debit Proved Property, Credit AP/Cash
+            var journalEntryId = await LedgerPosting.PostAsync(
+                () => _glIntegration.PostFinancialAccountingToGL(
                     costs.PropertyId,
                     "ProvedProperty",
                     costs.TotalDevelopmentCosts,
                     isCash: false,
                     transactionDate: DateTime.UtcNow,
-                    userId: userId);
+                    userId: userId),
+                $"Development costs for property {costs.PropertyId}", costs.PropertyId, "SUCCESSFUL_EFFORTS");
 
-                return Ok(new { PropertyId = costs.PropertyId, JournalEntryId = journalEntryId });
-            }
-            catch (GLPostingException ex)
-            {
-                _logger.LogError(ex, "GL posting failed for development costs {PropertyId}", costs?.PropertyId);
-                    return StatusCode(500, new { error = "Transaction created but GL posting failed." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error recording development costs");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { PropertyId = costs.PropertyId, JournalEntryId = journalEntryId });
         }
 
         /// <summary>
@@ -165,35 +132,24 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var accounting = _service.CreateSuccessfulEffortsAccounting(connectionName);
-                accounting.RecordProductionCosts(costs, connectionName);
+            var accounting = _service.CreateSuccessfulEffortsAccounting(connectionName);
+            accounting.RecordProductionCosts(costs, connectionName);
 
-                // Post to GL: Debit Operating Expense, Credit AP/Cash
-                var journalEntryId = await _glIntegration.PostCostToGL(
+            // Post to GL: Debit Operating Expense, Credit AP/Cash
+            var journalEntryId = await LedgerPosting.PostAsync(
+                () => _glIntegration.PostCostToGL(
                     costs.PropertyId,
                     costs.TotalProductionCosts,
                     isCapitalized: false,
                     isCash: false,
                     transactionDate: DateTime.UtcNow,
-                    userId: userId);
+                    userId: userId),
+                $"Production costs for property {costs.PropertyId}", costs.PropertyId, "SUCCESSFUL_EFFORTS");
 
-                return Ok(new { PropertyId = costs.PropertyId, JournalEntryId = journalEntryId });
-            }
-            catch (GLPostingException ex)
-            {
-                _logger.LogError(ex, "GL posting failed for production costs {PropertyId}", costs?.PropertyId);
-                    return StatusCode(500, new { error = "Transaction created but GL posting failed." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error recording production costs");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { PropertyId = costs.PropertyId, JournalEntryId = journalEntryId });
         }
 
         /// <summary>
@@ -205,35 +161,24 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var accounting = _service.CreateSuccessfulEffortsAccounting(connectionName);
-                accounting.RecordDryHole(costs, connectionName);
+            var accounting = _service.CreateSuccessfulEffortsAccounting(connectionName);
+            accounting.RecordDryHole(costs, connectionName);
 
-                // Post to GL: Debit Exploration Expense, Credit AP/Cash
-                var journalEntryId = await _glIntegration.PostFinancialAccountingToGL(
+            // Post to GL: Debit Exploration Expense, Credit AP/Cash
+            var journalEntryId = await LedgerPosting.PostAsync(
+                () => _glIntegration.PostFinancialAccountingToGL(
                     costs.PropertyId,
                     "ExplorationExpense",
                     costs.TotalExplorationCosts,
                     isCash: false,
                     transactionDate: DateTime.UtcNow,
-                    userId: userId);
+                    userId: userId),
+                $"Dry hole costs for property {costs.PropertyId}", costs.PropertyId, "SUCCESSFUL_EFFORTS");
 
-                return Ok(new { PropertyId = costs.PropertyId, JournalEntryId = journalEntryId });
-            }
-            catch (GLPostingException ex)
-            {
-                _logger.LogError(ex, "GL posting failed for dry hole {PropertyId}", costs?.PropertyId);
-                    return StatusCode(500, new { error = "Transaction created but GL posting failed." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error recording dry hole");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { PropertyId = costs.PropertyId, JournalEntryId = journalEntryId });
         }
 
         /// <summary>
@@ -245,35 +190,24 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var accounting = _service.CreateSuccessfulEffortsAccounting(connectionName);
-                accounting.RecordImpairment(request.PropertyId, request.ImpairmentAmount, connectionName);
+            var accounting = _service.CreateSuccessfulEffortsAccounting(connectionName);
+            accounting.RecordImpairment(request.PropertyId, request.ImpairmentAmount, connectionName);
 
-                // Post to GL: Debit Impairment Expense, Credit Unproved Property
-                var journalEntryId = await _glIntegration.PostFinancialAccountingToGL(
+            // Post to GL: Debit Impairment Expense, Credit Unproved Property
+            var journalEntryId = await LedgerPosting.PostAsync(
+                () => _glIntegration.PostFinancialAccountingToGL(
                     request.PropertyId,
                     "ImpairmentExpense",
                     request.ImpairmentAmount,
                     isCash: false,
                     transactionDate: DateTime.UtcNow,
-                    userId: userId);
+                    userId: userId),
+                $"Impairment of property {request.PropertyId}", request.PropertyId, "SUCCESSFUL_EFFORTS");
 
-                return Ok(new { PropertyId = request.PropertyId, JournalEntryId = journalEntryId });
-            }
-            catch (GLPostingException ex)
-            {
-                _logger.LogError(ex, "GL posting failed for impairment {PropertyId}", request?.PropertyId);
-                    return StatusCode(500, new { error = "Transaction created but GL posting failed." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error recording impairment");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { PropertyId = request.PropertyId, JournalEntryId = journalEntryId });
         }
     }
 

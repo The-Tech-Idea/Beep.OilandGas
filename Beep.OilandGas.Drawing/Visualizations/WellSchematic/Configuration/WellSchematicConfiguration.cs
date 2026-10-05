@@ -152,7 +152,7 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Configuration
             {
                 WellSchematicAnnotationProfile.Compact => Math.Min(AnnotationCalloutWidth, 120.0f),
                 WellSchematicAnnotationProfile.Print => Math.Max(AnnotationCalloutWidth, 220.0f),
-                _ => AnnotationCalloutWidth
+                WellSchematicAnnotationProfile.Detailed => AnnotationCalloutWidth
             };
         }
 
@@ -165,7 +165,7 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Configuration
             {
                 WellSchematicAnnotationProfile.Compact => Math.Min(AnnotationMinimumSpacing, 14.0f),
                 WellSchematicAnnotationProfile.Print => Math.Max(AnnotationMinimumSpacing, 24.0f),
-                _ => AnnotationMinimumSpacing
+                WellSchematicAnnotationProfile.Detailed => AnnotationMinimumSpacing
             };
         }
 
@@ -178,7 +178,7 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Configuration
             {
                 WellSchematicAnnotationProfile.Compact => 10.0f,
                 WellSchematicAnnotationProfile.Print => 12.0f,
-                _ => 11.0f
+                WellSchematicAnnotationProfile.Detailed => 11.0f
             };
         }
 
@@ -191,7 +191,7 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Configuration
             {
                 WellSchematicAnnotationProfile.Compact => 11.0f,
                 WellSchematicAnnotationProfile.Print => 13.0f,
-                _ => 12.0f
+                WellSchematicAnnotationProfile.Detailed => 12.0f
             };
         }
 

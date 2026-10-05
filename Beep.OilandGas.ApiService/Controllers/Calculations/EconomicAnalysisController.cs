@@ -31,21 +31,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         {
             if (request == null)
                 return BadRequest(new { error = "Request payload is required." });
-            try
-            {
-                var result = _service.CalculateNPV(EconomicAnalysisControllerHelpers.ToCashFlows(request.CashFlows), request.DISCOUNT_RATE);
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid request for NPV calculation");
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating NPV");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = _service.CalculateNPV(EconomicAnalysisControllerHelpers.ToCashFlows(request.CashFlows), request.DISCOUNT_RATE);
+            return Ok(result);
         }
 
         [HttpPost("irr")]
@@ -53,21 +40,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         {
             if (request == null)
                 return BadRequest(new { error = "Request payload is required." });
-            try
-            {
-                var result = _service.CalculateIRR(EconomicAnalysisControllerHelpers.ToCashFlows(request.CashFlows), request.InitialGuess);
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid request for IRR calculation");
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating IRR");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = _service.CalculateIRR(EconomicAnalysisControllerHelpers.ToCashFlows(request.CashFlows), request.InitialGuess);
+            return Ok(result);
         }
 
         [HttpPost("analyze")]
@@ -75,25 +49,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         {
             if (request == null)
                 return BadRequest(new { error = "Request payload is required." });
-            try
-            {
-                var result = _service.Analyze(
-                    EconomicAnalysisControllerHelpers.ToCashFlows(request.CashFlows),
-                    request.DISCOUNT_RATE,
-                    request.FinanceRate,
-                    request.ReinvestRate);
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid request for economic analysis");
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error performing economic analysis");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = _service.Analyze(
+                EconomicAnalysisControllerHelpers.ToCashFlows(request.CashFlows),
+                request.DISCOUNT_RATE,
+                request.FinanceRate,
+                request.ReinvestRate);
+            return Ok(result);
         }
 
         [HttpPost("npv-profile")]
@@ -101,25 +62,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         {
             if (request == null)
                 return BadRequest(new { error = "Request payload is required." });
-            try
-            {
-                var result = _service.GenerateNPVProfile(
-                    EconomicAnalysisControllerHelpers.ToCashFlows(request.CashFlows),
-                    request.MinRate,
-                    request.MaxRate,
-                    request.Points);
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid request for NPV profile generation");
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating NPV profile");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = _service.GenerateNPVProfile(
+                EconomicAnalysisControllerHelpers.ToCashFlows(request.CashFlows),
+                request.MinRate,
+                request.MaxRate,
+                request.Points);
+            return Ok(result);
         }
 
         [HttpPost("result")]
@@ -128,44 +76,18 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             var userId = User.ActingUserId();
             if (!EconomicAnalysisControllerHelpers.TryValidateSaveRequest(request, out var validationError))
                 return BadRequest(new { error = validationError });
-            try
-            {
-                await _service.SaveAnalysisResultAsync(request.AnalysisId, request.Result, userId);
-                return Ok(new { message = "Economic analysis result saved successfully", analysisId = request.AnalysisId });
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid request when saving economic analysis result");
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving economic analysis result");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            await _service.SaveAnalysisResultAsync(request.AnalysisId, request.Result, userId);
+            return Ok(new { message = "Economic analysis result saved successfully", analysisId = request.AnalysisId });
         }
 
         [HttpGet("result/{analysisId}")]
         public async Task<ActionResult<EconomicResult>> GetResult(string analysisId)
         {
             if (string.IsNullOrWhiteSpace(analysisId)) return BadRequest(new { error = "Analysis ID is required." });
-            try
-            {
-                var result = await _service.GetAnalysisResultAsync(analysisId);
-                if (result == null)
-                        return NotFound(new { error = $"Analysis {analysisId} not found." });
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid request when retrieving economic analysis result");
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting economic analysis result {AnalysisId}", analysisId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.GetAnalysisResultAsync(analysisId);
+            if (result == null)
+                    return NotFound(new { error = $"Analysis {analysisId} not found." });
+            return Ok(result);
         }
     }
 }

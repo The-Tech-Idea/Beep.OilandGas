@@ -63,7 +63,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             var rate = await GetFxRateAsync(fromCurrency, toCurrency, rateDate, cn);
             if (rate == null || rate.RATE == null || rate.RATE <= 0m)
-                throw new InvalidOperationException($"FX rate missing for {fromCurrency}->{toCurrency} on {rateDate:yyyy-MM-dd}");
+                throw RefusalException.Conflict($"No FX rate is recorded for {fromCurrency} to {toCurrency} on or before {rateDate:yyyy-MM-dd}.");
 
             return Math.Round(amount * rate.RATE.Value, 2);
         }
@@ -88,7 +88,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             var rate = await GetFxRateAsync(originalCurrency, reportingCurrency, periodEnd, cn);
             if (rate == null || rate.RATE == null || rate.RATE <= 0m)
-                throw new InvalidOperationException($"FX rate missing for {originalCurrency}->{reportingCurrency} on {periodEnd:yyyy-MM-dd}");
+                throw RefusalException.Conflict($"No FX rate is recorded for {originalCurrency} to {reportingCurrency} on or before {periodEnd:yyyy-MM-dd}.");
 
             var translated = Math.Round(originalAmount * rate.RATE.Value, 2);
 
@@ -122,7 +122,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(adjustmentAccount))
                 throw new ArgumentNullException(nameof(adjustmentAccount));
             if (amountDifference == 0m)
-                throw new InvalidOperationException("FX difference must be non-zero");
+                throw RefusalException.Invalid("FX difference must be non-zero.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 

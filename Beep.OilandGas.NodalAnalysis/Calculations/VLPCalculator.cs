@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.NodalAnalysis;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.NodalAnalysis.Calculations
 {
@@ -19,7 +20,7 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
                 throw new ArgumentNullException(nameof(wellbore));
 
             if (flowRates == null || flowRates.Length == 0)
-                throw new ArgumentException("Flow rates array cannot be null or empty.", nameof(flowRates));
+                throw RefusalException.Invalid("At least one flow rate is required.");
 
             var vlp = new List<VLPPoint>();
 
@@ -107,7 +108,7 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
                 throw new ArgumentNullException(nameof(wellbore));
 
             if (flowRates == null || flowRates.Length == 0)
-                throw new ArgumentException("Flow rates array cannot be null or empty.", nameof(flowRates));
+                throw RefusalException.Invalid("At least one flow rate is required.");
 
             var vlp = new List<VLPPoint>();
 
@@ -173,11 +174,14 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             }
 
             // Use specified correlation
+            // Every correlation is named (OILGAS-CATCH-01). Gray and Duns-Ros had fallen into a catch-all and been answered
+            // with a Hagedorn-Brown curve, as though the one asked for had been used; they are refused until implemented.
             return correlationType switch
             {
                 CorrelationType.HagedornBrown => GenerateVLP(wellbore, flowRates),
                 CorrelationType.BeggsBrill => GenerateVLPBeggsBrill(wellbore, flowRates),
-                _ => GenerateVLP(wellbore, flowRates) // Default to Hagedorn-Brown
+                CorrelationType.Gray or CorrelationType.DunsRos => throw RefusalException.Invalid(
+                    $"The {correlationType} correlation is not available for VLP curves: use Hagedorn-Brown or Beggs-Brill.")
             };
         }
     }

@@ -44,40 +44,28 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     return BadRequest(new { error = "Table name is required." });
             if (string.IsNullOrWhiteSpace(entityId))
                     return BadRequest(new { error = "Entity ID is required." });
-            try
+            if (request == null)
             {
-                if (request == null)
-                {
-                        return BadRequest(new { error = "Request body is required." });
-                }
-
-                _logger.LogInformation("Creating version for entity {EntityId} in table {TableName}", entityId, tableName);
-
-                // Retrieve the entity first - in a real implementation, this would use a repository
-                // For now, we'll pass the entityId as the entity object
-                // The versioning service will handle the entity retrieval internally
-                var version = await _versioningService.CreateVersionAsync(
-                    tableName,
-                    entityId,
-                    userId,
-                    request.VersionLabel);
-
-                return Ok(new VersioningResult
-                {
-                    Success = true,
-                    VersionId = version.VersionNumber.ToString(),
-                    Message = "Version created successfully"
-                });
+                    return BadRequest(new { error = "Request body is required." });
             }
-            catch (Exception ex)
+
+            _logger.LogInformation("Creating version for entity {EntityId} in table {TableName}", entityId, tableName);
+
+            // Retrieve the entity first - in a real implementation, this would use a repository
+            // For now, we'll pass the entityId as the entity object
+            // The versioning service will handle the entity retrieval internally
+            var version = await _versioningService.CreateVersionAsync(
+                tableName,
+                entityId,
+                userId,
+                request.VersionLabel);
+
+            return Ok(new VersioningResult
             {
-                _logger.LogError(ex, "Error creating version for entity {EntityId} in table {TableName}", entityId, tableName);
-                return StatusCode(500, new VersioningResult
-                {
-                    Success = false,
-                    ErrorMessage = "An internal error occurred."
-                });
-            }
+                Success = true,
+                VersionId = version.VersionNumber.ToString(),
+                Message = "Version created successfully"
+            });
         }
 
         /// <summary>
@@ -90,27 +78,19 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return BadRequest(new { error = "Table name is required." });
             if (string.IsNullOrWhiteSpace(entityId))
                 return BadRequest(new { error = "Entity ID is required." });
-            try
+            _logger.LogInformation("Getting version history for entity {EntityId} in table {TableName}", entityId, tableName);
+            var versions = await _versioningService.GetVersionsAsync(tableName, entityId);
+            
+            var versionInfos = versions?.Select(v => new VersionInfo
             {
-                _logger.LogInformation("Getting version history for entity {EntityId} in table {TableName}", entityId, tableName);
-                var versions = await _versioningService.GetVersionsAsync(tableName, entityId);
-                
-                var versionInfos = versions?.Select(v => new VersionInfo
-                {
-                    VersionId = v.VersionNumber.ToString(),
-                    CreatedAt = v.CreatedDate,
-                    CreatedBy = v.CreatedBy ?? string.Empty,
-                    Description = v.VersionLabel ?? v.ChangeDescription ?? string.Empty,
-                    EntityData = v.EntityData as System.Collections.Generic.Dictionary<string, object>
-                }).ToList() ?? new System.Collections.Generic.List<VersionInfo>();
+                VersionId = v.VersionNumber.ToString(),
+                CreatedAt = v.CreatedDate,
+                CreatedBy = v.CreatedBy ?? string.Empty,
+                Description = v.VersionLabel ?? v.ChangeDescription ?? string.Empty,
+                EntityData = v.EntityData as System.Collections.Generic.Dictionary<string, object>
+            }).ToList() ?? new System.Collections.Generic.List<VersionInfo>();
 
-                return Ok(versionInfos);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting version history for entity {EntityId} in table {TableName}", entityId, tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(versionInfos);
         }
 
         /// <summary>
@@ -123,32 +103,24 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return BadRequest(new { error = "Table name is required." });
             if (string.IsNullOrWhiteSpace(entityId))
                 return BadRequest(new { error = "Entity ID is required." });
-            try
+            _logger.LogInformation("Getting version {VersionNumber} for entity {EntityId} in table {TableName}", versionNumber, entityId, tableName);
+            var version = await _versioningService.GetVersionAsync(tableName, entityId, versionNumber);
+            
+            if (version == null)
             {
-                _logger.LogInformation("Getting version {VersionNumber} for entity {EntityId} in table {TableName}", versionNumber, entityId, tableName);
-                var version = await _versioningService.GetVersionAsync(tableName, entityId, versionNumber);
-                
-                if (version == null)
-                {
-                    return NotFound(new { error = "Version not found." });
-                }
-
-                var versionInfo = new VersionInfo
-                {
-                    VersionId = version.VersionNumber.ToString(),
-                    CreatedAt = version.CreatedDate,
-                    CreatedBy = version.CreatedBy ?? string.Empty,
-                    Description = version.VersionLabel ?? version.ChangeDescription ?? string.Empty,
-                    EntityData = version.EntityData as System.Collections.Generic.Dictionary<string, object>
-                };
-
-                return Ok(versionInfo);
+                return NotFound(new { error = "Version not found." });
             }
-            catch (Exception ex)
+
+            var versionInfo = new VersionInfo
             {
-                _logger.LogError(ex, "Error getting version {VersionNumber} for entity {EntityId} in table {TableName}", versionNumber, entityId, tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                VersionId = version.VersionNumber.ToString(),
+                CreatedAt = version.CreatedDate,
+                CreatedBy = version.CreatedBy ?? string.Empty,
+                Description = version.VersionLabel ?? version.ChangeDescription ?? string.Empty,
+                EntityData = version.EntityData as System.Collections.Generic.Dictionary<string, object>
+            };
+
+            return Ok(versionInfo);
         }
 
         /// <summary>
@@ -165,23 +137,34 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     return BadRequest(new { error = "Table name is required." });
             if (string.IsNullOrWhiteSpace(entityId))
                     return BadRequest(new { error = "Entity ID is required." });
-            try
+            if (request == null)
             {
-                    if (request == null)
-                {
-                        return BadRequest(new { error = "Request body is required." });
-                    }
-                    if (string.IsNullOrWhiteSpace(request.VersionId))
-                    {
-                        return BadRequest(new { error = "Version ID is required." });
+                    return BadRequest(new { error = "Request body is required." });
                 }
-
-                _logger.LogInformation("Restoring entity {EntityId} in table {TableName} to version {VersionId}", entityId, tableName, request.VersionId);
-
-                // Parse version ID (could be version number or GUID)
-                if (int.TryParse(request.VersionId, out int versionNumber))
+                if (string.IsNullOrWhiteSpace(request.VersionId))
                 {
-                    var restoreResult = await _versioningService.RestoreToVersionAsync(tableName, entityId, versionNumber, userId);
+                    return BadRequest(new { error = "Version ID is required." });
+            }
+
+            _logger.LogInformation("Restoring entity {EntityId} in table {TableName} to version {VersionId}", entityId, tableName, request.VersionId);
+
+            // Parse version ID (could be version number or GUID)
+            if (int.TryParse(request.VersionId, out int versionNumber))
+            {
+                var restoreResult = await _versioningService.RestoreToVersionAsync(tableName, entityId, versionNumber, userId);
+                if (!restoreResult.Success)
+                {
+                    return BadRequest(new VersioningResult { Success = false, ErrorMessage = restoreResult.Message ?? "Failed to restore version" });
+                }
+            }
+            else
+            {
+                // If version ID is not a number, try to find version by ID
+                var versions = await _versioningService.GetVersionsAsync(tableName, entityId);
+                var version = versions?.FirstOrDefault(v => v.VersionNumber.ToString() == request.VersionId);
+                if (version != null)
+                {
+                    var restoreResult = await _versioningService.RestoreToVersionAsync(tableName, entityId, version.VersionNumber, userId);
                     if (!restoreResult.Success)
                     {
                         return BadRequest(new VersioningResult { Success = false, ErrorMessage = restoreResult.Message ?? "Failed to restore version" });
@@ -189,39 +172,16 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 }
                 else
                 {
-                    // If version ID is not a number, try to find version by ID
-                    var versions = await _versioningService.GetVersionsAsync(tableName, entityId);
-                    var version = versions?.FirstOrDefault(v => v.VersionNumber.ToString() == request.VersionId);
-                    if (version != null)
-                    {
-                        var restoreResult = await _versioningService.RestoreToVersionAsync(tableName, entityId, version.VersionNumber, userId);
-                        if (!restoreResult.Success)
-                        {
-                            return BadRequest(new VersioningResult { Success = false, ErrorMessage = restoreResult.Message ?? "Failed to restore version" });
-                        }
-                    }
-                    else
-                    {
-                        return NotFound(new VersioningResult { Success = false, ErrorMessage = "Version not found" });
-                    }
+                    return NotFound(new VersioningResult { Success = false, ErrorMessage = "Version not found" });
                 }
+            }
 
-                return Ok(new VersioningResult
-                {
-                    Success = true,
-                    VersionId = request.VersionId,
-                    Message = "Version restored successfully"
-                });
-            }
-            catch (Exception ex)
+            return Ok(new VersioningResult
             {
-                _logger.LogError(ex, "Error restoring version for entity {EntityId} in table {TableName}", entityId, tableName);
-                return StatusCode(500, new VersioningResult
-                {
-                    Success = false,
-                    ErrorMessage = "An internal error occurred."
-                });
-            }
+                Success = true,
+                VersionId = request.VersionId,
+                Message = "Version restored successfully"
+            });
         }
         /// <summary>
         /// Create a table-level snapshot labelled by the caller.
@@ -236,30 +196,22 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     return BadRequest(new { error = "Request body is required." });
                 if (string.IsNullOrWhiteSpace(request.TableName))
                     return BadRequest(new { error = "Table name is required." });
-            try
-            {
-                var label = string.IsNullOrWhiteSpace(request.Label)
-                    ? $"{request.TableName} — {DateTime.UtcNow:dd MMM yyyy HH:mm}"
-                    : request.Label;
+            var label = string.IsNullOrWhiteSpace(request.Label)
+                ? $"{request.TableName} — {DateTime.UtcNow:dd MMM yyyy HH:mm}"
+                : request.Label;
 
-                var version = await _versioningService.CreateVersionAsync(
-                    request.TableName,
-                    request.TableName,   // use table name as entity placeholder for table-level snapshots
-                    userId,
-                    label);
+            var version = await _versioningService.CreateVersionAsync(
+                request.TableName,
+                request.TableName,   // use table name as entity placeholder for table-level snapshots
+                userId,
+                label);
 
-                return Ok(new VersioningResult
-                {
-                    Success    = true,
-                    VersionId  = version.VersionNumber.ToString(),
-                    Message    = label
-                });
-            }
-            catch (Exception ex)
+            return Ok(new VersioningResult
             {
-                _logger.LogError(ex, "Error creating table snapshot for {TableName}", request.TableName);
-                return StatusCode(500, new VersioningResult { Success = false, ErrorMessage = "An internal error occurred." });
-            }
+                Success    = true,
+                VersionId  = version.VersionNumber.ToString(),
+                Message    = label
+            });
         }
 
         /// <summary>
@@ -271,25 +223,17 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             if (string.IsNullOrWhiteSpace(table))
                     return BadRequest(new { error = "Table query parameter is required." });
-            try
-            {
-                var versions = await _versioningService.GetVersionsAsync(table, table);
-                var result   = (versions ?? new System.Collections.Generic.List<VersionSnapshot>())
-                    .Select(v => new SnapshotSummary(
-                        v.VersionLabel ?? $"{table} snapshot",
-                        table,
-                        v.CreatedBy,
-                        v.CreatedDate,
-                        v.VersionNumber))
-                    .OrderByDescending(s => s.CreatedAt)
-                    .ToList();
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting snapshots for {Table}", table);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var versions = await _versioningService.GetVersionsAsync(table, table);
+            var result   = (versions ?? new System.Collections.Generic.List<VersionSnapshot>())
+                .Select(v => new SnapshotSummary(
+                    v.VersionLabel ?? $"{table} snapshot",
+                    table,
+                    v.CreatedBy,
+                    v.CreatedDate,
+                    v.VersionNumber))
+                .OrderByDescending(s => s.CreatedAt)
+                .ToList();
+            return Ok(result);
         }
 
         public record TableSnapshotRequest(string TableName, string? Label);

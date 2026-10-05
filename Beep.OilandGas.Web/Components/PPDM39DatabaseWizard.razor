@@ -1,6 +1,9 @@
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IProgressTrackingClient ProgressClient
+@inject OilGasCallFailures Calls
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 @using Beep.OilandGas.Web.Components
 @using Beep.OilandGas.Web.Components.Demo
 @using Beep.OilandGas.Models.Data.DataManagement
@@ -493,14 +496,14 @@
         <MudButton OnClick="Cancel">Cancel</MudButton>
         @if (_activeStep > 0)
         {
-            <MudButton Variant="Variant.Text" OnClick="PreviousStep">Previous</MudButton>
+            <MudButton Variant="Variant.Text" OnClick="PreviousStep" Disabled="_isAdvancing">Previous</MudButton>
         }
         @if (_activeStep < (IsEditMode ? 2 : 5))
         {
             <MudButton Color="Color.Primary" 
                       Variant="Variant.Filled"
                       OnClick="NextStep"
-                      Disabled="@(!CanProceedToNextStep())">
+                      Disabled="@(_isAdvancing || !CanProceedToNextStep())">
                 Next
             </MudButton>
         }
@@ -513,6 +516,7 @@
     [Parameter] public bool IsEditMode { get; set; } = false;
 
     private int _activeStep = 0;
+    private bool _isAdvancing;
     private List<string> _availableDatabaseTypes = new();
     private string _selectedDatabaseType = string.Empty;
     private string _connectionName = string.Empty;
@@ -576,9 +580,14 @@
         {
             _availableDatabaseTypes = await ApiClient.GetAsync<List<string>>("/api/ppdm39/setup/database-types") ?? new List<string>();
         }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading the database types for the setup wizard", "The database types could not be loaded"), Severity.Error);
+        }
+        // A dialog answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading database types: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "loading the database types for the setup wizard", "The database types could not be loaded");
         }
     }
 
@@ -598,9 +607,14 @@
                     _driverInfo.IsInstalled ? Severity.Success : Severity.Warning);
             }
         }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "checking the database driver", "The database driver could not be checked"), Severity.Error);
+        }
+        // A dialog answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Error checking driver: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "checking the database driver", "The database driver could not be checked");
         }
     }
 
@@ -653,9 +667,14 @@
                 Snackbar.Add($"Connection test failed: {_connectionTestResult?.Message}", Severity.Error);
             }
         }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "testing the new database connection", "The connection could not be tested"), Severity.Error);
+        }
+        // A dialog answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Error testing connection: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "testing the new database connection", "The connection could not be tested");
         }
         finally
         {
@@ -673,9 +692,14 @@
             _availableScripts = await ApiClient.GetAsync<List<ScriptInfo>>(
                 $"/api/ppdm39/setup/scripts/{_selectedDatabaseType}") ?? new List<ScriptInfo>();
         }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading the database setup scripts", "The setup scripts could not be loaded"), Severity.Error);
+        }
+        // A dialog answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading scripts: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "loading the database setup scripts", "The setup scripts could not be loaded");
         }
     }
 
@@ -728,9 +752,14 @@
                     response.AllSucceeded ? Severity.Success : Severity.Warning);
             }
         }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "running the database setup scripts", "The setup scripts were not run"), Severity.Error);
+        }
+        // A dialog answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Error starting script execution: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "running the database setup scripts", "The setup scripts were not run");
         }
         finally
         {
@@ -773,9 +802,10 @@
             }
         }
         }
+        // An async void handler: nothing awaits it, so every failure is told here and kept in the store.
         catch (Exception ex)
         {
-            Snackbar.Add($"Script progress error: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "following the setup scripts' progress", "The setup scripts' progress could not be shown");
         }
     }
 
@@ -831,9 +861,16 @@
                 Snackbar.Add($"Failed to {(IsEditMode ? "update" : "save")} connection: {_saveResult?.Message}", Severity.Error);
             }
         }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, IsEditMode ? "updating a database connection" : "saving a database connection",
+                $"The connection was not {(IsEditMode ? "updated" : "saved")}"), Severity.Error);
+        }
+        // A dialog answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Error {(IsEditMode ? "updating" : "saving")} connection: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, IsEditMode ? "updating a database connection" : "saving a database connection",
+                $"The connection was not {(IsEditMode ? "updated" : "saved")}");
         }
         finally
         {
@@ -875,9 +912,14 @@
                 }
             }
         }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "checking the schema privileges", "The schema privileges could not be checked"), Severity.Error);
+        }
+        // A dialog answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Error checking schema privileges: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "checking the schema privileges", "The schema privileges could not be checked");
         }
         finally
         {
@@ -1006,15 +1048,16 @@
                 Snackbar.Add($"Failed to seed database: {_seedDataResult?.Message ?? "Unknown error"}", Severity.Error);
             }
         }
+        // A dialog answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
+            var sentence = Calls.Explain(ex, "seeding the new database", "The database was not seeded");
             _seedDataResult = new SeedDataResponse
             {
                 Success = false,
-                Message = "Error seeding database",
-                Errors = new List<string> { ex.Message }
+                Message = sentence
             };
-            Snackbar.Add($"Error seeding database: {ex.Message}", Severity.Error);
+            Snackbar.Add(sentence, Severity.Error);
         }
         finally
         {
@@ -1023,8 +1066,12 @@
         }
     }
 
-    private void NextStep()
+    private async Task NextStep()
     {
+        if (_isAdvancing || !CanProceedToNextStep()) return;
+        _isAdvancing = true;
+        try
+        {
         if (_activeStep == 0 && !string.IsNullOrEmpty(_selectedDatabaseType))
         {
             _defaultPort = GetDefaultPort(_selectedDatabaseType);
@@ -1036,20 +1083,20 @@
             _privilegeCheckResult = null;
         }
 
-        if (_activeStep == 2 && _driverInfo == null)
+        if (_activeStep == 1 && _driverInfo == null)
         {
-            CheckDriver().GetAwaiter().GetResult();
+            await CheckDriver();
         }
 
-        if (_activeStep == 3 && (_availableScripts == null || !_availableScripts.Any()))
+        if (_activeStep == 2 && !IsEditMode && (_availableScripts == null || !_availableScripts.Any()))
         {
-            LoadAvailableScripts().GetAwaiter().GetResult();
+            await LoadAvailableScripts();
         }
 
         // Auto-check schema privileges when moving to step 2 (connection settings)
         if (_activeStep == 1 && _selectedDatabaseType != "SQLite" && _privilegeCheckResult == null)
         {
-            CheckSchemaPrivileges().GetAwaiter().GetResult();
+            await CheckSchemaPrivileges();
         }
 
         if (_activeStep < (IsEditMode ? 2 : 5))
@@ -1057,10 +1104,13 @@
             _activeStep++;
             StateHasChanged();
         }
+        }
+        finally { _isAdvancing = false; }
     }
 
     private void PreviousStep()
     {
+        if (_isAdvancing) return;
         if (_activeStep > 0)
         {
             _activeStep--;

@@ -57,7 +57,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(description))
                 throw new ArgumentNullException(nameof(description));
             if (adjustmentAmount == 0m)
-                throw new InvalidOperationException("Adjustment amount cannot be zero");
+                throw RefusalException.Invalid("Adjustment amount cannot be zero.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 

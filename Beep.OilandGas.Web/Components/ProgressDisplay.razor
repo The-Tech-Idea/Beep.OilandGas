@@ -5,6 +5,8 @@
 @inject IProgressTrackingClient ProgressClient
 @inject ISnackbar Snackbar
 @inject ApiClient ApiClient
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 @if (ShowProgress && CurrentProgress != null)
 {
@@ -176,10 +178,11 @@
             await DisposeAsync();
         }
         }
+        // An async void handler: nothing awaits it, so every failure is told here (and kept in the store) rather than
+        // ending the circuit.
         catch (Exception ex)
         {
-            // async void handler — prevent circuit crash
-            Snackbar.Add($"Progress error: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "showing an operation's progress", "The operation's progress could not be shown");
         }
     }
 
@@ -187,8 +190,20 @@
     {
         if (!string.IsNullOrWhiteSpace(OperationId))
         {
-            try { await ApiClient.PostAsync<object>($"api/operations/{OperationId}/cancel", new { }); }
-            catch { /* cancellation is best-effort */ }
+            // A cancellation the API did not take is not a cancellation: the person is told the operation may still be
+            // running, and its progress stays on the page.
+            try { await ApiClient.PostAsync<object>($"api/operations/{Uri.EscapeDataString(OperationId)}/cancel", new { }); }
+            catch (OilGasApiException answer)
+            {
+                Snackbar.Add(Answers.Explain(answer, "cancelling an operation", "The operation was not cancelled and may still be running"), Severity.Error);
+                return;
+            }
+            // A component answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
+            {
+                Notifier.Failure(ex, "cancelling an operation", "The operation was not cancelled and may still be running");
+                return;
+            }
         }
         await OnCancel.InvokeAsync();
         await DisposeAsync();

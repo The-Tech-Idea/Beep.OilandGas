@@ -58,7 +58,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(assetAccountId))
                 throw new ArgumentNullException(nameof(assetAccountId));
             if (changeAmount == 0m)
-                throw new InvalidOperationException("Fair value change cannot be zero");
+                throw RefusalException.Invalid("Fair value change cannot be zero.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 

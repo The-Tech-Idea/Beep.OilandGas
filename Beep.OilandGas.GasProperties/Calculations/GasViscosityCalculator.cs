@@ -1,6 +1,7 @@
 using System;
 
 using Beep.OilandGas.GasProperties.Constants;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.GasProperties.Calculations
 {
@@ -24,13 +25,13 @@ namespace Beep.OilandGas.GasProperties.Calculations
             decimal zFactor)
         {
             if (pressure <= 0)
-                throw new ArgumentException("Pressure must be greater than zero.", nameof(pressure));
+                throw RefusalException.Invalid("Pressure must be greater than zero.");
 
             if (temperature <= 0)
-                throw new ArgumentException("Temperature must be greater than zero.", nameof(temperature));
+                throw RefusalException.Invalid("Temperature must be greater than zero.");
 
             if (specificGravity <= 0)
-                throw new ArgumentException("Specific gravity must be greater than zero.", nameof(specificGravity));
+                throw RefusalException.Invalid("Specific gravity must be greater than zero.");
 
             // Calculate pseudo-critical properties
             decimal pseudoCriticalPressure = 756.8m - 131.0m * specificGravity - 3.6m * specificGravity * specificGravity;
@@ -101,13 +102,13 @@ namespace Beep.OilandGas.GasProperties.Calculations
             decimal zFactor)
         {
             if (pressure <= 0)
-                throw new ArgumentException("Pressure must be greater than zero.", nameof(pressure));
+                throw RefusalException.Invalid("Pressure must be greater than zero.");
 
             if (temperature <= 0)
-                throw new ArgumentException("Temperature must be greater than zero.", nameof(temperature));
+                throw RefusalException.Invalid("Temperature must be greater than zero.");
 
             if (specificGravity <= 0)
-                throw new ArgumentException("Specific gravity must be greater than zero.", nameof(specificGravity));
+                throw RefusalException.Invalid("Specific gravity must be greater than zero.");
 
             // Calculate gas density
             decimal molecularWeight = specificGravity * GasPropertiesConstants.AirMolecularWeight;

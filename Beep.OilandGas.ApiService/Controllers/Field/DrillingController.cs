@@ -39,16 +39,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             if (string.IsNullOrWhiteSpace(fieldId))
                 return BadRequest(new { error = "No active field selected." });
 
-            try
-            {
-                var result = await _service.GetDrillingOperationsAsync(wellUWI, fieldId);
-                return Ok(result ?? new List<DRILLING_OPERATION>());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting drilling operations for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.GetDrillingOperationsAsync(wellUWI, fieldId);
+            return Ok(result ?? new List<DRILLING_OPERATION>());
         }
 
         [HttpGet("operations/{operationId}")]
@@ -61,19 +53,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             if (string.IsNullOrWhiteSpace(fieldId))
                 return BadRequest(new { error = "No active field selected." });
 
-            try
-            {
-                var result = await _service.GetDrillingOperationAsync(operationId, fieldId);
-                if (result == null)
-                    return NotFound(new { error = $"Drilling operation {operationId} not found." });
+            var result = await _service.GetDrillingOperationAsync(operationId, fieldId);
+            if (result == null)
+                return NotFound(new { error = $"Drilling operation {operationId} not found." });
 
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting drilling operation {OperationId} for field {FieldId}", operationId, fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(result);
         }
 
         [HttpPost("operations")]
@@ -84,16 +68,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             if (string.IsNullOrWhiteSpace(fieldId))
                 return BadRequest(new { error = "No active field selected." });
 
-            try
-            {
-                var result = await _service.CreateDrillingOperationAsync(createDto, fieldId, userId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating drilling operation for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.CreateDrillingOperationAsync(createDto, fieldId, userId);
+            return Ok(result);
         }
 
         [HttpPut("operations/{operationId}")]
@@ -107,20 +83,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             if (string.IsNullOrWhiteSpace(fieldId))
                 return BadRequest(new { error = "No active field selected." });
 
-            try
-            {
-                var result = await _service.UpdateDrillingOperationAsync(operationId, updateDto, fieldId, userId);
-                return Ok(result);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound(new { error = $"Drilling operation {operationId} not found." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating drilling operation {OperationId} for field {FieldId}", operationId, fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.UpdateDrillingOperationAsync(operationId, updateDto, fieldId, userId);
+            return Ok(result);
         }
 
         [HttpGet("operations/{operationId}/reports")]
@@ -133,20 +97,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             if (string.IsNullOrWhiteSpace(fieldId))
                 return BadRequest(new { error = "No active field selected." });
 
-            try
-            {
-                var result = await _service.GetDrillingReportsAsync(operationId, fieldId);
-                return Ok(result ?? new List<DRILLING_REPORT>());
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound(new { error = $"Drilling operation {operationId} not found." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting drilling reports for operation {OperationId} in field {FieldId}", operationId, fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.GetDrillingReportsAsync(operationId, fieldId);
+            return Ok(result ?? new List<DRILLING_REPORT>());
         }
 
         [HttpPost("operations/{operationId}/reports")]
@@ -160,20 +112,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             if (string.IsNullOrWhiteSpace(fieldId))
                 return BadRequest(new { error = "No active field selected." });
 
-            try
-            {
-                var result = await _service.CreateDrillingReportAsync(operationId, createDto, fieldId, userId);
-                return Ok(result);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound(new { error = $"Drilling operation {operationId} not found." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating drilling report for operation {OperationId} in field {FieldId}", operationId, fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.CreateDrillingReportAsync(operationId, createDto, fieldId, userId);
+            return Ok(result);
         }
     }
 }

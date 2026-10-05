@@ -52,53 +52,37 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<DCAResult?> GetDcaResultAsync(string calculationId)
         {
-            try
-            {
-                return await _apiClient.GetAsync<DCAResult>(
-                    $"/api/calculations/dca/{Uri.EscapeDataString(calculationId)}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting DCA result {CalculationId}", calculationId);
-                return null;
-            }
+            return await _apiClient.GetAsync<DCAResult>(
+                $"/api/calculations/dca/{Uri.EscapeDataString(calculationId)}");
         }
 
         public async Task<List<DCAResult>> GetDcaResultsAsync(string? wellId = null, string? poolId = null, string? fieldId = null)
         {
-            try
+            var queryParts = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(wellId))
             {
-                var queryParts = new List<string>();
-
-                if (!string.IsNullOrWhiteSpace(wellId))
-                {
-                    queryParts.Add($"wellId={Uri.EscapeDataString(wellId)}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(poolId))
-                {
-                    queryParts.Add($"poolId={Uri.EscapeDataString(poolId)}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(fieldId))
-                {
-                    queryParts.Add($"fieldId={Uri.EscapeDataString(fieldId)}");
-                }
-
-                var endpoint = "/api/calculations/dca";
-                if (queryParts.Count > 0)
-                {
-                    endpoint += $"?{string.Join("&", queryParts)}";
-                }
-
-                var result = await _apiClient.GetAsync<List<DCAResult>>(endpoint);
-                return result ?? new List<DCAResult>();
+                queryParts.Add($"wellId={Uri.EscapeDataString(wellId)}");
             }
-            catch (Exception ex)
+
+            if (!string.IsNullOrWhiteSpace(poolId))
             {
-                _logger.LogError(ex, "Error getting DCA results for well {WellId}, pool {PoolId}, field {FieldId}", wellId, poolId, fieldId);
-                return new List<DCAResult>();
+                queryParts.Add($"poolId={Uri.EscapeDataString(poolId)}");
             }
+
+            if (!string.IsNullOrWhiteSpace(fieldId))
+            {
+                queryParts.Add($"fieldId={Uri.EscapeDataString(fieldId)}");
+            }
+
+            var endpoint = "/api/calculations/dca";
+            if (queryParts.Count > 0)
+            {
+                endpoint += $"?{string.Join("&", queryParts)}";
+            }
+
+            var result = await _apiClient.GetAsync<List<DCAResult>>(endpoint);
+            return result ?? new List<DCAResult>();
         }
 
         #endregion
@@ -122,53 +106,37 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<WELL_TEST_ANALYSIS_RESULT?> GetWellTestAnalysisResultAsync(string calculationId)
         {
-            try
-            {
-                return await _apiClient.GetAsync<WELL_TEST_ANALYSIS_RESULT>(
-                    $"/api/calculations/well-test/{Uri.EscapeDataString(calculationId)}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting Well Test Analysis result {CalculationId}", calculationId);
-                return null;
-            }
+            return await _apiClient.GetAsync<WELL_TEST_ANALYSIS_RESULT>(
+                $"/api/calculations/well-test/{Uri.EscapeDataString(calculationId)}");
         }
 
         public async Task<List<WELL_TEST_ANALYSIS_RESULT>> GetWellTestAnalysisHistoryAsync(string? wellId = null, string? testId = null, string? fieldId = null)
         {
-            try
+            var queryParts = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(wellId))
             {
-                var queryParts = new List<string>();
-
-                if (!string.IsNullOrWhiteSpace(wellId))
-                {
-                    queryParts.Add($"wellId={Uri.EscapeDataString(wellId)}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(testId))
-                {
-                    queryParts.Add($"testId={Uri.EscapeDataString(testId)}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(fieldId))
-                {
-                    queryParts.Add($"fieldId={Uri.EscapeDataString(fieldId)}");
-                }
-
-                var endpoint = "/api/calculations/well-test";
-                if (queryParts.Count > 0)
-                {
-                    endpoint += $"?{string.Join("&", queryParts)}";
-                }
-
-                var result = await _apiClient.GetAsync<List<WELL_TEST_ANALYSIS_RESULT>>(endpoint);
-                return result ?? new List<WELL_TEST_ANALYSIS_RESULT>();
+                queryParts.Add($"wellId={Uri.EscapeDataString(wellId)}");
             }
-            catch (Exception ex)
+
+            if (!string.IsNullOrWhiteSpace(testId))
             {
-                _logger.LogError(ex, "Error getting Well Test Analysis history for well {WellId} test {TestId}", wellId, testId);
-                return new List<WELL_TEST_ANALYSIS_RESULT>();
+                queryParts.Add($"testId={Uri.EscapeDataString(testId)}");
             }
+
+            if (!string.IsNullOrWhiteSpace(fieldId))
+            {
+                queryParts.Add($"fieldId={Uri.EscapeDataString(fieldId)}");
+            }
+
+            var endpoint = "/api/calculations/well-test";
+            if (queryParts.Count > 0)
+            {
+                endpoint += $"?{string.Join("&", queryParts)}";
+            }
+
+            var result = await _apiClient.GetAsync<List<WELL_TEST_ANALYSIS_RESULT>>(endpoint);
+            return result ?? new List<WELL_TEST_ANALYSIS_RESULT>();
         }
 
         #endregion
@@ -279,39 +247,23 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveFlashResultAsync(FlashResult result)
+        public async Task SaveFlashResultAsync(FlashResult result)
         {
-            try
-            {
-                var endpoint = "/api/flashcalculation/result";
+            var endpoint = "/api/flashcalculation/result";
 
-                return await _apiClient.PostAsync(endpoint, result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving flash calculation result");
-                return false;
-            }
+            await _apiClient.PostAsync(endpoint, result);
         }
 
         public async Task<List<FlashResult>> GetFlashHistoryAsync(string? componentId = null)
         {
-            try
+            var endpoint = "/api/flashcalculation/history";
+            if (!string.IsNullOrWhiteSpace(componentId))
             {
-                var endpoint = "/api/flashcalculation/history";
-                if (!string.IsNullOrWhiteSpace(componentId))
-                {
-                    endpoint += $"?componentId={Uri.EscapeDataString(componentId)}";
-                }
+                endpoint += $"?componentId={Uri.EscapeDataString(componentId)}";
+            }
 
-                var result = await _apiClient.GetAsync<List<FlashResult>>(endpoint);
-                return result ?? new List<FlashResult>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting flash calculation history for component {ComponentId}", componentId);
-                return new List<FlashResult>();
-            }
+            var result = await _apiClient.GetAsync<List<FlashResult>>(endpoint);
+            return result ?? new List<FlashResult>();
         }
 
         #endregion
@@ -388,16 +340,8 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<GasComposition?> GetGasCompositionAsync(string compositionId)
         {
-            try
-            {
-                return await _apiClient.GetAsync<GasComposition>(
-                    $"/api/gasproperties/composition/{Uri.EscapeDataString(compositionId)}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting gas composition {CompositionId}", compositionId);
-                return null;
-            }
+            return await _apiClient.GetAsync<GasComposition>(
+                $"/api/gasproperties/composition/{Uri.EscapeDataString(compositionId)}");
         }
 
         #endregion
@@ -436,31 +380,15 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<OilComposition?> GetOilCompositionAsync(string compositionId)
         {
-            try
-            {
-                return await _apiClient.GetAsync<OilComposition>(
-                    $"/api/oilproperties/composition/{Uri.EscapeDataString(compositionId)}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting oil composition {CompositionId}", compositionId);
-                return null;
-            }
+            return await _apiClient.GetAsync<OilComposition>(
+                $"/api/oilproperties/composition/{Uri.EscapeDataString(compositionId)}");
         }
 
         public async Task<List<OilPropertyResult>> GetOilPropertyHistoryAsync(string compositionId)
         {
-            try
-            {
-                var result = await _apiClient.GetAsync<List<OilPropertyResult>>(
-                    $"/api/oilproperties/composition/{Uri.EscapeDataString(compositionId)}/history");
-                return result ?? new List<OilPropertyResult>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting oil property history for composition {CompositionId}", compositionId);
-                return new List<OilPropertyResult>();
-            }
+            var result = await _apiClient.GetAsync<List<OilPropertyResult>>(
+                $"/api/oilproperties/composition/{Uri.EscapeDataString(compositionId)}/history");
+            return result ?? new List<OilPropertyResult>();
         }
 
         public async Task<CalculationSaveResponse?> SaveOilPropertyResultAsync(OilPropertyResult result)
@@ -536,33 +464,17 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveGasLiftDesignAsync(GAS_LIFT_DESIGN design, CancellationToken cancellationToken = default)
+        public async Task SaveGasLiftDesignAsync(GAS_LIFT_DESIGN design, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var endpoint = "/api/gaslift/design";
-                return await _apiClient.PostAsync(endpoint, design, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving gas lift design");
-                return false;
-            }
+            var endpoint = "/api/gaslift/design";
+            await _apiClient.PostAsync(endpoint, design, cancellationToken);
         }
 
         public async Task<GAS_LIFT_PERFORMANCE> GetGasLiftPerformanceAsync(string wellUWI, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var result = await _apiClient.GetAsync<GAS_LIFT_PERFORMANCE>(
-                    $"/api/gaslift/performance/{Uri.EscapeDataString(wellUWI)}", cancellationToken);
-                return result ?? new GAS_LIFT_PERFORMANCE { WELL_UWI = wellUWI };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting gas lift performance for well {WellUWI}", wellUWI);
-                return new GAS_LIFT_PERFORMANCE { WELL_UWI = wellUWI };
-            }
+            var result = await _apiClient.GetAsync<GAS_LIFT_PERFORMANCE>(
+                $"/api/gaslift/performance/{Uri.EscapeDataString(wellUWI)}", cancellationToken);
+            return result ?? new GAS_LIFT_PERFORMANCE { WELL_UWI = wellUWI };
         }
 
         #endregion
@@ -625,41 +537,21 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveNodalAnalysisResultAsync(NodalAnalysisRunResult result)
+        public async Task SaveNodalAnalysisResultAsync(NodalAnalysisRunResult result)
         {
             if (result == null)
                 throw new ArgumentNullException(nameof(result));
-            try
-            {
-                var endpoint = NodalAnalysisHttpRoutes.Result;
-                return await _apiClient.PostAsync(endpoint, result);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving nodal analysis result");
-                return false;
-            }
+            var endpoint = NodalAnalysisHttpRoutes.Result;
+            await _apiClient.PostAsync(endpoint, result);
         }
 
         public async Task<List<NodalAnalysisRunResult>> GetNodalAnalysisHistoryAsync(string wellUWI)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI is required", nameof(wellUWI));
-            try
-            {
-                var result = await _apiClient.GetAsync<List<NodalAnalysisRunResult>>(
-                    NodalAnalysisHttpRoutes.History(wellUWI));
-                return result ?? new List<NodalAnalysisRunResult>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting nodal analysis history for well {WellUWI}", wellUWI);
-                return new List<NodalAnalysisRunResult>();
-            }
+            var result = await _apiClient.GetAsync<List<NodalAnalysisRunResult>>(
+                NodalAnalysisHttpRoutes.History(wellUWI));
+            return result ?? new List<NodalAnalysisRunResult>();
         }
 
         public async Task<PerformanceMatchingAnalysis> AnalyzePerformanceMatchingAsync(PerformNodalAnalysisRequest request)
@@ -835,18 +727,10 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveForecastAsync(ProductionForecastResult forecast)
+        public async Task SaveForecastAsync(ProductionForecastResult forecast)
         {
-            try
-            {
-                var endpoint = "/api/productionforecasting/forecast";
-                return await _apiClient.PostAsync(endpoint, forecast);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving production forecast");
-                return false;
-            }
+            var endpoint = "/api/productionforecasting/forecast";
+            await _apiClient.PostAsync(endpoint, forecast);
         }
 
         private static ForecastType ParseForecastType(string forecastMethod)
@@ -910,18 +794,10 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SavePipelineAnalysisResultAsync(PipelineAnalysisResult result)
+        public async Task SavePipelineAnalysisResultAsync(PipelineAnalysisResult result)
         {
-            try
-            {
-                var endpoint = "/api/pipelineanalysis/result";
-                return await _apiClient.PostAsync(endpoint, result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving pipeline analysis result");
-                return false;
-            }
+            var endpoint = "/api/pipelineanalysis/result";
+            await _apiClient.PostAsync(endpoint, result);
         }
 
         #endregion
@@ -992,58 +868,34 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<List<NPV_PROFILE_POINT>> GenerateNPVProfileAsync(CashFlow[] cashFlows, double minRate = 0.0, double maxRate = 1.0, int points = 50)
         {
-            try
+            var request = new
             {
-                var request = new
-                {
-                    CashFlows = cashFlows,
-                    MinRate = minRate,
-                    MaxRate = maxRate,
-                    Points = points
-                };
-                var result = await _apiClient.PostAsync<object, List<NPV_PROFILE_POINT>>(
-                    "/api/economicanalysis/npv-profile", request);
-                return result ?? new List<NPV_PROFILE_POINT>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating NPV profile");
-                return new List<NPV_PROFILE_POINT>();
-            }
+                CashFlows = cashFlows,
+                MinRate = minRate,
+                MaxRate = maxRate,
+                Points = points
+            };
+            var result = await _apiClient.PostAsync<object, List<NPV_PROFILE_POINT>>(
+                "/api/economicanalysis/npv-profile", request);
+            return result ?? new List<NPV_PROFILE_POINT>();
         }
 
-        public async Task<bool> SaveEconomicAnalysisResultAsync(string analysisId, EconomicResult result)
+        public async Task SaveEconomicAnalysisResultAsync(string analysisId, EconomicResult result)
         {
-            try
+            var request = new
             {
-                var request = new
-                {
-                    AnalysisId = analysisId,
-                    Result = result
-                };
-                var endpoint = "/api/economicanalysis/result";
-                return await _apiClient.PostAsync(endpoint, request);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving economic analysis result");
-                return false;
-            }
+                AnalysisId = analysisId,
+                Result = result
+            };
+            var endpoint = "/api/economicanalysis/result";
+            await _apiClient.PostAsync(endpoint, request);
         }
 
         public async Task<EconomicResult?> GetEconomicAnalysisResultAsync(string analysisId)
         {
-            try
-            {
-                var result = await _apiClient.GetAsync<EconomicResult>(
-                    $"/api/economicanalysis/result/{Uri.EscapeDataString(analysisId)}");
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting economic analysis result {AnalysisId}", analysisId);
-                return null;
-            }
+            var result = await _apiClient.GetAsync<EconomicResult>(
+                $"/api/economicanalysis/result/{Uri.EscapeDataString(analysisId)}");
+            return result;
         }
 
         #endregion

@@ -58,7 +58,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(contractName))
                 throw new ArgumentNullException(nameof(contractName));
             if (initialLiability <= 0m)
-                throw new InvalidOperationException("Initial liability must be positive");
+                throw RefusalException.Invalid("Initial liability must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
@@ -125,7 +125,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(contractName))
                 throw new ArgumentNullException(nameof(contractName));
             if (amount <= 0m)
-                throw new InvalidOperationException("Premium receipt amount must be positive");
+                throw RefusalException.Invalid("Premium receipt amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
@@ -176,7 +176,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(contractName))
                 throw new ArgumentNullException(nameof(contractName));
             if (amount <= 0m)
-                throw new InvalidOperationException("Insurance revenue amount must be positive");
+                throw RefusalException.Invalid("Insurance revenue amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
@@ -223,7 +223,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(contractName))
                 throw new ArgumentNullException(nameof(contractName));
             if (amount <= 0m)
-                throw new InvalidOperationException("Claim amount must be positive");
+                throw RefusalException.Invalid("Claim amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
@@ -271,7 +271,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(contractName))
                 throw new ArgumentNullException(nameof(contractName));
             if (amount <= 0m)
-                throw new InvalidOperationException("CSM adjustment must be positive");
+                throw RefusalException.Invalid("CSM adjustment must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
@@ -334,7 +334,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(contractName))
                 throw new ArgumentNullException(nameof(contractName));
             if (amount <= 0m)
-                throw new InvalidOperationException("Finance expense amount must be positive");
+                throw RefusalException.Invalid("Finance expense amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 

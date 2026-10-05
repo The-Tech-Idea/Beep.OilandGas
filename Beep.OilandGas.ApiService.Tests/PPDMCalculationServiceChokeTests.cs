@@ -32,6 +32,7 @@ public class PPDMCalculationServiceChokeTests
             new Mock<IFieldMappingService>().Object,
             choke?.Object ?? new Mock<IChokeAnalysisService>().Object,
             new Mock<ICompressorAnalysisService>().Object,
+            new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(),
             connectionName: "PPDM39",
             logger: null);
     }

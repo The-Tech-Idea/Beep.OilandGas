@@ -93,10 +93,10 @@ public class RepositoryAssetAccessStoreTests(ITestOutputHelper output)
         Assert.Empty(await store.ReadAsync("member", first));
         db.UserRoles.Remove(await db.UserRoles.SingleAsync());
         await db.SaveChangesAsync();
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => store.RevokeAsync("member", first, "WELL", "same-id"));
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => store.GrantAsync("member", first, "WELL", "same-id", "READ", false));
+        await Refusals.ForbiddenAsync(() => store.RevokeAsync("member", first, "WELL", "same-id"));
+        await Refusals.ForbiddenAsync(() => store.GrantAsync("member", first, "WELL", "same-id", "READ", false));
         accessor.HttpContext.User = Principal("member");
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => store.RevokeAsync("member", first, "WELL", "same-id"));
+        await Refusals.ForbiddenAsync(() => store.RevokeAsync("member", first, "WELL", "same-id"));
         editor.VerifyNoOtherCalls();
     }
 

@@ -120,20 +120,12 @@ namespace Beep.OilandGas.DCA.MultiSegment
             double di = activeSegment.DeclineRate;
             double b = activeSegment.DeclineExponent;
 
-            switch (activeSegment.DeclineType)
+            return activeSegment.DeclineType switch
             {
-                case DeclineType.Exponential:
-                    return DCAGenerator.ExponentialDecline(qi, di, relativeTime);
-
-                case DeclineType.Harmonic:
-                    return DCAGenerator.HarmonicDecline(qi, di, relativeTime);
-
-                case DeclineType.Hyperbolic:
-                    return DCAGenerator.HyperbolicDecline(qi, di, relativeTime, b);
-
-                default:
-                    throw new Exceptions.InvalidDataException($"Unknown decline type: {activeSegment.DeclineType}");
-            }
+                DeclineType.Exponential => DCAGenerator.ExponentialDecline(qi, di, relativeTime),
+                DeclineType.Harmonic => DCAGenerator.HarmonicDecline(qi, di, relativeTime),
+                DeclineType.Hyperbolic => DCAGenerator.HyperbolicDecline(qi, di, relativeTime, b),
+            };
         }
 
         /// <summary>

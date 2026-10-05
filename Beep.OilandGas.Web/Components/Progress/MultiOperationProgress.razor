@@ -3,6 +3,7 @@
 @using MudBlazor
 @implements IAsyncDisposable
 @inject IProgressTrackingClient ProgressClient
+@inject FailureNotifier Notifier
 
 <MudPaper Elevation="2" Class="pa-4 mb-4">
     <MudStack>
@@ -131,9 +132,11 @@
                 await OnOperationComplete.InvokeAsync(progress);
             }
         }
+        // An async void handler: nothing awaits it, so every failure is told here (and kept in the store) rather than
+        // ending the circuit.
         catch (Exception ex)
         {
-            // async void handler — prevent circuit crash
+            Notifier.Failure(ex, "showing the progress of several operations", "The operations' progress could not be shown", FailureSeverity.Degraded);
         }
     }
 

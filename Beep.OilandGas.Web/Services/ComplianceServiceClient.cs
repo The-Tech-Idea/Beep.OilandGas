@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.Compliance;
 using Microsoft.Extensions.Logging;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.Web.Services;
 
@@ -12,11 +13,13 @@ public sealed class ComplianceServiceClient : IComplianceServiceClient
 {
     private readonly ApiClient _apiClient;
     private readonly ILogger<ComplianceServiceClient> _logger;
+    private readonly IFailureReporter _failures;
 
-    public ComplianceServiceClient(ApiClient apiClient, ILogger<ComplianceServiceClient> logger)
+    public ComplianceServiceClient(ApiClient apiClient, ILogger<ComplianceServiceClient> logger, IFailureReporter failures)
     {
         _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _failures = failures ?? throw new ArgumentNullException(nameof(failures));
     }
 
     public async Task<List<ObligationSummary>> GetAllObligationsAsync(int? year = null, CancellationToken cancellationToken = default)
@@ -82,9 +85,15 @@ public sealed class ComplianceServiceClient : IComplianceServiceClient
                 $"/api/field/current/compliance/obligations/{Uri.EscapeDataString(obligationId)}",
                 cancellationToken);
         }
-        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        catch (OilGasApiException notFound) when (notFound.StatusCode == HttpStatusCode.NotFound)
         {
-            _logger.LogInformation("Compliance obligation {ObligationId} was not found.", obligationId);
+            // The API answers an obligation it does not hold with 404; this method's contract answers it as null, which
+            // the caller shows as "not found". Recorded so the store holds every answer that was not a success.
+            _failures.ReportHandled(
+                notFound,
+                "reading a compliance obligation",
+                consequence: "the API holds no such obligation; the caller was answered null and says it was not found",
+                FailureSeverity.Degraded);
             return null;
         }
         catch (Exception ex)
@@ -139,9 +148,7 @@ public sealed class ComplianceServiceClient : IComplianceServiceClient
 
         try
         {
-            var succeeded = await _apiClient.PostAsync(endpoint, new { }, cancellationToken);
-            if (!succeeded)
-                throw new InvalidOperationException($"Failed to submit compliance obligation {obligationId}.");
+            await _apiClient.PostAsync(endpoint, new { }, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -161,9 +168,7 @@ public sealed class ComplianceServiceClient : IComplianceServiceClient
 
         try
         {
-            var succeeded = await _apiClient.PostAsync(endpoint, new { }, cancellationToken);
-            if (!succeeded)
-                throw new InvalidOperationException($"Failed to waive compliance obligation {obligationId}.");
+            await _apiClient.PostAsync(endpoint, new { }, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -181,13 +186,10 @@ public sealed class ComplianceServiceClient : IComplianceServiceClient
 
         try
         {
-            var succeeded = await _apiClient.PostAsync(
+            await _apiClient.PostAsync(
                 $"/api/field/current/compliance/obligations/{Uri.EscapeDataString(obligationId)}/payment",
                 request,
                 cancellationToken);
-
-            if (!succeeded)
-                throw new InvalidOperationException($"Failed to record payment for compliance obligation {obligationId}.");
         }
         catch (Exception ex)
         {

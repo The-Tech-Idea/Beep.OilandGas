@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,7 +17,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             string fieldId, string eorMethod, string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentNullException(nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
 
             // Query existing EOR operations for this field and method
             var operations = await GetEnhancedRecoveryOperationsAsync(fieldId);
@@ -41,7 +42,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             string operationId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(operationId))
-                throw new ArgumentNullException(nameof(operationId));
+                throw RefusalException.Invalid("The enhanced recovery operation ID is required.");
 
             var operation = await GetEnhancedRecoveryOperationAsync(operationId);
             if (operation != null)
@@ -56,7 +57,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                 return operation;
             }
 
-            throw new InvalidOperationException($"Enhanced recovery operation {operationId} was not found.");
+            throw RefusalException.NotFound($"Enhanced recovery operation {operationId} was not found.");
         }
 
         async Task<System.Collections.Generic.List<InjectionOperation>> Beep.OilandGas.Models.Core.Interfaces.IEnhancedRecoveryService.GetInjectionOperationsAsync(
@@ -88,7 +89,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             string injectionWellId, decimal injectionRate, string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(injectionWellId))
-                throw new ArgumentNullException(nameof(injectionWellId));
+                throw RefusalException.Invalid("The injection well ID is required.");
             ArgumentException.ThrowIfNullOrWhiteSpace(userId);
 
             // Look for an existing active injection operation on this well
@@ -101,7 +102,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                 var pdenUow = await GetPDENUnitOfWorkAsync();
                 var pden = pdenUow.Read(existing.OperationId) as PDEN;
                 if (pden == null)
-                    throw new InvalidOperationException($"Injection operation {existing.OperationId} was not found.");
+                    throw RefusalException.NotFound($"Injection operation {existing.OperationId} was not found.");
 
                 var now = DateTime.UtcNow;
                 pden.ACTIVE_IND = "Y";

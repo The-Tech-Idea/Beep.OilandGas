@@ -72,18 +72,12 @@ namespace Beep.OilandGas.Accounting.Services
         {
             if (_isInitialized) return;
 
-            try
-            {
-                await EnsureTableExistsAsync();
-                await LoadMappingsFromDbAsync();
-                await SeedMissingMappingsAsync(userId);
-                _isInitialized = true;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Failed to initialize account mappings");
-                // Don't throw, allow valid fallback to defaults
-            }
+            // A failure propagates and leaves the service uninitialized, so the next call tries again. Swallowing it let
+            // postings go to the default accounts while an operator's own mapping sat unread in the table.
+            await EnsureTableExistsAsync();
+            await LoadMappingsFromDbAsync();
+            await SeedMissingMappingsAsync(userId);
+            _isInitialized = true;
         }
 
         private async Task EnsureTableExistsAsync()
@@ -96,29 +90,22 @@ namespace Beep.OilandGas.Accounting.Services
 
         private async Task LoadMappingsFromDbAsync()
         {
-            try
+            var repo = await GetRepoAsync<GLAccountMapping>(TableName);
+            var filters = new List<AppFilter>
             {
-                var repo = await GetRepoAsync<GLAccountMapping>(TableName);
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                };
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+            };
 
-                var results = await repo.GetAsync(filters);
-                if (results != null)
+            var results = await repo.GetAsync(filters);
+            if (results != null)
+            {
+                foreach (var item in results.Cast<GLAccountMapping>())
                 {
-                    foreach (var item in results.Cast<GLAccountMapping>())
+                    if (!string.IsNullOrWhiteSpace(item.MAPPING_KEY) && !string.IsNullOrWhiteSpace(item.GL_ACCOUNT_NUMBER))
                     {
-                        if (!string.IsNullOrWhiteSpace(item.MAPPING_KEY) && !string.IsNullOrWhiteSpace(item.GL_ACCOUNT_NUMBER))
-                        {
-                            _cache[item.MAPPING_KEY] = item.GL_ACCOUNT_NUMBER;
-                        }
+                        _cache[item.MAPPING_KEY] = item.GL_ACCOUNT_NUMBER;
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Could not load mappings from DB, using defaults.");
             }
         }
 
@@ -140,16 +127,10 @@ namespace Beep.OilandGas.Accounting.Services
                         DESCRIPTION = $"Default mapping for {kvp.Key}"
                     };
 
-                    try
-                    {
-                        await repo.InsertAsync(mapping, userId);
-                        _cache[kvp.Key] = kvp.Value; // Update cache immediately
-                        madeChanges = true;
-                    }
-                    catch (Exception ex)
-                    {
-                         _logger?.LogError(ex, "Failed to seed mapping for key {Key}", kvp.Key);
-                    }
+                    // A failed seed propagates: initialization is not complete until every key is stored.
+                    await repo.InsertAsync(mapping, userId);
+                    _cache[kvp.Key] = kvp.Value; // Update cache immediately
+                    madeChanges = true;
                 }
             }
 
@@ -161,26 +142,15 @@ namespace Beep.OilandGas.Accounting.Services
 
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName)
         {
-             // We need to handle the case where the table metadata might not exist yet
-             // In a production system, we'd check _metadata.GetTableMetadataAsync first.
-             // For this refactor, we assume the table creation is handled or we use a generic approach.
-             
-             // Note: PPDMGenericRepository usually requires valid metadata.
-            try
-            {
-                var metadata = await _metadata.GetTableMetadataAsync(tableName);
-                var entityType = typeof(T); 
-                
-                return new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, tableName);
-            }
-            catch
-            {
-                 // Fallback: If table doesn't exist in metadata, we might need a more dynamic repo 
-                 // or just fail gracefully (which falls back to defaults).
-                 throw new InvalidOperationException($"Table {tableName} not found in metadata.");
-            }
+            // Asked, not caught: a table missing from the metadata is the deployment's error and says so; a failure of
+            // the lookup itself propagates as itself.
+            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            if (metadata == null)
+                throw new InvalidOperationException($"Table {tableName} is not in the PPDM metadata.");
+
+            return new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(T), ConnectionName, tableName);
         }
 
         private static readonly Dictionary<string, string> DefaultMappings = new Dictionary<string, string>

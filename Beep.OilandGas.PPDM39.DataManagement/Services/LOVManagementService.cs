@@ -321,6 +321,10 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Generic method to bulk add reference values
         /// </summary>
+        /// <remarks>
+        /// A value that cannot be written fails the call (OILGAS-CATCH-01): each was caught and recorded as an "error" in the
+        /// exception's own words, and the remaining values were still written.
+        /// </remarks>
         public async Task<BulkReferenceResult> BulkAddReferenceValuesAsync<T>(
             IEnumerable<T> entities,
             string userId,
@@ -338,25 +342,16 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
             foreach (var entity in entities)
             {
-                try
+                result.TotalProcessed++;
+                var (inserted, wasInserted, wasSkipped) = await AddOrUpdateReferenceValueAsync(entity, userId, skipExisting, connectionName);
+                
+                if (wasSkipped)
                 {
-                    result.TotalProcessed++;
-                    var (inserted, wasInserted, wasSkipped) = await AddOrUpdateReferenceValueAsync(entity, userId, skipExisting, connectionName);
-                    
-                    if (wasSkipped)
-                    {
-                        result.TotalSkipped++;
-                    }
-                    else if (wasInserted && inserted != null)
-                    {
-                        result.TotalInserted++;
-                    }
+                    result.TotalSkipped++;
                 }
-                catch (Exception ex)
+                else if (wasInserted && inserted != null)
                 {
-                    var entityType = typeof(T);
-                    var tableName = entityType.Name;
-                    result.Errors.Add($"Error processing {tableName} entity: {ex.Message}");
+                    result.TotalInserted++;
                 }
             }
 
@@ -624,6 +619,10 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Bulk adds LOVs efficiently
         /// </summary>
+        /// <remarks>
+        /// A LOV that cannot be written fails the call (OILGAS-CATCH-01): each was caught and recorded as an "error" in the
+        /// exception's own words, and the remaining LOVs were still written.
+        /// </remarks>
         public async Task<BulkLOVResult> BulkAddLOVsAsync(
             IEnumerable<LIST_OF_VALUE> lovs, 
             string userId, 
@@ -641,23 +640,16 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
             foreach (var lov in lovs)
             {
-                try
+                result.TotalProcessed++;
+                var (inserted, wasInserted, wasSkipped) = await AddOrUpdateLOVAsync(lov, userId, skipExisting, connectionName);
+                
+                if (wasSkipped)
                 {
-                    result.TotalProcessed++;
-                    var (inserted, wasInserted, wasSkipped) = await AddOrUpdateLOVAsync(lov, userId, skipExisting, connectionName);
-                    
-                    if (wasSkipped)
-                    {
-                        result.TotalSkipped++;
-                    }
-                    else if (wasInserted)
-                    {
-                        result.TotalInserted++;
-                    }
+                    result.TotalSkipped++;
                 }
-                catch (Exception ex)
+                else if (wasInserted)
                 {
-                    result.Errors.Add($"Error processing LOV (VALUE_TYPE: {lov.VALUE_TYPE}, VALUE_CODE: {lov.VALUE_CODE}): {ex.Message}");
+                    result.TotalInserted++;
                 }
             }
 

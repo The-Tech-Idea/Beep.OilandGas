@@ -1,5 +1,6 @@
 @inject ISnackbar Snackbar
 @inject IConnectionService ConnectionService
+@inject OilGasCallFailures Calls
 
 <MudDialog>
     <DialogContent>
@@ -121,15 +122,16 @@
                 Snackbar.Add($"Connection test failed: {_testResult.Message}", Severity.Error);
             }
         }
+        // A dialog answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
+            var sentence = Calls.Explain(ex, "testing a database connection", $"Connection '{ConnectionName}' could not be tested");
             _testResult = new ConnectionTestResult
             {
                 Success = false,
-                Message = "Connection test failed",
-                ErrorDetails = ex.Message
+                Message = sentence
             };
-            Snackbar.Add($"Error testing connection: {ex.Message}", Severity.Error);
+            Snackbar.Add(sentence, Severity.Error);
         }
         finally
         {

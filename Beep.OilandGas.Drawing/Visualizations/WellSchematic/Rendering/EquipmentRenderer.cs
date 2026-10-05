@@ -20,7 +20,7 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Rendering
         private const float DefaultEquipmentWidth = 10.0f;
         private readonly DepthTransform depthSystem;
         private readonly WellSchematicConfiguration configuration;
-        private readonly Dictionary<string, SkiaSharp.Extended.Svg.SKSvg> svgCache;
+        private readonly Dictionary<string, Svg.Skia.SKSvg> svgCache;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EquipmentRenderer"/> class.
@@ -31,7 +31,7 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Rendering
         {
             this.depthSystem = depthSystem ?? throw new ArgumentNullException(nameof(depthSystem));
             this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            svgCache = new Dictionary<string, SkiaSharp.Extended.Svg.SKSvg>(StringComparer.OrdinalIgnoreCase);
+            svgCache = new Dictionary<string, Svg.Skia.SKSvg>(StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -134,7 +134,7 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Rendering
             return Math.Max(DefaultEquipmentWidth, symbolHeight * 0.65f);
         }
 
-        private void DrawSvgEquipment(SKCanvas canvas, SkiaSharp.Extended.Svg.SKSvg svg, SKPoint anchor, float angleDegrees, float width, float height)
+        private void DrawSvgEquipment(SKCanvas canvas, Svg.Skia.SKSvg svg, SKPoint anchor, float angleDegrees, float width, float height)
         {
             var bounds = svg.Picture.CullRect;
             if (bounds.Width <= 0 || bounds.Height <= 0)
@@ -178,7 +178,7 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Rendering
                 case EquipmentSymbolKind.Mandrel:
                     DrawMandrelSymbol(canvas, width, height, fillPaint, strokePaint);
                     break;
-                default:
+                case EquipmentSymbolKind.Generic:
                     DrawGenericToolSymbol(canvas, width, height, fillPaint, strokePaint);
                     break;
             }
@@ -330,7 +330,7 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Rendering
         /// </summary>
         /// <param name="equipment">The equipment descriptor.</param>
         /// <returns>The SVG, or null if not found.</returns>
-        private SkiaSharp.Extended.Svg.SKSvg LoadSvg(WellData_Equip equipment)
+        private Svg.Skia.SKSvg LoadSvg(WellData_Equip equipment)
         {
             foreach (var candidate in ResolveSvgCandidates(equipment))
             {
@@ -389,11 +389,11 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Rendering
                 EquipmentSymbolKind.Pump => "pump.svg",
                 EquipmentSymbolKind.Screen => "sand screen.svg",
                 EquipmentSymbolKind.Mandrel => "mandrel.svg",
-                _ => "tool.svg"
+                EquipmentSymbolKind.Generic => "tool.svg"
             };
         }
 
-        private SkiaSharp.Extended.Svg.SKSvg LoadSvgByName(string componentName)
+        private Svg.Skia.SKSvg LoadSvgByName(string componentName)
         {
             if (string.IsNullOrWhiteSpace(componentName))
                 return null;
@@ -402,55 +402,50 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Rendering
             if (svgCache.ContainsKey(componentName))
                 return svgCache[componentName];
 
-            SkiaSharp.Extended.Svg.SKSvg svg = null;
+            Svg.Skia.SKSvg svg = null;
 
-            try
+            // Null answers "no such symbol" — none embedded, none in the configured folder — and the symbol is drawn by
+            // hand. A symbol that exists and will not load is a defect in the shipped or configured SVG, and reaches the
+            // caller as its exception (OILGAS-CATCH-01): it had been answered null, drawn by hand, and never heard of.
+            if (configuration.UseEmbeddedSvg)
             {
-                if (configuration.UseEmbeddedSvg)
-                {
-                    // Load from embedded resources
-                    var assembly = Assembly.GetExecutingAssembly();
-                    var resourceNames = assembly.GetManifestResourceNames();
-                    var svgName = componentName.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)
-                        ? componentName
-                        : componentName + ".svg";
-                    var resourceName = resourceNames.FirstOrDefault(r =>
-                        r.EndsWith(svgName, StringComparison.OrdinalIgnoreCase) ||
-                        r.EndsWith(componentName, StringComparison.OrdinalIgnoreCase));
+                // Load from embedded resources
+                var assembly = Assembly.GetExecutingAssembly();
+                var resourceNames = assembly.GetManifestResourceNames();
+                var svgName = componentName.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)
+                    ? componentName
+                    : componentName + ".svg";
+                var resourceName = resourceNames.FirstOrDefault(r =>
+                    r.EndsWith(svgName, StringComparison.OrdinalIgnoreCase) ||
+                    r.EndsWith(componentName, StringComparison.OrdinalIgnoreCase));
 
-                    if (resourceName != null)
+                if (resourceName != null)
+                {
+                    using (var stream = assembly.GetManifestResourceStream(resourceName))
                     {
-                        using (var stream = assembly.GetManifestResourceStream(resourceName))
+                        if (stream != null)
                         {
-                            if (stream != null)
-                            {
-                                svg = new SkiaSharp.Extended.Svg.SKSvg();
-                                svg.Load(stream);
-                            }
+                            svg = new Svg.Skia.SKSvg();
+                            svg.Load(stream);
                         }
                     }
                 }
-                else if (!string.IsNullOrEmpty(configuration.SvgResourcesPath))
-                {
-                    // Load from file
-                    var candidatePaths = new[]
-                    {
-                        Path.Combine(configuration.SvgResourcesPath, componentName),
-                        Path.Combine(configuration.SvgResourcesPath, componentName.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ? componentName : componentName + ".svg")
-                    };
-
-                    var filePath = candidatePaths.FirstOrDefault(File.Exists);
-                    if (!string.IsNullOrWhiteSpace(filePath))
-                    {
-                        svg = new SkiaSharp.Extended.Svg.SKSvg();
-                        svg.Load(filePath);
-                    }
-                }
             }
-            catch (Exception)
+            else if (!string.IsNullOrEmpty(configuration.SvgResourcesPath))
             {
-                // Log error if needed
-                svg = null;
+                // Load from file
+                var candidatePaths = new[]
+                {
+                    Path.Combine(configuration.SvgResourcesPath, componentName),
+                    Path.Combine(configuration.SvgResourcesPath, componentName.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ? componentName : componentName + ".svg")
+                };
+
+                var filePath = candidatePaths.FirstOrDefault(File.Exists);
+                if (!string.IsNullOrWhiteSpace(filePath))
+                {
+                    svg = new Svg.Skia.SKSvg();
+                    svg.Load(filePath);
+                }
             }
 
             // Cache the result (even if null)

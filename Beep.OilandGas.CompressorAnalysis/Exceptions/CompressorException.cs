@@ -1,24 +1,31 @@
 using System;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.CompressorAnalysis.Exceptions
 {
     /// <summary>
     /// Base exception for compressor calculations.
     /// </summary>
-    public class CompressorException : Exception
+    /// <remarks>
+    /// OILGAS-CATCH-01. Every throw of this family refuses what the caller sent — compressor properties or operating
+    /// conditions out of the range the calculation accepts — so it is a <see cref="RefusalException"/> (<see
+    /// cref="RefusalKind.Invalid"/>) and the API answers it as a 400 with its sentence. Its message is written for
+    /// the person, never taken from a caught exception.
+    /// </remarks>
+    public class CompressorException : RefusalException
     {
         public CompressorException()
-            : base()
+            : base(RefusalKind.Invalid, "The compressor calculation could not be done with the values given.")
         {
         }
 
         public CompressorException(string message)
-            : base(message)
+            : base(RefusalKind.Invalid, message)
         {
         }
 
         public CompressorException(string message, Exception innerException)
-            : base(message, innerException)
+            : base(RefusalKind.Invalid, message, innerException)
         {
         }
     }

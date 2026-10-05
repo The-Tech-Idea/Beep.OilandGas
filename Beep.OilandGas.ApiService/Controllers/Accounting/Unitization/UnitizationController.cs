@@ -35,25 +35,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Unitization
         [HttpGet("units")]
         public async Task<ActionResult<List<object>>> GetUnits([FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                var repository = _service.GetRepository(typeof(UNIT_AGREEMENT), connectionName, "UNIT_AGREEMENT");
-                var units = (await repository.GetAsync(new List<AppFilter>())).OfType<UNIT_AGREEMENT>().ToList();
-                var dtos = units.Select(u => new 
-                { 
-                    UnitId = u.UNIT_ID,
-                    UnitName = u.UNIT_NAME,
-                    EffectiveDate = u.EFFECTIVE_DATE,
-                    ExpirationDate = u.EXPIRATION_DATE,
-                    UnitOperator = u.UNIT_OPERATOR
-                }).ToList();
-                return Ok(dtos);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting units");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var repository = _service.GetRepository(typeof(UNIT_AGREEMENT), connectionName, "UNIT_AGREEMENT");
+            var units = (await repository.GetAsync(new List<AppFilter>())).OfType<UNIT_AGREEMENT>().ToList();
+            var dtos = units.Select(u => new 
+            { 
+                UnitId = u.UNIT_ID,
+                UnitName = u.UNIT_NAME,
+                EffectiveDate = u.EFFECTIVE_DATE,
+                ExpirationDate = u.EXPIRATION_DATE,
+                UnitOperator = u.UNIT_OPERATOR
+            }).ToList();
+            return Ok(dtos);
         }
 
         /// <summary>
@@ -65,31 +57,23 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Unitization
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var repository = _service.GetRepository(typeof(UNIT_AGREEMENT), connectionName, "UNIT_AGREEMENT");
+            var unit = new UNIT_AGREEMENT
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+                UNIT_ID = Guid.NewGuid().ToString(),
+                UNIT_NAME = request.UnitName,
+                EFFECTIVE_DATE = request.EffectiveDate,
+                EXPIRATION_DATE = request.ExpiryDate,
+                UNIT_OPERATOR = request.UnitOperator,
+                TERMS_AND_CONDITIONS = request.TermsAndConditions
+            };
 
-                var repository = _service.GetRepository(typeof(UNIT_AGREEMENT), connectionName, "UNIT_AGREEMENT");
-                var unit = new UNIT_AGREEMENT
-                {
-                    UNIT_ID = Guid.NewGuid().ToString(),
-                    UNIT_NAME = request.UnitName,
-                    EFFECTIVE_DATE = request.EffectiveDate,
-                    EXPIRATION_DATE = request.ExpiryDate,
-                    UNIT_OPERATOR = request.UnitOperator,
-                    TERMS_AND_CONDITIONS = request.TermsAndConditions
-                };
+            await repository.InsertAsync(unit, userId);
 
-                await repository.InsertAsync(unit, userId);
-
-                return Ok(new { UnitId = unit.UNIT_ID, UnitName = unit.UNIT_NAME });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating unit agreement");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { UnitId = unit.UNIT_ID, UnitName = unit.UNIT_NAME });
         }
     }
 

@@ -3,12 +3,18 @@ using Beep.OilandGas.Models.Data.WorkOrder;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
+using Beep.OilandGas.Models.Core.Refusals;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Services.WorkOrder;
 
+/// <remarks>
+/// OILGAS-CATCH-01: a read that fails reaches the caller — it was caught and answered as "no such work order", an empty
+/// list or no steps. A transition the work order's state does not allow, and one naming a work order that does not exist,
+/// are refusals in this service's words.
+/// </remarks>
 public class WorkOrderService : IWorkOrderService
 {
     private readonly IDMEEditor              _editor;
@@ -83,73 +89,57 @@ public class WorkOrderService : IWorkOrderService
 
     public async Task<WorkOrderDetailModel?> GetByIdAsync(string fieldId, string instanceId)
     {
-        try
+        var meta       = await _metadata.GetTableMetadataAsync("PROJECT");
+        var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
+        var repo       = BuildRepo(entityType, "PROJECT");
+
+        var filters = new List<AppFilter>
         {
-            var meta       = await _metadata.GetTableMetadataAsync("PROJECT");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-            var repo       = BuildRepo(entityType, "PROJECT");
+            new() { FieldName = "PROJECT_ID",   Operator = "=", FilterValue = instanceId },
+            new() { FieldName = "FIELD_ID",     Operator = "=", FilterValue = fieldId    },
+            new() { FieldName = "PROJECT_TYPE", Operator = "=", FilterValue = "WORK_ORDER"},
+            new() { FieldName = "ACTIVE_IND",   Operator = "=", FilterValue = "Y"        }
+        };
+        var rows = (await repo.GetAsync(filters)).ToList();
+        if (rows.Count == 0) return null;
 
-            var filters = new List<AppFilter>
-            {
-                new() { FieldName = "PROJECT_ID",   Operator = "=", FilterValue = instanceId },
-                new() { FieldName = "FIELD_ID",     Operator = "=", FilterValue = fieldId    },
-                new() { FieldName = "PROJECT_TYPE", Operator = "=", FilterValue = "WORK_ORDER"},
-                new() { FieldName = "ACTIVE_IND",   Operator = "=", FilterValue = "Y"        }
-            };
-            var rows = (await repo.GetAsync(filters)).ToList();
-            if (rows.Count == 0) return null;
+        dynamic row     = rows[0];
+        var detail      = new WorkOrderDetailModel();
+        MapDynamicToSummary(row, detail, instanceId);
 
-            dynamic row     = rows[0];
-            var detail      = new WorkOrderDetailModel();
-            MapDynamicToSummary(row, detail, instanceId);
+        // Load steps, checklist
+        detail.Steps     = await GetStepsAsync(instanceId);
+        detail.Checklist = await _inspection.GetChecklistAsync(instanceId);
 
-            // Load steps, checklist
-            detail.Steps     = await GetStepsAsync(instanceId);
-            detail.Checklist = await _inspection.GetChecklistAsync(instanceId);
-
-            return detail;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to get work order {InstanceId}", instanceId);
-            return null;
-        }
+        return detail;
     }
 
     public async Task<List<WorkOrderSummary>> GetByFieldAsync(
         string fieldId, string? state = null, string? woSubType = null)
     {
-        try
-        {
-            var meta       = await _metadata.GetTableMetadataAsync("PROJECT");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-            var repo       = BuildRepo(entityType, "PROJECT");
+        var meta       = await _metadata.GetTableMetadataAsync("PROJECT");
+        var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
+        var repo       = BuildRepo(entityType, "PROJECT");
 
-            var filters = new List<AppFilter>
-            {
-                new() { FieldName = "FIELD_ID",     Operator = "=", FilterValue = fieldId      },
-                new() { FieldName = "PROJECT_TYPE", Operator = "=", FilterValue = "WORK_ORDER" },
-                new() { FieldName = "ACTIVE_IND",   Operator = "=", FilterValue = "Y"          }
-            };
-            if (!string.IsNullOrWhiteSpace(state))
-                filters.Add(new AppFilter { FieldName = "PROJECT_STATUS", Operator = "=", FilterValue = state });
-            if (!string.IsNullOrWhiteSpace(woSubType))
-                filters.Add(new AppFilter { FieldName = "WO_SUBTYPE", Operator = "=", FilterValue = woSubType });
-
-            var rows = (await repo.GetAsync(filters)).ToList();
-            return rows.Select(r =>
-            {
-                dynamic d = r;
-                var s = new WorkOrderSummary();
-                MapDynamicToSummary(d, s, GetStr(d, "PROJECT_ID"));
-                return s;
-            }).ToList();
-        }
-        catch (Exception ex)
+        var filters = new List<AppFilter>
         {
-            _logger.LogError(ex, "Failed to list work orders for field {FieldId}", fieldId);
-            return new();
-        }
+            new() { FieldName = "FIELD_ID",     Operator = "=", FilterValue = fieldId      },
+            new() { FieldName = "PROJECT_TYPE", Operator = "=", FilterValue = "WORK_ORDER" },
+            new() { FieldName = "ACTIVE_IND",   Operator = "=", FilterValue = "Y"          }
+        };
+        if (!string.IsNullOrWhiteSpace(state))
+            filters.Add(new AppFilter { FieldName = "PROJECT_STATUS", Operator = "=", FilterValue = state });
+        if (!string.IsNullOrWhiteSpace(woSubType))
+            filters.Add(new AppFilter { FieldName = "WO_SUBTYPE", Operator = "=", FilterValue = woSubType });
+
+        var rows = (await repo.GetAsync(filters)).ToList();
+        return rows.Select(r =>
+        {
+            dynamic d = r;
+            var s = new WorkOrderSummary();
+            MapDynamicToSummary(d, s, WorkOrderRowValues.Str(d, "PROJECT_ID"));
+            return s;
+        }).ToList();
     }
 
     // ── TRANSITION ───────────────────────────────────────────────────────────
@@ -173,11 +163,11 @@ public class WorkOrderService : IWorkOrderService
                 new() { FieldName = "ACTIVE_IND",   Operator = "=", FilterValue = "Y"         }
             };
             var rows = (await repo.GetAsync(filters)).ToList();
-            if (rows.Count == 0) throw new InvalidOperationException($"Work order {instanceId} not found");
+            if (rows.Count == 0) throw RefusalException.NotFound($"Work order {instanceId} was not found in field {fieldId}.");
 
             dynamic entity       = rows[0];
-            string  currentState = GetStr(entity, "PROJECT_STATUS");
-            string  woSubType    = GetStr(entity, "WO_SUBTYPE");
+            string  currentState = WorkOrderRowValues.Str(entity, "PROJECT_STATUS");
+            string  woSubType    = WorkOrderRowValues.Str(entity, "WO_SUBTYPE");
 
             ValidateTransition(currentState, toState, woSubType);
 
@@ -192,7 +182,7 @@ public class WorkOrderService : IWorkOrderService
             // Seed checklist on PLANNED transition
             if (toState == WorkOrderState.Planned)
             {
-                string jurisdiction = GetStr(entity, "JURISDICTION");
+                string jurisdiction = WorkOrderRowValues.Str(entity, "JURISDICTION");
                 if (string.IsNullOrWhiteSpace(jurisdiction)) jurisdiction = "USA";
                 await _inspection.SeedChecklistAsync(instanceId, woSubType, jurisdiction, userId);
             }
@@ -255,47 +245,39 @@ public class WorkOrderService : IWorkOrderService
 
     private async Task<List<WorkOrderStep>> GetStepsAsync(string instanceId)
     {
-        try
-        {
-            var meta       = await _metadata.GetTableMetadataAsync("PROJECT_STEP");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-            var repo       = BuildRepo(entityType, "PROJECT_STEP");
+        var meta       = await _metadata.GetTableMetadataAsync("PROJECT_STEP");
+        var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
+        var repo       = BuildRepo(entityType, "PROJECT_STEP");
 
-            var filters = new List<AppFilter>
-            {
-                new() { FieldName = "PROJECT_ID", Operator = "=", FilterValue = instanceId },
-                new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y"        }
-            };
-            return (await repo.GetAsync(filters)).Select(r =>
-            {
-                dynamic d = r;
-                return new WorkOrderStep
-                {
-                    InstanceId  = instanceId,
-                    StepSeq     = GetInt(d, "STEP_SEQ"),
-                    StepName    = GetStr(d, "STEP_NAME"),
-                    StepType    = GetStr(d, "STEP_TYPE"),
-                    Status      = GetStr(d, "STEP_STATUS"),
-                    PlannedDate = GetDate(d, "PLAN_DATE"),
-                    ActualDate  = GetDate(d, "ACTUAL_DATE")
-                };
-            }).ToList();
-        }
-        catch { return new(); }
+        var filters = new List<AppFilter>
+        {
+            new() { FieldName = "PROJECT_ID", Operator = "=", FilterValue = instanceId },
+            new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y"        }
+        };
+        return (await repo.GetAsync(filters)).Select(r => new WorkOrderStep
+        {
+            InstanceId  = instanceId,
+            StepSeq     = WorkOrderRowValues.Int(r, "STEP_SEQ"),
+            StepName    = WorkOrderRowValues.Str(r, "STEP_NAME"),
+            StepType    = WorkOrderRowValues.Str(r, "STEP_TYPE"),
+            Status      = WorkOrderRowValues.Str(r, "STEP_STATUS"),
+            PlannedDate = WorkOrderRowValues.Date(r, "PLAN_DATE"),
+            ActualDate  = WorkOrderRowValues.Date(r, "ACTUAL_DATE")
+        }).ToList();
     }
 
     private static void MapDynamicToSummary(dynamic d, WorkOrderSummary s, string instanceId)
     {
         s.InstanceId   = instanceId;
-        s.InstanceName = GetStr(d, "PROJECT_NAME");
-        s.WoSubType    = GetStr(d, "WO_SUBTYPE");
-        s.State        = GetStr(d, "PROJECT_STATUS");
-        s.FieldId      = GetStr(d, "FIELD_ID");
-        s.EquipmentId  = GetStr(d, "EQUIPMENT_ID");
-        s.PlannedStart = GetDate(d, "PLAN_START_DATE");
-        s.PlannedEnd   = GetDate(d, "PLAN_END_DATE");
-        s.ActualStart  = GetDate(d, "ACTUAL_DATE");
-        s.ActualEnd    = GetDate(d, "ACTUAL_END_DATE");
+        s.InstanceName = WorkOrderRowValues.Str(d, "PROJECT_NAME");
+        s.WoSubType    = WorkOrderRowValues.Str(d, "WO_SUBTYPE");
+        s.State        = WorkOrderRowValues.Str(d, "PROJECT_STATUS");
+        s.FieldId      = WorkOrderRowValues.Str(d, "FIELD_ID");
+        s.EquipmentId  = WorkOrderRowValues.Str(d, "EQUIPMENT_ID");
+        s.PlannedStart = WorkOrderRowValues.Date(d, "PLAN_START_DATE");
+        s.PlannedEnd   = WorkOrderRowValues.Date(d, "PLAN_END_DATE");
+        s.ActualStart  = WorkOrderRowValues.Date(d, "ACTUAL_DATE");
+        s.ActualEnd    = WorkOrderRowValues.Date(d, "ACTUAL_END_DATE");
     }
 
     private static WorkOrderSummary MapToSummary(dynamic entity, string instanceId)
@@ -309,40 +291,12 @@ public class WorkOrderService : IWorkOrderService
     {
         // Completed and Cancelled WOs cannot be transitioned further
         if (from == WorkOrderState.Completed || from == WorkOrderState.Cancelled)
-            throw new InvalidOperationException(
+            throw RefusalException.Conflict(
                 $"Work order in state '{from}' cannot be transitioned to '{to}'.");
 
         // UNDER_REVIEW only valid for Safety-critical WOs
         if (to == WorkOrderState.UnderReview && woSubType != WorkOrderSubType.Safety)
-            throw new InvalidOperationException(
+            throw RefusalException.Conflict(
                 "UNDER_REVIEW state is only valid for Safety-Critical work orders [SEMS §250.1917].");
-    }
-
-    private static string GetStr(dynamic d, string prop)
-    {
-        try { return (string?)d.GetType().GetProperty(prop)?.GetValue(d) ?? string.Empty; }
-        catch { return string.Empty; }
-    }
-
-    private static int GetInt(dynamic d, string prop)
-    {
-        try
-        {
-            var v = d.GetType().GetProperty(prop)?.GetValue(d);
-            return v is int i ? i : v is long l ? (int)l : 0;
-        }
-        catch { return 0; }
-    }
-
-    private static DateTime? GetDate(dynamic d, string prop)
-    {
-        try
-        {
-            var v = d.GetType().GetProperty(prop)?.GetValue(d);
-            if (v is DateTime dt) return dt;
-            if (v is string s && DateTime.TryParse(s, out var p)) return p;
-            return null;
-        }
-        catch { return null; }
     }
 }

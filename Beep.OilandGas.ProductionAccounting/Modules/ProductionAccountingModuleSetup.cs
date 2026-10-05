@@ -220,17 +220,11 @@ namespace Beep.OilandGas.ProductionAccounting.Modules
             var result = NewResult();
             cancellationToken.ThrowIfCancellationRequested();
 
-            try
-            {
-                await SeedProductionAccountingReferenceCodesAsync(connectionName, userId, result, cancellationToken)
-                    .ConfigureAwait(false);
-                result.Success = result.Errors.Count == 0;
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                result.Success = false;
-                result.Errors.Add($"R_PRODUCTION_ACCOUNTING_REFERENCE_CODE: {ex.Message}");
-            }
+            // A row that cannot be written is TryInsertAsync's to record; any other failure (the table, the reads)
+            // propagates to the setup orchestrator, which records the module as failed with its reference.
+            await SeedProductionAccountingReferenceCodesAsync(connectionName, userId, result, cancellationToken)
+                .ConfigureAwait(false);
+            result.Success = result.Errors.Count == 0;
 
             return result;
         }

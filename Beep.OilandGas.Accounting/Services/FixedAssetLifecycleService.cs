@@ -64,7 +64,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(assetType))
                 throw new ArgumentNullException(nameof(assetType));
             if (acquisitionCost <= 0m)
-                throw new InvalidOperationException("Acquisition cost must be positive");
+                throw RefusalException.Invalid("Acquisition cost must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
@@ -139,13 +139,13 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(equipmentId))
                 throw new ArgumentNullException(nameof(equipmentId));
             if (depreciationAmount <= 0m)
-                throw new InvalidOperationException("Depreciation amount must be positive");
+                throw RefusalException.Invalid("Depreciation amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
             var equipment = await GetEquipmentAsync(equipmentId, cn);
             if (equipment == null)
-                throw new InvalidOperationException($"Equipment not found: {equipmentId}");
+                throw RefusalException.NotFound($"Equipment {equipmentId} was not found.");
 
             var cost = new ACCOUNTING_COST
             {
@@ -209,13 +209,13 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(equipmentId))
                 throw new ArgumentNullException(nameof(equipmentId));
             if (saleProceeds < 0m)
-                throw new InvalidOperationException("Sale proceeds cannot be negative");
+                throw RefusalException.Invalid("Sale proceeds cannot be negative.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
             var equipment = await GetEquipmentAsync(equipmentId, cn);
             if (equipment == null)
-                throw new InvalidOperationException($"Equipment not found: {equipmentId}");
+                throw RefusalException.NotFound($"Equipment {equipmentId} was not found.");
 
             var costBasis = await GetAssetCostAsync(equipmentId, cn, "ASSET_CAPITALIZATION");
             var accumulatedDepreciation = await GetAssetCostAsync(equipmentId, cn, "DEPRECIATION");
@@ -308,7 +308,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(equipmentId))
                 throw new ArgumentNullException(nameof(equipmentId));
             if (componentObsNo <= 0m)
-                throw new InvalidOperationException("Component observation number must be positive");
+                throw RefusalException.Invalid("Component observation number must be positive.");
             if (string.IsNullOrWhiteSpace(componentType))
                 throw new ArgumentNullException(nameof(componentType));
             if (string.IsNullOrWhiteSpace(userId))
@@ -316,7 +316,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             var equipment = await GetEquipmentAsync(equipmentId, cn);
             if (equipment == null)
-                throw new InvalidOperationException($"Equipment not found: {equipmentId}");
+                throw RefusalException.NotFound($"Equipment {equipmentId} was not found.");
 
             var component = new EQUIPMENT_COMPONENT
             {

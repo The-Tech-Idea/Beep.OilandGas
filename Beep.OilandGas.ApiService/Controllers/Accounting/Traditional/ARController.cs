@@ -45,29 +45,21 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Invoice ID is required." });
-            try
-            {
-                var invoice = _service.TraditionalAccounting.AccountsReceivable.GetARInvoice(id);
-                if (invoice == null)
-                        return NotFound(new { error = $"AR invoice with ID {id} not found." });
+            var invoice = _service.TraditionalAccounting.AccountsReceivable.GetARInvoice(id);
+            if (invoice == null)
+                    return NotFound(new { error = $"AR invoice with ID {id} not found." });
 
-                return Ok(new
-                {
-                    ArInvoiceId = invoice.AR_INVOICE_ID,
-                    InvoiceNumber = invoice.INVOICE_NUMBER,
-                    CustomerBaId = invoice.CUSTOMER_BA_ID,
-                    InvoiceDate = invoice.INVOICE_DATE,
-                    DueDate = invoice.DUE_DATE,
-                    TotalAmount = invoice.TOTAL_AMOUNT,
-                    BalanceDue = invoice.BALANCE_DUE,
-                    Status = invoice.STATUS
-                });
-            }
-            catch (Exception ex)
+            return Ok(new
             {
-                _logger.LogError(ex, "Error getting AR invoice {InvoiceId}", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                ArInvoiceId = invoice.AR_INVOICE_ID,
+                InvoiceNumber = invoice.INVOICE_NUMBER,
+                CustomerBaId = invoice.CUSTOMER_BA_ID,
+                InvoiceDate = invoice.INVOICE_DATE,
+                DueDate = invoice.DUE_DATE,
+                TotalAmount = invoice.TOTAL_AMOUNT,
+                BalanceDue = invoice.BALANCE_DUE,
+                Status = invoice.STATUS
+            });
         }
 
         /// <summary>
@@ -79,53 +71,42 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var invoice = _service.TraditionalAccounting.AccountsReceivable.CreateARInvoice(request, userId);
+
+            // Post to GL: Debit AR, Credit Revenue
+            var lines = new List<JournalEntryLineData>
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-
-                var invoice = _service.TraditionalAccounting.AccountsReceivable.CreateARInvoice(request, userId);
-
-                // Post to GL: Debit AR, Credit Revenue
-                var lines = new List<JournalEntryLineData>
+                new JournalEntryLineData
                 {
-                    new JournalEntryLineData
-                    {
-                        GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
-                            .FirstOrDefault(a => a.ACCOUNT_NUMBER == "1200")?.GL_ACCOUNT_ID ?? "",
-                        DebitAmount = invoice.TOTAL_AMOUNT,
-                        CreditAmount = null,
-                        Description = $"AR Invoice {invoice.INVOICE_NUMBER}"
-                    },
-                    new JournalEntryLineData
-                    {
-                        GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
-                            .FirstOrDefault(a => a.ACCOUNT_NUMBER == "4000")?.GL_ACCOUNT_ID ?? "",
-                        DebitAmount = null,
-                        CreditAmount = invoice.TOTAL_AMOUNT,
-                        Description = $"AR Invoice {invoice.INVOICE_NUMBER}"
-                    }
-                };
+                    GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
+                        .FirstOrDefault(a => a.ACCOUNT_NUMBER == "1200")?.GL_ACCOUNT_ID ?? "",
+                    DebitAmount = invoice.TOTAL_AMOUNT,
+                    CreditAmount = null,
+                    Description = $"AR Invoice {invoice.INVOICE_NUMBER}"
+                },
+                new JournalEntryLineData
+                {
+                    GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
+                        .FirstOrDefault(a => a.ACCOUNT_NUMBER == "4000")?.GL_ACCOUNT_ID ?? "",
+                    DebitAmount = null,
+                    CreditAmount = invoice.TOTAL_AMOUNT,
+                    Description = $"AR Invoice {invoice.INVOICE_NUMBER}"
+                }
+            };
 
-                var journalEntryId = await _glIntegration.PostTraditionalAccountingToGL(
+            var journalEntryId = await LedgerPosting.PostAsync(
+                () => _glIntegration.PostTraditionalAccountingToGL(
                     invoice.AR_INVOICE_ID,
                     "AR_Invoice",
                     lines,
                     invoice.INVOICE_DATE,
-                    userId);
+                    userId),
+                $"AR invoice {invoice.INVOICE_NUMBER}", invoice.AR_INVOICE_ID, "AR_Invoice");
 
-                return Ok(new { ArInvoiceId = invoice.AR_INVOICE_ID, InvoiceNumber = invoice.INVOICE_NUMBER, JournalEntryId = journalEntryId });
-            }
-            catch (GLPostingException ex)
-            {
-                _logger.LogError(ex, "GL posting failed for AR invoice");
-                    return StatusCode(500, new { error = "AR invoice created but GL posting failed." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating AR invoice");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { ArInvoiceId = invoice.AR_INVOICE_ID, InvoiceNumber = invoice.INVOICE_NUMBER, JournalEntryId = journalEntryId });
         }
     }
 }

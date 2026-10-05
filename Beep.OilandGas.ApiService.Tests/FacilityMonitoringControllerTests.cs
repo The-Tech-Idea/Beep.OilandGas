@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers.Facility;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data.ProductionOperations;
 using Beep.OilandGas.ProductionOperations.Services;
 using Microsoft.AspNetCore.Http;
@@ -174,24 +175,24 @@ public class FacilityMonitoringControllerTests
         service.VerifyNoOtherCalls();
     }
 
+    // OILGAS-CATCH-01: the facility service's refusal reaches the API's handler as itself (404 with its sentence); an
+    // InvalidOperationException is no longer answered 400 in its own words.
     [Fact]
-    public async Task RecordEquipmentActivityAsync_ReturnsBadRequest_WhenServiceThrowsInvalidOperation()
+    public async Task RecordEquipmentActivityAsync_PassesTheServicesRefusalThrough()
     {
         var service = new Mock<IFacilityManagementService>(MockBehavior.Strict);
+        var refusal = RefusalException.NotFound("Facility not found.");
         service.Setup(s => s.RecordEquipmentActivityAsync(It.IsAny<FACILITY_EQUIPMENT_ACTIVITY>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("Facility not found."));
+            .ThrowsAsync(refusal);
 
         var controller = CreateController(service.Object, "user-6");
 
-        var action = await controller.RecordEquipmentActivityAsync(
+        Assert.Same(refusal, await Refusals.RefusedAsync(RefusalKind.NotFound, () => controller.RecordEquipmentActivityAsync(
             "FAC-600",
             "EQ-600",
             new FACILITY_EQUIPMENT_ACTIVITY { ACTIVITY_TYPE = "MOVE" },
             null,
-            CancellationToken.None);
-
-        var badRequest = Assert.IsType<BadRequestObjectResult>(action.Result);
-        Assert.NotNull(badRequest.Value);
+            CancellationToken.None)));
         service.VerifyAll();
     }
 

@@ -54,7 +54,7 @@ namespace Beep.OilandGas.Accounting.Services
             string cn = "PPDM39")
         {
             if (adjustmentAmount == 0m)
-                throw new InvalidOperationException("ECL adjustment cannot be zero");
+                throw RefusalException.Invalid("ECL adjustment cannot be zero.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 

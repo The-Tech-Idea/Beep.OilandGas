@@ -38,6 +38,14 @@ builder.WebHost.ConfigureKestrel(options =>
 // MUDBLAZOR & UI SERVICES
 // ============================================
 builder.Services.AddMudServices();
+
+// What a page shows of a failure, and of an API answer that was not a success (OILGAS-CATCH-01): the shared page notifier
+// (reported, said with its reference) and the one wording of the API's refusals and failures.
+builder.Services.AddFailureNotifier();
+builder.Services.AddSingleton<Beep.OilandGas.Web.Services.OilGasApiFailures>();
+// A service or page state whose contract is a failed result (Success = false, an Error the page renders) words any
+// failure through this — the API's answers through the wording above, anything else reported with its reference.
+builder.Services.AddSingleton<Beep.OilandGas.Web.Services.OilGasCallFailures>();
 // MudBlazor's own component texts (pager, pickers, data-grid filters) in the request's language: the MudBlazor
 // organisation's translations, as MudBlazor's localization documentation recommends. OilGas offers English only today;
 // a culture added below is served by MudBlazor's texts without further wiring.
@@ -180,7 +188,6 @@ builder.Services.AddBeepOilandGasAppRemote(builder.Configuration);
         // First-run setup wizard service
 
         // Multi-page PPDM39 database setup wizard state
-        builder.Services.AddScoped<CreateDatabaseWizardState>();
 
         // ── Phase 5: Workflow Notifications & Task Inbox ─────────────────
         builder.Services.AddScoped<IUnifiedTaskInboxService, UnifiedTaskInboxService>();
@@ -190,7 +197,7 @@ builder.Services.AddBeepOilandGasAppRemote(builder.Configuration);
         {
             var httpClient = sp.GetRequiredService<HttpClient>();
             var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<ExternalWebhookTriggerService>();
-            return new ExternalWebhookTriggerService(httpClient, logger);
+            return new ExternalWebhookTriggerService(httpClient, logger, sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>());
         });
 
 // PPDM39 Data Management Services

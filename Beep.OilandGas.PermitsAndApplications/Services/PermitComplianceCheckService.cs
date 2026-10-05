@@ -1,3 +1,4 @@
+using Beep.OilandGas.PermitsAndApplications.Exceptions;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
@@ -37,18 +38,13 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
         public async Task<PermitComplianceResult> CheckComplianceAsync(string applicationId, string? configDirectory = null)
         {
             if (string.IsNullOrWhiteSpace(applicationId))
-                throw new ArgumentNullException(nameof(applicationId));
+                throw new InvalidApplicationException("The permit application ID is required.");
 
             var result = new PermitComplianceResult();
 
-            var application = await GetPermitApplicationAsync(applicationId);
-            if (application == null)
-            {
-                result.Violations.Add("Permit application not found.");
-                result.IsCompliant = false;
-                result.ComplianceScore = 0m;
-                return result;
-            }
+            // An application that is not there is refused, not reported as a non-compliant one with a score of zero.
+            var application = await GetPermitApplicationAsync(applicationId)
+                ?? throw new PermitNotFoundException($"Permit application {applicationId} was not found.", applicationId);
 
             var drilling = await GetDrillingApplicationAsync(application.PERMIT_APPLICATION_ID);
             var environmental = await GetEnvironmentalApplicationAsync(application.PERMIT_APPLICATION_ID);

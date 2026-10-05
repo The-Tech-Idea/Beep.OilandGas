@@ -2,6 +2,8 @@
 @using Beep.OilandGas.Web.Services
 @inject ApiClient ApiClient
 @inject AuthenticationStateProvider AuthStateProvider
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 @using Microsoft.AspNetCore.Components.Authorization
 @using Beep.Foundation.IdentityServer.Shared.Identity
 
@@ -77,9 +79,14 @@
 
             _hierarchy = await ApiClient.GetAsync<AssetHierarchyNode>(url);
         }
+        catch (OilGasApiException answer)
+        {
+            _error = Answers.Explain(answer, "loading the asset hierarchy", "The asset hierarchy could not be loaded");
+        }
+        // A component answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            _error = $"Error loading asset hierarchy: {ex.Message}";
+            _error = Notifier.FailureText(ex, "loading the asset hierarchy", "The asset hierarchy could not be loaded");
         }
         finally
         {

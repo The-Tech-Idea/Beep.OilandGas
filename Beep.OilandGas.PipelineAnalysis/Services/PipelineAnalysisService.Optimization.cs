@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.PipelineAnalysis.Services
 {
@@ -13,7 +14,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<OptimizationResult> OptimizeFlowParametersAsync(string pipelineId, OptimizationRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -55,7 +56,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<DiameterRecommendation> RecommendOptimalDiameterAsync(string pipelineId, DiameterRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -92,7 +93,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<FlowRateOptimization> OptimizeFlowRateAsync(string pipelineId, FlowOptimizationRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -128,7 +129,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<SensitivityAnalysis> PerformSensitivityAnalysisAsync(string pipelineId, SensitivityRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -181,7 +182,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<PumpCompressorSizing> RecommendPumpCompressorSizingAsync(string pipelineId, PumpCompressorRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 

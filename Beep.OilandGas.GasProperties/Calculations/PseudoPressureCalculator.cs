@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.GasProperties;
 using Beep.OilandGas.GasProperties.Constants;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.GasProperties.Calculations
 {
@@ -28,13 +29,13 @@ namespace Beep.OilandGas.GasProperties.Calculations
             Func<decimal, decimal, decimal, decimal, decimal> viscosityCalculator)
         {
             if (pressure <= 0)
-                throw new ArgumentException("Pressure must be greater than zero.", nameof(pressure));
+                throw RefusalException.Invalid("Pressure must be greater than zero.");
 
             if (temperature <= 0)
-                throw new ArgumentException("Temperature must be greater than zero.", nameof(temperature));
+                throw RefusalException.Invalid("Temperature must be greater than zero.");
 
             if (specificGravity <= 0)
-                throw new ArgumentException("Specific gravity must be greater than zero.", nameof(specificGravity));
+                throw RefusalException.Invalid("Specific gravity must be greater than zero.");
 
             // Use Simpson's rule for numerical integration
             // Pseudo-pressure = 2 * âˆ«(P / (Î¼ * Z)) dP from 0 to P
@@ -80,7 +81,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
             Func<decimal, decimal, decimal, decimal, decimal> viscosityCalculator)
         {
             if (pressure <= 0)
-                throw new ArgumentException("Pressure must be greater than zero.", nameof(pressure));
+                throw RefusalException.Invalid("Pressure must be greater than zero.");
 
             int n = 100; // Number of integration points
             decimal h = pressure / n;
@@ -124,13 +125,13 @@ namespace Beep.OilandGas.GasProperties.Calculations
             Func<decimal, decimal, decimal, decimal, decimal> viscosityCalculator)
         {
             if (minPressure <= 0)
-                throw new ArgumentException("Minimum pressure must be greater than zero.", nameof(minPressure));
+                throw RefusalException.Invalid("Minimum pressure must be greater than zero.");
 
             if (maxPressure <= minPressure)
-                throw new ArgumentException("Maximum pressure must be greater than minimum pressure.", nameof(maxPressure));
+                throw RefusalException.Invalid("Maximum pressure must be greater than minimum pressure.");
 
             if (numberOfPoints < 2)
-                throw new ArgumentException("Number of points must be at least 2.", nameof(numberOfPoints));
+                throw RefusalException.Invalid("Number of points must be at least 2.");
 
             var results = new List<PSEUDO_PRESSURE_RESULT>();
             decimal pressureStep = (maxPressure - minPressure) / (numberOfPoints - 1);

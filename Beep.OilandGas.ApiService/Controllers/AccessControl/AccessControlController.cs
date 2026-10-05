@@ -36,19 +36,12 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         public async Task<ActionResult<AccessCheckResponse>> CheckAssetAccess([FromBody] AccessCheckRequest request)
         {
             if (!CanAccess(request.UserId)) return Forbid();
-            try
-            {
-                var response = await _accessControlService.CheckAssetAccessAsync(
-                    request.UserId, 
-                    request.AssetId, 
-                    request.AssetType, 
-                    request.RequiredPermission);
-                return Ok(response);
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var response = await _accessControlService.CheckAssetAccessAsync(
+                request.UserId, 
+                request.AssetId, 
+                request.AssetType, 
+                request.RequiredPermission);
+            return Ok(response);
         }
 
         /// <summary>
@@ -64,16 +57,9 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             if (!CanAccess(targetUserId)) return Forbid();
             if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
-            try
-            {
-                var assets = await _accessControlService.GetUserAccessibleAssetsAsync(
-                    targetUserId, assetType, organizationId, includeInherited);
-                return Ok(assets);
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var assets = await _accessControlService.GetUserAccessibleAssetsAsync(
+                targetUserId, assetType, organizationId, includeInherited);
+            return Ok(assets);
         }
 
         /// <summary>
@@ -87,15 +73,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             if (!CanAccess(targetUserId)) return Forbid();
             if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
-            try
-            {
-                var roles = await _accessControlService.GetUserRolesAsync(targetUserId, organizationId);
-                return Ok(roles);
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var roles = await _accessControlService.GetUserRolesAsync(targetUserId, organizationId);
+            return Ok(roles);
         }
 
         /// <summary>
@@ -112,15 +91,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 return BadRequest(new { error = "User ID is required." });
             if (string.IsNullOrWhiteSpace(permissionId))
                 return BadRequest(new { error = "Permission ID is required." });
-            try
-            {
-                var hasPermission = await _accessControlService.HasPermissionAsync(targetUserId, permissionId, organizationId);
-                return Ok(hasPermission);
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var hasPermission = await _accessControlService.HasPermissionAsync(targetUserId, permissionId, organizationId);
+            return Ok(hasPermission);
         }
 
         /// <summary>
@@ -131,21 +103,14 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         public async Task<ActionResult<bool>> GrantAssetAccess([FromBody] GrantAccessRequest request)
         {
             if (!IsAdministrator) return Forbid();
-            try
-            {
-                var result = await _accessControlService.GrantAssetAccessAsync(
-                    request.UserId, 
-                    request.AssetId, 
-                    request.AssetType, 
-                    request.AccessLevel, 
-                    request.Inherit, 
-                    request.OrganizationId);
-                return Ok(result);
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _accessControlService.GrantAssetAccessAsync(
+                request.UserId, 
+                request.AssetId, 
+                request.AssetType, 
+                request.AccessLevel, 
+                request.Inherit, 
+                request.OrganizationId);
+            return Ok(result);
         }
 
         /// <summary>
@@ -156,18 +121,11 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         public async Task<ActionResult<bool>> RevokeAssetAccess([FromBody] RevokeAccessRequest request)
         {
             if (!IsAdministrator) return Forbid();
-            try
-            {
-                var result = await _accessControlService.RevokeAssetAccessAsync(
-                    request.UserId, 
-                    request.AssetId, 
-                    request.AssetType);
-                return Ok(result);
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _accessControlService.RevokeAssetAccessAsync(
+                request.UserId, 
+                request.AssetId, 
+                request.AssetType);
+            return Ok(result);
         }
 
         /// <summary>
@@ -182,15 +140,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             if (!IsAdministrator) return Forbid();
             if (string.IsNullOrWhiteSpace(roleId))
                 return BadRequest(new { error = "Role ID is required." });
-            try
-            {
-                var permissions = await _accessControlService.GetRolePermissionsAsync(roleId, organizationId);
-                return Ok(permissions);
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var permissions = await _accessControlService.GetRolePermissionsAsync(roleId, organizationId);
+            return Ok(permissions);
         }
 
         /// <summary>
@@ -208,15 +159,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 return BadRequest(new { error = "Role ID is required." });
             if (string.IsNullOrWhiteSpace(permissionId))
                 return BadRequest(new { error = "Permission ID is required." });
-            try
-            {
-                var result = await _accessControlService.AssignPermissionToRoleAsync(roleId, permissionId, organizationId);
-                return Ok(result);
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _accessControlService.AssignPermissionToRoleAsync(roleId, permissionId, organizationId);
+            return Ok(result);
         }
 
         /// <summary>
@@ -234,15 +178,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 return BadRequest(new { error = "Role ID is required." });
             if (string.IsNullOrWhiteSpace(permissionId))
                 return BadRequest(new { error = "Permission ID is required." });
-            try
-            {
-                var result = await _accessControlService.RemovePermissionFromRoleAsync(roleId, permissionId, organizationId);
-                return Ok(result);
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _accessControlService.RemovePermissionFromRoleAsync(roleId, permissionId, organizationId);
+            return Ok(result);
         }
     }
 }

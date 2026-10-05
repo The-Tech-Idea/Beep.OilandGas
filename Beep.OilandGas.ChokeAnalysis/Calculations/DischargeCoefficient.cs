@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.ChokeAnalysis.Calculations
 {
@@ -60,7 +61,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
         public static double CalculateIso5167Cd(double beta, double reynoldsNumber)
         {
             if (beta is < 0.2 or > 0.75)
-                throw new ArgumentOutOfRangeException(nameof(beta), "β must be 0.2–0.75 for ISO 5167.");
+                throw RefusalException.Invalid("The diameter ratio (β) must be between 0.2 and 0.75 for ISO 5167.");
             if (reynoldsNumber < 100) reynoldsNumber = 100;
 
             double b2  = beta * beta;
@@ -104,7 +105,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
             double beta)
         {
             if (pressureRatioP2P1 is < 0 or > 1)
-                throw new ArgumentOutOfRangeException(nameof(pressureRatioP2P1));
+                throw RefusalException.Invalid("The downstream-to-upstream pressure ratio must be between 0 and 1.");
 
             double cd = 0.775
                 - 0.0012 * Math.Min(gorScfPerBbl, 5_000.0) / 1_000.0  // normalise to kscf/bbl
@@ -131,7 +132,6 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
                 ChokeValveType.VenturiTube        => new ApiChokeTypeResult(0.94, 0.99, 0.97),
                 ChokeValveType.AdjustableNeedle   => new ApiChokeTypeResult(0.70, 0.82, 0.76),
                 ChokeValveType.BeanChoke          => new ApiChokeTypeResult(0.83, 0.87, 0.85),
-                _ => new ApiChokeTypeResult(0.81, 0.85, 0.82),
             };
         }
 

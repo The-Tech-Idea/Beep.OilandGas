@@ -9,6 +9,7 @@
 @inject ApiClient ApiClient
 @inject IDevelopmentServiceClient DevelopmentClient
 @inject ILifeCycleService LifeCycleService
+@inject OilGasApiFailures Answers
 
 <PageTitle>Design Sucker Rod Pump System</PageTitle>
 
@@ -229,11 +230,12 @@
 
         try
         {
-            var saved = await PumpService.SaveSuckerRodPumpDesignAsync(_pumpDesign);
-            if (saved)
-            {
-                Snackbar.Add("Pump design saved successfully", Severity.Success);
-            }
+            await PumpService.SaveSuckerRodPumpDesignAsync(_pumpDesign);
+            Snackbar.Add("Pump design saved successfully", Severity.Success);
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "saving the sucker rod pump design", "The pump design was not saved"), Severity.Error);
         }
         catch (Exception)
         {

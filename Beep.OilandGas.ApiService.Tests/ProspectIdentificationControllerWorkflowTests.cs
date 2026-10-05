@@ -311,13 +311,15 @@ public class ProspectIdentificationControllerWorkflowTests
     }
 
     [Fact]
-    public async Task AnalyzeEconomicViability_WhenServiceThrowsUnexpectedException_Returns500()
+    public async Task AnalyzeEconomicViability_LeavesAnUnexpectedFailureToTheApiHandler()
     {
         var sut = CreateSut(out _, out _, out var riskEconomic, out _);
         riskEconomic.Setup(r => r.AnalyzeEconomicViabilityAsync(It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>()))
             .ThrowsAsync(new InvalidOperationException("Simulated downstream failure"));
 
-        var actionResult = await sut.AnalyzeEconomicViability(new EconomicViabilityRequest
+        // OILGAS-CATCH-01: the controller no longer answers a failure itself; it reaches the API's exception handler,
+        // which reports it and answers 500 with its reference and never its text (ExceptionAnswerTests).
+        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.AnalyzeEconomicViability(new EconomicViabilityRequest
         {
             ProspectId = "P-021",
             EstimatedOil = 1m,
@@ -326,9 +328,6 @@ public class ProspectIdentificationControllerWorkflowTests
             OperatingCost = 1m,
             OilPrice = 1m,
             GasPrice = 1m
-        });
-
-        var status = Assert.IsType<ObjectResult>(actionResult.Result);
-        Assert.Equal(500, status.StatusCode);
+        }));
     }
 }

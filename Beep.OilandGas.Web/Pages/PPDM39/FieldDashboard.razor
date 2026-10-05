@@ -2,6 +2,7 @@
 @using Beep.OilandGas.Models.Data
 @inject ILifeCycleService LifeCycleService
 @inject IDataManagementService DataManagementService
+@inject OilGasCallFailures Calls
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @implements IDisposable
 
@@ -338,7 +339,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _state = new(LifeCycleService.GetFieldDashboardAsync);
+        _state = new(LifeCycleService.GetFieldDashboardAsync, Calls);
         DataManagementService.CurrentFieldChanged += FieldChanged;
         await LoadDashboard();
     }

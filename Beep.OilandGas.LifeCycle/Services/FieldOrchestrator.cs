@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Core.Refusals;
+using TheTechIdeaWeb.Diagnostics;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
@@ -36,6 +38,7 @@ namespace Beep.OilandGas.LifeCycle.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly PPDMMappingService _mappingService;
         private readonly string _connectionName;
+        private readonly IFailureReporter _failures;
         private readonly ILogger<FieldOrchestrator>? _logger;
         private readonly IAccessControlService? _accessControlService;
         private readonly IHttpContextAccessor? _httpContextAccessor;
@@ -62,6 +65,7 @@ namespace Beep.OilandGas.LifeCycle.Services
             IPPDMMetadataRepository metadata,
             PPDMMappingService mappingService,
             IFieldExplorationService fieldExplorationService,
+            IFailureReporter failures,
             string connectionName = "PPDM39",
             ILogger<FieldOrchestrator>? logger = null,
             IAccessControlService? accessControlService = null,
@@ -73,6 +77,7 @@ namespace Beep.OilandGas.LifeCycle.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _mappingService = mappingService ?? throw new ArgumentNullException(nameof(mappingService));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
             _logger = logger;
             _accessControlService = accessControlService;
             _httpContextAccessor = httpContextAccessor;
@@ -86,6 +91,11 @@ namespace Beep.OilandGas.LifeCycle.Services
                 ?? _httpContextAccessor?.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         }
 
+        /// <returns>
+        /// False when no field is named, the field is not there, or the person may not open it. A failure to look the field up
+        /// reaches the caller (the API's handler reports it with its reference): it had been answered as false, which reads
+        /// as a field that does not exist.
+        /// </returns>
         public async Task<bool> SetActiveFieldAsync(string fieldId)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
@@ -94,58 +104,50 @@ namespace Beep.OilandGas.LifeCycle.Services
                 return false;
             }
 
-            try
+            // Validate field exists
+            var fieldMetadata = await _metadata.GetTableMetadataAsync("FIELD");
+            if (fieldMetadata == null)
             {
-                // Validate field exists
-                var fieldMetadata = await _metadata.GetTableMetadataAsync("FIELD");
-                if (fieldMetadata == null)
-                {
-                    _logger?.LogError("FIELD table metadata not found");
-                    return false;
-                }
-
-                _fieldRepository = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(FIELD), _connectionName, "FIELD");
-
-                var formattedFieldId = _defaults.FormatIdForTable("FIELD", fieldId);
-                var field = await _fieldRepository.GetByIdAsync(formattedFieldId);
-                
-                if (field == null)
-                {
-                    _logger?.LogWarning($"Field not found: {fieldId}");
-                    return false;
-                }
-
-                // Check access control if service is available
-                var currentUserId = GetCurrentUserId();
-                if (_accessControlService != null && !string.IsNullOrEmpty(currentUserId))
-                {
-                    var accessCheck = await _accessControlService.CheckAssetAccessAsync(currentUserId, formattedFieldId, "FIELD");
-                    if (!accessCheck.HasAccess)
-                    {
-                        _logger?.LogWarning($"User {currentUserId} does not have access to field: {fieldId}");
-                        return false;
-                    }
-                }
-
-                _currentFieldId = formattedFieldId;
-                _logger?.LogInformation($"Active field set to: {fieldId}");
-
-                // Phase services (except injected exploration) are created on demand; reset so they bind to the new field
-                _developmentService = null;
-                _productionService = null;
-                _decommissioningService = null;
-                _hseService = null;
-                _processService = null;
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, $"Error setting active field: {fieldId}");
+                _logger?.LogError("FIELD table metadata not found");
                 return false;
             }
+
+            _fieldRepository = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(FIELD), _connectionName, "FIELD");
+
+            var formattedFieldId = _defaults.FormatIdForTable("FIELD", fieldId);
+            var field = await _fieldRepository.GetByIdAsync(formattedFieldId);
+            
+            if (field == null)
+            {
+                _logger?.LogWarning($"Field not found: {fieldId}");
+                return false;
+            }
+
+            // Check access control if service is available
+            var currentUserId = GetCurrentUserId();
+            if (_accessControlService != null && !string.IsNullOrEmpty(currentUserId))
+            {
+                var accessCheck = await _accessControlService.CheckAssetAccessAsync(currentUserId, formattedFieldId, "FIELD");
+                if (!accessCheck.HasAccess)
+                {
+                    _logger?.LogWarning($"User {currentUserId} does not have access to field: {fieldId}");
+                    return false;
+                }
+            }
+
+            _currentFieldId = formattedFieldId;
+            _logger?.LogInformation($"Active field set to: {fieldId}");
+
+            // Phase services (except injected exploration) are created on demand; reset so they bind to the new field
+            _developmentService = null;
+            _productionService = null;
+            _decommissioningService = null;
+            _hseService = null;
+            _processService = null;
+
+            return true;
         }
 
         public async Task<object?> GetCurrentFieldAsync()
@@ -153,22 +155,14 @@ namespace Beep.OilandGas.LifeCycle.Services
             if (string.IsNullOrEmpty(_currentFieldId) || _fieldRepository == null)
                 return null;
 
-            try
-            {
-                return await _fieldRepository.GetByIdAsync(_currentFieldId);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, $"Error getting current field: {_currentFieldId}");
-                return null;
-            }
+            return await _fieldRepository.GetByIdAsync(_currentFieldId);
         }
 
         public async Task<FieldLifecycleSummary> GetFieldLifecycleSummaryAsync()
         {
             if (string.IsNullOrEmpty(_currentFieldId))
             {
-                throw new InvalidOperationException("No active field is set");
+                throw RefusalException.Conflict("No field is active: choose a field first.");
             }
 
             var summary = new FieldLifecycleSummary
@@ -241,7 +235,7 @@ namespace Beep.OilandGas.LifeCycle.Services
         {
             if (string.IsNullOrEmpty(_currentFieldId))
             {
-                throw new InvalidOperationException("No active field is set");
+                throw RefusalException.Conflict("No field is active: choose a field first.");
             }
 
             var allWells = new List<WELL>();
@@ -288,7 +282,7 @@ namespace Beep.OilandGas.LifeCycle.Services
         {
             if (string.IsNullOrEmpty(_currentFieldId))
             {
-                throw new InvalidOperationException("No active field is set");
+                throw RefusalException.Conflict("No field is active: choose a field first.");
             }
 
             var stats = new FieldStatistics
@@ -429,7 +423,7 @@ namespace Beep.OilandGas.LifeCycle.Services
         {
             if (string.IsNullOrEmpty(_currentFieldId))
             {
-                throw new InvalidOperationException("No active field is set");
+                throw RefusalException.Conflict("No field is active: choose a field first.");
             }
 
             var timeline = new FieldTimeline
@@ -730,7 +724,7 @@ namespace Beep.OilandGas.LifeCycle.Services
         {
             if (string.IsNullOrEmpty(_currentFieldId))
             {
-                throw new InvalidOperationException("No active field is set");
+                throw RefusalException.Conflict("No field is active: choose a field first.");
             }
 
             var dashboard = new FieldDashboard
@@ -1076,7 +1070,9 @@ namespace Beep.OilandGas.LifeCycle.Services
                     }
                 }
 
-                // Overdue Tasks Alert: Check for WELL_ACTIVITY records > 30 days old with no follow-up
+                // Overdue Tasks Alert: Check for WELL_ACTIVITY records > 30 days old with no follow-up. The check is one
+                // alert among several: when it cannot be made the dashboard says so in an alert of its own, with the
+                // reference, rather than showing no overdue tasks.
                 try
                 {
                     var activityMeta = await _metadata.GetTableMetadataAsync("WELL_ACTIVITY");
@@ -1115,9 +1111,20 @@ namespace Beep.OilandGas.LifeCycle.Services
                         }
                     }
                 }
-                catch (Exception overdueEx)
+                catch (Exception overdueEx) when (overdueEx is not OperationCanceledException)
                 {
-                    _logger?.LogWarning(overdueEx, "Unable to check overdue tasks for field {FieldId}", _currentFieldId);
+                    alerts.Add(new FieldDashboardAlert
+                    {
+                        AlertId = Guid.NewGuid().ToString(),
+                        AlertType = "warning",
+                        Title = "Overdue Tasks Not Checked",
+                        Message = ReportedFailure.Sentence(_failures, overdueEx,
+                            $"checking overdue inspection and maintenance tasks for the dashboard of field {_currentFieldId}",
+                            "Overdue inspection and maintenance tasks could not be checked", FailureSeverity.Degraded),
+                        Phase = "Operations",
+                        AlertDate = DateTime.UtcNow,
+                        IsActive = true
+                    });
                 }
 
                 dashboard.Alerts = alerts;
@@ -1135,7 +1142,7 @@ namespace Beep.OilandGas.LifeCycle.Services
         {
             if (string.IsNullOrEmpty(_currentFieldId))
             {
-                throw new InvalidOperationException("No active field is set");
+                throw RefusalException.Conflict("No field is active: choose a field first.");
             }
 
             return _fieldExplorationService;
@@ -1145,13 +1152,13 @@ namespace Beep.OilandGas.LifeCycle.Services
         {
             if (string.IsNullOrEmpty(_currentFieldId))
             {
-                throw new InvalidOperationException("No active field is set");
+                throw RefusalException.Conflict("No field is active: choose a field first.");
             }
 
             if (_developmentService == null)
             {
                 _developmentService = new Beep.OilandGas.LifeCycle.Services.Development.PPDMDevelopmentService(
-                    _editor, _commonColumnHandler, _defaults, _metadata, _mappingService, _connectionName, null);
+                    _editor, _commonColumnHandler, _defaults, _metadata, _mappingService, _failures, _connectionName, null);
             }
 
             return _developmentService;
@@ -1161,14 +1168,14 @@ namespace Beep.OilandGas.LifeCycle.Services
         {
             if (string.IsNullOrEmpty(_currentFieldId))
             {
-                throw new InvalidOperationException("No active field is set");
+                throw RefusalException.Conflict("No field is active: choose a field first.");
             }
 
             if (_productionService == null)
             {
                 // PPDMProductionService now implements IFieldProductionService directly
                 _productionService = new Beep.OilandGas.LifeCycle.Services.Production.PPDMProductionService(
-                    _editor, _commonColumnHandler, _defaults, _metadata, _mappingService, _connectionName);
+                    _editor, _commonColumnHandler, _defaults, _metadata, _mappingService, _failures, _connectionName);
             }
 
             return _productionService;
@@ -1178,7 +1185,7 @@ namespace Beep.OilandGas.LifeCycle.Services
         {
             if (string.IsNullOrEmpty(_currentFieldId))
             {
-                throw new InvalidOperationException("No active field is set");
+                throw RefusalException.Conflict("No field is active: choose a field first.");
             }
 
             if (_hseService == null)
@@ -1199,7 +1206,7 @@ namespace Beep.OilandGas.LifeCycle.Services
         {
             if (string.IsNullOrEmpty(_currentFieldId))
             {
-                throw new InvalidOperationException("No active field is set");
+                throw RefusalException.Conflict("No field is active: choose a field first.");
             }
 
             if (_decommissioningService == null)
@@ -1215,7 +1222,7 @@ namespace Beep.OilandGas.LifeCycle.Services
         {
             if (string.IsNullOrEmpty(_currentFieldId))
             {
-                throw new InvalidOperationException("No active field is set");
+                throw RefusalException.Conflict("No field is active: choose a field first.");
             }
 
             if (_processService == null)

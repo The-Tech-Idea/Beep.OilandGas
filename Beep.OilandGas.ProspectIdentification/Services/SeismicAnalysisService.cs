@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
@@ -101,10 +102,10 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         public async Task<SeismicInterpretationResult> PerformSeismicInterpretationAsync(string surveyId, SeismicInterpretationRequest request)
         {
             if (string.IsNullOrWhiteSpace(surveyId))
-                throw new ArgumentException("Survey ID cannot be null or empty.", nameof(surveyId));
+                throw RefusalException.Invalid("The seismic survey ID is required.");
 
             var survey = await GetSurveyEntityAsync(surveyId)
-                ?? throw new KeyNotFoundException($"Seismic survey with ID {surveyId} not found.");
+                ?? throw RefusalException.NotFound($"Seismic survey {surveyId} was not found.");
 
             return new SeismicInterpretationResult
             {
@@ -127,14 +128,14 @@ namespace Beep.OilandGas.ProspectIdentification.Services
 
             var areaId = createDto.ProspectId ?? createDto.FieldId;
             if (string.IsNullOrWhiteSpace(areaId))
-                throw new ArgumentException("Either ProspectId or FieldId must be provided in createDto.", nameof(createDto));
+                throw RefusalException.Invalid("Name the prospect or the field the seismic survey covers.");
 
             if (!string.IsNullOrWhiteSpace(createDto.ProspectId))
             {
                 var prospectRepo = await CreateProspectRepositoryAsync();
                 var existingProspect = await prospectRepo.GetByIdAsync(createDto.ProspectId);
                 if (existingProspect is not ProspectRecord)
-                    throw new KeyNotFoundException($"Prospect {createDto.ProspectId} not found.");
+                    throw RefusalException.NotFound($"Prospect {createDto.ProspectId} was not found.");
             }
 
             var surveyId = string.IsNullOrWhiteSpace(createDto.SurveyId)
@@ -161,12 +162,12 @@ namespace Beep.OilandGas.ProspectIdentification.Services
 
         public async Task<SeismicSurvey> UpdateSeismicSurveyAsync(string surveyId, UpdateSeismicSurvey updateDto, string userId)
         {
-            if (string.IsNullOrWhiteSpace(surveyId)) throw new ArgumentNullException(nameof(surveyId));
+            if (string.IsNullOrWhiteSpace(surveyId)) throw RefusalException.Invalid("The seismic survey ID is required.");
             if (updateDto == null) throw new ArgumentNullException(nameof(updateDto));
 
             var surveyRepo = await CreateSurveyRepositoryAsync();
             var survey = await GetSurveyEntityAsync(surveyId)
-                ?? throw new KeyNotFoundException($"Seismic survey {surveyId} not found.");
+                ?? throw RefusalException.NotFound($"Seismic survey {surveyId} was not found.");
 
             if (!string.IsNullOrWhiteSpace(updateDto.Name))
                 survey.ACQTN_SURVEY_NAME = updateDto.Name;
@@ -184,11 +185,11 @@ namespace Beep.OilandGas.ProspectIdentification.Services
 
         public async Task DeleteSeismicSurveyAsync(string surveyId, string userId)
         {
-            if (string.IsNullOrWhiteSpace(surveyId)) throw new ArgumentNullException(nameof(surveyId));
+            if (string.IsNullOrWhiteSpace(surveyId)) throw RefusalException.Invalid("The seismic survey ID is required.");
 
             var surveyRepo = await CreateSurveyRepositoryAsync();
             var survey = await GetSurveyEntityAsync(surveyId)
-                ?? throw new KeyNotFoundException($"Seismic survey {surveyId} not found.");
+                ?? throw RefusalException.NotFound($"Seismic survey {surveyId} was not found.");
 
             survey.ACTIVE_IND = "N";
             await surveyRepo.UpdateAsync(survey, userId);

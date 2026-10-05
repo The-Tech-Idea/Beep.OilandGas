@@ -27,7 +27,7 @@ public class PersonaWorkspaceTests
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token) => send(request);
     }
     private static HttpResponseMessage Json(object value) => new(HttpStatusCode.OK) { Content = new StringContent(JsonSerializer.Serialize(value)) };
-    private static PersonaContextService Context(HttpClient http, Auth auth) => new(new PersonaClient(new ApiClient(http, NullLogger<ApiClient>.Instance)), auth);
+    private static PersonaContextService Context(HttpClient http, Auth auth) => new(new PersonaClient(new ApiClient(http, new RecordingFailureReporter())), auth);
     private static List<AppPersona> Catalog() => new() {
         new() { Code = "ACCOUNTANT", Name = "Accountant", DefaultRoute = "/accounting/dashboard" },
         new() { Code = "OLD", Name = "Inactive", IsActive = false }

@@ -18,7 +18,7 @@ public sealed class UserAdministrationAuthorizationTests
         var claims = new List<Claim>();
         if (actor is not null) claims.Add(new("party_id", actor));
         if (role is not null) claims.Add(new(ClaimTypes.Role, role));
-        var controller = new UserManagementController(null!)
+        var controller = new UserManagementController(null!, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter())
         {
             ControllerContext = new ControllerContext
             {

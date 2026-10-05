@@ -13,6 +13,11 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
     /// <summary>
     /// Loader for well schematic data from PPDM38 database.
     /// </summary>
+    /// <remarks>
+    /// OILGAS-CATCH-01. A connection or query that fails reaches the caller as its exception. Every query had been wrapped
+    /// in a catch that answered an empty list — so a well whose borehole, casing, tubing, equipment or perforation query
+    /// failed was drawn as a well without them, and a failed connection was answered <c>false</c> with its reason dropped.
+    /// </remarks>
     public class Ppdm38SchematicLoader : ISchematicLoader
     {
         private readonly string connectionString;
@@ -47,31 +52,17 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         /// </summary>
         public bool Connect()
         {
-            try
-            {
-                if (connectionFactory != null)
-                {
-                    connection = connectionFactory();
-                }
-                else
-                {
-                    throw new InvalidOperationException("A connection factory must be provided to Ppdm38SchematicLoader. Pass a Func<DbConnection> via the constructor.");
-                }
+            isConnected = false;
+            connection = CreateConnection();
 
-                if (connection.State != ConnectionState.Open)
-                {
-                    connection.ConnectionString = connectionString;
-                    connection.Open();
-                }
-
-                isConnected = true;
-                return true;
-            }
-            catch
+            if (connection.State != ConnectionState.Open)
             {
-                isConnected = false;
-                return false;
+                connection.ConnectionString = connectionString;
+                connection.Open();
             }
+
+            isConnected = true;
+            return true;
         }
 
         /// <summary>
@@ -79,31 +70,25 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         /// </summary>
         public async Task<bool> ConnectAsync()
         {
-            try
-            {
-                if (connectionFactory != null)
-                {
-                    connection = connectionFactory();
-                }
-                else
-                {
-                    throw new InvalidOperationException("A connection factory must be provided to Ppdm38SchematicLoader. Pass a Func<DbConnection> via the constructor.");
-                }
+            isConnected = false;
+            connection = CreateConnection();
 
-                if (connection.State != ConnectionState.Open)
-                {
-                    connection.ConnectionString = connectionString;
-                    await connection.OpenAsync();
-                }
-
-                isConnected = true;
-                return true;
-            }
-            catch
+            if (connection.State != ConnectionState.Open)
             {
-                isConnected = false;
-                return false;
+                connection.ConnectionString = connectionString;
+                await connection.OpenAsync();
             }
+
+            isConnected = true;
+            return true;
+        }
+
+        private DbConnection CreateConnection()
+        {
+            if (connectionFactory == null)
+                throw new InvalidOperationException("A connection factory must be provided to Ppdm38SchematicLoader. Pass a Func<DbConnection> via the constructor.");
+
+            return connectionFactory();
         }
 
         /// <summary>
@@ -168,58 +153,50 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
             var stats = new DataLoadStatistics();
             configuration = configuration ?? new WellSchematicLoadConfiguration();
 
-            try
+            if (!isConnected)
+                Connect();
+
+            if (connection == null || connection.State != ConnectionState.Open)
+                return DataLoadResult<WellData>.CreateFailure("Database connection is not open.");
+
+            var wellData = new WellData
             {
-                if (!isConnected)
-                    Connect();
+                UWI = wellIdentifier
+            };
 
-                if (connection == null || connection.State != ConnectionState.Open)
-                    return DataLoadResult<WellData>.CreateFailure("Database connection is not open.");
+            // Load boreholes
+            wellData.BoreHoles = LoadBoreholes(wellIdentifier, configuration);
 
-                var wellData = new WellData
-                {
-                    UWI = wellIdentifier
-                };
-
-                // Load boreholes
-                wellData.BoreHoles = LoadBoreholes(wellIdentifier, configuration);
-
-                // Load casing, tubing, equipment, perforations for each borehole based on configuration
-                foreach (var borehole in wellData.BoreHoles)
-                {
-                    if (configuration.LoadCasing)
-                        borehole.Casing = LoadCasing(borehole.BoreHoleIndex, wellIdentifier, configuration);
-                    else
-                        borehole.Casing = new List<WellData_Casing>();
-
-                    if (configuration.LoadTubing)
-                        borehole.Tubing = LoadTubing(borehole.BoreHoleIndex, wellIdentifier, configuration);
-                    else
-                        borehole.Tubing = new List<WellData_Tubing>();
-
-                    if (configuration.LoadEquipment)
-                        borehole.Equip = LoadEquipment(borehole.BoreHoleIndex, wellIdentifier, configuration);
-                    else
-                        borehole.Equip = new List<WellData_Equip>();
-
-                    if (configuration.LoadPerforations)
-                        borehole.Perforation = LoadPerforations(borehole.BoreHoleIndex, wellIdentifier, configuration);
-                    else
-                        borehole.Perforation = new List<WellData_Perf>();
-                }
-
-                stats.RecordsLoaded = wellData.BoreHoles?.Count ?? 0;
-                stats.Complete();
-
-                var result = DataLoadResult<WellData>.CreateSuccess(wellData, stats.RecordsLoaded);
-                result.LoadDuration = stats.Duration;
-                return result;
-            }
-            catch (Exception ex)
+            // Load casing, tubing, equipment, perforations for each borehole based on configuration
+            foreach (var borehole in wellData.BoreHoles)
             {
-                stats.Complete();
-                return DataLoadResult<WellData>.CreateFailure($"Failed to load schematic: {ex.Message}", ex.ToString());
+                if (configuration.LoadCasing)
+                    borehole.Casing = LoadCasing(borehole.BoreHoleIndex, wellIdentifier, configuration);
+                else
+                    borehole.Casing = new List<WellData_Casing>();
+
+                if (configuration.LoadTubing)
+                    borehole.Tubing = LoadTubing(borehole.BoreHoleIndex, wellIdentifier, configuration);
+                else
+                    borehole.Tubing = new List<WellData_Tubing>();
+
+                if (configuration.LoadEquipment)
+                    borehole.Equip = LoadEquipment(borehole.BoreHoleIndex, wellIdentifier, configuration);
+                else
+                    borehole.Equip = new List<WellData_Equip>();
+
+                if (configuration.LoadPerforations)
+                    borehole.Perforation = LoadPerforations(borehole.BoreHoleIndex, wellIdentifier, configuration);
+                else
+                    borehole.Perforation = new List<WellData_Perf>();
             }
+
+            stats.RecordsLoaded = wellData.BoreHoles?.Count ?? 0;
+            stats.Complete();
+
+            var result = DataLoadResult<WellData>.CreateSuccess(wellData, stats.RecordsLoaded);
+            result.LoadDuration = stats.Duration;
+            return result;
         }
 
         /// <summary>
@@ -299,33 +276,31 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
             if (!isConnected) Connect();
             if (connection == null || connection.State != ConnectionState.Open) return null;
 
-            try
+            // Null means the well has no survey stations. A query that fails reaches the caller rather than reading as
+            // "no survey" (OILGAS-CATCH-01).
+            var points = new List<DeviationSurveyPoint>();
+            using var command = connection.CreateCommand();
+            command.CommandText = boreholeIdentifier != null
+                ? "SELECT MD, DEVIATION_ANGLE, AZIMUTH FROM WELL_SURVEY_STATION WHERE UWI = @uwi AND BORE_HOLE_ID = @bore ORDER BY MD"
+                : "SELECT MD, DEVIATION_ANGLE, AZIMUTH FROM WELL_SURVEY_STATION WHERE UWI = @uwi ORDER BY MD";
+
+            var p1 = command.CreateParameter(); p1.ParameterName = "@uwi"; p1.Value = wellIdentifier; command.Parameters.Add(p1);
+            if (boreholeIdentifier != null)
             {
-                var points = new List<DeviationSurveyPoint>();
-                using var command = connection.CreateCommand();
-                command.CommandText = boreholeIdentifier != null
-                    ? "SELECT MD, DEVIATION_ANGLE, AZIMUTH FROM WELL_SURVEY_STATION WHERE UWI = @uwi AND BORE_HOLE_ID = @bore ORDER BY MD"
-                    : "SELECT MD, DEVIATION_ANGLE, AZIMUTH FROM WELL_SURVEY_STATION WHERE UWI = @uwi ORDER BY MD";
-
-                var p1 = command.CreateParameter(); p1.ParameterName = "@uwi"; p1.Value = wellIdentifier; command.Parameters.Add(p1);
-                if (boreholeIdentifier != null)
-                {
-                    var p2 = command.CreateParameter(); p2.ParameterName = "@bore"; p2.Value = boreholeIdentifier; command.Parameters.Add(p2);
-                }
-
-                using var reader = command.ExecuteReader();
-                while (reader.Read())
-                    points.Add(new DeviationSurveyPoint
-                    {
-                        MD = reader.IsDBNull(0) ? 0 : Convert.ToDouble(reader.GetValue(0)),
-                        DEVIATION_ANGLE = reader.IsDBNull(1) ? 0 : Convert.ToDouble(reader.GetValue(1)),
-                        AZIMUTH = reader.IsDBNull(2) ? 0 : Convert.ToDouble(reader.GetValue(2))
-                    });
-
-                if (points.Count == 0) return null;
-                return new DeviationSurvey { WellIdentifier = wellIdentifier, BoreholeIdentifier = boreholeIdentifier, SurveyPoints = points };
+                var p2 = command.CreateParameter(); p2.ParameterName = "@bore"; p2.Value = boreholeIdentifier; command.Parameters.Add(p2);
             }
-            catch { return null; }
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+                points.Add(new DeviationSurveyPoint
+                {
+                    MD = reader.IsDBNull(0) ? 0 : Convert.ToDouble(reader.GetValue(0)),
+                    DEVIATION_ANGLE = reader.IsDBNull(1) ? 0 : Convert.ToDouble(reader.GetValue(1)),
+                    AZIMUTH = reader.IsDBNull(2) ? 0 : Convert.ToDouble(reader.GetValue(2))
+                });
+
+            if (points.Count == 0) return null;
+            return new DeviationSurvey { WellIdentifier = wellIdentifier, BoreholeIdentifier = boreholeIdentifier, SurveyPoints = points };
         }
 
         /// <summary>
@@ -371,18 +346,11 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
                 throw new InvalidOperationException("Database connection is not open.");
 
             var wells = new List<string>();
-            try
-            {
-                using var command = connection.CreateCommand();
-                command.CommandText = "SELECT DISTINCT UWI FROM WELL ORDER BY UWI";
-                using var reader = command.ExecuteReader();
-                while (reader.Read())
-                    if (!reader.IsDBNull(0)) wells.Add(reader.GetString(0));
-            }
-            catch
-            {
-                // Return empty list if table doesn't exist in this database schema
-            }
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT DISTINCT UWI FROM WELL ORDER BY UWI";
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+                if (!reader.IsDBNull(0)) wells.Add(reader.GetString(0));
             return wells;
         }
 
@@ -399,23 +367,18 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         /// </summary>
         public bool ValidateConnection()
         {
-            try
-            {
-                if (connection == null || connection.State != ConnectionState.Open)
-                    return false;
-
-                // Simple validation query
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "SELECT 1";
-                    command.ExecuteScalar();
-                }
-                return true;
-            }
-            catch
-            {
+            // False when no connection is open; a probe the database refuses reaches the caller as its exception, with
+            // the database's reason, rather than as an unexplained false (OILGAS-CATCH-01).
+            if (connection == null || connection.State != ConnectionState.Open)
                 return false;
+
+            // Simple validation query
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "SELECT 1";
+                command.ExecuteScalar();
             }
+            return true;
         }
 
         /// <summary>
@@ -433,61 +396,53 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         {
             var boreholes = new List<WellData_Borehole>();
             
-            try
+            using (var command = connection.CreateCommand())
             {
-                using (var command = connection.CreateCommand())
+                // PPDM38 query structure - adjust table/column names as needed
+                command.CommandText = @"
+                    SELECT 
+                        BOREHOLE_ID,
+                        UWI,
+                        UBHI,
+                        TOP_DEPTH,
+                        BOTTOM_DEPTH,
+                        DIAMETER,
+                        BOREHOLE_INDEX,
+                        IS_VERTICAL
+                    FROM BOREHOLE 
+                    WHERE UWI = @wellIdentifier
+                    ORDER BY BOREHOLE_INDEX";
+
+                var param = command.CreateParameter();
+                param.ParameterName = "@wellIdentifier";
+                param.Value = wellIdentifier;
+                command.Parameters.Add(param);
+
+                using (var reader = command.ExecuteReader())
                 {
-                    // PPDM38 query structure - adjust table/column names as needed
-                    command.CommandText = @"
-                        SELECT 
-                            BOREHOLE_ID,
-                            UWI,
-                            UBHI,
-                            TOP_DEPTH,
-                            BOTTOM_DEPTH,
-                            DIAMETER,
-                            BOREHOLE_INDEX,
-                            IS_VERTICAL
-                        FROM BOREHOLE 
-                        WHERE UWI = @wellIdentifier
-                        ORDER BY BOREHOLE_INDEX";
-
-                    var param = command.CreateParameter();
-                    param.ParameterName = "@wellIdentifier";
-                    param.Value = wellIdentifier;
-                    command.Parameters.Add(param);
-
-                    using (var reader = command.ExecuteReader())
+                    while (reader.Read())
                     {
-                        while (reader.Read())
+                        var borehole = new WellData_Borehole
                         {
-                            var borehole = new WellData_Borehole
-                            {
-                                ID = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
-                                UWI = reader.IsDBNull(1) ? wellIdentifier : reader.GetString(1),
-                                UBHI = reader.IsDBNull(2) ? "" : reader.GetString(2),
-                                TopDepth = reader.IsDBNull(3) ? 0 : (float)reader.GetDouble(3),
-                                BottomDepth = reader.IsDBNull(4) ? 0 : (float)reader.GetDouble(4),
-                                Diameter = reader.IsDBNull(5) ? 0 : (float)reader.GetDouble(5),
-                                BoreHoleIndex = reader.IsDBNull(6) ? 0 : reader.GetInt32(6),
-                                IsVertical = reader.IsDBNull(7) ? true : reader.GetBoolean(7)
-                            };
+                            ID = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
+                            UWI = reader.IsDBNull(1) ? wellIdentifier : reader.GetString(1),
+                            UBHI = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                            TopDepth = reader.IsDBNull(3) ? 0 : (float)reader.GetDouble(3),
+                            BottomDepth = reader.IsDBNull(4) ? 0 : (float)reader.GetDouble(4),
+                            Diameter = reader.IsDBNull(5) ? 0 : (float)reader.GetDouble(5),
+                            BoreHoleIndex = reader.IsDBNull(6) ? 0 : reader.GetInt32(6),
+                            IsVertical = reader.IsDBNull(7) ? true : reader.GetBoolean(7)
+                        };
 
-                            // Apply depth filtering
-                            if (configuration.MinDepth > 0 && borehole.BottomDepth < configuration.MinDepth)
-                                continue;
-                            if (configuration.MaxDepth > 0 && borehole.TopDepth > configuration.MaxDepth)
-                                continue;
+                        // Apply depth filtering
+                        if (configuration.MinDepth > 0 && borehole.BottomDepth < configuration.MinDepth)
+                            continue;
+                        if (configuration.MaxDepth > 0 && borehole.TopDepth > configuration.MaxDepth)
+                            continue;
 
-                            boreholes.Add(borehole);
-                        }
+                        boreholes.Add(borehole);
                     }
                 }
-            }
-            catch (Exception)
-            {
-                // Log error or handle gracefully
-                // For now, return empty list if query fails
             }
 
             return boreholes;
@@ -500,69 +455,62 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         {
             var casing = new List<WellData_Casing>();
             
-            try
+            using (var command = connection.CreateCommand())
             {
-                using (var command = connection.CreateCommand())
+                command.CommandText = @"
+                    SELECT 
+                        CASING_ID,
+                        UWI,
+                        UBHI,
+                        BOREHOLE_INDEX,
+                        TOP_DEPTH,
+                        BOTTOM_DEPTH,
+                        OUTER_DIAMETER,
+                        INNER_DIAMETER,
+                        CASING_TYPE
+                    FROM CASING 
+                    WHERE UWI = @wellIdentifier AND BOREHOLE_INDEX = @boreholeIndex
+                    ORDER BY TOP_DEPTH";
+
+                var param = command.CreateParameter();
+                param.ParameterName = "@wellIdentifier";
+                param.Value = wellIdentifier;
+                command.Parameters.Add(param);
+
+                param = command.CreateParameter();
+                param.ParameterName = "@boreholeIndex";
+                param.Value = boreholeIndex;
+                command.Parameters.Add(param);
+
+                using (var reader = command.ExecuteReader())
                 {
-                    command.CommandText = @"
-                        SELECT 
-                            CASING_ID,
-                            UWI,
-                            UBHI,
-                            BOREHOLE_INDEX,
-                            TOP_DEPTH,
-                            BOTTOM_DEPTH,
-                            OUTER_DIAMETER,
-                            INNER_DIAMETER,
-                            CASING_TYPE
-                        FROM CASING 
-                        WHERE UWI = @wellIdentifier AND BOREHOLE_INDEX = @boreholeIndex
-                        ORDER BY TOP_DEPTH";
-
-                    var param = command.CreateParameter();
-                    param.ParameterName = "@wellIdentifier";
-                    param.Value = wellIdentifier;
-                    command.Parameters.Add(param);
-
-                    param = command.CreateParameter();
-                    param.ParameterName = "@boreholeIndex";
-                    param.Value = boreholeIndex;
-                    command.Parameters.Add(param);
-
-                    using (var reader = command.ExecuteReader())
+                    while (reader.Read())
                     {
-                        while (reader.Read())
+                        var casingItem = new WellData_Casing
                         {
-                            var casingItem = new WellData_Casing
-                            {
-                                ID = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
-                                UWI = reader.IsDBNull(1) ? wellIdentifier : reader.GetString(1),
-                                UBHI = reader.IsDBNull(2) ? "" : reader.GetString(2),
-                                BoreHoleIndex = boreholeIndex,
-                                TopDepth = reader.IsDBNull(4) ? 0 : (float)reader.GetDouble(4),
-                                BottomDepth = reader.IsDBNull(5) ? 0 : (float)reader.GetDouble(5),
-                                OUTER_DIAMETER = reader.IsDBNull(6) ? 0 : (float)reader.GetDouble(6),
-                                INNER_DIAMETER = reader.IsDBNull(7) ? 0 : (float)reader.GetDouble(7),
-                                CasingType = reader.IsDBNull(8) ? "" : reader.GetString(8)
-                            };
+                            ID = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
+                            UWI = reader.IsDBNull(1) ? wellIdentifier : reader.GetString(1),
+                            UBHI = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                            BoreHoleIndex = boreholeIndex,
+                            TopDepth = reader.IsDBNull(4) ? 0 : (float)reader.GetDouble(4),
+                            BottomDepth = reader.IsDBNull(5) ? 0 : (float)reader.GetDouble(5),
+                            OUTER_DIAMETER = reader.IsDBNull(6) ? 0 : (float)reader.GetDouble(6),
+                            INNER_DIAMETER = reader.IsDBNull(7) ? 0 : (float)reader.GetDouble(7),
+                            CasingType = reader.IsDBNull(8) ? "" : reader.GetString(8)
+                        };
 
-                            casingItem.Diameter = casingItem.OUTER_DIAMETER;
-                            casingItem.Depth = (casingItem.TopDepth + casingItem.BottomDepth) / 2;
+                        casingItem.Diameter = casingItem.OUTER_DIAMETER;
+                        casingItem.Depth = (casingItem.TopDepth + casingItem.BottomDepth) / 2;
 
-                            // Apply depth filtering
-                            if (configuration.MinDepth > 0 && casingItem.BottomDepth < configuration.MinDepth)
-                                continue;
-                            if (configuration.MaxDepth > 0 && casingItem.TopDepth > configuration.MaxDepth)
-                                continue;
+                        // Apply depth filtering
+                        if (configuration.MinDepth > 0 && casingItem.BottomDepth < configuration.MinDepth)
+                            continue;
+                        if (configuration.MaxDepth > 0 && casingItem.TopDepth > configuration.MaxDepth)
+                            continue;
 
-                            casing.Add(casingItem);
-                        }
+                        casing.Add(casingItem);
                     }
                 }
-            }
-            catch (Exception)
-            {
-                // Log error or handle gracefully
             }
 
             return casing;
@@ -575,66 +523,59 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         {
             var tubing = new List<WellData_Tubing>();
             
-            try
+            using (var command = connection.CreateCommand())
             {
-                using (var command = connection.CreateCommand())
+                command.CommandText = @"
+                    SELECT 
+                        TUBING_ID,
+                        UWI,
+                        UBHI,
+                        BOREHOLE_INDEX,
+                        TOP_DEPTH,
+                        BOTTOM_DEPTH,
+                        DIAMETER,
+                        TUBE_INDEX,
+                        TUBE_TYPE
+                    FROM TUBING 
+                    WHERE UWI = @wellIdentifier AND BOREHOLE_INDEX = @boreholeIndex
+                    ORDER BY TUBE_INDEX, TOP_DEPTH";
+
+                var param = command.CreateParameter();
+                param.ParameterName = "@wellIdentifier";
+                param.Value = wellIdentifier;
+                command.Parameters.Add(param);
+
+                param = command.CreateParameter();
+                param.ParameterName = "@boreholeIndex";
+                param.Value = boreholeIndex;
+                command.Parameters.Add(param);
+
+                using (var reader = command.ExecuteReader())
                 {
-                    command.CommandText = @"
-                        SELECT 
-                            TUBING_ID,
-                            UWI,
-                            UBHI,
-                            BOREHOLE_INDEX,
-                            TOP_DEPTH,
-                            BOTTOM_DEPTH,
-                            DIAMETER,
-                            TUBE_INDEX,
-                            TUBE_TYPE
-                        FROM TUBING 
-                        WHERE UWI = @wellIdentifier AND BOREHOLE_INDEX = @boreholeIndex
-                        ORDER BY TUBE_INDEX, TOP_DEPTH";
-
-                    var param = command.CreateParameter();
-                    param.ParameterName = "@wellIdentifier";
-                    param.Value = wellIdentifier;
-                    command.Parameters.Add(param);
-
-                    param = command.CreateParameter();
-                    param.ParameterName = "@boreholeIndex";
-                    param.Value = boreholeIndex;
-                    command.Parameters.Add(param);
-
-                    using (var reader = command.ExecuteReader())
+                    while (reader.Read())
                     {
-                        while (reader.Read())
+                        var tube = new WellData_Tubing
                         {
-                            var tube = new WellData_Tubing
-                            {
-                                ID = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
-                                UWI = reader.IsDBNull(1) ? wellIdentifier : reader.GetString(1),
-                                UBHI = reader.IsDBNull(2) ? "" : reader.GetString(2),
-                                BoreHoleIndex = boreholeIndex,
-                                TopDepth = reader.IsDBNull(4) ? 0 : (float)reader.GetDouble(4),
-                                BottomDepth = reader.IsDBNull(5) ? 0 : (float)reader.GetDouble(5),
-                                Diameter = reader.IsDBNull(6) ? 0 : (float)reader.GetDouble(6),
-                                TubeIndex = reader.IsDBNull(7) ? 0 : reader.GetInt32(7),
-                                TubeType = reader.IsDBNull(8) ? 0 : reader.GetInt32(8)
-                            };
+                            ID = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
+                            UWI = reader.IsDBNull(1) ? wellIdentifier : reader.GetString(1),
+                            UBHI = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                            BoreHoleIndex = boreholeIndex,
+                            TopDepth = reader.IsDBNull(4) ? 0 : (float)reader.GetDouble(4),
+                            BottomDepth = reader.IsDBNull(5) ? 0 : (float)reader.GetDouble(5),
+                            Diameter = reader.IsDBNull(6) ? 0 : (float)reader.GetDouble(6),
+                            TubeIndex = reader.IsDBNull(7) ? 0 : reader.GetInt32(7),
+                            TubeType = reader.IsDBNull(8) ? 0 : reader.GetInt32(8)
+                        };
 
-                            // Apply depth filtering
-                            if (configuration.MinDepth > 0 && tube.BottomDepth < configuration.MinDepth)
-                                continue;
-                            if (configuration.MaxDepth > 0 && tube.TopDepth > configuration.MaxDepth)
-                                continue;
+                        // Apply depth filtering
+                        if (configuration.MinDepth > 0 && tube.BottomDepth < configuration.MinDepth)
+                            continue;
+                        if (configuration.MaxDepth > 0 && tube.TopDepth > configuration.MaxDepth)
+                            continue;
 
-                            tubing.Add(tube);
-                        }
+                        tubing.Add(tube);
                     }
                 }
-            }
-            catch (Exception)
-            {
-                // Log error or handle gracefully
             }
 
             return tubing;
@@ -647,76 +588,69 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         {
             var equipment = new List<WellData_Equip>();
             
-            try
+            using (var command = connection.CreateCommand())
             {
-                using (var command = connection.CreateCommand())
+                command.CommandText = @"
+                    SELECT 
+                        EQUIPMENT_ID,
+                        UWI,
+                        UBHI,
+                        BOREHOLE_INDEX,
+                        TOP_DEPTH,
+                        BOTTOM_DEPTH,
+                        DIAMETER,
+                        TUBE_INDEX,
+                        EQUIPMENT_TYPE,
+                        EQUIPMENT_NAME,
+                        EQUIPMENT_SVG,
+                        TOOLTIP_TEXT,
+                        EQUIPMENT_DESCRIPTION,
+                        EQUIPMENT_STATUS
+                    FROM EQUIPMENT 
+                    WHERE UWI = @wellIdentifier AND BOREHOLE_INDEX = @boreholeIndex
+                    ORDER BY TOP_DEPTH";
+
+                var param = command.CreateParameter();
+                param.ParameterName = "@wellIdentifier";
+                param.Value = wellIdentifier;
+                command.Parameters.Add(param);
+
+                param = command.CreateParameter();
+                param.ParameterName = "@boreholeIndex";
+                param.Value = boreholeIndex;
+                command.Parameters.Add(param);
+
+                using (var reader = command.ExecuteReader())
                 {
-                    command.CommandText = @"
-                        SELECT 
-                            EQUIPMENT_ID,
-                            UWI,
-                            UBHI,
-                            BOREHOLE_INDEX,
-                            TOP_DEPTH,
-                            BOTTOM_DEPTH,
-                            DIAMETER,
-                            TUBE_INDEX,
-                            EQUIPMENT_TYPE,
-                            EQUIPMENT_NAME,
-                            EQUIPMENT_SVG,
-                            TOOLTIP_TEXT,
-                            EQUIPMENT_DESCRIPTION,
-                            EQUIPMENT_STATUS
-                        FROM EQUIPMENT 
-                        WHERE UWI = @wellIdentifier AND BOREHOLE_INDEX = @boreholeIndex
-                        ORDER BY TOP_DEPTH";
-
-                    var param = command.CreateParameter();
-                    param.ParameterName = "@wellIdentifier";
-                    param.Value = wellIdentifier;
-                    command.Parameters.Add(param);
-
-                    param = command.CreateParameter();
-                    param.ParameterName = "@boreholeIndex";
-                    param.Value = boreholeIndex;
-                    command.Parameters.Add(param);
-
-                    using (var reader = command.ExecuteReader())
+                    while (reader.Read())
                     {
-                        while (reader.Read())
+                        var equip = new WellData_Equip
                         {
-                            var equip = new WellData_Equip
-                            {
-                                ID = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
-                                UWI = reader.IsDBNull(1) ? wellIdentifier : reader.GetString(1),
-                                UBHI = reader.IsDBNull(2) ? "" : reader.GetString(2),
-                                BoreHoleIndex = boreholeIndex,
-                                TopDepth = reader.IsDBNull(4) ? 0 : (float)reader.GetDouble(4),
-                                BottomDepth = reader.IsDBNull(5) ? 0 : (float)reader.GetDouble(5),
-                                Diameter = reader.IsDBNull(6) ? 0 : (float)reader.GetDouble(6),
-                                TubeIndex = reader.IsDBNull(7) ? -1 : reader.GetInt32(7),
-                                EquipmentType = reader.IsDBNull(8) ? "" : reader.GetString(8),
-                                EquipmentName = reader.IsDBNull(9) ? "" : reader.GetString(9),
-                                EquipmentSvg = reader.IsDBNull(10) ? "" : reader.GetString(10),
-                                ToolTipText = reader.IsDBNull(11) ? "" : reader.GetString(11),
-                                EquipmentDescription = reader.IsDBNull(12) ? "" : reader.GetString(12),
-                                EquipmentStatus = reader.IsDBNull(13) ? "" : reader.GetString(13)
-                            };
+                            ID = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
+                            UWI = reader.IsDBNull(1) ? wellIdentifier : reader.GetString(1),
+                            UBHI = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                            BoreHoleIndex = boreholeIndex,
+                            TopDepth = reader.IsDBNull(4) ? 0 : (float)reader.GetDouble(4),
+                            BottomDepth = reader.IsDBNull(5) ? 0 : (float)reader.GetDouble(5),
+                            Diameter = reader.IsDBNull(6) ? 0 : (float)reader.GetDouble(6),
+                            TubeIndex = reader.IsDBNull(7) ? -1 : reader.GetInt32(7),
+                            EquipmentType = reader.IsDBNull(8) ? "" : reader.GetString(8),
+                            EquipmentName = reader.IsDBNull(9) ? "" : reader.GetString(9),
+                            EquipmentSvg = reader.IsDBNull(10) ? "" : reader.GetString(10),
+                            ToolTipText = reader.IsDBNull(11) ? "" : reader.GetString(11),
+                            EquipmentDescription = reader.IsDBNull(12) ? "" : reader.GetString(12),
+                            EquipmentStatus = reader.IsDBNull(13) ? "" : reader.GetString(13)
+                        };
 
-                            // Apply depth filtering
-                            if (configuration.MinDepth > 0 && equip.BottomDepth < configuration.MinDepth)
-                                continue;
-                            if (configuration.MaxDepth > 0 && equip.TopDepth > configuration.MaxDepth)
-                                continue;
+                        // Apply depth filtering
+                        if (configuration.MinDepth > 0 && equip.BottomDepth < configuration.MinDepth)
+                            continue;
+                        if (configuration.MaxDepth > 0 && equip.TopDepth > configuration.MaxDepth)
+                            continue;
 
-                            equipment.Add(equip);
-                        }
+                        equipment.Add(equip);
                     }
                 }
-            }
-            catch (Exception)
-            {
-                // Log error or handle gracefully
             }
 
             return equipment;
@@ -729,78 +663,71 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         {
             var perforations = new List<WellData_Perf>();
             
-            try
+            using (var command = connection.CreateCommand())
             {
-                using (var command = connection.CreateCommand())
+                command.CommandText = @"
+                    SELECT 
+                        PERFORATION_ID,
+                        UWI,
+                        UBHI,
+                        BOREHOLE_INDEX,
+                        TOP_DEPTH,
+                        BOTTOM_DEPTH,
+                        COMPLETION_CODE,
+                        SHOTS_PER_UOM,
+                        PERF_TYPE,
+                        SHOT_DENSITY,
+                        SHOT_SIZE,
+                        SHOT_DEPTH,
+                        SHOT_THICKNESS,
+                        SHOT_LENGTH,
+                        SHOT_WIDTH
+                    FROM PERFORATION 
+                    WHERE UWI = @wellIdentifier AND BOREHOLE_INDEX = @boreholeIndex
+                    ORDER BY TOP_DEPTH";
+
+                var param = command.CreateParameter();
+                param.ParameterName = "@wellIdentifier";
+                param.Value = wellIdentifier;
+                command.Parameters.Add(param);
+
+                param = command.CreateParameter();
+                param.ParameterName = "@boreholeIndex";
+                param.Value = boreholeIndex;
+                command.Parameters.Add(param);
+
+                using (var reader = command.ExecuteReader())
                 {
-                    command.CommandText = @"
-                        SELECT 
-                            PERFORATION_ID,
-                            UWI,
-                            UBHI,
-                            BOREHOLE_INDEX,
-                            TOP_DEPTH,
-                            BOTTOM_DEPTH,
-                            COMPLETION_CODE,
-                            SHOTS_PER_UOM,
-                            PERF_TYPE,
-                            SHOT_DENSITY,
-                            SHOT_SIZE,
-                            SHOT_DEPTH,
-                            SHOT_THICKNESS,
-                            SHOT_LENGTH,
-                            SHOT_WIDTH
-                        FROM PERFORATION 
-                        WHERE UWI = @wellIdentifier AND BOREHOLE_INDEX = @boreholeIndex
-                        ORDER BY TOP_DEPTH";
-
-                    var param = command.CreateParameter();
-                    param.ParameterName = "@wellIdentifier";
-                    param.Value = wellIdentifier;
-                    command.Parameters.Add(param);
-
-                    param = command.CreateParameter();
-                    param.ParameterName = "@boreholeIndex";
-                    param.Value = boreholeIndex;
-                    command.Parameters.Add(param);
-
-                    using (var reader = command.ExecuteReader())
+                    while (reader.Read())
                     {
-                        while (reader.Read())
+                        var perf = new WellData_Perf
                         {
-                            var perf = new WellData_Perf
-                            {
-                                ID = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
-                                UWI = reader.IsDBNull(1) ? wellIdentifier : reader.GetString(1),
-                                UBHI = reader.IsDBNull(2) ? "" : reader.GetString(2),
-                                BoreHoleIndex = boreholeIndex,
-                                TopDepth = reader.IsDBNull(4) ? 0 : (float)reader.GetDouble(4),
-                                BottomDepth = reader.IsDBNull(5) ? 0 : (float)reader.GetDouble(5),
-                                CompletionCode = reader.IsDBNull(6) ? "" : reader.GetString(6),
-                                ShotsPerUOM = reader.IsDBNull(7) ? 0 : (float)reader.GetDouble(7),
-                                PerfType = reader.IsDBNull(8) ? "" : reader.GetString(8),
-                                ShotDensity = reader.IsDBNull(9) ? 0 : (float)reader.GetDouble(9),
-                                ShotSize = reader.IsDBNull(10) ? 0 : (float)reader.GetDouble(10),
-                                ShotDepth = reader.IsDBNull(11) ? 0 : (float)reader.GetDouble(11),
-                                ShotThickness = reader.IsDBNull(12) ? 0 : (float)reader.GetDouble(12),
-                                ShotLength = reader.IsDBNull(13) ? 0 : (float)reader.GetDouble(13),
-                                ShotWidth = reader.IsDBNull(14) ? 0 : (float)reader.GetDouble(14)
-                            };
+                            ID = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
+                            UWI = reader.IsDBNull(1) ? wellIdentifier : reader.GetString(1),
+                            UBHI = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                            BoreHoleIndex = boreholeIndex,
+                            TopDepth = reader.IsDBNull(4) ? 0 : (float)reader.GetDouble(4),
+                            BottomDepth = reader.IsDBNull(5) ? 0 : (float)reader.GetDouble(5),
+                            CompletionCode = reader.IsDBNull(6) ? "" : reader.GetString(6),
+                            ShotsPerUOM = reader.IsDBNull(7) ? 0 : (float)reader.GetDouble(7),
+                            PerfType = reader.IsDBNull(8) ? "" : reader.GetString(8),
+                            ShotDensity = reader.IsDBNull(9) ? 0 : (float)reader.GetDouble(9),
+                            ShotSize = reader.IsDBNull(10) ? 0 : (float)reader.GetDouble(10),
+                            ShotDepth = reader.IsDBNull(11) ? 0 : (float)reader.GetDouble(11),
+                            ShotThickness = reader.IsDBNull(12) ? 0 : (float)reader.GetDouble(12),
+                            ShotLength = reader.IsDBNull(13) ? 0 : (float)reader.GetDouble(13),
+                            ShotWidth = reader.IsDBNull(14) ? 0 : (float)reader.GetDouble(14)
+                        };
 
-                            // Apply depth filtering
-                            if (configuration.MinDepth > 0 && perf.BottomDepth < configuration.MinDepth)
-                                continue;
-                            if (configuration.MaxDepth > 0 && perf.TopDepth > configuration.MaxDepth)
-                                continue;
+                        // Apply depth filtering
+                        if (configuration.MinDepth > 0 && perf.BottomDepth < configuration.MinDepth)
+                            continue;
+                        if (configuration.MaxDepth > 0 && perf.TopDepth > configuration.MaxDepth)
+                            continue;
 
-                            perforations.Add(perf);
-                        }
+                        perforations.Add(perf);
                     }
                 }
-            }
-            catch (Exception)
-            {
-                // Log error or handle gracefully
             }
 
             return perforations;

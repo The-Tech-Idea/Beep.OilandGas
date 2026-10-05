@@ -61,10 +61,10 @@ namespace Beep.OilandGas.Accounting.Services
             try
             {
                 if (taxableIncome < 0)
-                    throw new InvalidOperationException("Taxable income cannot be negative");
+                    throw RefusalException.Invalid("Taxable income cannot be negative.");
 
                 if (effectiveTaxRate < 0 || effectiveTaxRate > 1)
-                    throw new InvalidOperationException("Tax rate must be between 0 and 1");
+                    throw RefusalException.Invalid("Tax rate must be between 0 and 1.");
 
                 var provision = new TaxProvision
                 {
@@ -104,7 +104,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error calculating tax provision: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error calculating tax provision");
                 throw;
             }
         }
@@ -124,7 +124,7 @@ namespace Beep.OilandGas.Accounting.Services
             try
             {
                 if (annualTaxableIncome < 0)
-                    throw new InvalidOperationException("Annual taxable income cannot be negative");
+                    throw RefusalException.Invalid("Annual taxable income cannot be negative.");
 
                 var quarterly = new QuarterlyEstimatedTax
                 {
@@ -169,7 +169,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error calculating quarterly estimated tax: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error calculating quarterly estimated tax");
                 throw;
             }
         }
@@ -254,7 +254,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error analyzing tax deferral opportunities: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error analyzing tax deferral opportunities");
                 throw;
             }
         }
@@ -319,7 +319,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error exporting tax provision: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error exporting tax provision");
                 throw;
             }
         }

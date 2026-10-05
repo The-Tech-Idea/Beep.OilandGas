@@ -28,47 +28,23 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
         [HttpPost("design")]
         public async Task<ActionResult<PlungerLiftDesign>> DesignPlungerLiftSystem([FromBody] DesignPlungerLiftSystemRequest request)
         {
-            try
-            {
-                var result = await _service.DesignPlungerLiftSystemAsync(request.WellUWI, request.WellProperties);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error designing plunger lift system for well {WellUWI}", request.WellUWI);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.DesignPlungerLiftSystemAsync(request.WellUWI, request.WellProperties);
+            return Ok(result);
         }
 
         [HttpPost("analyze-performance")]
         public async Task<ActionResult<PlungerLiftPerformance>> AnalyzePerformance([FromBody] AnalyzePerformanceRequest request)
         {
-            try
-            {
-                var result = await _service.AnalyzePerformanceAsync(request.WellUWI);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error analyzing plunger lift performance for well {WellUWI}", request.WellUWI);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.AnalyzePerformanceAsync(request.WellUWI);
+            return Ok(result);
         }
 
         [HttpPost("design/save")]
         public async Task<ActionResult> SavePlungerLiftDesign([FromBody] PlungerLiftDesign design)
         {
             var userId = User.ActingUserId();
-            try
-            {
-                await _service.SavePlungerLiftDesignAsync(design, userId);
-                return Ok(new { message = "Plunger lift design saved successfully", designId = design.DesignId });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving plunger lift design");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            await _service.SavePlungerLiftDesignAsync(design, userId);
+            return Ok(new { message = "Plunger lift design saved successfully", designId = design.DesignId });
         }
     }
 }

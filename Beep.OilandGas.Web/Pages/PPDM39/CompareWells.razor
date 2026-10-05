@@ -7,6 +7,7 @@
 @implements IDisposable
 @inject ISnackbar Snackbar
 @inject IClientFileExportService ExportService
+@inject OilGasCallFailures Calls
 
 <PageTitle>Compare Well Properties</PageTitle>
 
@@ -112,7 +113,7 @@
 
     protected override void OnInitialized()
     {
-        _state = new(request => ApiClient.PostAsync<CompareWellsRequest, WellComparisonData>("/api/well/compare", request));
+        _state = new(request => ApiClient.PostAsync<CompareWellsRequest, WellComparisonData>("/api/well/compare", request), Calls);
         DataManagementService.CurrentFieldChanged += FieldChanged;
     }
 

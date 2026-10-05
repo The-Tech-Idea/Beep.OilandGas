@@ -50,6 +50,10 @@
             {
                 <MudAlert Severity="Severity.Info" Class="ma-4">@NoDataMessage</MudAlert>
             }
+            else if (_mapError is not null)
+            {
+                <MudAlert Severity="Severity.Warning" Class="ma-4">@_mapError</MudAlert>
+            }
         </MudPaper>
         
         @if (ShowLegend && LegendItems != null && LegendItems.Any())
@@ -96,10 +100,12 @@
     [Parameter] public EventCallback<object> OnMarkerClick { get; set; }
     
     [Inject] protected IJSRuntime JSRuntime { get; set; } = null!;
+    [Inject] protected FailureNotifier Notifier { get; set; } = null!;
     
     private string _mapContainerId = $"map_{Guid.NewGuid():N}";
     private string _mapType = "roadmap";
     private bool _isInitialized = false;
+    private string? _mapError;
 
     private string GetMapContainerClass() => Height switch
     {
@@ -192,10 +198,12 @@
             
             _isInitialized = true;
         }
+        // The browser's map script refused or is not loaded: the locations are not drawn, and the card says so in place
+        // of the map; the store keeps the exception.
         catch (JSException ex)
         {
-            // Map library not loaded - show fallback message
-            Console.WriteLine($"Map initialization failed: {ex.Message}");
+            _mapError = Notifier.FailureText(ex, "drawing the PPDM map", "The map could not be drawn", FailureSeverity.Degraded);
+            StateHasChanged();
         }
     }
     
@@ -219,9 +227,11 @@
                     label = l.Label 
                 }).ToArray());
         }
+        // The browser's map script refused the new locations: the map keeps the ones it drew, and the card says so.
         catch (JSException ex)
         {
-            Console.WriteLine($"Map update failed: {ex.Message}");
+            _mapError = Notifier.FailureText(ex, "updating the PPDM map", "The map could not show the latest locations", FailureSeverity.Degraded);
+            await InvokeAsync(StateHasChanged);
         }
     }
     

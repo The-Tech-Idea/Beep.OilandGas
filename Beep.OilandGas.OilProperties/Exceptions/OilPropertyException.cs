@@ -1,24 +1,30 @@
 using System;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.OilProperties.Exceptions
 {
     /// <summary>
-    /// Base exception for oil property calculations.
+    /// Base exception for oil property calculations: the calculation refusing the values it was given.
     /// </summary>
-    public class OilPropertyException : Exception
+    /// <remarks>
+    /// OILGAS-CATCH-01. Every throw of this family refuses what the caller sent (a pressure, temperature, API gravity or
+    /// GOR outside the correlations' range), so it is a <see cref="RefusalException"/> (<see cref="RefusalKind.Invalid"/>)
+    /// and the API answers it as a 400 with its sentence. Its message is written for the person.
+    /// </remarks>
+    public class OilPropertyException : RefusalException
     {
         public OilPropertyException()
-            : base()
+            : base(RefusalKind.Invalid, "The oil properties could not be calculated from the values given.")
         {
         }
 
         public OilPropertyException(string message)
-            : base(message)
+            : base(RefusalKind.Invalid, message)
         {
         }
 
         public OilPropertyException(string message, Exception innerException)
-            : base(message, innerException)
+            : base(RefusalKind.Invalid, message, innerException)
         {
         }
     }

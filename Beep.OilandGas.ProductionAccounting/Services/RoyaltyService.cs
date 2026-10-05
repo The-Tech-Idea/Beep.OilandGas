@@ -16,6 +16,7 @@ using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ProductionAccounting.Constants;
 using Beep.OilandGas.ProductionAccounting.Exceptions;
 using Beep.OilandGas.PPDM39.Models;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
@@ -35,6 +36,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly IJournalEntryService _glService;
         private readonly Func<Task<string>> _resolveConnection;
+        private readonly IFailureReporter _failures;
         private readonly ILogger<RoyaltyService> _logger;
 
         public RoyaltyService(
@@ -43,6 +45,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             IJournalEntryService glService,
+            IFailureReporter failures,
             ILogger<RoyaltyService> logger,
             Func<Task<string>> resolveConnection)
         {
@@ -52,6 +55,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _resolveConnection = resolveConnection ?? throw new ArgumentNullException(nameof(resolveConnection));
             _glService = glService ?? throw new ArgumentNullException(nameof(glService));
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
             _logger = logger;
         }
 
@@ -105,7 +109,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 new() { FieldName = "ALLOCATION_DETAIL_ID", Operator = "=", FilterValue = id },
                 new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             })).OfType<ALLOCATION_DETAIL>().ToList();
-            if (details.Count != 1) throw new RoyaltyException("Exactly one active stored allocation detail is required.");
+            if (details.Count == 0) throw new RoyaltyException(RefusalKind.NotFound, $"No active allocation detail {id} is stored.");
+            if (details.Count != 1) throw new RoyaltyException($"Allocation detail {id} is stored more than once as active; reconcile it before calculating royalties.");
             return details[0];
         }
 
@@ -124,140 +129,145 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private async Task<ROYALTY_CALCULATION> CalculateCoreAsync(ALLOCATION_DETAIL detail, string userId, string connectionName, bool persist)
         {
             if (detail == null)
-                throw new RoyaltyException("Allocation detail cannot be null");
+                throw new RoyaltyException(RefusalKind.Invalid, "An allocation detail is required.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
             _logger?.LogInformation("Calculating royalty for allocation detail {DetailId}", detail.ALLOCATION_DETAIL_ID);
 
+            // Until the calculation is reserved, a refusal or a failure propagates as itself: nothing has been written.
+            // STEP 1: Validate allocation volume
+            if (detail.ALLOCATED_VOLUME == null || detail.ALLOCATED_VOLUME <= 0)
+                throw new RoyaltyException(RefusalKind.Invalid, $"The allocated volume must be positive; it is {detail.ALLOCATED_VOLUME}.");
+
+            var allocatedVolume = detail.ALLOCATED_VOLUME.Value;
+            _logger?.LogDebug("Allocated volume: {Volume} BBL", allocatedVolume);
+
+            // STEP 2: Resolve allocation and lease for royalty interest lookup
+            if (string.IsNullOrWhiteSpace(detail.ALLOCATION_RESULT_ID))
+                throw new RoyaltyException(RefusalKind.Invalid, "The allocation detail names no ALLOCATION_RESULT_ID.");
+
+            var ALLOCATION_RESULT = await GetAllocationResultAsync(detail.ALLOCATION_RESULT_ID, connectionName);
+            if (ALLOCATION_RESULT == null)
+                throw new RoyaltyException(RefusalKind.NotFound, $"Allocation result {detail.ALLOCATION_RESULT_ID} was not found.");
+
+            var RUN_TICKET = await GetRunTicketAsync(ALLOCATION_RESULT.ALLOCATION_REQUEST_ID, connectionName);
+            var leaseId = RUN_TICKET?.LEASE_ID;
+            if (string.IsNullOrWhiteSpace(leaseId))
+                throw new RoyaltyException("Lease ID is required for royalty calculation");
+
+            var ROYALTY_INTEREST = await GetRoyaltyInterestAsync(
+                leaseId,
+                detail.ENTITY_ID,
+                RUN_TICKET?.TICKET_DATE_TIME,
+                connectionName);
+
+            if (ROYALTY_INTEREST is null || string.IsNullOrWhiteSpace(ROYALTY_INTEREST.ROYALTY_INTEREST_ID))
+                throw new RoyaltyException("A recorded effective royalty interest is required.");
+            var rawRate = ROYALTY_INTEREST.ROYALTY_RATE;
+            var royaltyRate = rawRate / 100m; // ROYALTY_RATE is explicitly stored in percentage points.
+
+            if (royaltyRate < 0 || royaltyRate > 1m)
+            {
+                _logger?.LogWarning("Royalty rate outside normal range: {Rate}%", royaltyRate * 100);
+                throw new RoyaltyException($"Royalty rate {royaltyRate * 100}% outside acceptable range (0-100%)");
+            }
+            _logger?.LogDebug("Royalty rate: {Rate}%", royaltyRate * 100);
+
+            // STEP 3: Calculate gross revenue (Volume x Commodity Price) (Volume x Commodity Price)
+            // Use the source ticket valuation; no default or substitute market price.
+            // Missing recorded prices fail before any financial records are written.
+            var priceDate = RUN_TICKET?.TICKET_DATE_TIME ?? throw new RoyaltyException("The source ticket date is required.");
+            if (RUN_TICKET?.PRICE_PER_BARREL is not > 0 ||
+                !string.Equals(RUN_TICKET.VOLUME_OUOM, "BBL", StringComparison.OrdinalIgnoreCase))
+                throw new RoyaltyException("A positive recorded ticket price and BBL volume units are required.");
+            decimal commodityPrice = RUN_TICKET.PRICE_PER_BARREL.Value;
+            decimal grossRevenue = allocatedVolume * commodityPrice;
+            _logger?.LogDebug("Gross revenue: {Volume} BBL x ${Price}/BBL = ${GrossRevenue}", 
+                allocatedVolume, commodityPrice, grossRevenue);
+
+            // STEP 4: Calculate deductions from cost records
+            // Query ACCOUNTING_COST for lease-specific deductions
+            var (dbTransportation, dbAdValorem, dbSeverance) = await GetDeductionsAsync(
+                leaseId,
+                priceDate,
+                connectionName);
+
+            // Use recorded amounts only; never invent percentage deductions.
+            decimal transportationCost = dbTransportation;
+            decimal adValoremTax = dbAdValorem;
+            decimal severanceTax = dbSeverance;
+            decimal totalDeductions = transportationCost + adValoremTax + severanceTax;
+            
+            _logger?.LogDebug(
+                "Deductions: Transportation=${Transp} + Ad Valorem=${AdVal} + Severance=${Sev} = ${Total}",
+                transportationCost, adValoremTax, severanceTax, totalDeductions);
+
+            // STEP 5: Calculate net revenue
+            decimal netRevenue = grossRevenue - totalDeductions;
+            if (netRevenue < 0)
+            {
+                _logger?.LogWarning("Net revenue is negative: Gross=${Gross}, Deductions=${Deductions}",
+                    grossRevenue, totalDeductions);
+                throw new RoyaltyException("Recorded deductions exceed gross revenue; review the source amounts.");
+            }
+            _logger?.LogInformation("Net revenue: ${NetRevenue}", netRevenue);
+
+            // STEP 6: Calculate royalty amount
+            decimal royaltyAmount = netRevenue * royaltyRate;
+            _logger?.LogInformation("Royalty amount: ${NetRevenue} x {Rate}% = ${Royalty}",
+                netRevenue, royaltyRate * 100, royaltyAmount);
+
+            // STEP 7: Create ROYALTY_CALCULATION record (ASC 932 requirement)
+            var royaltyCalc = new ROYALTY_CALCULATION
+            {
+                ROYALTY_CALCULATION_ID = Guid.NewGuid().ToString(),
+                PROPERTY_OR_LEASE_ID = leaseId,
+                ALLOCATION_RESULT_ID = ALLOCATION_RESULT.ALLOCATION_RESULT_ID,
+                ROYALTY_INTEREST_ID = ROYALTY_INTEREST?.ROYALTY_INTEREST_ID,
+                ROYALTY_OWNER_ID = detail.ENTITY_ID,
+                ALLOCATION_DETAIL_ID = detail.ALLOCATION_DETAIL_ID,
+                CALCULATION_DATE = DateTime.UtcNow,
+                GROSS_REVENUE = grossRevenue,
+                GROSS_VOLUME = allocatedVolume,
+                GROSS_VOLUME_OUOM = "BBL",
+                FLUID_TYPE = "OIL",
+                PRICE_PER_UNIT = commodityPrice,
+                PRODUCTION_PERIOD_START = priceDate.Date,
+                TRANSPORTATION_COST = transportationCost,
+                AD_VALOREM_TAX = adValoremTax,
+                SEVERANCE_TAX = severanceTax,
+                NET_REVENUE = netRevenue,
+                ROYALTY_INTEREST = royaltyRate * 100,  // Store as percentage
+                ROYALTY_AMOUNT = royaltyAmount,
+                ROYALTY_STATUS = RoyaltyStatus.Calculated,
+                ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
+                PPDM_GUID = Guid.NewGuid().ToString(),
+                ROW_CREATED_DATE = DateTime.UtcNow,
+                ROW_CREATED_BY = userId
+            };
+
+            if (!persist)
+            {
+                royaltyCalc.ROYALTY_STATUS = "PREVIEW";
+                return royaltyCalc;
+            }
+
+            // Save ROYALTY_CALCULATION to database
+            var repo = await CreateRepositoryAsync<ROYALTY_CALCULATION>("ROYALTY_CALCULATION");
+
+            // The existing database primary key arbitrates concurrent attempts before any journal call.
+            // A correction requires a new allocation detail, not a second obligation for this detail.
+            var digest = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(
+                "royalty-accrual:" + detail.ALLOCATION_DETAIL_ID));
+            royaltyCalc.ROYALTY_CALCULATION_ID = new Guid(digest.AsSpan(0, 16)).ToString();
+
+            // From the reservation on, any failure — another attempt holding the key, the journal, the status write —
+            // leaves a calculation that must be reconciled before a retry can post. The failure is reported with its
+            // reference, and the caller is refused with that instruction; a retry is refused the same way by the
+            // existing-calculation check above, so nothing posts twice.
             try
             {
-                // STEP 1: Validate allocation volume
-                if (detail.ALLOCATED_VOLUME == null || detail.ALLOCATED_VOLUME <= 0)
-                    throw new RoyaltyException($"Invalid allocation volume: {detail.ALLOCATED_VOLUME}. Must be positive.");
-
-                var allocatedVolume = detail.ALLOCATED_VOLUME.Value;
-                _logger?.LogDebug("Allocated volume: {Volume} BBL", allocatedVolume);
-
-                // STEP 2: Resolve allocation and lease for royalty interest lookup
-                if (string.IsNullOrWhiteSpace(detail.ALLOCATION_RESULT_ID))
-                    throw new RoyaltyException("Allocation detail is missing ALLOCATION_RESULT_ID");
-
-                var ALLOCATION_RESULT = await GetAllocationResultAsync(detail.ALLOCATION_RESULT_ID, connectionName);
-                if (ALLOCATION_RESULT == null)
-                    throw new RoyaltyException($"Allocation result not found: {detail.ALLOCATION_RESULT_ID}");
-
-                var RUN_TICKET = await GetRunTicketAsync(ALLOCATION_RESULT.ALLOCATION_REQUEST_ID, connectionName);
-                var leaseId = RUN_TICKET?.LEASE_ID;
-                if (string.IsNullOrWhiteSpace(leaseId))
-                    throw new RoyaltyException("Lease ID is required for royalty calculation");
-
-                var ROYALTY_INTEREST = await GetRoyaltyInterestAsync(
-                    leaseId,
-                    detail.ENTITY_ID,
-                    RUN_TICKET?.TICKET_DATE_TIME,
-                    connectionName);
-
-                if (ROYALTY_INTEREST is null || string.IsNullOrWhiteSpace(ROYALTY_INTEREST.ROYALTY_INTEREST_ID))
-                    throw new RoyaltyException("A recorded effective royalty interest is required.");
-                var rawRate = ROYALTY_INTEREST.ROYALTY_RATE;
-                var royaltyRate = rawRate / 100m; // ROYALTY_RATE is explicitly stored in percentage points.
-
-                if (royaltyRate < 0 || royaltyRate > 1m)
-                {
-                    _logger?.LogWarning("Royalty rate outside normal range: {Rate}%", royaltyRate * 100);
-                    throw new RoyaltyException($"Royalty rate {royaltyRate * 100}% outside acceptable range (0-100%)");
-                }
-                _logger?.LogDebug("Royalty rate: {Rate}%", royaltyRate * 100);
-
-                // STEP 3: Calculate gross revenue (Volume x Commodity Price) (Volume x Commodity Price)
-                // Use the source ticket valuation; no default or substitute market price.
-                // Missing recorded prices fail before any financial records are written.
-                var priceDate = RUN_TICKET?.TICKET_DATE_TIME ?? throw new RoyaltyException("The source ticket date is required.");
-                if (RUN_TICKET?.PRICE_PER_BARREL is not > 0 ||
-                    !string.Equals(RUN_TICKET.VOLUME_OUOM, "BBL", StringComparison.OrdinalIgnoreCase))
-                    throw new RoyaltyException("A positive recorded ticket price and BBL volume units are required.");
-                decimal commodityPrice = RUN_TICKET.PRICE_PER_BARREL.Value;
-                decimal grossRevenue = allocatedVolume * commodityPrice;
-                _logger?.LogDebug("Gross revenue: {Volume} BBL x ${Price}/BBL = ${GrossRevenue}", 
-                    allocatedVolume, commodityPrice, grossRevenue);
-
-                // STEP 4: Calculate deductions from cost records
-                // Query ACCOUNTING_COST for lease-specific deductions
-                var (dbTransportation, dbAdValorem, dbSeverance) = await GetDeductionsAsync(
-                    leaseId,
-                    priceDate,
-                    connectionName);
-
-                // Use recorded amounts only; never invent percentage deductions.
-                decimal transportationCost = dbTransportation;
-                decimal adValoremTax = dbAdValorem;
-                decimal severanceTax = dbSeverance;
-                decimal totalDeductions = transportationCost + adValoremTax + severanceTax;
-                
-                _logger?.LogDebug(
-                    "Deductions: Transportation=${Transp} + Ad Valorem=${AdVal} + Severance=${Sev} = ${Total}",
-                    transportationCost, adValoremTax, severanceTax, totalDeductions);
-
-                // STEP 5: Calculate net revenue
-                decimal netRevenue = grossRevenue - totalDeductions;
-                if (netRevenue < 0)
-                {
-                    _logger?.LogWarning("Net revenue is negative: Gross=${Gross}, Deductions=${Deductions}",
-                        grossRevenue, totalDeductions);
-                    throw new RoyaltyException("Recorded deductions exceed gross revenue; review the source amounts.");
-                }
-                _logger?.LogInformation("Net revenue: ${NetRevenue}", netRevenue);
-
-                // STEP 6: Calculate royalty amount
-                decimal royaltyAmount = netRevenue * royaltyRate;
-                _logger?.LogInformation("Royalty amount: ${NetRevenue} x {Rate}% = ${Royalty}",
-                    netRevenue, royaltyRate * 100, royaltyAmount);
-
-                // STEP 7: Create ROYALTY_CALCULATION record (ASC 932 requirement)
-                var royaltyCalc = new ROYALTY_CALCULATION
-                {
-                    ROYALTY_CALCULATION_ID = Guid.NewGuid().ToString(),
-                    PROPERTY_OR_LEASE_ID = leaseId,
-                    ALLOCATION_RESULT_ID = ALLOCATION_RESULT.ALLOCATION_RESULT_ID,
-                    ROYALTY_INTEREST_ID = ROYALTY_INTEREST?.ROYALTY_INTEREST_ID,
-                    ROYALTY_OWNER_ID = detail.ENTITY_ID,
-                    ALLOCATION_DETAIL_ID = detail.ALLOCATION_DETAIL_ID,
-                    CALCULATION_DATE = DateTime.UtcNow,
-                    GROSS_REVENUE = grossRevenue,
-                    GROSS_VOLUME = allocatedVolume,
-                    GROSS_VOLUME_OUOM = "BBL",
-                    FLUID_TYPE = "OIL",
-                    PRICE_PER_UNIT = commodityPrice,
-                    PRODUCTION_PERIOD_START = priceDate.Date,
-                    TRANSPORTATION_COST = transportationCost,
-                    AD_VALOREM_TAX = adValoremTax,
-                    SEVERANCE_TAX = severanceTax,
-                    NET_REVENUE = netRevenue,
-                    ROYALTY_INTEREST = royaltyRate * 100,  // Store as percentage
-                    ROYALTY_AMOUNT = royaltyAmount,
-                    ROYALTY_STATUS = RoyaltyStatus.Calculated,
-                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
-                    PPDM_GUID = Guid.NewGuid().ToString(),
-                    ROW_CREATED_DATE = DateTime.UtcNow,
-                    ROW_CREATED_BY = userId
-                };
-
-                if (!persist)
-                {
-                    royaltyCalc.ROYALTY_STATUS = "PREVIEW";
-                    return royaltyCalc;
-                }
-
-                // Save ROYALTY_CALCULATION to database
-                var repo = await CreateRepositoryAsync<ROYALTY_CALCULATION>("ROYALTY_CALCULATION");
-
-                // The existing database primary key arbitrates concurrent attempts before any journal call.
-                // A correction requires a new allocation detail, not a second obligation for this detail.
-                var digest = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(
-                    "royalty-accrual:" + detail.ALLOCATION_DETAIL_ID));
-                royaltyCalc.ROYALTY_CALCULATION_ID = new Guid(digest.AsSpan(0, 16)).ToString();
-
                 await repo.InsertAsync(royaltyCalc, userId);
 
                 if (royaltyAmount > 0m)
@@ -272,7 +282,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         royaltyCalc.ROYALTY_CALCULATION_ID);
 
                     if (accrualEntry is null || string.IsNullOrWhiteSpace(accrualEntry.JOURNAL_ENTRY_ID) || accrualEntry.STATUS != "POSTED")
-                        throw new RoyaltyException("The royalty journal was not confirmed posted. Reconcile the reserved calculation before retrying.");
+                        throw new InvalidOperationException(
+                            $"The accrual journal for royalty calculation {royaltyCalc.ROYALTY_CALCULATION_ID} was not confirmed posted.");
                     royaltyCalc.JOURNAL_ENTRY_ID = accrualEntry.JOURNAL_ENTRY_ID;
                 }
 
@@ -280,23 +291,23 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 royaltyCalc.ROW_CHANGED_DATE = DateTime.UtcNow;
                 royaltyCalc.ROW_CHANGED_BY = userId;
                 await repo.UpdateAsync(royaltyCalc, userId);
-
-                _logger?.LogInformation(
-                    "Royalty calculation saved: ID={RoyaltyId}, Amount=${Amount}",
-                    royaltyCalc.ROYALTY_CALCULATION_ID, royaltyAmount);
-
-                return royaltyCalc;
             }
-            catch (RoyaltyException)
+            // Any failure here, for the reason above; cancellation is not one and goes on as itself.
+            catch (Exception failure) when (failure is not OperationCanceledException)
             {
-                throw;
+                _failures.ReportHandled(failure,
+                    $"recording royalty calculation {royaltyCalc.ROYALTY_CALCULATION_ID} for allocation detail {detail.ALLOCATION_DETAIL_ID}",
+                    "the calculation is reserved but not accrued; the caller is refused and told to reconcile it before retrying");
+                throw new RoyaltyException(
+                    "The royalty calculation was reserved but not completed. Reconcile the reserved calculation before retrying.",
+                    failure);
             }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error calculating royalty for allocation detail {DetailId}: {Message}",
-                    detail?.ALLOCATION_DETAIL_ID, ex.Message);
-                throw new RoyaltyException($"Failed to calculate royalty: {ex.Message}", ex);
-            }
+
+            _logger?.LogInformation(
+                "Royalty calculation saved: ID={RoyaltyId}, Amount=${Amount}",
+                royaltyCalc.ROYALTY_CALCULATION_ID, royaltyAmount);
+
+            return royaltyCalc;
         }
 
         /// <summary>
@@ -359,8 +370,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(userId);
             if (requestId == Guid.Empty || amount <= 0 || decimal.Round(amount, 2) != amount)
-                throw new RoyaltyException("A request ID and a positive payment amount with at most two decimal places are required.");
-            var royalty = await GetAsync(royaltyId) ?? throw new RoyaltyException("Stored royalty calculation not found.");
+                throw new RoyaltyException(RefusalKind.Invalid, "A request ID and a positive payment amount with at most two decimal places are required.");
+            var royalty = await GetAsync(royaltyId) ?? throw new RoyaltyException(RefusalKind.NotFound, $"Royalty calculation {royaltyId} was not found.");
             if (royalty.ACTIVE_IND != _defaults.GetActiveIndicatorYes() ||
                 royalty.ROYALTY_STATUS is not (RoyaltyStatus.Accrued or RoyaltyStatus.Paid) ||
                 royalty.ROYALTY_AMOUNT is null or <= 0)
@@ -405,7 +416,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     DefaultGlAccounts.Cash, amount, $"Royalty payment {payment.ROYALTY_PAYMENT_ID} for calculation {royaltyId}",
                     userId, payment.ROYALTY_PAYMENT_ID);
                 if (journal is null || journal.STATUS != "POSTED" || string.IsNullOrWhiteSpace(journal.JOURNAL_ENTRY_ID))
-                    throw new RoyaltyException("Payment journal was not confirmed posted. Reconcile the reserved payment.");
+                    throw new InvalidOperationException($"The journal for royalty payment {payment.ROYALTY_PAYMENT_ID} was not confirmed posted.");
                 payment.JOURNAL_ENTRY_ID = journal.JOURNAL_ENTRY_ID;
                 // Keep the reservation pending until both calculation and payment writes succeed.
                 royalty.ROYALTY_STATUS = paid + amount == royalty.ROYALTY_AMOUNT.Value ? RoyaltyStatus.Paid : RoyaltyStatus.Accrued;
@@ -416,9 +427,15 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 await repo.UpdateAsync(payment, userId);
                 return payment;
             }
-            catch (Exception ex)
+            // From the reservation on, any failure — another payment holding this position, the journal, a status write —
+            // leaves a payment to reconcile before another can be recorded. The failure is reported with its reference and
+            // the caller refused with that instruction; cancellation is not a failure and goes on as itself.
+            catch (Exception failure) when (failure is not OperationCanceledException)
             {
-                throw new RoyaltyException("Payment could not be confirmed. Reconcile its recorded reservation before retrying.", ex);
+                _failures.ReportHandled(failure,
+                    $"recording royalty payment {payment.ROYALTY_PAYMENT_ID} against royalty calculation {royaltyId}",
+                    "the payment is reserved as pending and not confirmed; the caller is refused and told to reconcile it before retrying");
+                throw new RoyaltyException("Payment could not be confirmed. Reconcile its recorded reservation before retrying.", failure);
             }
         }
 
@@ -439,7 +456,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 if (string.IsNullOrWhiteSpace(royalty.PROPERTY_OR_LEASE_ID))
                 {
                     _logger?.LogWarning("Royalty {RoyaltyId}: Property/Lease ID is required", royalty.ROYALTY_CALCULATION_ID);
-                    throw new RoyaltyException("Property/Lease ID is required");
+                    throw new RoyaltyException(RefusalKind.Invalid, "A property or lease ID is required.");
                 }
 
                 // Validation 2: If gross revenue is set, it should be positive
@@ -447,7 +464,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 {
                     _logger?.LogWarning("Royalty {RoyaltyId}: Gross revenue is negative {Amount}",
                         royalty.ROYALTY_CALCULATION_ID, royalty.GROSS_REVENUE);
-                    throw new RoyaltyException("Gross revenue cannot be negative");
+                    throw new RoyaltyException(RefusalKind.Invalid, "Gross revenue cannot be negative.");
                 }
 
                 // Validation 3: Net revenue should not exceed gross revenue
@@ -458,7 +475,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         _logger?.LogWarning(
                             "Royalty {RoyaltyId}: Net revenue {Net} exceeds gross {Gross}",
                             royalty.ROYALTY_CALCULATION_ID, royalty.NET_REVENUE, royalty.GROSS_REVENUE);
-                        throw new RoyaltyException("Net revenue cannot exceed gross revenue");
+                        throw new RoyaltyException(RefusalKind.Invalid, "Net revenue cannot exceed gross revenue.");
                     }
                 }
 
@@ -470,7 +487,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         _logger?.LogWarning(
                             "Royalty {RoyaltyId}: Royalty amount {Royal} exceeds net revenue {Net}",
                             royalty.ROYALTY_CALCULATION_ID, royalty.ROYALTY_AMOUNT, royalty.NET_REVENUE);
-                        throw new RoyaltyException("Royalty amount cannot exceed net revenue");
+                        throw new RoyaltyException(RefusalKind.Invalid, "The royalty amount cannot exceed net revenue.");
                     }
                 }
 
@@ -481,7 +498,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     {
                         _logger?.LogWarning("Royalty {RoyaltyId}: Unreasonable royalty rate {Rate}%",
                             royalty.ROYALTY_CALCULATION_ID, royalty.ROYALTY_INTEREST);
-                        throw new RoyaltyException($"Royalty rate must be between 0% and 50%: {royalty.ROYALTY_INTEREST}%");
+                        throw new RoyaltyException(RefusalKind.Invalid, $"The royalty rate must be between 0% and 50%; it is {royalty.ROYALTY_INTEREST}%.");
                     }
                 }
 
@@ -489,7 +506,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 if (string.IsNullOrWhiteSpace(royalty.ROYALTY_CALCULATION_ID))
                 {
                     _logger?.LogWarning("Royalty: Missing calculation ID");
-                    throw new RoyaltyException("Royalty calculation ID is required");
+                    throw new RoyaltyException(RefusalKind.Invalid, "A royalty calculation ID is required.");
                 }
 
                 _logger?.LogInformation("Royalty {RoyaltyId} validation passed", royalty.ROYALTY_CALCULATION_ID);
@@ -617,7 +634,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return (transportation, adValorem, severance);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not RefusalException)
             {
                 _logger?.LogWarning(ex, "Error retrieving deductions for lease {LeaseId}", leaseId);
                 throw; // A failed lookup is not evidence of zero deductions.

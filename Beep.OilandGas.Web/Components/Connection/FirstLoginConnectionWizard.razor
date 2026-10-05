@@ -1,6 +1,7 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
 @inject IConnectionService ConnectionService
+@inject OilGasCallFailures Calls
 
 <MudDialog>
     <DialogContent>
@@ -25,6 +26,16 @@
                     {
                         <MudProgressLinear Indeterminate="true" />
                         <MudText Class="mt-2">Loading available connections...</MudText>
+                    }
+                    else if (_loadError is not null)
+                    {
+                        <MudAlert Severity="Severity.Error" Class="mb-4">@_loadError</MudAlert>
+                        <MudButton Variant="Variant.Outlined"
+                                  Color="Color.Primary"
+                                  StartIcon="@Icons.Material.Filled.Refresh"
+                                  OnClick="@LoadConnections">
+                            Retry
+                        </MudButton>
                     }
                     else if (_connections.Any())
                     {
@@ -193,6 +204,7 @@
     private List<ConnectionInfo> _connections = new();
     private string? _selectedConnectionName;
     private bool _isLoadingConnections = true;
+    private string? _loadError;
     private bool _isTestingConnection = false;
     private ConnectionTestResult? _testResult;
     private bool _isSettingConnection = false;
@@ -206,6 +218,7 @@
     private async Task LoadConnections()
     {
         _isLoadingConnections = true;
+        _loadError = null;
         try
         {
             _connections = await ConnectionService.GetAllConnectionsAsync();
@@ -217,9 +230,12 @@
                 _selectedConnectionName = activeConnection.ConnectionName;
             }
         }
+        // A dialog answers every failure it meets with a sentence; the store keeps the exception. The step says the list
+        // did not load, rather than that there are no connections.
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading connections: {ex.Message}", Severity.Error);
+            _connections = new();
+            _loadError = Calls.Explain(ex, "loading the database connections", "The database connections could not be loaded");
         }
         finally
         {
@@ -290,15 +306,16 @@
                 Snackbar.Add($"Connection test failed: {_testResult.Message}", Severity.Error);
             }
         }
+        // A dialog answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
+            var sentence = Calls.Explain(ex, "testing a database connection", $"Connection '{_selectedConnectionName}' could not be tested");
             _testResult = new ConnectionTestResult
             {
                 Success = false,
-                Message = "Connection test failed",
-                ErrorDetails = ex.Message
+                Message = sentence
             };
-            Snackbar.Add($"Error testing connection: {ex.Message}", Severity.Error);
+            Snackbar.Add(sentence, Severity.Error);
         }
         finally
         {
@@ -343,9 +360,10 @@
                 Snackbar.Add($"Failed to set connection: {result.Message}", Severity.Error);
             }
         }
+        // A dialog answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Error completing setup: {ex.Message}", Severity.Error);
+            Snackbar.Add(Calls.Explain(ex, "completing the first connection setup", "The connection setup was not completed"), Severity.Error);
         }
         finally
         {

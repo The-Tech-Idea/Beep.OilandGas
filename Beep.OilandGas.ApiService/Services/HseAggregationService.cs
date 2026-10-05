@@ -41,17 +41,15 @@ namespace Beep.OilandGas.ApiService.Services
         public async Task<IncidentSummary> GetIncidentSummaryAsync(string? fieldId=null,DateTime? start=null,DateTime? end=null)
         {
             var r=new IncidentSummary();
-            try{
-                var repo=GetRepo<HseIncident>("HSE_INCIDENT");
-                var f=new List<AppFilter>{new(){FieldName="ACTIVE_IND",Operator="=",FilterValue="Y"}};
-                if(start.HasValue)f.Add(new(){FieldName="INCIDENT_DATE",Operator=">=",FilterValue=start.Value.ToString("yyyy-MM-dd")});
-                if(end.HasValue)f.Add(new(){FieldName="INCIDENT_DATE",Operator="<=",FilterValue=end.Value.ToString("yyyy-MM-dd")});
-                var entities=(await repo.GetAsync(f)).OfType<HseIncident>().ToList();
-                r.Total=entities.Count;
-                // PPDM HSE_INCIDENT uses INCIDENT_CLASS_ID for classification
-                r.Tier1=entities.Count(e=>string.Equals(e.INCIDENT_CLASS_ID,"TIER_1",StringComparison.OrdinalIgnoreCase));
-                r.Tier2=entities.Count(e=>string.Equals(e.INCIDENT_CLASS_ID,"TIER_2",StringComparison.OrdinalIgnoreCase));
-            }catch(Exception ex){_logger?.LogWarning(ex,"Failed to load HSE summary");}
+            var repo=GetRepo<HseIncident>("HSE_INCIDENT");
+            var f=new List<AppFilter>{new(){FieldName="ACTIVE_IND",Operator="=",FilterValue="Y"}};
+            if(start.HasValue)f.Add(new(){FieldName="INCIDENT_DATE",Operator=">=",FilterValue=start.Value.ToString("yyyy-MM-dd")});
+            if(end.HasValue)f.Add(new(){FieldName="INCIDENT_DATE",Operator="<=",FilterValue=end.Value.ToString("yyyy-MM-dd")});
+            var entities=(await repo.GetAsync(f)).OfType<HseIncident>().ToList();
+            r.Total=entities.Count;
+            // PPDM HSE_INCIDENT uses INCIDENT_CLASS_ID for classification
+            r.Tier1=entities.Count(e=>string.Equals(e.INCIDENT_CLASS_ID,"TIER_1",StringComparison.OrdinalIgnoreCase));
+            r.Tier2=entities.Count(e=>string.Equals(e.INCIDENT_CLASS_ID,"TIER_2",StringComparison.OrdinalIgnoreCase));
             return r;
         }
     }

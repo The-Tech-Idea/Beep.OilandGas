@@ -11,6 +11,7 @@ using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Services
 {
@@ -48,6 +49,7 @@ namespace Beep.OilandGas.ApiService.Services
         {
             private readonly IHubContext<ProgressHub> _hubContext;
             private readonly ILogger<ProgressTrackingService> _logger;
+            private readonly IFailureReporter _failures;
             private readonly IBackgroundOperationQueue? _queue;
             private readonly object _gate = new();
             private readonly TimeProvider _clock;
@@ -62,11 +64,13 @@ namespace Beep.OilandGas.ApiService.Services
         public ProgressTrackingService(
             IHubContext<ProgressHub> hubContext,
             ILogger<ProgressTrackingService> logger,
+            IFailureReporter failures,
             IBackgroundOperationQueue? queue = null,
             TimeProvider? clock = null)
         {
             _hubContext = hubContext;
             _logger = logger;
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
             _queue = queue;
             _clock = clock ?? TimeProvider.System;
         }
@@ -516,6 +520,8 @@ namespace Beep.OilandGas.ApiService.Services
         protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
             Task.WhenAll(BroadcastAsync(stoppingToken), CleanupAsync(stoppingToken));
 
+        // The host's own cancellation ends both loops as cancelled, which is what BackgroundService expects of a stop it
+        // started; it is never caught here (OILGAS-CATCH-01: both loops swallowed it).
         private async Task BroadcastAsync(CancellationToken token)
         {
             try
@@ -524,19 +530,22 @@ namespace Beep.OilandGas.ApiService.Services
                 {
                     token.ThrowIfCancellationRequested();
                     try { await _hubContext.Clients.Group(item.Group).SendAsync(item.Method, item.Payload, token); }
-                    catch (OperationCanceledException) when (token.IsCancellationRequested) { break; }
-                    catch (Exception ex) { _logger.LogWarning(ex, "Progress broadcast failed for {Group}", item.Group); }
+                    // One group's broadcast failing leaves the others served; the update stays readable through
+                    // GetProgress / GetWorkflowProgress, which is how a client that missed it catches up.
+                    catch (Exception ex) when (!token.IsCancellationRequested)
+                    {
+                        _failures.ReportHandled(ex, $"broadcasting {item.Method} to progress group {item.Group}",
+                            "the live update is not delivered; the progress stays readable by polling", FailureSeverity.Degraded);
+                    }
                 }
             }
-            catch (OperationCanceledException) when (token.IsCancellationRequested) { }
             finally { while (_notifications.Reader.TryRead(out _)) { } }
         }
 
         private async Task CleanupAsync(CancellationToken token)
         {
             using var timer = new PeriodicTimer(TimeSpan.FromSeconds(30));
-            try { while (await timer.WaitForNextTickAsync(token)) PruneExpired(); }
-            catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+            while (await timer.WaitForNextTickAsync(token)) PruneExpired();
         }
 
         public override Task StopAsync(CancellationToken token)

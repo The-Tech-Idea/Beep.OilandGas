@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.AspNetCore.Components.Authorization;
 using Beep.Foundation.IdentityServer.Shared.Identity;
 using Duende.AccessTokenManagement.OpenIdConnect;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.Web.Services;
 
@@ -56,7 +57,7 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
 {
     private readonly AuthenticationStateProvider _authentication;
     private readonly IUserTokenManager _tokens;
-    private readonly ILogger<NotificationService> _logger;
+    private readonly IFailureReporter _failures;
     private readonly Uri _hubUri;
     private readonly SemaphoreSlim _lifecycle = new(1, 1);
     private readonly object _stateLock = new();
@@ -68,11 +69,11 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
     private volatile PersonaSubscription? _persona;
 
     public NotificationService(AuthenticationStateProvider authentication, IUserTokenManager tokens,
-        OilGasApiAddress api, ILogger<NotificationService> logger)
+        OilGasApiAddress api, IFailureReporter failures)
     {
         _authentication = authentication;
         _tokens = tokens;
-        _logger = logger;
+        _failures = failures ?? throw new ArgumentNullException(nameof(failures));
         _hubUri = api.For("hubs/workflow-notifications");
         _authentication.AuthenticationStateChanged += AuthenticationChanged;
     }
@@ -152,11 +153,17 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
                     if (_persona is { } persona)
                     {
                         try { await connection.InvokeAsync("SubscribeToPersona", persona.Persona, persona.Field); }
+                        // The hub refuses or fails the subscription in its own terms (HubException, a lost connection);
+                        // the person is told in the notification centre, and the store keeps the exception.
                         catch (Exception exception)
                         {
                             _persona = null;
                             LastError = "Persona notifications are unavailable. Select an authorized persona and field.";
-                            _logger.LogWarning(exception, "Unable to restore persona notification subscription");
+                            _failures.ReportHandled(
+                                exception,
+                                "restoring the persona notification subscription after a reconnect",
+                                consequence: "persona notifications stop; the notification centre asks the person to select an authorized persona and field",
+                                FailureSeverity.Degraded);
                         }
                     }
                     OnStateChanged?.Invoke();
@@ -175,11 +182,17 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
             await connection.StartAsync();
             LastError = null;
         }
+        // Connecting fails in many ways (the hub unreachable, the token unavailable, the person changed); each leaves
+        // live notifications off, which the notification centre says, and the store keeps the exception.
         catch (Exception exception)
         {
             await StopCoreAsync();
             LastError = "Live notifications are unavailable. Retry to reconnect.";
-            _logger.LogWarning(exception, "Unable to connect workflow notifications");
+            _failures.ReportHandled(
+                exception,
+                "connecting to workflow notifications",
+                consequence: "live notifications are off; the notification centre offers a retry",
+                FailureSeverity.Degraded);
         }
         finally
         {
@@ -205,10 +218,15 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
             _persona = new(personaCode, fieldId);
             LastError = null;
         }
+        // The hub refuses or fails the subscription in its own terms; the person is told in the notification centre.
         catch (Exception exception)
         {
             LastError = "Persona notifications are unavailable. Select an authorized persona and field.";
-            _logger.LogWarning(exception, "Persona notification subscription denied or unavailable");
+            _failures.ReportHandled(
+                exception,
+                "subscribing to persona notifications",
+                consequence: "persona notifications are off; the notification centre asks the person to select an authorized persona and field",
+                FailureSeverity.Degraded);
         }
         finally { _lifecycle.Release(); }
         OnStateChanged?.Invoke();
@@ -268,9 +286,14 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
             await StopAsync();
             await StartAsync();
         }
+        // Runs unobserved from the authentication event, so every failure is reported here and notifications stopped.
         catch (Exception exception)
         {
-            _logger.LogWarning(exception, "Unable to refresh notification authentication");
+            _failures.ReportHandled(
+                exception,
+                "reconnecting workflow notifications after the person's sign-in changed",
+                consequence: "live notifications are stopped until the next page asks them to start",
+                FailureSeverity.Degraded);
             await StopAsync();
         }
     }

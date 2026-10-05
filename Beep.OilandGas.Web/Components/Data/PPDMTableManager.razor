@@ -10,6 +10,9 @@
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject NavigationManager Nav
+@inject OilGasCallFailures Calls
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 @* ─── Breadcrumb ─────────────────────────────────────────────────────────── *@
 @if (Breadcrumbs != null && Breadcrumbs.Count > 0)
@@ -144,7 +147,11 @@
                 <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
             }
 
-            @if (!string.IsNullOrWhiteSpace(TableName))
+            @if (_dataError is not null)
+            {
+                <MudAlert Severity="Severity.Error" Class="ma-2">@_dataError</MudAlert>
+            }
+            else if (!string.IsNullOrWhiteSpace(TableName))
             {
                 <MudDataGrid T="Dictionary<string,object?>"
                              Items="@_rows"
@@ -298,6 +305,7 @@
     private PPDMTableMetadata? _tableMetadata;
     private bool _metaLoading;
     private bool _dataLoading;
+    private string? _dataError;
 
     private List<Dictionary<string,object?>> _rows = new();
     private List<Dictionary<string,object?>> _allRows = new();
@@ -353,9 +361,15 @@
             if (_tableMetadata == null)
                 Snackbar.Add($"Metadata not found for {TableName}", Severity.Warning);
         }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading a table's metadata", $"The {TableName} metadata could not be loaded"), Severity.Warning);
+            _tableMetadata = null;
+        }
+        // A component answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Metadata error: {ex.Message}", Severity.Warning);
+            Notifier.Failure(ex, "loading a table's metadata", $"The {TableName} metadata could not be loaded", FailureSeverity.Degraded);
             _tableMetadata = null;
         }
         finally
@@ -368,6 +382,7 @@
     private async Task LoadData()
     {
         _dataLoading = true;
+        _dataError = null;
         _rows = new();
         _allRows = new();
         try
@@ -391,9 +406,11 @@
             BuildDisplayColumns();
             ApplySearch();
         }
+        // A component answers every failure it meets with a sentence; the store keeps the exception. The grid says the
+        // rows did not load, rather than that the table has none.
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading {TableName}: {ex.Message}", Severity.Error);
+            _dataError = Calls.Explain(ex, "loading a table's rows", $"The {TableName} records could not be loaded");
         }
         finally
         {
@@ -409,9 +426,17 @@
                 $"/api/ppdm39/metadata/tables/{Uri.EscapeDataString(TableName)}/children");
             _childRelations = children ?? new();
         }
-        catch
+        // The table itself is still usable without its child tabs; the person is told they are missing.
+        catch (OilGasApiException answer)
         {
             _childRelations = new();
+            Snackbar.Add(Answers.Explain(answer, "loading a table's child relations", $"The child tables of {TableName} could not be loaded"), Severity.Warning);
+        }
+        // A component answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            _childRelations = new();
+            Notifier.Failure(ex, "loading a table's child relations", $"The child tables of {TableName} could not be loaded", FailureSeverity.Degraded);
         }
     }
 
@@ -482,18 +507,24 @@
                 var instance = Activator.CreateInstance(entityType);
                 if (instance != null)
                 {
+                    // A column the form cannot hold is not skipped: saving the form would write its default over the
+                    // stored value. The record is not opened for editing, and the person is told which columns.
+                    var unreadable = new List<string>();
                     foreach (var prop in entityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
                                                    .Where(p => p.CanWrite))
                     {
                         if (row.TryGetValue(prop.Name, out var val) && val != null)
                         {
-                            try
-                            {
-                                var converted = ConvertValue(val, prop.PropertyType);
+                            if (Services.ValueConverter.TryConvertValue(val, prop.PropertyType, out var converted))
                                 prop.SetValue(instance, converted);
-                            }
-                            catch { /* skip incompatible */ }
+                            else
+                                unreadable.Add(prop.Name);
                         }
+                    }
+                    if (unreadable.Count > 0)
+                    {
+                        Snackbar.Add($"This record cannot be edited here: {string.Join(", ", unreadable)} could not be read as their column types.", Severity.Warning);
+                        return;
                     }
                     _editingRecord = instance;
                     _editingNewRecord = false;
@@ -525,7 +556,10 @@
                         BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
                     if (prop?.CanWrite == true)
                     {
-                        try { prop.SetValue(instance, ConvertValue(ParentKeyValue, prop.PropertyType)); } catch { }
+                        if (Services.ValueConverter.TryConvertValue(ParentKeyValue, prop.PropertyType, out var parentKey))
+                            prop.SetValue(instance, parentKey);
+                        else
+                            Snackbar.Add($"The parent key {ParentKeyValue} could not be filled into {ParentKeyColumn}; enter it on the form.", Severity.Warning);
                     }
                 }
                 _editingRecord = instance;
@@ -563,9 +597,14 @@
             _showEditPanel = false;
             await LoadData();
         }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "saving a table record", "The record was not saved"), Severity.Error);
+        }
+        // A component answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Save failed: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "saving a table record", "The record was not saved");
         }
     }
 
@@ -584,9 +623,14 @@
             Snackbar.Add("Record deleted", Severity.Success);
             await LoadData();
         }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "deleting a table record", "The record was not deleted"), Severity.Error);
+        }
+        // A component answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Delete failed: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "deleting a table record", "The record was not deleted");
         }
     }
 
@@ -622,7 +666,7 @@
                     JsonValueKind.True    => true,
                     JsonValueKind.False   => false,
                     JsonValueKind.Null    => null,
-                    _                    => prop.Value.ToString()
+                    JsonValueKind.Object or JsonValueKind.Array or JsonValueKind.Undefined => prop.Value.ToString()
                 };
             }
             return dict;
@@ -664,9 +708,6 @@
         }));
     }
 
-    private static object? ConvertValue(object? src, Type targetType)
-        => Services.ValueConverter.ConvertValue(src, targetType);
-
     // ── Export ────────────────────────────────────────────────────────────────
     private void ExportCsv()
     {
@@ -699,13 +740,18 @@
     private async Task RunImport()
     {
         if (_importFile == null || string.IsNullOrWhiteSpace(TableName)) return;
+        const long maxSize = 10 * 1024 * 1024; // 10 MB limit
+        if (_importFile.Size > maxSize)
+        {
+            Snackbar.Add($"{_importFile.Name} is larger than 10 MB; choose a smaller file.", Severity.Warning);
+            return;
+        }
         _importing = true;
         _importResult = null;
         try
         {
             // Stream the file as multipart/form-data via ApiClient
             using var content = new System.Net.Http.MultipartFormDataContent();
-            var maxSize = 10 * 1024 * 1024; // 10 MB limit
             var stream = _importFile.OpenReadStream(maxSize);
             content.Add(new System.Net.Http.StreamContent(stream), "file", _importFile.Name);
 
@@ -723,9 +769,14 @@
                 Snackbar.Add($"Import completed with {result.Failed} failures.", Severity.Warning);
             }
         }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "importing a CSV file into a table", "The file was not imported"), Severity.Error);
+        }
+        // A component answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Import failed: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "importing a CSV file into a table", "The file was not imported");
         }
         finally
         {

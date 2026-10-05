@@ -4,6 +4,7 @@
 @inject ISnackbar Snackbar
 @inject IDevelopmentServiceClient DevelopmentService
 @inject IProductionServiceClient ProductionService
+@inject OilGasApiFailures Answers
 
 <PageTitle>Allocate Production Volumes</PageTitle>
 
@@ -342,7 +343,7 @@
     {
         try
         {
-            var success = await ProductionService.PatchAllocationAsync(
+            await ProductionService.PatchAllocationAsync(
                 _selectedPeriod,
                 item.Uwi,
                 new ProductionAllocationPatchRequest
@@ -351,11 +352,10 @@
                     AllocatedGasMmscfd = item.AllocatedGasMmscfd,
                     AllocatedWaterBopd = item.AllocatedWaterBopd,
                 });
-
-            if (!success)
-            {
-                Snackbar.Add($"Allocation change for {item.WellName} could not be synced.", Severity.Warning);
-            }
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "syncing a well's allocation change", $"The allocation change for {item.WellName} was not synced"), Severity.Warning);
         }
         catch
         {

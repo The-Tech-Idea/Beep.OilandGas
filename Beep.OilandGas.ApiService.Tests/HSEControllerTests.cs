@@ -44,7 +44,7 @@ public class HSEControllerTests
     }
 
     [Fact]
-    public async Task TransitionAsync_ReturnsServerError_WhenServiceThrowsUnexpected()
+    public async Task TransitionAsync_LeavesAnUnexpectedFailureToTheApiHandler()
     {
         const string incidentId = "INC-MISSING";
         var hse = new Mock<IFieldHSEService>(MockBehavior.Strict);
@@ -55,10 +55,9 @@ public class HSEControllerTests
         var controller = SignedIn(new HSEController(orchestrator.Object, NullLogger<HSEController>.Instance));
         var request = new TransitionIncidentRequest { Trigger = "investigate", Reason = null };
 
-        var result = await controller.TransitionAsync(incidentId, request);
-
-        var objectResult = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(500, objectResult.StatusCode);
+        // OILGAS-CATCH-01: the controller no longer answers a failure itself; it reaches the API's exception handler,
+        // which reports it and answers 500 with its reference and never its text (ExceptionAnswerTests).
+        await Assert.ThrowsAsync<MockException>(() => controller.TransitionAsync(incidentId, request));
         orchestrator.VerifyAll();
     }
 

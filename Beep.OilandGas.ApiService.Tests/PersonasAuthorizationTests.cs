@@ -86,7 +86,7 @@ public class PersonasAuthorizationTests
         var claims = new List<Claim>();
         if (actor is not null) claims.Add(new Claim("party_id", actor));
         if (admin) claims.Add(new Claim(ClaimTypes.Role, "Administrator"));
-        return new(service) { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext
+        return new(service, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter()) { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext
         { User = new ClaimsPrincipal(new ClaimsIdentity(claims, "repository")) } } };
     }
     private sealed class TestContext(DbContextOptions<TestContext> options) : RepositoryDbContext(options);

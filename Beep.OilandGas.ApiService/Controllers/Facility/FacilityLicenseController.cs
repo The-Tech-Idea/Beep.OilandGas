@@ -32,16 +32,8 @@ public class FacilityLicenseController : ControllerBase
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
 
-        try
-        {
-            var rows = await _facilities.ListFacilityLicensesAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
-            return Ok(rows);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "List licenses for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var rows = await _facilities.ListFacilityLicensesAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
+        return Ok(rows);
     }
 
     [HttpPost]
@@ -56,24 +48,11 @@ public class FacilityLicenseController : ControllerBase
         if (license == null)
             return BadRequest(new { error = "Request body is required." });
 
-        try
-        {
-            license.FACILITY_ID ??= facilityId;
-            var row = await _facilities
-                .CreateFacilityLicenseAsync(license, userId, cancellationToken)
-                .ConfigureAwait(false);
-            return Ok(row);
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Create license for {FacilityId} failed", facilityId);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Create license for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        license.FACILITY_ID ??= facilityId;
+        var row = await _facilities
+            .CreateFacilityLicenseAsync(license, userId, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(row);
     }
 
     [HttpGet("active")]
@@ -86,17 +65,9 @@ public class FacilityLicenseController : ControllerBase
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
 
-        try
-        {
-            var ok = await _facilities
-                .FacilityHasActiveLicenseAsync(facilityId, facilityType, asOf, cancellationToken)
-                .ConfigureAwait(false);
-            return Ok(new { hasActiveLicense = ok, asOf = asOf ?? DateTime.UtcNow.Date });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Active license check for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var ok = await _facilities
+            .FacilityHasActiveLicenseAsync(facilityId, facilityType, asOf, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(new { hasActiveLicense = ok, asOf = asOf ?? DateTime.UtcNow.Date });
     }
 }

@@ -1,3 +1,4 @@
+using Beep.OilandGas.PermitsAndApplications.Exceptions;
 using Beep.OilandGas.PPDM39.Core;
 ﻿using System;
 using System.Collections.Generic;
@@ -66,27 +67,32 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
         public async Task<PERMIT_APPLICATION> UpdateAsync(string applicationId, PERMIT_APPLICATION application, string userId)
         {
             if (string.IsNullOrWhiteSpace(applicationId))
-                throw new ArgumentNullException(nameof(applicationId));
+                throw new InvalidApplicationException("The permit application ID is required.");
             if (application == null)
                 throw new ArgumentNullException(nameof(application));
 
             var repo = await CreateRepositoryAsync<PERMIT_APPLICATION>("PERMIT_APPLICATION");
             var existing = await repo.GetByIdAsync(applicationId) as PERMIT_APPLICATION;
             if (existing == null)
-                throw new InvalidOperationException($"Permit application not found: {applicationId}");
+                throw new PermitNotFoundException($"Permit application {applicationId} was not found.", applicationId);
 
+            // The status change is judged before anything is written: the update had been saved and the refusal
+            // thrown after it, so a refused status was stored anyway.
+            var previousStatus = existing.STATUS;
             var data = _mapper.MapToData(application, existing);
+            var statusChanged = EnsureStatusChangeAllowed(previousStatus, data.STATUS);
             SetAuditFields(data, userId);
 
             await repo.UpdateAsync(data, userId);
-            await AddStatusHistoryIfChangedAsync(existing.STATUS, data.STATUS, applicationId, userId);
+            if (statusChanged)
+                await AddStatusHistoryAsync(applicationId, data.STATUS, "Status updated", userId);
             return _mapper.MapToDomain(data);
         }
 
         public async Task<PERMIT_APPLICATION?> GetByIdAsync(string applicationId)
         {
             if (string.IsNullOrWhiteSpace(applicationId))
-                throw new ArgumentNullException(nameof(applicationId));
+                throw new InvalidApplicationException("The permit application ID is required.");
 
             var repo = await CreateRepositoryAsync<PERMIT_APPLICATION>("PERMIT_APPLICATION");
             var result = await repo.GetByIdAsync(applicationId) as PERMIT_APPLICATION;
@@ -114,7 +120,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             var repo = await CreateRepositoryAsync<PERMIT_APPLICATION>("PERMIT_APPLICATION");
             var application = await repo.GetByIdAsync(applicationId) as PERMIT_APPLICATION;
             if (application == null)
-                throw new InvalidOperationException($"Permit application not found: {applicationId}");
+                throw new PermitNotFoundException($"Permit application {applicationId} was not found.", applicationId);
 
             ValidateStatusTransition(application.STATUS, nameof(PermitApplicationStatus.Submitted));
             application.STATUS = PermitApplicationStatus.Submitted;
@@ -136,7 +142,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             var repo = await CreateRepositoryAsync<PERMIT_APPLICATION>("PERMIT_APPLICATION");
             var application = await repo.GetByIdAsync(applicationId) as PERMIT_APPLICATION;
             if (application == null)
-                throw new InvalidOperationException($"Permit application not found: {applicationId}");
+                throw new PermitNotFoundException($"Permit application {applicationId} was not found.", applicationId);
 
             application.DECISION = decision;
             application.DECISION_DATE = DateTime.UtcNow;
@@ -155,8 +161,8 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             }
             else
             {
-                throw new InvalidOperationException(
-                    $"Decision must be \"Approved\" or \"Rejected\" (regulator disposition). Received: \"{decision}\".");
+                throw new InvalidApplicationException(
+                    "The regulator's decision must be \"Approved\" or \"Rejected\".", applicationId);
             }
 
             SetAuditFields(application, userId);
@@ -171,18 +177,21 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             return $"PA-{timestamp}";
         }
 
-        private async Task AddStatusHistoryIfChangedAsync(PermitApplicationStatus? previousStatus, PermitApplicationStatus? nextStatus, string applicationId, string userId)
+        /// <summary>
+        /// Refuses a status change the rules do not allow; answers whether the status changes at all.
+        /// </summary>
+        private static bool EnsureStatusChangeAllowed(PermitApplicationStatus? previousStatus, PermitApplicationStatus? nextStatus)
         {
-            var normalizedPrevious = PermitStatusTransitionRules.Normalize(previousStatus.ToString());
-            var normalizedNext = PermitStatusTransitionRules.Normalize(nextStatus.ToString());
+            var normalizedPrevious = PermitStatusTransitionRules.Normalize(previousStatus?.ToString());
+            var normalizedNext = PermitStatusTransitionRules.Normalize(nextStatus?.ToString());
 
             if (string.Equals(normalizedPrevious, normalizedNext, StringComparison.OrdinalIgnoreCase))
-                return;
+                return false;
 
             if (!PermitStatusTransitionRules.IsTransitionAllowed(normalizedPrevious, normalizedNext))
-                throw new InvalidOperationException($"Invalid status transition: {normalizedPrevious} -> {normalizedNext}");
+                throw PermitStatusTransitionRules.RefuseTransition(normalizedPrevious, normalizedNext);
 
-            await AddStatusHistoryAsync(applicationId, nextStatus, "Status updated", userId);
+            return true;
         }
 
         private async Task AddStatusHistoryAsync(string applicationId, PermitApplicationStatus? status, string? remarks, string userId)
@@ -227,7 +236,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             var normalizedNext = PermitStatusTransitionRules.Normalize(nextEnum.ToString());
 
             if (!PermitStatusTransitionRules.IsTransitionAllowed(normalizedCurrent, normalizedNext))
-                throw new InvalidOperationException($"Invalid status transition: {normalizedCurrent} -> {normalizedNext}");
+                throw PermitStatusTransitionRules.RefuseTransition(normalizedCurrent, normalizedNext);
         }
     }
 }

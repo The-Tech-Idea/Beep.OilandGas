@@ -35,31 +35,18 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Tax
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var tax = await _productionTaxService.CalculateProductionTaxesAsync(
-                    revenueTransaction,
-                    userId,
-                    connectionName ?? "PPDM39");
+            var tax = await _productionTaxService.CalculateProductionTaxesAsync(
+                revenueTransaction,
+                userId,
+                connectionName ?? "PPDM39");
 
-                if (tax == null)
-                    return Ok(new { message = "No production tax generated for this transaction." });
+            if (tax == null)
+                return Ok(new { message = "No production tax generated for this transaction." });
 
-                return Ok(tax);
-            }
-            catch (ArgumentNullException ex)
-            {
-                _logger.LogWarning(ex, "Invalid production tax request");
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating production taxes");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(tax);
         }
     }
 }

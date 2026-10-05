@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.Web.Services;
 
@@ -60,15 +61,18 @@ public class ExternalWebhookTriggerService : IExternalWebhookTriggerService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<ExternalWebhookTriggerService> _logger;
+    private readonly IFailureReporter _failures;
     private readonly List<WebhookSubscription> _subscriptions = new();
     private readonly object _lock = new();
 
     public ExternalWebhookTriggerService(
         HttpClient httpClient,
-        ILogger<ExternalWebhookTriggerService>? logger = null)
+        ILogger<ExternalWebhookTriggerService> logger,
+        IFailureReporter failures)
     {
-        _httpClient = httpClient;
-        _logger = logger;
+        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _failures = failures ?? throw new ArgumentNullException(nameof(failures));
     }
 
     public Task<WebhookSubscription> RegisterWebhookAsync(WebhookConfig config)
@@ -87,7 +91,7 @@ public class ExternalWebhookTriggerService : IExternalWebhookTriggerService
             _subscriptions.Add(subscription);
         }
 
-        _logger?.LogInformation("Webhook registered: {Name} → {Url}, events: {Events}",
+        _logger.LogInformation("Webhook registered: {Name} → {Url}, events: {Events}",
             config.Name, config.Url, string.Join(", ", config.EventTypes));
 
         return Task.FromResult(subscription);
@@ -100,7 +104,7 @@ public class ExternalWebhookTriggerService : IExternalWebhookTriggerService
 
         if (subscribers.Count == 0)
         {
-            _logger?.LogDebug("No webhook subscribers for event type: {EventType}", eventType);
+            _logger.LogDebug("No webhook subscribers for event type: {EventType}", eventType);
             return results;
         }
 
@@ -143,16 +147,21 @@ public class ExternalWebhookTriggerService : IExternalWebhookTriggerService
                 if (!response.IsSuccessStatusCode)
                 {
                     lock (_lock) { sub.FailureCount++; }
-                    _logger?.LogWarning("Webhook {Name} returned {StatusCode} for event {EventType}",
+                    _logger.LogWarning("Webhook {Name} returned {StatusCode} for event {EventType}",
                         sub.Name, response.StatusCode, eventType);
                 }
             }
+            // One subscriber's failed delivery (unreachable, timed out, a malformed address) must not stop delivery to
+            // the others: each is reported and answered in its own result.
             catch (Exception ex)
             {
+                var reference = _failures.ReportHandled(
+                    ex,
+                    $"delivering the {eventType} webhook to {sub.Name}",
+                    consequence: "this subscriber did not receive the event; its result says so and the others were still sent it");
                 result.Success = false;
-                result.ErrorMessage = ex.Message;
+                result.ErrorMessage = $"The webhook was not delivered; the failure was reported under reference {reference}.";
                 lock (_lock) { sub.FailureCount++; }
-                _logger?.LogError(ex, "Webhook {Name} delivery failed for event {EventType}", sub.Name, eventType);
             }
 
             lock (_lock)

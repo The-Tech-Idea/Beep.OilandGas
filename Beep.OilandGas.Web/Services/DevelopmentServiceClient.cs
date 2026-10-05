@@ -104,7 +104,7 @@ public sealed class DevelopmentServiceClient : IDevelopmentServiceClient
         }
     }
 
-    public async Task<bool> AssignRigAsync(string uwi, DevelopmentAssignRigRequest request, CancellationToken cancellationToken = default)
+    public async Task AssignRigAsync(string uwi, DevelopmentAssignRigRequest request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(uwi))
             throw new ArgumentException("UWI is required.", nameof(uwi));
@@ -113,7 +113,7 @@ public sealed class DevelopmentServiceClient : IDevelopmentServiceClient
 
         try
         {
-            return await _apiClient.PutAsync(
+            await _apiClient.PutAsync(
                 $"/api/field/current/development/wells/{Uri.EscapeDataString(uwi)}/rig",
                 request,
                 cancellationToken);

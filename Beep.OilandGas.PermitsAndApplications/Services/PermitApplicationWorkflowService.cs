@@ -1,3 +1,4 @@
+using Beep.OilandGas.PermitsAndApplications.Exceptions;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
@@ -46,14 +47,18 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             string stateProvince,
             string authority)
         {
-            if (string.IsNullOrWhiteSpace(country)) throw new ArgumentNullException(nameof(country));
-            if (string.IsNullOrWhiteSpace(stateProvince)) throw new ArgumentNullException(nameof(stateProvince));
-            if (string.IsNullOrWhiteSpace(authority)) throw new ArgumentNullException(nameof(authority));
+            if (string.IsNullOrWhiteSpace(country)) throw new InvalidApplicationException("Choose the country.");
+            if (string.IsNullOrWhiteSpace(stateProvince)) throw new InvalidApplicationException("Choose the state or province.");
+            if (string.IsNullOrWhiteSpace(authority)) throw new InvalidApplicationException("Choose the regulatory authority.");
 
-            // Try parse enums, fallback to defaults
-            Enum.TryParse<Country>(country, true, out var parsedCountry);
-            Enum.TryParse<StateProvince>(stateProvince, true, out var parsedState);
-            Enum.TryParse<RegulatoryAuthority>(authority, true, out var parsedAuthority);
+            // A name that is not a known country, state or authority is refused. The failed parses had been ignored, so
+            // an unknown name was looked up as the enum's first member (the United States, Texas, the RRC).
+            if (!Enum.TryParse<Country>(country, true, out var parsedCountry) || !Enum.IsDefined(parsedCountry))
+                throw new InvalidApplicationException($"\"{country}\" is not a country permits are filed in.");
+            if (!Enum.TryParse<StateProvince>(stateProvince, true, out var parsedState) || !Enum.IsDefined(parsedState))
+                throw new InvalidApplicationException($"\"{stateProvince}\" is not a known state or province.");
+            if (!Enum.TryParse<RegulatoryAuthority>(authority, true, out var parsedAuthority) || !Enum.IsDefined(parsedAuthority))
+                throw new InvalidApplicationException($"\"{authority}\" is not a known regulatory authority.");
 
             return await GetJurisdictionRequirementsAsync(parsedCountry, parsedState, parsedAuthority);
         }
@@ -229,12 +234,14 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
                 var application = await GetPermitApplicationAsync(applicationId);
                 if (application == null)
-                    throw new InvalidOperationException($"Permit application not found: {applicationId}");
+                    throw new PermitNotFoundException($"Permit application {applicationId} was not found.", applicationId);
 
                 // Validate before submission
                 var validation = await ValidatePermitApplicationAsync(applicationId);
                 if (!validation.IsValid)
-                    throw new InvalidOperationException($"Cannot submit invalid application. Errors: {string.Join(", ", validation.Errors)}");
+                    throw new ApplicationSubmissionException(
+                        $"This permit application cannot be submitted until it is complete: {string.Join("; ", validation.Errors)}",
+                        applicationId);
 
                 ValidateStatusTransition(application.STATUS, "SUBMITTED");
                 application.STATUS =   PermitApplicationStatus.Submitted;
@@ -269,7 +276,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
                 var application = await GetPermitApplicationAsync(applicationId);
                 if (application == null)
-                    throw new InvalidOperationException($"Permit application not found: {applicationId}");
+                    throw new PermitNotFoundException($"Permit application {applicationId} was not found.", applicationId);
 
                 application.DECISION = decision;
                 application.DECISION_DATE = DateTime.UtcNow;
@@ -579,7 +586,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
                 var application = await GetPermitApplicationAsync(applicationId);
                 if (application == null)
-                    throw new InvalidOperationException($"Permit application not found: {applicationId}");
+                    throw new PermitNotFoundException($"Permit application {applicationId} was not found.", applicationId);
 
                 // Get jurisdiction requirements
                 var requirements = await GetJurisdictionRequirementsAsync(
@@ -611,7 +618,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
                 var application = await GetPermitApplicationAsync(applicationId);
                 if (application == null)
-                    throw new InvalidOperationException($"Permit application not found: {applicationId}");
+                    throw new PermitNotFoundException($"Permit application {applicationId} was not found.", applicationId);
 
                 // Base fee calculation (simplified - would be more complex in real implementation)
                 decimal baseFee = 1000.00m; // Base fee
@@ -643,7 +650,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
                 var application = await GetPermitApplicationAsync(applicationId);
                 if (application == null)
-                    throw new InvalidOperationException($"Permit application not found: {applicationId}");
+                    throw new PermitNotFoundException($"Permit application {applicationId} was not found.", applicationId);
 
                 var applicationType = NormalizeApplicationType(application.APPLICATION_TYPE);
                 var drillingApplication = applicationType == "DRILLING"
@@ -697,7 +704,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
                 var application = await GetPermitApplicationAsync(applicationId);
                 if (application == null)
-                    throw new InvalidOperationException($"Permit application not found: {applicationId}");
+                    throw new PermitNotFoundException($"Permit application {applicationId} was not found.", applicationId);
 
                 var applicationType = NormalizeApplicationType(application.APPLICATION_TYPE);
                 var drillingApplication = applicationType == "DRILLING"
@@ -777,7 +784,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
                 var application = await GetPermitApplicationAsync(applicationId);
                 if (application == null)
-                    throw new InvalidOperationException($"Permit application not found: {applicationId}");
+                    throw new PermitNotFoundException($"Permit application {applicationId} was not found.", applicationId);
 
                 var applicationType = NormalizeApplicationType(application.APPLICATION_TYPE);
                 var drillingApplication = applicationType == "DRILLING"
@@ -1223,7 +1230,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             if (PermitStatusTransitionRules.IsTransitionAllowed(normalizedCurrent, normalizedNext))
                 return;
 
-            throw new InvalidOperationException($"Invalid status transition: {normalizedCurrent} -> {normalizedNext}");
+            throw PermitStatusTransitionRules.RefuseTransition(normalizedCurrent, normalizedNext);
         }
 
         private async Task AddStatusHistoryAsync(string applicationId, PermitApplicationStatus? status, string? remarks, string userId)
@@ -1296,7 +1303,17 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 RegulatoryAuthority.AER => 1.1m,    // Alberta Energy Regulator
                 RegulatoryAuthority.BCER => 1.1m,   // BC Energy Regulator
                 RegulatoryAuthority.CNH => 1.3m,    // Mexico CNH
-                _ => 1.0m         // Default
+                // Every other authority: the base rate.
+                RegulatoryAuthority.AOGCC or RegulatoryAuthority.NDIC or RegulatoryAuthority.WOGCC
+                    or RegulatoryAuthority.COGCC or RegulatoryAuthority.OCC or RegulatoryAuthority.LADNR
+                    or RegulatoryAuthority.NMOCD or RegulatoryAuthority.CEC or RegulatoryAuthority.BLM
+                    or RegulatoryAuthority.USACE or RegulatoryAuthority.BOEM or RegulatoryAuthority.BSEE
+                    or RegulatoryAuthority.SER or RegulatoryAuthority.NLDET or RegulatoryAuthority.ASEA
+                    or RegulatoryAuthority.NPD or RegulatoryAuthority.NSTA or RegulatoryAuthority.NOPSEMA
+                    or RegulatoryAuthority.QLD_DNRME or RegulatoryAuthority.WA_DMIRS or RegulatoryAuthority.NT_DITT
+                    or RegulatoryAuthority.SA_DMRE or RegulatoryAuthority.ANP or RegulatoryAuthority.ARG_NEUQUEN
+                    or RegulatoryAuthority.ARG_MENDOZA or RegulatoryAuthority.DPR or RegulatoryAuthority.SKKMigas
+                    or RegulatoryAuthority.KZ_MOE or RegulatoryAuthority.Other => 1.0m
             };
         }
 
@@ -1304,10 +1321,12 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
         {
             return applicationType switch
             {
-                PermitApplicationType.Drilling => 1.5m,      // Drilling permits are most complex
+                // DRILLING_PERMIT names a drilling permit; the catch-all had charged it the base rate.
+                PermitApplicationType.Drilling or PermitApplicationType.DRILLING_PERMIT => 1.5m, // Drilling permits are most complex
                 PermitApplicationType.Environmental => 1.3m, // Environmental assessments are detailed
                 PermitApplicationType.Injection => 1.2m,     // Injection permits require monitoring
-                _ => 1.0m                // Default
+                PermitApplicationType.Storage or PermitApplicationType.Facility or PermitApplicationType.Seismic
+                    or PermitApplicationType.Groundwater or PermitApplicationType.Other => 1.0m
             };
         }
 
@@ -1342,7 +1361,9 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                  PermitApplicationType.Facility => "FACILITY",
                  PermitApplicationType.Seismic => "SEISMIC",
                  PermitApplicationType.Groundwater => "GROUNDWATER",
-                _ => "OTHER"
+                // DRILLING_PERMIT names a drilling permit; the catch-all had treated it as OTHER.
+                PermitApplicationType.DRILLING_PERMIT => "DRILLING",
+                PermitApplicationType.Other => "OTHER"
             };
         }
 

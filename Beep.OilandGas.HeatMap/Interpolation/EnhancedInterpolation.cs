@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.HeatMap.Interpolation
 {
@@ -28,7 +29,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
             double maxDistance = double.MaxValue)
         {
             if (dataPoints == null || dataPoints.Count == 0)
-                throw new ArgumentException("Data points list cannot be null or empty.");
+                throw RefusalException.Invalid("At least one data point is required.");
 
             // If k is specified and less than total points, use k-nearest neighbors
             if (k > 0 && k < dataPoints.Count)
@@ -87,7 +88,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
             double shapeParameter = 1.0)
         {
             if (dataPoints == null || dataPoints.Count == 0)
-                throw new ArgumentException("Data points list cannot be null or empty.");
+                throw RefusalException.Invalid("At least one data point is required.");
 
             // For simplicity, using direct evaluation (full RBF requires solving a system)
             double result = 0.0;
@@ -125,7 +126,6 @@ namespace Beep.OilandGas.HeatMap.Interpolation
                 RbfType.InverseMultiquadric => 1.0 / Math.Sqrt(1 + r * r),
                 RbfType.Cubic => r * r * r,
                 RbfType.Quintic => r * r * r * r * r,
-                _ => Math.Exp(-r * r) // Default to Gaussian
             };
         }
 
@@ -142,7 +142,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
             double targetY)
         {
             if (dataPoints == null || dataPoints.Count == 0)
-                throw new ArgumentException("Data points list cannot be null or empty.");
+                throw RefusalException.Invalid("At least one data point is required.");
 
             // Simplified Natural Neighbor using Voronoi diagram approximation
             // Full implementation would require Delaunay triangulation
@@ -194,7 +194,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
             double tension = 0.5)
         {
             if (dataPoints == null || dataPoints.Count == 0)
-                throw new ArgumentException("Data points list cannot be null or empty.");
+                throw RefusalException.Invalid("At least one data point is required.");
 
             // Find 4 nearest neighbors for bicubic interpolation
             var nearest = dataPoints
@@ -333,14 +333,9 @@ namespace Beep.OilandGas.HeatMap.Interpolation
                     {
                         for (double y = regionMinY; y <= regionMaxY; y += cellSize)
                         {
-                            double value = interpolationMethod switch
-                            {
-                                InterpolationMethodType.InverseDistanceWeighting =>
-                                    InterpolationMethod.InverseDistanceWeighting(dataPoints, x, y),
-                                InterpolationMethodType.Kriging =>
-                                    InterpolationMethod.Kriging(dataPoints, x, y),
-                                _ => 0.0
-                            };
+                            // The one dispatcher over every method (OILGAS-CATCH-01): this switch named two and answered
+                            // 0.0 for the other six, so an adaptive grid asked for by any of them came back flat zero.
+                            double value = InterpolationMethod.Interpolate(interpolationMethod, dataPoints, x, y);
 
                             grid.Add((x, y, value, cellSize));
                         }

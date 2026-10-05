@@ -1,3 +1,4 @@
+using Beep.OilandGas.ApiService.Data;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Data.OilGas;
+using TheTechIdeaWeb.Diagnostics;
 using System.Data;
 
 namespace Beep.OilandGas.ApiService.Controllers;
@@ -17,7 +19,7 @@ namespace Beep.OilandGas.ApiService.Controllers;
 [Route("api/setup/modules")]
 [Authorize(Roles = "Administrator")]
 public sealed class ModuleRepositoryController(RepositoryDbContext repository, IDMEEditor editor,
-    IEnumerable<IModuleSetup> modules, IPPDM39SchemaMigrationService migration) : ControllerBase
+    IEnumerable<IModuleSetup> modules, IPPDM39SchemaMigrationService migration, IFailureReporter failures) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> List(CancellationToken cancellationToken)
@@ -59,8 +61,11 @@ public sealed class ModuleRepositoryController(RepositoryDbContext repository, I
             binding.ConnectionName = connection.ConnectionName;
             binding.ConcurrencyStamp = Guid.NewGuid().ToString();
         }
+        // A binding somebody else saved first — a stale version, or the same module bound twice — is the administrator's to
+        // reload; any other refused save is a failure and goes on to the API's handler (OILGAS-CATCH-01).
         try { await repository.SaveChangesAsync(cancellationToken); }
-        catch (DbUpdateException) { return Conflict(new { Error = "The binding could not be saved. Reload before retrying." }); }
+        catch (DbUpdateConcurrencyException changed) { return BindingChanged(changed); }
+        catch (DbUpdateException duplicate) when (UniqueKeyViolation.Is(duplicate)) { return BindingChanged(duplicate); }
         return Ok(binding);
     }
 
@@ -93,11 +98,10 @@ public sealed class ModuleRepositoryController(RepositoryDbContext repository, I
         if (module is null) return BadRequest(new { Error = "Unknown module or repository-owned security module." });
         if (User.Identity?.IsAuthenticated != true) return Forbid();
         var userId = User.ActingUserId();
-        try { ModuleSchemaBoundary.Validate(module.EntityTypes); }
-        catch (ArgumentException)
-        {
-            return BadRequest(new { Error = "Repository-owned entities cannot be seeded into a module database." });
-        }
+        // The module boundary, the cached target and the installed schema are the setup library's to judge: what it refuses
+        // reaches the API's handler as its refusal, and a provider that fails while it looks is a reported failure — not a
+        // "could not be verified" (OILGAS-CATCH-01: every exception here was answered 400 or 409, unreported).
+        ModuleSchemaBoundary.Validate(module.EntityTypes);
         var binding = await repository.ModuleDatabases.AsNoTracking()
             .SingleOrDefaultAsync(x => x.ModuleId == module.ModuleId, cancellationToken);
         if (binding is null || string.IsNullOrWhiteSpace(request.ConcurrencyStamp) ||
@@ -112,23 +116,22 @@ public sealed class ModuleRepositoryController(RepositoryDbContext repository, I
         var source = editor.GetDataSource(connection.ConnectionName);
         if (source is null)
             return StatusCode(503, new { Error = "The selected module datasource is unavailable." });
-        try { MigrationConnectionTarget.Validate(editor, source, connection.ConnectionName); }
-        catch (InvalidOperationException)
-        {
-            return Conflict(new { Error = "The cached datasource does not match the selected connection. Reload it before seeding." });
-        }
+        MigrationConnectionTarget.Validate(editor, source, connection.ConnectionName);
         if (source.Openconnection() != ConnectionState.Open)
             return StatusCode(503, new { Error = "The selected module connection could not be opened." });
-        try { ModuleSchemaVerification.Verify(editor, source, module.EntityTypes); }
-        catch (Exception) when (!cancellationToken.IsCancellationRequested)
-        {
-            return Conflict(new { Error = "The module schema could not be verified. Install or repair the selected module before seeding." });
-        }
+        ModuleSchemaVerification.Verify(editor, source, module.EntityTypes);
         cancellationToken.ThrowIfCancellationRequested();
         var result = await module.SeedAsync(connection.ConnectionName, userId, cancellationToken);
         var summary = new ModuleSeedSummary(module.ModuleId, result.Success && result.Errors.Count == 0,
             result.RecordsInserted, result.TablesSeeded, result.Errors, result.SkipReason);
         return summary.Success ? Ok(summary) : BadRequest(summary);
+    }
+
+    private ConflictObjectResult BindingChanged(DbUpdateException refused)
+    {
+        failures.ReportHandled(refused, "saving a module's database binding", "the binding is not saved; the administrator is told to reload",
+            FailureSeverity.Degraded);
+        return Conflict(new { Error = "The binding could not be saved. Reload before retrying." });
     }
 
     private IModuleSetup? Find(string moduleId) => modules.SingleOrDefault(x =>

@@ -979,7 +979,6 @@ namespace Beep.OilandGas.HeatMap.Rendering
                     PointClustering.DistanceBasedClustering(points, configuration.ClusterCellSize),
                 ClusteringAlgorithm.KMeans =>
                     PointClustering.KMeansClustering(points, configuration.ClusterCount),
-                _ => new List<Cluster>()
             };
         }
 

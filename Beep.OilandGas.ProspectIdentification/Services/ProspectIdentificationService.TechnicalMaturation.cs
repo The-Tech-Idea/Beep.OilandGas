@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -17,9 +18,9 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             List<Fault> faults)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
-                throw new ArgumentException("Prospect ID cannot be null or empty", nameof(prospectId));
+                throw RefusalException.Invalid("The prospect ID is required.");
             if (string.IsNullOrWhiteSpace(surveyId))
-                throw new ArgumentException("Survey ID cannot be null or empty", nameof(surveyId));
+                throw RefusalException.Invalid("The seismic survey ID is required.");
 
             _logger?.LogInformation("Analyzing seismic interpretation for prospect {ProspectId}: Horizons={Horizons}, Faults={Faults}",
                 prospectId, horizons?.Count ?? 0, faults?.Count ?? 0);
@@ -53,9 +54,9 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             string estimatedBy)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
-                throw new ArgumentException("Prospect ID cannot be null or empty", nameof(prospectId));
+                throw RefusalException.Invalid("The prospect ID is required.");
             if (string.IsNullOrWhiteSpace(estimatedBy))
-                throw new ArgumentException("Estimated by cannot be null or empty", nameof(estimatedBy));
+                throw RefusalException.Invalid("Say who made the resource estimate.");
 
             _logger?.LogInformation("Estimating resources for prospect {ProspectId}: GRV={GRV}, NGR={NGR}",
                 prospectId, grossRockVolume, netToGrossRatio);
@@ -100,7 +101,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             decimal volume)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
-                throw new ArgumentException("Prospect ID cannot be null or empty", nameof(prospectId));
+                throw RefusalException.Invalid("The prospect ID is required.");
 
             _logger?.LogInformation("Analyzing trap geometry for prospect {ProspectId}: Type={Type}, Closure={Closure}ft",
                 prospectId, trapType, spillPointDepth - crestDepth);
@@ -137,7 +138,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             decimal distance)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
-                throw new ArgumentException("Prospect ID cannot be null or empty", nameof(prospectId));
+                throw RefusalException.Invalid("The prospect ID is required.");
 
             _logger?.LogInformation("Analyzing migration path for prospect {ProspectId} from source {SourceRockId}",
                 prospectId, sourceRockId);
@@ -179,7 +180,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             decimal sourceMaturity)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
-                throw new ArgumentException("Prospect ID cannot be null or empty", nameof(prospectId));
+                throw RefusalException.Invalid("The prospect ID is required.");
 
             _logger?.LogInformation("Assessing seal and source for prospect {ProspectId}: SealType={SealType}, SourceType={SourceType}",
                 prospectId, sealRockType, sourceRockType);

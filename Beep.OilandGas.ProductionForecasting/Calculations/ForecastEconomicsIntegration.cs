@@ -113,7 +113,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
             ForecastEconomicParameters economicParams)
         {
             if (forecast == null || forecast.FORECAST_POINTS.Count == 0)
-                throw new ArgumentException("Forecast must contain points.", nameof(forecast));
+                throw RefusalException.Invalid("Forecast must contain points.");
 
             ValidateEconomicParameters(economicParams);
 
@@ -286,19 +286,19 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         private static void ValidateEconomicParameters(ForecastEconomicParameters parameters)
         {
             if (parameters.ProductPrice < 0)
-                throw new ArgumentException("Product price cannot be negative.", nameof(parameters.ProductPrice));
+                throw RefusalException.Invalid("Product price cannot be negative.");
 
             if (parameters.VariableCostPerUnit < 0)
-                throw new ArgumentException("Variable cost cannot be negative.", nameof(parameters.VariableCostPerUnit));
+                throw RefusalException.Invalid("Variable cost cannot be negative.");
 
             if (parameters.FixedCostPerDay < 0)
-                throw new ArgumentException("Fixed cost cannot be negative.", nameof(parameters.FixedCostPerDay));
+                throw RefusalException.Invalid("Fixed cost cannot be negative.");
 
             if (parameters.InitialCapitalCost < 0)
-                throw new ArgumentException("Capital cost cannot be negative.", nameof(parameters.InitialCapitalCost));
+                throw RefusalException.Invalid("Capital cost cannot be negative.");
 
             if (parameters.DiscountRate < -50 || parameters.DiscountRate > 100)
-                throw new ArgumentException("Discount rate should be between -50% and 100%.", nameof(parameters.DiscountRate));
+                throw RefusalException.Invalid("Discount rate must be between -50% and 100%.");
         }
 
         #endregion

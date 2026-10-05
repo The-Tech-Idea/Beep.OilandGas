@@ -13,6 +13,8 @@ using Beep.OilandGas.PPDM.Models;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
+using TheTechIdeaWeb.Diagnostics;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.ProductionOperations.Services;
 
@@ -28,6 +30,7 @@ public sealed partial class FacilityManagementService : IFacilityManagementServi
     private readonly ICommonColumnHandler _commonColumnHandler;
     private readonly IPPDM39DefaultsRepository _defaults;
     private readonly IPPDMMetadataRepository _metadata;
+    private readonly IFailureReporter _failures;
     private readonly string _connectionName;
     private readonly ILogger<FacilityManagementService>? _logger;
     private readonly Func<string, Task<string>>? _resolveModuleConnection;
@@ -37,6 +40,7 @@ public sealed partial class FacilityManagementService : IFacilityManagementServi
         ICommonColumnHandler commonColumnHandler,
         IPPDM39DefaultsRepository defaults,
         IPPDMMetadataRepository metadata,
+        IFailureReporter failures,
         string connectionName = "PPDM39",
         ILogger<FacilityManagementService>? logger = null,
         Func<string, Task<string>>? resolveModuleConnection = null)
@@ -45,6 +49,7 @@ public sealed partial class FacilityManagementService : IFacilityManagementServi
         _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
         _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
         _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
+        _failures = failures ?? throw new ArgumentNullException(nameof(failures));
         _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
         _logger = logger;
         _resolveModuleConnection = resolveModuleConnection;
@@ -147,9 +152,14 @@ public sealed partial class FacilityManagementService : IFacilityManagementServi
         {
             throw;
         }
+        // Any failure of the link's write: the facility row is already stored, so answering the create as failed would
+        // invite a retry that collides with it. The facility's own PRIMARY_FIELD_ID still names the field — the create
+        // met its contract — and the missing association is reported, not only logged.
         catch (Exception ex)
         {
-            _logger?.LogWarning(ex, "FACILITY_FIELD link insert skipped for facility {Id}", created.FACILITY_ID);
+            _failures.ReportHandled(ex, $"linking facility {created.FACILITY_ID} to field {created.PRIMARY_FIELD_ID} in FACILITY_FIELD",
+                "the facility is created and its PRIMARY_FIELD_ID names the field; the FACILITY_FIELD association row is not written",
+                FailureSeverity.Degraded);
         }
     }
 
@@ -179,9 +189,9 @@ public sealed partial class FacilityManagementService : IFacilityManagementServi
 
     public async Task<FACILITY_CLASS> AddFacilityClassAsync(string facilityId, string? facilityType, string facilityClassType, string userId, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(facilityClassType)) throw new ArgumentException("Facility class type is required.", nameof(facilityClassType));
+        if (string.IsNullOrWhiteSpace(facilityClassType)) throw RefusalException.Invalid("Facility class type is required.");
         var f = await ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false)
-                ?? throw new InvalidOperationException("Facility not found.");
+                ?? throw RefusalException.NotFound("Facility not found.");
 
         var repo = await RepoAsync<FACILITY_CLASS>("FACILITY_CLASS");
         var existing = (await repo.GetAsync(new List<AppFilter>
@@ -258,7 +268,7 @@ public sealed partial class FacilityManagementService : IFacilityManagementServi
             var ok = await FacilityHasActiveLicenseAsync(
                 status.FACILITY_ID ?? string.Empty, status.FACILITY_TYPE, DateTime.UtcNow.Date, cancellationToken).ConfigureAwait(false);
             if (!ok)
-                throw new InvalidOperationException("Operational/active status requires at least one active facility license.");
+                throw RefusalException.Conflict("Operational/active status requires at least one active facility license.");
         }
 
         if (string.IsNullOrWhiteSpace(status.STATUS_ID))

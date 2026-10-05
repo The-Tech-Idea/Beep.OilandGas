@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.WellTestAnalysis.Constants;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.WellTestAnalysis.Calculations
 {
@@ -44,7 +45,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             double mu_cp, double ct_1psi, double rw_ft)
         {
             if (phi <= 0 || mu_cp <= 0 || ct_1psi <= 0 || rw_ft <= 0)
-                throw new ArgumentException("Reservoir parameters must all be positive.");
+                throw RefusalException.Invalid("Porosity, viscosity, total compressibility and wellbore radius must all be positive.");
             return 0.0002637 * k_md * t_hr / (phi * mu_cp * ct_1psi * rw_ft * rw_ft);
         }
 
@@ -57,7 +58,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
         {
             double denom = 141.2 * q_stbday * B_resbbl * mu_cp;
             if (Math.Abs(denom) < 1e-10)
-                throw new ArgumentException("Flow rate, FVF and viscosity must all be non-zero.");
+                throw RefusalException.Invalid("Flow rate, FVF and viscosity must all be non-zero.");
             return k_md * h_ft * deltaP_psi / denom;
         }
 
@@ -149,7 +150,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             IEnumerable<double> tDValues, double reD = 1000)
         {
             if (reD <= 1)
-                throw new ArgumentException("reD must be > 1.", nameof(reD));
+                throw RefusalException.Invalid("The dimensionless outer radius (reD) must be greater than 1.");
 
             var result = new List<(double tD, double pD)>();
             double pssBoundary = 0.1 * reD * reD;
@@ -189,7 +190,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             IEnumerable<double> tDValues, double reD = 1000)
         {
             if (reD <= 1)
-                throw new ArgumentException("reD must be > 1.", nameof(reD));
+                throw RefusalException.Invalid("The dimensionless outer radius (reD) must be greater than 1.");
 
             var result = new List<(double tD, double pD)>();
             double pDSteadyState = Math.Log(reD);
@@ -226,9 +227,9 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             IEnumerable<double> tDValues, double omega = 0.1, double lambda = 1e-6)
         {
             if (omega <= 0 || omega >= 1)
-                throw new ArgumentException("Omega must be between 0 and 1.", nameof(omega));
+                throw RefusalException.Invalid("Omega must be between 0 and 1.");
             if (lambda <= 0)
-                throw new ArgumentException("Lambda must be positive.", nameof(lambda));
+                throw RefusalException.Invalid("Lambda must be positive.");
 
             var result = new List<(double tD, double pD)>();
 
@@ -271,7 +272,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             IEnumerable<double> tDValues, double xfD = 100)
         {
             if (xfD <= 0)
-                throw new ArgumentException("xfD must be positive.", nameof(xfD));
+                throw RefusalException.Invalid("The dimensionless fracture half-length (xfD) must be positive.");
 
             var result = new List<(double tD, double pD)>();
 

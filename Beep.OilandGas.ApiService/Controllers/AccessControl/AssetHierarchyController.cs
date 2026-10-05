@@ -41,20 +41,13 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             if (!IsAdministrator) return Forbid();
             if (string.IsNullOrWhiteSpace(organizationId))
                 return BadRequest(new { error = "Organization ID is required." });
-            try
-            {
-                var hierarchy = await _assetHierarchyService.GetAssetHierarchyAsync(
-                    organizationId, rootAssetId, rootAssetType);
-                
-                if (hierarchy == null)
-                    return NotFound(new { message = "Hierarchy not found" });
-                
-                return Ok(hierarchy);
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var hierarchy = await _assetHierarchyService.GetAssetHierarchyAsync(
+                organizationId, rootAssetId, rootAssetType);
+            
+            if (hierarchy == null)
+                return NotFound(new { message = "Hierarchy not found" });
+            
+            return Ok(hierarchy);
         }
 
         /// <summary>
@@ -70,20 +63,13 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             if (!CanAccess(targetUserId)) return Forbid();
             if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
-            try
-            {
-                var hierarchy = await _assetHierarchyService.GetAssetHierarchyForUserAsync(
-                    targetUserId, organizationId, rootAssetId, rootAssetType);
-                
-                if (hierarchy == null)
-                    return NotFound(new { message = "Hierarchy not found" });
-                
-                return Ok(hierarchy);
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var hierarchy = await _assetHierarchyService.GetAssetHierarchyForUserAsync(
+                targetUserId, organizationId, rootAssetId, rootAssetType);
+            
+            if (hierarchy == null)
+                return NotFound(new { message = "Hierarchy not found" });
+            
+            return Ok(hierarchy);
         }
 
         /// <summary>
@@ -101,15 +87,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 return BadRequest(new { error = "Asset ID is required." });
             if (string.IsNullOrWhiteSpace(assetType))
                 return BadRequest(new { error = "Asset type is required." });
-            try
-            {
-                var children = await _assetHierarchyService.GetAssetChildrenAsync(assetId, assetType, organizationId);
-                return Ok(children);
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var children = await _assetHierarchyService.GetAssetChildrenAsync(assetId, assetType, organizationId);
+            return Ok(children);
         }
 
         /// <summary>
@@ -127,15 +106,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 return BadRequest(new { error = "Asset ID is required." });
             if (string.IsNullOrWhiteSpace(assetType))
                 return BadRequest(new { error = "Asset type is required." });
-            try
-            {
-                var path = await _assetHierarchyService.GetAssetPathAsync(assetId, assetType, organizationId);
-                return Ok(path);
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var path = await _assetHierarchyService.GetAssetPathAsync(assetId, assetType, organizationId);
+            return Ok(path);
         }
 
         /// <summary>
@@ -145,15 +117,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         public async Task<ActionResult<bool>> ValidateAccess([FromBody] ValidateAccessRequest request)
         {
             if (!CanAccess(request.UserId)) return Forbid();
-            try
-            {
-                var result = await _assetHierarchyService.ValidateAccessAsync(request.UserId, request.AssetPath);
-                return Ok(result);
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _assetHierarchyService.ValidateAccessAsync(request.UserId, request.AssetPath);
+            return Ok(result);
         }
 
         /// <summary>
@@ -166,15 +131,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             if (!IsAdministrator) return Forbid();
             if (string.IsNullOrWhiteSpace(organizationId))
                 return BadRequest(new { error = "Organization ID is required." });
-            try
-            {
-                var config = await _assetHierarchyService.GetHierarchyConfigAsync(organizationId);
-                return Ok(config);
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var config = await _assetHierarchyService.GetHierarchyConfigAsync(organizationId);
+            return Ok(config);
         }
 
         /// <summary>
@@ -189,15 +147,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             if (!IsAdministrator) return Forbid();
             if (string.IsNullOrWhiteSpace(organizationId))
                 return BadRequest(new { error = "Organization ID is required." });
-            try
-            {
-                var result = await _assetHierarchyService.UpdateHierarchyConfigAsync(organizationId, config);
-                return Ok(result);
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _assetHierarchyService.UpdateHierarchyConfigAsync(organizationId, config);
+            return Ok(result);
         }
     }
 }

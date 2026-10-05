@@ -265,7 +265,9 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
                 PermitApplicationType.Facility => "FACILITY",
                 PermitApplicationType.Seismic => "SEISMIC",
                 PermitApplicationType.Groundwater => "GROUNDWATER",
-                _ => "OTHER"
+                // DRILLING_PERMIT names a drilling permit; the catch-all had stored it as OTHER.
+                PermitApplicationType.DRILLING_PERMIT => "DRILLING",
+                PermitApplicationType.Other => "OTHER"
             };
         }
 
@@ -301,8 +303,7 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
                 PermitApplicationStatus.Rejected => "REJECTED",
                 PermitApplicationStatus.Withdrawn => "WITHDRAWN",
                 PermitApplicationStatus.Expired => "EXPIRED",
-                PermitApplicationStatus.Renewed => "RENEWED",
-                _ => "DRAFT"
+                PermitApplicationStatus.Renewed => "RENEWED"
             };
         }
 
@@ -351,6 +352,8 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
                 "NOPSEMA" => RegulatoryAuthority.NOPSEMA,
                 "QLD_DNRME" => RegulatoryAuthority.QLD_DNRME,
                 "WA_DMIRS" => RegulatoryAuthority.WA_DMIRS,
+                "NT_DITT" => RegulatoryAuthority.NT_DITT,
+                "SA_DMRE" => RegulatoryAuthority.SA_DMRE,
                 
                 // Brazil
                 "ANP" => RegulatoryAuthority.ANP,
@@ -413,6 +416,8 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
                 RegulatoryAuthority.NOPSEMA => "NOPSEMA",
                 RegulatoryAuthority.QLD_DNRME => "QLD_DNRME",
                 RegulatoryAuthority.WA_DMIRS => "WA_DMIRS",
+                RegulatoryAuthority.NT_DITT => "NT_DITT",
+                RegulatoryAuthority.SA_DMRE => "SA_DMRE",
                 
                 // Brazil
                 RegulatoryAuthority.ANP => "ANP",
@@ -430,7 +435,7 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
                 // Kazakhstan
                 RegulatoryAuthority.KZ_MOE => "KZ_MOE",
                 
-                _ => "OTHER"
+                RegulatoryAuthority.Other => "OTHER"
             };
         }
 

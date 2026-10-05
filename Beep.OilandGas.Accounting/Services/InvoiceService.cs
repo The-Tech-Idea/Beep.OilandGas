@@ -57,11 +57,11 @@ namespace Beep.OilandGas.Accounting.Services
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.CustomerBaId))
-                throw new InvalidOperationException("Customer BA ID is required");
+                throw RefusalException.Invalid("Customer BA ID is required.");
             if (request.Subtotal <= 0m)
-                throw new InvalidOperationException("Invoice subtotal must be positive");
+                throw RefusalException.Invalid("Invoice subtotal must be positive.");
             if (request.DueDate.Date < request.InvoiceDate.Date)
-                throw new InvalidOperationException("Due date cannot be earlier than invoice date");
+                throw RefusalException.Invalid("Due date cannot be earlier than invoice date.");
 
             var invoice = new INVOICE
             {
@@ -131,7 +131,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             var invoice = await GetInvoiceAsync(request.InvoiceId, cn);
             if (invoice == null)
-                throw new InvalidOperationException($"Invoice not found: {request.InvoiceId}");
+                throw RefusalException.NotFound($"Invoice {request.InvoiceId} was not found.");
 
             invoice.INVOICE_NUMBER = request.InvoiceNumber ?? invoice.INVOICE_NUMBER;
             invoice.CUSTOMER_BA_ID = request.CustomerBaId ?? invoice.CUSTOMER_BA_ID;
@@ -140,7 +140,7 @@ namespace Beep.OilandGas.Accounting.Services
             var updatedInvoiceDate = request.InvoiceDate ?? invoice.INVOICE_DATE;
             if (updatedDueDate.HasValue && updatedInvoiceDate.HasValue
                 && updatedDueDate.Value.Date < updatedInvoiceDate.Value.Date)
-                throw new InvalidOperationException("Due date cannot be earlier than invoice date");
+                throw RefusalException.Invalid("Due date cannot be earlier than invoice date.");
             invoice.DUE_DATE = updatedDueDate;
             invoice.SUBTOTAL = request.Subtotal ?? invoice.SUBTOTAL;
             invoice.TAX_AMOUNT = request.TaxAmount ?? invoice.TAX_AMOUNT;
@@ -186,14 +186,14 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(request.InvoiceId))
                 throw new ArgumentNullException(nameof(request.InvoiceId));
             if (request.PaymentAmount <= 0m)
-                throw new InvalidOperationException("Payment amount must be positive");
+                throw RefusalException.Invalid("Payment amount must be positive.");
 
             var invoice = await GetInvoiceAsync(request.InvoiceId, cn);
             if (invoice == null)
-                throw new InvalidOperationException($"Invoice not found: {request.InvoiceId}");
+                throw RefusalException.NotFound($"Invoice {request.InvoiceId} was not found.");
             var currentBalance = (invoice.TOTAL_AMOUNT is decimal ta2 ? ta2 : 0m) - (invoice.PAID_AMOUNT is decimal pa2 ? pa2 : 0m);
             if (request.PaymentAmount > currentBalance + 0.01m)
-                throw new InvalidOperationException("Payment amount exceeds invoice balance");
+                throw RefusalException.Conflict("The payment amount exceeds the invoice's balance.");
 
             var payment = new INVOICE_PAYMENT
             {
@@ -274,7 +274,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             var invoice = await GetInvoiceAsync(invoiceId, cn);
             if (invoice == null)
-                throw new InvalidOperationException($"Invoice not found: {invoiceId}");
+                throw RefusalException.NotFound($"Invoice {invoiceId} was not found.");
 
             if (!string.Equals(invoice.STATUS, InvoiceStatuses.Draft, StringComparison.OrdinalIgnoreCase))
             {
@@ -358,7 +358,7 @@ namespace Beep.OilandGas.Accounting.Services
         {
             var invoice = await GetInvoiceAsync(invoiceId, cn);
             if (invoice == null)
-                throw new InvalidOperationException($"Invoice not found: {invoiceId}");
+                throw RefusalException.NotFound($"Invoice {invoiceId} was not found.");
 
             var payments = await GetInvoicePaymentsAsync(invoiceId, cn);
             var totalPaid = payments.Sum(p => p.PAYMENT_AMOUNT is decimal pa3 ? pa3 : 0m);

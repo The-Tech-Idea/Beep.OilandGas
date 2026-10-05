@@ -1,4 +1,6 @@
-using System;using System.Collections.Generic;using System.Globalization;using System.IO;using System.Linq;using System.Threading;using System.Threading.Tasks;
+using System;using System.Collections.Generic;using System.ComponentModel;using System.Globalization;using System.IO;using System.Linq;using System.Reflection;using System.Threading;using System.Threading.Tasks;
+using Beep.OilandGas.Models.Core.Refusals;
+using TheTechIdeaWeb.Diagnostics;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;using Beep.OilandGas.PPDM39.Core;
@@ -12,75 +14,102 @@ namespace Beep.OilandGas.ApiService.Services
     {
         private readonly IDMEEditor _editor;private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;private readonly IPPDMMetadataRepository _metadata;
-        private readonly string _connectionName;private readonly ILogger<DataImportService> _logger;
+        private readonly string _connectionName;private readonly ILogger<DataImportService>? _logger;
+        private readonly IFailureReporter _failures;
 
         public DataImportService(IDMEEditor editor,ICommonColumnHandler commonColumnHandler,
-            IPPDM39DefaultsRepository defaults,IPPDMMetadataRepository metadata,
+            IPPDM39DefaultsRepository defaults,IPPDMMetadataRepository metadata,IFailureReporter failures,
             string connectionName="PPDM39",ILogger<DataImportService>? logger=null)
-        {_editor=editor;_commonColumnHandler=commonColumnHandler;_defaults=defaults;_metadata=metadata;_connectionName=connectionName;_logger=logger;}
+        {_editor=editor;_commonColumnHandler=commonColumnHandler;_defaults=defaults;_metadata=metadata;_failures=failures??throw new ArgumentNullException(nameof(failures));_connectionName=connectionName;_logger=logger;}
 
+        /// <summary>
+        /// Imports a CSV file's rows into a PPDM table. A file with no data rows, or naming a table PPDM does not have, is
+        /// refused; a row with a value its column cannot hold, a row a quality rule rejects, and a row the store refuses are
+        /// not imported, and the result says how many (OILGAS-CATCH-01: the import answered a failure's own text, left an
+        /// unconvertible value unset and inserted the row anyway, and reported nothing).
+        /// </summary>
         public async Task<DataImportResult> ImportCsvAsync(string csvFilePath,string tableName,string userId,
             DataImportOptions? options=null,IProgress<int>? progress=null,CancellationToken token=default)
         {
-            if(string.IsNullOrWhiteSpace(csvFilePath))throw new ArgumentException("CSV path required");
+            ArgumentException.ThrowIfNullOrWhiteSpace(csvFilePath);
             ArgumentException.ThrowIfNullOrWhiteSpace(userId);
-            if(string.IsNullOrWhiteSpace(tableName))throw new ArgumentException("Table name required");
-            if(!File.Exists(csvFilePath))throw new FileNotFoundException($"CSV not found: {csvFilePath}");
+            ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
+            if(!File.Exists(csvFilePath))throw new FileNotFoundException("The CSV file to import was not found.",csvFilePath);
 
             var result=new DataImportResult();
-            try
+            _logger?.LogInformation("Importing {File} → {Table}",csvFilePath,tableName);
+
+            // 1. Read CSV lines
+            var lines=await File.ReadAllLinesAsync(csvFilePath,token);
+
+            // 2. Parse header
+            if(lines.Length<2)throw RefusalException.Invalid("The CSV file has no data rows.");
+            var headers=ParseCsvLine(lines[0]);
+            var rows=new List<string[]>();
+            for(int i=1;i<lines.Length;i++)
+            {if(string.IsNullOrWhiteSpace(lines[i]))continue;rows.Add(ParseCsvLine(lines[i]));}
+            result.RecordsRead=rows.Count;
+            if(rows.Count==0)throw RefusalException.Invalid("The CSV file has no data rows.");
+
+            // 3. Get PPDM table metadata and entity type
+            var metadata=await _metadata.GetTableMetadataAsync(tableName);
+            if(metadata==null)throw RefusalException.NotFound($"Table '{tableName}' is not a PPDM table.");
+            var entityType=Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ??Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}");
+            if(entityType==null)
+                throw new InvalidOperationException($"PPDM table '{tableName}' maps to entity type '{metadata.EntityTypeName}', which this application does not have.");
+
+            // 4. Create repository and insert records
+            var repo=new PPDMGenericRepository(_editor,_commonColumnHandler,_defaults,_metadata,entityType,_connectionName,tableName);
+            int inserted=0,failed=0;
+            var qualityRules=options?.QualityRules??new List<IDataQualityRule>();
+
+            for(int i=0;i<rows.Count;i++)
             {
-                _logger.LogInformation("Importing {File} → {Table}",csvFilePath,tableName);
-
-                // 1. Read CSV lines
-                var lines=await File.ReadAllLinesAsync(csvFilePath,token);
-                if(lines.Length<2){result.ErrorMessage="CSV has no data rows";return result;}
-
-                // 2. Parse header
-                var headers=ParseCsvLine(lines[0]);
-                var rows=new List<string[]>();
-                for(int i=1;i<lines.Length;i++)
-                {if(string.IsNullOrWhiteSpace(lines[i]))continue;rows.Add(ParseCsvLine(lines[i]));}
-                result.RecordsRead=rows.Count;
-                if(rows.Count==0){result.ErrorMessage="No data rows found";return result;}
-
-                // 3. Get PPDM table metadata and entity type
-                var metadata=await _metadata.GetTableMetadataAsync(tableName);
-                if(metadata==null){result.ErrorMessage=$"Table '{tableName}' not found in PPDM metadata";return result;}
-                var entityType=Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ??Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}");
-                if(entityType==null){result.ErrorMessage=$"Entity type for '{tableName}' not found";return result;}
-
-                // 4. Create repository and insert records
-                var repo=new PPDMGenericRepository(_editor,_commonColumnHandler,_defaults,_metadata,entityType,_connectionName,tableName);
-                int inserted=0,failed=0;
-                var qualityRules=options?.QualityRules??new List<IDataQualityRule>();
-
-                for(int i=0;i<rows.Count;i++)
+                token.ThrowIfCancellationRequested();
+                if(progress!=null && i%100==0)progress.Report(i*100/rows.Count);
+                var entity=Activator.CreateInstance(entityType)
+                    ??throw new InvalidOperationException($"Entity type '{entityType.Name}' could not be created.");
+                if(!TryFill(entity,entityType,headers,rows[i])){failed++;continue;}
+                // Set PPDM standard columns
+                var activeInd=entityType.GetProperty("ACTIVE_IND");if(activeInd!=null)activeInd.SetValue(entity,"Y");
+                var ppdmGuid=entityType.GetProperty("PPDM_GUID");if(ppdmGuid!=null)ppdmGuid.SetValue(entity,Guid.NewGuid().ToString());
+                // Run quality rules
+                if(qualityRules.Any(rule=>!rule.Evaluate(entity))){failed++;continue;}
+                try{await repo.InsertAsync(entity,userId);inserted++;}
+                // Whatever the store refuses a row with — a key already there, a constraint, a value too long — that row is
+                // not imported and the import goes on with the next; the caller is told how many were not. Cancellation is
+                // the request ending, not a row failing.
+                catch(Exception rowFailure) when (rowFailure is not OperationCanceledException)
                 {
-                    token.ThrowIfCancellationRequested();
-                    if(progress!=null && i%100==0)progress.Report(i*100/rows.Count);
-                    try
-                    {
-                        var entity=Activator.CreateInstance(entityType);
-                        for(int c=0;c<Math.Min(headers.Length,rows[i].Length);c++)
-                        {var prop=entityType.GetProperty(headers[c],System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.IgnoreCase);if(prop!=null&&prop.CanWrite){try{prop.SetValue(entity,Convert.ChangeType(rows[i][c],Nullable.GetUnderlyingType(prop.PropertyType)??prop.PropertyType));}catch{}}}
-                        // Set PPDM standard columns
-                        var activeInd=entityType.GetProperty("ACTIVE_IND");if(activeInd!=null)activeInd.SetValue(entity,"Y");
-                        var ppdmGuid=entityType.GetProperty("PPDM_GUID");if(ppdmGuid!=null)ppdmGuid.SetValue(entity,Guid.NewGuid().ToString());
-                        // Run quality rules
-                        bool passed=true;
-                        foreach(var rule in qualityRules){if(!rule.Evaluate(entity)){failed++;passed=false;break;}}
-                        if(passed){await repo.InsertAsync(entity,userId);inserted++;}
-                    }
-                    catch(Exception ex){_logger.LogWarning(ex,"Row {Row} failed",i+2);failed++;}
+                    failed++;
+                    _failures.ReportHandled(rowFailure,$"importing CSV row {i+2} into {tableName}",
+                        "the row is not imported; the import goes on and its result counts the row as not imported",FailureSeverity.Degraded);
                 }
-                if(progress!=null)progress.Report(100);
-                result.RecordsInserted=inserted;result.RecordsFailed=failed;result.Success=inserted>0;
             }
-            catch(OperationCanceledException){throw;}
-            catch(Exception ex){_logger.LogError(ex,"Import failed");result.ErrorMessage=ex.Message;}
+            if(progress!=null)progress.Report(100);
+            result.RecordsInserted=inserted;result.RecordsFailed=failed;result.Success=failed==0;
             return result;
+        }
+
+        // A cell is set only when its property's type can hold it — asked of the type's converter, in the invariant culture a
+        // CSV is written in — and an empty cell leaves a non-text property unset. A row with a cell that cannot be held is
+        // not imported at all: setting the rest and inserting it would store a row that is not what the file said.
+        private static bool TryFill(object entity,Type entityType,string[] headers,string[] row)
+        {
+            for(int c=0;c<Math.Min(headers.Length,row.Length);c++)
+            {
+                var prop=entityType.GetProperty(headers[c],BindingFlags.Public|BindingFlags.Instance|BindingFlags.IgnoreCase);
+                if(prop==null||!prop.CanWrite)continue;
+                var cell=row[c];
+                var target=Nullable.GetUnderlyingType(prop.PropertyType)??prop.PropertyType;
+                if(target==typeof(string)){prop.SetValue(entity,cell);continue;}
+                if(cell.Length==0)continue;
+                var converter=TypeDescriptor.GetConverter(target);
+                if(!converter.IsValid(cell))return false;
+                prop.SetValue(entity,converter.ConvertFromInvariantString(cell));
+            }
+            return true;
         }
 
         private static string[] ParseCsvLine(string line)
@@ -93,7 +122,7 @@ namespace Beep.OilandGas.ApiService.Services
     }
 
     public class DataImportOptions{public List<IDataQualityRule> QualityRules{get;set;}=new();public int? BatchSize{get;set;}}
-    public class DataImportResult{public bool Success{get;set;}public string? ContextKey{get;set;}public string? ErrorMessage{get;set;}public int RecordsRead{get;set;}public int RecordsInserted{get;set;}public int RecordsFailed{get;set;}public int RecordsSkipped{get;set;}public TimeSpan Duration{get;set;}public string? ErrorStorePath{get;set;}}
+    public class DataImportResult{public bool Success{get;set;}public string? ContextKey{get;set;}public int RecordsRead{get;set;}public int RecordsInserted{get;set;}public int RecordsFailed{get;set;}public int RecordsSkipped{get;set;}public TimeSpan Duration{get;set;}public string? ErrorStorePath{get;set;}}
     public interface IDataQualityRule{bool Evaluate(object entity);}
 
     public class NotNullRule:IDataQualityRule{public string FieldName{get;set;}="";public bool Evaluate(object e){var p=e.GetType().GetProperty(FieldName);return p!=null&&p.GetValue(e)!=null;}}

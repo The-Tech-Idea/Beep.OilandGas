@@ -1,15 +1,17 @@
+using Beep.OilandGas.ApiService.Data;
 using Beep.OilandGas.ApiService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TheTechIdea.Data.OilGas;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Controllers.Identity;
 
 [ApiController]
 [Route("api/identity/users")]
 [Authorize]
-public sealed class UserManagementController(RepositoryUserService users) : ControllerBase
+public sealed class UserManagementController(RepositoryUserService users, IFailureReporter failures) : ControllerBase
 {
     private bool IsLocalUser => !string.IsNullOrWhiteSpace(User.FindActingUserId());
     private bool IsAdministrator => User.IsInRole("Administrator");
@@ -38,9 +40,11 @@ public sealed class UserManagementController(RepositoryUserService users) : Cont
             var user = await users.UpdateAsync(targetUserId, request);
             return user is null ? NotFound() : Ok(user);
         }
-        catch (ArgumentException exception) { return BadRequest(new { error = exception.Message }); }
-        catch (DbUpdateConcurrencyException) { return Conflict(new { error = "The user changed. Reload before saving." }); }
-        catch (InvalidOperationException exception) { return Conflict(new { error = exception.Message }); }
+        catch (DbUpdateConcurrencyException changed)
+        {
+            failures.ReportHandled(changed, "saving a user", "the user is not saved; the person is told to reload", FailureSeverity.Degraded);
+            return Conflict(new { error = "The user changed. Reload before saving." });
+        }
     }
 
     [HttpGet("{targetUserId}/roles")]
@@ -60,9 +64,8 @@ public sealed class UserManagementController(RepositoryUserService users) : Cont
         {
             return await users.AddToRoleAsync(targetUserId, request.RoleName) ? NoContent() : NotFound();
         }
-        catch (ArgumentException exception) { return BadRequest(new { error = exception.Message }); }
-        catch (DbUpdateException) { return Conflict(new { error = "The assignment changed. Reload before retrying." }); }
-        catch (InvalidOperationException exception) { return Conflict(new { error = exception.Message }); }
+        catch (DbUpdateConcurrencyException changed) { return AssignmentChanged(changed, "adding a user to a role"); }
+        catch (DbUpdateException duplicate) when (UniqueKeyViolation.Is(duplicate)) { return AssignmentChanged(duplicate, "adding a user to a role"); }
     }
 
     [HttpDelete("{targetUserId}/roles/{roleName}")]
@@ -74,7 +77,16 @@ public sealed class UserManagementController(RepositoryUserService users) : Cont
         {
             return await users.RemoveFromRoleAsync(targetUserId, roleName) ? NoContent() : NotFound();
         }
-        catch (DbUpdateException) { return Conflict(new { error = "The assignment changed. Reload before retrying." }); }
-        catch (InvalidOperationException exception) { return Conflict(new { error = exception.Message }); }
+        catch (DbUpdateConcurrencyException changed) { return AssignmentChanged(changed, "removing a user from a role"); }
+        catch (DbUpdateException duplicate) when (UniqueKeyViolation.Is(duplicate)) { return AssignmentChanged(duplicate, "removing a user from a role"); }
+    }
+
+    // An assignment somebody else changed first — a stale version, or the same row written twice — is the administrator's
+    // to reload. Any other refused save is a failure and goes on to the API's handler (OILGAS-CATCH-01: every refused save
+    // was answered "the assignment changed", unreported).
+    private ConflictObjectResult AssignmentChanged(DbUpdateException refused, string operation)
+    {
+        failures.ReportHandled(refused, operation, "nothing is changed; the administrator is told to reload", FailureSeverity.Degraded);
+        return Conflict(new { error = "The assignment changed. Reload before retrying." });
     }
 }

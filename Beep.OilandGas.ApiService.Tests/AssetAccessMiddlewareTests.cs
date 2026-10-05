@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Middleware;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -42,7 +43,8 @@ public sealed class AssetAccessMiddlewareTests
     {
         var (context, _) = Request("/api/production/fields");
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        // OILGAS-CATCH-01: the unbound module is the resolver's refusal (409), passed through untouched.
+        await Refusals.RefusedAsync(RefusalKind.Conflict, () =>
             new AssetAccessMiddleware(_ => Task.CompletedTask).InvokeAsync(context));
     }
 
@@ -51,7 +53,7 @@ public sealed class AssetAccessMiddlewareTests
         var access = new Mock<IAccessControlService>();
         access.Setup(service => service.GetUserAccessibleAssetsAsync(
                 It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<bool>()))
-            .ThrowsAsync(new InvalidOperationException("Configure a database binding for module PPDM_CORE before accessing its data."));
+            .ThrowsAsync(RefusalException.Conflict("Configure a database binding for module PPDM_CORE before accessing its data."));
 
         var context = new DefaultHttpContext
         {

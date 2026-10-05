@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Identity;
@@ -32,7 +33,7 @@ public sealed class RepositoryUserProfileService(RepositoryDbContext repository,
 
     public Task<List<string>> GetUserRolesAsync(string userId, string? organizationId = null)
     {
-        if (!string.IsNullOrWhiteSpace(organizationId)) throw new NotSupportedException("Application roles are not organization-scoped.");
+        if (!string.IsNullOrWhiteSpace(organizationId)) throw RefusalException.Invalid("Application roles are not organization-scoped.");
         return authorization.GetRolesAsync(userId);
     }
 
@@ -44,33 +45,47 @@ public sealed class RepositoryUserProfileService(RepositoryDbContext repository,
 
     public Task<bool> UpdateUserPreferencesAsync(string userId, string preferencesJson)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(preferencesJson);
-        if (preferencesJson.Length > 4000) throw new ArgumentException("Preferences cannot exceed 4000 characters.");
-        using var parsed = JsonDocument.Parse(preferencesJson);
+        if (string.IsNullOrWhiteSpace(preferencesJson)) throw RefusalException.Invalid("Preferences are required.");
+        if (preferencesJson.Length > 4000) throw RefusalException.Invalid("Preferences cannot exceed 4000 characters.");
+        EnsureJson(preferencesJson);
         return UpdateAsync(userId, metadata => metadata.PreferencesJson = preferencesJson);
     }
 
     public async Task<bool> UpdateUserPrimaryRoleAsync(string userId, string primaryRole)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(primaryRole);
+        if (string.IsNullOrWhiteSpace(primaryRole)) throw RefusalException.Invalid("A primary role is required.");
         var normalized = normalizer.NormalizeName(primaryRole);
         var role = await repository.Roles.SingleOrDefaultAsync(x => x.NormalizedName == normalized);
         if (role is null || !await repository.UserRoles.AnyAsync(x => x.UserId == userId && x.RoleId == role.Id))
-            throw new ArgumentException("The primary role must already be assigned to the user.");
+            throw RefusalException.Invalid("The primary role must already be assigned to the user.");
         return await UpdateAsync(userId, metadata => metadata.PrimaryRoleId = role.Id);
     }
 
     public Task<bool> UpdateUserPreferredLayoutAsync(string userId, string preferredLayout)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(preferredLayout);
-        if (preferredLayout.Length > 128) throw new ArgumentException("Layout cannot exceed 128 characters.");
+        if (string.IsNullOrWhiteSpace(preferredLayout)) throw RefusalException.Invalid("A layout is required.");
+        if (preferredLayout.Length > 128) throw RefusalException.Invalid("Layout cannot exceed 128 characters.");
         return UpdateAsync(userId, metadata => metadata.PreferredLayout = preferredLayout);
     }
 
     public async Task RecordUserLoginAsync(string userId)
     {
         if (!await UpdateAsync(userId, metadata => metadata.LastLoginUtc = DateTime.UtcNow))
-            throw new InvalidOperationException("An active repository user is required.");
+            throw RefusalException.Forbidden("Only an active user of this application has a sign-in recorded.");
+    }
+
+    // System.Text.Json has no question for "is this JSON": parsing is the check. What the person sent is refused in this
+    // service's words; the reader's own text stays with the inner exception.
+    private static void EnsureJson(string preferencesJson)
+    {
+        try
+        {
+            using var parsed = JsonDocument.Parse(preferencesJson);
+        }
+        catch (JsonException notJson)
+        {
+            throw new RefusalException(RefusalKind.Invalid, "Preferences must be valid JSON.", notJson);
+        }
     }
 
     private async Task<bool> UpdateAsync(string userId, Action<AppUserExtension> update)

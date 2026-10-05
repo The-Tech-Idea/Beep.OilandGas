@@ -101,27 +101,30 @@ namespace Beep.OilandGas.PPDM39.Core
         /// Phase 2A of BeepDM framework integration.
         /// </summary>
         /// <param name="rule">Expression rule string, e.g. ":NOW" or ":IF(:USERNAME, :USERNAME, 'SYSTEM')"</param>
-        /// <param name="fallback">Hardcoded fallback if the resolver is unavailable or fails.</param>
+        /// <param name="fallback">The constant used when no resolver is configured, no rule is given, or the rule resolves to nothing.</param>
         /// <returns>The resolved value, or the fallback.</returns>
+        /// <remarks>
+        /// A rule the resolver fails on is a broken rule, not a missing one: its exception reaches the caller rather than
+        /// being answered with the constant (OILGAS-CATCH-01), so a misconfigured rule is seen instead of silently ignored.
+        /// </remarks>
         public string ResolveDefaultWithRules(string rule, string fallback)
         {
             if (_defaultsManager != null && !string.IsNullOrWhiteSpace(rule))
             {
-                try
-                {
-                    var value = TheTechIdea.Beep.Editor.Defaults.DefaultsManager.Resolve(_editor, rule);
-                    if (value is string s && !string.IsNullOrEmpty(s))
-                        return s;
-                    if (value != null)
-                        return value.ToString()!;
-                }
-                catch
-                {
-                    // Resolver failure is non-fatal — fall through to hardcoded constant
-                }
+                var value = TheTechIdea.Beep.Editor.Defaults.DefaultsManager.Resolve(_editor, rule);
+                if (value is string s && !string.IsNullOrEmpty(s))
+                    return s;
+                if (value != null)
+                    return value.ToString()!;
             }
             return fallback;
         }
+
+        // OILGAS-CATCH-01: the three overridable values below read the database override once. A failed read used to be
+        // answered with the shipped constant and cached for the life of the repository, so a transient outage pinned the
+        // constant and an override in the database was ignored with nothing said. A failure now reaches the caller — whose
+        // next step is a query against the same database — and nothing is cached, so the next call reads again. A row that
+        // is absent still means the shipped constant: that is the documented default, not a fallback for a failure.
 
         public string GetActiveIndicatorYes()
         {
@@ -132,18 +135,11 @@ namespace Beep.OilandGas.PPDM39.Core
             // Try database lookup once
             if (_defaultValueRepository != null && !string.IsNullOrEmpty(_connectionName))
             {
-                try
+                var dbValue = GetDefaultValueAsync("ACTIVE_IND_YES", _connectionName).GetAwaiter().GetResult();
+                if (!string.IsNullOrEmpty(dbValue))
                 {
-                    var dbValue = GetDefaultValueAsync("ACTIVE_IND_YES", _connectionName).GetAwaiter().GetResult();
-                    if (!string.IsNullOrEmpty(dbValue))
-                    {
-                        _cachedActiveIndYes = dbValue;
-                        return dbValue;
-                    }
-                }
-                catch
-                {
-                    // Fall through to hardcoded value
+                    _cachedActiveIndYes = dbValue;
+                    return dbValue;
                 }
             }
             _cachedActiveIndYes = ACTIVE_IND_YES;
@@ -157,18 +153,11 @@ namespace Beep.OilandGas.PPDM39.Core
 
             if (_defaultValueRepository != null && !string.IsNullOrEmpty(_connectionName))
             {
-                try
+                var dbValue = GetDefaultValueAsync("ACTIVE_IND_NO", _connectionName).GetAwaiter().GetResult();
+                if (!string.IsNullOrEmpty(dbValue))
                 {
-                    var dbValue = GetDefaultValueAsync("ACTIVE_IND_NO", _connectionName).GetAwaiter().GetResult();
-                    if (!string.IsNullOrEmpty(dbValue))
-                    {
-                        _cachedActiveIndNo = dbValue;
-                        return dbValue;
-                    }
-                }
-                catch
-                {
-                    // Fall through to hardcoded value
+                    _cachedActiveIndNo = dbValue;
+                    return dbValue;
                 }
             }
             _cachedActiveIndNo = ACTIVE_IND_NO;
@@ -182,18 +171,11 @@ namespace Beep.OilandGas.PPDM39.Core
 
             if (_defaultValueRepository != null && !string.IsNullOrEmpty(_connectionName))
             {
-                try
+                var dbValue = GetDefaultValueAsync("DEFAULT_ROW_QUALITY", _connectionName).GetAwaiter().GetResult();
+                if (!string.IsNullOrEmpty(dbValue))
                 {
-                    var dbValue = GetDefaultValueAsync("DEFAULT_ROW_QUALITY", _connectionName).GetAwaiter().GetResult();
-                    if (!string.IsNullOrEmpty(dbValue))
-                    {
-                        _cachedDefaultRowQuality = dbValue;
-                        return dbValue;
-                    }
-                }
-                catch
-                {
-                    // Fall through to hardcoded value
+                    _cachedDefaultRowQuality = dbValue;
+                    return dbValue;
                 }
             }
             _cachedDefaultRowQuality = DEFAULT_ROW_QUALITY;
@@ -299,45 +281,38 @@ namespace Beep.OilandGas.PPDM39.Core
         #region Database-Backed Default Values
 
         /// <summary>
-        /// Gets a default value from database (user-specific if userId provided, otherwise system default)
-        /// Falls back to hardcoded constant if not found in database
+        /// Gets a default value from database (user-specific if userId provided, otherwise system default).
+        /// Answers null when no row holds the key (the caller then uses its shipped constant); a failed read is not "no row"
+        /// and reaches the caller.
         /// </summary>
         public async Task<string?> GetDefaultValueAsync(string key, string databaseId, string? userId = null)
         {
             if (_defaultValueRepository == null)
-                return null; // Database not available, will use hardcoded fallback
+                return null; // No database-backed defaults are configured; the caller uses its shipped constant
 
-            try
+            var filters = new List<AppFilter>
             {
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "DEFAULT_KEY", Operator = "=", FilterValue = key },
-                    new AppFilter { FieldName = "DATABASE_ID", Operator = "=", FilterValue = databaseId },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = GetActiveIndicatorYes() }
-                };
+                new AppFilter { FieldName = "DEFAULT_KEY", Operator = "=", FilterValue = key },
+                new AppFilter { FieldName = "DATABASE_ID", Operator = "=", FilterValue = databaseId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = GetActiveIndicatorYes() }
+            };
 
-                // Try user-specific first if userId provided
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    filters.Add(new AppFilter { FieldName = "USER_ID", Operator = "=", FilterValue = userId });
-                    var userResults = await _defaultValueRepository.GetAsync(filters);
-                    var userDefault = userResults.Cast<PPDM_DEFAULT_VALUE>().FirstOrDefault();
-                    if (userDefault != null)
-                        return userDefault.DEFAULT_VALUE;
-                }
-
-                // Try system default (USER_ID IS NULL)
-                filters.RemoveAll(f => f.FieldName == "USER_ID");
-                filters.Add(new AppFilter { FieldName = "USER_ID", Operator = "IS", FilterValue = "NULL" });
-                var systemResults = await _defaultValueRepository.GetAsync(filters);
-                var systemDefault = systemResults.Cast<PPDM_DEFAULT_VALUE>().FirstOrDefault();
-                return systemDefault?.DEFAULT_VALUE;
-            }
-            catch
+            // Try user-specific first if userId provided
+            if (!string.IsNullOrEmpty(userId))
             {
-                // If database query fails, return null to use hardcoded fallback
-                return null;
+                filters.Add(new AppFilter { FieldName = "USER_ID", Operator = "=", FilterValue = userId });
+                var userResults = await _defaultValueRepository.GetAsync(filters);
+                var userDefault = userResults.Cast<PPDM_DEFAULT_VALUE>().FirstOrDefault();
+                if (userDefault != null)
+                    return userDefault.DEFAULT_VALUE;
             }
+
+            // Try system default (USER_ID IS NULL)
+            filters.RemoveAll(f => f.FieldName == "USER_ID");
+            filters.Add(new AppFilter { FieldName = "USER_ID", Operator = "IS", FilterValue = "NULL" });
+            var systemResults = await _defaultValueRepository.GetAsync(filters);
+            var systemDefault = systemResults.Cast<PPDM_DEFAULT_VALUE>().FirstOrDefault();
+            return systemDefault?.DEFAULT_VALUE;
         }
 
         /// <summary>
@@ -411,39 +386,33 @@ namespace Beep.OilandGas.PPDM39.Core
         }
 
         /// <summary>
-        /// Gets all default values for a category
+        /// Gets all default values for a category. Empty when no database-backed defaults are configured or none is stored
+        /// for the category; a failed read reaches the caller rather than reading as "none stored".
         /// </summary>
         public async Task<Dictionary<string, string>> GetDefaultsByCategoryAsync(string category, string databaseId, string? userId = null)
         {
             if (_defaultValueRepository == null)
-                return new Dictionary<string, string>();
+                return new Dictionary<string, string>(); // No database-backed defaults are configured, so none is stored
 
-            try
+            var filters = new List<AppFilter>
             {
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "DEFAULT_CATEGORY", Operator = "=", FilterValue = category },
-                    new AppFilter { FieldName = "DATABASE_ID", Operator = "=", FilterValue = databaseId },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = GetActiveIndicatorYes() }
-                };
+                new AppFilter { FieldName = "DEFAULT_CATEGORY", Operator = "=", FilterValue = category },
+                new AppFilter { FieldName = "DATABASE_ID", Operator = "=", FilterValue = databaseId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = GetActiveIndicatorYes() }
+            };
 
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    filters.Add(new AppFilter { FieldName = "USER_ID", Operator = "=", FilterValue = userId });
-                }
-                else
-                {
-                    filters.Add(new AppFilter { FieldName = "USER_ID", Operator = "IS", FilterValue = "NULL" });
-                }
-
-                var results = await _defaultValueRepository.GetAsync(filters);
-                return results.Cast<PPDM_DEFAULT_VALUE>()
-                    .ToDictionary(dv => dv.DEFAULT_KEY, dv => dv.DEFAULT_VALUE ?? string.Empty);
-            }
-            catch
+            if (!string.IsNullOrEmpty(userId))
             {
-                return new Dictionary<string, string>();
+                filters.Add(new AppFilter { FieldName = "USER_ID", Operator = "=", FilterValue = userId });
             }
+            else
+            {
+                filters.Add(new AppFilter { FieldName = "USER_ID", Operator = "IS", FilterValue = "NULL" });
+            }
+
+            var results = await _defaultValueRepository.GetAsync(filters);
+            return results.Cast<PPDM_DEFAULT_VALUE>()
+                .ToDictionary(dv => dv.DEFAULT_KEY, dv => dv.DEFAULT_VALUE ?? string.Empty);
         }
 
         /// <summary>

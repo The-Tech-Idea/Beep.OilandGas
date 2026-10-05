@@ -58,7 +58,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(arrangementName))
                 throw new ArgumentNullException(nameof(arrangementName));
             if (amount <= 0m)
-                throw new InvalidOperationException("Cost share amount must be positive");
+                throw RefusalException.Invalid("Cost share amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 

@@ -57,7 +57,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(taxType))
                 throw new ArgumentNullException(nameof(taxType));
             if (taxAmount <= 0m)
-                throw new InvalidOperationException("Tax amount must be positive");
+                throw RefusalException.Invalid("Tax amount must be positive.");
             if (string.IsNullOrWhiteSpace(jurisdiction))
                 throw new ArgumentNullException(nameof(jurisdiction));
             if (string.IsNullOrWhiteSpace(userId))

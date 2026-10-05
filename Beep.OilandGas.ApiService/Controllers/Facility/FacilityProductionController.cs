@@ -34,23 +34,10 @@ public class FacilityProductionController : ControllerBase
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
 
-        try
-        {
-            var pdenId = await _facilities
-                .EnsureFacilityPdenAsync(facilityId, facilityType, userId, cancellationToken)
-                .ConfigureAwait(false);
-            return Ok(new { pdenId });
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Ensure PDEN for {FacilityId} failed", facilityId);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Ensure PDEN for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var pdenId = await _facilities
+            .EnsureFacilityPdenAsync(facilityId, facilityType, userId, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(new { pdenId });
     }
 
     [HttpGet("volumes")]
@@ -66,18 +53,10 @@ public class FacilityProductionController : ControllerBase
         if (startDate > endDate)
             return BadRequest(new { error = "startDate must be on or before endDate." });
 
-        try
-        {
-            var rows = await _facilities
-                .ListFacilityProductionVolumesAsync(facilityId, facilityType, startDate, endDate, cancellationToken)
-                .ConfigureAwait(false);
-            return Ok(rows);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "List volumes for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var rows = await _facilities
+            .ListFacilityProductionVolumesAsync(facilityId, facilityType, startDate, endDate, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(rows);
     }
 
     [HttpPost("volumes")]
@@ -93,36 +72,18 @@ public class FacilityProductionController : ControllerBase
         if (volume == null)
             return BadRequest(new { error = "Request body is required." });
 
-        try
+        if (string.IsNullOrWhiteSpace(volume.PDEN_ID))
         {
-            if (string.IsNullOrWhiteSpace(volume.PDEN_ID))
-            {
-                var pdenId = await _facilities
-                    .EnsureFacilityPdenAsync(facilityId, facilityType, userId, cancellationToken)
-                    .ConfigureAwait(false);
-                volume.PDEN_ID = pdenId;
-            }
-
-            var row = await _facilities
-                .RecordFacilityProductionVolumeAsync(volume, userId, cancellationToken)
+            var pdenId = await _facilities
+                .EnsureFacilityPdenAsync(facilityId, facilityType, userId, cancellationToken)
                 .ConfigureAwait(false);
-            return Ok(row);
+            volume.PDEN_ID = pdenId;
         }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Record volume for {FacilityId} failed", facilityId);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Record volume for {FacilityId} failed", facilityId);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Record volume for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+
+        var row = await _facilities
+            .RecordFacilityProductionVolumeAsync(volume, userId, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(row);
     }
 
     [HttpGet("reliability")]
@@ -138,22 +99,14 @@ public class FacilityProductionController : ControllerBase
         if (startDate > endDate)
             return BadRequest(new { error = "startDate must be on or before endDate." });
 
-        try
+        var metrics = await _facilities
+            .GetFacilityReliabilityMetricsAsync(facilityId, facilityType, startDate, endDate, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(new
         {
-            var metrics = await _facilities
-                .GetFacilityReliabilityMetricsAsync(facilityId, facilityType, startDate, endDate, cancellationToken)
-                .ConfigureAwait(false);
-            return Ok(new
-            {
-                metrics.MaintenanceEvents,
-                metrics.WorkOrders,
-                metrics.EstimatedAvailabilityPercent
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Reliability for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+            metrics.MaintenanceEvents,
+            metrics.WorkOrders,
+            metrics.EstimatedAvailabilityPercent
+        });
     }
 }

@@ -19,6 +19,7 @@ using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.FlashCalculations;
 using Beep.OilandGas.PPDM.Models;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.FlashCalculations.Services
 {
@@ -70,7 +71,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         public List<FlashResult> PerformMultiStageFlash(FLASH_CONDITIONS conditions, int stages)
         {
             if (stages < 1)
-                throw new ArgumentOutOfRangeException(nameof(stages), stages, "At least one stage is required.");
+                throw RefusalException.Invalid("At least one stage is required.");
 
             FlashValidator.ValidateFlashConditions(conditions);
 
@@ -185,7 +186,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         public async Task<PVTEnvelopeAnalysis> AnalyzePVTEnvelopeAsync(List<FLASH_COMPONENT> composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature, CancellationToken cancellationToken = default)
         {
             if (composition == null || composition.Count == 0)
-                throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
+                throw RefusalException.Invalid("At least one component is required in the composition.");
 
             _logger?.LogInformation("Analyzing PVT envelope for composition with {ComponentCount} components", composition.Count);
 
@@ -245,7 +246,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         public async Task<BubblePointAnalysis> CalculateBubblePointAsync(List<FLASH_COMPONENT> composition, decimal pressure, CancellationToken cancellationToken = default)
         {
             if (composition == null || composition.Count == 0)
-                throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
+                throw RefusalException.Invalid("At least one component is required in the composition.");
 
             _logger?.LogInformation("Calculating bubble point at pressure {Pressure} psia", pressure);
 
@@ -309,7 +310,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         public async Task<DewPointAnalysis> CalculateDewPointAsync(List<FLASH_COMPONENT> composition, decimal pressure, CancellationToken cancellationToken = default)
         {
             if (composition == null || composition.Count == 0)
-                throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
+                throw RefusalException.Invalid("At least one component is required in the composition.");
 
             _logger?.LogInformation("Calculating dew point at pressure {Pressure} psia", pressure);
 
@@ -373,7 +374,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         public async Task<SeparatorSimulation> SimulateSeparatorAsync(List<FLASH_COMPONENT> composition, decimal inletPressure, decimal inletTemperature, int stages, CancellationToken cancellationToken = default)
         {
             if (composition == null || composition.Count == 0)
-                throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
+                throw RefusalException.Invalid("At least one component is required in the composition.");
 
             _logger?.LogInformation("Simulating separator with {Stages} stages at inlet P={Pressure}, T={Temperature}", stages, inletPressure, inletTemperature);
 
@@ -434,7 +435,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         public async Task<PhaseDiagram> GeneratePhaseDiagramAsync(List<FLASH_COMPONENT> composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature, CancellationToken cancellationToken = default)
         {
             if (composition == null || composition.Count == 0)
-                throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
+                throw RefusalException.Invalid("At least one component is required in the composition.");
 
             _logger?.LogInformation("Generating phase diagram for composition");
 
@@ -497,7 +498,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         public async Task<StabilityAnalysis> AnalyzeStabilityAsync(List<FLASH_COMPONENT> composition, decimal pressure, decimal temperature, CancellationToken cancellationToken = default)
         {
             if (composition == null || composition.Count == 0)
-                throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
+                throw RefusalException.Invalid("At least one component is required in the composition.");
 
             _logger?.LogInformation("Performing stability analysis at P={Pressure}, T={Temperature}", pressure, temperature);
 
@@ -544,7 +545,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         public async Task<EquilibriumConstantAnalysis> AnalyzeEquilibriumConstantsAsync(List<FLASH_COMPONENT> composition, decimal pressure, decimal temperature, CancellationToken cancellationToken = default)
         {
             if (composition == null || composition.Count == 0)
-                throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
+                throw RefusalException.Invalid("At least one component is required in the composition.");
 
             _logger?.LogInformation("Analyzing equilibrium constants at P={Pressure}, T={Temperature}", pressure, temperature);
 

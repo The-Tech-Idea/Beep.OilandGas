@@ -61,8 +61,10 @@ namespace Beep.OilandGas.Accounting.Services
 
             try
             {
-                if (!costCenters.Any())
-                    throw new InvalidOperationException("Must provide at least one cost center");
+                if (costCenters == null || !costCenters.Any())
+                    throw RefusalException.Invalid("At least one cost center is required.");
+                if (!Enum.IsDefined(method))
+                    throw RefusalException.Invalid($"{method} is not a cost allocation method.");
 
                 var result = new CostAllocationResult
                 {
@@ -73,27 +75,14 @@ namespace Beep.OilandGas.Accounting.Services
                     AllocationEntries = new List<AllocationEntry>()
                 };
 
-                switch (method)
+                var allocation = method switch
                 {
-                    case CostAllocationMethod.DirectAllocation:
-                        await PerformDirectAllocationAsync(costCenters, allocationBases, result);
-                        break;
-
-                    case CostAllocationMethod.StepDown:
-                        await PerformStepDownAllocationAsync(costCenters, allocationBases, result);
-                        break;
-
-                    case CostAllocationMethod.Reciprocal:
-                        await PerformReciprocalAllocationAsync(costCenters, allocationBases, result);
-                        break;
-
-                    case CostAllocationMethod.ActivityBasedCosting:
-                        await PerformActivityBasedAllocationAsync(costCenters, allocationBases, result);
-                        break;
-
-                    default:
-                        throw new InvalidOperationException($"Unknown allocation method: {method}");
-                }
+                    CostAllocationMethod.DirectAllocation => PerformDirectAllocationAsync(costCenters, allocationBases, result),
+                    CostAllocationMethod.StepDown => PerformStepDownAllocationAsync(costCenters, allocationBases, result),
+                    CostAllocationMethod.Reciprocal => PerformReciprocalAllocationAsync(costCenters, allocationBases, result),
+                    CostAllocationMethod.ActivityBasedCosting => PerformActivityBasedAllocationAsync(costCenters, allocationBases, result),
+                };
+                await allocation;
 
                 result.TotalAllocated = result.AllocationEntries.Sum(x => x.AllocationAmount);
                 result.AllocationCount = result.AllocationEntries.Count;
@@ -106,7 +95,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error performing cost allocation: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error performing cost allocation");
                 throw;
             }
         }
@@ -272,15 +261,15 @@ namespace Beep.OilandGas.Accounting.Services
             if (cost == null)
                 throw new ArgumentNullException(nameof(cost));
             if (allocations == null || allocations.Count == 0)
-                throw new InvalidOperationException("Allocations are required");
+                throw RefusalException.Invalid("At least one allocation is required.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
             if (cost.AMOUNT <= 0)
-                throw new InvalidOperationException("Cost amount must be positive");
+                throw RefusalException.Invalid("Cost amount must be positive.");
 
             var totalPercentage = allocations.Sum(a => a.ALLOCATION_PERCENTAGE ?? 0m);
             if (Math.Abs(totalPercentage - 100m) > 0.01m)
-                throw new InvalidOperationException($"Allocation percentages must sum to 100 (got {totalPercentage})");
+                throw RefusalException.Invalid($"Allocation percentages must sum to 100; they sum to {totalPercentage}.");
 
             var repo = await GetRepoAsync<COST_ALLOCATION>("COST_ALLOCATION", cn);
 
@@ -421,7 +410,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error generating departmental profitability: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error generating departmental profitability");
                 throw;
             }
         }
@@ -469,7 +458,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error exporting allocation result: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error exporting allocation result");
                 throw;
             }
         }

@@ -59,29 +59,24 @@ namespace Beep.OilandGas.Client.Connection
             if (dmeEditor == null)
                 return false;
 
-            try
-            {
-                var connection = GetConnection(connectionName);
-                if (connection == null)
-                    return false;
+            // False answers "not configured here" or "did not open". An attempt that fails reaches the caller as its
+            // exception, with the data source's reason (OILGAS-CATCH-01): it had been answered false, the reason dropped.
+            var connection = GetConnection(connectionName);
+            if (connection == null)
+                return false;
 
-                var dataSource = dmeEditor.GetDataSource(connectionName);
-                if (dataSource != null)
-                {
-                    var state = dataSource.Openconnection();
-                    var isOpen = state.ToString().Equals("Open", StringComparison.OrdinalIgnoreCase);
-                    if (isOpen)
-                    {
-                        dataSource.Closeconnection();
-                        return true;
-                    }
-                }
-                return false;
-            }
-            catch
+            var dataSource = dmeEditor.GetDataSource(connectionName);
+            if (dataSource != null)
             {
-                return false;
+                var state = dataSource.Openconnection();
+                var isOpen = state.ToString().Equals("Open", StringComparison.OrdinalIgnoreCase);
+                if (isOpen)
+                {
+                    dataSource.Closeconnection();
+                    return true;
+                }
             }
+            return false;
         }
     }
 }

@@ -5,6 +5,7 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]
 @inject UserAdministrationClient Users
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
 
 <PageTitle>Assign User Roles</PageTitle>
 
@@ -95,15 +96,15 @@
         _busy = true;
         try
         {
-            if (!await Users.CreateRoleAsync(_newRole.Trim(), _roleDescription))
-            {
-                Snackbar.Add("Role could not be created. Check the name and existing roles.", Severity.Error);
-                return;
-            }
+            await Users.CreateRoleAsync(_newRole.Trim(), _roleDescription);
             _availableRoles = (await Users.GetRolesAsync()).Select(role => role.RoleName).ToList();
             _newRole = "";
             _roleDescription = null;
             Snackbar.Add("Role created.", Severity.Success);
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "creating a role", "The role was not created"), Severity.Error);
         }
         catch { Snackbar.Add("Role creation could not be verified. Reload before retrying.", Severity.Error); }
         finally { _busy = false; }
@@ -168,9 +169,13 @@
         _busy = true;
         try
         {
-            if (!await Users.AssignRoleAsync(_selectedUserId, _selectedRole)) throw new InvalidOperationException();
+            await Users.AssignRoleAsync(_selectedUserId, _selectedRole);
             Snackbar.Add($"Role {_selectedRole} assigned to user {_selectedUserId}", Severity.Success);
             await LoadUserRoles();
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "assigning a role to a user", "The role was not assigned"), Severity.Error);
         }
         catch (Exception)
         {
@@ -185,9 +190,13 @@
         _busy = true;
         try
         {
-            if (!await Users.RemoveRoleAsync(_selectedUserId, role)) throw new InvalidOperationException();
+            await Users.RemoveRoleAsync(_selectedUserId, role);
             Snackbar.Add($"Role {role} removed from user {_selectedUserId}", Severity.Success);
             await LoadUserRoles();
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "removing a role from a user", "The role was not removed"), Severity.Error);
         }
         catch (Exception)
         {

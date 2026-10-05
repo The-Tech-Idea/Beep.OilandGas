@@ -14,7 +14,6 @@
     <ProjectReference Include="$(IdentityContractsProject)" />
     <!-- SEC-BCL-01. The back-channel logout table the Web's sign-in keeps in this context. -->
     <ProjectReference Include="$(IdentitySharedProject)" />
-    <ProjectReference Include="..\..\Beep.IdentityServer\Beep.IdentityServer.Analyzers\Beep.IdentityServer.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.10" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
     <PackageReference Include="Oracle.EntityFrameworkCore" Version="10.23.26300" />

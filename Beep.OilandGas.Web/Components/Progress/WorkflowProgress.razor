@@ -3,6 +3,7 @@
 @using MudBlazor
 @implements IAsyncDisposable
 @inject IProgressTrackingClient ProgressClient
+@inject FailureNotifier Notifier
 
 <MudPaper Elevation="2" Class="pa-4 mb-4">
     <MudStack>
@@ -162,9 +163,11 @@
         {
             await InvokeAsync(StateHasChanged);
         }
+        // An async void handler: nothing awaits it, so every failure is told here (and kept in the store) rather than
+        // ending the circuit.
         catch (Exception ex)
         {
-            // async void handler — prevent circuit crash
+            Notifier.Failure(ex, "showing a workflow's progress", "The workflow's progress could not be shown", FailureSeverity.Degraded);
         }
     }
 
@@ -175,7 +178,7 @@
             WorkflowStatus.Completed => Color.Success,
             WorkflowStatus.Failed => Color.Error,
             WorkflowStatus.Cancelled => Color.Warning,
-            _ => Color.Primary
+            WorkflowStatus.NotStarted or WorkflowStatus.Running => Color.Primary,
         };
     }
 
@@ -187,7 +190,7 @@
             OperationStatus.Failed => Color.Error,
             OperationStatus.Cancelled => Color.Warning,
             OperationStatus.Running => Color.Primary,
-            _ => Color.Default
+            OperationStatus.Pending or OperationStatus.Skipped => Color.Default,
         };
     }
 

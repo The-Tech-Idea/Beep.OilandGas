@@ -4,7 +4,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 namespace Beep.OilandGas.Web.Services;
 
 /// <summary>Page state with independent payment/review errors and stale-response protection.</summary>
-public sealed class RoyaltyDetailsState(IAccountingServiceClient client) : IDisposable
+public sealed class RoyaltyDetailsState(IAccountingServiceClient client, OilGasCallFailures failures) : IDisposable
 {
     public ROYALTY_CALCULATION? Calculation { get; private set; }
     public List<ROYALTY_PAYMENT>? Payments { get; private set; }
@@ -30,19 +30,33 @@ public sealed class RoyaltyDetailsState(IAccountingServiceClient client) : IDisp
         Loading = true; Reviewing = false;
         try
         {
-            var calculation = await client.GetRoyaltyAsync(id, token);
+            var calculationCall = client.GetRoyaltyAsync(id, token);
+            if (await SupersededAsync(calculationCall, token)) return;
+            var calculation = await calculationCall;
             if (!Current(version)) return;
             Calculation = calculation;
             try
             {
-                var payments = await client.GetRoyaltyPaymentsAsync(id, token);
+                var paymentsCall = client.GetRoyaltyPaymentsAsync(id, token);
+                if (await SupersededAsync(paymentsCall, token)) return;
+                var payments = await paymentsCall;
                 if (Current(version)) Payments = payments;
             }
-            catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-            catch (Exception ex) { if (Current(version)) PaymentError = Message(ex, "Payment history"); }
+            // The page renders a sentence for every failure of this part, beside the details it did load; the store keeps
+            // the exception (a superseded load's too, though nobody is shown it).
+            catch (Exception ex)
+            {
+                var sentence = Explain(ex, "loading a royalty's payment history", "Payment history");
+                if (Current(version)) PaymentError = sentence;
+            }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception ex) { if (Current(version)) Error = Message(ex, "Royalty details"); }
+        // The page renders a sentence for every failure of this load, in place of the details; the store keeps the
+        // exception (a superseded load's too, though nobody is shown it).
+        catch (Exception ex)
+        {
+            var sentence = Explain(ex, "loading a royalty calculation", "Royalty details");
+            if (Current(version)) Error = sentence;
+        }
         finally { if (Current(version)) Loading = false; }
     }
 
@@ -54,22 +68,47 @@ public sealed class RoyaltyDetailsState(IAccountingServiceClient client) : IDisp
         Reviewing = true; Review = null; ReviewError = null;
         try
         {
-            var review = await client.GetRoyaltyPostingReviewAsync(Calculation.ROYALTY_CALCULATION_ID, token);
+            var reviewCall = client.GetRoyaltyPostingReviewAsync(Calculation.ROYALTY_CALCULATION_ID, token);
+            if (await SupersededAsync(reviewCall, token)) return;
+            var review = await reviewCall;
             if (Current(version)) Review = review;
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception ex) { if (Current(version)) ReviewError = Message(ex, "Posting review"); }
+        // The page renders a sentence for every failure of the review, beside the details; the store keeps the exception.
+        catch (Exception ex)
+        {
+            var sentence = Explain(ex, "loading a royalty's posting review", "Posting review");
+            if (Current(version)) ReviewError = sentence;
+        }
         finally { if (Current(version)) Reviewing = false; }
     }
 
     private bool Current(int version) => !_disposed && version == _version;
-    private static string Message(Exception ex, string subject) => ex is HttpRequestException http ? http.StatusCode switch {
-        HttpStatusCode.Unauthorized => "Your session has expired. Sign in again to continue.",
-        HttpStatusCode.Forbidden => $"You do not have access to {subject.ToLowerInvariant()}. Contact your app administrator if you need access.",
-        HttpStatusCode.NotFound => $"{subject} could not be found. Return to the royalty list and refresh it.",
-        HttpStatusCode.Conflict => $"{subject} needs reconciliation. Refresh the records or contact your accounting administrator.",
-        _ => $"{subject} could not be loaded. Please retry."
-    } : $"{subject} could not be loaded. Please retry.";
+
+    /// <summary>
+    /// Whether <paramref name="call"/> ended because this state cancelled it — a newer royalty was asked for, or the page
+    /// left. Asked of the finished call rather than caught: nobody is waiting for its answer, so there is nothing to tell.
+    /// A call that timed out was not cancelled by this state and is awaited, to fail like any other.
+    /// </summary>
+    private static async Task<bool> SupersededAsync(Task call, CancellationToken token)
+    {
+        await Task.WhenAny(call);
+        return call.IsCanceled && token.IsCancellationRequested;
+    }
+
+    /// <summary>Reports <paramref name="ex"/> and returns the sentence for the part of the page that did not load.</summary>
+    [TheTechIdeaWeb.Diagnostics.ReportsFailure]
+    private string Explain(Exception ex, string operation, string subject) => ex switch
+    {
+        OilGasApiException { StatusCode: HttpStatusCode.Unauthorized } =>
+            failures.Told(ex, operation, "Your session has expired. Sign in again to continue."),
+        OilGasApiException { StatusCode: HttpStatusCode.Forbidden } =>
+            failures.Told(ex, operation, $"You do not have access to {subject.ToLowerInvariant()}. Contact your app administrator if you need access."),
+        OilGasApiException { StatusCode: HttpStatusCode.NotFound } =>
+            failures.Told(ex, operation, $"{subject} could not be found. Return to the royalty list and refresh it."),
+        OilGasApiException { StatusCode: HttpStatusCode.Conflict } =>
+            failures.Told(ex, operation, $"{subject} needs reconciliation. Refresh the records or contact your accounting administrator."),
+        _ => failures.Explain(ex, operation, $"{subject} could not be loaded"),
+    };
 
     public void Dispose()
     {

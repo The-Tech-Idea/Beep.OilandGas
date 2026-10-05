@@ -6,7 +6,12 @@
    MudRTLProvider: OilGas is English only, so no right-to-left culture is offered. *@
 <MudThemeProvider Theme="@Theme.Theme" IsDarkMode="@Theme.IsDarkMode" />
 <MudPopoverProvider />
-<MudDialogProvider />
+@* MudBlazor draws every dialog inside the provider, beside the router and outside the page's error boundary, so a dialog's
+   exception ended the circuit and reached only Blazor's log. The shared boundary reports it, tells the person with its
+   reference, and puts the provider back so the next dialog opens (OILGAS-CATCH-01). *@
+<TheTechIdeaWeb.Diagnostics.Components.DialogFailureBoundary>
+    <MudDialogProvider />
+</TheTechIdeaWeb.Diagnostics.Components.DialogFailureBoundary>
 <MudSnackbarProvider />
 
 <Router AppAssembly="@typeof(Routes).Assembly">

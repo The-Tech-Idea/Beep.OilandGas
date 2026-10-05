@@ -39,42 +39,34 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
             [FromQuery] string? indexName = null,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
+            var indexManager = _service.PricingManager.GetIndexManager();
+            if (!string.IsNullOrEmpty(indexName))
             {
-                var indexManager = _service.PricingManager.GetIndexManager();
-                if (!string.IsNullOrEmpty(indexName))
+                var index = indexManager.GetLatestPrice(indexName);
+                if (index == null)
+                        return NotFound(new { error = $"Price index {indexName} not found." });
+                return Ok(new List<PriceIndex> { new PriceIndex
                 {
-                    var index = indexManager.GetLatestPrice(indexName);
-                    if (index == null)
-                            return NotFound(new { error = $"Price index {indexName} not found." });
-                    return Ok(new List<PriceIndex> { new PriceIndex
-                    {
-                        IndexName = index.IndexName,
-                        IndexDate = index.IndexDate,
-                        Price = index.Price,
-                        Currency = index.Currency
-                    }});
-                }
-                
-                var standardIndices = new[] { "WTI", "Brent", "LLS", "WCS" };
-                var dtos = standardIndices.Select(name =>
-                {
-                    var idx = indexManager.GetLatestPrice(name);
-                    return idx != null ? new PriceIndex
-                    {
-                        IndexName = idx.IndexName,
-                        IndexDate = idx.IndexDate,
-                        Price = idx.Price,
-                        Currency = idx.Currency
-                    } : null;
-                }).Where(i => i != null).ToList();
-                return Ok(dtos);
+                    IndexName = index.IndexName,
+                    IndexDate = index.IndexDate,
+                    Price = index.Price,
+                    Currency = index.Currency
+                }});
             }
-            catch (Exception ex)
+            
+            var standardIndices = new[] { "WTI", "Brent", "LLS", "WCS" };
+            var dtos = standardIndices.Select(name =>
             {
-                _logger.LogError(ex, "Error getting price indices");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                var idx = indexManager.GetLatestPrice(name);
+                return idx != null ? new PriceIndex
+                {
+                    IndexName = idx.IndexName,
+                    IndexDate = idx.IndexDate,
+                    Price = idx.Price,
+                    Currency = idx.Currency
+                } : null;
+            }).Where(i => i != null).ToList();
+            return Ok(dtos);
         }
 
         /// <summary>
@@ -85,34 +77,26 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
             [FromBody] PriceIndexRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var indexManager = _service.PricingManager.GetIndexManager();
-                var index = new PriceIndex
-                {
-                    IndexName = request.IndexName,
-                    IndexDate = request.IndexDate,
-                    Price = request.Price,
-                    Currency = request.Currency ?? "USD"
-                };
-
-                indexManager.AddOrUpdatePriceIndex(index);
-                return Ok(new PriceIndex
-                {
-                    IndexName = index.IndexName,
-                    IndexDate = index.IndexDate,
-                    Price = index.Price,
-                    Currency = index.Currency
-                });
-            }
-            catch (Exception ex)
+            var indexManager = _service.PricingManager.GetIndexManager();
+            var index = new PriceIndex
             {
-                _logger.LogError(ex, "Error adding price index");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                IndexName = request.IndexName,
+                IndexDate = request.IndexDate,
+                Price = request.Price,
+                Currency = request.Currency ?? "USD"
+            };
+
+            indexManager.AddOrUpdatePriceIndex(index);
+            return Ok(new PriceIndex
+            {
+                IndexName = index.IndexName,
+                IndexDate = index.IndexDate,
+                Price = index.Price,
+                Currency = index.Currency
+            });
         }
 
         /// <summary>
@@ -123,34 +107,26 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
             [FromBody] ValueRunTicketRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var ticket = await _tickets.GetAsync(request.RunTicketNumber);
-                if (ticket == null)
-                    return NotFound(new { error = $"Run ticket {request.RunTicketNumber} not found." });
+            var ticket = await _tickets.GetAsync(request.RunTicketNumber);
+            if (ticket == null)
+                return NotFound(new { error = $"Run ticket {request.RunTicketNumber} not found." });
 
-                PricingMethod pricingMethod;
-                if (!Enum.TryParse<PricingMethod>(request.PricingMethod, true, out pricingMethod))
-                    pricingMethod = PricingMethod.IndexBased;
+            PricingMethod pricingMethod;
+            if (!Enum.TryParse<PricingMethod>(request.PricingMethod, true, out pricingMethod))
+                pricingMethod = PricingMethod.IndexBased;
 
-                var valuation = _service.PricingManager.ValueRunTicket(
-                    ticket,
-                    pricingMethod,
-                    request.FixedPrice,
-                    request.IndexName,
-                    request.Differential,
-                    null);
+            var valuation = _service.PricingManager.ValueRunTicket(
+                ticket,
+                pricingMethod,
+                request.FixedPrice,
+                request.IndexName,
+                request.Differential,
+                null);
 
-                return Ok(MapToRUN_TICKET_VALUATIONDto(valuation));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error valuing run ticket");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(MapToRUN_TICKET_VALUATIONDto(valuation));
         }
 
         private RUN_TICKET_VALUATION MapToRUN_TICKET_VALUATIONDto(RUN_TICKET_VALUATION valuation)

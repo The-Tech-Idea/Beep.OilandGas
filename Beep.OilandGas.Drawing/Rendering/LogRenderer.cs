@@ -1363,15 +1363,11 @@ namespace Beep.OilandGas.Drawing.Rendering
 
         private SKColor ResolveIntervalColor(LogTrackKind trackKind, LogIntervalData interval)
         {
-            if (!string.IsNullOrWhiteSpace(interval.ColorCode) && interval.ColorCode.StartsWith("#", StringComparison.Ordinal))
+            // A colour code that is not a colour falls through to the defaults below (asked, not caught).
+            if (!string.IsNullOrWhiteSpace(interval.ColorCode) && interval.ColorCode.StartsWith("#", StringComparison.Ordinal) &&
+                SKColor.TryParse(interval.ColorCode, out var parsedColor))
             {
-                try
-                {
-                    return SKColor.Parse(interval.ColorCode);
-                }
-                catch
-                {
-                }
+                return parsedColor;
             }
 
             if (trackKind == LogTrackKind.Lithology)

@@ -75,7 +75,7 @@
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
     [Inject] private IPersonaContextService PersonaContext { get; set; } = default!;
     [Inject] private IDataManagementService DataManagement { get; set; } = default!;
-    [Inject] private ILogger<NotificationCenter> Logger { get; set; } = default!;
+    [Inject] private OilGasCallFailures Calls { get; set; } = default!;
 
     private List<NotificationModel> _notifications = new();
     private int _unreadCount;
@@ -106,10 +106,11 @@
             if (PersonaContext.CurrentPersona is { } persona && !string.IsNullOrWhiteSpace(fieldId))
                 await NotificationService.SubscribeToPersonaAsync(persona.Code, fieldId);
         }
+        // The persona and the active field come from the API; any failure leaves persona notifications off, which the
+        // alert above says with its reference and a retry. The store keeps the exception.
         catch (Exception exception)
         {
-            _contextError = "Unable to load the persona notification context. Retry to reload.";
-            Logger.LogWarning(exception, "Unable to load notification context");
+            _contextError = Calls.Explain(exception, "loading the persona notification context", "Persona notifications could not be started");
         }
         finally { await InvokeAsync(StateHasChanged); }
     }

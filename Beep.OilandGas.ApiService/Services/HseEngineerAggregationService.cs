@@ -48,29 +48,22 @@ namespace Beep.OilandGas.ApiService.Services
         public async Task<HseKpi> GetKpiAsync()
         {
             var kpi = new HseKpi();
-            try
+            var activeFilter = new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" };
+            var now = DateTime.UtcNow;
+            var ytd = new DateTime(now.Year, 1, 1);
+
+            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(PpdmEntities.HSE_INCIDENT), _connectionName, "HSE_INCIDENT");
+
+            var filters = new List<AppFilter>
             {
-                var activeFilter = new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" };
-                var now = DateTime.UtcNow;
-                var ytd = new DateTime(now.Year, 1, 1);
+                activeFilter,
+                new() { FieldName = "INCIDENT_DATE", Operator = ">=", FilterValue = ytd.ToString("yyyy-MM-dd") }
+            };
 
-                var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PpdmEntities.HSE_INCIDENT), _connectionName, "HSE_INCIDENT");
-
-                var filters = new List<AppFilter>
-                {
-                    activeFilter,
-                    new() { FieldName = "INCIDENT_DATE", Operator = ">=", FilterValue = ytd.ToString("yyyy-MM-dd") }
-                };
-
-                var incidents = (await repo.GetAsync(filters)).OfType<PpdmEntities.HSE_INCIDENT>().ToList();
-                kpi.TotalIncidents = incidents.Count;
-                kpi.OpenIncidents = incidents.Count(i => string.IsNullOrEmpty(i.INCIDENT_CLASS_ID));
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Failed to compute HSE KPI");
-            }
+            var incidents = (await repo.GetAsync(filters)).OfType<PpdmEntities.HSE_INCIDENT>().ToList();
+            kpi.TotalIncidents = incidents.Count;
+            kpi.OpenIncidents = incidents.Count(i => string.IsNullOrEmpty(i.INCIDENT_CLASS_ID));
             return kpi;
         }
     }

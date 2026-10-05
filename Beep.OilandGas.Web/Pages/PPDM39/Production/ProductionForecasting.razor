@@ -9,6 +9,7 @@
 @inject IDevelopmentServiceClient DevelopmentService
 @inject IProductionServiceClient ProductionService
 @inject ILifeCycleService LifeCycleService
+@inject OilGasApiFailures Answers
 
 <PageTitle>Production Forecasting</PageTitle>
 
@@ -432,8 +433,12 @@
                 Status = _activeScenario,
                 Notes = $"Scenario={_activeScenario}; Di={_di:N1}; b={_bFactor:N2}"
             };
-            var saved = await CalculationService.SaveForecastAsync(payload);
-            Snackbar.Add(saved ? "Forecast revision saved." : "Save failed.", saved ? Severity.Success : Severity.Error);
+            await CalculationService.SaveForecastAsync(payload);
+            Snackbar.Add("Forecast revision saved.", Severity.Success);
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "saving a forecast revision", "The forecast revision was not saved"), Severity.Error);
         }
         catch (Exception) { Snackbar.Add("Save failed.", Severity.Error); }
     }

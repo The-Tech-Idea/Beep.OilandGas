@@ -188,13 +188,10 @@ public sealed class BusinessProcessServiceClient : IBusinessProcessServiceClient
 
         try
         {
-            var succeeded = await _apiClient.PostAsync(
+            await _apiClient.PostAsync(
                 BuildHseIncidentEndpoint(incidentId, "rca"),
                 request,
                 cancellationToken);
-
-            if (!succeeded)
-                throw new InvalidOperationException($"Failed to submit RCA for incident {incidentId}.");
         }
         catch (Exception ex)
         {
@@ -212,13 +209,10 @@ public sealed class BusinessProcessServiceClient : IBusinessProcessServiceClient
 
         try
         {
-            var succeeded = await _apiClient.PostAsync(
+            await _apiClient.PostAsync(
                 BuildHseIncidentEndpoint(incidentId, "actions"),
                 request,
                 cancellationToken);
-
-            if (!succeeded)
-                throw new InvalidOperationException($"Failed to raise corrective actions for incident {incidentId}.");
         }
         catch (Exception ex)
         {
@@ -238,13 +232,10 @@ public sealed class BusinessProcessServiceClient : IBusinessProcessServiceClient
 
         try
         {
-            var succeeded = await _apiClient.PatchAsync(
+            await _apiClient.PatchAsync(
                 BuildHseIncidentEndpoint(incidentId, $"actions/{Uri.EscapeDataString(actionId)}"),
                 request,
                 cancellationToken);
-
-            if (!succeeded)
-                throw new InvalidOperationException($"Failed to close corrective action {actionId} for incident {incidentId}.");
         }
         catch (Exception ex)
         {
@@ -262,13 +253,10 @@ public sealed class BusinessProcessServiceClient : IBusinessProcessServiceClient
 
         try
         {
-            var succeeded = await _apiClient.PostAsync(
+            await _apiClient.PostAsync(
                 BuildHseIncidentEndpoint(incidentId, "close"),
                 request,
                 cancellationToken);
-
-            if (!succeeded)
-                throw new InvalidOperationException($"Failed to close incident {incidentId}.");
         }
         catch (Exception ex)
         {
@@ -475,13 +463,10 @@ public sealed class BusinessProcessServiceClient : IBusinessProcessServiceClient
 
         try
         {
-            var succeeded = await _apiClient.PostAsync(
+            await _apiClient.PostAsync(
                 $"/api/field/current/gates/{Uri.EscapeDataString(gateId)}/{action}",
                 request,
                 cancellationToken);
-
-            if (!succeeded)
-                throw new InvalidOperationException($"Failed to {action} gate review {gateId}.");
         }
         catch (Exception ex)
         {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Beep.OilandGas.GasProperties.Calculations;
+using Beep.OilandGas.Models.Core.Refusals;
 using Xunit;
 
 namespace Beep.OilandGas.GasProperties.Tests;
@@ -77,11 +78,12 @@ public class AveragePropertiesCalculatorTests
     [Fact]
     public void CalculatePressureWeightedAverage_throws_when_counts_mismatch()
     {
-        Assert.Throws<ArgumentException>(() =>
+        var refusal = Assert.Throws<RefusalException>(() =>
             AveragePropertiesCalculator.CalculatePressureWeightedAverage(
                 new List<decimal> { 1m },
                 new List<decimal> { 1m, 2m },
                 0.65m,
                 BrillBeggs));
+        Assert.Equal(RefusalKind.Invalid, refusal.Kind);
     }
 }

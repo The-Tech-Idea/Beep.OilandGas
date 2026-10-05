@@ -17,14 +17,16 @@ public class ProgressWorkerTests
         public override DateTimeOffset GetUtcNow() => Now;
     }
 
-    private static ProgressTrackingService Create(Func<string, object?[], CancellationToken, Task> send, TimeProvider? clock = null)
+    private static ProgressTrackingService Create(Func<string, object?[], CancellationToken, Task> send, TimeProvider? clock = null,
+        Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter? failures = null)
     {
         var client = new Mock<IClientProxy>();
         client.Setup(c => c.SendCoreAsync(It.IsAny<string>(), It.IsAny<object?[]>(), It.IsAny<CancellationToken>()))
             .Returns(send);
         var hub = new Mock<IHubContext<ProgressHub>> { DefaultValue = DefaultValue.Mock };
         hub.Setup(h => h.Clients.Group(It.IsAny<string>())).Returns(client.Object);
-        return new(hub.Object, NullLogger<ProgressTrackingService>.Instance, clock: clock);
+        return new(hub.Object, NullLogger<ProgressTrackingService>.Instance,
+            failures ?? new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), clock: clock);
     }
 
     [Fact]
@@ -75,18 +77,23 @@ public class ProgressWorkerTests
     {
         var count = 0;
         var complete = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var failures = new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter();
         using var service = Create((_, _, _) =>
         {
             if (Interlocked.Increment(ref count) == 1) throw new InvalidOperationException("send failed");
             complete.TrySetResult();
             return Task.CompletedTask;
-        });
+        }, failures: failures);
         service.StartOperation("test", "one");
         service.StartOperation("test", "two");
         await service.StartAsync(default);
         try { await complete.Task.WaitAsync(TimeSpan.FromSeconds(10)); }
         finally { await service.StopAsync(default); }
         Assert.Equal(2, count);
+        // OILGAS-CATCH-01: the failed broadcast is reported (it was a warning line), and the worker went on.
+        var reported = Assert.Single(failures.Reports);
+        Assert.Equal("send failed", reported.Exception.Message);
+        Assert.Equal(TheTechIdeaWeb.Diagnostics.FailureSeverity.Degraded, reported.Severity);
     }
 
     [Fact]

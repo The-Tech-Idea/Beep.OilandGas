@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers.Calculations;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -42,21 +43,20 @@ public class EconomicAnalysisControllerTests
         service.VerifyAll();
     }
 
+    // OILGAS-CATCH-01: the analysis's refusal reaches the API's handler as itself (answered 400 with its sentence).
     [Fact]
-    public void CalculateNPV_ReturnsBadRequest_WhenServiceThrowsArgumentException()
+    public void CalculateNPV_PassesTheAnalysisRefusalThrough()
     {
         var service = new Mock<IEconomicAnalysisService>(MockBehavior.Strict);
-        service.Setup(s => s.CalculateNPV(It.IsAny<CashFlow[]>(), 0.1))
-            .Throws(new ArgumentException("Cash flows cannot be empty"));
+        var refusal = RefusalException.Invalid("Cash flows cannot be empty");
+        service.Setup(s => s.CalculateNPV(It.IsAny<CashFlow[]>(), 0.1)).Throws(refusal);
         var controller = new EconomicAnalysisController(service.Object, NullLogger<EconomicAnalysisController>.Instance);
 
-        var result = controller.CalculateNPV(new CalculateNPVRequest
+        Assert.Same(refusal, Refusals.Refused(RefusalKind.Invalid, () => controller.CalculateNPV(new CalculateNPVRequest
         {
             CashFlows = new(),
             DISCOUNT_RATE = 0.1
-        });
-
-        Assert.IsType<BadRequestObjectResult>(result.Result);
+        })));
         service.VerifyAll();
     }
 

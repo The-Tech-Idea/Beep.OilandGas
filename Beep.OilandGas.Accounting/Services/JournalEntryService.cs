@@ -66,7 +66,7 @@ namespace Beep.OilandGas.Accounting.Services
             string? bookId = null)
         {
             if (lineItems == null || lineItems.Count == 0)
-                throw new ArgumentException("Journal entry must have at least one line item", nameof(lineItems));
+                throw RefusalException.Invalid("A journal entry must have at least one line item.");
 
             _logger?.LogInformation("Creating journal entry with {LineCount} items", lineItems.Count);
 
@@ -78,7 +78,7 @@ namespace Beep.OilandGas.Accounting.Services
                 foreach (var item in lineItems)
                 {
                     if (!await _glAccountService.ValidateAccountAsync(item.GL_ACCOUNT_ID ?? string.Empty))
-                        throw new InvalidOperationException($"GL account {item.GL_ACCOUNT_ID} is invalid or inactive");
+                        throw RefusalException.Conflict($"GL account {item.GL_ACCOUNT_ID} does not exist or is inactive.");
                 }
 
                 // Calculate totals
@@ -90,8 +90,8 @@ namespace Beep.OilandGas.Accounting.Services
                 {
                     _logger?.LogError("Journal entry out of balance: Debits {Debits}, Credits {Credits}",
                         totalDebit, totalCredit);
-                    throw new InvalidOperationException(
-                        $"Journal entry out of balance: Debits {totalDebit:C} != Credits {totalCredit:C}");
+                    throw RefusalException.Invalid(
+                        $"The journal entry is out of balance: debits {totalDebit:C}, credits {totalCredit:C}.");
                 }
 
                 // Create journal entry header
@@ -128,7 +128,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error creating journal entry: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error creating journal entry");
                 throw;
             }
         }
@@ -147,7 +147,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(glAccount))
                 throw new ArgumentNullException(nameof(glAccount));
             if (amount == 0)
-                throw new InvalidOperationException("Journal entry amount cannot be zero");
+                throw RefusalException.Invalid("Journal entry amount cannot be zero.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
@@ -156,9 +156,9 @@ namespace Beep.OilandGas.Accounting.Services
 
             var arAccountId = DefaultGlAccounts.AccountsReceivable;
             if (!await _glAccountService.ValidateAccountAsync(glAccount))
-                throw new InvalidOperationException($"GL account not found or inactive: {glAccount}");
+                throw RefusalException.Conflict($"GL account {glAccount} does not exist or is inactive.");
             if (!await _glAccountService.ValidateAccountAsync(arAccountId))
-                throw new InvalidOperationException($"AR account not found or inactive: {arAccountId}");
+                throw RefusalException.Conflict($"The accounts-receivable account {arAccountId} does not exist or is inactive.");
 
             var absAmount = Math.Abs(amount);
 
@@ -183,7 +183,8 @@ namespace Beep.OilandGas.Accounting.Services
                 sourceModule: "PRODUCTION_ACCOUNTING",
                 bookId: bookId);
 
-            await PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId);
+            if (!await PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId))
+                throw new InvalidOperationException($"Journal {entry.JOURNAL_ENTRY_ID} was created but not posted.");
             entry.STATUS = AccountingReferenceCodes.JournalEntryStatusCodes.Posted;
             return entry;
         }
@@ -198,6 +199,8 @@ namespace Beep.OilandGas.Accounting.Services
         public Task<JOURNAL_ENTRY> CreateReferencedBalancedEntryAsync(string debitAccount, string creditAccount,
             decimal amount, string description, string userId, string referenceNumber)
         {
+            // The reference is the posting service's own record id (a royalty calculation, a payment), not the caller's:
+            // a blank or oversized one is the program's error.
             ArgumentException.ThrowIfNullOrWhiteSpace(referenceNumber);
             if (referenceNumber.Length > 255) throw new ArgumentException("Journal source reference exceeds 255 characters.", nameof(referenceNumber));
             return CreateBalancedEntryCoreAsync(debitAccount, creditAccount, amount, description, userId, referenceNumber, null);
@@ -211,14 +214,14 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(creditAccount))
                 throw new ArgumentNullException(nameof(creditAccount));
             if (amount <= 0)
-                throw new InvalidOperationException("Journal entry amount must be positive");
+                throw RefusalException.Invalid("Journal entry amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
             if (!await _glAccountService.ValidateAccountAsync(debitAccount))
-                throw new InvalidOperationException($"GL account not found or inactive: {debitAccount}");
+                throw RefusalException.Conflict($"GL account {debitAccount} does not exist or is inactive.");
             if (!await _glAccountService.ValidateAccountAsync(creditAccount))
-                throw new InvalidOperationException($"GL account not found or inactive: {creditAccount}");
+                throw RefusalException.Conflict($"GL account {creditAccount} does not exist or is inactive.");
 
             var lines = new List<JOURNAL_ENTRY_LINE>
             {
@@ -247,7 +250,8 @@ namespace Beep.OilandGas.Accounting.Services
                 sourceModule: "PRODUCTION_ACCOUNTING",
                 bookId: bookId);
 
-            await PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId);
+            if (!await PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId))
+                throw new InvalidOperationException($"Journal {entry.JOURNAL_ENTRY_ID} was created but not posted.");
             entry.STATUS = AccountingReferenceCodes.JournalEntryStatusCodes.Posted;
             return entry;
         }
@@ -308,7 +312,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(glAccount))
                 throw new ArgumentNullException(nameof(glAccount));
             if (start > end)
-                throw new ArgumentException("start must be <= end", nameof(start));
+                throw RefusalException.Invalid("The start date must be on or before the end date.");
 
             _logger?.LogInformation("Getting GL entries for account {Account} from {StartDate} to {EndDate}",
                 glAccount, start.ToShortDateString(), end.ToShortDateString());
@@ -378,13 +382,13 @@ namespace Beep.OilandGas.Accounting.Services
             decimal credits = entry.TOTAL_CREDIT is decimal tc ? tc : 0m;
 
             if (Math.Abs(debits - credits) > BalanceTolerance)
-                throw new InvalidOperationException($"Journal entry not balanced: Debits {debits} != Credits {credits}");
+                throw RefusalException.Invalid($"The journal entry is out of balance: debits {debits}, credits {credits}.");
 
             if (entry.ENTRY_DATE.HasValue && entry.ENTRY_DATE > DateTime.UtcNow)
-                throw new InvalidOperationException("Entry date cannot be in the future");
+                throw RefusalException.Invalid("The entry date cannot be in the future.");
 
             if (string.IsNullOrWhiteSpace(entry.DESCRIPTION))
-                throw new InvalidOperationException("Entry description is required");
+                throw RefusalException.Invalid("An entry description is required.");
 
             return Task.FromResult(true);
         }
@@ -404,14 +408,14 @@ namespace Beep.OilandGas.Accounting.Services
             {
                 var entry = await GetEntryByIdAsync(journalEntryId);
                 if (entry == null)
-                    throw new InvalidOperationException($"Journal entry {journalEntryId} not found");
+                    throw RefusalException.NotFound($"Journal entry {journalEntryId} was not found.");
 
                 if (entry.STATUS != "DRAFT")
-                    throw new InvalidOperationException($"Journal entry must be in DRAFT status to post (current: {entry.STATUS})");
+                    throw RefusalException.Conflict($"Only a DRAFT journal entry can be posted; this entry is {entry.STATUS}.");
 
                 var lineItems = await GetEntryLineItemsAsync(journalEntryId);
                 if (lineItems.Count == 0)
-                    throw new InvalidOperationException($"Journal entry {journalEntryId} has no line items");
+                    throw RefusalException.Conflict($"Journal entry {journalEntryId} has no line items to post.");
 
                 // Materialize GL_ENTRY rows so account-based queries and GL reporting work off posted entries.
                 await InsertGlEntriesAsync(entry, lineItems, userId);
@@ -430,7 +434,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error posting journal entry {EntryId}: {Message}", journalEntryId, ex.Message);
+                _logger?.LogError(ex, "Error posting journal entry {EntryId}", journalEntryId);
                 throw;
             }
         }
@@ -449,7 +453,7 @@ namespace Beep.OilandGas.Accounting.Services
             {
                 var originalEntry = await GetEntryByIdAsync(journalEntryId);
                 if (originalEntry == null)
-                    throw new InvalidOperationException($"Journal entry {journalEntryId} not found");
+                    throw RefusalException.NotFound($"Journal entry {journalEntryId} was not found.");
 
                 // Get original line items
                 var originalLines = await GetEntryLineItemsAsync(journalEntryId);
@@ -491,7 +495,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error reversing journal entry {EntryId}: {Message}", journalEntryId, ex.Message);
+                _logger?.LogError(ex, "Error reversing journal entry {EntryId}", journalEntryId);
                 throw;
             }
         }
@@ -504,18 +508,11 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(journalEntryId))
                 return null;
 
-            try
-            {
-                var repo = await GetRepoAsync<JOURNAL_ENTRY>("JOURNAL_ENTRY");
+            // A failed read propagates: as null it became "journal entry not found" when posting or reversing.
+            var repo = await GetRepoAsync<JOURNAL_ENTRY>("JOURNAL_ENTRY");
 
-                var entry = await repo.GetByIdAsync(journalEntryId);
-                return entry as JOURNAL_ENTRY;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error getting journal entry {EntryId}", journalEntryId);
-                return null;
-            }
+            var entry = await repo.GetByIdAsync(journalEntryId);
+            return entry as JOURNAL_ENTRY;
         }
 
         /// <summary>

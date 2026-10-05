@@ -1,5 +1,6 @@
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data;
 using Moq;
 using TheTechIdea.Data.OilGas;
@@ -57,7 +58,8 @@ public class BoundAssetHierarchyTests
             .Callback(() => current = new("second", new string('B', 64)))
             .ReturnsAsync(new List<AssetHierarchyNode> { new() { AssetId = "sensitive", AssetType = "WELL" } });
         var service = new BoundAssetHierarchyService(() => Task.FromResult(current), _ => inner.Object);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetAssetChildrenAsync("field", "FIELD"));
+        // A binding an administrator changed mid-request is theirs to reload: refused (409), never answered from the old one.
+        await Refusals.RefusedAsync(RefusalKind.Conflict, () => service.GetAssetChildrenAsync("field", "FIELD"));
     }
 
     private static Task Invoke(IAssetHierarchyService service, string operation) => operation switch

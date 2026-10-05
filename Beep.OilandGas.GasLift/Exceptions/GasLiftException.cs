@@ -1,24 +1,31 @@
 using System;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.GasLift.Exceptions
 {
     /// <summary>
     /// Base exception for gas lift calculations.
     /// </summary>
-    public class GasLiftException : Exception
+    /// <remarks>
+    /// OILGAS-CATCH-01. Every throw of this family refuses what the caller sent — well properties, injection
+    /// pressure, rate or valve count out of range — so it is a <see cref="RefusalException"/> (<see
+    /// cref="RefusalKind.Invalid"/>) and the API answers it as a 400 with its sentence. Its message is written for
+    /// the person, never taken from a caught exception.
+    /// </remarks>
+    public class GasLiftException : RefusalException
     {
         public GasLiftException()
-            : base()
+            : base(RefusalKind.Invalid, "The gas lift calculation could not be done with the values given.")
         {
         }
 
         public GasLiftException(string message)
-            : base(message)
+            : base(RefusalKind.Invalid, message)
         {
         }
 
         public GasLiftException(string message, Exception innerException)
-            : base(message, innerException)
+            : base(RefusalKind.Invalid, message, innerException)
         {
         }
     }

@@ -6,6 +6,7 @@
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
 
 <PageTitle>@(_showDetail ? $"{_well.WellName} — Well Design" : "Development Well Design")</PageTitle>
 
@@ -516,20 +517,19 @@
         _assigningRig = true;
         try
         {
-            var success = await DevelopmentServiceClient.AssignRigAsync(_well.Id, new DevelopmentAssignRigRequest
+            await DevelopmentServiceClient.AssignRigAsync(_well.Id, new DevelopmentAssignRigRequest
             {
                 RigName = _rigName,
                 MobDate = _rigMobDate
             });
 
-            if (!success)
-            {
-                throw new InvalidOperationException("The rig assignment request did not complete successfully.");
-            }
-
             _well.RigAssigned = _rigName;
             _showAssignRigDialog = false;
             Snackbar.Add($"Rig {_rigName} assigned to {_well.WellName}.", Severity.Success);
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "assigning a rig to a development well", "The rig was not assigned"), Severity.Error);
         }
         catch (Exception)
         {

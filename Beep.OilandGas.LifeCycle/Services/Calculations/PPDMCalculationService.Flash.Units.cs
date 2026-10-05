@@ -7,10 +7,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations;
 /// </summary>
 public partial class PPDMCalculationService
 {
-    private const decimal DefaultFlashPressurePsia = 1000m;
-
-    /// <summary>~150 °F expressed as Rankine — screening default when PPDM does not supply temperature.</summary>
-    private static readonly decimal DefaultFlashTemperatureRankine = 459.67m + 150m;
+    // OILGAS-CATCH-01: the screening defaults (1000 psia, ~150 °F) that stood in for a pressure and temperature PPDM did not
+    // supply are gone — a flash with neither given nor recorded is refused, not run on made-up conditions.
 
     private static decimal FahrenheitToRankine(decimal tempF) => tempF + 459.67m;
 

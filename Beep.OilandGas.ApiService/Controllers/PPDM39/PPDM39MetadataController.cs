@@ -118,38 +118,30 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("categories")]
         public async Task<ActionResult<List<DataCategoryWithTables>>> GetCategories()
         {
-            try
-            {
-                var all = await _metadata.GetAllMetadataAsync();
-                var tableNames = all.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var all = await _metadata.GetAllMetadataAsync();
+            var tableNames = all.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-                var result = _categories.Select(cat =>
+            var result = _categories.Select(cat =>
+            {
+                var tables = tableNames
+                    .Where(t => cat.Prefixes.Any(p =>
+                        t.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+                    .OrderBy(t => t)
+                    .ToList();
+
+                return new DataCategoryWithTables
                 {
-                    var tables = tableNames
-                        .Where(t => cat.Prefixes.Any(p =>
-                            t.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
-                        .OrderBy(t => t)
-                        .ToList();
+                    Id          = cat.Id,
+                    Name        = cat.Name,
+                    Description = cat.Description,
+                    Icon        = cat.Icon,
+                    Color       = cat.Color,
+                    Tables      = tables,
+                    TableCount  = tables.Count
+                };
+            }).ToList();
 
-                    return new DataCategoryWithTables
-                    {
-                        Id          = cat.Id,
-                        Name        = cat.Name,
-                        Description = cat.Description,
-                        Icon        = cat.Icon,
-                        Color       = cat.Color,
-                        Tables      = tables,
-                        TableCount  = tables.Count
-                    };
-                }).ToList();
-
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching data categories");
-                return StatusCode(500, new List<DataCategoryWithTables>());
-            }
+            return Ok(result);
         }
 
         /// <summary>
@@ -159,37 +151,29 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<List<TableInfo>>> GetCategoryTables(string categoryId)
         {
             if (string.IsNullOrWhiteSpace(categoryId)) return BadRequest(new { error = "Category ID is required." });
-            try
-            {
-                var cat = _categories.FirstOrDefault(c =>
-                    c.Id.Equals(categoryId, StringComparison.OrdinalIgnoreCase));
+            var cat = _categories.FirstOrDefault(c =>
+                c.Id.Equals(categoryId, StringComparison.OrdinalIgnoreCase));
 
-                if (cat == null)
-                    return NotFound(new List<TableInfo>());
+            if (cat == null)
+                return NotFound(new List<TableInfo>());
 
-                var all = await _metadata.GetAllMetadataAsync();
+            var all = await _metadata.GetAllMetadataAsync();
 
-                var tables = all
-                    .Where(kvp => cat.Prefixes.Any(p =>
-                        kvp.Key.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
-                    .Select(kvp => new TableInfo
-                    {
-                        TableName      = kvp.Key,
-                        Description    = kvp.Value.Module ?? string.Empty,
-                        PrimaryKey     = kvp.Value.PrimaryKeyColumn ?? string.Empty,
-                        IsReferenceTable = kvp.Key.StartsWith("R_", StringComparison.OrdinalIgnoreCase)
-                                        || kvp.Key.StartsWith("RA_", StringComparison.OrdinalIgnoreCase)
-                    })
-                    .OrderBy(t => t.TableName)
-                    .ToList();
+            var tables = all
+                .Where(kvp => cat.Prefixes.Any(p =>
+                    kvp.Key.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+                .Select(kvp => new TableInfo
+                {
+                    TableName      = kvp.Key,
+                    Description    = kvp.Value.Module ?? string.Empty,
+                    PrimaryKey     = kvp.Value.PrimaryKeyColumn ?? string.Empty,
+                    IsReferenceTable = kvp.Key.StartsWith("R_", StringComparison.OrdinalIgnoreCase)
+                                    || kvp.Key.StartsWith("RA_", StringComparison.OrdinalIgnoreCase)
+                })
+                .OrderBy(t => t.TableName)
+                .ToList();
 
-                return Ok(tables);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching tables for category {CategoryId}", categoryId);
-                return StatusCode(500, new List<TableInfo>());
-            }
+            return Ok(tables);
         }
 
         /// <summary>
@@ -199,30 +183,22 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<List<TableInfo>>> GetTablesByPrefix(string prefix)
         {
             if (string.IsNullOrWhiteSpace(prefix)) return BadRequest(new { error = "Prefix is required." });
-            try
-            {
-                var all = await _metadata.GetAllMetadataAsync();
+            var all = await _metadata.GetAllMetadataAsync();
 
-                var tables = all
-                    .Where(kvp => kvp.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                    .Select(kvp => new TableInfo
-                    {
-                        TableName      = kvp.Key,
-                        Description    = kvp.Value.Module ?? string.Empty,
-                        PrimaryKey     = kvp.Value.PrimaryKeyColumn ?? string.Empty,
-                        IsReferenceTable = kvp.Key.StartsWith("R_", StringComparison.OrdinalIgnoreCase)
-                                        || kvp.Key.StartsWith("RA_", StringComparison.OrdinalIgnoreCase)
-                    })
-                    .OrderBy(t => t.TableName)
-                    .ToList();
+            var tables = all
+                .Where(kvp => kvp.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                .Select(kvp => new TableInfo
+                {
+                    TableName      = kvp.Key,
+                    Description    = kvp.Value.Module ?? string.Empty,
+                    PrimaryKey     = kvp.Value.PrimaryKeyColumn ?? string.Empty,
+                    IsReferenceTable = kvp.Key.StartsWith("R_", StringComparison.OrdinalIgnoreCase)
+                                    || kvp.Key.StartsWith("RA_", StringComparison.OrdinalIgnoreCase)
+                })
+                .OrderBy(t => t.TableName)
+                .ToList();
 
-                return Ok(tables);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching tables by prefix {Prefix}", prefix);
-                return StatusCode(500, new List<TableInfo>());
-            }
+            return Ok(tables);
         }
 
         /// <summary>
@@ -232,27 +208,19 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<List<TableInfo>>> GetTablesByModule(string module)
         {
             if (string.IsNullOrWhiteSpace(module)) return BadRequest(new { error = "Module is required." });
-            try
-            {
-                var tables = (await _metadata.GetTablesByModuleAsync(module))
-                    .Select(m => new TableInfo
-                    {
-                        TableName      = m.TableName,
-                        Description    = m.Module ?? string.Empty,
-                        PrimaryKey     = m.PrimaryKeyColumn ?? string.Empty,
-                        IsReferenceTable = m.TableName.StartsWith("R_", StringComparison.OrdinalIgnoreCase)
-                                        || m.TableName.StartsWith("RA_", StringComparison.OrdinalIgnoreCase)
-                    })
-                    .OrderBy(t => t.TableName)
-                    .ToList();
+            var tables = (await _metadata.GetTablesByModuleAsync(module))
+                .Select(m => new TableInfo
+                {
+                    TableName      = m.TableName,
+                    Description    = m.Module ?? string.Empty,
+                    PrimaryKey     = m.PrimaryKeyColumn ?? string.Empty,
+                    IsReferenceTable = m.TableName.StartsWith("R_", StringComparison.OrdinalIgnoreCase)
+                                    || m.TableName.StartsWith("RA_", StringComparison.OrdinalIgnoreCase)
+                })
+                .OrderBy(t => t.TableName)
+                .ToList();
 
-                return Ok(tables);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching tables by module {Module}", module);
-                return StatusCode(500, new List<TableInfo>());
-            }
+            return Ok(tables);
         }
 
         /// <summary>
@@ -261,16 +229,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("modules")]
         public async Task<ActionResult<List<string>>> GetModules()
         {
-            try
-            {
-                var modules = (await _metadata.GetModulesAsync()).OrderBy(m => m).ToList();
-                return Ok(modules);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching modules");
-                return StatusCode(500, new List<string>());
-            }
+            var modules = (await _metadata.GetModulesAsync()).OrderBy(m => m).ToList();
+            return Ok(modules);
         }
 
         /// <summary>
@@ -280,37 +240,29 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<TableDetailInfo>> GetTableDetail(string tableName)
         {
             if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
-            try
-            {
-                var meta = await _metadata.GetTableMetadataAsync(tableName);
-                if (meta == null)
-                        return NotFound(new { error = $"Table '{tableName}' not found in metadata." });
+            var meta = await _metadata.GetTableMetadataAsync(tableName);
+            if (meta == null)
+                    return NotFound(new { error = $"Table '{tableName}' not found in metadata." });
 
-                var fks = (await _metadata.GetForeignKeysAsync(tableName))
-                    .Select(fk => new ForeignKeyInfo
-                    {
-                        ForeignKeyColumn   = fk.ForeignKeyColumn ?? string.Empty,
-                        ReferencedTable    = fk.ReferencedTable  ?? string.Empty,
-                        ReferencedPrimaryKey = fk.ReferencedPrimaryKey ?? string.Empty
-                    })
-                    .ToList();
-
-                return Ok(new TableDetailInfo
+            var fks = (await _metadata.GetForeignKeysAsync(tableName))
+                .Select(fk => new ForeignKeyInfo
                 {
-                    TableName    = meta.TableName,
-                    PrimaryKey   = meta.PrimaryKeyColumn ?? string.Empty,
-                    Module       = meta.Module           ?? string.Empty,
-                    SubjectArea  = meta.SubjectArea      ?? string.Empty,
-                    ForeignKeys  = fks,
-                    IsReferenceTable = tableName.StartsWith("R_", StringComparison.OrdinalIgnoreCase)
-                                   || tableName.StartsWith("RA_", StringComparison.OrdinalIgnoreCase)
-                });
-            }
-            catch (Exception ex)
+                    ForeignKeyColumn   = fk.ForeignKeyColumn ?? string.Empty,
+                    ReferencedTable    = fk.ReferencedTable  ?? string.Empty,
+                    ReferencedPrimaryKey = fk.ReferencedPrimaryKey ?? string.Empty
+                })
+                .ToList();
+
+            return Ok(new TableDetailInfo
             {
-                _logger.LogError(ex, "Error fetching table detail for {TableName}", tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                TableName    = meta.TableName,
+                PrimaryKey   = meta.PrimaryKeyColumn ?? string.Empty,
+                Module       = meta.Module           ?? string.Empty,
+                SubjectArea  = meta.SubjectArea      ?? string.Empty,
+                ForeignKeys  = fks,
+                IsReferenceTable = tableName.StartsWith("R_", StringComparison.OrdinalIgnoreCase)
+                               || tableName.StartsWith("RA_", StringComparison.OrdinalIgnoreCase)
+            });
         }
 
         /// <summary>
@@ -321,45 +273,37 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<List<ChildTableRelation>>> GetChildTables(string tableName)
         {
             if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
-            try
+            var childMetas = await _metadata.GetReferencingTablesAsync(tableName);
+
+            var result = new List<ChildTableRelation>();
+            foreach (var childMeta in childMetas)
             {
-                var childMetas = await _metadata.GetReferencingTablesAsync(tableName);
-
-                var result = new List<ChildTableRelation>();
-                foreach (var childMeta in childMetas)
-                {
-                    // Find which FK in the child table references the parent
-                    var matchingFks = (childMeta.ForeignKeys ?? Enumerable.Empty<PPDMForeignKey>())
-                        .Where(fk => fk.ReferencedTable != null &&
-                                     fk.ReferencedTable.Equals(tableName, StringComparison.OrdinalIgnoreCase))
-                        .ToList();
-
-                    foreach (var fk in matchingFks)
-                    {
-                        result.Add(new ChildTableRelation
-                        {
-                            ChildTableName     = childMeta.TableName,
-                            ForeignKeyColumn   = fk.ForeignKeyColumn  ?? string.Empty,
-                            ReferencedColumn   = fk.ReferencedPrimaryKey ?? string.Empty,
-                            ChildPrimaryKey    = childMeta.PrimaryKeyColumn ?? string.Empty
-                        });
-                    }
-                }
-
-                // Deduplicate (same child table / same FK column pair)
-                var distinct = result
-                    .GroupBy(r => $"{r.ChildTableName}|{r.ForeignKeyColumn}")
-                    .Select(g => g.First())
-                    .OrderBy(r => r.ChildTableName)
+                // Find which FK in the child table references the parent
+                var matchingFks = (childMeta.ForeignKeys ?? Enumerable.Empty<PPDMForeignKey>())
+                    .Where(fk => fk.ReferencedTable != null &&
+                                 fk.ReferencedTable.Equals(tableName, StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
-                return Ok(distinct);
+                foreach (var fk in matchingFks)
+                {
+                    result.Add(new ChildTableRelation
+                    {
+                        ChildTableName     = childMeta.TableName,
+                        ForeignKeyColumn   = fk.ForeignKeyColumn  ?? string.Empty,
+                        ReferencedColumn   = fk.ReferencedPrimaryKey ?? string.Empty,
+                        ChildPrimaryKey    = childMeta.PrimaryKeyColumn ?? string.Empty
+                    });
+                }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching child tables for {TableName}", tableName);
-                return StatusCode(500, new List<ChildTableRelation>());
-            }
+
+            // Deduplicate (same child table / same FK column pair)
+            var distinct = result
+                .GroupBy(r => $"{r.ChildTableName}|{r.ForeignKeyColumn}")
+                .Select(g => g.First())
+                .OrderBy(r => r.ChildTableName)
+                .ToList();
+
+            return Ok(distinct);
         }
     }
 

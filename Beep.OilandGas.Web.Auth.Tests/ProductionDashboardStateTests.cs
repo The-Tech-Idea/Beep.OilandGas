@@ -13,21 +13,21 @@ public class ProductionDashboardStateTests
     [Fact]
     public async Task NoFieldDoesNotLoadData()
     {
-        using var state = new ProductionDashboardState(_ => throw new Exception());
+        using var state = new ProductionDashboardState(_ => throw new Exception(), TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync(() => Task.FromResult<string?>(null));
         Assert.True(state.NeedsField); Assert.Null(state.Error); Assert.Null(state.Summary);
     }
     [Fact]
     public async Task EmptyWellsAreValidWithConfirmedSummary()
     {
-        using var state = new ProductionDashboardState(_ => Task.FromResult(Response()));
+        using var state = new ProductionDashboardState(_ => Task.FromResult(Response()), TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync(Field);
         Assert.NotNull(state.Summary); Assert.Empty(state.Wells); Assert.Null(state.Error);
     }
     [Fact]
     public async Task WrongSummaryCannotBeDisplayed()
     {
-        using var state = new ProductionDashboardState(_ => Task.FromResult(Response()));
+        using var state = new ProductionDashboardState(_ => Task.FromResult(Response()), TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync(() => Task.FromResult<string?>("other"));
         Assert.Null(state.Summary); Assert.NotNull(state.Error);
     }
@@ -35,7 +35,7 @@ public class ProductionDashboardStateTests
     public async Task RequestIsBoundToTheSelectedFieldOnce()
     {
         var reads = 0;
-        using var state = new ProductionDashboardState(field => { Assert.Equal("a", field); return Task.FromResult(Response(field)); });
+        using var state = new ProductionDashboardState(field => { Assert.Equal("a", field); return Task.FromResult(Response(field)); }, TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync(() => Task.FromResult<string?>(++reads == 1 ? "a" : "b"));
         Assert.NotNull(state.Summary); Assert.Equal(1, reads);
     }
@@ -44,8 +44,8 @@ public class ProductionDashboardStateTests
     {
         var fail = false;
         using var state = new ProductionDashboardState(_ => fail
-            ? Task.FromException<ProductionDashboardResponse>(new HttpRequestException("secret", null, HttpStatusCode.Forbidden))
-            : Task.FromResult(Response()));
+            ? Task.FromException<ProductionDashboardResponse>(new OilGasApiException(HttpStatusCode.Forbidden, "secret", null))
+            : Task.FromResult(Response()), TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync(Field); Assert.NotNull(state.Summary);
         fail = true; await state.LoadAsync(Field);
         Assert.Null(state.Summary); Assert.Empty(state.Wells); Assert.Contains("do not have access", state.Error);
@@ -56,7 +56,7 @@ public class ProductionDashboardStateTests
     public async Task ClearingFieldOrDisposalRejectsLateDashboard(bool dispose)
     {
         var pending = new TaskCompletionSource<ProductionDashboardResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var state = new ProductionDashboardState(_ => pending.Task);
+        using var state = new ProductionDashboardState(_ => pending.Task, TestFailures.Calls(new RecordingFailureReporter()));
         var load = state.LoadAsync(Field);
         if (dispose) state.Dispose(); else await state.LoadAsync(() => Task.FromResult<string?>(null));
         pending.SetResult(Response()); await load;
@@ -68,7 +68,7 @@ public class ProductionDashboardStateTests
     public async Task ClientDistinguishesMissingPayloadFromEmptyList(string body, bool valid)
     {
         using var http = new HttpClient(new Handler(body)) { BaseAddress = new Uri("https://api.example") };
-        var client = new ProductionServiceClient(new ApiClient(http, NullLogger<ApiClient>.Instance), NullLogger<ProductionServiceClient>.Instance);
+        var client = new ProductionServiceClient(new ApiClient(http, new RecordingFailureReporter()), NullLogger<ProductionServiceClient>.Instance);
         if (valid) Assert.Empty(await client.GetDashboardWellsAsync());
         else await Assert.ThrowsAsync<InvalidOperationException>(() => client.GetDashboardWellsAsync());
     }
@@ -76,7 +76,7 @@ public class ProductionDashboardStateTests
     public async Task FieldBoundClientEscapesFieldAndRejectsNullPayload()
     {
         using var http = new HttpClient(new BoundHandler()) { BaseAddress = new Uri("https://api.example") };
-        var client = new ProductionServiceClient(new ApiClient(http, NullLogger<ApiClient>.Instance), NullLogger<ProductionServiceClient>.Instance);
+        var client = new ProductionServiceClient(new ApiClient(http, new RecordingFailureReporter()), NullLogger<ProductionServiceClient>.Instance);
         await Assert.ThrowsAsync<InvalidOperationException>(() => client.GetDashboardAsync("field ?#"));
     }
     private sealed class BoundHandler : HttpMessageHandler

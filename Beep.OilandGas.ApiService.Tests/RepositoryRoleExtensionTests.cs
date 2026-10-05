@@ -436,7 +436,7 @@ public class RepositoryRoleExtensionTests
     {
         using var fixture = new Fixture();
         var readiness = new RepositoryReadinessService(fixture.Db,
-            Microsoft.Extensions.Logging.Abstractions.NullLogger<RepositoryReadinessService>.Instance);
+            new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         Assert.Equal(RepositoryReadiness.BootstrapRequired, await readiness.CheckAsync());
         Assert.True((await fixture.Users.CreateAsync(new OilGasUser { UserName = "existing" })).Succeeded);
         Assert.Equal(RepositoryReadiness.RecoveryRequired, await readiness.CheckAsync());
@@ -451,7 +451,7 @@ public class RepositoryRoleExtensionTests
         var bootstrap = new RepositoryBootstrapService(fixture.Db, fixture.Users, fixture.Roles);
         Assert.Equal(BootstrapOutcome.Created, await bootstrap.BootstrapAsync("https://issuer", "first"));
         var readiness = new RepositoryReadinessService(fixture.Db,
-            Microsoft.Extensions.Logging.Abstractions.NullLogger<RepositoryReadinessService>.Instance);
+            new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         Assert.Equal(RepositoryReadiness.Ready, await readiness.CheckAsync());
         fixture.Db.UserRoles.RemoveRange(await fixture.Db.UserRoles.ToListAsync());
         await fixture.Db.SaveChangesAsync();

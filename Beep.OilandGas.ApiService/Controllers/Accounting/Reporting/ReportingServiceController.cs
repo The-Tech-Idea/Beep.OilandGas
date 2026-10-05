@@ -116,29 +116,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
 
         private async Task<ActionResult<T>> ExecuteAsync<T>(Func<Task<T>> action, string logMessage)
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var result = await action();
-                return Ok(result);
-            }
-            catch (ArgumentNullException ex)
-            {
-                _logger.LogWarning(ex, "{Message}", logMessage);
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "{Message}", logMessage);
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Message}", logMessage);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await action();
+            return Ok(result);
         }
     }
 }

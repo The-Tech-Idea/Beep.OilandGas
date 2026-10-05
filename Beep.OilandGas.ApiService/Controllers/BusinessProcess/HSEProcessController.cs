@@ -74,52 +74,44 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 
             var userId = User.ActingUserId();
 
-            try
+            var processId = $"HSE_INCIDENT_REPORTING";
+            var incident = await Hse.ReportIncidentAsync(new ReportIncidentRequest(
+                FieldId: fieldId,
+                IncidentType: request.IncidentType,
+                Tier: MapSeverityToTier(request.Severity),
+                IncidentDate: request.IncidentDateTime,
+                Location: request.LocationDescription,
+                Description: request.Description,
+                Jurisdiction: "USA"), userId);
+
+            var instance = await _processService.StartProcessAsync(
+                processId,
+                incident.IncidentId,
+                HseIncidentEntityType,
+                fieldId,
+                userId);
+
+            await SyncProcessStateToIncidentAsync(instance.InstanceId, incident.IncidentId, userId);
+
+            // Record the incident details in process history
+            await _processService.AddHistoryEntryAsync(instance.InstanceId, new ProcessHistoryEntry
             {
-                var processId = $"HSE_INCIDENT_REPORTING";
-                var incident = await Hse.ReportIncidentAsync(new ReportIncidentRequest(
-                    FieldId: fieldId,
-                    IncidentType: request.IncidentType,
-                    Tier: MapSeverityToTier(request.Severity),
-                    IncidentDate: request.IncidentDateTime,
-                    Location: request.LocationDescription,
-                    Description: request.Description,
-                    Jurisdiction: "USA"), userId);
-
-                var instance = await _processService.StartProcessAsync(
-                    processId,
-                    incident.IncidentId,
-                    HseIncidentEntityType,
-                    fieldId,
-                    userId);
-
-                await SyncProcessStateToIncidentAsync(instance.InstanceId, incident.IncidentId, userId);
-
-                // Record the incident details in process history
-                await _processService.AddHistoryEntryAsync(instance.InstanceId, new ProcessHistoryEntry
+                HistoryId = Guid.NewGuid().ToString(),
+                InstanceId = instance.InstanceId,
+                Action = "INCIDENT_REPORTED",
+                Notes = $"Type: {request.IncidentType} | Severity: {request.Severity} | Location: {request.LocationDescription} | {request.Description}",
+                PerformedBy = userId,
+                Timestamp = DateTime.UtcNow,
+                ActionData = new Dictionary<string, object>
                 {
-                    HistoryId = Guid.NewGuid().ToString(),
-                    InstanceId = instance.InstanceId,
-                    Action = "INCIDENT_REPORTED",
-                    Notes = $"Type: {request.IncidentType} | Severity: {request.Severity} | Location: {request.LocationDescription} | {request.Description}",
-                    PerformedBy = userId,
-                    Timestamp = DateTime.UtcNow,
-                    ActionData = new Dictionary<string, object>
-                    {
-                        ["IncidentType"] = request.IncidentType,
-                        ["Severity"] = request.Severity,
-                        ["LocationDescription"] = request.LocationDescription,
-                        ["InjuredPartyId"] = request.InjuredPartyId
-                    }
-                });
+                    ["IncidentType"] = request.IncidentType,
+                    ["Severity"] = request.Severity,
+                    ["LocationDescription"] = request.LocationDescription,
+                    ["InjuredPartyId"] = request.InjuredPartyId
+                }
+            });
 
-                return CreatedAtAction(nameof(GetIncidentAsync), new { incidentId = incident.IncidentId }, instance);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error reporting HSE incident for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "Error reporting incident." });
-            }
+            return CreatedAtAction(nameof(GetIncidentAsync), new { incidentId = incident.IncidentId }, instance);
         }
 
         /// <summary>List HSE incidents for the current field, optionally filtered by severity or status.</summary>
@@ -133,46 +125,38 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrEmpty(fieldId))
                     return BadRequest(new { error = "No active field selected." });
 
-            try
+            var incidents = await Hse.GetIncidentsAsync(null);
+            var summaries = new List<ProcessInstanceSummary>();
+
+            foreach (var incident in incidents ?? Enumerable.Empty<HSEIncidentRecord>())
             {
-                var incidents = await Hse.GetIncidentsAsync(null);
-                var summaries = new List<ProcessInstanceSummary>();
-
-                foreach (var incident in incidents ?? Enumerable.Empty<HSEIncidentRecord>())
+                if (!MatchesSeverity(incident, severity))
                 {
-                    if (!MatchesSeverity(incident, severity))
-                    {
-                        continue;
-                    }
-
-                    var inst = await GetLatestProcessInstanceForIncidentAsync(incident.IncidentId);
-                    if (!string.IsNullOrWhiteSpace(status) &&
-                        (inst == null || !string.Equals(inst.Status.ToString(), status, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        continue;
-                    }
-
-                    summaries.Add(new ProcessInstanceSummary
-                    {
-                        InstanceId = inst?.InstanceId ?? string.Empty,
-                        ProcessId = inst?.ProcessId ?? string.Empty,
-                        EntityId = incident.IncidentId,
-                        EntityType = "HSE_INCIDENT",
-                        CurrentStepId = inst?.CurrentStepId ?? string.Empty,
-                        Status = inst?.Status.ToString() ?? incident.CurrentState,
-                        StartedAt = inst?.StartDate ?? incident.IncidentDate,
-                        StartedBy = inst?.StartedBy ?? string.Empty,
-                        CompletedAt = inst?.CompletionDate
-                    });
+                    continue;
                 }
 
-                return Ok(summaries);
+                var inst = await GetLatestProcessInstanceForIncidentAsync(incident.IncidentId);
+                if (!string.IsNullOrWhiteSpace(status) &&
+                    (inst == null || !string.Equals(inst.Status.ToString(), status, StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                summaries.Add(new ProcessInstanceSummary
+                {
+                    InstanceId = inst?.InstanceId ?? string.Empty,
+                    ProcessId = inst?.ProcessId ?? string.Empty,
+                    EntityId = incident.IncidentId,
+                    EntityType = "HSE_INCIDENT",
+                    CurrentStepId = inst?.CurrentStepId ?? string.Empty,
+                    Status = inst?.Status.ToString() ?? incident.CurrentState,
+                    StartedAt = inst?.StartDate ?? incident.IncidentDate,
+                    StartedBy = inst?.StartedBy ?? string.Empty,
+                    CompletedAt = inst?.CompletionDate
+                });
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error listing HSE incidents for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "Error retrieving incidents." });
-            }
+
+            return Ok(summaries);
         }
 
         /// <summary>Get a specific incident process instance.</summary>
@@ -184,18 +168,10 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrWhiteSpace(incidentId))
                     return BadRequest(new { error = "Incident ID is required." });
 
-            try
-            {
-                var instance = await GetLatestProcessInstanceForIncidentAsync(incidentId);
-                if (instance == null)
-                    return NotFound(new { error = $"Incident '{incidentId}' not found." });
-                return Ok(instance);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving incident {IncidentId}", incidentId);
-                return StatusCode(500, new { error = "Error retrieving incident." });
-            }
+            var instance = await GetLatestProcessInstanceForIncidentAsync(incidentId);
+            if (instance == null)
+                return NotFound(new { error = $"Incident '{incidentId}' not found." });
+            return Ok(instance);
         }
 
         /// <summary>Ensure an existing PPDM incident has an HSE workflow instance.</summary>
@@ -215,42 +191,34 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 
             var userId = User.ActingUserId();
 
-            try
+            var incident = await Hse.GetIncidentAsync(incidentId);
+            if (incident == null)
+                return NotFound(new { error = $"Incident '{incidentId}' not found." });
+
+            var existing = await GetLatestProcessInstanceForIncidentAsync(incidentId);
+            if (existing != null)
+                return Ok(existing);
+
+            var instance = await _processService.StartProcessAsync(
+                "HSE_INCIDENT_REPORTING",
+                incident.IncidentId,
+                HseIncidentEntityType,
+                fieldId,
+                userId);
+
+            await SyncProcessStateToIncidentAsync(instance.InstanceId, incident.IncidentId, userId);
+
+            await _processService.AddHistoryEntryAsync(instance.InstanceId, new ProcessHistoryEntry
             {
-                var incident = await Hse.GetIncidentAsync(incidentId);
-                if (incident == null)
-                    return NotFound(new { error = $"Incident '{incidentId}' not found." });
+                HistoryId = Guid.NewGuid().ToString(),
+                InstanceId = instance.InstanceId,
+                Action = "WORKFLOW_ENROLLED",
+                Notes = "Workflow created for an existing PPDM incident.",
+                PerformedBy = userId,
+                Timestamp = DateTime.UtcNow
+            });
 
-                var existing = await GetLatestProcessInstanceForIncidentAsync(incidentId);
-                if (existing != null)
-                    return Ok(existing);
-
-                var instance = await _processService.StartProcessAsync(
-                    "HSE_INCIDENT_REPORTING",
-                    incident.IncidentId,
-                    HseIncidentEntityType,
-                    fieldId,
-                    userId);
-
-                await SyncProcessStateToIncidentAsync(instance.InstanceId, incident.IncidentId, userId);
-
-                await _processService.AddHistoryEntryAsync(instance.InstanceId, new ProcessHistoryEntry
-                {
-                    HistoryId = Guid.NewGuid().ToString(),
-                    InstanceId = instance.InstanceId,
-                    Action = "WORKFLOW_ENROLLED",
-                    Notes = "Workflow created for an existing PPDM incident.",
-                    PerformedBy = userId,
-                    Timestamp = DateTime.UtcNow
-                });
-
-                return CreatedAtAction(nameof(GetIncidentAsync), new { incidentId = incident.IncidentId }, instance);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error ensuring workflow for incident {IncidentId}", incidentId);
-                return StatusCode(500, new { error = "Error ensuring workflow." });
-            }
+            return CreatedAtAction(nameof(GetIncidentAsync), new { incidentId = incident.IncidentId }, instance);
         }
 
         /// <summary>Submit a Root Cause Analysis for an incident. Requires SafetyOfficer or Manager role.</summary>
@@ -273,56 +241,48 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 
             var userId = User.ActingUserId();
 
-            try
+            var instance = await GetLatestProcessInstanceForIncidentAsync(incidentId);
+            if (instance == null)
+                return NotFound(new { error = $"Incident '{incidentId}' not found." });
+
+            await TransitionIncidentIfAvailableAsync(incidentId, "investigate", request.RcaSummary, userId);
+            await TransitionIncidentIfAvailableAsync(incidentId, "rca_start", request.RcaSummary, userId);
+
+            var causes = await Hse.GetCausesAsync(incidentId);
+            if (!causes.Any(cause =>
+                    string.Equals(cause.CauseType, CauseType.Root, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(cause.Description, request.RcaSummary, StringComparison.Ordinal)))
             {
-                var instance = await GetLatestProcessInstanceForIncidentAsync(incidentId);
-                if (instance == null)
-                    return NotFound(new { error = $"Incident '{incidentId}' not found." });
-
-                await TransitionIncidentIfAvailableAsync(incidentId, "investigate", request.RcaSummary, userId);
-                await TransitionIncidentIfAvailableAsync(incidentId, "rca_start", request.RcaSummary, userId);
-
-                var causes = await Hse.GetCausesAsync(incidentId);
-                if (!causes.Any(cause =>
-                        string.Equals(cause.CauseType, CauseType.Root, StringComparison.OrdinalIgnoreCase) &&
-                        string.Equals(cause.Description, request.RcaSummary, StringComparison.Ordinal)))
-                {
-                    var nextSeq = causes.Count > 0 ? causes.Max(cause => cause.Seq) + 1 : 1;
-                    await Hse.AddCauseAsync(incidentId, new AddCauseRequest(
-                        CauseType: CauseType.Root,
-                        CauseDesc: request.RcaSummary,
-                        CauseCategory: string.IsNullOrWhiteSpace(request.RcaCauseCategory)
-                            ? CauseCategory.Process
-                            : request.RcaCauseCategory,
-                        Seq: nextSeq), userId);
-                }
-
-                if (await Hse.IsRcaCompleteAsync(incidentId))
-                {
-                    await TransitionIncidentIfAvailableAsync(incidentId, "rca_complete", request.RcaSummary, userId);
-                }
-
-                await AdvanceWorkflowThroughStepAsync(instance.InstanceId, "INC_RCA", userId);
-                await SyncProcessStateToIncidentAsync(instance.InstanceId, incidentId, userId);
-
-                // Record RCA submission
-                await _processService.AddHistoryEntryAsync(instance.InstanceId, new ProcessHistoryEntry
-                {
-                    HistoryId = Guid.NewGuid().ToString(),
-                    InstanceId = instance.InstanceId,
-                    Action = "RCA_SUBMITTED",
-                    Notes = request.RcaSummary,
-                    PerformedBy = userId,
-                    Timestamp = DateTime.UtcNow
-                });
-
-                return NoContent();
+                var nextSeq = causes.Count > 0 ? causes.Max(cause => cause.Seq) + 1 : 1;
+                await Hse.AddCauseAsync(incidentId, new AddCauseRequest(
+                    CauseType: CauseType.Root,
+                    CauseDesc: request.RcaSummary,
+                    CauseCategory: string.IsNullOrWhiteSpace(request.RcaCauseCategory)
+                        ? CauseCategory.Process
+                        : request.RcaCauseCategory,
+                    Seq: nextSeq), userId);
             }
-            catch (Exception ex)
+
+            if (await Hse.IsRcaCompleteAsync(incidentId))
             {
-                _logger.LogError(ex, "Error submitting RCA for incident {IncidentId}", incidentId);
-                return StatusCode(500, new { error = "Error submitting RCA." });
+                await TransitionIncidentIfAvailableAsync(incidentId, "rca_complete", request.RcaSummary, userId);
             }
+
+            await AdvanceWorkflowThroughStepAsync(instance.InstanceId, "INC_RCA", userId);
+            await SyncProcessStateToIncidentAsync(instance.InstanceId, incidentId, userId);
+
+            // Record RCA submission
+            await _processService.AddHistoryEntryAsync(instance.InstanceId, new ProcessHistoryEntry
+            {
+                HistoryId = Guid.NewGuid().ToString(),
+                InstanceId = instance.InstanceId,
+                Action = "RCA_SUBMITTED",
+                Notes = request.RcaSummary,
+                PerformedBy = userId,
+                Timestamp = DateTime.UtcNow
+            });
+
+            return NoContent();
         }
 
         /// <summary>Raise corrective actions for an incident.</summary>
@@ -351,50 +311,42 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 
             var userId = User.ActingUserId();
 
-            try
+            var instance = await GetLatestProcessInstanceForIncidentAsync(incidentId);
+            if (instance == null)
+                return NotFound(new { error = $"Incident '{incidentId}' not found." });
+
+            await Hse.CreateCaPlanAsync(incidentId, userId);
+
+            foreach (var action in correctiveActions)
             {
-                var instance = await GetLatestProcessInstanceForIncidentAsync(incidentId);
-                if (instance == null)
-                    return NotFound(new { error = $"Incident '{incidentId}' not found." });
+                var actionId = await Hse.AddCorrectiveActionAsync(incidentId, new AddCARequest(
+                    CADescription: action,
+                    CAType: request.CorrectiveActionType,
+                    DueDate: request.CorrectiveActionDueDate.Value,
+                    ResponsibleBaId: request.AssignedToUserId ?? string.Empty), userId);
 
-                await Hse.CreateCaPlanAsync(incidentId, userId);
-
-                foreach (var action in correctiveActions)
+                await _processService.AddHistoryEntryAsync(instance.InstanceId, new ProcessHistoryEntry
                 {
-                    var actionId = await Hse.AddCorrectiveActionAsync(incidentId, new AddCARequest(
-                        CADescription: action,
-                        CAType: request.CorrectiveActionType,
-                        DueDate: request.CorrectiveActionDueDate.Value,
-                        ResponsibleBaId: request.AssignedToUserId ?? string.Empty), userId);
-
-                    await _processService.AddHistoryEntryAsync(instance.InstanceId, new ProcessHistoryEntry
+                    HistoryId = Guid.NewGuid().ToString(),
+                    InstanceId = instance.InstanceId,
+                    Action = "CORRECTIVE_ACTION_RAISED",
+                    Notes = action,
+                    PerformedBy = userId,
+                    Timestamp = DateTime.UtcNow,
+                    ActionData = new Dictionary<string, object>
                     {
-                        HistoryId = Guid.NewGuid().ToString(),
-                        InstanceId = instance.InstanceId,
-                        Action = "CORRECTIVE_ACTION_RAISED",
-                        Notes = action,
-                        PerformedBy = userId,
-                        Timestamp = DateTime.UtcNow,
-                        ActionData = new Dictionary<string, object>
-                        {
-                            ["ActionId"] = actionId,
-                            ["ActionType"] = request.CorrectiveActionType,
-                            ["AssignedTo"] = request.AssignedToUserId ?? userId,
-                            ["DueDate"] = request.CorrectiveActionDueDate.Value
-                        }
-                    });
-                }
-
-                await AdvanceWorkflowThroughStepAsync(instance.InstanceId, "INC_CORRECTIVE_ACTIONS", userId);
-                await SyncProcessStateToIncidentAsync(instance.InstanceId, incidentId, userId);
-
-                return NoContent();
+                        ["ActionId"] = actionId,
+                        ["ActionType"] = request.CorrectiveActionType,
+                        ["AssignedTo"] = request.AssignedToUserId ?? userId,
+                        ["DueDate"] = request.CorrectiveActionDueDate.Value
+                    }
+                });
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error raising corrective actions for incident {IncidentId}", incidentId);
-                return StatusCode(500, new { error = "Error raising corrective actions." });
-            }
+
+            await AdvanceWorkflowThroughStepAsync(instance.InstanceId, "INC_CORRECTIVE_ACTIONS", userId);
+            await SyncProcessStateToIncidentAsync(instance.InstanceId, incidentId, userId);
+
+            return NoContent();
         }
 
         /// <summary>Mark a corrective action as closed.</summary>
@@ -415,43 +367,35 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             var userId = User.ActingUserId();
             var notes = request?.Notes ?? "Closed.";
 
-            try
+            if (!TryParseCorrectiveActionStepSeq(actionId, out var stepSeq))
+                return BadRequest(new { error = "Action ID must contain the corrective-action step sequence." });
+
+            var instance = await GetLatestProcessInstanceForIncidentAsync(incidentId);
+            if (instance == null)
+                return NotFound(new { error = $"Incident '{incidentId}' not found." });
+
+            await Hse.RecordCompletionAsync(incidentId, stepSeq, notes, userId);
+
+            var correctiveActions = await Hse.GetCorrectiveActionsAsync(incidentId);
+            if (correctiveActions.Count > 0 && correctiveActions.All(action =>
+                    string.Equals(action.Status, "COMPLETED", StringComparison.OrdinalIgnoreCase)))
             {
-                if (!TryParseCorrectiveActionStepSeq(actionId, out var stepSeq))
-                    return BadRequest(new { error = "Action ID must contain the corrective-action step sequence." });
-
-                var instance = await GetLatestProcessInstanceForIncidentAsync(incidentId);
-                if (instance == null)
-                    return NotFound(new { error = $"Incident '{incidentId}' not found." });
-
-                await Hse.RecordCompletionAsync(incidentId, stepSeq, notes, userId);
-
-                var correctiveActions = await Hse.GetCorrectiveActionsAsync(incidentId);
-                if (correctiveActions.Count > 0 && correctiveActions.All(action =>
-                        string.Equals(action.Status, "COMPLETED", StringComparison.OrdinalIgnoreCase)))
-                {
-                    await TransitionIncidentIfAvailableAsync(incidentId, "ca_done", notes, userId);
-                    await SyncProcessStateToIncidentAsync(instance.InstanceId, incidentId, userId);
-                }
-
-                await _processService.AddHistoryEntryAsync(instance.InstanceId, new ProcessHistoryEntry
-                {
-                    HistoryId = Guid.NewGuid().ToString(),
-                    InstanceId = instance.InstanceId,
-                    Action = "CORRECTIVE_ACTION_CLOSED",
-                    Notes = notes,
-                    PerformedBy = userId,
-                    Timestamp = DateTime.UtcNow,
-                    ActionData = new Dictionary<string, object> { ["ActionId"] = actionId }
-                });
-
-                return NoContent();
+                await TransitionIncidentIfAvailableAsync(incidentId, "ca_done", notes, userId);
+                await SyncProcessStateToIncidentAsync(instance.InstanceId, incidentId, userId);
             }
-            catch (Exception ex)
+
+            await _processService.AddHistoryEntryAsync(instance.InstanceId, new ProcessHistoryEntry
             {
-                _logger.LogError(ex, "Error closing corrective action {ActionId} for incident {IncidentId}", actionId, incidentId);
-                return StatusCode(500, new { error = "Error closing corrective action." });
-            }
+                HistoryId = Guid.NewGuid().ToString(),
+                InstanceId = instance.InstanceId,
+                Action = "CORRECTIVE_ACTION_CLOSED",
+                Notes = notes,
+                PerformedBy = userId,
+                Timestamp = DateTime.UtcNow,
+                ActionData = new Dictionary<string, object> { ["ActionId"] = actionId }
+            });
+
+            return NoContent();
         }
 
         /// <summary>Close an incident. Requires SafetyOfficer or Manager role.</summary>
@@ -471,52 +415,44 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             var userId = User.ActingUserId();
             var reason = request?.Reason ?? "Closed.";
 
-            try
+            var instance = await GetLatestProcessInstanceForIncidentAsync(incidentId);
+            if (instance == null)
+                return NotFound(new { error = $"Incident '{incidentId}' not found or already closed." });
+
+            var correctiveActions = await Hse.GetCorrectiveActionsAsync(incidentId);
+            var hasOpenCorrectiveActions = correctiveActions.Any() && correctiveActions.Any(action =>
+                !string.Equals(action.Status, "COMPLETED", StringComparison.OrdinalIgnoreCase));
+            if (hasOpenCorrectiveActions)
+                return BadRequest(new { error = "All corrective actions must be completed before the incident can be closed." });
+
+            await TransitionIncidentIfAvailableAsync(incidentId, "ca_done", reason, userId);
+
+            var incident = await Hse.GetIncidentAsync(incidentId);
+            if (incident == null)
+                return NotFound(new { error = $"Incident '{incidentId}' not found or already closed." });
+
+            var availableTriggers = await Hse.GetAvailableTriggersAsync(incidentId);
+            if (!availableTriggers.Contains("close", StringComparer.OrdinalIgnoreCase) &&
+                !string.Equals(incident.CurrentState, IncidentState.Closed, StringComparison.OrdinalIgnoreCase))
             {
-                var instance = await GetLatestProcessInstanceForIncidentAsync(incidentId);
-                if (instance == null)
-                    return NotFound(new { error = $"Incident '{incidentId}' not found or already closed." });
-
-                var correctiveActions = await Hse.GetCorrectiveActionsAsync(incidentId);
-                var hasOpenCorrectiveActions = correctiveActions.Any() && correctiveActions.Any(action =>
-                    !string.Equals(action.Status, "COMPLETED", StringComparison.OrdinalIgnoreCase));
-                if (hasOpenCorrectiveActions)
-                    return BadRequest(new { error = "All corrective actions must be completed before the incident can be closed." });
-
-                await TransitionIncidentIfAvailableAsync(incidentId, "ca_done", reason, userId);
-
-                var incident = await Hse.GetIncidentAsync(incidentId);
-                if (incident == null)
-                    return NotFound(new { error = $"Incident '{incidentId}' not found or already closed." });
-
-                var availableTriggers = await Hse.GetAvailableTriggersAsync(incidentId);
-                if (!availableTriggers.Contains("close", StringComparer.OrdinalIgnoreCase) &&
-                    !string.Equals(incident.CurrentState, IncidentState.Closed, StringComparison.OrdinalIgnoreCase))
-                {
-                    return BadRequest(new { error = $"Incident '{incidentId}' is not ready for closure from state '{incident.CurrentState}'." });
-                }
-
-                await TransitionIncidentIfAvailableAsync(incidentId, "close", reason, userId);
-                await AdvanceWorkflowThroughStepAsync(instance.InstanceId, "INC_CLOSURE", userId);
-                await SyncProcessStateToIncidentAsync(instance.InstanceId, incidentId, userId);
-
-                await _processService.AddHistoryEntryAsync(instance.InstanceId, new ProcessHistoryEntry
-                {
-                    HistoryId = Guid.NewGuid().ToString(),
-                    InstanceId = instance.InstanceId,
-                    Action = "INCIDENT_CLOSED",
-                    Notes = reason,
-                    PerformedBy = userId,
-                    Timestamp = DateTime.UtcNow
-                });
-
-                return NoContent();
+                return BadRequest(new { error = $"Incident '{incidentId}' is not ready for closure from state '{incident.CurrentState}'." });
             }
-            catch (Exception ex)
+
+            await TransitionIncidentIfAvailableAsync(incidentId, "close", reason, userId);
+            await AdvanceWorkflowThroughStepAsync(instance.InstanceId, "INC_CLOSURE", userId);
+            await SyncProcessStateToIncidentAsync(instance.InstanceId, incidentId, userId);
+
+            await _processService.AddHistoryEntryAsync(instance.InstanceId, new ProcessHistoryEntry
             {
-                _logger.LogError(ex, "Error closing incident {IncidentId}", incidentId);
-                return StatusCode(500, new { error = "Error closing incident." });
-            }
+                HistoryId = Guid.NewGuid().ToString(),
+                InstanceId = instance.InstanceId,
+                Action = "INCIDENT_CLOSED",
+                Notes = reason,
+                PerformedBy = userId,
+                Timestamp = DateTime.UtcNow
+            });
+
+            return NoContent();
         }
 
         private async Task<ProcessInstance?> GetLatestProcessInstanceForIncidentAsync(string incidentId)

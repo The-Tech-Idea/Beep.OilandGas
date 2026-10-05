@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.Core;
 ﻿using System;
 using System.Collections.Generic;
@@ -30,8 +31,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// </summary>
         /// <param name="request">Flash calculation request containing well/facility ID, pressure, temperature, and feed composition</param>
         /// <returns>Flash calculation result with vapor/liquid fractions, phase compositions, K-values, and phase properties</returns>
-        /// <exception cref="ArgumentException">Thrown when request validation fails</exception>
-        /// <exception cref="InvalidOperationException">Thrown when feed composition is unavailable or calculation fails</exception>
+        /// <exception cref="RefusalException">What was sent cannot be calculated, or no pressure and temperature are known for it.</exception>
         public async Task<Beep.OilandGas.Models.Data.Calculations.FlashCalculationResult> PerformFlashCalculationAsync(Beep.OilandGas.Models.Data.Calculations.FlashCalculationRequest request)
         {
             try
@@ -39,50 +39,50 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 // Validate request
                 if (string.IsNullOrEmpty(request.WellId) && string.IsNullOrEmpty(request.FacilityId))
                 {
-                    throw new ArgumentException("At least one of WellId or FacilityId must be provided");
+                    throw RefusalException.Invalid("Choose the well or facility for the flash calculation.");
                 }
 
                 if (request.FeedComposition == null || request.FeedComposition.Count == 0)
                 {
-                    throw new ArgumentException("Feed composition must be provided");
+                    throw RefusalException.Invalid("Give the feed composition for the flash calculation.");
                 }
 
                 _logger?.LogInformation("Starting Flash Calculation for WellId: {WellId}, FacilityId: {FacilityId}",
                     request.WellId, request.FacilityId);
 
-                // Step 1: Build flash conditions from request or PPDM data
-                FLASH_CONDITIONS FLASH_CONDITIONS;
-                if (request.Pressure.HasValue && request.Temperature.HasValue && request.FeedComposition != null)
+                // Step 1: Build flash conditions: pressure and temperature from the request, or from the well's
+                // recorded data where the request leaves them out; the feed composition is the request's.
+                var pressure = request.Pressure;
+                var temperature = request.Temperature;
+                if (!pressure.HasValue || !temperature.HasValue)
                 {
-                    // Use values from request (model types use decimal)
-                    FLASH_CONDITIONS = new FLASH_CONDITIONS
-                    {
-                        PRESSURE = (decimal)request.Pressure.Value,
-                        TEMPERATURE = (decimal)request.Temperature.Value,
-                        // Map incoming calculation request components to FlashCalculations.FLASH_COMPONENT
-                        FEED_COMPOSITION = request.FeedComposition.Select(c => new Beep.OilandGas.Models.Data.FlashCalculations.FLASH_COMPONENT
-                        {
-                            NAME = c.NAME,
-                            COMPONENT_NAME = string.IsNullOrWhiteSpace(c.COMPONENT_NAME) ? c.NAME : c.COMPONENT_NAME,
-                            MOLE_FRACTION = (decimal)c.MOLE_FRACTION,
-                            CRITICAL_TEMPERATURE = (decimal)c.CRITICAL_TEMPERATURE,
-                            CRITICAL_PRESSURE = (decimal)c.CRITICAL_PRESSURE,
-                            ACENTRIC_FACTOR = (decimal)c.ACENTRIC_FACTOR,
-                            MOLECULAR_WEIGHT = (decimal)c.MOLECULAR_WEIGHT
-                        }).ToList()
-                    };
-                }
-                else
-                {
-                    // Retrieve from PPDM data
-                    FLASH_CONDITIONS = await GetFlashConditionsFromPPDMAsync(request.WellId ?? string.Empty, request.FacilityId ?? string.Empty);
+                    var recorded = await GetFlashConditionsFromPPDMAsync(request.WellId ?? string.Empty);
+                    pressure ??= recorded.Pressure;
+                    temperature ??= recorded.Temperature;
                 }
 
-                if (FLASH_CONDITIONS.FEED_COMPOSITION == null || FLASH_CONDITIONS.FEED_COMPOSITION.Count == 0)
+                if (!pressure.HasValue || !temperature.HasValue)
                 {
-                    throw new InvalidOperationException(
-                        "Flash requires a non-empty feed composition. Supply FeedComposition on the request, or extend GetFlashConditionsFromPPDMAsync to load composition from PPDM.");
+                    throw RefusalException.Invalid(
+                        "Give the pressure and the temperature for the flash calculation: none is recorded for this well.");
                 }
+
+                var FLASH_CONDITIONS = new FLASH_CONDITIONS
+                {
+                    PRESSURE = pressure.Value,
+                    TEMPERATURE = temperature.Value,
+                    // Map incoming calculation request components to FlashCalculations.FLASH_COMPONENT
+                    FEED_COMPOSITION = request.FeedComposition.Select(c => new Beep.OilandGas.Models.Data.FlashCalculations.FLASH_COMPONENT
+                    {
+                        NAME = c.NAME,
+                        COMPONENT_NAME = string.IsNullOrWhiteSpace(c.COMPONENT_NAME) ? c.NAME : c.COMPONENT_NAME,
+                        MOLE_FRACTION = (decimal)c.MOLE_FRACTION,
+                        CRITICAL_TEMPERATURE = (decimal)c.CRITICAL_TEMPERATURE,
+                        CRITICAL_PRESSURE = (decimal)c.CRITICAL_PRESSURE,
+                        ACENTRIC_FACTOR = (decimal)c.ACENTRIC_FACTOR,
+                        MOLECULAR_WEIGHT = (decimal)c.MOLECULAR_WEIGHT
+                    }).ToList()
+                };
 
                 FlashValidator.ValidateFlashConditions(FLASH_CONDITIONS);
 
@@ -97,26 +97,20 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 var eosRef = FlashEquationOfStateMapping.ToReferenceCode(request.AdditionalParameters?.EquationOfState);
                 var result = MapFlashResultToDTO(flashResult, request, vaporProperties, liquidProperties, eosRef);
 
-                // Step 5: Store result in PPDM database
-                try
+                // Step 5: Store result in PPDM database (the result is the caller's answer even when saving fails)
+                result.Pressure = FLASH_CONDITIONS.PRESSURE;
+                result.Temperature = FLASH_CONDITIONS.TEMPERATURE;
+                result.FeedCompositionJson = JsonSerializer.Serialize(FLASH_CONDITIONS.FEED_COMPOSITION);
+                result.VaporCompositionJson = JsonSerializer.Serialize(result.VaporComposition);
+                result.LiquidCompositionJson = JsonSerializer.Serialize(result.LiquidComposition);
+                result.KValuesJson = JsonSerializer.Serialize(result.KValues);
+                await SaveCompletedRunAsync("flash calculation", async () =>
                 {
                     var repository = await GetFlashResultRepositoryAsync();
-                    result.Pressure = FLASH_CONDITIONS.PRESSURE;
-                    result.Temperature = FLASH_CONDITIONS.TEMPERATURE;
-                    result.FeedCompositionJson = JsonSerializer.Serialize(FLASH_CONDITIONS.FEED_COMPOSITION);
-                    result.VaporCompositionJson = JsonSerializer.Serialize(result.VaporComposition);
-                    result.LiquidCompositionJson = JsonSerializer.Serialize(result.LiquidComposition);
-                    result.KValuesJson = JsonSerializer.Serialize(result.KValues);
-
                     // Avoid ambiguous overload resolution by casting to object
                     await InsertAnalysisResultAsync(repository, (object)result, request.UserId);
                     _logger?.LogInformation("Stored Flash Calculation result with ID: {CalculationId}", result.CalculationId);
-                }
-                catch (Exception storeEx)
-                {
-                    _logger?.LogError(storeEx, "Error storing Flash Calculation result");
-                    // Continue - don't fail the operation if storage fails
-                }
+                });
 
                 return result;
             }
@@ -124,34 +118,28 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             {
                 throw;
             }
+            // Every other way the run ends short of a result is recorded in the calculation history, then goes on to the
+            // caller: the API's handler answers a refusal with its sentence and reports anything else.
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error performing Flash Calculation for WellId: {WellId}, FacilityId: {FacilityId}",
-                    request.WellId, request.FacilityId);
-
-                // Try to store error result
-                try
+                var errorResult = new FlashCalculationResult
+                {
+                    CalculationId = _defaults.FormatIdForTable("FLASH_CALCULATION", Guid.NewGuid().ToString()),
+                    WellId = request.WellId,
+                    FacilityId = request.FacilityId,
+                    CalculationDate = DateTime.UtcNow,
+                    Status = "FAILED",
+                    ErrorMessage = FailedRunMessage(ex, "flash calculation"),
+                    AdditionalResults = new FlashCalculationAdditionalResults
+                    {
+                        EosModelReferenceCode = FlashEquationOfStateMapping.ToReferenceCode(request.AdditionalParameters?.EquationOfState)
+                    }
+                };
+                await RecordFailedRunAsync("flash calculation", async () =>
                 {
                     var repository = await GetFlashResultRepositoryAsync();
-                    var errorResult = new FlashCalculationResult
-                    {
-                        CalculationId = _defaults.FormatIdForTable("FLASH_CALCULATION", Guid.NewGuid().ToString()),
-                        WellId = request.WellId,
-                        FacilityId = request.FacilityId,
-                        CalculationDate = DateTime.UtcNow,
-                        Status = "FAILED",
-                        ErrorMessage = ex.Message,
-                        AdditionalResults = new FlashCalculationAdditionalResults
-                        {
-                            EosModelReferenceCode = FlashEquationOfStateMapping.ToReferenceCode(request.AdditionalParameters?.EquationOfState)
-                        }
-                    };
                     await InsertAnalysisResultAsync(repository, errorResult, request.UserId);
-                }
-                catch (Exception storeEx)
-                {
-                    _logger?.LogError(storeEx, "Error storing Flash Calculation error result");
-                }
+                });
 
                 throw;
             }
@@ -162,76 +150,66 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         #region Flash Calculation Helper Methods
 
         /// <summary>
-        /// Retrieves flash conditions from PPDM for a well or facility
+        /// The flash pressure (psia) and temperature (Rankine) recorded for a well: the latest bottom-hole survey, then the
+        /// latest well test for what that leaves out. Null where nothing is recorded — no value is made up.
         /// </summary>
-        private async Task<FLASH_CONDITIONS> GetFlashConditionsFromPPDMAsync(string wellId, string facilityId)
+        private async Task<(decimal? Pressure, decimal? Temperature)> GetFlashConditionsFromPPDMAsync(string wellId)
         {
-            var conditions = new FLASH_CONDITIONS
-            {
-                PRESSURE = DefaultFlashPressurePsia,
-                TEMPERATURE = DefaultFlashTemperatureRankine, // ~150 °F as Rankine; matches FlashCalculator / README
-                FEED_COMPOSITION = new List<Beep.OilandGas.Models.Data.FlashCalculations.FLASH_COMPONENT>()
-            };
+            decimal? pressure = null;
+            decimal? temperature = null;
 
-            try
+            if (!string.IsNullOrEmpty(wellId))
             {
-                if (!string.IsNullOrEmpty(wellId))
+                // Try WELL_PRESSURE_BH for wellhead pressure and bottom-hole temperature
+                var bhMeta = await _metadata.GetTableMetadataAsync("WELL_PRESSURE_BH");
+                if (bhMeta != null)
                 {
-                    // Try WELL_PRESSURE_BH for wellhead pressure and bottom-hole temperature
-                    var bhMeta = await _metadata.GetTableMetadataAsync("WELL_PRESSURE_BH");
-                    if (bhMeta != null)
+                    var bhType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{bhMeta.EntityTypeName}") ?? typeof(WELL_PRESSURE_BH);
+                    var bhRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, bhType, _connectionName, "WELL_PRESSURE_BH");
+                    var bhFilters = new List<AppFilter>
                     {
-                        var bhType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{bhMeta.EntityTypeName}") ?? typeof(WELL_PRESSURE_BH);
-                        var bhRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, bhType, _connectionName, "WELL_PRESSURE_BH");
-                        var bhFilters = new List<AppFilter>
+                        new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellId },
+                        new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    };
+                    var bhResults = await bhRepo.GetAsync(bhFilters);
+                    var bhRecord = bhResults?.OfType<WELL_PRESSURE_BH>().OrderByDescending(r => r.SURVEY_DATE).FirstOrDefault();
+                    if (bhRecord != null)
+                    {
+                        if (bhRecord.WELL_HEAD_PRESSURE > 0) pressure = bhRecord.WELL_HEAD_PRESSURE;
+                        if (bhRecord.RUN_DEPTH_TEMPERATURE > 0)
+                            temperature = ToRankineFromPpdm(bhRecord.RUN_DEPTH_TEMPERATURE, bhRecord.RUN_DEPTH_TEMPERATURE_OUOM);
+                    }
+                }
+
+                // Fall back to WELL_TEST for temperature/pressure if BH data missing
+                if (!pressure.HasValue || !temperature.HasValue)
+                {
+                    var wtMeta = await _metadata.GetTableMetadataAsync("WELL_TEST");
+                    if (wtMeta != null)
+                    {
+                        var wtType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{wtMeta.EntityTypeName}") ?? typeof(WELL_TEST);
+                        var wtRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, wtType, _connectionName, "WELL_TEST");
+                        var wtFilters = new List<AppFilter>
                         {
                             new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellId },
                             new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
                         };
-                        var bhResults = await bhRepo.GetAsync(bhFilters);
-                        var bhRecord = bhResults?.OfType<WELL_PRESSURE_BH>().OrderByDescending(r => r.SURVEY_DATE).FirstOrDefault();
-                        if (bhRecord != null)
+                        var wtResults = await wtRepo.GetAsync(wtFilters);
+                        var wtRecord = wtResults?.OfType<WELL_TEST>().OrderByDescending(t => t.TEST_DATE).FirstOrDefault();
+                        if (wtRecord != null)
                         {
-                            if (bhRecord.WELL_HEAD_PRESSURE > 0) conditions.PRESSURE = bhRecord.WELL_HEAD_PRESSURE;
-                            if (bhRecord.RUN_DEPTH_TEMPERATURE > 0)
-                                conditions.TEMPERATURE = ToRankineFromPpdm(bhRecord.RUN_DEPTH_TEMPERATURE, bhRecord.RUN_DEPTH_TEMPERATURE_OUOM);
-                        }
-                    }
-
-                    // Fall back to WELL_TEST for temperature/pressure if BH data missing
-                    if (conditions.PRESSURE == DefaultFlashPressurePsia || conditions.TEMPERATURE == DefaultFlashTemperatureRankine)
-                    {
-                        var wtMeta = await _metadata.GetTableMetadataAsync("WELL_TEST");
-                        if (wtMeta != null)
-                        {
-                            var wtType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{wtMeta.EntityTypeName}") ?? typeof(WELL_TEST);
-                            var wtRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, wtType, _connectionName, "WELL_TEST");
-                            var wtFilters = new List<AppFilter>
-                            {
-                                new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellId },
-                                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-                            };
-                            var wtResults = await wtRepo.GetAsync(wtFilters);
-                            var wtRecord = wtResults?.OfType<WELL_TEST>().OrderByDescending(t => t.TEST_DATE).FirstOrDefault();
-                            if (wtRecord != null)
-                            {
-                                if (conditions.PRESSURE == DefaultFlashPressurePsia && wtRecord.FLOW_PRESSURE > 0)
-                                    conditions.PRESSURE = wtRecord.FLOW_PRESSURE;
-                                if (conditions.TEMPERATURE == DefaultFlashTemperatureRankine && wtRecord.FLOW_TEMPERATURE > 0)
-                                    conditions.TEMPERATURE = ToRankineFromPpdm(wtRecord.FLOW_TEMPERATURE, wtRecord.FLOW_TEMPERATURE_OUOM);
-                            }
+                            if (!pressure.HasValue && wtRecord.FLOW_PRESSURE > 0)
+                                pressure = wtRecord.FLOW_PRESSURE;
+                            if (!temperature.HasValue && wtRecord.FLOW_TEMPERATURE > 0)
+                                temperature = ToRankineFromPpdm(wtRecord.FLOW_TEMPERATURE, wtRecord.FLOW_TEMPERATURE_OUOM);
                         }
                     }
                 }
-
-                _logger?.LogInformation("Flash conditions retrieved for WellId: {WellId}, P={Pressure}, T={Temperature}", wellId, conditions.PRESSURE, conditions.TEMPERATURE);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Could not retrieve flash conditions from PPDM for WellId: {WellId}; using defaults", wellId);
             }
 
-            return conditions;
+            _logger?.LogInformation("Flash conditions recorded for WellId: {WellId}, P={Pressure}, T={Temperature}", wellId, pressure, temperature);
+
+            return (pressure, temperature);
         }
 
         /// <summary>

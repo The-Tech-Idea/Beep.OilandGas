@@ -43,29 +43,21 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
             [FromQuery] string? leaseId = null,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
+            if (!string.IsNullOrEmpty(facilityId))
             {
-                if (!string.IsNullOrEmpty(facilityId))
-                {
-                    var facility = _service.StorageManager.GetFacility(facilityId);
-                    if (facility == null)
-                            return NotFound(new { error = $"Storage facility {facilityId} not found." });
-                    return Ok(new { FacilityId = facility.FacilityId, FacilityName = facility.FacilityName, Location = facility.Location });
-                }
-                
-                if (!string.IsNullOrEmpty(leaseId))
-                {
-                    var tankBatteries = _service.StorageManager.GetTankBatteriesByLease(leaseId).ToList();
-                    return Ok(tankBatteries.Select(tb => new { BatteryId = tb.BatteryId, BatteryName = tb.BatteryName, LeaseId = tb.LeaseId }));
-                }
-                
-                    return BadRequest(new { error = "Either facility ID or lease ID parameter is required." });
+                var facility = _service.StorageManager.GetFacility(facilityId);
+                if (facility == null)
+                        return NotFound(new { error = $"Storage facility {facilityId} not found." });
+                return Ok(new { FacilityId = facility.FacilityId, FacilityName = facility.FacilityName, Location = facility.Location });
             }
-            catch (Exception ex)
+            
+            if (!string.IsNullOrEmpty(leaseId))
             {
-                _logger.LogError(ex, "Error getting storage facilities");
-                return StatusCode(500, new { error = "An internal error occurred." });
+                var tankBatteries = _service.StorageManager.GetTankBatteriesByLease(leaseId).ToList();
+                return Ok(tankBatteries.Select(tb => new { BatteryId = tb.BatteryId, BatteryName = tb.BatteryName, LeaseId = tb.LeaseId }));
             }
+            
+                return BadRequest(new { error = "Either facility ID or lease ID parameter is required." });
         }
 
         /// <summary>
@@ -76,26 +68,18 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
             [FromBody] CreateStorageFacilityRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var facility = new StorageFacility
-                {
-                    FacilityId = request.FacilityId ?? Guid.NewGuid().ToString(),
-                    FacilityName = request.FacilityName,
-                    Location = request.Location
-                };
-
-                _service.StorageManager.RegisterFacility(facility);
-                return Ok(new { FacilityId = facility.FacilityId, FacilityName = facility.FacilityName });
-            }
-            catch (Exception ex)
+            var facility = new StorageFacility
             {
-                _logger.LogError(ex, "Error creating storage facility");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                FacilityId = request.FacilityId ?? Guid.NewGuid().ToString(),
+                FacilityName = request.FacilityName,
+                Location = request.Location
+            };
+
+            _service.StorageManager.RegisterFacility(facility);
+            return Ok(new { FacilityId = facility.FacilityId, FacilityName = facility.FacilityName });
         }
 
         /// <summary>Service-backed tank inventory update for storage workflows.</summary>
@@ -106,26 +90,18 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-                if (string.IsNullOrWhiteSpace(tankId))
-                    return BadRequest(new { error = "Tank ID is required." });
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            if (string.IsNullOrWhiteSpace(tankId))
+                return BadRequest(new { error = "Tank ID is required." });
 
-                var result = await _inventoryService.UpdateInventoryAsync(
-                    tankId,
-                    request.VolumeDelta,
-                    userId,
-                    connectionName ?? _service.DefaultConnectionName);
+            var result = await _inventoryService.UpdateInventoryAsync(
+                tankId,
+                request.VolumeDelta,
+                userId,
+                connectionName ?? _service.DefaultConnectionName);
 
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating storage tank inventory for {TankId}", tankId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(result);
         }
 
         /// <summary>Service-backed tank inventory lookup for storage workflows.</summary>
@@ -134,25 +110,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
             string tankId,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(tankId))
-                    return BadRequest(new { error = "Tank ID is required." });
+            if (string.IsNullOrWhiteSpace(tankId))
+                return BadRequest(new { error = "Tank ID is required." });
 
-                var result = await _inventoryService.GetInventoryAsync(
-                    tankId,
-                    connectionName ?? _service.DefaultConnectionName);
+            var result = await _inventoryService.GetInventoryAsync(
+                tankId,
+                connectionName ?? _service.DefaultConnectionName);
 
-                if (result == null)
-                    return NotFound(new { error = $"Tank inventory {tankId} not found." });
+            if (result == null)
+                return NotFound(new { error = $"Tank inventory {tankId} not found." });
 
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving storage tank inventory for {TankId}", tankId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(result);
         }
 
         /// <summary>Service-backed storage valuation endpoint.</summary>
@@ -163,27 +131,19 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-                if (string.IsNullOrWhiteSpace(inventoryItemId))
-                    return BadRequest(new { error = "Inventory item ID is required." });
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            if (string.IsNullOrWhiteSpace(inventoryItemId))
+                return BadRequest(new { error = "Inventory item ID is required." });
 
-                var result = await _inventoryService.CalculateValuationAsync(
-                    inventoryItemId,
-                    request.ValuationDate,
-                    request.Method,
-                    userId,
-                    connectionName ?? _service.DefaultConnectionName);
+            var result = await _inventoryService.CalculateValuationAsync(
+                inventoryItemId,
+                request.ValuationDate,
+                request.Method,
+                userId,
+                connectionName ?? _service.DefaultConnectionName);
 
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating storage valuation for {InventoryItemId}", inventoryItemId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(result);
         }
 
         /// <summary>Service-backed storage reconciliation summary endpoint.</summary>
@@ -194,27 +154,19 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-                if (string.IsNullOrWhiteSpace(inventoryItemId))
-                    return BadRequest(new { error = "Inventory item ID is required." });
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            if (string.IsNullOrWhiteSpace(inventoryItemId))
+                return BadRequest(new { error = "Inventory item ID is required." });
 
-                var result = await _inventoryService.GenerateReconciliationReportAsync(
-                    inventoryItemId,
-                    request.PeriodStart,
-                    request.PeriodEnd,
-                    userId,
-                    connectionName ?? _service.DefaultConnectionName);
+            var result = await _inventoryService.GenerateReconciliationReportAsync(
+                inventoryItemId,
+                request.PeriodStart,
+                request.PeriodEnd,
+                userId,
+                connectionName ?? _service.DefaultConnectionName);
 
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating storage reconciliation report for {InventoryItemId}", inventoryItemId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(result);
         }
     }
 

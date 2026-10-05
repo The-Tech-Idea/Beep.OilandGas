@@ -36,16 +36,8 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpGet]
         public ActionResult<List<ConnectionInfo>> GetAllConnections()
         {
-            try
-            {
-                var connections = _connectionService.GetAllConnections();
-                return Ok(connections);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting all connections");
-                    return StatusCode(500, new { error = "Failed to get connections." });
-            }
+            var connections = _connectionService.GetAllConnections();
+            return Ok(connections);
         }
 
         /// <summary>
@@ -55,20 +47,12 @@ namespace Beep.OilandGas.ApiService.Controllers
         public ActionResult<ConnectionInfo> GetConnection(string connectionName)
         {
             if (string.IsNullOrWhiteSpace(connectionName)) return BadRequest(new { error = "Connection name is required." });
-            try
+            var connection = _connectionService.GetConnection(connectionName);
+            if (connection == null)
             {
-                var connection = _connectionService.GetConnection(connectionName);
-                if (connection == null)
-                {
-                        return NotFound(new { error = $"Connection '{connectionName}' not found." });
-                }
-                return Ok(connection);
+                    return NotFound(new { error = $"Connection '{connectionName}' not found." });
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting connection {ConnectionName}", connectionName);
-                    return StatusCode(500, new { error = "Failed to get connection." });
-            }
+            return Ok(connection);
         }
 
         /// <summary>
@@ -77,26 +61,13 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpPost("test")]
         public async Task<ActionResult<ConnectionTestResult>> TestConnection([FromBody] TestConnectionRequest request)
         {
-            try
+            if (request == null || string.IsNullOrEmpty(request.ConnectionName))
             {
-                if (request == null || string.IsNullOrEmpty(request.ConnectionName))
-                {
-                        return BadRequest(new { error = "Connection name is required." });
-                }
+                    return BadRequest(new { error = "Connection name is required." });
+            }
 
-                var result = await _connectionService.TestConnectionAsync(request.ConnectionName);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error testing connection");
-                return StatusCode(500, new ConnectionTestResult
-                {
-                    Success = false,
-                    Message = "Connection test failed",
-                    ErrorDetails = "An internal error occurred."
-                });
-            }
+            var result = await _connectionService.TestConnectionAsync(request.ConnectionName);
+            return Ok(result);
         }
 
         /// <summary>
@@ -105,16 +76,8 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpGet("current")]
         public ActionResult<CurrentConnectionResponse> GetCurrentConnection()
         {
-            try
-            {
-                var response = _connectionService.GetCurrentConnection();
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting current connection");
-                    return StatusCode(500, new { error = "Failed to get current connection." });
-            }
+            var response = _connectionService.GetCurrentConnection();
+            return Ok(response);
         }
 
         /// <summary>
@@ -123,26 +86,13 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpPost("set-current")]
         public ActionResult<SetCurrentConnectionResult> SetCurrentConnection([FromBody] SetCurrentConnectionRequest request)
         {
-            try
+            if (request == null || string.IsNullOrEmpty(request.ConnectionName))
             {
-                if (request == null || string.IsNullOrEmpty(request.ConnectionName))
-                {
-                        return BadRequest(new { error = "Connection name is required." });
-                }
+                    return BadRequest(new { error = "Connection name is required." });
+            }
 
-                var result = _connectionService.SetCurrentConnection(request.ConnectionName);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error setting current connection {ConnectionName}", request?.ConnectionName);
-                return StatusCode(500, new SetCurrentConnectionResult
-                {
-                    Success = false,
-                    Message = "Failed to set current connection",
-                    ErrorDetails = "An internal error occurred."
-                });
-            }
+            var result = _connectionService.SetCurrentConnection(request.ConnectionName);
+            return Ok(result);
         }
 
         /// <summary>
@@ -152,34 +102,20 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpPost("create")]
         public async Task<ActionResult<CreateConnectionResult>> CreateConnection([FromBody] CreateConnectionRequest request)
         {
-            try
+            if (request == null || string.IsNullOrEmpty(request.ConnectionName))
             {
-                if (request == null || string.IsNullOrEmpty(request.ConnectionName))
-                {
-                        return BadRequest(new { error = "Connection name is required." });
-                }
+                    return BadRequest(new { error = "Connection name is required." });
+            }
 
-                // Note: Database creation is handled by PPDM39SetupController
-                // This endpoint can redirect or call the setup service
-                // For now, return a response indicating the connection should be created via setup endpoints
-                return Ok(new CreateConnectionResult
-                {
-                    Success = true,
-                    ConnectionName = request.ConnectionName,
-                    Message = "Use /api/ppdm39/setup endpoints to create database connections"
-                });
-            }
-            catch (Exception ex)
+            // Note: Database creation is handled by PPDM39SetupController
+            // This endpoint can redirect or call the setup service
+            // For now, return a response indicating the connection should be created via setup endpoints
+            return Ok(new CreateConnectionResult
             {
-                _logger.LogError(ex, "Error creating connection");
-                return StatusCode(500, new CreateConnectionResult
-                {
-                    Success = false,
-                    ConnectionName = request?.ConnectionName ?? string.Empty,
-                    Message = "Failed to create connection",
-                    ErrorDetails = "An internal error occurred."
-                });
-            }
+                Success = true,
+                ConnectionName = request.ConnectionName,
+                Message = "Use /api/ppdm39/setup endpoints to create database connections"
+            });
         }
     }
 }

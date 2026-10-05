@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
-using Beep.OilandGas.WellTestAnalysis.Exceptions;
 using Beep.OilandGas.WellTestAnalysis.Validation;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.WellTestAnalysis.Services
 {
@@ -146,10 +146,13 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
 
             _logger?.LogInformation("Validating test data for well {WellUWI}", wellUWI);
 
-            try
+            EnsureCalculationWellUwi(testData, wellUWI);
+
+            // The validator is asked for its answer rather than made to refuse and caught (OILGAS-CATCH-01): a problem in
+            // the data is this method's answer, not a failure.
+            var problem = WellTestDataValidator.FindProblem(testData);
+            if (problem is null)
             {
-                EnsureCalculationWellUwi(testData, wellUWI);
-                WellTestDataValidator.Validate(testData);
                 var ok = new TestDataValidationResult
                 {
                     IsValid = true,
@@ -158,24 +161,22 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
                 };
                 return await Task.FromResult(ok).ConfigureAwait(false);
             }
-            catch (InvalidWellTestDataException ex)
+
+            _logger?.LogInformation("Test data for well {WellUWI} failed validation on {Parameter}", wellUWI, problem.ParameterName);
+            var fail = new TestDataValidationResult
             {
-                _logger?.LogWarning(ex, "Test data validation failed for well {WellUWI}", wellUWI);
-                var fail = new TestDataValidationResult
-                {
-                    IsValid = false,
-                    DATA_QUALITY_SCORE = 0,
-                    DataQualityRating = "Failed",
-                    Errors = new List<string> { ex.Message }
-                };
-                return await Task.FromResult(fail).ConfigureAwait(false);
-            }
+                IsValid = false,
+                DATA_QUALITY_SCORE = 0,
+                DataQualityRating = "Failed",
+                Errors = new List<string> { problem.Sentence }
+            };
+            return await Task.FromResult(fail).ConfigureAwait(false);
         }
 
         public Task<AnalysisComparisonResult> CompareAnalysisMethodsAsync(string wellUWI, List<string> analysisIds)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
-            if (analysisIds == null || analysisIds.Count < 2) throw new ArgumentException("At least 2 analyses required for comparison");
+            if (analysisIds == null || analysisIds.Count < 2) throw RefusalException.Invalid("At least two analyses are needed for a comparison.");
 
             _logger?.LogWarning("WellTestAnalysisService: {Method} is not implemented.", nameof(CompareAnalysisMethodsAsync));
             return Task.FromException<AnalysisComparisonResult>(FeatureNotImplemented(nameof(CompareAnalysisMethodsAsync)));

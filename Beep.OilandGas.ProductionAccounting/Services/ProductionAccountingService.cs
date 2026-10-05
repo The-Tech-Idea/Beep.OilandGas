@@ -250,12 +250,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     RUN_TICKET.RUN_TICKET_ID);
                 throw;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not RefusalException)
             {
                 _logger?.LogError(
                     ex,
-                    "Error processing production cycle for ticket {TicketId}: {ErrorMessage}",
-                    RUN_TICKET.RUN_TICKET_ID, ex.Message);
+                    "Error processing production cycle for ticket {TicketId}",
+                    RUN_TICKET.RUN_TICKET_ID);
                 throw new ProductionAccountingException(
                     $"Failed to process production cycle for ticket {RUN_TICKET.RUN_TICKET_ID}", ex);
             }
@@ -303,7 +303,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 status.NetIncome = status.TotalRevenue - status.TotalCosts - status.TotalRoyalty;
 
                 // Get accounting method (SE or FC)
-                status.AccountingMethod = await GetAccountingMethodAsync(fieldId, connectionName);
+                status.AccountingMethod = await GetAccountingMethodAsync(fieldId, date, connectionName);
 
                 // Get period status
                 status.PeriodStatus = await GetPeriodStatusAsync(fieldId, date, connectionName);
@@ -321,12 +321,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     fieldId);
                 throw;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not RefusalException)
             {
                 _logger?.LogError(
                     ex,
-                    "Error retrieving accounting status for field {FieldId}: {ErrorMessage}",
-                    fieldId, ex.Message);
+                    "Error retrieving accounting status for field {FieldId}",
+                    fieldId);
                 throw new ProductionAccountingException(
                     $"Failed to retrieve accounting status for field {fieldId}", ex);
             }
@@ -346,7 +346,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
             if (periodEnd == default)
-                throw new ArgumentException("periodEnd must be valid", nameof(periodEnd));
+                throw RefusalException.Invalid("A period end date is required.");
 
             _logger?.LogInformation(
                 "Closing accounting period for field {FieldId} as of {PeriodEnd} by user {UserId}",
@@ -383,12 +383,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     fieldId);
                 throw;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not RefusalException)
             {
                 _logger?.LogError(
                     ex,
-                    "Error closing period for field {FieldId}: {ErrorMessage}",
-                    fieldId, ex.Message);
+                    "Error closing period for field {FieldId}",
+                    fieldId);
                 throw new ProductionAccountingException(
                     $"Failed to close period for field {fieldId}", ex);
             }
@@ -473,11 +473,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     fieldId);
                 throw;
             }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Error calculating total production for field {FieldId}", fieldId);
-                return 0;
-            }
         }
 
         private async Task<decimal> GetTotalRevenueAsync(string fieldId, DateTime asOfDate, string connectionName)
@@ -516,11 +511,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     "Total revenue calculation cancelled for field {FieldId}",
                     fieldId);
                 throw;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Error calculating total revenue for field {FieldId}", fieldId);
-                return 0;
             }
         }
 
@@ -561,11 +551,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     fieldId);
                 throw;
             }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Error calculating total royalty for field {FieldId}", fieldId);
-                return 0;
-            }
         }
 
         private async Task<decimal> GetTotalCostsAsync(string fieldId, DateTime asOfDate, string connectionName)
@@ -605,71 +590,38 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     fieldId);
                 throw;
             }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Error calculating total costs for field {FieldId}", fieldId);
-                return 0;
-            }
         }
 
-        private async Task<string> GetAccountingMethodAsync(string fieldId, string connectionName)
+        /// <summary>
+        /// The field's accounting method (successful efforts or full cost) as recorded in ACCOUNTING_METHOD — the most
+        /// recent active record in effect on <paramref name="asOfDate"/> — or an empty string when the field has none.
+        /// </summary>
+        /// <remarks>
+        /// OILGAS-CATCH-01: this answered "SuccessfulEfforts" for every field, recorded or not, and again when the read
+        /// failed. A field with no recorded method now says so (empty), and a failed read propagates.
+        /// </remarks>
+        private async Task<string> GetAccountingMethodAsync(string fieldId, DateTime asOfDate, string connectionName)
         {
-            try
+            var repo = await CreateRepoAsync<ACCOUNTING_METHOD>("ACCOUNTING_METHOD", connectionName);
+            var records = await repo.GetAsync(new List<AppFilter>
             {
-                // Check ACCOUNTING_POLICY or company default for method (SE vs FC)
-                // Default to Successful Efforts, which is most common in upstream E&P
-                var metadata = await _metadata.GetTableMetadataAsync("FIELD");
-                var fieldEntity = await GetFieldAsync(fieldId, connectionName);
-                
-                string accountingMethod = "SuccessfulEfforts";  // Default: SE is standard
-                
-                _logger?.LogDebug("Retrieved accounting method for field {FieldId}: {Method}", 
-                    fieldId, accountingMethod);
-                return accountingMethod;
-            }
-            catch (OperationCanceledException)
-            {
-                _logger?.LogWarning(
-                    "Accounting method retrieval cancelled for field {FieldId}",
-                    fieldId);
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Error retrieving accounting method for field {FieldId}", fieldId);
-                return "SuccessfulEfforts";  // Safe default
-            }
+                new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+            });
+
+            var method = (records?.OfType<ACCOUNTING_METHOD>() ?? Enumerable.Empty<ACCOUNTING_METHOD>())
+                .Where(record => record.METHOD_TYPE == AccountingMethods.SuccessfulEfforts
+                    || record.METHOD_TYPE == AccountingMethods.FullCost)
+                .Where(record => (record.EFFECTIVE_DATE ?? DateTime.MinValue) <= asOfDate
+                    && (record.EXPIRY_DATE ?? DateTime.MaxValue) >= asOfDate)
+                .OrderByDescending(record => record.EFFECTIVE_DATE ?? DateTime.MinValue)
+                .Select(record => record.METHOD_TYPE)
+                .FirstOrDefault();
+
+            if (method is null)
+                _logger?.LogInformation("Field {FieldId} has no accounting method recorded as of {AsOfDate}", fieldId, asOfDate);
+            return method ?? string.Empty;
         }
-
-        private async Task<FIELD> GetFieldAsync(string fieldId, string connectionName)
-        {
-            try
-            {
-                var metadata = await _metadata.GetTableMetadataAsync("FIELD");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(FIELD);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "FIELD");
-
-                var field = await repo.GetByIdAsync(fieldId);
-                return field as FIELD;
-            }
-            catch (OperationCanceledException)
-            {
-                _logger?.LogWarning(
-                    "Field retrieval cancelled for field {FieldId}",
-                    fieldId);
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Failed to retrieve FIELD row for field id {FieldId}", fieldId);
-                return null;
-            }
-        }
-
         private async Task<string> GetPeriodStatusAsync(string fieldId, DateTime asOfDate, string connectionName)
         {
             try
@@ -702,11 +654,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     "Period status retrieval cancelled for field {FieldId}",
                     fieldId);
                 throw;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Error retrieving period status for field {FieldId}", fieldId);
-                return PeriodCloseStatusCodes.Open;
             }
         }
 

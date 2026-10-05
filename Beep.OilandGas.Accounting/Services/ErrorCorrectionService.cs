@@ -57,21 +57,22 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(correctionReason))
                 throw new ArgumentNullException(nameof(correctionReason));
             if (correctedLines == null || correctedLines.Count == 0)
-                throw new ArgumentException("Corrected lines are required", nameof(correctedLines));
+                throw RefusalException.Invalid("Corrected lines are required.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
             var originalEntry = await _journalEntryService.GetEntryByIdAsync(originalJournalEntryId);
             if (originalEntry == null)
-                throw new InvalidOperationException($"Journal entry not found: {originalJournalEntryId}");
+                throw RefusalException.NotFound($"Journal entry {originalJournalEntryId} was not found.");
             if (!string.Equals(originalEntry.STATUS, "POSTED", StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException("Only posted journal entries can be corrected");
+                throw RefusalException.Conflict("Only a posted journal entry can be corrected.");
 
             var reversal = await _journalEntryService.ReverseEntryAsync(
                 originalJournalEntryId,
                 correctionReason,
                 userId);
-            await _basisPosting.PostExistingEntryAsync(reversal.JOURNAL_ENTRY_ID, userId);
+            if (!await _basisPosting.PostExistingEntryAsync(reversal.JOURNAL_ENTRY_ID, userId))
+                throw new InvalidOperationException($"Reversal journal {reversal.JOURNAL_ENTRY_ID} was created but not posted.");
             await UpdateEntryRemarkAsync(reversal, originalEntry, correctionReason, userId, cn);
 
             var correctionResult = await _basisPosting.PostEntryAsync(

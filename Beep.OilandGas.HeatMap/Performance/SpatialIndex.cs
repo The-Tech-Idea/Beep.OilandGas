@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.HeatMap.Performance
 {
@@ -249,7 +250,7 @@ namespace Beep.OilandGas.HeatMap.Performance
         public SpatialIndex(List<HEAT_MAP_DATA_POINT> dataPoints)
         {
             if (dataPoints == null || dataPoints.Count == 0)
-                throw new ArgumentException("Data points list cannot be null or empty.");
+                throw RefusalException.Invalid("At least one data point is required.");
 
             // Calculate bounding box
             double minX = dataPoints.Min(p => p.X);

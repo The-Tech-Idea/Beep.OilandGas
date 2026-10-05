@@ -28,65 +28,33 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         [HttpPost("calculate-zfactor")]
         public ActionResult<decimal> CalculateZFactor([FromBody] CalculateZFactorRequest request)
         {
-            try
-            {
-                var result = _service.CalculateZFactor(
-                    request.Pressure, request.Temperature, request.SpecificGravity, request.Correlation);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating Z-factor");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = _service.CalculateZFactor(
+                request.Pressure, request.Temperature, request.SpecificGravity, request.Correlation);
+            return Ok(result);
         }
 
         [HttpPost("calculate-density")]
         public ActionResult<decimal> CalculateDensity([FromBody] CalculateGasDensityRequest request)
         {
-            try
-            {
-                var result = _service.CalculateGasDensity(
-                    request.Pressure, request.Temperature, request.ZFactor, request.MolecularWeight);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating gas density");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = _service.CalculateGasDensity(
+                request.Pressure, request.Temperature, request.ZFactor, request.MolecularWeight);
+            return Ok(result);
         }
 
         [HttpPost("calculate-fvf")]
         public ActionResult<decimal> CalculateFormationVolumeFactor([FromBody] CalculateGasFVFRequest request)
         {
-            try
-            {
-                var result = _service.CalculateFormationVolumeFactor(
-                    request.Pressure, request.Temperature, request.ZFactor);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating formation volume factor");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = _service.CalculateFormationVolumeFactor(
+                request.Pressure, request.Temperature, request.ZFactor);
+            return Ok(result);
         }
 
         [HttpPost("composition")]
         public async Task<ActionResult> SaveComposition([FromBody] GasComposition composition)
         {
             var userId = User.ActingUserId();
-            try
-            {
-                await _service.SaveGasCompositionAsync(composition, userId);
-                return Ok(new { message = "Composition saved successfully", compositionId = composition.CompositionId });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving gas composition");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            await _service.SaveGasCompositionAsync(composition, userId);
+            return Ok(new { message = "Composition saved successfully", compositionId = composition.CompositionId });
         }
 
         [HttpGet("composition/{compositionId}")]
@@ -94,18 +62,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         {
             if (string.IsNullOrWhiteSpace(compositionId))
                 return BadRequest(new { error = "Composition ID is required." });
-            try
-            {
-                var result = await _service.GetGasCompositionAsync(compositionId);
-                if (result == null)
-                        return NotFound(new { error = $"Composition {compositionId} not found." });
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting gas composition");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.GetGasCompositionAsync(compositionId);
+            if (result == null)
+                    return NotFound(new { error = $"Composition {compositionId} not found." });
+            return Ok(result);
         }
     }
 }

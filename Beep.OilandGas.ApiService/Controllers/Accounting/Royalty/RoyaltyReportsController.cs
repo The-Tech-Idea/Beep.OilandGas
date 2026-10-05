@@ -22,20 +22,9 @@ public sealed class RoyaltyReportsController(IAccountingService accounting, ILog
         var actor = User.ActingUserId();
         if (!ModelState.IsValid) return BadRequest(ModelState);
         if (string.IsNullOrWhiteSpace(request.FieldId)) return BadRequest(new { error = "Field ID is required." });
-        try
-        {
-            if (!(await access.CheckAssetAccessAsync(actor, request.FieldId, "FIELD", null)).HasAccess) return Forbid();
-            return Ok(await accounting.PreviewRoyaltiesAsync(request.FieldId,
-                request.ProductionDate.ToDateTime(TimeOnly.MinValue), request.ProductionDate.ToDateTime(TimeOnly.MinValue), actor));
-        }
-        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
-        catch (Beep.OilandGas.ProductionAccounting.Exceptions.RoyaltyException ex) { return UnprocessableEntity(new { error = ex.Message }); }
-        catch (InvalidOperationException ex) { return UnprocessableEntity(new { error = ex.Message }); }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error previewing royalties");
-            return StatusCode(500, new { error = "An internal error occurred." });
-        }
+        if (!(await access.CheckAssetAccessAsync(actor, request.FieldId, "FIELD", null)).HasAccess) return Forbid();
+        return Ok(await accounting.PreviewRoyaltiesAsync(request.FieldId,
+            request.ProductionDate.ToDateTime(TimeOnly.MinValue), request.ProductionDate.ToDateTime(TimeOnly.MinValue), actor));
     }
     /// <summary>
     /// Get royalty calculation records.
@@ -51,21 +40,11 @@ public sealed class RoyaltyReportsController(IAccountingService accounting, ILog
         var actor = User.ActingUserId();
         if (!ModelState.IsValid) return BadRequest(ModelState);
         if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest(new { error = "Field ID is required." });
-        try
-        {
-            if (!(await access.CheckAssetAccessAsync(actor, fieldId, "FIELD", null)).HasAccess) return Forbid();
-            var results = await accounting.GetRoyaltyCalculationsAsync(
-                fieldId, startDate, endDate);
+        if (!(await access.CheckAssetAccessAsync(actor, fieldId, "FIELD", null)).HasAccess) return Forbid();
+        var results = await accounting.GetRoyaltyCalculationsAsync(
+            fieldId, startDate, endDate);
 
-            return Ok(results);
-        }
-        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
-        catch (InvalidOperationException ex) { return UnprocessableEntity(new { error = ex.Message }); }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error getting royalty calculations");
-            return StatusCode(500, new { error = "An internal error occurred." });
-        }
+        return Ok(results);
     }
 
 }

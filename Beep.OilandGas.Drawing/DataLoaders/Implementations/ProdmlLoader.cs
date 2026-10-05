@@ -34,53 +34,36 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
             this.filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
         }
 
+        /// <summary>
+        /// Reads the PRODML document: false when the file does not exist; a file that cannot be read or is not
+        /// well-formed XML reaches the caller as its exception (OILGAS-CATCH-01). It had been written to the console and
+        /// answered false, and the loads then answered empty production data.
+        /// </summary>
         public bool Connect()
         {
             if (isConnected) return true;
 
-            try
-            {
-                if (!File.Exists(filePath))
-                {
-                    throw new FileNotFoundException($"PRODML file not found: {filePath}");
-                }
-
-                document = XDocument.Load(filePath);
-                isConnected = true;
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error connecting to PRODML file: {ex.Message}");
-                isConnected = false;
+            if (!File.Exists(filePath))
                 return false;
-            }
+
+            document = XDocument.Load(filePath);
+            isConnected = true;
+            return true;
         }
 
         public async Task<bool> ConnectAsync()
         {
             if (isConnected) return true;
 
-            try
-            {
-                if (!File.Exists(filePath))
-                {
-                    throw new FileNotFoundException($"PRODML file not found: {filePath}");
-                }
-
-                using (var stream = File.OpenRead(filePath))
-                {
-                    document = await XDocument.LoadAsync(stream, LoadOptions.None, default);
-                }
-                isConnected = true;
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error connecting to PRODML file: {ex.Message}");
-                isConnected = false;
+            if (!File.Exists(filePath))
                 return false;
+
+            using (var stream = File.OpenRead(filePath))
+            {
+                document = await XDocument.LoadAsync(stream, LoadOptions.None, default);
             }
+            isConnected = true;
+            return true;
         }
 
         public void Disconnect()
@@ -98,18 +81,12 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         {
             if (!isConnected || document == null) return false;
 
-            try
-            {
-                var root = document.Root;
-                return root != null && (
-                    root.Name.Namespace == prodml ||
-                    root.Elements().Any(e => e.Name.Namespace == prodml)
-                );
-            }
-            catch
-            {
-                return false;
-            }
+            // Reading an element tree already in memory throws nothing; the catch around it answered nothing.
+            var root = document.Root;
+            return root != null && (
+                root.Name.Namespace == prodml ||
+                root.Elements().Any(e => e.Name.Namespace == prodml)
+            );
         }
 
         public List<string> GetAvailableIdentifiers()
@@ -119,36 +96,31 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
 
             var identifiers = new List<string>();
 
-            try
+            // Reading the document in memory hides nothing (OILGAS-CATCH-01): the catch here wrote to the console and
+            // answered the identifiers gathered so far as the whole list.
+            // Find ProductionOperation, WellTest, Flow objects
+            var operations = document.Descendants(prodml + "ProductionOperation");
+            var wellTests = document.Descendants(prodml + "WellTest");
+            var flows = document.Descendants(prodml + "Flow");
+
+            foreach (var op in operations)
             {
-                // Find ProductionOperation, WellTest, Flow objects
-                var operations = document.Descendants(prodml + "ProductionOperation");
-                var wellTests = document.Descendants(prodml + "WellTest");
-                var flows = document.Descendants(prodml + "Flow");
-
-                foreach (var op in operations)
-                {
-                    var uid = op.Element(prodml + "uid")?.Value;
-                    var name = op.Element(prodml + "name")?.Value;
-                    if (!string.IsNullOrEmpty(uid)) identifiers.Add(uid);
-                    else if (!string.IsNullOrEmpty(name)) identifiers.Add(name);
-                }
-
-                foreach (var test in wellTests)
-                {
-                    var uid = test.Element(prodml + "uid")?.Value;
-                    if (!string.IsNullOrEmpty(uid)) identifiers.Add(uid);
-                }
-
-                foreach (var flow in flows)
-                {
-                    var uid = flow.Element(prodml + "uid")?.Value;
-                    if (!string.IsNullOrEmpty(uid)) identifiers.Add(uid);
-                }
+                var uid = op.Element(prodml + "uid")?.Value;
+                var name = op.Element(prodml + "name")?.Value;
+                if (!string.IsNullOrEmpty(uid)) identifiers.Add(uid);
+                else if (!string.IsNullOrEmpty(name)) identifiers.Add(name);
             }
-            catch (Exception ex)
+
+            foreach (var test in wellTests)
             {
-                Console.WriteLine($"Error getting available identifiers: {ex.Message}");
+                var uid = test.Element(prodml + "uid")?.Value;
+                if (!string.IsNullOrEmpty(uid)) identifiers.Add(uid);
+            }
+
+            foreach (var flow in flows)
+            {
+                var uid = flow.Element(prodml + "uid")?.Value;
+                if (!string.IsNullOrEmpty(uid)) identifiers.Add(uid);
             }
 
             return identifiers;
@@ -183,43 +155,38 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
 
             var productionData = new ProductionData();
 
-            try
+            // Reading the document in memory hides nothing (OILGAS-CATCH-01): the catch here wrote to the console and
+            // answered whatever had been read so far as the production data.
+            // Find ProductionOperation
+            var operation = document.Descendants(prodml + "ProductionOperation")
+                .FirstOrDefault(op =>
+                    op.Element(prodml + "uid")?.Value == identifier ||
+                    op.Element(prodml + "name")?.Value == identifier);
+
+            if (operation != null)
             {
-                // Find ProductionOperation
-                var operation = document.Descendants(prodml + "ProductionOperation")
-                    .FirstOrDefault(op => 
-                        op.Element(prodml + "uid")?.Value == identifier ||
-                        op.Element(prodml + "name")?.Value == identifier);
-
-                if (operation != null)
-                {
-                    ExtractProductionOperation(operation, productionData);
-                }
-
-                // Find WellTest
-                var wellTest = document.Descendants(prodml + "WellTest")
-                    .FirstOrDefault(test => test.Element(prodml + "uid")?.Value == identifier);
-
-                if (wellTest != null)
-                {
-                    ExtractWellTest(wellTest, productionData);
-                }
-
-                // Find Flow data
-                var flows = document.Descendants(prodml + "Flow")
-                    .Where(flow => 
-                        flow.Element(prodml + "uid")?.Value == identifier ||
-                        flow.Ancestors(prodml + "ProductionOperation")
-                            .Any(op => op.Element(prodml + "uid")?.Value == identifier));
-
-                foreach (var flow in flows)
-                {
-                    ExtractFlowData(flow, productionData);
-                }
+                ExtractProductionOperation(operation, productionData);
             }
-            catch (Exception ex)
+
+            // Find WellTest
+            var wellTest = document.Descendants(prodml + "WellTest")
+                .FirstOrDefault(test => test.Element(prodml + "uid")?.Value == identifier);
+
+            if (wellTest != null)
             {
-                Console.WriteLine($"Error loading PRODML production data: {ex.Message}");
+                ExtractWellTest(wellTest, productionData);
+            }
+
+            // Find Flow data
+            var flows = document.Descendants(prodml + "Flow")
+                .Where(flow =>
+                    flow.Element(prodml + "uid")?.Value == identifier ||
+                    flow.Ancestors(prodml + "ProductionOperation")
+                        .Any(op => op.Element(prodml + "uid")?.Value == identifier));
+
+            foreach (var flow in flows)
+            {
+                ExtractFlowData(flow, productionData);
             }
 
             return productionData;

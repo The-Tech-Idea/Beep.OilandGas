@@ -1,5 +1,6 @@
 ﻿@page "/ppdm39/database-management"
 @implements IAsyncDisposable
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]
 @using Beep.OilandGas.Client.App
 @using Beep.OilandGas.Models.Data.DataManagement
 @inject ISnackbar Snackbar

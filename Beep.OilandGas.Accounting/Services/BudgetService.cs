@@ -64,7 +64,7 @@ namespace Beep.OilandGas.Accounting.Services
                     throw new ArgumentNullException(nameof(budgetName));
 
                 if (budgetLines == null || !budgetLines.Any())
-                    throw new InvalidOperationException("Budget must contain at least one line item");
+                    throw RefusalException.Invalid("Budget must contain at least one line item.");
 
                 var budget = new Budget
                 {
@@ -88,7 +88,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error creating budget: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error creating budget");
                 throw;
             }
         }
@@ -171,7 +171,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error generating budget variance report: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error generating budget variance report");
                 throw;
             }
         }
@@ -249,7 +249,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error calculating YTD performance: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error calculating YTD performance");
                 throw;
             }
         }
@@ -328,7 +328,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error forecasting budget: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error forecasting budget");
                 throw;
             }
         }
@@ -372,7 +372,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error exporting budget variance report: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error exporting budget variance report");
                 throw;
             }
         }

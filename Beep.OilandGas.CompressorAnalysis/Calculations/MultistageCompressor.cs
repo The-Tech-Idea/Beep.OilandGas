@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Beep.OilandGas.CompressorAnalysis.Data;
 using Beep.OilandGas.GasProperties.Calculations;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.CompressorAnalysis.Calculations
 {
@@ -141,7 +142,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
             if (compressorProperties.OPERATING_CONDITIONS == null)
                 throw new ArgumentNullException(nameof(compressorProperties.OPERATING_CONDITIONS));
             if (numberOfStages < 1 || numberOfStages > 12)
-                throw new ArgumentOutOfRangeException(nameof(numberOfStages), "Stages must be 1–12.");
+                throw RefusalException.Invalid("The number of compression stages must be between 1 and 12.");
 
             var conditions = compressorProperties.OPERATING_CONDITIONS;
             decimal k = compressorProperties.SPECIFIC_HEAT_RATIO;

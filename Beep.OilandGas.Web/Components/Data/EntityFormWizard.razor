@@ -1,4 +1,5 @@
 @using MudBlazor
+@inject FailureNotifier Notifier
 
 <MudDialog>
     <DialogContent>
@@ -99,9 +100,10 @@
             await OnSave.InvokeAsync(_formData);
             MudDialog?.Close(DialogResult.Ok(true));
         }
-        catch (Exception)
+        // The parent's save is its own; whatever it throws is told here and the form stays open with the entries kept.
+        catch (Exception ex)
         {
-            // Error handling would be done by parent component
+            Notifier.Failure(ex, "saving the entity form", "The record was not saved");
         }
         finally
         {

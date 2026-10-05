@@ -217,18 +217,15 @@ namespace Beep.OilandGas.PipelineAnalysis.Calculations
 
             // ── Liquid holdup (horizontal, H_L_0) ────────────────────────────
             // Beggs-Brill holdup constants by flow pattern
-            double a, b, c;
-            switch (fp)
+            // Every pattern is named (OILGAS-CATCH-01): a pattern added later is a build error here, not a default.
+            var (a, b, c) = fp switch
             {
-                case FlowPattern.Segregated:
-                    a = 0.98; b = 0.4846; c = 0.0868; break;
-                case FlowPattern.Intermittent:
-                    a = 0.845; b = 0.5351; c = 0.0173; break;
-                case FlowPattern.Distributed:
-                    a = 1.065; b = 0.5824; c = 0.0609; break;
-                default: // Transition — linear interpolation between Segregated and Intermittent
-                    a = 0.91; b = 0.51; c = 0.05; break;
-            }
+                FlowPattern.Segregated => (0.98, 0.4846, 0.0868),
+                FlowPattern.Intermittent => (0.845, 0.5351, 0.0173),
+                FlowPattern.Distributed => (1.065, 0.5824, 0.0609),
+                // Transition — linear interpolation between Segregated and Intermittent
+                FlowPattern.Transition => (0.91, 0.51, 0.05)
+            };
 
             double hL0 = Math.Min(1.0, a * Math.Pow(cL, b) / Math.Pow(froudeM > 1e-12 ? froudeM : 1e-12, c));
             hL0 = Math.Max(cL, hL0);  // Holdup must be ≥ no-slip fraction
@@ -238,16 +235,14 @@ namespace Beep.OilandGas.PipelineAnalysis.Calculations
             double C = 0.0;
             if (sinTheta > 0 && fp != FlowPattern.Distributed)  // uphill, not mist
             {
-                double d1, e1, f1, g1;
-                switch (fp)
+                // Transition takes the segregated constants. Distributed (mist) flow is excluded by the condition above and
+                // is named only so that every pattern is: one added later is a build error here, not a default.
+                var (d1, e1, f1, g1) = fp switch
                 {
-                    case FlowPattern.Segregated:
-                        d1 = 0.011; e1 = -3.768; f1 = 3.539; g1 = -1.614; break;
-                    case FlowPattern.Intermittent:
-                        d1 = 2.96; e1 = 0.305; f1 = -0.4473; g1 = 0.0978; break;
-                    default:
-                        d1 = 0.011; e1 = -3.768; f1 = 3.539; g1 = -1.614; break;
-                }
+                    FlowPattern.Segregated => (0.011, -3.768, 3.539, -1.614),
+                    FlowPattern.Intermittent => (2.96, 0.305, -0.4473, 0.0978),
+                    FlowPattern.Transition or FlowPattern.Distributed => (0.011, -3.768, 3.539, -1.614)
+                };
                 double nfvL = vSl * Math.Pow(liquidDensityLbFt3 / (G_FT_S2 * 62.4), 0.25);
                 C = Math.Max(0, (1 - cL) * Math.Log(d1 * Math.Pow(nfvL, e1) * Math.Pow(cL, f1) * Math.Pow(froudeM, g1)));
             }

@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Core.Refusals;
+using TheTechIdeaWeb.Diagnostics;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
@@ -36,6 +38,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
         private readonly WorkOrderManagementService? _workOrderService;
         private readonly DataFlowService? _dataFlowService;
         private readonly string _connectionName;
+        private readonly IFailureReporter _failures;
         private readonly ILogger<FacilityManagementService>? _logger;
 
         public FacilityManagementService(
@@ -43,6 +46,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
+            IFailureReporter failures,
             WorkOrderManagementService? workOrderService = null,
             DataFlowService? dataFlowService = null,
             string connectionName = "PPDM39",
@@ -55,6 +59,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
             _workOrderService = workOrderService;
             _dataFlowService = dataFlowService;
             _connectionName = connectionName ?? "PPDM39";
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
             _logger = logger;
         }
 
@@ -177,10 +182,12 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                 await linkRepo.InsertAsync(link, userId);
                 _logger?.LogInformation("Facility-Field link created: FacilityId={FacilityId}, FieldId={FieldId}", facilityId, fieldId);
             }
-            catch (Exception ex)
+            // The facility is created whatever happens to its link: a link that cannot be written is reported so the
+            // missing FACILITY_FIELD row is seen. Cancellation is the caller's.
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger?.LogError(ex, "Error creating facility-field link for FacilityId={FacilityId}, FieldId={FieldId}", facilityId, fieldId);
-                // Don't throw - link failure shouldn't fail facility creation
+                _failures.ReportHandled(ex, $"linking facility {facilityId} to field {fieldId} in FACILITY_FIELD",
+                    "the facility is created but is not linked to its field", FailureSeverity.Degraded);
             }
         }
 
@@ -195,7 +202,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                 var facility = await GetFacilityAsync(request.FacilityId);
                 if (facility == null)
                 {
-                    throw new InvalidOperationException($"Facility not found: {request.FacilityId}");
+                    throw RefusalException.NotFound($"Facility {request.FacilityId} was not found.");
                 }
 
                 var statusMeta = await _metadata.GetTableMetadataAsync("FACILITY_STATUS");
@@ -241,7 +248,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                 var facility = await GetFacilityAsync(request.FacilityId);
                 if (facility == null)
                 {
-                    throw new InvalidOperationException($"Facility not found: {request.FacilityId}");
+                    throw RefusalException.NotFound($"Facility {request.FacilityId} was not found.");
                 }
 
                 var maintMeta = await _metadata.GetTableMetadataAsync("FACILITY_MAINTAIN");
@@ -287,7 +294,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                 var facility = await GetFacilityAsync(request.FacilityId);
                 if (facility == null)
                 {
-                    throw new InvalidOperationException($"Facility not found: {request.FacilityId}");
+                    throw RefusalException.NotFound($"Facility {request.FacilityId} was not found.");
                 }
 
                 var inspMeta = await _metadata.GetTableMetadataAsync("FACILITY_STATUS");
@@ -333,7 +340,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                 var facility = await GetFacilityAsync(request.FacilityId);
                 if (facility == null)
                 {
-                    throw new InvalidOperationException($"Facility not found: {request.FacilityId}");
+                    throw RefusalException.NotFound($"Facility {request.FacilityId} was not found.");
                 }
 
                 var integrityMeta = await _metadata.GetTableMetadataAsync("FACILITY_STATUS");
@@ -379,7 +386,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                 var facility = await GetFacilityAsync(request.FacilityId);
                 if (facility == null)
                 {
-                    throw new InvalidOperationException($"Facility not found: {request.FacilityId}");
+                    throw RefusalException.NotFound($"Facility {request.FacilityId} was not found.");
                 }
 
                 var equipmentMetadata = await _metadata.GetTableMetadataAsync("EQUIPMENT");
@@ -492,7 +499,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                 var facility = await GetFacilityAsync(facilityId);
                 if (facility == null)
                 {
-                    throw new InvalidOperationException($"Facility not found: {facilityId}");
+                    throw RefusalException.NotFound($"Facility {facilityId} was not found.");
                 }
 
                 var metrics = new Dictionary<string, decimal>();
@@ -689,11 +696,17 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                 PumpAnalysisOptions? pumpOptions = null;
                 if (options != null && options.AnalysisParameters != null)
                 {
-                     try 
+                     // The parameters the caller sent are read as pump analysis options; parameters that do not fit are
+                     // refused — they had been dropped with a warning, and the analysis run without them.
+                     try
                      {
                         pumpOptions = Newtonsoft.Json.JsonConvert.DeserializeObject<Beep.OilandGas.Models.Data.Pumps.PumpAnalysisOptions>(Newtonsoft.Json.JsonConvert.SerializeObject(options.AnalysisParameters));
                      }
-                     catch (Exception ex) { _logger?.LogWarning(ex, "Failed to deserialize pump analysis options for facility {FacilityId}", facilityId); }
+                     catch (Newtonsoft.Json.JsonException unreadable)
+                     {
+                        throw new RefusalException(RefusalKind.Invalid,
+                            "The pump analysis parameters are not in the form a pump analysis takes.", unreadable);
+                     }
                 }
 
                 _logger?.LogInformation("Running pump analysis for facility: {FacilityId}, PumpType: {PumpType}", 

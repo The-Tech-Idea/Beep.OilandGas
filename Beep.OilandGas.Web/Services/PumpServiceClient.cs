@@ -65,33 +65,17 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveHydraulicPumpDesignAsync(HydraulicPumpDesign design)
+        public async Task SaveHydraulicPumpDesignAsync(HydraulicPumpDesign design)
         {
-            try
-            {
-                var endpoint = "/api/hydraulicpump/design/save";
-                return await _apiClient.PostAsync(endpoint, design);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving hydraulic pump design");
-                return false;
-            }
+            var endpoint = "/api/hydraulicpump/design/save";
+            await _apiClient.PostAsync(endpoint, design);
         }
 
         public async Task<List<PumpPerformanceHistory>> GetHydraulicPumpPerformanceHistoryAsync(string pumpId)
         {
-            try
-            {
-                var result = await _apiClient.GetAsync<List<PumpPerformanceHistory>>(
-                    $"/api/hydraulicpump/performance-history/{Uri.EscapeDataString(pumpId)}");
-                return result ?? new List<PumpPerformanceHistory>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting hydraulic pump performance history for pump {PumpId}", pumpId);
-                return new List<PumpPerformanceHistory>();
-            }
+            var result = await _apiClient.GetAsync<List<PumpPerformanceHistory>>(
+                $"/api/hydraulicpump/performance-history/{Uri.EscapeDataString(pumpId)}");
+            return result ?? new List<PumpPerformanceHistory>();
         }
 
         #endregion
@@ -134,18 +118,10 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SavePlungerLiftDesignAsync(PlungerLiftDesign design)
+        public async Task SavePlungerLiftDesignAsync(PlungerLiftDesign design)
         {
-            try
-            {
-                var endpoint = "/api/plungerlift/design/save";
-                return await _apiClient.PostAsync(endpoint, design);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving plunger lift design");
-                return false;
-            }
+            var endpoint = "/api/plungerlift/design/save";
+            await _apiClient.PostAsync(endpoint, design);
         }
 
         #endregion
@@ -188,18 +164,10 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveSuckerRodPumpDesignAsync(SuckerRodPumpDesign design)
+        public async Task SaveSuckerRodPumpDesignAsync(SuckerRodPumpDesign design)
         {
-            try
-            {
-                var endpoint = "/api/suckerrodpumping/design/save";
-                return await _apiClient.PostAsync(endpoint, design);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving sucker rod pump design");
-                return false;
-            }
+            var endpoint = "/api/suckerrodpumping/design/save";
+            await _apiClient.PostAsync(endpoint, design);
         }
 
         #endregion

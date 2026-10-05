@@ -1,5 +1,6 @@
 using Beep.OilandGas.GasProperties.Calculations;
 using Beep.OilandGas.Models.Data.GasProperties;
+using Beep.OilandGas.Models.Core.Refusals;
 using Xunit;
 
 namespace Beep.OilandGas.GasProperties.Tests;
@@ -41,8 +42,9 @@ public class ZFactorCalculatorTests
     [Fact]
     public void CalculateBrillBeggs_throws_when_pressure_non_positive()
     {
-        Assert.Throws<ArgumentException>(() =>
+        var refusal = Assert.Throws<RefusalException>(() =>
             ZFactorCalculator.CalculateBrillBeggs(0m, 580m, 0.65m));
+        Assert.Equal(RefusalKind.Invalid, refusal.Kind);
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using System;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
@@ -70,11 +71,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 result.TotalGasInjectionRate = analysisResult.OPTIMAL_GAS_INJECTION_RATE;
                 result.ExpectedProductionRate = analysisResult.MAXIMUM_PRODUCTION_RATE;
             }
-            catch (Exception ex)
+            // A packaged calculation answers a failure as a failed run carrying the reference; a refusal of what was
+            // sent goes on to the caller with its own sentence, and cancellation is the caller's.
+            catch (Exception ex) when (ex is not RefusalException and not OperationCanceledException)
             {
-                _logger?.LogError(ex, "Gas Lift Analysis failed for WellId: {WellId}", request.WellId);
                 result.Status = "FAILED";
-                result.ErrorMessage = ex.Message;
+                result.ErrorMessage = ReportedFailure.Sentence(_failures, ex,
+                    $"running the gas lift analysis for well {request.WellId}", "The gas lift analysis did not complete");
             }
 
             return await Task.FromResult(result);
@@ -172,11 +175,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     ? ChokeAnalysisReferenceCodes.RegimeSonic
                     : ChokeAnalysisReferenceCodes.RegimeSubsonic;
             }
-            catch (Exception ex)
+            // A packaged calculation answers a failure as a failed run carrying the reference; a refusal of what was
+            // sent goes on to the caller with its own sentence, and cancellation is the caller's.
+            catch (Exception ex) when (ex is not RefusalException and not OperationCanceledException)
             {
-                _logger?.LogError(ex, "Choke Analysis failed for WellId: {WellId}", request.WellId);
                 result.Status = "FAILED";
-                result.ErrorMessage = ex.Message;
+                result.ErrorMessage = ReportedFailure.Sentence(_failures, ex,
+                    $"running the choke analysis for well {request.WellId}", "The choke analysis did not complete");
             }
 
             return await Task.FromResult(result);
@@ -207,11 +212,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 result.Efficiency = Math.Min(1.0m, estimatedEfficiency);
                 result.FlowRate = flowRate;
             }
-            catch (Exception ex)
+            // A packaged calculation answers a failure as a failed run carrying the reference; a refusal of what was
+            // sent goes on to the caller with its own sentence, and cancellation is the caller's.
+            catch (Exception ex) when (ex is not RefusalException and not OperationCanceledException)
             {
-                _logger?.LogError(ex, "Pump Analysis failed for WellId: {WellId}", request.WellId);
                 result.Status = "FAILED";
-                result.ErrorMessage = ex.Message;
+                result.ErrorMessage = ReportedFailure.Sentence(_failures, ex,
+                    $"running the pump analysis for well {request.WellId}, facility {request.FacilityId}", "The pump analysis did not complete");
             }
 
             return await Task.FromResult(result);
@@ -256,11 +263,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 result.ProductionRate = productionRate;
                 result.VolumetricEfficiency = systemProps.PUMP_EFFICIENCY;
             }
-            catch (Exception ex)
+            // A packaged calculation answers a failure as a failed run carrying the reference; a refusal of what was
+            // sent goes on to the caller with its own sentence, and cancellation is the caller's.
+            catch (Exception ex) when (ex is not RefusalException and not OperationCanceledException)
             {
-                _logger?.LogError(ex, "Sucker Rod Analysis failed for WellId: {WellId}", request.WellId);
                 result.Status = "FAILED";
-                result.ErrorMessage = ex.Message;
+                result.ErrorMessage = ReportedFailure.Sentence(_failures, ex,
+                    $"running the sucker rod analysis for well {request.WellId}", "The sucker rod analysis did not complete");
             }
 
             return await Task.FromResult(result);
@@ -306,11 +315,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 result.RiseTime = wellDepth / (riseVelocity > 0 ? riseVelocity : 800m) / 60m; // minutes
                 result.ProductionRate = liquidLoadBbl;
             }
-            catch (Exception ex)
+            // A packaged calculation answers a failure as a failed run carrying the reference; a refusal of what was
+            // sent goes on to the caller with its own sentence, and cancellation is the caller's.
+            catch (Exception ex) when (ex is not RefusalException and not OperationCanceledException)
             {
-                _logger?.LogError(ex, "Plunger Lift Analysis failed for WellId: {WellId}", request.WellId);
                 result.Status = "FAILED";
-                result.ErrorMessage = ex.Message;
+                result.ErrorMessage = ReportedFailure.Sentence(_failures, ex,
+                    $"running the plunger lift analysis for well {request.WellId}", "The plunger lift analysis did not complete");
             }
 
             return await Task.FromResult(result);
@@ -357,11 +368,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 result.RecommendedNozzleSize = nozzle;
                 result.RecommendedThroatSize = throat;
             }
-            catch (Exception ex)
+            // A packaged calculation answers a failure as a failed run carrying the reference; a refusal of what was
+            // sent goes on to the caller with its own sentence, and cancellation is the caller's.
+            catch (Exception ex) when (ex is not RefusalException and not OperationCanceledException)
             {
-                _logger?.LogError(ex, "Hydraulic Pump Analysis failed for WellId: {WellId}", request.WellId);
                 result.Status = "FAILED";
-                result.ErrorMessage = ex.Message;
+                result.ErrorMessage = ReportedFailure.Sentence(_failures, ex,
+                    $"running the hydraulic pump analysis for well {request.WellId}", "The hydraulic pump analysis did not complete");
             }
 
             return await Task.FromResult(result);

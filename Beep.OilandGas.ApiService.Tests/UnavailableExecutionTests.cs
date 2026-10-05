@@ -22,7 +22,7 @@ public class UnavailableExecutionTests
     public async Task ExecutionCannotOmitReviewedHashes(string planHash, string manifestHash)
     {
         var service = new PPDM39SetupService(_editor.Object, NullLogger<PPDM39SetupService>.Instance,
-            _columns.Object, _defaults.Object, _metadata.Object);
+            _columns.Object, _defaults.Object, _metadata.Object, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         var request = new SchemaMigrationExecuteRequest { PlanId = "unreviewed", ExpectedPlanHash = planHash,
             ExpectedManifestHash = manifestHash };
         var direct = await service.ExecuteSchemaMigrationPlanAsync(request);
@@ -40,7 +40,7 @@ public class UnavailableExecutionTests
     public async Task AssemblyMigrationCannotCreateLegacyIdentityInModuleDatabase(string assembly, string modelNamespace)
     {
         var service = new PPDM39SetupService(_editor.Object, NullLogger<PPDM39SetupService>.Instance,
-            _columns.Object, _defaults.Object, _metadata.Object);
+            _columns.Object, _defaults.Object, _metadata.Object, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         var result = await service.PlanSchemaMigrationAsync(new SchemaMigrationPlanRequest
         {
             ConnectionName = "module-db", TargetAssemblyName = assembly, TargetModelNamespace = modelNamespace
@@ -74,7 +74,7 @@ public class UnavailableExecutionTests
     public async Task InvalidMigrationEnvironmentIsRejectedBeforeDatabaseAccess(string environment)
     {
         var service = new PPDM39SetupService(_editor.Object, NullLogger<PPDM39SetupService>.Instance,
-            _columns.Object, _defaults.Object, _metadata.Object);
+            _columns.Object, _defaults.Object, _metadata.Object, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         var result = await service.PlanSchemaMigrationAsync(new SchemaMigrationPlanRequest
         { ConnectionName = "module-db", EnvironmentTier = environment });
         Assert.False(result.Success);
@@ -87,7 +87,7 @@ public class UnavailableExecutionTests
     public async Task MigrationActorsComeFromLocalPrincipal(bool authenticatedLocally)
     {
         var service = new PPDM39SetupService(_editor.Object, NullLogger<PPDM39SetupService>.Instance,
-            _columns.Object, _defaults.Object, _metadata.Object);
+            _columns.Object, _defaults.Object, _metadata.Object, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         var migration = new Mock<IPPDM39SchemaMigrationService>(MockBehavior.Strict);
         if (authenticatedLocally)
         {
@@ -99,7 +99,7 @@ public class UnavailableExecutionTests
                 .ReturnsAsync(new OperationStartResponse { Success = true });
         }
         var controller = new PPDM39SetupController(service, migration.Object, _editor.Object,
-            NullLogger<PPDM39SetupController>.Instance,
+            NullLogger<PPDM39SetupController>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(),
             commonColumnHandler: _columns.Object, defaults: _defaults.Object, metadata: _metadata.Object);
         controller.ControllerContext = new ControllerContext { HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext() };
         if (authenticatedLocally)
@@ -114,9 +114,9 @@ public class UnavailableExecutionTests
         }
         else
         {
-            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => controller.ApproveSchemaMigration(new() { ApprovedBy = "spoofed" }));
-            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => controller.ExecuteSchemaMigration(new() { ExecutedBy = "spoofed" }));
-            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => controller.StartSchemaMigration(new() { ExecutedBy = "spoofed" }));
+            await Refusals.ForbiddenAsync(() => controller.ApproveSchemaMigration(new() { ApprovedBy = "spoofed" }));
+            await Refusals.ForbiddenAsync(() => controller.ExecuteSchemaMigration(new() { ExecutedBy = "spoofed" }));
+            await Refusals.ForbiddenAsync(() => controller.StartSchemaMigration(new() { ExecutedBy = "spoofed" }));
             migration.VerifyNoOtherCalls();
         }
     }
@@ -130,9 +130,9 @@ public class UnavailableExecutionTests
         Assert.Equal("Administrator", authorization.Roles);
         Assert.False(new DatabaseCreationOptions().SeedDefaultSecurityData);
         var service = new PPDM39SetupService(_editor.Object, NullLogger<PPDM39SetupService>.Instance,
-            _columns.Object, _defaults.Object, _metadata.Object);
+            _columns.Object, _defaults.Object, _metadata.Object, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         var controller = new PPDM39SetupController(service, service, _editor.Object,
-            NullLogger<PPDM39SetupController>.Instance,
+            NullLogger<PPDM39SetupController>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(),
             commonColumnHandler: _columns.Object, defaults: _defaults.Object, metadata: _metadata.Object);
         var result = await controller.CreateDatabase(new CreateDatabaseRequest
         {
@@ -197,9 +197,9 @@ public class UnavailableExecutionTests
     public async Task CopyEndpointRejectsWithoutStartingAnOperation(string source, string target, int expected)
     {
         var service = new PPDM39SetupService(_editor.Object, NullLogger<PPDM39SetupService>.Instance,
-            _columns.Object, _defaults.Object, _metadata.Object);
+            _columns.Object, _defaults.Object, _metadata.Object, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         var controller = new PPDM39SetupController(service, service, _editor.Object,
-            NullLogger<PPDM39SetupController>.Instance, _progress.Object,
+            NullLogger<PPDM39SetupController>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), _progress.Object,
             commonColumnHandler: _columns.Object, defaults: _defaults.Object, metadata: _metadata.Object);
         var result = await controller.CopyDatabase(new CopyDatabaseRequest
         { SourceConnectionName = source, TargetConnectionName = target });

@@ -4,6 +4,7 @@ using Beep.OilandGas.CompressorAnalysis.Constants;
 using Beep.OilandGas.CompressorAnalysis.Exceptions;
 using Beep.OilandGas.CompressorAnalysis.Core.Interfaces;
 using Beep.OilandGas.CompressorAnalysis.Data;
+using Beep.OilandGas.Models.Core.Refusals;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -28,7 +29,7 @@ namespace Beep.OilandGas.ApiService.Controllers
 
         [HttpPost("analyze")]
         public Task<ActionResult<COMPRESSOR_POWER_RESULT>> Analyze([FromBody] COMPRESSOR_OPERATING_CONDITIONS request) =>
-            ExecuteWithHandlingAsync("analyze", async () =>
+            OkAsync(async () =>
             {
                 var conditions = NormalizeOperatingConditions(request, CompressorConstants.StandardPolytropicEfficiency);
                 var properties = BuildDefaultCentrifugalProperties(conditions);
@@ -38,7 +39,7 @@ namespace Beep.OilandGas.ApiService.Controllers
 
         [HttpPost("power")]
         public Task<ActionResult<COMPRESSOR_POWER_RESULT>> CalculatePower([FromBody] COMPRESSOR_OPERATING_CONDITIONS request) =>
-            ExecuteWithHandlingAsync("power", async () =>
+            OkAsync(async () =>
             {
                 var conditions = NormalizeOperatingConditions(request, CompressorConstants.StandardPolytropicEfficiency);
                 var properties = BuildDefaultCentrifugalProperties(conditions);
@@ -48,7 +49,7 @@ namespace Beep.OilandGas.ApiService.Controllers
 
         [HttpPost("design/centrifugal")]
         public Task<ActionResult<COMPRESSOR_POWER_RESULT>> DesignCentrifugal([FromBody] CENTRIFUGAL_COMPRESSOR_PROPERTIES request) =>
-            ExecuteWithHandlingAsync("design/centrifugal", async () =>
+            OkAsync(async () =>
             {
                 var properties = NormalizeCentrifugalProperties(request);
                 var raw = await _compressorAnalysis.CalculateCentrifugalPowerAsync(properties);
@@ -57,40 +58,18 @@ namespace Beep.OilandGas.ApiService.Controllers
 
         [HttpPost("design/reciprocating")]
         public Task<ActionResult<COMPRESSOR_POWER_RESULT>> DesignReciprocating([FromBody] RECIPROCATING_COMPRESSOR_PROPERTIES request) =>
-            ExecuteWithHandlingAsync("design/reciprocating", async () =>
+            OkAsync(async () =>
             {
                 var properties = NormalizeReciprocatingProperties(request);
                 var raw = await _compressorAnalysis.CalculateReciprocatingPowerAsync(properties);
                 return StampResult(raw, properties.OPERATING_CONDITIONS);
             });
 
-        private async Task<ActionResult<COMPRESSOR_POWER_RESULT>> ExecuteWithHandlingAsync(
-            string operation,
-            Func<Task<COMPRESSOR_POWER_RESULT>> action)
+        // The calculation's refusals (CompressorException) and the request's own (below) reach the API's handler as
+        // refusals; anything else as a reported failure (OILGAS-CATCH-01: both were answered 400 with the exception's text).
+        private async Task<ActionResult<COMPRESSOR_POWER_RESULT>> OkAsync(Func<Task<COMPRESSOR_POWER_RESULT>> action)
         {
-            try
-            {
-                return Ok(await action());
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (CompressorException ex)
-            {
-                _logger.LogWarning(ex, "Compressor route {Operation} rejected invalid input", operation);
-                return BadRequest(ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Compressor route {Operation} received invalid arguments", operation);
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Compressor route {Operation} failed", operation);
-                return StatusCode(500, "Compressor calculation failed");
-            }
+            return Ok(await action());
         }
 
         private static COMPRESSOR_OPERATING_CONDITIONS NormalizeOperatingConditions(
@@ -99,7 +78,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         {
             if (request == null)
             {
-                throw new ArgumentNullException(nameof(request));
+                throw RefusalException.Invalid("Operating conditions are required.");
             }
 
             return new COMPRESSOR_OPERATING_CONDITIONS
@@ -144,7 +123,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         {
             if (request == null)
             {
-                throw new ArgumentNullException(nameof(request));
+                throw RefusalException.Invalid("Centrifugal compressor properties are required.");
             }
 
             var conditions = NormalizeOperatingConditions(request.OPERATING_CONDITIONS, CompressorConstants.StandardPolytropicEfficiency);
@@ -174,7 +153,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         {
             if (request == null)
             {
-                throw new ArgumentNullException(nameof(request));
+                throw RefusalException.Invalid("Reciprocating compressor properties are required.");
             }
 
             var conditions = NormalizeOperatingConditions(request.OPERATING_CONDITIONS, CompressorConstants.StandardReciprocatingEfficiency);

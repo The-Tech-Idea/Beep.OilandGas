@@ -154,7 +154,7 @@ namespace Beep.OilandGas.Drawing.Primitives
                     canvas.DrawCircle(rect.MidX, rect.MidY, Math.Min(rect.Width, rect.Height) / 3, strokePaint);
                     break;
 
-                default:
+                case LegendSymbolKind.Fill:
                     canvas.DrawRect(rect, fillPaint);
                     canvas.DrawRect(rect, strokePaint);
                     break;

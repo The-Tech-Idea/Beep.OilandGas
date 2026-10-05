@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -285,7 +286,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             var wellUow = await GetWellUnitOfWorkAsync();
             var well = wellUow.Read(injectionWellId) as WELL;
             if (well == null)
-                throw new InvalidOperationException($"Injection well {injectionWellId} was not found.");
+                throw RefusalException.NotFound($"Injection well {injectionWellId} was not found.");
 
             var now = DateTime.UtcNow;
             var fieldId = well.ASSIGNED_FIELD ?? string.Empty;

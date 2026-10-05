@@ -8,6 +8,7 @@
 @inject ICalculationServiceClient CalculationService
 @inject IDevelopmentServiceClient DevelopmentClient
 @inject ILifeCycleService LifeCycleService
+@inject OilGasApiFailures Answers
 
 <PageTitle>Perform Nodal Analysis</PageTitle>
 
@@ -247,15 +248,14 @@
 
             var result = await CalculationService.PerformNodalAnalysisAsync(_selectedWellUWI, parameters);
 
-            var saved = await CalculationService.SaveNodalAnalysisResultAsync(result);
-            if (!saved)
+            try
             {
-                Logger.LogWarning("Nodal analysis finished but save returned false for well {WellUWI}", _selectedWellUWI);
-                Snackbar.Add("Analysis finished but saving results failed. Check connectivity and permissions.", Severity.Warning);
-            }
-            else
-            {
+                await CalculationService.SaveNodalAnalysisResultAsync(result);
                 Snackbar.Add("Nodal analysis completed successfully", Severity.Success);
+            }
+            catch (OilGasApiException answer)
+            {
+                Snackbar.Add(Answers.Explain(answer, "saving the nodal analysis result", "The nodal analysis finished but its results were not saved"), Severity.Warning);
             }
 
             await ReloadHistoryForSelectedWellAsync();

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.GasProperties.Calculations;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.GasLift.Calculations
 {
@@ -26,10 +27,10 @@ namespace Beep.OilandGas.GasLift.Calculations
                 throw new ArgumentNullException(nameof(wellProperties));
 
             if (numberOfValves <= 0)
-                throw new ArgumentException("Number of valves must be greater than zero.", nameof(numberOfValves));
+                throw RefusalException.Invalid("Number of valves must be greater than zero.");
 
             if (gasInjectionPressure <= wellProperties.WELLHEAD_PRESSURE)
-                throw new ArgumentException("Gas injection pressure must be greater than wellhead pressure.", nameof(gasInjectionPressure));
+                throw RefusalException.Invalid("Gas injection pressure must be greater than wellhead pressure.");
 
             var result = new GasLiftValveSpacingResult
             {

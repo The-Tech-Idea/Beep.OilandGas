@@ -4,6 +4,7 @@ using System.Linq;
 using Beep.OilandGas.Models.Data.GasLift;
 
 using Beep.OilandGas.GasProperties.Calculations;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.GasLift.Calculations
 {
@@ -51,7 +52,7 @@ namespace Beep.OilandGas.GasLift.Calculations
                 throw new ArgumentNullException(nameof(wellProperties));
 
             if (gasInjectionPressure <= wellProperties.WELLHEAD_PRESSURE)
-                throw new ArgumentException("Gas injection pressure must be greater than wellhead pressure.", nameof(gasInjectionPressure));
+                throw RefusalException.Invalid("Gas injection pressure must be greater than wellhead pressure.");
 
             var result = new GAS_LIFT_VALVE_DESIGN_RESULT();
 

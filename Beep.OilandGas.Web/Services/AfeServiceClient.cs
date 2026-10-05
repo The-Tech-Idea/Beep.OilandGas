@@ -59,13 +59,10 @@ public sealed class AfeServiceClient : IAfeServiceClient
 
         try
         {
-            var succeeded = await _apiClient.PatchAsync(
+            await _apiClient.PatchAsync(
                 $"{BaseEndpoint}/{Uri.EscapeDataString(afeId)}/approve",
                 new { },
                 cancellationToken);
-
-            if (!succeeded)
-                throw new InvalidOperationException($"Failed to approve AFE {afeId}.");
         }
         catch (Exception ex)
         {
@@ -81,13 +78,10 @@ public sealed class AfeServiceClient : IAfeServiceClient
 
         try
         {
-            var succeeded = await _apiClient.PatchAsync(
+            await _apiClient.PatchAsync(
                 $"{BaseEndpoint}/{Uri.EscapeDataString(afeId)}/reject",
                 new { },
                 cancellationToken);
-
-            if (!succeeded)
-                throw new InvalidOperationException($"Failed to reject AFE {afeId}.");
         }
         catch (Exception ex)
         {

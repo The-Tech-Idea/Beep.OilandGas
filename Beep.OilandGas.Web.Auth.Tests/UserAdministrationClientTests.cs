@@ -13,7 +13,7 @@ public sealed class UserAdministrationClientTests
     {
         using var handler = new Handler(HttpStatusCode.OK);
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new UserAdministrationClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
+        var client = new UserAdministrationClient(new ApiClient(http, new RecordingFailureReporter()));
         var saved = await client.UpdateUserAsync("owner", new("Engineer", false, "before"));
         Assert.Equal("after", saved!.ConcurrencyStamp);
         Assert.Equal(HttpMethod.Put, handler.Method);
@@ -30,8 +30,9 @@ public sealed class UserAdministrationClientTests
     {
         using var handler = new Handler(HttpStatusCode.Conflict);
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new UserAdministrationClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
-        await Assert.ThrowsAsync<HttpRequestException>(() => client.UpdateUserAsync("owner", new("Engineer", false, "stale")));
+        var client = new UserAdministrationClient(new ApiClient(http, new RecordingFailureReporter()));
+        var refusal = await Assert.ThrowsAsync<OilGasApiException>(() => client.UpdateUserAsync("owner", new("Engineer", false, "stale")));
+        Assert.Equal(HttpStatusCode.Conflict, refusal.StatusCode);
     }
 
     private sealed class Handler(HttpStatusCode status) : HttpMessageHandler

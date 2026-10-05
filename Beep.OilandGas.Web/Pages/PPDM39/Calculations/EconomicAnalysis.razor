@@ -6,6 +6,7 @@
 @inject ApiClient ApiClient
 @inject IAccountingServiceClient AccountingClient
 @inject ILifeCycleService LifeCycleService
+@inject OilGasApiFailures Answers
 
 <PageTitle>Run Economic Analysis</PageTitle>
 
@@ -196,14 +197,14 @@
             _economicResult = await CalculationServiceClient.AnalyzeEconomicAsync(_cashFlows, _discountRate);
 
             var analysisId = Guid.NewGuid().ToString();
-            var saved = await CalculationServiceClient.SaveEconomicAnalysisResultAsync(analysisId, _economicResult);
-            if (saved)
+            try
             {
+                await CalculationServiceClient.SaveEconomicAnalysisResultAsync(analysisId, _economicResult);
                 Snackbar.Add("Economic analysis completed and saved", Severity.Success);
             }
-            else
+            catch (OilGasApiException answer)
             {
-                Snackbar.Add("Economic analysis completed, but saving failed.", Severity.Warning);
+                Snackbar.Add(Answers.Explain(answer, "saving the economic analysis result", "The economic analysis was completed but not saved"), Severity.Warning);
             }
         }
         catch (Exception)

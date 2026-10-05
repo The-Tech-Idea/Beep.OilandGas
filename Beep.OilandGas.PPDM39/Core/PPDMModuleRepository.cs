@@ -446,23 +446,18 @@ namespace Beep.OilandGas.PPDM39.Core
         /// </summary>
         protected virtual async Task<IEnumerable<TResult>> GetEntitiesWithFiltersAsync<TResult>(string tableName, List<AppFilter> filters)
         {
-            // Try to use GetEntityAsync if available (for IDataSource)
-            try
+            // Use GetEntityAsync when the unit of work offers it (for IDataSource). Whether it does is asked of its type;
+            // a query that fails through it reaches the caller (OILGAS-CATCH-01). Any failure used to be caught and the
+            // same query run again as text below, so a failed read was retried down a second path and its cause dropped.
+            var getEntityMethod = _unitOfWork.GetType().GetMethod("GetEntityAsync");
+            if (getEntityMethod != null)
             {
-                var getEntityMethod = _unitOfWork.GetType().GetMethod("GetEntityAsync");
-                if (getEntityMethod != null)
-                {
-                    var task = (Task<dynamic>)getEntityMethod.Invoke(_unitOfWork, new object[] { tableName, filters });
-                    var result = await task;
-                    return ConvertToTypedList<TResult>(result);
-                }
-            }
-            catch
-            {
-                // Fall through to SQL-based approach
+                var task = (Task<dynamic>)getEntityMethod.Invoke(_unitOfWork, new object[] { tableName, filters });
+                var result = await task;
+                return ConvertToTypedList<TResult>(result);
             }
 
-            // Fallback: Build SQL from AppFilter
+            // No GetEntityAsync on this unit of work: build SQL from AppFilter
             var sql = BuildSqlFromFilters(tableName, filters);
             _unitOfWork.EntityName = tableName;
             var queryResult = await _unitOfWork.GetQuery(sql);

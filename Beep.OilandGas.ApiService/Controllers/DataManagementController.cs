@@ -9,6 +9,7 @@ using TheTechIdea.Beep.Editor;
 using System.Reflection;
 using System.Text.Json;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core;
@@ -75,20 +76,12 @@ namespace Beep.OilandGas.ApiService.Controllers
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
-            try
-            {
-                var repository = await GetRepositoryForTable(tableName);
-                if (repository == null)
-                        return NotFound(new { error = $"Table '{tableName}' not found." });
+            var repository = await GetRepositoryForTable(tableName);
+            if (repository == null)
+                    return NotFound(new { error = $"Table '{tableName}' not found." });
 
-                var records = await repository.GetAsync(filters ?? new List<AppFilter>());
-                return Ok(records.ToList());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting records for table: {TableName}", tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var records = await repository.GetAsync(filters ?? new List<AppFilter>());
+            return Ok(records.ToList());
         }
 
         /// <summary>
@@ -102,30 +95,22 @@ namespace Beep.OilandGas.ApiService.Controllers
                 return BadRequest(new { error = "Table name is required." });
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Record ID is required." });
-            try
+            var repository = await GetRepositoryForTable(tableName);
+            if (repository == null)
+                    return NotFound(new { error = $"Table '{tableName}' not found." });
+
+            // Handle composite keys (comma-separated)
+            object recordId = id;
+            if (id.Contains(','))
             {
-                var repository = await GetRepositoryForTable(tableName);
-                if (repository == null)
-                        return NotFound(new { error = $"Table '{tableName}' not found." });
-
-                // Handle composite keys (comma-separated)
-                object recordId = id;
-                if (id.Contains(','))
-                {
-                    recordId = id.Split(',').ToList();
-                }
-
-                var record = await repository.GetByIdAsync(recordId);
-                if (record == null)
-                    return NotFound(new { error = $"Record with ID '{id}' not found in table '{tableName}'." });
-
-                return Ok(record);
+                recordId = id.Split(',').ToList();
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting record {Id} from table: {TableName}", id, tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+
+            var record = await repository.GetByIdAsync(recordId);
+            if (record == null)
+                return NotFound(new { error = $"Record with ID '{id}' not found in table '{tableName}'." });
+
+            return Ok(record);
         }
 
         /// <summary>
@@ -138,26 +123,18 @@ namespace Beep.OilandGas.ApiService.Controllers
             var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
-            try
-            {
-                var repository = await GetRepositoryForTable(tableName);
-                if (repository == null)
-                        return NotFound(new { error = $"Table '{tableName}' not found." });
+            var repository = await GetRepositoryForTable(tableName);
+            if (repository == null)
+                    return NotFound(new { error = $"Table '{tableName}' not found." });
 
-                // Convert JSON to entity object
-                var entity = await ConvertJsonToEntity(entityJson, repository.EntityType);
-                if (entity == null)
-                    return BadRequest(new { error = "Invalid entity data." });
+            // Convert JSON to entity object
+            var entity = ConvertJsonToEntity(entityJson, repository.EntityType);
+            if (entity == null)
+                return BadRequest(new { error = "Invalid entity data." });
 
-                var createdEntity = await repository.InsertAsync(entity, userId);
-                var recordId = await GetRecordIdAsync(createdEntity, repository);
-                return CreatedAtAction(nameof(GetTableRecord), new { tableName, id = recordId }, createdEntity);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating record in table: {TableName}", tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var createdEntity = await repository.InsertAsync(entity, userId);
+            var recordId = await GetRecordIdAsync(createdEntity, repository);
+            return CreatedAtAction(nameof(GetTableRecord), new { tableName, id = recordId }, createdEntity);
         }
 
         /// <summary>
@@ -170,35 +147,27 @@ namespace Beep.OilandGas.ApiService.Controllers
             var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
-            try
+            if (entitiesJson == null || entitiesJson.Count == 0)
+                    return BadRequest(new { error = "Entities array is required." });
+
+            var repository = await GetRepositoryForTable(tableName);
+            if (repository == null)
+                    return NotFound(new { error = $"Table '{tableName}' not found." });
+
+            // Convert JSON array to entity objects
+            var entities = new List<object>();
+            foreach (var json in entitiesJson)
             {
-                if (entitiesJson == null || entitiesJson.Count == 0)
-                        return BadRequest(new { error = "Entities array is required." });
-
-                var repository = await GetRepositoryForTable(tableName);
-                if (repository == null)
-                        return NotFound(new { error = $"Table '{tableName}' not found." });
-
-                // Convert JSON array to entity objects
-                var entities = new List<object>();
-                foreach (var json in entitiesJson)
-                {
-                    var entity = await ConvertJsonToEntity(json, repository.EntityType);
-                    if (entity != null)
-                        entities.Add(entity);
-                }
-
-                if (entities.Count == 0)
-                    return BadRequest(new { error = "No valid entities to create." });
-
-                var createdEntities = await repository.InsertBatchAsync(entities, userId);
-                return Ok(createdEntities.ToList());
+                var entity = ConvertJsonToEntity(json, repository.EntityType);
+                if (entity != null)
+                    entities.Add(entity);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating batch records in table: {TableName}", tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+
+            if (entities.Count == 0)
+                return BadRequest(new { error = "No valid entities to create." });
+
+            var createdEntities = await repository.InsertBatchAsync(entities, userId);
+            return Ok(createdEntities.ToList());
         }
 
         /// <summary>
@@ -213,25 +182,17 @@ namespace Beep.OilandGas.ApiService.Controllers
                 return BadRequest(new { error = "Table name is required." });
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Record ID is required." });
-            try
-            {
-                var repository = await GetRepositoryForTable(tableName);
-                if (repository == null)
-                    return NotFound(new { error = $"Table '{tableName}' not found." });
+            var repository = await GetRepositoryForTable(tableName);
+            if (repository == null)
+                return NotFound(new { error = $"Table '{tableName}' not found." });
 
-                // Convert JSON to entity object
-                var entity = await ConvertJsonToEntity(entityJson, repository.EntityType);
-                if (entity == null)
-                    return BadRequest(new { error = "Invalid entity data." });
+            // Convert JSON to entity object
+            var entity = ConvertJsonToEntity(entityJson, repository.EntityType);
+            if (entity == null)
+                return BadRequest(new { error = "Invalid entity data." });
 
-                var updatedEntity = await repository.UpdateAsync(entity, userId);
-                return Ok(updatedEntity);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating record {Id} in table: {TableName}", id, tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var updatedEntity = await repository.UpdateAsync(entity, userId);
+            return Ok(updatedEntity);
         }
 
         /// <summary>
@@ -244,25 +205,17 @@ namespace Beep.OilandGas.ApiService.Controllers
             var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
-            try
-            {
-                var repository = await GetRepositoryForTable(tableName);
-                if (repository == null)
-                    return NotFound(new { error = $"Table '{tableName}' not found." });
+            var repository = await GetRepositoryForTable(tableName);
+            if (repository == null)
+                return NotFound(new { error = $"Table '{tableName}' not found." });
 
-                // Convert JSON to entity object
-                var entity = await ConvertJsonToEntity(entityJson, repository.EntityType);
-                if (entity == null)
-                    return BadRequest(new { error = "Invalid entity data." });
+            // Convert JSON to entity object
+            var entity = ConvertJsonToEntity(entityJson, repository.EntityType);
+            if (entity == null)
+                return BadRequest(new { error = "Invalid entity data." });
 
-                var updatedEntity = await repository.UpdateAsync(entity, userId);
-                return Ok(updatedEntity);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating record in table: {TableName}", tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var updatedEntity = await repository.UpdateAsync(entity, userId);
+            return Ok(updatedEntity);
         }
 
         /// <summary>
@@ -276,30 +229,22 @@ namespace Beep.OilandGas.ApiService.Controllers
                 return BadRequest(new { error = "Table name is required." });
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Record ID is required." });
-            try
+            var repository = await GetRepositoryForTable(tableName);
+            if (repository == null)
+                    return NotFound(new { error = $"Table '{tableName}' not found." });
+
+            // Handle composite keys (comma-separated)
+            object recordId = id;
+            if (id.Contains(','))
             {
-                var repository = await GetRepositoryForTable(tableName);
-                if (repository == null)
-                        return NotFound(new { error = $"Table '{tableName}' not found." });
-
-                // Handle composite keys (comma-separated)
-                object recordId = id;
-                if (id.Contains(','))
-                {
-                    recordId = id.Split(',').ToList();
-                }
-
-                var deleted = await repository.DeleteAsync(recordId);
-                if (!deleted)
-                    return NotFound(new { error = $"Record with ID '{id}' not found in table '{tableName}'." });
-
-                return NoContent();
+                recordId = id.Split(',').ToList();
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting record {Id} from table: {TableName}", id, tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+
+            var deleted = await repository.DeleteAsync(recordId);
+            if (!deleted)
+                return NotFound(new { error = $"Record with ID '{id}' not found in table '{tableName}'." });
+
+            return NoContent();
         }
 
         // ============================================
@@ -315,16 +260,8 @@ namespace Beep.OilandGas.ApiService.Controllers
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
-            try
-            {
-                var result = await _validationService.ValidateAsync(entity, tableName);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error validating entity for table: {TableName}", tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _validationService.ValidateAsync(entity, tableName);
+            return Ok(result);
         }
 
         /// <summary>
@@ -336,16 +273,8 @@ namespace Beep.OilandGas.ApiService.Controllers
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
-            try
-            {
-                var rules = await _validationService.GetValidationRulesAsync(tableName);
-                return Ok(rules);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting validation rules for table: {TableName}", tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var rules = await _validationService.GetValidationRulesAsync(tableName);
+            return Ok(rules);
         }
 
         /// <summary>
@@ -359,37 +288,29 @@ namespace Beep.OilandGas.ApiService.Controllers
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
-            try
-            {
-                if (rows == null || rows.Count == 0)
-                    return Ok(new List<ForeignKeyValidationError>());
+            if (rows == null || rows.Count == 0)
+                return Ok(new List<ForeignKeyValidationError>());
 
-                // Get entity type for the table
-                var entityType = await GetEntityTypeForTableAsync(tableName);
-                if (entityType == null)
-                    return BadRequest(new { error = $"Entity type not found for table: {tableName}" });
+            // Get entity type for the table
+            var entityType = await GetEntityTypeForTableAsync(tableName);
+            if (entityType == null)
+                return BadRequest(new { error = $"Entity type not found for table: {tableName}" });
 
-                // Create repository for the table
-                var repository = new PPDMGenericRepository(
-                    _editor,
-                    _commonColumnHandler,
-                    _defaults,
-                    _metadata,
-                    entityType,
-                    ConnectionName,
-                    tableName,
-                    null);
+            // Create repository for the table
+            var repository = new PPDMGenericRepository(
+                _editor,
+                _commonColumnHandler,
+                _defaults,
+                _metadata,
+                entityType,
+                ConnectionName,
+                tableName,
+                null);
 
-                // Validate all rows
-                var errors = await repository.ValidateForeignKeyValuesBatchAsync(rows);
+            // Validate all rows
+            var errors = await repository.ValidateForeignKeyValuesBatchAsync(rows);
 
-                return Ok(errors);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error validating foreign keys for table: {TableName}", tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(errors);
         }
 
         /// <summary>
@@ -404,37 +325,29 @@ namespace Beep.OilandGas.ApiService.Controllers
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
-            try
-            {
-                if (row == null || row.Count == 0)
-                    return Ok(new List<ForeignKeyValidationError>());
+            if (row == null || row.Count == 0)
+                return Ok(new List<ForeignKeyValidationError>());
 
-                // Get entity type for the table
-                var entityType = await GetEntityTypeForTableAsync(tableName);
-                if (entityType == null)
-                    return BadRequest(new { error = $"Entity type not found for table: {tableName}" });
+            // Get entity type for the table
+            var entityType = await GetEntityTypeForTableAsync(tableName);
+            if (entityType == null)
+                return BadRequest(new { error = $"Entity type not found for table: {tableName}" });
 
-                // Create repository for the table
-                var repository = new PPDMGenericRepository(
-                    _editor,
-                    _commonColumnHandler,
-                    _defaults,
-                    _metadata,
-                    entityType,
-                    ConnectionName,
-                    tableName,
-                    null);
+            // Create repository for the table
+            var repository = new PPDMGenericRepository(
+                _editor,
+                _commonColumnHandler,
+                _defaults,
+                _metadata,
+                entityType,
+                ConnectionName,
+                tableName,
+                null);
 
-                // Validate the row
-                var errors = await repository.ValidateForeignKeyValuesAsync(row, rowNumber);
+            // Validate the row
+            var errors = await repository.ValidateForeignKeyValuesAsync(row, rowNumber);
 
-                return Ok(errors);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error validating foreign keys for table: {TableName}", tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(errors);
         }
 
         // ============================================
@@ -450,16 +363,8 @@ namespace Beep.OilandGas.ApiService.Controllers
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
-            try
-            {
-                var metrics = await _qualityService.CalculateTableQualityMetricsAsync(tableName);
-                return Ok(metrics);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting quality metrics for table: {TableName}", tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var metrics = await _qualityService.CalculateTableQualityMetricsAsync(tableName);
+            return Ok(metrics);
         }
 
         /// <summary>
@@ -471,16 +376,8 @@ namespace Beep.OilandGas.ApiService.Controllers
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
-            try
-            {
-                var dashboard = await _qualityDashboardService.GetDashboardDataAsync(tableName);
-                return Ok(dashboard);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting quality dashboard for table: {TableName}", tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var dashboard = await _qualityDashboardService.GetDashboardDataAsync(tableName);
+            return Ok(dashboard);
         }
 
         /// <summary>
@@ -492,16 +389,8 @@ namespace Beep.OilandGas.ApiService.Controllers
             [FromQuery] string? tableName = null,
             [FromQuery] QualityAlertSeverity? severity = null)
         {
-            try
-            {
-                var alerts = await _qualityDashboardService.GetQualityAlertsAsync(tableName, severity);
-                return Ok(alerts);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting quality alerts");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var alerts = await _qualityDashboardService.GetQualityAlertsAsync(tableName, severity);
+            return Ok(alerts);
         }
 
         // ============================================
@@ -517,19 +406,11 @@ namespace Beep.OilandGas.ApiService.Controllers
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
-            try
-            {
-                var meta = await _metadata.GetTableMetadataAsync(tableName);
-                if (meta == null)
-                        return NotFound(new { error = $"Metadata not found for table '{tableName}'." });
+            var meta = await _metadata.GetTableMetadataAsync(tableName);
+            if (meta == null)
+                    return NotFound(new { error = $"Metadata not found for table '{tableName}'." });
 
-                return Ok(meta);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting metadata for table: {TableName}", tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(meta);
         }
 
         /// <summary>
@@ -543,59 +424,51 @@ namespace Beep.OilandGas.ApiService.Controllers
         {
             if (string.IsNullOrWhiteSpace(tableName))
                     return BadRequest(new { error = "Table name is required." });
-            try
+            var rules = await _validationService.GetValidationRulesAsync(tableName);
+            var repo  = await GetRepositoryForTable(tableName);
+            if (repo == null)
+                    return NotFound(new { error = $"Table '{tableName}' not found or has no mapped entity type." });
+
+            var allEntities = (await repo.GetAsync(new List<AppFilter>
             {
-                var rules = await _validationService.GetValidationRulesAsync(tableName);
-                var repo  = await GetRepositoryForTable(tableName);
-                if (repo == null)
-                        return NotFound(new { error = $"Table '{tableName}' not found or has no mapped entity type." });
+                new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            })).ToList();
 
-                var allEntities = (await repo.GetAsync(new List<AppFilter>
-                {
-                    new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-                })).ToList();
+            int rowsChecked  = allEntities.Count;
+            var issueGroups  = new Dictionary<string, (int Count, string Severity, string Column, string Rule)>();
 
-                int rowsChecked  = allEntities.Count;
-                var issueGroups  = new Dictionary<string, (int Count, string Severity, string Column, string Rule)>();
-
-                foreach (var entity in allEntities)
-                {
-                        var result = await _validationService.ValidateAsync(entity, tableName);
-                        if (result?.Errors != null)
-                        {
-                            foreach (var e in result.Errors)
-                            {
-                                var key = $"Error|{e.FieldName}|{e.ErrorMessage}";
-                                if (!issueGroups.TryGetValue(key, out var g))
-                                    issueGroups[key] = (1, "Error", e.FieldName ?? string.Empty, e.ErrorMessage ?? string.Empty);
-                                else
-                                    issueGroups[key] = (g.Count + 1, g.Severity, g.Column, g.Rule);
-                            }
-                        }
-                        if (result?.Warnings != null)
-                        {
-                            foreach (var w in result.Warnings)
-                            {
-                                var key = $"Warning|{w.FieldName}|{w.WarningMessage}";
-                                if (!issueGroups.TryGetValue(key, out var g))
-                                    issueGroups[key] = (1, "Warning", w.FieldName ?? string.Empty, w.WarningMessage ?? string.Empty);
-                                else
-                                    issueGroups[key] = (g.Count + 1, g.Severity, g.Column, g.Rule);
-                            }
-                        }
-                }
-
-                var issues = issueGroups.Values
-                    .Select(x => new { x.Rule, x.Column, Message = x.Rule, x.Severity, RowCount = x.Count })
-                    .ToList();
-
-                return Ok(new { RowsChecked = rowsChecked, Issues = issues });
-            }
-            catch (Exception ex)
+            foreach (var entity in allEntities)
             {
-                _logger.LogError(ex, "Error validating table {TableName}", tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
+                    var result = await _validationService.ValidateAsync(entity, tableName);
+                    if (result?.Errors != null)
+                    {
+                        foreach (var e in result.Errors)
+                        {
+                            var key = $"Error|{e.FieldName}|{e.ErrorMessage}";
+                            if (!issueGroups.TryGetValue(key, out var g))
+                                issueGroups[key] = (1, "Error", e.FieldName ?? string.Empty, e.ErrorMessage ?? string.Empty);
+                            else
+                                issueGroups[key] = (g.Count + 1, g.Severity, g.Column, g.Rule);
+                        }
+                    }
+                    if (result?.Warnings != null)
+                    {
+                        foreach (var w in result.Warnings)
+                        {
+                            var key = $"Warning|{w.FieldName}|{w.WarningMessage}";
+                            if (!issueGroups.TryGetValue(key, out var g))
+                                issueGroups[key] = (1, "Warning", w.FieldName ?? string.Empty, w.WarningMessage ?? string.Empty);
+                            else
+                                issueGroups[key] = (g.Count + 1, g.Severity, g.Column, g.Rule);
+                        }
+                    }
             }
+
+            var issues = issueGroups.Values
+                .Select(x => new { x.Rule, x.Column, Message = x.Rule, x.Severity, RowCount = x.Count })
+                .ToList();
+
+            return Ok(new { RowsChecked = rowsChecked, Issues = issues });
         }
 
         public class TableValidationOptions
@@ -614,41 +487,33 @@ namespace Beep.OilandGas.ApiService.Controllers
         /// </summary>
         private async Task<PPDMGenericRepository?> GetRepositoryForTable(string tableName)
         {
-            try
+            // Get table metadata to find entity type
+            var tableMetadata = await _metadata.GetTableMetadataAsync(tableName);
+            if (tableMetadata == null)
             {
-                // Get table metadata to find entity type
-                var tableMetadata = await _metadata.GetTableMetadataAsync(tableName);
-                if (tableMetadata == null)
-                {
-                    _logger.LogWarning("Table metadata not found: {TableName}", tableName);
-                    return null;
-                }
-
-                // Get entity type from metadata
-                var entityType = await GetEntityTypeForTableAsync(tableName);
-                if (entityType == null)
-                {
-                    _logger.LogWarning("Entity type not found for table: {TableName}, EntityTypeName: {EntityTypeName}", 
-                        tableName, tableMetadata.EntityTypeName);
-                    return null;
-                }
-
-                // Create repository
-                return new PPDMGenericRepository(
-                    _editor,
-                    _commonColumnHandler,
-                    _defaults,
-                    _metadata,
-                    entityType,
-                    ConnectionName,
-                    tableName,
-                    null);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating repository for table: {TableName}", tableName);
+                _logger.LogWarning("Table metadata not found: {TableName}", tableName);
                 return null;
             }
+
+            // Get entity type from metadata
+            var entityType = await GetEntityTypeForTableAsync(tableName);
+            if (entityType == null)
+            {
+                _logger.LogWarning("Entity type not found for table: {TableName}, EntityTypeName: {EntityTypeName}",
+                    tableName, tableMetadata.EntityTypeName);
+                return null;
+            }
+
+            // Create repository
+            return new PPDMGenericRepository(
+                _editor,
+                _commonColumnHandler,
+                _defaults,
+                _metadata,
+                entityType,
+                ConnectionName,
+                tableName,
+                null);
         }
 
         /// <summary>
@@ -694,26 +559,26 @@ namespace Beep.OilandGas.ApiService.Controllers
         }
 
         /// <summary>
-        /// Converts JSON element to entity object
+        /// Converts JSON element to entity object. JSON that is not a record of the table's entity is refused in this API's
+        /// words; System.Text.Json has no question for it, so its exception is the answer and stays inside the refusal.
         /// </summary>
-        private async Task<object?> ConvertJsonToEntity(JsonElement json, Type entityType)
+        private static object? ConvertJsonToEntity(JsonElement json, Type entityType)
         {
+            var jsonString = json.GetRawText();
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                ReadCommentHandling = JsonCommentHandling.Skip,
+                AllowTrailingCommas = true
+            };
+
             try
             {
-                var jsonString = json.GetRawText();
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                    ReadCommentHandling = JsonCommentHandling.Skip,
-                    AllowTrailingCommas = true
-                };
-
                 return JsonSerializer.Deserialize(jsonString, entityType, options);
             }
-            catch (Exception ex)
+            catch (JsonException notAnEntity)
             {
-                _logger.LogError(ex, "Error converting JSON to entity type: {EntityType}", entityType.Name);
-                return null;
+                throw new RefusalException(RefusalKind.Invalid, $"The data is not a valid {entityType.Name} record.", notAnEntity);
             }
         }
 
@@ -722,40 +587,32 @@ namespace Beep.OilandGas.ApiService.Controllers
         /// </summary>
         private async Task<string?> GetRecordIdAsync(object entity, PPDMGenericRepository repository)
         {
-            try
-            {
-                var tableMetadata = await _metadata.GetTableMetadataAsync(repository.TableName);
-                if (tableMetadata?.PrimaryKeyColumn == null)
-                    return null;
-
-                // Handle composite primary keys
-                if (tableMetadata.PrimaryKeyColumn.Contains(','))
-                {
-                    var keyParts = tableMetadata.PrimaryKeyColumn.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                    var values = new List<string>();
-
-                    foreach (var keyPart in keyParts)
-                    {
-                        var prop = entity.GetType().GetProperty(keyPart);
-                        var value = prop?.GetValue(entity)?.ToString();
-                        if (string.IsNullOrEmpty(value))
-                            return null;
-                        values.Add(value);
-                    }
-
-                    return string.Join(",", values);
-                }
-                else
-                {
-                    // Single primary key
-                    var prop = entity.GetType().GetProperty(tableMetadata.PrimaryKeyColumn);
-                    return prop?.GetValue(entity)?.ToString();
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting record ID from entity");
+            var tableMetadata = await _metadata.GetTableMetadataAsync(repository.TableName);
+            if (tableMetadata?.PrimaryKeyColumn == null)
                 return null;
+
+            // Handle composite primary keys
+            if (tableMetadata.PrimaryKeyColumn.Contains(','))
+            {
+                var keyParts = tableMetadata.PrimaryKeyColumn.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                var values = new List<string>();
+
+                foreach (var keyPart in keyParts)
+                {
+                    var prop = entity.GetType().GetProperty(keyPart);
+                    var value = prop?.GetValue(entity)?.ToString();
+                    if (string.IsNullOrEmpty(value))
+                        return null;
+                    values.Add(value);
+                }
+
+                return string.Join(",", values);
+            }
+            else
+            {
+                // Single primary key
+                var prop = entity.GetType().GetProperty(tableMetadata.PrimaryKeyColumn);
+                return prop?.GetValue(entity)?.ToString();
             }
         }
     }

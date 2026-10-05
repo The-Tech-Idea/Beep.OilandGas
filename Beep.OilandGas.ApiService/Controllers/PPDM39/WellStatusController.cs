@@ -49,42 +49,34 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("reference")]
         public async Task<ActionResult<List<WellServices.FacetTypeDto>>> GetFacetReference()
         {
-            try
+            var result = new List<WellServices.FacetTypeDto>();
+            foreach (var facetType in WellServices.DEFAULT_WELL_STATUS_TYPES)
             {
-                var result = new List<WellServices.FacetTypeDto>();
-                foreach (var facetType in WellServices.DEFAULT_WELL_STATUS_TYPES)
+                var values     = await _wellServices.GetFacetValuesAsync(facetType);
+                var qualifiers = await _wellServices.GetFacetQualifiersAsync(facetType);
+
+                var qualByStatus = new Dictionary<string, List<WellServices.FacetQualifierDto>>(StringComparer.OrdinalIgnoreCase);
+                foreach (var q in qualifiers)
                 {
-                    var values     = await _wellServices.GetFacetValuesAsync(facetType);
-                    var qualifiers = await _wellServices.GetFacetQualifiersAsync(facetType);
-
-                    var qualByStatus = new Dictionary<string, List<WellServices.FacetQualifierDto>>(StringComparer.OrdinalIgnoreCase);
-                    foreach (var q in qualifiers)
-                    {
-                        var key = q.Status ?? "*";
-                        if (!qualByStatus.ContainsKey(key))
-                            qualByStatus[key] = new();
-                        qualByStatus[key].Add(q);
-                    }
-
-                    WellServices.FacetTypeDef? catalog = null;
-                    WellServices.FACET_CATALOG.TryGetValue(facetType, out catalog);
-
-                    result.Add(new WellServices.FacetTypeDto
-                    {
-                        StatusType = facetType,
-                        LongName   = catalog?.LongName ?? facetType,
-                        Scope      = catalog?.Scope,
-                        Values     = values,
-                        Qualifiers = qualByStatus
-                    });
+                    var key = q.Status ?? "*";
+                    if (!qualByStatus.ContainsKey(key))
+                        qualByStatus[key] = new();
+                    qualByStatus[key].Add(q);
                 }
-                return Ok(result);
+
+                WellServices.FacetTypeDef? catalog = null;
+                WellServices.FACET_CATALOG.TryGetValue(facetType, out catalog);
+
+                result.Add(new WellServices.FacetTypeDto
+                {
+                    StatusType = facetType,
+                    LongName   = catalog?.LongName ?? facetType,
+                    Scope      = catalog?.Scope,
+                    Values     = values,
+                    Qualifiers = qualByStatus
+                });
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading facet reference data");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(result);
         }
 
         /// <summary>
@@ -96,37 +88,29 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             if (string.IsNullOrWhiteSpace(statusType))
                 return BadRequest(new { error = "Status type is required." });
-            try
+            var values     = await _wellServices.GetFacetValuesAsync(statusType);
+            var qualifiers = await _wellServices.GetFacetQualifiersAsync(statusType);
+
+            WellServices.FacetTypeDef? catalog = null;
+            WellServices.FACET_CATALOG.TryGetValue(statusType, out catalog);
+
+            var qualByStatus = new Dictionary<string, List<WellServices.FacetQualifierDto>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var q in qualifiers)
             {
-                var values     = await _wellServices.GetFacetValuesAsync(statusType);
-                var qualifiers = await _wellServices.GetFacetQualifiersAsync(statusType);
-
-                WellServices.FacetTypeDef? catalog = null;
-                WellServices.FACET_CATALOG.TryGetValue(statusType, out catalog);
-
-                var qualByStatus = new Dictionary<string, List<WellServices.FacetQualifierDto>>(StringComparer.OrdinalIgnoreCase);
-                foreach (var q in qualifiers)
-                {
-                    var key = q.Status ?? "*";
-                    if (!qualByStatus.ContainsKey(key))
-                        qualByStatus[key] = new();
-                    qualByStatus[key].Add(q);
-                }
-
-                return Ok(new WellServices.FacetTypeDto
-                {
-                    StatusType = statusType,
-                    LongName   = catalog?.LongName ?? statusType,
-                    Scope      = catalog?.Scope,
-                    Values     = values,
-                    Qualifiers = qualByStatus
-                });
+                var key = q.Status ?? "*";
+                if (!qualByStatus.ContainsKey(key))
+                    qualByStatus[key] = new();
+                qualByStatus[key].Add(q);
             }
-            catch (Exception ex)
+
+            return Ok(new WellServices.FacetTypeDto
             {
-                _logger.LogError(ex, "Error loading facet reference for {StatusType}", statusType);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                StatusType = statusType,
+                LongName   = catalog?.LongName ?? statusType,
+                Scope      = catalog?.Scope,
+                Values     = values,
+                Qualifiers = qualByStatus
+            });
         }
 
         /// <summary>
@@ -140,16 +124,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return BadRequest(new { error = "Status type is required." });
             if (string.IsNullOrWhiteSpace(status))
                 return BadRequest(new { error = "Status is required." });
-            try
-            {
-                var result = await _wellServices.GetFacetQualifiersAsync(statusType, status);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading qualifiers for {StatusType}/{Status}", statusType, status);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _wellServices.GetFacetQualifiersAsync(statusType, status);
+            return Ok(result);
         }
 
         /// <summary>
@@ -166,16 +142,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return BadRequest(new { error = "Status is required." });
             if (string.IsNullOrWhiteSpace(qualifier))
                 return BadRequest(new { error = "Qualifier is required." });
-            try
-            {
-                var result = await _wellServices.GetFacetQualifierValuesAsync(statusType, status, qualifier);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading qualifier values for {StatusType}/{Status}/{Qualifier}", statusType, status, qualifier);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _wellServices.GetFacetQualifierValuesAsync(statusType, status, qualifier);
+            return Ok(result);
         }
 
         // ─────────────────────────────────────────────────────────────────────────
@@ -191,16 +159,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<Dictionary<string, WELL_STATUS>>> GetCurrentStatus(string uwi)
         {
             if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
-            try
-            {
-                var result = await _wellServices.GetCurrentWellStatusByUwiAsync(uwi);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading current status for UWI {UWI}", uwi);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _wellServices.GetCurrentWellStatusByUwiAsync(uwi);
+            return Ok(result);
         }
 
         /// <summary>
@@ -212,16 +172,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<List<WellServices.FacetTypeDto>>> GetFacetPageData(string uwi)
         {
             if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
-            try
-            {
-                var result = await _wellServices.GetWellFacetPageDataAsync(uwi);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading facet page data for UWI {UWI}", uwi);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _wellServices.GetWellFacetPageDataAsync(uwi);
+            return Ok(result);
         }
 
         /// <summary>
@@ -232,16 +184,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<List<WELL_STATUS>>> GetStatusHistory(string uwi)
         {
             if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
-            try
-            {
-                var result = await _wellServices.GetWellStatusByUwiAsync(uwi);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading status history for UWI {UWI}", uwi);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _wellServices.GetWellStatusByUwiAsync(uwi);
+            return Ok(result);
         }
 
         // ─────────────────────────────────────────────────────────────────────────
@@ -265,25 +209,13 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             // Ensure UWI from route is used (prevents spoofing via body).
             request.UWI = uwi;
 
-            try
-            {
-                _logger.LogInformation("Setting facet {StatusType}={Status} for UWI {UWI} by {UserId}",
-                    request.StatusType, request.Status, uwi, userId);
+            _logger.LogInformation("Setting facet {StatusType}={Status} for UWI {UWI} by {UserId}",
+                request.StatusType, request.Status, uwi, userId);
 
-                var result = await _wellServices.SetFacetAsync(request, userId);
+            var result = await _wellServices.SetFacetAsync(request, userId);
 
-                _logger.LogInformation("Facet {StatusType} set for UWI {UWI}", request.StatusType, uwi);
-                return Ok(result);
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest(new { error = "An internal error occurred." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error setting facet {StatusType} for UWI {UWI}", request.StatusType, uwi);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            _logger.LogInformation("Facet {StatusType} set for UWI {UWI}", request.StatusType, uwi);
+            return Ok(result);
         }
     }
 }

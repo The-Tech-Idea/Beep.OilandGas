@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.NodalAnalysis;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.NodalAnalysis.Calculations
 {
@@ -99,7 +100,7 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             if (baseReservoir == null) throw new ArgumentNullException(nameof(baseReservoir));
             if (baseWellbore == null) throw new ArgumentNullException(nameof(baseWellbore));
             if (parameterRanges == null || parameterRanges.Count == 0)
-                throw new ArgumentException("At least one parameter range is required.", nameof(parameterRanges));
+                throw RefusalException.Invalid("At least one parameter range is required.");
 
             double baseRate = ComputeVogelOperatingFlowRate(baseReservoir, baseWellbore);
             double baseBhp = ComputeVogelOperatingBhp(baseReservoir, baseWellbore);
@@ -181,7 +182,7 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             if (baseReservoir == null) throw new ArgumentNullException(nameof(baseReservoir));
             if (baseWellbore == null) throw new ArgumentNullException(nameof(baseWellbore));
             if (parameterDistributions == null || parameterDistributions.Count == 0)
-                throw new ArgumentException("At least one parameter distribution is required.", nameof(parameterDistributions));
+                throw RefusalException.Invalid("At least one parameter distribution is required.");
             if (iterations < 10) iterations = 10;
 
             var rng = seed.HasValue ? new Random(seed.Value) : new Random();
@@ -356,7 +357,7 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
                 case nameof(ReservoirProperties.FormationVolumeFactor):r.FormationVolumeFactor = value;break;
                 case nameof(ReservoirProperties.OilViscosity):         r.OilViscosity = value;         break;
                 default:
-                    throw new ArgumentException($"Unknown ReservoirProperties parameter: '{name}'", nameof(name));
+                    throw RefusalException.Invalid($"Unknown ReservoirProperties parameter: '{name}'");
             }
         }
 
@@ -372,7 +373,7 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
                 nameof(ReservoirProperties.OilGravity)           => r.OilGravity,
                 nameof(ReservoirProperties.FormationVolumeFactor)=> r.FormationVolumeFactor,
                 nameof(ReservoirProperties.OilViscosity)         => r.OilViscosity,
-                _ => throw new ArgumentException($"Unknown ReservoirProperties parameter: '{name}'", nameof(name))
+                _ => throw RefusalException.Invalid($"Unknown ReservoirProperties parameter: '{name}'")
             };
         }
 

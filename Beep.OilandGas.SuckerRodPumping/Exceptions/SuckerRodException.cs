@@ -1,24 +1,31 @@
 using System;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.SuckerRodPumping.Exceptions
 {
     /// <summary>
     /// Base exception for sucker rod pumping calculations.
     /// </summary>
-    public class SuckerRodException : Exception
+    /// <remarks>
+    /// OILGAS-CATCH-01. Every throw of this family refuses what the caller sent — system or rod-string properties out
+    /// of range, or a design whose rod stress exceeds the safe limit — so it is a <see cref="RefusalException"/>
+    /// (<see cref="RefusalKind.Invalid"/>) and the API answers it as a 400 with its sentence. Its message is written
+    /// for the person, never taken from a caught exception.
+    /// </remarks>
+    public class SuckerRodException : RefusalException
     {
         public SuckerRodException()
-            : base()
+            : base(RefusalKind.Invalid, "The sucker rod calculation could not be done with the values given.")
         {
         }
 
         public SuckerRodException(string message)
-            : base(message)
+            : base(RefusalKind.Invalid, message)
         {
         }
 
         public SuckerRodException(string message, Exception innerException)
-            : base(message, innerException)
+            : base(RefusalKind.Invalid, message, innerException)
         {
         }
     }

@@ -16,6 +16,7 @@ using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Models;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.Accounting.Services
 {
@@ -31,6 +32,7 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly AccountingBasisPostingService _basisPosting;
         private readonly IAccountMappingService? _accountMapping;
         private readonly ILogger<ARService> _logger;
+        private readonly IFailureReporter _failures;
         private readonly Func<Task<string>>? _resolveConnection;
         private const string ConnectionName = "PPDM39";
 
@@ -40,6 +42,7 @@ namespace Beep.OilandGas.Accounting.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             AccountingBasisPostingService basisPosting,
+            IFailureReporter failures,
             ILogger<ARService> logger = null,
             IAccountMappingService? accountMapping = null,
             Func<Task<string>>? resolveConnection = null)
@@ -49,6 +52,7 @@ namespace Beep.OilandGas.Accounting.Services
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _basisPosting = basisPosting ?? throw new ArgumentNullException(nameof(basisPosting));
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
             _logger = logger;
             _accountMapping = accountMapping;
             _resolveConnection = resolveConnection;
@@ -59,11 +63,11 @@ namespace Beep.OilandGas.Accounting.Services
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.CustomerBaId))
-                throw new InvalidOperationException("Customer BA ID is required");
+                throw RefusalException.Invalid("A customer BA ID is required.");
             if (request.TotalAmount <= 0m)
-                throw new InvalidOperationException("Invoice amount must be positive");
+                throw RefusalException.Invalid("Invoice amount must be positive.");
             if (request.DueDate.Date < request.InvoiceDate.Date)
-                throw new InvalidOperationException("Due date cannot be earlier than invoice date");
+                throw RefusalException.Invalid("Due date cannot be earlier than the invoice date.");
 
             var invoice = new AR_INVOICE
             {
@@ -129,7 +133,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             var invoice = await GetInvoiceAsync(request.ArInvoiceId, cn);
             if (invoice == null)
-                throw new InvalidOperationException($"AR invoice not found: {request.ArInvoiceId}");
+                throw RefusalException.NotFound($"AR invoice {request.ArInvoiceId} was not found.");
 
             invoice.INVOICE_NUMBER = request.InvoiceNumber ?? invoice.INVOICE_NUMBER;
             invoice.CUSTOMER_BA_ID = request.CustomerBaId ?? invoice.CUSTOMER_BA_ID;
@@ -138,7 +142,7 @@ namespace Beep.OilandGas.Accounting.Services
             var updatedInvoiceDate = request.InvoiceDate ?? invoice.INVOICE_DATE;
             if (updatedDueDate.HasValue && updatedInvoiceDate.HasValue
                 && updatedDueDate.Value.Date < updatedInvoiceDate.Value.Date)
-                throw new InvalidOperationException("Due date cannot be earlier than invoice date");
+                throw RefusalException.Invalid("Due date cannot be earlier than the invoice date.");
             invoice.DUE_DATE = updatedDueDate;
             if (request.TotalAmount.HasValue)
             {
@@ -174,9 +178,9 @@ namespace Beep.OilandGas.Accounting.Services
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.CustomerBaId))
-                throw new InvalidOperationException("Customer BA ID is required");
+                throw RefusalException.Invalid("A customer BA ID is required.");
             if (request.PaymentAmount <= 0m)
-                throw new InvalidOperationException("Payment amount must be positive");
+                throw RefusalException.Invalid("Payment amount must be positive.");
 
             var payment = new AR_PAYMENT
             {
@@ -203,16 +207,16 @@ namespace Beep.OilandGas.Accounting.Services
         public async Task<AR_PAYMENT> ApplyPaymentAsync(string paymentId, string invoiceId, decimal amount, string userId, string cn = "PPDM39")
         {
             if (amount <= 0m)
-                throw new InvalidOperationException("Applied amount must be positive");
+                throw RefusalException.Invalid("Applied amount must be positive.");
 
             var paymentRepo = await GetRepoAsync<AR_PAYMENT>("AR_PAYMENT", cn);
             var payment = await paymentRepo.GetByIdAsync(paymentId) as AR_PAYMENT;
             if (payment == null)
-                throw new InvalidOperationException($"Payment not found: {paymentId}");
+                throw RefusalException.NotFound($"Payment {paymentId} was not found.");
 
             var invoice = await GetInvoiceAsync(invoiceId, cn);
             if (invoice == null)
-                throw new InvalidOperationException($"AR invoice not found: {invoiceId}");
+                throw RefusalException.NotFound($"AR invoice {invoiceId} was not found.");
 
             var remainingBalance = invoice.BALANCE_DUE ?? 0m;
             var appliedAmount = Math.Min(amount, remainingBalance);
@@ -262,13 +266,13 @@ namespace Beep.OilandGas.Accounting.Services
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.ArInvoiceId))
-                throw new InvalidOperationException("Invoice ID is required");
+                throw RefusalException.Invalid("An invoice ID is required.");
             if (request.CreditAmount <= 0m)
-                throw new InvalidOperationException("Credit amount must be positive");
+                throw RefusalException.Invalid("Credit amount must be positive.");
 
             var invoice = await GetInvoiceAsync(request.ArInvoiceId, cn);
             if (invoice == null)
-                throw new InvalidOperationException($"AR invoice not found: {request.ArInvoiceId}");
+                throw RefusalException.NotFound($"AR invoice {request.ArInvoiceId} was not found.");
 
             var creditMemo = new AR_CREDIT_MEMO
             {
@@ -317,7 +321,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             var invoice = await GetInvoiceAsync(invoiceId, cn);
             if (invoice == null)
-                throw new InvalidOperationException($"AR invoice not found: {invoiceId}");
+                throw RefusalException.NotFound($"AR invoice {invoiceId} was not found.");
 
             if (!string.Equals(invoice.STATUS, "DRAFT", StringComparison.OrdinalIgnoreCase))
             {
@@ -426,7 +430,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(request.PaymentId))
                 throw new ArgumentNullException(nameof(request.PaymentId));
             if (request.Applications == null || request.Applications.Count == 0)
-                throw new InvalidOperationException("At least one application is required");
+                throw RefusalException.Invalid("At least one payment application is required.");
 
             var result = new PaymentApplicationResult
             {
@@ -442,8 +446,15 @@ namespace Beep.OilandGas.Accounting.Services
                     result.TotalApplied += application.Amount;
                     result.AppliedInvoiceIds.Add(application.InvoiceId);
                 }
-                catch
+                // Each application is its own unit and the result lists the ones that did not apply, so the batch goes
+                // on past any failure — a refusal (no such invoice) or a fault alike. Every one is reported, never only
+                // counted: the caller is told which invoices failed, and the store keeps why.
+                catch (Exception failure)
                 {
+                    _failures.ReportHandled(failure,
+                        $"applying payment {request.PaymentId} to AR invoice {application.InvoiceId}",
+                        "the application is listed in FailedInvoiceIds and the payment is not applied to that invoice; the other applications go on",
+                        failure is RefusalException ? FailureSeverity.Degraded : FailureSeverity.Error);
                     result.FailedApplications++;
                     result.FailedInvoiceIds.Add(application.InvoiceId);
                 }
@@ -503,24 +514,18 @@ namespace Beep.OilandGas.Accounting.Services
 
         public async Task<bool> HasUnpostedInvoicesAsync(DateTime periodEndDate)
         {
-             try
+            // A failed check propagates, which stops the period close without telling the person there are unposted
+            // invoices when nobody looked.
+            var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", null);
+            var filters = new List<AppFilter>
             {
-                var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", null);
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "STATUS", Operator = "=", FilterValue = InvoiceStatuses.Draft },
-                    new AppFilter { FieldName = "INVOICE_DATE", Operator = "<=", FilterValue = periodEndDate.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-                };
+                new AppFilter { FieldName = "STATUS", Operator = "=", FilterValue = InvoiceStatuses.Draft },
+                new AppFilter { FieldName = "INVOICE_DATE", Operator = "<=", FilterValue = periodEndDate.ToString("yyyy-MM-dd") },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
 
-                var results = await repo.GetAsync(filters);
-                return results != null && results.Any();
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error checking for unposted AR invoices");
-                return true;
-            }
+            var results = await repo.GetAsync(filters);
+            return results != null && results.Any();
         }
 
         private string GetAccountId(string key, string fallback)

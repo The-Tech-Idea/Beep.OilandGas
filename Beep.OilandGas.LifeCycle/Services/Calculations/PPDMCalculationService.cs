@@ -1,3 +1,4 @@
+using TheTechIdeaWeb.Diagnostics;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Concurrent;
@@ -76,6 +77,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         private readonly Beep.OilandGas.ChokeAnalysis.Core.Interfaces.IChokeAnalysisService _chokeAnalysisService;
         private readonly ICompressorAnalysisService _compressorAnalysisService;
         private readonly string _connectionName;
+        private readonly IFailureReporter _failures;
         private readonly ILogger<PPDMCalculationService>? _logger;
 
         public PPDMCalculationService(
@@ -86,6 +88,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             IFieldMappingService fieldMappingService,
             Beep.OilandGas.ChokeAnalysis.Core.Interfaces.IChokeAnalysisService chokeAnalysisService,
             ICompressorAnalysisService compressorAnalysisService,
+            IFailureReporter failures,
             string connectionName = "PPDM39",
             ILogger<PPDMCalculationService>? logger = null)
         {
@@ -97,6 +100,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             _chokeAnalysisService = chokeAnalysisService ?? throw new ArgumentNullException(nameof(chokeAnalysisService));
             _compressorAnalysisService = compressorAnalysisService ?? throw new ArgumentNullException(nameof(compressorAnalysisService));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
             _logger = logger;
         }
 

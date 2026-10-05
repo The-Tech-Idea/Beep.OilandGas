@@ -41,25 +41,17 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             if (string.IsNullOrWhiteSpace(entityType))
                 return BadRequest(new { error = "Entity type is required." });
-            try
+            _logger.LogInformation("Getting defaults for entity type {EntityType}", entityType);
+            
+            var result = new Dictionary<string, object>
             {
-                _logger.LogInformation("Getting defaults for entity type {EntityType}", entityType);
-                
-                var result = new Dictionary<string, object>
-                {
-                    { "ActiveIndicator", _defaultsRepository.GetActiveIndicatorYes() },
-                    { "RowQuality", _defaultsRepository.GetDefaultRowQuality() },
-                    { "PreferredIndicator", _defaultsRepository.GetDefaultPreferredIndicator() },
-                    { "CertifiedIndicator", _defaultsRepository.GetDefaultCertifiedIndicator() }
-                };
+                { "ActiveIndicator", _defaultsRepository.GetActiveIndicatorYes() },
+                { "RowQuality", _defaultsRepository.GetDefaultRowQuality() },
+                { "PreferredIndicator", _defaultsRepository.GetDefaultPreferredIndicator() },
+                { "CertifiedIndicator", _defaultsRepository.GetDefaultCertifiedIndicator() }
+            };
 
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting defaults for entity type {EntityType}", entityType);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(result);
         }
 
         /// <summary>
@@ -70,18 +62,10 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             if (string.IsNullOrWhiteSpace(statusId))
                 return BadRequest(new { error = "Status ID is required." });
-            try
-            {
-                _logger.LogInformation("Getting well status facets for status {StatusId}", statusId);
-                var facets = await _wellServices.GetWellStatusFacetsAsync(statusId);
-                
-                return Ok(facets ?? new Dictionary<string, object>());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting well status facets for status {StatusId}", statusId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            _logger.LogInformation("Getting well status facets for status {StatusId}", statusId);
+            var facets = await _wellServices.GetWellStatusFacetsAsync(statusId);
+            
+            return Ok(facets ?? new Dictionary<string, object>());
         }
 
         /// <summary>
@@ -90,16 +74,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("active-indicator")]
         public ActionResult<string> GetActiveIndicator()
         {
-            try
-            {
-                var activeIndicator = _defaultsRepository.GetActiveIndicatorYes();
-                return Ok(new { value = activeIndicator });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting active indicator");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var activeIndicator = _defaultsRepository.GetActiveIndicatorYes();
+            return Ok(new { value = activeIndicator });
         }
 
         /// <summary>
@@ -108,16 +84,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("inactive-indicator")]
         public ActionResult<string> GetInactiveIndicator()
         {
-            try
-            {
-                var inactiveIndicator = _defaultsRepository.GetActiveIndicatorNo();
-                return Ok(new { value = inactiveIndicator });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting inactive indicator");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var inactiveIndicator = _defaultsRepository.GetActiveIndicatorNo();
+            return Ok(new { value = inactiveIndicator });
         }
     }
 }

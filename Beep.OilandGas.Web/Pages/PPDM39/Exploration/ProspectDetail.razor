@@ -6,6 +6,7 @@
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
 
 <PageTitle>@_prospect.Name — Prospect Detail</PageTitle>
 
@@ -313,6 +314,10 @@
                 Snackbar.Add("Prospect advanced to Drill Candidate.", Severity.Success);
                 await LoadProspectAsync();
             }
+            catch (OilGasApiException answer)
+            {
+                Snackbar.Add(Answers.Explain(answer, "advancing a prospect to drill candidate", "The prospect was not advanced"), Severity.Error);
+            }
             catch (Exception)
             {
                 Snackbar.Add("Failed to advance prospect stage.", Severity.Error);
@@ -339,15 +344,13 @@
 
         try
         {
-            var deleted = await ExplorationService.DeleteProspectAsync(_loadedId);
-            if (!deleted)
-            {
-                Snackbar.Add("Prospect could not be dropped.", Severity.Warning);
-                return;
-            }
-
+            await ExplorationService.DeleteProspectAsync(_loadedId);
             Snackbar.Add($"'{_prospect.Name}' has been dropped.", Severity.Warning);
             NavigationManager.NavigateTo("/exploration/prospect-board");
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "dropping a prospect", "The prospect was not dropped"), Severity.Error);
         }
         catch (Exception)
         {

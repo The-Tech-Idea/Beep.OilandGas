@@ -18,11 +18,11 @@ public interface IExplorationServiceClient
     Task<ProspectEvaluation> EvaluateProspectAsync(string prospectId, CancellationToken cancellationToken = default);
     Task<PROSPECT?> CreateProspectAsync(ProspectRequest request, CancellationToken cancellationToken = default);
     Task<PROSPECT?> UpdateProspectAsync(string prospectId, ProspectRequest request, CancellationToken cancellationToken = default);
-    Task<bool> DeleteProspectAsync(string prospectId, CancellationToken cancellationToken = default);
+    Task DeleteProspectAsync(string prospectId, CancellationToken cancellationToken = default);
     Task<List<SEIS_ACQTN_SURVEY>> GetSeismicSurveysAsync(CancellationToken cancellationToken = default);
     Task<SEIS_ACQTN_SURVEY?> CreateSeismicSurveyAsync(SeismicSurveyRequest request, CancellationToken cancellationToken = default);
     Task<List<SEIS_LINE>> GetSeismicLinesAsync(string surveyId, CancellationToken cancellationToken = default);
-    Task<bool> RecordProspectDecisionAsync(string prospectId, string decision, string? comments = null, CancellationToken cancellationToken = default);
+    Task RecordProspectDecisionAsync(string prospectId, string decision, string? comments = null, CancellationToken cancellationToken = default);
 }
 
 public sealed class ExplorationDashboardSummaryDto

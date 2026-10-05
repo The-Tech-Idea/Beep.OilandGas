@@ -10,6 +10,7 @@ using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.UserManagement.Models.Audit;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Services;
 
@@ -20,6 +21,7 @@ public sealed class AuthorizationObservabilityService : IAuthorizationObservabil
     private readonly IPPDM39DefaultsRepository _defaults;
     private readonly IPPDMMetadataRepository _metadata;
     private readonly ILogger<AuthorizationObservabilityService> _logger;
+    private readonly IFailureReporter _failures;
     private readonly string _connectionName;
 
     public AuthorizationObservabilityService(
@@ -28,8 +30,10 @@ public sealed class AuthorizationObservabilityService : IAuthorizationObservabil
         IPPDM39DefaultsRepository defaults,
         IPPDMMetadataRepository metadata,
         ILogger<AuthorizationObservabilityService> logger,
+        IFailureReporter failures,
         string connectionName = "PPDM39")
     {
+        _failures = failures ?? throw new ArgumentNullException(nameof(failures));
         _editor = editor ?? throw new ArgumentNullException(nameof(editor));
         _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
         _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
@@ -123,13 +127,14 @@ public sealed class AuthorizationObservabilityService : IAuthorizationObservabil
             // The audit row is the server's own record of a decision; the person it concerns is USER_ID above.
             await auditRepo.InsertAsync(ev, ActingUser.System);
         }
-        catch (Exception ex)
+        // The decision has been made and logged above; whatever stops its audit row being stored, the decision stands and
+        // the lost record is reported, so the gap in the audit trail is visible (OILGAS-CATCH-01: it was a warning line).
+        // Cancellation is the request ending.
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _logger.LogWarning(
-                ex,
-                "Failed to persist authorization audit event for policy {PolicyName} and user {UserId}",
-                observation.PolicyName,
-                observation.UserId);
+            _failures.ReportHandled(ex,
+                $"storing the authorization audit record for policy {observation.PolicyName} ({observation.Decision})",
+                "the authorization decision stands; its audit record is not stored");
         }
     }
 }

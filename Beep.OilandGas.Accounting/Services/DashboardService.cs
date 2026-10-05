@@ -269,7 +269,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error generating financial dashboard: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error generating financial dashboard");
                 throw;
             }
         }
@@ -339,7 +339,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error generating executive summary: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error generating executive summary");
                 throw;
             }
         }
@@ -405,7 +405,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error analyzing trends: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error analyzing trends");
                 throw;
             }
         }
@@ -477,7 +477,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error exporting dashboard: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error exporting dashboard");
                 throw;
             }
         }

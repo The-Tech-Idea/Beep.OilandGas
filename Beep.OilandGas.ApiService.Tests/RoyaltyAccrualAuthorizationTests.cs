@@ -20,7 +20,7 @@ public class RoyaltyAccrualAuthorizationTests
     {
         var royalties = new Mock<IRoyaltyService>(MockBehavior.Strict);
         var access = new Mock<IAccessControlService>(MockBehavior.Strict);
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+        await Refusals.ForbiddenAsync(() =>
             Controller(royalties.Object, access.Object, local, issuer).Accrue("detail"));
         royalties.VerifyNoOtherCalls();
         access.VerifyNoOtherCalls();

@@ -1,17 +1,20 @@
 using System.ComponentModel.DataAnnotations;
+using Beep.OilandGas.ApiService.Data;
 using Beep.OilandGas.ApiService.Services;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TheTechIdea.Data.OilGas;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Controllers.Identity;
 
 [ApiController]
 [Route("api/personas")]
 [Authorize]
-public sealed class PersonasController(RepositoryPersonaService personas) : ControllerBase
+public sealed class PersonasController(RepositoryPersonaService personas, IFailureReporter failures) : ControllerBase
 {
     // Self or Administrator: the route id names the subject whose personas are read or changed; the actor is always the
     // signed-in account.
@@ -60,11 +63,26 @@ public sealed class PersonasController(RepositoryPersonaService personas) : Cont
         return Write(async () => await personas.SavePreferenceAsync(targetUserId, code, viewKey, request, actor, token));
     }
 
+    // A stale version, or a row somebody else created first, is the one answer here: the person reloads. Any other refused
+    // save is a failure and goes on to the API's handler (OILGAS-CATCH-01: every refused save was answered "changed or could
+    // not be saved", unreported). The settings' own rules are checked with DataAnnotations, whose refusal is the BCL's
+    // ValidationException; it is refused here in this API's words.
     private async Task<IActionResult> Write(Func<Task<object>> save)
     {
         try { return Ok(await save()); }
-        catch (DbUpdateException) { return Conflict(new { Error = "Settings changed or could not be saved. Reload before retrying." }); }
-        catch (ValidationException) { return BadRequest(new { Error = "Invalid persona settings." }); }
-        catch (ArgumentException exception) { return BadRequest(new { Error = exception.Message }); }
+        catch (DbUpdateConcurrencyException changed)
+        {
+            failures.ReportHandled(changed, "saving persona settings", "the settings are not saved; the person is told to reload", FailureSeverity.Degraded);
+            return Conflict(new { Error = "Settings changed. Reload before retrying." });
+        }
+        catch (DbUpdateException duplicate) when (UniqueKeyViolation.Is(duplicate))
+        {
+            failures.ReportHandled(duplicate, "saving persona settings", "the settings are not saved; the person is told to reload", FailureSeverity.Degraded);
+            return Conflict(new { Error = "Settings changed. Reload before retrying." });
+        }
+        catch (ValidationException invalid)
+        {
+            throw new RefusalException(RefusalKind.Invalid, "Invalid persona settings.", invalid);
+        }
     }
 }

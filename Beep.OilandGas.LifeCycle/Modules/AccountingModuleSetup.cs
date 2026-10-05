@@ -45,20 +45,15 @@ public sealed class AccountingModuleSetup : ModuleSetupBase
         var result = NewResult();
         cancellationToken.ThrowIfCancellationRequested();
 
-        try
-        {
-            await SeedBACategoriesAsync(connectionName, userId, result, cancellationToken);
-            await SeedBATypesAsync(connectionName, userId, result, cancellationToken);
-            await SeedBAPreferenceTypesAsync(connectionName, userId, result, cancellationToken);
-            await SeedBAStatusCodesAsync(connectionName, userId, result, cancellationToken);
+        // A failure of a step is not caught here: it reaches the module orchestrator, which records this module as failed
+        // and goes on with the others, or the API's handler, which reports it and answers with its reference. Copying the
+        // exception's text into the result had put a fault's words in front of the operator.
+        await SeedBACategoriesAsync(connectionName, userId, result, cancellationToken);
+        await SeedBATypesAsync(connectionName, userId, result, cancellationToken);
+        await SeedBAPreferenceTypesAsync(connectionName, userId, result, cancellationToken);
+        await SeedBAStatusCodesAsync(connectionName, userId, result, cancellationToken);
 
-            result.Success = result.Errors.Count == 0;
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            result.Success = false;
-            result.Errors.Add($"Accounting reference code seeding failed: {ex.Message}");
-        }
+        result.Success = result.Errors.Count == 0;
 
         return result;
     }

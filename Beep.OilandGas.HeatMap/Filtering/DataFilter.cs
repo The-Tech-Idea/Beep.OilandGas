@@ -102,7 +102,6 @@ namespace Beep.OilandGas.HeatMap.Filtering
                 FilterType.SpatialBounds => ApplySpatialBoundsFilter(dataPoints),
                 FilterType.LabelPattern => ApplyLabelPatternFilter(dataPoints),
                 FilterType.Custom => ApplyCustomFilter(dataPoints),
-                _ => dataPoints
             };
         }
 

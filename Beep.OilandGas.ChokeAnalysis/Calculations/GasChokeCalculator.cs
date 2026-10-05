@@ -3,6 +3,7 @@ using Beep.OilandGas.Models.Data.ChokeAnalysis;
 using Beep.OilandGas.GasProperties.Calculations;
 using Beep.OilandGas.ChokeAnalysis.Constants;
 using Beep.OilandGas.ChokeAnalysis.Exceptions;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.ChokeAnalysis.Calculations
 {
@@ -168,7 +169,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
                 throw new ArgumentNullException(nameof(gasProperties));
 
             if (flowRate <= 0)
-                throw new ArgumentException("Flow rate must be greater than zero.", nameof(flowRate));
+                throw RefusalException.Invalid("Flow rate must be greater than zero.");
 
             // Calculate Z-factor
             decimal zFactor = gasProperties.Z_FACTOR;
@@ -236,22 +237,19 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
                 return gasProperties.Z_FACTOR;
             }
 
-            // Calculate using Brill-Beggs as primary method
-            try
-            {
-                var zFactor = ZFactorCalculator.CalculateBrillBeggs(
-                    gasProperties.UPSTREAM_PRESSURE,
-                    gasProperties.TEMPERATURE,
-                    gasProperties.GAS_SPECIFIC_GRAVITY);
-
-                // Apply reasonable bounds based on industry experience
-                return Math.Max(0.5m, Math.Min(1.8m, zFactor));
-            }
-            catch
-            {
-                // Fallback to simplified Standing-Katz approximation
+            // Calculate using Brill-Beggs as primary method where it is defined, and the simplified Standing-Katz
+            // approximation below its temperature range. The range is asked, not caught (OILGAS-CATCH-01): a catch-all
+            // here had turned any failure of the calculation into the approximation.
+            if (!ZFactorCalculator.IsBrillBeggsDefined(gasProperties.TEMPERATURE, gasProperties.GAS_SPECIFIC_GRAVITY))
                 return CalculateStandingKatzApproximation(gasProperties);
-            }
+
+            var zFactor = ZFactorCalculator.CalculateBrillBeggs(
+                gasProperties.UPSTREAM_PRESSURE,
+                gasProperties.TEMPERATURE,
+                gasProperties.GAS_SPECIFIC_GRAVITY);
+
+            // Apply reasonable bounds based on industry experience
+            return Math.Max(0.5m, Math.Min(1.8m, zFactor));
         }
 
         private static decimal CalculateStandingKatzApproximation(GAS_CHOKE_PROPERTIES gasProperties)

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.FlashCalculations;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.FlashCalculations.Calculations
 {
@@ -322,7 +323,7 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
             bool useEos = false)
         {
             if (components == null || components.Count == 0)
-                throw new ArgumentException("Components required.", nameof(components));
+                throw RefusalException.Invalid("At least one component is required.");
 
             double[,]? kij = useEos ? AdvancedEOS.GetBinaryInteractionParameters(components) : null;
             var result = new PhaseEnvelopeResult { EosUsed = useEos ? "PR-EOS" : "Wilson" };

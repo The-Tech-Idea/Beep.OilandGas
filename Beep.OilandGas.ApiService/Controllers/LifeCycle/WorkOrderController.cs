@@ -64,60 +64,47 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
             if (string.IsNullOrWhiteSpace(workOrderId))
                 return BadRequest(new { error = "Work order ID is required." });
 
-            try
+            // Get work order to convert to WorkOrderResponse
+            var connName = connectionName ?? ConnectionName;
+            var workOrderRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(WORK_ORDER), connName, "WORK_ORDER", null);
+
+            var workOrder = await workOrderRepo.GetByIdAsync(workOrderId) as WORK_ORDER;
+            if (workOrder == null)
+                return NotFound(new { error = $"Work order {workOrderId} not found." });
+
+            // Convert WORK_ORDER to WorkOrderResponse
+            var workOrderResponse = new WorkOrderResponse
             {
-                // Get work order to convert to WorkOrderResponse
-                var connName = connectionName ?? ConnectionName;
-                var workOrderRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WORK_ORDER), connName, "WORK_ORDER", null);
+                WorkOrderId = workOrder.WORK_ORDER_ID ?? string.Empty,
+                WorkOrderNumber = workOrder.WORK_ORDER_NUMBER ?? string.Empty,
+                WorkOrderType = workOrder.WORK_ORDER_TYPE ?? string.Empty,
+                EntityType = nameof(WORK_ORDER),
+                EntityId = workOrder.WORK_ORDER_ID ?? string.Empty,
+                FieldId = null,
+                PropertyId = null,
+                Status = GetWorkOrderStatus(workOrder),
+                RequestDate = workOrder.REQUEST_DATE,
+                DueDate = workOrder.DUE_DATE,
+                CompleteDate = workOrder.COMPLETE_DATE,
+                EstimatedCost = null,
+                ActualCost = null
+            };
 
-                var workOrder = await workOrderRepo.GetByIdAsync(workOrderId) as WORK_ORDER;
-                if (workOrder == null)
-                    return NotFound(new { error = $"Work order {workOrderId} not found." });
+            var afe = await _workOrderAccountingService.CreateOrLinkAFEAsync(
+                workOrderResponse,
+                userId);
 
-                // Convert WORK_ORDER to WorkOrderResponse
-                var workOrderResponse = new WorkOrderResponse
-                {
-                    WorkOrderId = workOrder.WORK_ORDER_ID ?? string.Empty,
-                    WorkOrderNumber = workOrder.WORK_ORDER_NUMBER ?? string.Empty,
-                    WorkOrderType = workOrder.WORK_ORDER_TYPE ?? string.Empty,
-                    EntityType = nameof(WORK_ORDER),
-                    EntityId = workOrder.WORK_ORDER_ID ?? string.Empty,
-                    FieldId = null,
-                    PropertyId = null,
-                    Status = GetWorkOrderStatus(workOrder),
-                    RequestDate = workOrder.REQUEST_DATE,
-                    DueDate = workOrder.DUE_DATE,
-                    CompleteDate = workOrder.COMPLETE_DATE,
-                    EstimatedCost = null,
-                    ActualCost = null
-                };
-
-                var afe = await _workOrderAccountingService.CreateOrLinkAFEAsync(
-                    workOrderResponse,
-                    userId);
-
-                return Ok(new
-                {
-                    AfeId = afe.AFE_ID,
-                    AfeNumber = afe.AFE_NUMBER,
-                    AfeName = afe.AFE_NAME,
-                    EstimatedCost = afe.ESTIMATED_COST,
-                    ActualCost = afe.ACTUAL_COST,
-                    Status = afe.STATUS,
-                    WorkOrderId = workOrderId
-                });
-            }
-            catch (InvalidOperationException ex)
+            return Ok(new
             {
-                _logger.LogWarning(ex, "Cannot create AFE for work order {WorkOrderId}", workOrderId);
-                return BadRequest(new { error = "An internal error occurred." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating/linking AFE for work order {WorkOrderId}", workOrderId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                AfeId = afe.AFE_ID,
+                AfeNumber = afe.AFE_NUMBER,
+                AfeName = afe.AFE_NAME,
+                EstimatedCost = afe.ESTIMATED_COST,
+                ActualCost = afe.ACTUAL_COST,
+                Status = afe.STATUS,
+                WorkOrderId = workOrderId
+            });
         }
 
         /// <summary>
@@ -137,43 +124,30 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
             if (string.IsNullOrWhiteSpace(workOrderId))
                 return BadRequest(new { error = "Work order ID is required." });
 
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                // Ensure request has the work order ID
-                request.WorkOrderId = workOrderId;
+            // Ensure request has the work order ID
+            request.WorkOrderId = workOrderId;
 
-                var costTransactionId = await _workOrderAccountingService.RecordWorkOrderCostAsync(
-                    request,
-                    wellId,
-                    facilityId,
-                    fieldId,
-                    propertyId,
-                    userId);
+            var costTransactionId = await _workOrderAccountingService.RecordWorkOrderCostAsync(
+                request,
+                wellId,
+                facilityId,
+                fieldId,
+                propertyId,
+                userId);
 
-                return Ok(new
-                {
-                    CostTransactionId = costTransactionId,
-                    WorkOrderId = workOrderId,
-                    Amount = request.Amount,
-                    CostType = request.CostType,
-                    CostCategory = request.CostCategory,
-                    IsCapitalized = request.IsCapitalized,
-                    Message = "Work order cost recorded successfully"
-                });
-            }
-            catch (InvalidOperationException ex)
+            return Ok(new
             {
-                _logger.LogWarning(ex, "Cannot record cost for work order {WorkOrderId}", workOrderId);
-                return BadRequest(new { error = "An internal error occurred." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error recording cost for work order {WorkOrderId}", workOrderId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                CostTransactionId = costTransactionId,
+                WorkOrderId = workOrderId,
+                Amount = request.Amount,
+                CostType = request.CostType,
+                CostCategory = request.CostCategory,
+                IsCapitalized = request.IsCapitalized,
+                Message = "Work order cost recorded successfully"
+            });
         }
 
         /// <summary>
@@ -187,49 +161,41 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
             if (string.IsNullOrWhiteSpace(workOrderId))
                 return BadRequest(new { error = "Work order ID is required." });
 
-            try
+            var connName = connectionName ?? ConnectionName;
+            var workOrderRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(WORK_ORDER), connName, "WORK_ORDER", null);
+
+            var workOrder = await workOrderRepo.GetByIdAsync(workOrderId) as WORK_ORDER;
+            if (workOrder == null)
+                return NotFound(new { error = $"Work order {workOrderId} not found." });
+
+            // Try to extract AFE_ID from REMARK (format: "AFE_ID:xxx")
+            if (string.IsNullOrEmpty(workOrder.REMARK))
+                return NotFound(new { error = $"No AFE linked to work order {workOrderId}." });
+
+            var afeIdMatch = System.Text.RegularExpressions.Regex.Match(workOrder.REMARK, @"AFE_ID:([^\s]+)");
+            if (!afeIdMatch.Success)
+                return NotFound(new { error = $"No AFE linked to work order {workOrderId}." });
+
+            var afeId = afeIdMatch.Groups[1].Value;
+            var afeRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(AFE), connName, "AFE", null);
+
+            var afe = await afeRepo.GetByIdAsync(afeId) as AFE;
+            if (afe == null)
+                return NotFound(new { error = $"AFE {afeId} not found." });
+
+            return Ok(new
             {
-                var connName = connectionName ?? ConnectionName;
-                var workOrderRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WORK_ORDER), connName, "WORK_ORDER", null);
-
-                var workOrder = await workOrderRepo.GetByIdAsync(workOrderId) as WORK_ORDER;
-                if (workOrder == null)
-                    return NotFound(new { error = $"Work order {workOrderId} not found." });
-
-                // Try to extract AFE_ID from REMARK (format: "AFE_ID:xxx")
-                if (string.IsNullOrEmpty(workOrder.REMARK))
-                    return NotFound(new { error = $"No AFE linked to work order {workOrderId}." });
-
-                var afeIdMatch = System.Text.RegularExpressions.Regex.Match(workOrder.REMARK, @"AFE_ID:([^\s]+)");
-                if (!afeIdMatch.Success)
-                    return NotFound(new { error = $"No AFE linked to work order {workOrderId}." });
-
-                var afeId = afeIdMatch.Groups[1].Value;
-                var afeRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(AFE), connName, "AFE", null);
-
-                var afe = await afeRepo.GetByIdAsync(afeId) as AFE;
-                if (afe == null)
-                    return NotFound(new { error = $"AFE {afeId} not found." });
-
-                return Ok(new
-                {
-                    AfeId = afe.AFE_ID,
-                    AfeNumber = afe.AFE_NUMBER,
-                    AfeName = afe.AFE_NAME,
-                    EstimatedCost = afe.ESTIMATED_COST,
-                    ActualCost = afe.ACTUAL_COST,
-                    Status = afe.STATUS,
-                    Description = afe.DESCRIPTION,
-                    WorkOrderId = workOrderId
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting AFE for work order {WorkOrderId}", workOrderId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                AfeId = afe.AFE_ID,
+                AfeNumber = afe.AFE_NUMBER,
+                AfeName = afe.AFE_NAME,
+                EstimatedCost = afe.ESTIMATED_COST,
+                ActualCost = afe.ACTUAL_COST,
+                Status = afe.STATUS,
+                Description = afe.DESCRIPTION,
+                WorkOrderId = workOrderId
+            });
         }
 
         private static string GetWorkOrderStatus(WORK_ORDER workOrder)

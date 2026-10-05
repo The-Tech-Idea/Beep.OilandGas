@@ -34,21 +34,11 @@ public sealed class RoyaltyController(IRoyaltyService royalties, IAccessControlS
     private async Task<IActionResult> WithCalculation(string royaltyId, bool write, Func<string, Task<IActionResult>> action)
     {
         var actor = User.ActingUserId();
-        try
-        {
-            if (write && !await access.HasPermissionAsync(actor, "Accounting.PostJournal", null)) return Forbid();
-            var calculation = await royalties.GetAsync(royaltyId);
-            if (calculation is null) return NotFound();
-            var field = await royalties.GetAllocationFieldAsync(calculation.ALLOCATION_DETAIL_ID);
-            if (!(await access.CheckAssetAccessAsync(actor, field, "FIELD", null)).HasAccess) return Forbid();
-            return await action(actor);
-        }
-        catch (RoyaltyException ex) { return Conflict(new { error = ex.Message }); }
-        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Royalty operation failed for {RoyaltyId}", royaltyId);
-            return StatusCode(500, new { error = "The royalty operation could not be confirmed. Check the recorded status before retrying." });
-        }
+        if (write && !await access.HasPermissionAsync(actor, "Accounting.PostJournal", null)) return Forbid();
+        var calculation = await royalties.GetAsync(royaltyId);
+        if (calculation is null) return NotFound();
+        var field = await royalties.GetAllocationFieldAsync(calculation.ALLOCATION_DETAIL_ID);
+        if (!(await access.CheckAssetAccessAsync(actor, field, "FIELD", null)).HasAccess) return Forbid();
+        return await action(actor);
     }
 }

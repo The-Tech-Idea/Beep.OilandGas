@@ -574,7 +574,17 @@ namespace Beep.OilandGas.Drawing.Visualizations.FieldMap
                     canvas.DrawCircle(anchor, radius, outlinePaint);
                     break;
 
-                default:
+                case FieldMapAssetKind.Unknown:
+                case FieldMapAssetKind.Field:
+                case FieldMapAssetKind.Pool:
+                case FieldMapAssetKind.Lease:
+                case FieldMapAssetKind.LandRight:
+                case FieldMapAssetKind.ProtectedArea:
+                case FieldMapAssetKind.HazardZone:
+                case FieldMapAssetKind.Seismic2D:
+                case FieldMapAssetKind.Seismic3D:
+                case FieldMapAssetKind.Pipeline:
+                case FieldMapAssetKind.SurfaceSystem:
                     using (var markerPath = new SKPath())
                     {
                         markerPath.MoveTo(anchor.X, anchor.Y - radius);
@@ -627,15 +637,7 @@ namespace Beep.OilandGas.Drawing.Visualizations.FieldMap
             if (string.IsNullOrWhiteSpace(colorCode) || !colorCode.StartsWith("#", StringComparison.Ordinal))
                 return false;
 
-            try
-            {
-                color = SKColor.Parse(colorCode);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return SKColor.TryParse(colorCode, out color);
         }
 
         private static SKColor ResolveDefaultFillColor(FieldMapAssetKind kind)
@@ -649,7 +651,9 @@ namespace Beep.OilandGas.Drawing.Visualizations.FieldMap
                 FieldMapAssetKind.ProtectedArea => new SKColor(129, 199, 132),
                 FieldMapAssetKind.HazardZone => new SKColor(239, 154, 154),
                 FieldMapAssetKind.Seismic3D => new SKColor(100, 181, 246),
-                _ => new SKColor(176, 190, 197)
+                FieldMapAssetKind.Unknown or FieldMapAssetKind.Facility or FieldMapAssetKind.Well
+                    or FieldMapAssetKind.Seismic2D or FieldMapAssetKind.Pipeline or FieldMapAssetKind.SurfaceSystem
+                    => new SKColor(176, 190, 197)
             };
         }
 
@@ -664,7 +668,9 @@ namespace Beep.OilandGas.Drawing.Visualizations.FieldMap
                 FieldMapAssetKind.ProtectedArea => new SKColor(56, 142, 60),
                 FieldMapAssetKind.HazardZone => new SKColor(198, 40, 40),
                 FieldMapAssetKind.Seismic3D => new SKColor(25, 118, 210),
-                _ => new SKColor(84, 110, 122)
+                FieldMapAssetKind.Unknown or FieldMapAssetKind.Facility or FieldMapAssetKind.Well
+                    or FieldMapAssetKind.Seismic2D or FieldMapAssetKind.Pipeline or FieldMapAssetKind.SurfaceSystem
+                    => new SKColor(84, 110, 122)
             };
         }
 
@@ -677,7 +683,10 @@ namespace Beep.OilandGas.Drawing.Visualizations.FieldMap
                 FieldMapAssetKind.Seismic2D => new SKColor(94, 53, 177),
                 FieldMapAssetKind.Pipeline => new SKColor(123, 31, 162),
                 FieldMapAssetKind.SurfaceSystem => new SKColor(0, 121, 107),
-                _ => new SKColor(96, 125, 139)
+                FieldMapAssetKind.Unknown or FieldMapAssetKind.Field or FieldMapAssetKind.Pool
+                    or FieldMapAssetKind.Lease or FieldMapAssetKind.LandRight or FieldMapAssetKind.ProtectedArea
+                    or FieldMapAssetKind.HazardZone or FieldMapAssetKind.Seismic3D
+                    => new SKColor(96, 125, 139)
             };
         }
 
@@ -690,7 +699,7 @@ namespace Beep.OilandGas.Drawing.Visualizations.FieldMap
                 FieldMapConnectionKind.ExportLine => new SKColor(230, 81, 0),
                 FieldMapConnectionKind.Utility => new SKColor(123, 31, 162),
                 FieldMapConnectionKind.FacilityLink => new SKColor(96, 125, 139),
-                _ => new SKColor(84, 110, 122)
+                FieldMapConnectionKind.Unknown => new SKColor(84, 110, 122)
             };
         }
 
@@ -709,7 +718,11 @@ namespace Beep.OilandGas.Drawing.Visualizations.FieldMap
             return kind switch
             {
                 FieldMapAssetKind.Seismic2D => SKPathEffect.CreateDash(new float[] { 5f, 4f }, 0),
-                _ => null
+                FieldMapAssetKind.Unknown or FieldMapAssetKind.Field or FieldMapAssetKind.Pool
+                    or FieldMapAssetKind.Lease or FieldMapAssetKind.LandRight or FieldMapAssetKind.ProtectedArea
+                    or FieldMapAssetKind.HazardZone or FieldMapAssetKind.Facility or FieldMapAssetKind.Well
+                    or FieldMapAssetKind.Seismic3D or FieldMapAssetKind.Pipeline or FieldMapAssetKind.SurfaceSystem
+                    => null
             };
         }
 
@@ -719,7 +732,9 @@ namespace Beep.OilandGas.Drawing.Visualizations.FieldMap
             {
                 FieldMapConnectionKind.Utility => SKPathEffect.CreateDash(new float[] { 4f, 4f }, 0),
                 FieldMapConnectionKind.FacilityLink => SKPathEffect.CreateDash(new float[] { 10f, 5f }, 0),
-                _ => null
+                FieldMapConnectionKind.Unknown or FieldMapConnectionKind.Flowline
+                    or FieldMapConnectionKind.GatheringLine or FieldMapConnectionKind.ExportLine
+                    => null
             };
         }
 

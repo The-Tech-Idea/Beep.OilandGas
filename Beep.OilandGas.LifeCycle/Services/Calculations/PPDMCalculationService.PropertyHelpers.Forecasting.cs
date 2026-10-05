@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +16,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         {
             if (string.IsNullOrEmpty(request.WellId) && string.IsNullOrEmpty(request.PoolId))
             {
-                throw new ArgumentException("WellId or PoolId is required for physics-based forecasting");
+                throw RefusalException.Invalid("Choose the well or pool for a physics-based forecast.");
             }
 
             ClearEntityCache();

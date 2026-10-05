@@ -143,7 +143,6 @@ namespace Beep.OilandGas.HeatMap.Tools
                 MeasurementType.Distance => 2,
                 MeasurementType.Angle => 3,
                 MeasurementType.Area => int.MaxValue,
-                _ => 2
             };
 
             if (measurementPoints.Count < maxPoints)
@@ -208,7 +207,6 @@ namespace Beep.OilandGas.HeatMap.Tools
                 MeasurementType.Distance => CalculateDistance(),
                 MeasurementType.Area => CalculateArea(),
                 MeasurementType.Angle => CalculateAngle(),
-                _ => 0
             };
         }
 

@@ -14,7 +14,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
         public async Task<DeclineCurveAnalysis> PerformDeclineCurveAnalysisAsync(string wellUWI, DateTime startDate, DateTime endDate)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
 
             _logger?.LogInformation("Performing decline curve analysis for well {WellUWI} from {StartDate} to {EndDate}",
                 wellUWI, startDate, endDate);

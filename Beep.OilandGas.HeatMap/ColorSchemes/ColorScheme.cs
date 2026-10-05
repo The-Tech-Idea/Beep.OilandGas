@@ -1,4 +1,5 @@
 using SkiaSharp;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.HeatMap.ColorSchemes
 {
@@ -88,7 +89,10 @@ namespace Beep.OilandGas.HeatMap.ColorSchemes
                 ColorSchemeType.BlueToRed => GenerateBlueToRed(steps),
                 ColorSchemeType.Grayscale => GenerateGrayscale(steps),
                 ColorSchemeType.Rainbow => GenerateRainbow(steps),
-                _ => GenerateGrayscale(steps)
+                // A custom scheme is built from its own colors (CreateCustom). Asked for here, without them, it had been
+                // drawn in grayscale as though that were what was chosen (OILGAS-CATCH-01).
+                ColorSchemeType.Custom => throw RefusalException.Invalid(
+                    "A custom color scheme needs its own colors: give at least two.")
             };
         }
 
@@ -101,7 +105,7 @@ namespace Beep.OilandGas.HeatMap.ColorSchemes
         public static SKColor[] CreateCustom(SKColor[] colors, int steps = 256)
         {
             if (colors == null || colors.Length < 2)
-                throw new ArgumentException("At least two colors are required for a custom color scheme.");
+                throw RefusalException.Invalid("At least two colors are required for a custom color scheme.");
 
             var result = new SKColor[steps];
             double segmentSize = (double)(colors.Length - 1) / (steps - 1);

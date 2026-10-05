@@ -38,6 +38,7 @@ using Beep.OilandGas.PlungerLift.Services;
 using Beep.OilandGas.HydraulicPumps.Services;
 using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ApiService.Services;
+using Beep.OilandGas.ApiService.Middleware;
 using Beep.OilandGas.UserManagement.Services;
 using Beep.OilandGas.DevelopmentPlanning.Services;
 using Beep.OilandGas.Diagnostics;
@@ -58,6 +59,11 @@ builder.Services.AddOilGasRepository(builder.Configuration);
 // server's client library reports through this and does not start without it. The store's database is
 // Diagnostics:Provider / Diagnostics:ConnectionString; this host owns its schema (Diagnostics:MigrateOnStartup).
 builder.Services.AddOilGasDiagnostics(builder.Configuration);
+
+// What an exception a request did not catch is answered with (OILGAS-CATCH-01): the application's refusal
+// (RefusalException) as problem details carrying its sentence, unreported; anything else reported by the failure service's
+// handler and answered 500 with its reference.
+builder.Services.AddRefusalAnswers();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<RepositoryUserService>();
 
@@ -211,7 +217,8 @@ builder.Services.AddScoped<IPPDMProductionService>(sp =>
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var logger = loggerFactory.CreateLogger<Beep.OilandGas.LifeCycle.Services.Production.PPDMProductionService>();
     return new Beep.OilandGas.LifeCycle.Services.Production.PPDMProductionService(
-        editor, commonColumnHandler, defaults, metadata, mappingService, connectionName, logger);
+        editor, commonColumnHandler, defaults, metadata, mappingService,
+        sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), connectionName, logger);
 });
 // Also register concrete type so ProductionController can use extended methods
 builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.Production.PPDMProductionService>(sp =>
@@ -285,7 +292,8 @@ builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.Development.PPDMDev
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var logger = loggerFactory.CreateLogger<Beep.OilandGas.LifeCycle.Services.Development.PPDMDevelopmentService>();
     return new Beep.OilandGas.LifeCycle.Services.Development.PPDMDevelopmentService(
-        editor, commonColumnHandler, defaults, metadata, mappingService, connectionName, logger);
+        editor, commonColumnHandler, defaults, metadata, mappingService,
+        sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), connectionName, logger);
 });
 
 // Development Process Service
@@ -360,7 +368,8 @@ builder.Services.AddScoped<IFieldOrchestrator>(sp =>
     var httpContextAccessor = sp.GetService<Microsoft.AspNetCore.Http.IHttpContextAccessor>();
     var fieldExploration = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IFieldExplorationService>();
     return new Beep.OilandGas.LifeCycle.Services.FieldOrchestrator(
-        editor, commonColumnHandler, defaults, metadata, mappingService, fieldExploration, connectionName, logger, accessControlService, httpContextAccessor);
+        editor, commonColumnHandler, defaults, metadata, mappingService, fieldExploration,
+        sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), connectionName, logger, accessControlService, httpContextAccessor);
 });
 
 // Calculation Service
@@ -377,6 +386,7 @@ builder.Services.AddScoped<ICalculationService>(sp =>
         editor, commonColumnHandler, defaults, metadata, fieldMappingService,
         sp.GetRequiredService<Beep.OilandGas.ChokeAnalysis.Services.ChokeAnalysisService>(),
         sp.GetRequiredService<Beep.OilandGas.CompressorAnalysis.Core.Interfaces.ICompressorAnalysisService>(),
+        sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>(),
         connectionName, logger);
 });
 
@@ -451,6 +461,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IRoyaltyService
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     return new Beep.OilandGas.ProductionAccounting.Services.RoyaltyService(
         editor, commonColumnHandler, defaults, metadata, glService,
+        sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>(),
         loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.RoyaltyService>(),
         () => sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync("PRODUCTION"));
 });
@@ -1016,6 +1027,7 @@ builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.IAuthorizationObse
         defaults,
         metadata,
         logger,
+        sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>(),
         connectionName);
 });
 
@@ -1130,7 +1142,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPPDM39SetupCon
     var editor = sp.GetRequiredService<IDMEEditor>();
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var logger = loggerFactory.CreateLogger<Beep.OilandGas.PPDM39.DataManagement.Services.Setup.PPDM39SetupConnectionService>();
-    return new Beep.OilandGas.PPDM39.DataManagement.Services.Setup.PPDM39SetupConnectionService(editor, logger);
+    return new Beep.OilandGas.PPDM39.DataManagement.Services.Setup.PPDM39SetupConnectionService(editor, logger, sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>());
 });
 
 // PPDM39 Setup Service
@@ -1145,7 +1157,7 @@ builder.Services.AddScoped<PPDM39SetupService>(sp =>
     // LOVManagementService is registered below; resolve via TryGet to avoid circular dependencies.
     var lovService = sp.GetService<Beep.OilandGas.PPDM39.DataManagement.Services.LOVManagementService>();
     var moduleSetupOrchestrator = sp.GetService<Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup.ModuleSetupOrchestrator>();
-    return new PPDM39SetupService(editor, logger, commonColumnHandler, defaults, metadata, lovService, moduleSetupOrchestrator,
+    return new PPDM39SetupService(editor, logger, commonColumnHandler, defaults, metadata, sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), lovService, moduleSetupOrchestrator,
         sp.GetRequiredService<IBackgroundOperationQueue>(),
         migrationBindingFingerprint: (ids, connection) => sp.GetRequiredService<ModuleConnectionResolver>()
             .GetMigrationBindingFingerprintAsync(ids, connection));
@@ -1198,7 +1210,7 @@ builder.Services.AddScoped<Beep.OilandGas.PPDM39.DataManagement.SeedData.PPDMRef
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
     var lovService = sp.GetRequiredService<Beep.OilandGas.PPDM39.DataManagement.Services.LOVManagementService>();
     return new Beep.OilandGas.PPDM39.DataManagement.SeedData.PPDMReferenceDataSeeder(
-        editor, commonColumnHandler, defaults, metadata, lovService, connectionName);
+        editor, commonColumnHandler, defaults, metadata, lovService, sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), connectionName);
 });
 
 // CSV Seeder
@@ -1349,7 +1361,7 @@ builder.Services.AddScoped<DemoDatabaseService>(sp =>
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var logger = loggerFactory.CreateLogger<DemoDatabaseService>();
     return new DemoDatabaseService(
-        config, repository, editor, commonColumnHandler, defaults, metadata, setupService, referenceDataSeeder, logger);
+        config, repository, editor, commonColumnHandler, defaults, metadata, setupService, sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), referenceDataSeeder, logger);
 });
 
 // Demo Database Cleanup Service (Background Service)
@@ -1521,7 +1533,8 @@ builder.Services.AddScoped<IFacilityManagementService>(sp =>
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var logger = loggerFactory.CreateLogger<FacilityManagementService>();
-    return new FacilityManagementService(editor, commonColumnHandler, defaults, metadata, connectionName, logger,
+    return new FacilityManagementService(editor, commonColumnHandler, defaults, metadata,
+        sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), connectionName, logger,
         module => sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync(module));
 });
 
@@ -1817,7 +1830,9 @@ builder.Services.AddScoped<Beep.OilandGas.Accounting.Services.ARService>(sp =>
     var basisPosting = sp.GetRequiredService<Beep.OilandGas.Accounting.Services.AccountingBasisPostingService>();
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     return new Beep.OilandGas.Accounting.Services.ARService(
-        editor, commonColumnHandler, defaults, metadata, basisPosting, loggerFactory.CreateLogger<Beep.OilandGas.Accounting.Services.ARService>(),
+        editor, commonColumnHandler, defaults, metadata, basisPosting,
+        sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>(),
+        loggerFactory.CreateLogger<Beep.OilandGas.Accounting.Services.ARService>(),
         resolveConnection: () => sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync("PRODUCTION"));
 });
 
@@ -2420,7 +2435,8 @@ builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.FacilityManagement.
     var workOrderService = sp.GetService<Beep.OilandGas.LifeCycle.Services.WorkOrder.WorkOrderManagementService>();
     var dataFlowService = sp.GetService<Beep.OilandGas.LifeCycle.Services.Integration.DataFlowService>();
     var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<Beep.OilandGas.LifeCycle.Services.FacilityManagement.FacilityManagementService>();
-    return new Beep.OilandGas.LifeCycle.Services.FacilityManagement.FacilityManagementService(editor, cch, defaults, metadata, workOrderService, dataFlowService, connectionName, logger);
+    return new Beep.OilandGas.LifeCycle.Services.FacilityManagement.FacilityManagementService(editor, cch, defaults, metadata,
+        sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), workOrderService, dataFlowService, connectionName, logger);
 });
 
 // Process services (per-domain workflow orchestration)
@@ -2486,7 +2502,8 @@ builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes
     var workOrderService = sp.GetRequiredService<Beep.OilandGas.LifeCycle.Services.WorkOrder.WorkOrderManagementService>();
     var accountingService = sp.GetService<Beep.OilandGas.LifeCycle.Services.Accounting.WorkOrderAccountingService>();
     var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes.WorkOrderProcessService>();
-    return new Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes.WorkOrderProcessService(processService, workOrderService, accountingService, logger);
+    return new Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes.WorkOrderProcessService(processService, workOrderService,
+        sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), accountingService, logger);
 });
 
 // Core workflow engine utilities
@@ -2579,8 +2596,14 @@ using (var scope = app.Services.CreateScope())
             {
                 return assembly.GetTypes();
             }
+            // .NET has no question for "can every type of this assembly be loaded": an assembly whose dependencies are not
+            // all present answers with the types that did load, and those are searched.
             catch (ReflectionTypeLoadException ex)
             {
+                app.Services.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>().ReportHandled(ex,
+                    $"listing the types of assembly {assembly.GetName().Name} while looking for the Beep service",
+                    "the types that loaded are searched; the ones that did not are skipped",
+                    TheTechIdeaWeb.Diagnostics.FailureSeverity.Degraded);
                 return ex.Types.Where(type => type != null)!;
             }
         })
@@ -2674,8 +2697,10 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Global exception handling — must be first to catch errors from all downstream middleware
-app.UseMiddleware<Beep.OilandGas.ApiService.Middleware.GlobalExceptionMiddleware>();
+// ASP.NET Core's exception handler, first so it takes what every later middleware and endpoint throws (OILGAS-CATCH-01):
+// the refusal handler answers a refusal; the failure service's handler reports anything else, and the 500's problem
+// details carry its reference.
+app.UseExceptionHandler();
 
 // Repository readiness gates business requests independently of module database setup.
 app.UseMiddleware<Beep.OilandGas.ApiService.Middleware.SetupGateMiddleware>();

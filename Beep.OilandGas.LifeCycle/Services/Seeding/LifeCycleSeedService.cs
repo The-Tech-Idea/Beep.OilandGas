@@ -1,3 +1,4 @@
+using TheTechIdeaWeb.Diagnostics;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
@@ -26,6 +27,7 @@ public class LifeCycleSeedService : ILifeCycleSeedService
     private readonly IPPDM39DefaultsRepository _defaults;
     private readonly IPPDMMetadataRepository _metadata;
     private readonly string _connectionName;
+    private readonly IFailureReporter _failures;
     private readonly ILogger<LifeCycleSeedService>? _logger;
 
     public LifeCycleSeedService(
@@ -34,6 +36,7 @@ public class LifeCycleSeedService : ILifeCycleSeedService
         IPPDM39DefaultsRepository defaults,
         IPPDMMetadataRepository metadata,
         string connectionName,
+        IFailureReporter failures,
         ILogger<LifeCycleSeedService>? logger = null)
     {
         _editor = editor;
@@ -41,6 +44,7 @@ public class LifeCycleSeedService : ILifeCycleSeedService
         _defaults = defaults;
         _metadata = metadata;
         _connectionName = connectionName;
+        _failures = failures ?? throw new ArgumentNullException(nameof(failures));
         _logger = logger;
     }
 
@@ -51,39 +55,34 @@ public class LifeCycleSeedService : ILifeCycleSeedService
     {
         var result = new LifeCycleSeedResult { Success = true };
 
-        try
-        {
-            await SeedLifecycleReferenceCodesAsync(connectionName, userId, result, cancellationToken);
-            await SeedProcessDefinitionsAsync(connectionName, userId, result, cancellationToken);
+        // A step that fails as a whole is not caught here: it reaches the module orchestrator, which records the module as
+        // failed, or the API's handler, which reports it with its reference. Copying the exception's text into the result
+        // had put a fault's words in front of the operator. A single row that cannot be written is reported and named in
+        // the result, and the rest are still seeded.
+        await SeedLifecycleReferenceCodesAsync(connectionName, userId, result, cancellationToken);
+        await SeedProcessDefinitionsAsync(connectionName, userId, result, cancellationToken);
 
-            // Phase 2: Seed DoA thresholds
-            await SeedDoAThresholdsAsync(connectionName, userId, result, cancellationToken);
+        // Phase 2: Seed DoA thresholds
+        await SeedDoAThresholdsAsync(connectionName, userId, result, cancellationToken);
 
-            // Phase 3: Seed business event triggers
-            await SeedBusinessEventTriggersAsync(connectionName, userId, result, cancellationToken);
+        // Phase 3: Seed business event triggers
+        await SeedBusinessEventTriggersAsync(connectionName, userId, result, cancellationToken);
 
-            // Phase 4: Seed SoD rules
-            await SeedSodRulesAsync(connectionName, userId, result, cancellationToken);
+        // Phase 4: Seed SoD rules
+        await SeedSodRulesAsync(connectionName, userId, result, cancellationToken);
 
-            result.Success = result.Errors.Count == 0;
-            result.TablesSeeded = new[] { result.LifecycleStatesInserted, result.ProcessDefinitionsInserted,
-                result.ProcessStepsInserted, result.SlaTemplatesInserted, result.ApprovalChainsInserted,
-                result.DelegationRulesInserted, result.BusinessEventTriggersInserted, result.SodRulesInserted }
-                .Count(count => count > 0);
+        result.Success = result.Errors.Count == 0;
+        result.TablesSeeded = new[] { result.LifecycleStatesInserted, result.ProcessDefinitionsInserted,
+            result.ProcessStepsInserted, result.SlaTemplatesInserted, result.ApprovalChainsInserted,
+            result.DelegationRulesInserted, result.BusinessEventTriggersInserted, result.SodRulesInserted }
+            .Count(count => count > 0);
 
-            _logger?.LogInformation(
-                "Lifecycle seed completed. States={States}, Definitions={Defs}, Steps={Steps}, Total={Total}",
-                result.LifecycleStatesInserted,
-                result.ProcessDefinitionsInserted,
-                result.ProcessStepsInserted,
-                result.TotalRecordsInserted);
-        }
-        catch (Exception ex)
-        {
-            result.Success = false;
-            result.Errors.Add(ex.Message);
-            _logger?.LogError(ex, "Lifecycle seeding failed for connection {ConnectionName}", connectionName);
-        }
+        _logger?.LogInformation(
+            "Lifecycle seed completed. States={States}, Definitions={Defs}, Steps={Steps}, Total={Total}",
+            result.LifecycleStatesInserted,
+            result.ProcessDefinitionsInserted,
+            result.ProcessStepsInserted,
+            result.TotalRecordsInserted);
 
         return result;
     }
@@ -130,9 +129,13 @@ public class LifeCycleSeedService : ILifeCycleSeedService
                 await repo.InsertAsync(entity, userId);
                 result.LifecycleStatesInserted++;
             }
-            catch (Exception ex)
+            // One reference row that cannot be written does not stop the others: it is reported, and the result names it
+            // with the reference. Cancellation is the caller's.
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                result.Errors.Add($"[R_LIFECYCLE_STATE_REFERENCE/{code.ReferenceSet}/{code.ReferenceCode}] {ex.Message}");
+                result.Errors.Add(ReportedFailure.Sentence(_failures, ex,
+                    $"seeding lifecycle reference code {code.ReferenceSet}/{code.ReferenceCode}",
+                    $"Lifecycle reference code {code.ReferenceSet}/{code.ReferenceCode} was not seeded"));
             }
         }
     }
@@ -198,9 +201,13 @@ public class LifeCycleSeedService : ILifeCycleSeedService
                     result.ProcessStepsInserted++;
                 }
             }
-            catch (Exception ex)
+            // One process definition that cannot be written does not stop the others: it is reported, and the result
+            // names it with the reference. Cancellation is the caller's.
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                result.Errors.Add($"[PROCESS_DEFINITION/{def.Name}] {ex.Message}");
+                result.Errors.Add(ReportedFailure.Sentence(_failures, ex,
+                    $"seeding the {def.Name} process definition",
+                    $"The {def.Name} process definition was not seeded completely"));
             }
         }
     }
@@ -430,20 +437,13 @@ public class LifeCycleSeedService : ILifeCycleSeedService
     private async Task SeedSodRulesAsync(
         string connectionName, string userId, LifeCycleSeedResult result, CancellationToken ct)
     {
-        try
-        {
-            var sodEngine = new Processes.SodEvaluationEngine(
-                _editor, _commonColumnHandler, _defaults, _metadata, () => Task.FromResult(connectionName),
-                _logger as ILogger<Processes.SodEvaluationEngine>);
+        // A failure is not caught here: like every other step it reaches the module orchestrator or the API's handler,
+        // which report it with its reference.
+        var sodEngine = new Processes.SodEvaluationEngine(
+            _editor, _commonColumnHandler, _defaults, _metadata, () => Task.FromResult(connectionName),
+            _logger as ILogger<Processes.SodEvaluationEngine>);
 
-            result.SodRulesInserted = await sodEngine.SeedDefaultRulesAsync(userId, ct);
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
-        catch (Exception ex)
-        {
-            result.Errors.Add($"SoD rule seeding failed: {ex.Message}");
-            _logger?.LogError(ex, "SoD rule seeding failed");
-        }
+        result.SodRulesInserted = await sodEngine.SeedDefaultRulesAsync(userId, ct);
     }
 
 }

@@ -1,3 +1,15 @@
+<!-- smarterasp-pem-rule:2026-10-02 -->
+> **Fahad's SmarterASP hosting rule (2026-10-02):** Use IdentityServer's PEM RSA key method,
+> parsed in memory. No PFX/PKCS#12 loading, Windows certificate store or user-profile key container;
+> do not suggest import-flag retries or changing `Load User Profile`. Follow the hosting rule in
+> `The-Tech-Idea/CLAUDE.md` and IdentityServer's `CredentialFiles.RsaKey`/`PemKeyRingCertificate` owners.
+> Family Needs uses `DataProtection:Key`, never `CertificatePath`/`CertificatePassword`.
+> Preserve each installation's existing keys and database key ring; no new key on startup, disabled
+> encryption, key-ring deletion or copying IdentityServer's private key into another application.
+> This supersedes older PFX deployment examples. Authentication migration still requires each app
+> to protect its own cookies and stored secrets. Check deployed builds and log timestamps.
+<!-- /smarterasp-pem-rule -->
+
 # Beep.OilandGas - Agent Assistance Guidelines
 
 This guide helps agents make safe, well-scoped edits that align with Beep.OilandGas architecture and patterns.
@@ -267,12 +279,33 @@ public class MyController : ControllerBase
 }
 ```
 
+**A failure is reported; a refusal is answered; neither is an exception's text** (OILGAS-CATCH-01):
+
+- The identity server's analyzers are loaded into every project but tests and benchmarks (`Directory.Build.props`):
+  BEEP0003 a catch that neither reports (`IFailureReporter`, the page notifier, `OilGasApiFailures.Explain`) nor
+  rethrows; BEEP0004 a caught exception's `Message` going anywhere; BEEP0001/0002 an enum switch's catch-all (CS8509 is an
+  error). Fix the code; never suppress.
+- **A refusal is `RefusalException`** (`Models/Core/Refusals`: `Invalid` 400, `NotFound` 404, `Conflict` 409, `Forbidden`
+  403), its `Sentence` written for the person. The API answers it through ASP.NET Core's exception handler
+  (`Middleware/RefusalExceptionHandler`, registered ahead of every other handler by `AddRefusalAnswers`) as RFC 9457
+  problem details, unreported. **Anything else is a failure**: the shared failure service's handler reports it and the
+  500 carries its `reference`. An `ArgumentException` or `InvalidOperationException` is the framework's type too — EF,
+  the collections, the JSON reader throw them — so it is never a refusal; the hand-written `GlobalExceptionMiddleware`
+  that answered them 400/409 with their message is gone. A domain exception family whose messages refuse what the caller
+  sent derives from `RefusalException`. Never build a refusal's sentence from a caught exception's text.
+  `ExceptionAnswerTests`.
+- **The web reads every non-success answer as `OilGasApiException`** (status, `Sentence`, `Reference`) from `ApiClient`,
+  whose calls succeed or throw — the bool calls that answered refusals, failures and lost connections alike as `false`
+  are gone. A page words it with `OilGasApiFailures.Explain(answer, operation, whatDidNotHappen)`, and any other failure
+  with the shared `FailureNotifier` (`Failure`/`FailureText`: what did not happen, with the reference). Dialogs render
+  inside the shared `DialogFailureBoundary`.
+
 **Who is acting comes from the signed-in principal, and only from it** (S3-06):
 
 - `User.ActingUserId()` (`ApiService/Services/ActingUser.cs`) is the OilGas account id — the `party_id` this API
   stamped when it resolved the person (`PartyIdClaims.Find`). A `party_id` a token carried is not it, and neither is
   `sub` or `ClaimTypes.NameIdentifier`: `sub` is Beep.IdentityServer's subject, which it may re-mint. No signed-in
-  account → `UnauthorizedAccessException`, answered 403 by `GlobalExceptionMiddleware`.
+  account → `RefusalException.Forbidden`, answered 403 by the API's refusal handler.
 - **Never take the actor from a query string or a request body** (`?userId=`, `request.UserId`) and never fall back to
   `"system"` for a person's request: either lets a caller write as somebody else. `ActingUser.System` is for work the
   server does on its own (seeding, background jobs).

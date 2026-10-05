@@ -226,30 +226,30 @@ namespace Beep.OilandGas.HeatMap.Tools
             if (selectionPoints.Count < 2)
                 return false;
 
-            switch (selectionType)
+            // Every selection type is named (OILGAS-CATCH-01): a type added later is a build error here, where a default
+            // had answered "not selected" for it.
+            return selectionType switch
             {
-                case BrushSelectionType.Rectangle:
-                    var rect = GetSelectionBounds();
-                    return rect.Contains(x, y);
+                BrushSelectionType.Rectangle => GetSelectionBounds().Contains(x, y),
+                BrushSelectionType.Circle => IsPointInCircle(x, y),
+                BrushSelectionType.Lasso or BrushSelectionType.Freehand => IsPointInPolygon(x, y, selectionPoints)
+            };
+        }
 
-                case BrushSelectionType.Circle:
-                    var center = new SKPoint(
-                        (selectionPoints[0].X + selectionPoints[1].X) / 2,
-                        (selectionPoints[0].Y + selectionPoints[1].Y) / 2);
-                    float radius = (float)Math.Sqrt(
-                        Math.Pow(selectionPoints[1].X - selectionPoints[0].X, 2) +
-                        Math.Pow(selectionPoints[1].Y - selectionPoints[0].Y, 2)) / 2;
-                    float distance = (float)Math.Sqrt(
-                        Math.Pow(x - center.X, 2) + Math.Pow(y - center.Y, 2));
-                    return distance <= radius;
-
-                case BrushSelectionType.Lasso:
-                case BrushSelectionType.Freehand:
-                    return IsPointInPolygon(x, y, selectionPoints);
-
-                default:
-                    return false;
-            }
+        /// <summary>
+        /// Checks if a point is inside the circle whose diameter runs between the first two selection points.
+        /// </summary>
+        private bool IsPointInCircle(float x, float y)
+        {
+            var center = new SKPoint(
+                (selectionPoints[0].X + selectionPoints[1].X) / 2,
+                (selectionPoints[0].Y + selectionPoints[1].Y) / 2);
+            float radius = (float)Math.Sqrt(
+                Math.Pow(selectionPoints[1].X - selectionPoints[0].X, 2) +
+                Math.Pow(selectionPoints[1].Y - selectionPoints[0].Y, 2)) / 2;
+            float distance = (float)Math.Sqrt(
+                Math.Pow(x - center.X, 2) + Math.Pow(y - center.Y, 2));
+            return distance <= radius;
         }
 
         /// <summary>

@@ -63,92 +63,87 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
                 Errors = new List<string>()
             };
 
-            try
+            // OILGAS-CATCH-01: an item without a code or name is recorded against the import in this importer's words; a
+            // file that cannot be read or parsed, and a write the database refuses, are failures and reach the caller. Each
+            // item's failure, and the whole import's, were caught and recorded in the exception's own words.
+            if (!File.Exists(jsonFilePath))
             {
-                if (!File.Exists(jsonFilePath))
-                {
-                    result.Success = false;
-                    result.Errors.Add($"JSON file not found: {jsonFilePath}");
-                    return result;
-                }
+                result.Success = false;
+                result.Errors.Add($"JSON file not found: {Path.GetFileName(jsonFilePath)}");
+                return result;
+            }
 
-                var jsonContent = await File.ReadAllTextAsync(jsonFilePath);
-                var jsonDoc = JsonDocument.Parse(jsonContent);
-                var root = jsonDoc.RootElement;
+            var jsonContent = await File.ReadAllTextAsync(jsonFilePath);
+            using var jsonDoc = JsonDocument.Parse(jsonContent);
+            var root = jsonDoc.RootElement;
 
-                if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("ihsData", out var ihsData))
+            if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("ihsData", out var ihsData) &&
+                ihsData.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var category in ihsData.EnumerateObject())
                 {
-                    foreach (var category in ihsData.EnumerateObject())
+                    var categoryName = category.Name;
+                    var categoryData = category.Value;
+
+                    if (categoryData.ValueKind == JsonValueKind.Array)
                     {
-                        var categoryName = category.Name;
-                        var categoryData = category.Value;
-
-                        if (categoryData.ValueKind == JsonValueKind.Array)
+                        foreach (var item in categoryData.EnumerateArray())
                         {
-                            foreach (var item in categoryData.EnumerateArray())
+                            // Each value is asked for by kind: a missing or mistyped code or name was thrown on and caught.
+                            var ihsCode = SeedTemplateJson.StringProperty(item, "code");
+                            var ihsName = SeedTemplateJson.StringProperty(item, "name");
+                            if (ihsCode == null || ihsName == null)
                             {
-                                try
-                                {
-                                    var ihsCode = item.GetProperty("code").GetString();
-                                    var ihsName = item.GetProperty("name").GetString();
-                                    var description = item.TryGetProperty("description", out var desc) ? desc.GetString() : null;
-                                    var targetTable = item.TryGetProperty("targetTable", out var table) ? table.GetString() : null;
+                                result.Errors.Add($"An IHS {categoryName} item has no code or name and was not imported.");
+                                continue;
+                            }
+                            var description = SeedTemplateJson.StringProperty(item, "description");
+                            var targetTable = SeedTemplateJson.StringProperty(item, "targetTable");
 
-                                    // Map to PPDM if requested
-                                    if (mapToPPDM && !string.IsNullOrEmpty(targetTable))
-                                    {
-                                        var mappedResult = await _valueMapper.MapIHSToPPDMAsync(ihsCode, ihsName, targetTable, skipExisting, userId);
-                                        result.RecordsProcessed += mappedResult.RecordsProcessed;
-                                        result.RecordsInserted += mappedResult.RecordsInserted;
-                                        result.RecordsSkipped += mappedResult.RecordsSkipped;
-                                        result.Errors.AddRange(mappedResult.Errors);
-                                    }
-                                    else
-                                    {
-                                        // Store in LIST_OF_VALUE using LOVManagementService
-                                        var lov = new LIST_OF_VALUE
-                                        {
-                                            LIST_OF_VALUE_ID = Guid.NewGuid().ToString(),
-                                            VALUE_TYPE = categoryName,
-                                            VALUE_CODE = ihsCode ?? string.Empty,
-                                            VALUE_NAME = ihsName ?? string.Empty,
-                                            DESCRIPTION = description,
-                                            CATEGORY = "IHS",
-                                            SOURCE = "IHS",
-                                            ACTIVE_IND = "Y"
-                                        };
-
-                                        var (inserted, wasInserted, wasSkipped) = await _lovService.AddOrUpdateLOVAsync(lov, userId, skipExisting, _connectionName);
-                                        
-                                        if (wasSkipped)
-                                        {
-                                            result.RecordsSkipped++;
-                                        }
-                                        else if (wasInserted && inserted != null)
-                                        {
-                                            result.RecordsInserted++;
-                                        }
-                                        result.RecordsProcessed++;
-                                    }
-                                }
-                                catch (Exception ex)
+                            // Map to PPDM if requested
+                            if (mapToPPDM && !string.IsNullOrEmpty(targetTable))
+                            {
+                                var mappedResult = await _valueMapper.MapIHSToPPDMAsync(ihsCode, ihsName, targetTable, skipExisting, userId);
+                                result.RecordsProcessed += mappedResult.RecordsProcessed;
+                                result.RecordsInserted += mappedResult.RecordsInserted;
+                                result.RecordsSkipped += mappedResult.RecordsSkipped;
+                                result.Errors.AddRange(mappedResult.Errors);
+                            }
+                            else
+                            {
+                                // Store in LIST_OF_VALUE using LOVManagementService
+                                var lov = new LIST_OF_VALUE
                                 {
-                                    result.Errors.Add($"Error importing IHS item: {ex.Message}");
+                                    LIST_OF_VALUE_ID = Guid.NewGuid().ToString(),
+                                    VALUE_TYPE = categoryName,
+                                    VALUE_CODE = ihsCode,
+                                    VALUE_NAME = ihsName,
+                                    DESCRIPTION = description,
+                                    CATEGORY = "IHS",
+                                    SOURCE = "IHS",
+                                    ACTIVE_IND = "Y"
+                                };
+
+                                var (inserted, wasInserted, wasSkipped) = await _lovService.AddOrUpdateLOVAsync(lov, userId, skipExisting, _connectionName);
+
+                                if (wasSkipped)
+                                {
+                                    result.RecordsSkipped++;
                                 }
+                                else if (wasInserted && inserted != null)
+                                {
+                                    result.RecordsInserted++;
+                                }
+                                result.RecordsProcessed++;
                             }
                         }
                     }
                 }
-
-                if (result.Errors.Any())
-                {
-                    result.Success = false;
-                }
             }
-            catch (Exception ex)
+
+            if (result.Errors.Any())
             {
                 result.Success = false;
-                result.Errors.Add($"Import error: {ex.Message}");
             }
 
             return result;

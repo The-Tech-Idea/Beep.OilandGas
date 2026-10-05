@@ -114,7 +114,7 @@ public class RoyaltyReportingTests
         var accounting = new Mock<IAccountingService>(MockBehavior.Strict);
         var access = new Mock<IAccessControlService>(MockBehavior.Strict);
         var controller = Controller(accounting.Object, local, issuer);
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => controller.GetRoyaltyCalculations(access.Object, "field-a"));
+        await Refusals.ForbiddenAsync(() => controller.GetRoyaltyCalculations(access.Object, "field-a"));
         accounting.VerifyNoOtherCalls();
         access.VerifyNoOtherCalls();
     }

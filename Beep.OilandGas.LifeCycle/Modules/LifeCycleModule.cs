@@ -109,29 +109,20 @@ public sealed class LifeCycleModule : ModuleSetupBase
         ModuleSetupResult result,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var seedResult = await _seedService.SeedAllAsync(connectionName, userId, cancellationToken);
+        // A failure of the seed service is not caught here: it reaches the module orchestrator, which records this module
+        // as failed and goes on with the others, or the API's handler, which reports it and answers with its reference.
+        // Copying the exception's text into the result had put a fault's words in front of the operator.
+        var seedResult = await _seedService.SeedAllAsync(connectionName, userId, cancellationToken);
 
-            result.Success = seedResult.Success;
-            result.RecordsInserted = seedResult.TotalRecordsInserted;
-            result.TablesSeeded = seedResult.TablesSeeded;
+        result.Success = seedResult.Success;
+        result.RecordsInserted = seedResult.TotalRecordsInserted;
+        result.TablesSeeded = seedResult.TablesSeeded;
 
-            foreach (var error in seedResult.Errors)
-                result.Errors.Add(error);
+        foreach (var error in seedResult.Errors)
+            result.Errors.Add(error);
 
-            if (seedResult.TotalRecordsInserted == 0 && seedResult.Errors.Count == 0)
-                result.SkipReason = "Lifecycle reference data already seeded.";
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            result.Success = false;
-            result.Errors.Add($"Lifecycle seeding failed: {ex.Message}");
-        }
+        if (seedResult.TotalRecordsInserted == 0 && seedResult.Errors.Count == 0)
+            result.SkipReason = "Lifecycle reference data already seeded.";
 
         return result;
     }

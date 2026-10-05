@@ -7,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Net.Http;
 using TheTechIdea.Beep.Report;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.Web.Services
 {
@@ -327,6 +328,8 @@ namespace Beep.OilandGas.Web.Services
     {
         private readonly ApiClient _apiClient;
         private readonly ILogger<DataManagementService> _logger;
+        private readonly OilGasCallFailures _calls;
+        private readonly IFailureReporter _failures;
         private readonly IProgressTrackingClient? _progressTrackingClient;
         
         private string? _currentConnectionName;
@@ -342,10 +345,14 @@ namespace Beep.OilandGas.Web.Services
         public DataManagementService(
             ApiClient apiClient,
             ILogger<DataManagementService> logger,
+            OilGasCallFailures calls,
+            IFailureReporter failures,
             IProgressTrackingClient? progressTrackingClient = null)
         {
             _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _calls = calls ?? throw new ArgumentNullException(nameof(calls));
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
             _progressTrackingClient = progressTrackingClient;
         }
 
@@ -357,59 +364,50 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<string?> GetCurrentConnectionNameAsync()
         {
-            try
-            {
-                // Create a simple model class for the response
-                var responseModel = await _apiClient.GetAsync<CurrentConnectionResponse>("/api/ppdm39/setup/current-connection");
-                _currentConnectionName = responseModel?.ConnectionName;
-                return _currentConnectionName;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting current connection name");
-            }
-            return null;
+            var responseModel = await _apiClient.GetAsync<CurrentConnectionResponse>("/api/ppdm39/setup/current-connection");
+            _currentConnectionName = responseModel?.ConnectionName;
+            return _currentConnectionName;
         }
 
         public async Task<SetCurrentDatabaseResult> SetCurrentConnectionAsync(string connectionName)
         {
+            SetCurrentDatabaseResult? result;
             try
             {
                 var request = new SetCurrentDatabaseRequest { ConnectionName = connectionName };
-                var result = await _apiClient.PostAsync<SetCurrentDatabaseRequest, SetCurrentDatabaseResult>(
+                result = await _apiClient.PostAsync<SetCurrentDatabaseRequest, SetCurrentDatabaseResult>(
                     "/api/ppdm39/setup/set-current-connection", request);
-
-                if (result?.Success == true)
-                {
-                    var oldConnection = _currentConnectionName;
-                    _currentConnectionName = connectionName;
-                    
-                    // Update connections list to reflect current status
-                    await RefreshConnectionsAsync();
-                    
-                    // Fire event
-                    if (oldConnection != connectionName)
-                    {
-                        CurrentConnectionChanged?.Invoke(this, connectionName);
-                    }
-                }
-
-                return result ?? new SetCurrentDatabaseResult 
-                { 
-                    Success = false, 
-                    Message = "Failed to set current connection" 
-                };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error setting current connection {ConnectionName}", connectionName);
                 return new SetCurrentDatabaseResult
                 {
                     Success = false,
-                    Message = "Error setting current connection",
-                    ErrorDetails = ex.Message
+                    Message = _calls.Explain(failure, "setting the current database connection", "The current connection was not changed")
                 };
             }
+
+            if (result?.Success == true)
+            {
+                var oldConnection = _currentConnectionName;
+                _currentConnectionName = connectionName;
+
+                // Update connections list to reflect current status
+                await RefreshAfterChangeAsync("reading the connection list again after the current connection changed");
+
+                // Fire event
+                if (oldConnection != connectionName)
+                {
+                    CurrentConnectionChanged?.Invoke(this, connectionName);
+                }
+            }
+
+            return result ?? new SetCurrentDatabaseResult
+            {
+                Success = false,
+                Message = "Failed to set current connection"
+            };
         }
 
         public async Task<ConnectionTestResult> TestConnectionAsync(ConnectionConfig connectionConfig)
@@ -428,14 +426,13 @@ namespace Beep.OilandGas.Web.Services
                     Message = "Connection test failed"
                 };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error testing setup connection {ConnectionName}", connectionConfig.ConnectionName);
                 return new ConnectionTestResult
                 {
                     Success = false,
-                    Message = "Connection test failed",
-                    ErrorDetails = ex.Message
+                    Message = _calls.Explain(failure, "testing a database connection", "The connection could not be tested")
                 };
             }
         }
@@ -444,47 +441,39 @@ namespace Beep.OilandGas.Web.Services
         {
             ArgumentNullException.ThrowIfNull(request);
 
+            SaveConnectionResult? result;
             try
             {
-                var result = await _apiClient.PostAsync<SaveConnectionRequest, SaveConnectionResult>(
+                result = await _apiClient.PostAsync<SaveConnectionRequest, SaveConnectionResult>(
                     "/api/ppdm39/setup/save-connection",
                     request);
-
-                if (result?.Success == true)
-                {
-                    await RefreshConnectionsAsync();
-                }
-
-                return result ?? new SaveConnectionResult
-                {
-                    Success = false,
-                    Message = "Failed to save connection"
-                };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error saving setup connection {ConnectionName}", request.Connection?.ConnectionName);
                 return new SaveConnectionResult
                 {
                     Success = false,
-                    Message = "Failed to save connection",
-                    ErrorDetails = ex.Message
+                    Message = _calls.Explain(failure, "saving a database connection", "The connection was not saved")
                 };
             }
+
+            if (result?.Success == true)
+            {
+                await RefreshAfterChangeAsync("reading the connection list again after a connection was saved");
+            }
+
+            return result ?? new SaveConnectionResult
+            {
+                Success = false,
+                Message = "Failed to save connection"
+            };
         }
 
         public async Task<List<string>> GetAvailableDatabaseTypesAsync()
         {
-            try
-            {
-                return await _apiClient.GetAsync<List<string>>("/api/ppdm39/setup/database-types")
-                    ?? new List<string>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting available database types");
-                return new List<string>();
-            }
+            return await _apiClient.GetAsync<List<string>>("/api/ppdm39/setup/database-types")
+                ?? new List<string>();
         }
 
         public async Task<List<ScriptInfo>> DiscoverScriptsAsync(string databaseType)
@@ -494,17 +483,9 @@ namespace Beep.OilandGas.Web.Services
                 return new List<ScriptInfo>();
             }
 
-            try
-            {
-                return await _apiClient.GetAsync<List<ScriptInfo>>(
-                    $"/api/ppdm39/setup/discover-scripts/{Uri.EscapeDataString(databaseType)}")
-                    ?? new List<ScriptInfo>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error discovering setup scripts for database type {DatabaseType}", databaseType);
-                return new List<ScriptInfo>();
-            }
+            return await _apiClient.GetAsync<List<ScriptInfo>>(
+                $"/api/ppdm39/setup/discover-scripts/{Uri.EscapeDataString(databaseType)}")
+                ?? new List<ScriptInfo>();
         }
 
         public async Task<DatabaseCreationResult> CreateDatabaseAsync(CreateDatabaseRequest request)
@@ -523,13 +504,13 @@ namespace Beep.OilandGas.Web.Services
                     ErrorMessage = "Database creation failed"
                 };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error creating PPDM database for connection {ConnectionName}", request.Connection?.ConnectionName);
                 return new DatabaseCreationResult
                 {
                     Success = false,
-                    ErrorMessage = ex.Message
+                    ErrorMessage = _calls.Explain(failure, "creating a PPDM database", "The database was not created")
                 };
             }
         }
@@ -541,16 +522,8 @@ namespace Beep.OilandGas.Web.Services
                 return null;
             }
 
-            try
-            {
-                return await _apiClient.GetAsync<ScriptExecutionProgressInfo>(
-                    $"/api/ppdm39/setup/creation-progress/{Uri.EscapeDataString(executionId)}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Error getting database creation progress for execution {ExecutionId}", executionId);
-                return null;
-            }
+            return await _apiClient.GetAsync<ScriptExecutionProgressInfo>(
+                $"/api/ppdm39/setup/creation-progress/{Uri.EscapeDataString(executionId)}");
         }
 
         public async Task<DeleteConnectionResult> DeleteConnectionAsync(string connectionName)
@@ -564,32 +537,32 @@ namespace Beep.OilandGas.Web.Services
                 };
             }
 
+            DeleteConnectionResult? result;
             try
             {
-                var result = await _apiClient.DeleteAsync<DeleteConnectionResult>(
+                result = await _apiClient.DeleteAsync<DeleteConnectionResult>(
                     $"/api/ppdm39/setup/connection/{Uri.EscapeDataString(connectionName)}");
-
-                if (result?.Success == true)
-                {
-                    await RefreshConnectionsAsync();
-                }
-
-                return result ?? new DeleteConnectionResult
-                {
-                    Success = false,
-                    Message = "Failed to delete connection"
-                };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error deleting setup connection {ConnectionName}", connectionName);
                 return new DeleteConnectionResult
                 {
                     Success = false,
-                    Message = "Failed to delete connection",
-                    ErrorDetails = ex.Message
+                    Message = _calls.Explain(failure, "deleting a database connection", "The connection was not deleted")
                 };
             }
+
+            if (result?.Success == true)
+            {
+                await RefreshAfterChangeAsync("reading the connection list again after a connection was deleted");
+            }
+
+            return result ?? new DeleteConnectionResult
+            {
+                Success = false,
+                Message = "Failed to delete connection"
+            };
         }
 
         public async Task<DropDatabaseResult> DropDatabaseAsync(DropDatabaseRequest request)
@@ -608,14 +581,13 @@ namespace Beep.OilandGas.Web.Services
                     Message = "Failed to drop database"
                 };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error dropping setup database for connection {ConnectionName}", request.ConnectionName);
                 return new DropDatabaseResult
                 {
                     Success = false,
-                    Message = "Failed to drop database",
-                    ErrorDetails = ex.Message
+                    Message = _calls.Explain(failure, "dropping a PPDM database", "The database was not dropped")
                 };
             }
         }
@@ -636,14 +608,13 @@ namespace Beep.OilandGas.Web.Services
                     Message = "Failed to recreate database"
                 };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error recreating setup database for connection {ConnectionName}", request.ConnectionName);
                 return new RecreateDatabaseResult
                 {
                     Success = false,
-                    Message = "Failed to recreate database",
-                    ErrorDetails = ex.Message
+                    Message = _calls.Explain(failure, "recreating a PPDM database", "The database was not recreated")
                 };
             }
         }
@@ -665,30 +636,22 @@ namespace Beep.OilandGas.Web.Services
                     Message = "Failed to start database copy"
                 };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error copying setup database from {SourceConnection} to {TargetConnection}", request.SourceConnectionName, request.TargetConnectionName);
                 return new OperationStartResponse
                 {
                     Success = false,
                     OperationId = string.Empty,
-                    Message = ex.Message
+                    Message = _calls.Explain(failure, "starting a PPDM database copy", "The database copy was not started")
                 };
             }
         }
 
         public async Task<FacetSeedStatus?> GetWellStatusFacetSeedStatusAsync()
         {
-            try
-            {
-                return await _apiClient.GetAsync<FacetSeedStatus>(
-                    "/api/ppdm39/setup/seed/well-status-facets/status");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Error getting well-status facet seed status");
-                return null;
-            }
+            return await _apiClient.GetAsync<FacetSeedStatus>(
+                "/api/ppdm39/setup/seed/well-status-facets/status");
         }
 
         public async Task<SeedingOperationResult> SeedWellStatusFacetsAsync()
@@ -720,14 +683,13 @@ namespace Beep.OilandGas.Web.Services
                         Errors = rawResult.Errors ?? new List<string>()
                     };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error seeding well-status facets");
                 return new SeedingOperationResult
                 {
                     Success = false,
-                    Message = "Facet seeding failed.",
-                    Errors = new List<string> { ex.Message }
+                    Message = _calls.Explain(failure, "seeding the well-status facets", "The well-status facets were not seeded")
                 };
             }
         }
@@ -745,14 +707,13 @@ namespace Beep.OilandGas.Web.Services
                            Message = "Enum reference data seeding failed."
                        };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error seeding enum reference data");
                 return new SeedingOperationResult
                 {
                     Success = false,
-                    Message = "Enum reference data seeding failed.",
-                    Errors = new List<string> { ex.Message }
+                    Message = _calls.Explain(failure, "seeding the enum reference data", "The enum reference data was not seeded")
                 };
             }
         }
@@ -770,14 +731,13 @@ namespace Beep.OilandGas.Web.Services
                            Message = "Reference data seeding failed."
                        };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error seeding all reference data");
                 return new SeedingOperationResult
                 {
                     Success = false,
-                    Message = "Reference data seeding failed.",
-                    Errors = new List<string> { ex.Message }
+                    Message = _calls.Explain(failure, "seeding all reference data", "The reference data was not seeded")
                 };
             }
         }
@@ -797,14 +757,13 @@ namespace Beep.OilandGas.Web.Services
                            Message = "Generation failed."
                        };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error generating dummy setup data for seed option {SeedOption}", request.SeedOption);
                 return new GenerateDummyDataResponse
                 {
                     Success = false,
-                    Message = "An error occurred generating demo data.",
-                    ErrorDetails = ex.Message,
+                    Message = _calls.Explain(failure, "generating demo data", "The demo data was not generated"),
                     SeedOption = request.SeedOption
                 };
             }
@@ -812,68 +771,52 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<AccessStatistics?> GetAuditStatisticsAsync(DateTime? from = null, DateTime? to = null, string? tableName = null)
         {
-            try
+            var queryParts = new List<string>();
+            if (from.HasValue)
             {
-                var queryParts = new List<string>();
-                if (from.HasValue)
-                {
-                    queryParts.Add($"from={Uri.EscapeDataString(from.Value.ToString("o"))}");
-                }
-
-                if (to.HasValue)
-                {
-                    queryParts.Add($"to={Uri.EscapeDataString(to.Value.ToString("o"))}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(tableName))
-                {
-                    queryParts.Add($"tableName={Uri.EscapeDataString(tableName)}");
-                }
-
-                var url = "/api/ppdm39/audit/statistics";
-                if (queryParts.Count > 0)
-                {
-                    url += "?" + string.Join("&", queryParts);
-                }
-
-                return await _apiClient.GetAsync<AccessStatistics>(url);
+                queryParts.Add($"from={Uri.EscapeDataString(from.Value.ToString("o"))}");
             }
-            catch (Exception ex)
+
+            if (to.HasValue)
             {
-                _logger.LogError(ex, "Error getting PPDM audit statistics");
-                return null;
+                queryParts.Add($"to={Uri.EscapeDataString(to.Value.ToString("o"))}");
             }
+
+            if (!string.IsNullOrWhiteSpace(tableName))
+            {
+                queryParts.Add($"tableName={Uri.EscapeDataString(tableName)}");
+            }
+
+            var url = "/api/ppdm39/audit/statistics";
+            if (queryParts.Count > 0)
+            {
+                url += "?" + string.Join("&", queryParts);
+            }
+
+            return await _apiClient.GetAsync<AccessStatistics>(url);
         }
 
         public async Task<List<DataAccessEvent>> GetRecentAuditEventsAsync(DateTime? from = null, DateTime? to = null)
         {
-            try
+            var queryParts = new List<string>();
+            if (from.HasValue)
             {
-                var queryParts = new List<string>();
-                if (from.HasValue)
-                {
-                    queryParts.Add($"from={Uri.EscapeDataString(from.Value.ToString("o"))}");
-                }
-
-                if (to.HasValue)
-                {
-                    queryParts.Add($"to={Uri.EscapeDataString(to.Value.ToString("o"))}");
-                }
-
-                var url = "/api/ppdm39/audit/recent";
-                if (queryParts.Count > 0)
-                {
-                    url += "?" + string.Join("&", queryParts);
-                }
-
-                return await _apiClient.GetAsync<List<DataAccessEvent>>(url)
-                    ?? new List<DataAccessEvent>();
+                queryParts.Add($"from={Uri.EscapeDataString(from.Value.ToString("o"))}");
             }
-            catch (Exception ex)
+
+            if (to.HasValue)
             {
-                _logger.LogError(ex, "Error getting recent PPDM audit events");
-                return new List<DataAccessEvent>();
+                queryParts.Add($"to={Uri.EscapeDataString(to.Value.ToString("o"))}");
             }
+
+            var url = "/api/ppdm39/audit/recent";
+            if (queryParts.Count > 0)
+            {
+                url += "?" + string.Join("&", queryParts);
+            }
+
+            return await _apiClient.GetAsync<List<DataAccessEvent>>(url)
+                ?? new List<DataAccessEvent>();
         }
 
         public async Task<CreateSqliteResult> CreateSqliteAsync(CreateSqliteRequest request)
@@ -891,14 +834,13 @@ namespace Beep.OilandGas.Web.Services
                            Message = "Failed to create database."
                        };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error creating SQLite setup database for connection {ConnectionName}", request.ConnectionName);
                 return new CreateSqliteResult
                 {
                     Success = false,
-                    Message = "An error occurred.",
-                    ErrorDetails = ex.Message,
+                    Message = _calls.Explain(failure, "creating a SQLite PPDM database", "The SQLite database was not created"),
                     ConnectionName = request.ConnectionName
                 };
             }
@@ -919,14 +861,13 @@ namespace Beep.OilandGas.Web.Services
                            Message = "Schema migration failed."
                        };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error creating schema from migration for connection {ConnectionName}", request.ConnectionName);
                 return new CreateSchemaResult
                 {
                     Success = false,
-                    Message = "Schema migration failed.",
-                    ErrorDetails = ex.Message
+                    Message = _calls.Explain(failure, "creating the schema from its migrations", "The schema was not created")
                 };
             }
         }
@@ -946,15 +887,14 @@ namespace Beep.OilandGas.Web.Services
                            Message = "Schema migration planning failed."
                        };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error planning schema migration for connection {ConnectionName}", request.ConnectionName);
                 return new SchemaMigrationPlanResult
                 {
                     Success = false,
                     ConnectionName = request.ConnectionName,
-                    Message = "Schema migration planning failed.",
-                    DryRunDiagnostics = new List<string> { ex.Message }
+                    Message = _calls.Explain(failure, "planning a schema migration", "The schema migration was not planned")
                 };
             }
         }
@@ -974,14 +914,14 @@ namespace Beep.OilandGas.Web.Services
                            Message = "Schema migration approval failed."
                        };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error approving schema migration plan {PlanId}", request.PlanId);
                 return new SchemaMigrationApprovalResult
                 {
                     Success = false,
                     PlanId = request.PlanId,
-                    Message = "Schema migration approval failed."
+                    Message = _calls.Explain(failure, "approving a schema migration plan", "The schema migration plan was not approved")
                 };
             }
         }
@@ -1001,15 +941,14 @@ namespace Beep.OilandGas.Web.Services
                            Message = "Schema migration execution failed."
                        };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error executing schema migration plan {PlanId}", request.PlanId);
                 return new SchemaMigrationExecuteResult
                 {
                     Success = false,
                     PlanId = request.PlanId,
-                    Message = "Schema migration execution failed.",
-                    CompensationOutcome = ex.Message
+                    Message = _calls.Explain(failure, "executing a schema migration plan", "The schema migration was not executed")
                 };
             }
         }
@@ -1029,13 +968,13 @@ namespace Beep.OilandGas.Web.Services
                            Message = "Schema migration could not be started."
                        };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error starting schema migration plan {PlanId}", request.PlanId);
                 return new OperationStartResponse
                 {
                     Success = false,
-                    Message = "Schema migration could not be started."
+                    Message = _calls.Explain(failure, "starting a schema migration", "The schema migration was not started")
                 };
             }
         }
@@ -1062,15 +1001,14 @@ namespace Beep.OilandGas.Web.Services
                            Message = "Schema migration progress was not found."
                        };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error getting schema migration progress for {ExecutionToken}", executionToken);
                 return new SchemaMigrationProgressResult
                 {
                     Success = false,
                     ExecutionToken = executionToken,
-                    Message = "Could not read schema migration progress.",
-                    FailureReason = ex.Message
+                    Message = _calls.Explain(failure, "reading a schema migration's progress", "The schema migration's progress could not be read")
                 };
             }
         }
@@ -1097,14 +1035,14 @@ namespace Beep.OilandGas.Web.Services
                            Message = "Schema migration artifacts were not found."
                        };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error getting schema migration artifacts for {PlanId}", planId);
                 return new SchemaMigrationArtifactsResult
                 {
                     Success = false,
                     PlanId = planId,
-                    Message = "Could not load schema migration artifacts."
+                    Message = _calls.Explain(failure, "loading a schema migration plan's artifacts", "The schema migration artifacts could not be loaded")
                 };
             }
         }
@@ -1123,15 +1061,7 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<ConnectionConfig?> GetConnectionByNameAsync(string connectionName)
         {
-            try
-            {
-                return await _apiClient.GetAsync<ConnectionConfig>($"/api/ppdm39/setup/connection/{connectionName}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting connection {ConnectionName}", connectionName);
-                return null;
-            }
+            return await _apiClient.GetAsync<ConnectionConfig>($"/api/ppdm39/setup/connection/{Uri.EscapeDataString(connectionName)}");
         }
 
         public async Task<bool> ConnectionExistsAsync(string connectionName)
@@ -1160,13 +1090,30 @@ namespace Beep.OilandGas.Web.Services
                 // Also refresh current connection name
                 _currentConnectionName = await GetCurrentConnectionNameAsync();
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error refreshing connections");
-            }
             finally
             {
                 _refreshLock.Release();
+            }
+        }
+
+        /// <summary>
+        /// Reads the connection list again after a change the API confirmed. A failure to read it does not undo the change:
+        /// it is reported, the cached list is marked stale so its next use asks the API again, and the change answers as done.
+        /// </summary>
+        private async Task RefreshAfterChangeAsync(string operation)
+        {
+            try
+            {
+                await RefreshConnectionsAsync();
+            }
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+            {
+                _lastRefreshTime = DateTime.MinValue;
+                _failures.ReportHandled(
+                    failure,
+                    operation,
+                    consequence: "the change was made; the cached connection list is stale and is read again on its next use",
+                    FailureSeverity.Degraded);
             }
         }
 
@@ -1191,13 +1138,17 @@ namespace Beep.OilandGas.Web.Services
                 {
                     return await operation();
                 }
+                // A request that did not complete is tried again; the API's own answers (OilGasApiException) are not.
                 catch (HttpRequestException ex) when (attempt < maxRetries - 1)
                 {
                     lastException = ex;
                     attempt++;
                     var delay = TimeSpan.FromMilliseconds(_retryDelay.TotalMilliseconds * Math.Pow(2, attempt - 1));
-                    _logger.LogWarning(ex, "Attempt {Attempt} failed for {OperationName}, retrying in {Delay}ms", 
-                        attempt, operationName, delay.TotalMilliseconds);
+                    _failures.ReportHandled(
+                        ex,
+                        operationName,
+                        consequence: $"attempt {attempt} of {maxRetries} did not complete; the request is sent again after {delay.TotalMilliseconds} ms",
+                        FailureSeverity.Degraded);
                     await Task.Delay(delay);
                 }
                 catch (Exception ex)
@@ -1225,12 +1176,16 @@ namespace Beep.OilandGas.Web.Services
                     };
                     return await _apiClient.PostAsync<GetEntitiesRequest, GetEntitiesResponse>(
                         $"/api/ppdm39/data/{tableName}", request) ?? new GetEntitiesResponse { Success = false };
-                }, $"GetEntitiesAsync({tableName})");
+                }, $"reading the rows of {tableName}");
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error getting entities from table {TableName}", tableName);
-                return new GetEntitiesResponse { Success = false, ErrorMessage = ex.Message };
+                return new GetEntitiesResponse
+                {
+                    Success = false,
+                    ErrorMessage = _calls.Explain(failure, $"reading the rows of {tableName}", $"The {tableName} rows could not be loaded")
+                };
             }
         }
 
@@ -1244,34 +1199,41 @@ namespace Beep.OilandGas.Web.Services
                 
                 return await _apiClient.GetAsync<GenericEntityResponse>(url) ?? new GenericEntityResponse { Success = false };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error getting entity {Id} from table {TableName}", id, tableName);
-                return new GenericEntityResponse { Success = false, ErrorMessage = ex.Message };
+                return new GenericEntityResponse
+                {
+                    Success = false,
+                    ErrorMessage = _calls.Explain(failure, $"reading a {tableName} row", "The record could not be loaded")
+                };
             }
         }
 
         public async Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> entityData, string connectionName = "PPDM39")
         {
+            // Not sent again when it does not complete (ExecuteWithRetryAsync): the request may have reached the API, and
+            // sending it again would insert the row twice.
             try
             {
-                return await ExecuteWithRetryAsync(async () =>
+                var request = new GenericEntityRequest
                 {
-                    var request = new GenericEntityRequest
-                    {
-                        TableName = tableName,
-                        EntityData = entityData,
-                        ConnectionName = connectionName
-                    };
-                    var url = $"/api/ppdm39/data/{tableName}/insert";
-                    return await _apiClient.PostAsync<GenericEntityRequest, GenericEntityResponse>(url, request) 
-                        ?? new GenericEntityResponse { Success = false };
-                }, $"InsertEntityAsync({tableName})");
+                    TableName = tableName,
+                    EntityData = entityData,
+                    ConnectionName = connectionName
+                };
+                var url = $"/api/ppdm39/data/{tableName}/insert";
+                return await _apiClient.PostAsync<GenericEntityRequest, GenericEntityResponse>(url, request)
+                    ?? new GenericEntityResponse { Success = false };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error inserting entity into table {TableName}", tableName);
-                return new GenericEntityResponse { Success = false, ErrorMessage = ex.Message };
+                return new GenericEntityResponse
+                {
+                    Success = false,
+                    ErrorMessage = _calls.Explain(failure, $"inserting a {tableName} row", "The record was not added")
+                };
             }
         }
 
@@ -1288,14 +1250,18 @@ namespace Beep.OilandGas.Web.Services
                         ConnectionName = connectionName
                     };
                     var url = $"/api/ppdm39/data/{tableName}/{entityId}";
-                    return await _apiClient.PutAsync<GenericEntityRequest, GenericEntityResponse>(url, request) 
+                    return await _apiClient.PutAsync<GenericEntityRequest, GenericEntityResponse>(url, request)
                         ?? new GenericEntityResponse { Success = false };
-                }, $"UpdateEntityAsync({tableName}, {entityId})");
+                }, $"updating a {tableName} row");
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error updating entity {EntityId} in table {TableName}", entityId, tableName);
-                return new GenericEntityResponse { Success = false, ErrorMessage = ex.Message };
+                return new GenericEntityResponse
+                {
+                    Success = false,
+                    ErrorMessage = _calls.Explain(failure, $"updating a {tableName} row", "The record was not updated")
+                };
             }
         }
 
@@ -1309,10 +1275,14 @@ namespace Beep.OilandGas.Web.Services
                 
                 return await _apiClient.DeleteAsync<GenericEntityResponse>(url) ?? new GenericEntityResponse { Success = false };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error deleting entity {Id} from table {TableName}", id, tableName);
-                return new GenericEntityResponse { Success = false, ErrorMessage = ex.Message };
+                return new GenericEntityResponse
+                {
+                    Success = false,
+                    ErrorMessage = _calls.Explain(failure, $"deleting a {tableName} row", "The record was not deleted")
+                };
             }
         }
 
@@ -1349,10 +1319,14 @@ namespace Beep.OilandGas.Web.Services
 
                 return response ?? new OperationStartResponse { OperationId = "", Message = "Import failed" };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error starting CSV import for table {TableName}", tableName);
-                return new OperationStartResponse { OperationId = "", Message = ex.Message };
+                return new OperationStartResponse
+                {
+                    OperationId = "",
+                    Message = _calls.Explain(failure, $"starting a CSV import into {tableName}", "The CSV import was not started")
+                };
             }
         }
 
@@ -1383,63 +1357,40 @@ namespace Beep.OilandGas.Web.Services
         // Validation Operations Implementation
         // ============================================
 
+        // A validation the API could not run is not a validation that failed: the failure reaches the caller, which says so.
         public async Task<ValidationResult> ValidateEntityAsync(string tableName, Dictionary<string, object> entityData, string connectionName = "PPDM39")
         {
-            try
+            var request = new ValidationRequest
             {
-                var request = new ValidationRequest
-                {
-                    TableName = tableName,
-                    EntityData = entityData,
-                    ConnectionName = connectionName
-                };
-                return await _apiClient.PostAsync<ValidationRequest, ValidationResult>(
-                    $"/api/ppdm39/validation/{tableName}/validate", request) 
-                    ?? new ValidationResult { IsValid = false };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error validating entity in table {TableName}", tableName);
-                return new ValidationResult { IsValid = false, Errors = new List<ValidationError> { new ValidationError { ErrorMessage = ex.Message } } };
-            }
+                TableName = tableName,
+                EntityData = entityData,
+                ConnectionName = connectionName
+            };
+            return await _apiClient.PostAsync<ValidationRequest, ValidationResult>(
+                $"/api/ppdm39/validation/{tableName}/validate", request)
+                ?? new ValidationResult { IsValid = false };
         }
 
         public async Task<List<ValidationResult>> ValidateBatchAsync(string tableName, List<Dictionary<string, object>> entities, string connectionName = "PPDM39")
         {
-            try
+            var request = new BatchValidationRequest
             {
-                var request = new BatchValidationRequest
-                {
-                    TableName = tableName,
-                    Entities = entities,
-                    ConnectionName = connectionName
-                };
-                return await _apiClient.PostAsync<BatchValidationRequest, List<ValidationResult>>(
-                    $"/api/ppdm39/validation/{tableName}/validate-batch", request) 
-                    ?? new List<ValidationResult>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error validating batch entities in table {TableName}", tableName);
-                return new List<ValidationResult>();
-            }
+                TableName = tableName,
+                Entities = entities,
+                ConnectionName = connectionName
+            };
+            return await _apiClient.PostAsync<BatchValidationRequest, List<ValidationResult>>(
+                $"/api/ppdm39/validation/{tableName}/validate-batch", request)
+                ?? new List<ValidationResult>();
         }
 
         public async Task<object> GetValidationRulesAsync(string tableName, string connectionName = "PPDM39")
         {
-            try
-            {
-                var url = $"/api/ppdm39/validation/{tableName}/rules";
-                if (!string.IsNullOrEmpty(connectionName))
-                    url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
-                
-                return await _apiClient.GetAsync<object>(url) ?? new List<object>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting validation rules for table {TableName}", tableName);
-                return new List<object>();
-            }
+            var url = $"/api/ppdm39/validation/{tableName}/rules";
+            if (!string.IsNullOrEmpty(connectionName))
+                url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
+
+            return await _apiClient.GetAsync<object>(url) ?? new List<object>();
         }
 
         // ============================================
@@ -1448,38 +1399,22 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<DataQualityResult> GetTableQualityMetricsAsync(string tableName, string connectionName = "PPDM39")
         {
-            try
-            {
-                var url = $"/api/datamanagement/quality/{tableName}/metrics";
-                if (!string.IsNullOrEmpty(connectionName))
-                    url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
-                
-                return await _apiClient.GetAsync<DataQualityResult>(url) 
-                    ?? new DataQualityResult { TableName = tableName };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting quality metrics for table {TableName}", tableName);
-                return new DataQualityResult { TableName = tableName };
-            }
+            var url = $"/api/datamanagement/quality/{tableName}/metrics";
+            if (!string.IsNullOrEmpty(connectionName))
+                url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
+
+            return await _apiClient.GetAsync<DataQualityResult>(url)
+                ?? new DataQualityResult { TableName = tableName };
         }
 
         public async Task<DataQualityDashboardResult> GetQualityDashboardAsync(string connectionName = "PPDM39")
         {
-            try
-            {
-                var url = "/api/datamanagement/quality/alerts";
-                if (!string.IsNullOrEmpty(connectionName))
-                    url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
-                
-                return await _apiClient.GetAsync<DataQualityDashboardResult>(url) 
-                    ?? new DataQualityDashboardResult();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting quality dashboard");
-                return new DataQualityDashboardResult();
-            }
+            var url = "/api/datamanagement/quality/alerts";
+            if (!string.IsNullOrEmpty(connectionName))
+                url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
+
+            return await _apiClient.GetAsync<DataQualityDashboardResult>(url)
+                ?? new DataQualityDashboardResult();
         }
 
         // ============================================
@@ -1497,31 +1432,27 @@ namespace Beep.OilandGas.Web.Services
                     ConnectionName = connectionName
                 };
                 return await _apiClient.PostAsync<VersioningRequest, VersioningResult>(
-                    $"/api/ppdm39/versioning/{tableName}/{entityId}/create-version", request) 
+                    $"/api/ppdm39/versioning/{tableName}/{entityId}/create-version", request)
                     ?? new VersioningResult { Success = false };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error creating version for entity {EntityId} in table {TableName}", entityId, tableName);
-                return new VersioningResult { Success = false, ErrorMessage = ex.Message };
+                return new VersioningResult
+                {
+                    Success = false,
+                    ErrorMessage = _calls.Explain(failure, $"creating a version of a {tableName} row", "The version was not created")
+                };
             }
         }
 
         public async Task<List<VersionInfo>> GetVersionHistoryAsync(string tableName, string entityId, string connectionName = "PPDM39")
         {
-            try
-            {
-                var url = $"/api/ppdm39/versioning/{tableName}/{entityId}/versions";
-                if (!string.IsNullOrEmpty(connectionName))
-                    url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
-                
-                return await _apiClient.GetAsync<List<VersionInfo>>(url) ?? new List<VersionInfo>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting version history for entity {EntityId} in table {TableName}", entityId, tableName);
-                return new List<VersionInfo>();
-            }
+            var url = $"/api/ppdm39/versioning/{tableName}/{entityId}/versions";
+            if (!string.IsNullOrEmpty(connectionName))
+                url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
+
+            return await _apiClient.GetAsync<List<VersionInfo>>(url) ?? new List<VersionInfo>();
         }
 
         public async Task<VersioningResult> RestoreVersionAsync(string tableName, string entityId, string versionId, string connectionName = "PPDM39")
@@ -1536,13 +1467,17 @@ namespace Beep.OilandGas.Web.Services
                     ConnectionName = connectionName
                 };
                 return await _apiClient.PostAsync<RestoreVersionRequest, VersioningResult>(
-                    $"/api/ppdm39/versioning/{tableName}/{entityId}/restore", request) 
+                    $"/api/ppdm39/versioning/{tableName}/{entityId}/restore", request)
                     ?? new VersioningResult { Success = false };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error restoring version for entity {EntityId} in table {TableName}", entityId, tableName);
-                return new VersioningResult { Success = false, ErrorMessage = ex.Message };
+                return new VersioningResult
+                {
+                    Success = false,
+                    ErrorMessage = _calls.Explain(failure, $"restoring a version of a {tableName} row", "The version was not restored")
+                };
             }
         }
 
@@ -1552,36 +1487,20 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<Dictionary<string, object>> GetDefaultsAsync(string entityType, string connectionName = "PPDM39")
         {
-            try
-            {
-                var url = $"/api/ppdm39/defaults/{entityType}";
-                if (!string.IsNullOrEmpty(connectionName))
-                    url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
-                
-                return await _apiClient.GetAsync<Dictionary<string, object>>(url) ?? new Dictionary<string, object>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting defaults for entity type {EntityType}", entityType);
-                return new Dictionary<string, object>();
-            }
+            var url = $"/api/ppdm39/defaults/{entityType}";
+            if (!string.IsNullOrEmpty(connectionName))
+                url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
+
+            return await _apiClient.GetAsync<Dictionary<string, object>>(url) ?? new Dictionary<string, object>();
         }
 
         public async Task<object> GetWellStatusFacetsAsync(string statusId, string connectionName = "PPDM39")
         {
-            try
-            {
-                var url = $"/api/ppdm39/defaults/well-status/{statusId}/facets";
-                if (!string.IsNullOrEmpty(connectionName))
-                    url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
-                
-                return await _apiClient.GetAsync<object>(url) ?? new List<object>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting well status facets for status {StatusId}", statusId);
-                return new List<object>();
-            }
+            var url = $"/api/ppdm39/defaults/well-status/{statusId}/facets";
+            if (!string.IsNullOrEmpty(connectionName))
+                url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
+
+            return await _apiClient.GetAsync<object>(url) ?? new List<object>();
         }
 
         // ============================================
@@ -1599,9 +1518,14 @@ namespace Beep.OilandGas.Web.Services
                     ?? throw new InvalidOperationException("Current field response was empty.");
                 return string.IsNullOrWhiteSpace(response.FieldId) ? null : response.FieldId;
             }
-            // This endpoint defines 404 as no active field, not a transport failure.
-            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            // This endpoint defines 404 as no active field, not a failure: answered as no selection, and recorded.
+            catch (OilGasApiException noField) when (noField.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
+                _failures.ReportHandled(
+                    noField,
+                    "reading the active field",
+                    consequence: "the API holds no active field for this person; the caller was answered with no selection",
+                    FailureSeverity.Degraded);
                 return null;
             }
             finally { _fieldLock.Release(); }
@@ -1636,7 +1560,14 @@ namespace Beep.OilandGas.Web.Services
             foreach (var handler in CurrentFieldChanged?.GetInvocationList() ?? Array.Empty<Delegate>())
             {
                 try { ((Action<string>)handler)(fieldId); }
-                catch (Exception ex) { _logger.LogWarning(ex, "A field-change subscriber could not refresh."); }
+                // One subscriber's failure must not keep the others from hearing the change, so each is reported in turn.
+                catch (Exception ex)
+                {
+                    _failures.ReportHandled(
+                        ex,
+                        "telling a subscriber that the active field changed",
+                        consequence: "that subscriber shows the previous field until it is refreshed; the change itself stands");
+                }
             }
         }
     }

@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
@@ -139,7 +140,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
 
             var landRight = await landRightRepo.GetByIdAsync(leaseId) as LAND_RIGHT;
             if (landRight == null)
-                throw new KeyNotFoundException($"Lease with ID {leaseId} was not found.");
+                throw RefusalException.NotFound($"Lease {leaseId} was not found.");
 
             landRight.ACTIVE_IND = activeIndicator;
             await landRightRepo.UpdateAsync(landRight, userId);
@@ -443,7 +444,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         private static string NormalizeLeaseStatus(string status)
         {
             if (string.IsNullOrWhiteSpace(status))
-                throw new ArgumentException("Status is required.", nameof(status));
+                throw RefusalException.Invalid("Choose the lease's status.");
 
             var trimmed = status.Trim();
             var upper = trimmed.ToUpperInvariant();
@@ -460,7 +461,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             if (LeaseReferenceCodes.IsDefinedLandRightOperationalStatus(upper))
                 return upper;
 
-            throw new ArgumentException($"Status '{status}' is not a recognized land-right operational status.", nameof(status));
+            throw RefusalException.Invalid($"\"{status}\" is not a lease status this system knows.");
         }
     }
 }

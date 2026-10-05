@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data.GasLift;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.GasLift.Calculations
 {
@@ -139,7 +140,7 @@ namespace Beep.OilandGas.GasLift.Calculations
             double k = 1.28,
             double cd = 0.865)
         {
-            if (upstreamPressurePsia <= 0) throw new ArgumentOutOfRangeException(nameof(upstreamPressurePsia));
+            if (upstreamPressurePsia <= 0) throw RefusalException.Invalid("Upstream pressure must be greater than zero.");
 
             double T_R    = gasTemperatureF + 459.67;
             double r      = downstreamPressurePsia / upstreamPressurePsia;

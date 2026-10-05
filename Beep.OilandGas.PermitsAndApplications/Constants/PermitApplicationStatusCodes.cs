@@ -37,8 +37,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Constants
                 PermitApplicationStatus.Rejected => Rejected,
                 PermitApplicationStatus.Withdrawn => Withdrawn,
                 PermitApplicationStatus.Expired => Expired,
-                PermitApplicationStatus.Renewed => Renewed,
-                _ => Draft
+                PermitApplicationStatus.Renewed => Renewed
             };
         }
 

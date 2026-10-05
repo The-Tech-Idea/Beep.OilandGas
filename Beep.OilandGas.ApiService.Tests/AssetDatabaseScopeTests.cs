@@ -1,4 +1,5 @@
 using Beep.OilandGas.ApiService.Services;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Repository;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -26,7 +27,7 @@ public class AssetDatabaseScopeTests(ITestOutputHelper output)
         var editor = new Mock<IDMEEditor>(MockBehavior.Strict);
         editor.SetupGet(x => x.ConfigEditor).Returns(config.Object);
         var resolver = new ModuleConnectionResolver(db, editor.Object);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => resolver.ResolveAssetScopeAsync());
+        await Refusals.RefusedAsync(RefusalKind.Conflict, () => resolver.ResolveAssetScopeAsync());
         var binding = new ModuleDatabaseBinding { ModuleId = "PPDM_CORE", ConnectionName = "selected", ConcurrencyStamp = "review-one" };
         db.ModuleDatabases.Add(binding);
         await db.SaveChangesAsync();
@@ -42,7 +43,7 @@ public class AssetDatabaseScopeTests(ITestOutputHelper output)
         Assert.NotEqual(rebound.Fingerprint, (await resolver.ResolveAssetScopeAsync()).Fingerprint);
         binding.ConcurrencyStamp = "";
         await db.SaveChangesAsync();
-        await Assert.ThrowsAsync<InvalidOperationException>(() => resolver.ResolveAssetScopeAsync());
+        await Refusals.RefusedAsync(RefusalKind.Conflict, () => resolver.ResolveAssetScopeAsync());
         editor.Verify(x => x.GetDataSource(It.IsAny<string>()), Times.Never);
     }
 }

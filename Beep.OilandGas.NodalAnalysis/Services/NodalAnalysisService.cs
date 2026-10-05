@@ -16,6 +16,7 @@ using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.PPDM.Models;
 using Beep.OilandGas.Models.Data.ProductionForecasting;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.NodalAnalysis.Services
 {
@@ -58,7 +59,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
         public async Task<NodalAnalysisRunResult> PerformNodalAnalysisAsync(string wellUWI, NodalAnalysisParameters analysisParameters, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (analysisParameters == null)
                 throw new ArgumentNullException(nameof(analysisParameters));
 
@@ -115,7 +116,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
         public async Task<OptimizationResult> OptimizeSystemAsync(string wellUWI, OptimizationGoals optimizationGoals, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (optimizationGoals == null)
                 throw new ArgumentNullException(nameof(optimizationGoals));
 
@@ -149,7 +150,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
             if (result == null)
                 throw new ArgumentNullException(nameof(result));
             if (string.IsNullOrWhiteSpace(result.WellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty.", nameof(result));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
@@ -261,7 +262,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
          public async Task<List<NodalAnalysisRunResult>> GetAnalysisHistoryAsync(string wellUWI, CancellationToken cancellationToken = default)
          {
              if (string.IsNullOrWhiteSpace(wellUWI))
-                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                 throw RefusalException.Invalid("A well UWI is required.");
 
              _logger?.LogInformation("Getting nodal analysis history for well {WellUWI}", wellUWI);
 
@@ -299,7 +300,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              NodalAnalysisParameters analysisParameters, CancellationToken cancellationToken = default)
          {
              if (string.IsNullOrWhiteSpace(wellUWI))
-                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                 throw RefusalException.Invalid("A well UWI is required.");
              if (analysisParameters == null)
                  throw new ArgumentNullException(nameof(analysisParameters));
 
@@ -365,7 +366,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              List<string> parametersToVary, CancellationToken cancellationToken = default)
          {
              if (string.IsNullOrWhiteSpace(wellUWI))
-                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                 throw RefusalException.Invalid("A well UWI is required.");
              if (baselineParameters == null)
                  throw new ArgumentNullException(nameof(baselineParameters));
 
@@ -418,7 +419,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              decimal waterCut, CancellationToken cancellationToken = default)
          {
              if (string.IsNullOrWhiteSpace(wellUWI))
-                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                 throw RefusalException.Invalid("A well UWI is required.");
 
              _logger?.LogInformation("Recommending artificial lift design for well {WellUWI}: Target={Target}bpd, Depth={Depth}ft",
                  wellUWI, targetProduction, wellDepth);
@@ -462,7 +463,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              decimal bottomholePressure, CancellationToken cancellationToken = default)
          {
              if (string.IsNullOrWhiteSpace(wellUWI))
-                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                 throw RefusalException.Invalid("A well UWI is required.");
 
              _logger?.LogInformation("Diagnosing well performance for {WellUWI}: Expected={Expected}bpd, Actual={Actual}bpd",
                  wellUWI, expectedProduction, actualProduction);
@@ -525,11 +526,11 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              int forecastMonths, CancellationToken cancellationToken = default)
          {
              if (string.IsNullOrWhiteSpace(wellUWI))
-                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                 throw RefusalException.Invalid("A well UWI is required.");
              if (forecastMonths <= 0)
-                 throw new ArgumentOutOfRangeException(nameof(forecastMonths), forecastMonths, "Forecast months must be positive.");
+                 throw RefusalException.Invalid("Forecast months must be positive.");
              if (declineRate < 0m || declineRate > 1m)
-                 throw new ArgumentOutOfRangeException(nameof(declineRate), declineRate, "Decline rate must be between 0 and 1 (annual fraction).");
+                 throw RefusalException.Invalid("Decline rate must be between 0 and 1 (annual fraction).");
 
              _logger?.LogInformation("Forecasting production for well {WellUWI} for {Months} months with decline rate {Decline}%",
                  wellUWI, forecastMonths, declineRate);
@@ -585,9 +586,9 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              decimal productivityIndex, CancellationToken cancellationToken = default)
          {
              if (string.IsNullOrWhiteSpace(wellUWI))
-                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                 throw RefusalException.Invalid("A well UWI is required.");
              if (productivityIndex < 0m)
-                 throw new ArgumentOutOfRangeException(nameof(productivityIndex), productivityIndex, "Productivity index cannot be negative.");
+                 throw RefusalException.Invalid("Productivity index cannot be negative.");
 
              _logger?.LogInformation("Analyzing pressure maintenance strategy for well {WellUWI}: ResPres={ResPres}psi",
                  wellUWI, currentReservoirPressure);

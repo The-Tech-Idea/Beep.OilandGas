@@ -3,8 +3,11 @@ using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Web.Services;
 
-public sealed class WellComparisonState(Func<CompareWellsRequest, Task<WellComparisonData?>> compare) : IDisposable
+public sealed class WellComparisonState(
+    Func<CompareWellsRequest, Task<WellComparisonData?>> compare, OilGasCallFailures failures) : IDisposable
 {
+    private const string Operation = "comparing wells";
+
     private int _version;
     private bool _disposed;
     public WellComparisonData? Result { get; private set; }
@@ -41,18 +44,27 @@ public sealed class WellComparisonState(Func<CompareWellsRequest, Task<WellCompa
             Result = result;
             RequestedWells = Array.AsReadOnly(wells);
         }
+        // The page renders a sentence for every failure of this comparison, in place of the result; the store keeps the
+        // exception (a superseded comparison's too, though nobody is shown it).
         catch (Exception ex)
         {
-            if (!_disposed && version == _version)
-                Error = ex is HttpRequestException http ? http.StatusCode switch
-                {
-                    HttpStatusCode.Unauthorized => "Your session has expired. Sign in again to compare wells.",
-                    HttpStatusCode.Forbidden => "You do not have access to compare these wells.",
-                    _ => "The comparison could not be loaded. Retry when the service is available."
-                } : "The comparison could not be confirmed for all requested wells. Check the UWIs and retry.";
+            var sentence = Refusal(ex) is { } own
+                ? failures.Told(ex, Operation, own)
+                : failures.Explain(ex, Operation, OilGasCallFailures.IsCallFailure(ex)
+                    ? "The comparison could not be loaded"
+                    : "The comparison could not be confirmed for all requested wells");
+            if (!_disposed && version == _version) Error = sentence;
         }
         finally { if (!_disposed && version == _version) Loading = false; }
     }
 
     public void Dispose() { _disposed = true; Reset(); }
+
+    /// <summary>This page's own words for a refusal it recognises; null for anything else.</summary>
+    private static string? Refusal(Exception ex) => ex switch
+    {
+        OilGasApiException { StatusCode: HttpStatusCode.Unauthorized } => "Your session has expired. Sign in again to compare wells.",
+        OilGasApiException { StatusCode: HttpStatusCode.Forbidden } => "You do not have access to compare these wells.",
+        _ => null,
+    };
 }

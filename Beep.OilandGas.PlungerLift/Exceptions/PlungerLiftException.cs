@@ -1,24 +1,31 @@
 using System;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.PlungerLift.Exceptions
 {
     /// <summary>
     /// Base exception for plunger lift calculations.
     /// </summary>
-    public class PlungerLiftException : Exception
+    /// <remarks>
+    /// OILGAS-CATCH-01. Every throw of this family refuses what the caller sent — well properties out of range, or a
+    /// well for which plunger lift is not feasible — so it is a <see cref="RefusalException"/>
+    /// (<see cref="RefusalKind.Invalid"/>) and the API answers it as a 400 with its sentence. Its message is written for
+    /// the person, never taken from a caught exception.
+    /// </remarks>
+    public class PlungerLiftException : RefusalException
     {
         public PlungerLiftException()
-            : base()
+            : base(RefusalKind.Invalid, "The plunger lift calculation could not be done with the values given.")
         {
         }
 
         public PlungerLiftException(string message)
-            : base(message)
+            : base(RefusalKind.Invalid, message)
         {
         }
 
         public PlungerLiftException(string message, Exception innerException)
-            : base(message, innerException)
+            : base(RefusalKind.Invalid, message, innerException)
         {
         }
     }

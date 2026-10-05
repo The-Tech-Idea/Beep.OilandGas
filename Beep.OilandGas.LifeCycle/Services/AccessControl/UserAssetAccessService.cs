@@ -52,31 +52,29 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
             _rolePermissions = rolePermissions ?? throw new ArgumentNullException(nameof(rolePermissions));
         }
 
+        /// <remarks>
+        /// OILGAS-CATCH-01: a check that cannot be made reaches the caller (an authorization filter or the API's handler
+        /// reports it with its reference, and the request is still refused). It had been answered as access denied
+        /// ("could not be verified"), and the failure itself was told to no one.
+        /// </remarks>
         public async Task<AccessCheckResponse> CheckAssetAccessAsync(string userId, string assetId, string assetType, string? requiredPermission = null)
         {
             if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(assetId) || string.IsNullOrWhiteSpace(assetType))
                 return new AccessCheckResponse { HasAccess = false, Reason = "User and asset identifiers are required." };
-            try
-            {
-                var assets = await GetUserAccessibleAssetsAsync(userId, includeInherited: true);
-                var access = assets.FirstOrDefault(candidate => candidate.Active && candidate.UserId == userId
-                    && candidate.AssetId == assetId && string.Equals(candidate.AssetType, assetType, StringComparison.OrdinalIgnoreCase));
-                if (access is null)
-                    return new AccessCheckResponse { HasAccess = false, Reason = "No direct or inherited access found." };
+            var assets = await GetUserAccessibleAssetsAsync(userId, includeInherited: true);
+            var access = assets.FirstOrDefault(candidate => candidate.Active && candidate.UserId == userId
+                && candidate.AssetId == assetId && string.Equals(candidate.AssetType, assetType, StringComparison.OrdinalIgnoreCase));
+            if (access is null)
+                return new AccessCheckResponse { HasAccess = false, Reason = "No direct or inherited access found." };
 
-                var permitted = string.IsNullOrWhiteSpace(requiredPermission)
-                    || await HasPermissionAsync(userId, requiredPermission);
-                return new AccessCheckResponse
-                {
-                    HasAccess = permitted,
-                    AccessLevel = access.AccessLevel,
-                    Reason = permitted ? "Access granted for the requested asset." : "The required application permission is not assigned."
-                };
-            }
-            catch (Exception)
+            var permitted = string.IsNullOrWhiteSpace(requiredPermission)
+                || await HasPermissionAsync(userId, requiredPermission);
+            return new AccessCheckResponse
             {
-                return new AccessCheckResponse { HasAccess = false, Reason = "Asset access could not be verified." };
-            }
+                HasAccess = permitted,
+                AccessLevel = access.AccessLevel,
+                Reason = permitted ? "Access granted for the requested asset." : "The required application permission is not assigned."
+            };
         }
 
         public async Task<List<AssetAccess>> GetUserAccessibleAssetsAsync(string userId, string? assetType = null, string? organizationId = null, bool includeInherited = true)

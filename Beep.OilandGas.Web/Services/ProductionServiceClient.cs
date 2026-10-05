@@ -213,7 +213,7 @@ public sealed class ProductionServiceClient : IProductionServiceClient
         }
     }
 
-    public async Task<bool> PatchAllocationAsync(string period, string wellId, ProductionAllocationPatchRequest request, CancellationToken cancellationToken = default)
+    public async Task PatchAllocationAsync(string period, string wellId, ProductionAllocationPatchRequest request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(period))
             throw new ArgumentException("Allocation period is required.", nameof(period));
@@ -225,7 +225,7 @@ public sealed class ProductionServiceClient : IProductionServiceClient
 
         try
         {
-            return await _apiClient.PatchAsync(
+            await _apiClient.PatchAsync(
                 $"/api/field/current/production/allocation/{Uri.EscapeDataString(period)}/wells/{Uri.EscapeDataString(wellId)}",
                 request,
                 cancellationToken);

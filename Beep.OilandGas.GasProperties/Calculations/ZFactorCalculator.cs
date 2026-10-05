@@ -1,6 +1,7 @@
 using System;
 using Beep.OilandGas.Models.Data.GasProperties;
 using Beep.OilandGas.GasProperties.Constants;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.GasProperties.Calculations
 {
@@ -9,6 +10,27 @@ namespace Beep.OilandGas.GasProperties.Calculations
     /// </summary>
     public static class ZFactorCalculator
     {
+        /// <summary>
+        /// The pseudo-reduced temperature at and below which the Brill-Beggs correlation is not defined: its first term
+        /// takes the square root of <c>Tpr - 0.92</c>.
+        /// </summary>
+        public const decimal BrillBeggsMinimumPseudoReducedTemperature = 0.92m;
+
+        /// <summary>
+        /// Whether the Brill-Beggs correlation is defined for this temperature (°R) and gas gravity: the pseudo-reduced
+        /// temperature, on Sutton's pseudo-critical temperature, must be above
+        /// <see cref="BrillBeggsMinimumPseudoReducedTemperature"/>.
+        /// </summary>
+        public static bool IsBrillBeggsDefined(decimal temperature, decimal specificGravity)
+        {
+            if (temperature <= 0 || specificGravity <= 0)
+                return false;
+
+            decimal pseudoCriticalTemperature = 169.2m + 349.5m * specificGravity - 74.0m * specificGravity * specificGravity;
+            return pseudoCriticalTemperature > 0 &&
+                   temperature / pseudoCriticalTemperature > BrillBeggsMinimumPseudoReducedTemperature;
+        }
+
         /// <summary>
         /// Calculates Z-factor using Brill-Beggs correlation.
         /// </summary>
@@ -22,13 +44,22 @@ namespace Beep.OilandGas.GasProperties.Calculations
             decimal? specificGravity)
         {
             if (pressure <= 0)
-                throw new ArgumentException("Pressure must be greater than zero.", nameof(pressure));
+                throw RefusalException.Invalid("Pressure must be greater than zero.");
 
             if (temperature <= 0)
-                throw new ArgumentException("Temperature must be greater than zero.", nameof(temperature));
+                throw RefusalException.Invalid("Temperature must be greater than zero.");
+
+            if (specificGravity is null)
+                throw RefusalException.Invalid("Specific gravity is required.");
 
             if (specificGravity <= 0)
-                throw new ArgumentException("Specific gravity must be greater than zero.", nameof(specificGravity));
+                throw RefusalException.Invalid("Specific gravity must be greater than zero.");
+
+            // Below its range the correlation's square root is of a negative number, and the cast of NaN threw an
+            // OverflowException from deep inside whichever calculation asked (OILGAS-CATCH-01). The inputs are refused.
+            if (!IsBrillBeggsDefined(temperature, specificGravity.Value))
+                throw RefusalException.Invalid(
+                    "The temperature is too low for the Brill-Beggs Z-factor correlation at this gas gravity: it needs a pseudo-reduced temperature above 0.92.");
 
             // Calculate pseudo-critical properties
             decimal pseudoCriticalPressure = (decimal)(756.8m - 131.0m * specificGravity - 3.6m * specificGravity * specificGravity);
@@ -64,13 +95,13 @@ namespace Beep.OilandGas.GasProperties.Calculations
             decimal specificGravity)
         {
             if (pressure <= 0)
-                throw new ArgumentException("Pressure must be greater than zero.", nameof(pressure));
+                throw RefusalException.Invalid("Pressure must be greater than zero.");
 
             if (temperature <= 0)
-                throw new ArgumentException("Temperature must be greater than zero.", nameof(temperature));
+                throw RefusalException.Invalid("Temperature must be greater than zero.");
 
             if (specificGravity <= 0)
-                throw new ArgumentException("Specific gravity must be greater than zero.", nameof(specificGravity));
+                throw RefusalException.Invalid("Specific gravity must be greater than zero.");
 
             // Calculate pseudo-critical properties
             decimal pseudoCriticalPressure = 756.8m - 131.0m * specificGravity - 3.6m * specificGravity * specificGravity;
@@ -136,13 +167,13 @@ namespace Beep.OilandGas.GasProperties.Calculations
             decimal specificGravity)
         {
             if (pressure <= 0)
-                throw new ArgumentException("Pressure must be greater than zero.", nameof(pressure));
+                throw RefusalException.Invalid("Pressure must be greater than zero.");
 
             if (temperature <= 0)
-                throw new ArgumentException("Temperature must be greater than zero.", nameof(temperature));
+                throw RefusalException.Invalid("Temperature must be greater than zero.");
 
             if (specificGravity <= 0)
-                throw new ArgumentException("Specific gravity must be greater than zero.", nameof(specificGravity));
+                throw RefusalException.Invalid("Specific gravity must be greater than zero.");
 
             // Calculate pseudo-critical properties
             decimal pseudoCriticalPressure = 756.8m - 131.0m * specificGravity - 3.6m * specificGravity * specificGravity;
@@ -235,7 +266,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
                 throw new ArgumentNullException(nameof(composition));
 
             if (!composition.IsValid())
-                throw new ArgumentException("Gas composition fractions must sum to 1.0.", nameof(composition));
+                throw RefusalException.Invalid("Gas composition fractions must sum to 1.0.");
 
             // Component critical properties (pressure in psia, temperature in Rankine)
             decimal pc1 = 667.8m, tc1 = 343.0m; // Methane

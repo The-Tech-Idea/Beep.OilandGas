@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Services.Audit;
 using TheTechIdea.Beep.Services.Audit.Models;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Services
 {
@@ -20,11 +21,13 @@ namespace Beep.OilandGas.ApiService.Services
     {
         private readonly IBeepAudit? _audit;
         private readonly ILogger<BeepAuditAdapter> _logger;
+        private readonly IFailureReporter _failures;
 
-        public BeepAuditAdapter(IBeepAudit? audit, ILogger<BeepAuditAdapter> logger)
+        public BeepAuditAdapter(IBeepAudit? audit, ILogger<BeepAuditAdapter> logger, IFailureReporter failures)
         {
             _audit = audit;
             _logger = logger;
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
         }
 
         /// <summary>
@@ -66,13 +69,13 @@ namespace Beep.OilandGas.ApiService.Services
 
                 await _audit.RecordAsync(auditEvent);
             }
-            catch (Exception ex)
+            // Audit pipeline failure must never crash the application: the PPDM audit table write (handled by the existing
+            // service) is the authoritative record and BeepDM audit is additive. The lost hash-chain entry is reported, so
+            // the gap is visible. Cancellation is the caller ending.
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                // Audit pipeline failure must never crash the application.
-                // The PPDM audit table write (handled by the existing service)
-                // is the authoritative record; BeepDM audit is additive.
-                _logger.LogError(ex, "Failed to record audit event via BeepDM pipeline: {EventType}/{Resource}/{Action}",
-                    eventType, resource, action);
+                _failures.ReportHandled(ex, $"recording the {eventType}/{resource}/{action} audit event in the BeepDM hash chain",
+                    "the PPDM audit record stands; the hash-chain entry is not written", FailureSeverity.Degraded);
             }
         }
 

@@ -151,14 +151,14 @@ public sealed class ExplorationServiceClient : IExplorationServiceClient
         }
     }
 
-    public async Task<bool> DeleteProspectAsync(string prospectId, CancellationToken cancellationToken = default)
+    public async Task DeleteProspectAsync(string prospectId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(prospectId))
             throw new ArgumentException("Prospect ID is required.", nameof(prospectId));
 
         try
         {
-            return await _apiClient.DeleteAsync(
+            await _apiClient.DeleteAsync(
                 $"/api/field/current/exploration/prospects/{Uri.EscapeDataString(prospectId)}",
                 cancellationToken);
         }
@@ -224,7 +224,7 @@ public sealed class ExplorationServiceClient : IExplorationServiceClient
         }
     }
 
-    public async Task<bool> RecordProspectDecisionAsync(string prospectId, string decision, string? comments = null, CancellationToken cancellationToken = default)
+    public async Task RecordProspectDecisionAsync(string prospectId, string decision, string? comments = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(prospectId))
             throw new ArgumentException("Prospect ID is required.", nameof(prospectId));
@@ -233,7 +233,7 @@ public sealed class ExplorationServiceClient : IExplorationServiceClient
 
         try
         {
-            return await _apiClient.PostAsync(
+            await _apiClient.PostAsync(
                 $"/api/field/current/exploration/prospects/{Uri.EscapeDataString(prospectId)}/decision",
                 new ProspectDecisionRequest { Decision = decision, Comments = comments },
                 cancellationToken);

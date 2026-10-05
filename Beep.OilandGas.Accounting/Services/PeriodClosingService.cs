@@ -82,72 +82,65 @@ namespace Beep.OilandGas.Accounting.Services
                 ChecklistGeneratedAt = DateTime.UtcNow
             };
 
-            try
+            // A check that cannot run propagates: the period is not closed, and the failure is reported with its
+            // reference by the caller's handler rather than written into the checklist in the exception's own words.
+
+            // 1. Validate GL Balance
+            var glValidation = await _trialBalanceService.ValidateGLAsync(periodEndDate, bookId);
+            checklist.Items.Add(new PeriodCloseChecklistItem
             {
-                // 1. Validate GL Balance
-                var glValidation = await _trialBalanceService.ValidateGLAsync(periodEndDate, bookId);
-                checklist.Items.Add(new PeriodCloseChecklistItem
-                {
-                    RuleId = "GL_BALANCE",
-                    Name = "GL Balance Check",
-                    Description = "Ensure Total Debits equal Total Credits",
-                    IsMandatory = true,
-                    IsComplete = glValidation.IsBalanced,
-                    Details = glValidation.IsBalanced 
-                        ? "Balanced" 
-                        : $"Difference: {glValidation.Difference:C} (Dr: {glValidation.TotalDebits:C}, Cr: {glValidation.TotalCredits:C})",
-                    Module = "GL"
-                });
+                RuleId = "GL_BALANCE",
+                Name = "GL Balance Check",
+                Description = "Ensure Total Debits equal Total Credits",
+                IsMandatory = true,
+                IsComplete = glValidation.IsBalanced,
+                Details = glValidation.IsBalanced 
+                    ? "Balanced" 
+                    : $"Difference: {glValidation.Difference:C} (Dr: {glValidation.TotalDebits:C}, Cr: {glValidation.TotalCredits:C})",
+                Module = "GL"
+            });
 
-                // 2. Check for Unposted AP Invoices
-                var hasUnpostedAP = await _apService.HasUnpostedInvoicesAsync(periodEndDate);
-                checklist.Items.Add(new PeriodCloseChecklistItem
-                {
-                    RuleId = "AP_CLOSE",
-                    Name = "Accounts Payable Close",
-                    Description = "All AP Invoices Posted",
-                    IsMandatory = true,
-                    IsComplete = !hasUnpostedAP,
-                    Details = hasUnpostedAP ? "Found unposted AP Invoices" : "All AP Invoices Posted",
-                    Module = "AP"
-                });
-
-                // 3. Check for Unposted AR Invoices
-                var hasUnpostedAR = await _arService.HasUnpostedInvoicesAsync(periodEndDate);
-                checklist.Items.Add(new PeriodCloseChecklistItem
-                {
-                    RuleId = "AR_CLOSE",
-                    Name = "Accounts Receivable Close",
-                    Description = "All AR Invoices Posted",
-                    IsMandatory = true,
-                    IsComplete = !hasUnpostedAR,
-                    Details = hasUnpostedAR ? "Found unposted AR Invoices" : "All AR Invoices Posted",
-                    Module = "AR"
-                });
-
-                // Determine overall readiness
-                if (checklist.Items.Any(i => i.IsMandatory && !i.IsComplete))
-                {
-                    checklist.IsReadyToClose = false;
-                    checklist.Errors = checklist.Items
-                        .Where(i => i.IsMandatory && !i.IsComplete)
-                        .Select(i => $"{i.Name} failed: {i.Details}")
-                        .ToList();
-                }
-                else
-                {
-                    checklist.IsReadyToClose = true;
-                }
-
-                return checklist;
-            }
-            catch (Exception ex)
+            // 2. Check for Unposted AP Invoices
+            var hasUnpostedAP = await _apService.HasUnpostedInvoicesAsync(periodEndDate);
+            checklist.Items.Add(new PeriodCloseChecklistItem
             {
-                _logger?.LogError(ex, "Error validating period close: {Message}", ex.Message);
+                RuleId = "AP_CLOSE",
+                Name = "Accounts Payable Close",
+                Description = "All AP Invoices Posted",
+                IsMandatory = true,
+                IsComplete = !hasUnpostedAP,
+                Details = hasUnpostedAP ? "Found unposted AP Invoices" : "All AP Invoices Posted",
+                Module = "AP"
+            });
+
+            // 3. Check for Unposted AR Invoices
+            var hasUnpostedAR = await _arService.HasUnpostedInvoicesAsync(periodEndDate);
+            checklist.Items.Add(new PeriodCloseChecklistItem
+            {
+                RuleId = "AR_CLOSE",
+                Name = "Accounts Receivable Close",
+                Description = "All AR Invoices Posted",
+                IsMandatory = true,
+                IsComplete = !hasUnpostedAR,
+                Details = hasUnpostedAR ? "Found unposted AR Invoices" : "All AR Invoices Posted",
+                Module = "AR"
+            });
+
+            // Determine overall readiness
+            if (checklist.Items.Any(i => i.IsMandatory && !i.IsComplete))
+            {
                 checklist.IsReadyToClose = false;
-                checklist.Errors.Add($"System Error: {ex.Message}");
-                return checklist;
+                checklist.Errors = checklist.Items
+                    .Where(i => i.IsMandatory && !i.IsComplete)
+                    .Select(i => $"{i.Name} failed: {i.Details}")
+                    .ToList();
             }
+            else
+            {
+                checklist.IsReadyToClose = true;
+            }
+
+            return checklist;
         }
         /// 1. Validate GL is balanced
         /// 2. Create closing entries (close revenue/expense to retained earnings)
@@ -287,7 +280,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error closing period {PeriodName}: {Message}", periodName, ex.Message);
+                _logger?.LogError(ex, "Error closing period {PeriodName}", periodName);
                 throw;
             }
         }
@@ -319,7 +312,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error reopening period: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error reopening period");
                 throw;
             }
         }

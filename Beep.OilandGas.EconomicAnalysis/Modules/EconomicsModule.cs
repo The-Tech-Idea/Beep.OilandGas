@@ -46,20 +46,13 @@ namespace Beep.OilandGas.EconomicAnalysis.Modules
             var result = NewResult();
             cancellationToken.ThrowIfCancellationRequested();
 
-            try
-            {
-                await SeedEconomicReferenceDataAsync(connectionName, userId, result, cancellationToken);
-                result.Success = result.Errors.Count == 0;
-                if (result.Success && result.RecordsInserted == 0 && result.TablesSeeded == 0)
-                    result.SkipReason = "Economic reference rows already seeded.";
-                else if (result.Success && result.RecordsInserted == 0 && string.IsNullOrWhiteSpace(result.SkipReason))
-                    result.SkipReason = "Seed completed with no additional economic inserts.";
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                result.Success = false;
-                result.Errors.Add(ex.Message);
-            }
+            // A failure propagates to the module orchestrator, which isolates and records each module's failure.
+            await SeedEconomicReferenceDataAsync(connectionName, userId, result, cancellationToken);
+            result.Success = result.Errors.Count == 0;
+            if (result.Success && result.RecordsInserted == 0 && result.TablesSeeded == 0)
+                result.SkipReason = "Economic reference rows already seeded.";
+            else if (result.Success && result.RecordsInserted == 0 && string.IsNullOrWhiteSpace(result.SkipReason))
+                result.SkipReason = "Seed completed with no additional economic inserts.";
 
             return result;
         }

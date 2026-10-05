@@ -111,66 +111,59 @@ namespace Beep.OilandGas.ApiService.Services
         {
             _logger.LogInformation("Starting entity sync: {SchemaId}", schemaId);
 
-            try
-            {
-                token.ThrowIfCancellationRequested();
-                _lastReport = null;
-                // Use file-based stores for error/history tracking
-                var errorStore = LocalStoreFactory.CreateErrorStore(_editor);
-                var historyStore = LocalStoreFactory.CreateHistoryStore(_editor);
-
-                token.ThrowIfCancellationRequested();
-                var schema = _syncManager.SyncSchemas.SingleOrDefault(s => s.Id == schemaId)
-                    ?? throw new InvalidOperationException("Sync schema was not found.");
-                if (string.IsNullOrWhiteSpace(schema.SourceKeyField) || string.IsNullOrWhiteSpace(schema.DestinationKeyField) ||
-                    string.IsNullOrWhiteSpace(schema.SourceSyncDataField) || string.IsNullOrWhiteSpace(schema.DestinationSyncDataField))
-                    throw new InvalidOperationException("Configure the schema's key and sync field mappings before execution.");
-                // Early validation failures in the engine may leave the previous report in place.
-                schema.LastReconciliationReport = null;
-                var timer = System.Diagnostics.Stopwatch.StartNew();
-                var outcome = await _syncManager.SyncDataAsync(schema, token, progress, errorStore, historyStore);
-                token.ThrowIfCancellationRequested();
-                var report = schema.LastReconciliationReport;
-                _lastReport = report;
-                var success = outcome != null && outcome.Flag == Errors.Ok &&
-                    !(outcome.Errors?.Any() ?? false) && schema.SyncStatus == "Success" &&
-                    report?.RunAbortedByThreshold != true;
-
+            // A schema that is not there, or not ready to run, is this method's own answer, in its own words; the engine
+            // reporting a failed run is its answer too. An exception is a failure and goes on to the caller — the API's
+            // handler reports it with its reference (OILGAS-CATCH-01: every exception, the engine's and these two alike, was
+            // returned as a failed result carrying the exception's own text, and reported nowhere).
+            token.ThrowIfCancellationRequested();
+            _lastReport = null;
+            var schema = _syncManager.SyncSchemas.SingleOrDefault(s => s.Id == schemaId);
+            if (schema == null)
+                return new SyncResult { Success = false, SchemaId = schemaId, ErrorMessage = "Sync schema was not found." };
+            if (string.IsNullOrWhiteSpace(schema.SourceKeyField) || string.IsNullOrWhiteSpace(schema.DestinationKeyField) ||
+                string.IsNullOrWhiteSpace(schema.SourceSyncDataField) || string.IsNullOrWhiteSpace(schema.DestinationSyncDataField))
                 return new SyncResult
                 {
-                    Success = success,
-                    ErrorMessage = success ? null : outcome?.Message ?? schema.SyncStatusMessage ?? "Sync did not report success.",
-                    SchemaId = schemaId,
-                    SchemaName = schema.EntityName,
-                    RecordsRead = report?.SourceRowsScanned ?? 0,
-                    RecordsInserted = report?.DestRowsInserted ?? 0,
-                    RecordsUpdated = report?.DestRowsUpdated ?? 0,
-                    RecordsFailed = report?.RejectCount ?? 0,
-                    Duration = timer.Elapsed,
-                    Reconciliation = report != null ? new SyncReconciliation
-                    {
-                        SourceRows = report.SourceRowsScanned,
-                        DestRows = report.DestRowsWritten,
-                        Rejects = report.RejectCount,
-                        Conflicts = report.ConflictCount,
-                        MappingQualityBand = report.MappingQualityBand
-                    } : null
+                    Success = false, SchemaId = schemaId, SchemaName = schema.EntityName,
+                    ErrorMessage = "Configure the schema's key and sync field mappings before execution."
                 };
-            }
-            catch (OperationCanceledException) when (token.IsCancellationRequested)
+
+            // Use file-based stores for error/history tracking
+            var errorStore = LocalStoreFactory.CreateErrorStore(_editor);
+            var historyStore = LocalStoreFactory.CreateHistoryStore(_editor);
+
+            token.ThrowIfCancellationRequested();
+            // Early validation failures in the engine may leave the previous report in place.
+            schema.LastReconciliationReport = null;
+            var timer = System.Diagnostics.Stopwatch.StartNew();
+            var outcome = await _syncManager.SyncDataAsync(schema, token, progress, errorStore, historyStore);
+            token.ThrowIfCancellationRequested();
+            var report = schema.LastReconciliationReport;
+            _lastReport = report;
+            var success = outcome != null && outcome.Flag == Errors.Ok &&
+                !(outcome.Errors?.Any() ?? false) && schema.SyncStatus == "Success" &&
+                report?.RunAbortedByThreshold != true;
+
+            return new SyncResult
             {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Sync failed: {SchemaId}", schemaId);
-                return new SyncResult
+                Success = success,
+                ErrorMessage = success ? null : outcome?.Message ?? schema.SyncStatusMessage ?? "Sync did not report success.",
+                SchemaId = schemaId,
+                SchemaName = schema.EntityName,
+                RecordsRead = report?.SourceRowsScanned ?? 0,
+                RecordsInserted = report?.DestRowsInserted ?? 0,
+                RecordsUpdated = report?.DestRowsUpdated ?? 0,
+                RecordsFailed = report?.RejectCount ?? 0,
+                Duration = timer.Elapsed,
+                Reconciliation = report != null ? new SyncReconciliation
                 {
-                    Success = false,
-                    SchemaId = schemaId,
-                    ErrorMessage = ex.Message
-                };
-            }
+                    SourceRows = report.SourceRowsScanned,
+                    DestRows = report.DestRowsWritten,
+                    Rejects = report.RejectCount,
+                    Conflicts = report.ConflictCount,
+                    MappingQualityBand = report.MappingQualityBand
+                } : null
+            };
         }
 
         /// <summary>

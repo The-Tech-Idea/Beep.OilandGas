@@ -19,6 +19,6 @@ public sealed class OilGasAccountAdmission(RepositoryAccountClient repository) :
         {
             RepositoryAccountState.Active => AccountAdmission.Admitted,
             RepositoryAccountState.Refused => AccountAdmission.Refused,
-            _ => AccountAdmission.Unknown
+            RepositoryAccountState.Unavailable => AccountAdmission.Unknown,
         };
 }

@@ -92,16 +92,9 @@ public class WorkOrderController : ControllerBase
         var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
         if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest(new { error = "No active field selected." });
 
-        try
-        {
-            var result = await _workOrders.TransitionStateAsync(
-                fieldId, instanceId, request.ToState, userId, request.Notes);
-            return Ok(result);
-        }
-        catch (InvalidOperationException)
-        {
-            return UnprocessableEntity(new { error = "An internal error occurred." });
-        }
+        var result = await _workOrders.TransitionStateAsync(
+            fieldId, instanceId, request.ToState, userId, request.Notes);
+        return Ok(result);
     }
 
     /// <summary>Returns valid next states for a work order.</summary>
@@ -263,31 +256,18 @@ public class WorkOrderController : ControllerBase
         var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
 
-        try
+        var afe = await _accounting.CreateOrLinkAFEAsync(instanceId, userId);
+        return Ok(new
         {
-            var afe = await _accounting.CreateOrLinkAFEAsync(instanceId, userId);
-            return Ok(new
-            {
-                AfeId = afe.AFE_ID,
-                AfeNumber = afe.AFE_NUMBER,
-                AfeName = afe.AFE_NAME,
-                EstimatedCost = afe.ESTIMATED_COST,
-                ActualCost = afe.ACTUAL_COST,
-                Status = afe.STATUS,
-                Description = afe.DESCRIPTION,
-                WorkOrderId = instanceId
-            });
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Cannot create or link AFE for work order {WorkOrderId}", instanceId);
-            return BadRequest(new { error = "Unable to create or link an AFE for this work order." });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating or linking AFE for work order {WorkOrderId}", instanceId);
-            return StatusCode(500, new { error = "An internal error occurred." });
-        }
+            AfeId = afe.AFE_ID,
+            AfeNumber = afe.AFE_NUMBER,
+            AfeName = afe.AFE_NAME,
+            EstimatedCost = afe.ESTIMATED_COST,
+            ActualCost = afe.ACTUAL_COST,
+            Status = afe.STATUS,
+            Description = afe.DESCRIPTION,
+            WorkOrderId = instanceId
+        });
     }
 
     [HttpPost("{instanceId}/costs/afe")]

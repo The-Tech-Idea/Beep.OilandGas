@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data.ProspectIdentification;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
@@ -64,12 +65,12 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         public async Task<ProspectEvaluation> EvaluateProspectAsync(string prospectId, ProspectEvaluationRequest request)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
-                throw new ArgumentException("Prospect ID cannot be null or empty.", nameof(prospectId));
+                throw RefusalException.Invalid("The prospect ID is required.");
 
             var prospectRepo = await CreateProspectRepositoryAsync();
             var prospect = await prospectRepo.GetByIdAsync(prospectId) as ProspectRecord;
             if (prospect == null)
-                throw new KeyNotFoundException($"Prospect with ID {prospectId} not found.");
+                throw RefusalException.NotFound($"Prospect {prospectId} was not found.");
 
             var seismicCount = await GetSeismicSurveyCountAsync(prospect.PROSPECT_ID);
             var riskScore = CalculateRiskScore(prospect, seismicCount);
@@ -176,7 +177,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         public async Task<Prospect> UpdateProspectAsync(string prospectId, UpdateProspect updateDto, string userId)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
-                throw new ArgumentException("Prospect ID cannot be null or empty.", nameof(prospectId));
+                throw RefusalException.Invalid("The prospect ID is required.");
 
             if (updateDto == null)
                 throw new ArgumentNullException(nameof(updateDto));
@@ -184,7 +185,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             var prospectRepo = await CreateProspectRepositoryAsync();
             var prospect = await prospectRepo.GetByIdAsync(prospectId) as ProspectRecord;
             if (prospect == null)
-                throw new KeyNotFoundException($"Prospect with ID {prospectId} not found.");
+                throw RefusalException.NotFound($"Prospect {prospectId} was not found.");
 
             if (!string.IsNullOrWhiteSpace(updateDto.ProspectName))
             {
@@ -213,14 +214,17 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         public async Task<Prospect> ChangeProspectStatusAsync(string prospectId, ProspectStatus newStatus, string userId)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
-                throw new ArgumentException("Prospect ID cannot be null or empty.", nameof(prospectId));
+                throw RefusalException.Invalid("The prospect ID is required.");
+            // "Unknown" names no status: it had been stored as EVALUATED, an answer nobody gave.
+            if (newStatus == ProspectStatus.Unknown)
+                throw RefusalException.Invalid("Choose the status the prospect moves to.");
 
             var prospectRepo = await CreateProspectRepositoryAsync();
             var prospect = await prospectRepo.GetByIdAsync(prospectId) as ProspectRecord;
             if (prospect == null)
-                throw new KeyNotFoundException($"Prospect with ID {prospectId} not found.");
+                throw RefusalException.NotFound($"Prospect {prospectId} was not found.");
 
-            prospect.PROSPECT_STATUS = MapProspectStatus(newStatus) ?? "EVALUATED";
+            prospect.PROSPECT_STATUS = MapProspectStatus(newStatus);
             prospect.ACTIVE_IND = newStatus == ProspectStatus.Rejected ? "N" : "Y";
 
             await prospectRepo.UpdateAsync(prospect, userId);
@@ -232,12 +236,12 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         public async Task DeleteProspectAsync(string prospectId, string userId)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
-                throw new ArgumentException("Prospect ID cannot be null or empty.", nameof(prospectId));
+                throw RefusalException.Invalid("The prospect ID is required.");
 
             var prospectRepo = await CreateProspectRepositoryAsync();
             var prospect = await prospectRepo.GetByIdAsync(prospectId) as ProspectRecord;
             if (prospect == null)
-                throw new KeyNotFoundException($"Prospect with ID {prospectId} not found.");
+                throw RefusalException.NotFound($"Prospect {prospectId} was not found.");
 
             prospect.ACTIVE_IND = "N";
             await prospectRepo.UpdateAsync(prospect, userId);
@@ -572,7 +576,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                 ProspectStatus.Evaluated => "EVALUATED",
                 ProspectStatus.Approved => "APPROVED",
                 ProspectStatus.Rejected => "REJECTED",
-                _ => null
+                ProspectStatus.Unknown => null
             };
         }
     }

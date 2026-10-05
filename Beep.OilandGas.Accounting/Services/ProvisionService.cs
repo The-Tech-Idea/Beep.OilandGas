@@ -57,7 +57,7 @@ namespace Beep.OilandGas.Accounting.Services
             string cn = "PPDM39")
         {
             if (estimatedCost <= 0m)
-                throw new InvalidOperationException("Estimated cost must be positive");
+                throw RefusalException.Invalid("Estimated cost must be positive.");
             if (string.IsNullOrWhiteSpace(description))
                 throw new ArgumentNullException(nameof(description));
             if (string.IsNullOrWhiteSpace(userId))
@@ -115,7 +115,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(aroId))
                 throw new ArgumentNullException(nameof(aroId));
             if (updatedEstimatedCost <= 0m)
-                throw new InvalidOperationException("Updated cost must be positive");
+                throw RefusalException.Invalid("Updated cost must be positive.");
             if (string.IsNullOrWhiteSpace(updateReason))
                 throw new ArgumentNullException(nameof(updateReason));
             if (string.IsNullOrWhiteSpace(userId))
@@ -124,7 +124,7 @@ namespace Beep.OilandGas.Accounting.Services
             var repo = await GetRepoAsync<ASSET_RETIREMENT_OBLIGATION>("ASSET_RETIREMENT_OBLIGATION", cn);
             var aro = await repo.GetByIdAsync(aroId) as ASSET_RETIREMENT_OBLIGATION;
             if (aro == null)
-                throw new InvalidOperationException($"ARO not found: {aroId}");
+                throw RefusalException.NotFound($"Asset retirement obligation {aroId} was not found.");
 
             var oldPv = aro.PRESENT_VALUE is decimal pv ? pv : 0m;
             var newPv = CalculatePresentValue(updatedEstimatedCost, updatedRetirementDate, updatedDiscountRate);
@@ -184,21 +184,21 @@ namespace Beep.OilandGas.Accounting.Services
             var repo = await GetRepoAsync<ASSET_RETIREMENT_OBLIGATION>("ASSET_RETIREMENT_OBLIGATION", cn);
             var aro = await repo.GetByIdAsync(aroId) as ASSET_RETIREMENT_OBLIGATION;
             if (aro == null)
-                throw new InvalidOperationException($"ARO not found: {aroId}");
+                throw RefusalException.NotFound($"Asset retirement obligation {aroId} was not found.");
             // DISCOUNT_RATE is non-nullable decimal on the model; treat values <= 0 as not provided
             if (aro.DISCOUNT_RATE <= 0m)
-                throw new InvalidOperationException("Discount rate is required for accretion");
+                throw RefusalException.Conflict("The asset retirement obligation has no discount rate; set one before recording accretion.");
 
             var baseDate = aro.ROW_CHANGED_DATE ?? aro.ROW_CREATED_DATE ?? DateTime.UtcNow;
             if (asOfDate <= baseDate)
-                throw new InvalidOperationException("Accretion date must be after the last update date");
+                throw RefusalException.Invalid("The accretion date must be after the obligation's last update.");
 
             var yearFraction = (decimal)(asOfDate - baseDate).TotalDays / 365m;
             var presentValue = aro.PRESENT_VALUE;
             var accretion = presentValue * aro.DISCOUNT_RATE * yearFraction;
 
             if (accretion <= 0m)
-                throw new InvalidOperationException("Calculated accretion must be positive");
+                throw RefusalException.Conflict("The obligation's present value and discount rate give no accretion for this period.");
 
             aro.ACCRETION_EXPENSE = (aro.ACCRETION_EXPENSE is decimal ae ? ae : 0m) + accretion;
             aro.PRESENT_VALUE = presentValue + accretion;

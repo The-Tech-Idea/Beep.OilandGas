@@ -47,26 +47,24 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
             _connectionName = connectionName;
         }
 
+        /// <remarks>
+        /// OILGAS-CATCH-01: a failure reading the hierarchy reaches the caller (the API's handler reports it with its
+        /// reference). Every read here had answered a failure as no hierarchy, no children or a partial path, which reads as
+        /// an organization with nothing in it.
+        /// </remarks>
         public async Task<AssetHierarchyNode?> GetAssetHierarchyAsync(string organizationId, string? rootAssetId = null, string? rootAssetType = null)
         {
-            try
-            {
-                // Get hierarchy configuration for organization
-                var config = await GetHierarchyConfigAsync(organizationId);
+            // Get hierarchy configuration for organization
+            var config = await GetHierarchyConfigAsync(organizationId);
 
-                if (config == null || !config.Any())
-                {
-                    // Use default PPDM hierarchy: FIELD -> POOL -> FACILITY -> WELL
-                    return await BuildDefaultHierarchyAsync(organizationId, rootAssetId, rootAssetType);
-                }
-
-                // Build hierarchy based on configuration
-                return await BuildConfiguredHierarchyAsync(organizationId, config, rootAssetId, rootAssetType);
-            }
-            catch (Exception)
+            if (config == null || !config.Any())
             {
-                return null;
+                // Use default PPDM hierarchy: FIELD -> POOL -> FACILITY -> WELL
+                return await BuildDefaultHierarchyAsync(organizationId, rootAssetId, rootAssetType);
             }
+
+            // Build hierarchy based on configuration
+            return await BuildConfiguredHierarchyAsync(organizationId, config, rootAssetId, rootAssetType);
         }
 
         public async Task<AssetHierarchyNode?> GetAssetHierarchyForUserAsync(string userId, string? organizationId = null, string? rootAssetId = null, string? rootAssetType = null)
@@ -82,58 +80,51 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
         {
             var children = new List<AssetHierarchyNode>();
 
-            try
+            switch (assetType.ToUpperInvariant())
             {
-                switch (assetType.ToUpperInvariant())
+                case "FIELD":
                 {
-                    case "FIELD":
+                    // Query POOLs that belong to this field
+                    var poolMeta = await _metadata.GetTableMetadataAsync("POOL");
+                    if (poolMeta != null)
                     {
-                        // Query POOLs that belong to this field
-                        var poolMeta = await _metadata.GetTableMetadataAsync("POOL");
-                        if (poolMeta != null)
+                        var poolRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, typeof(POOL), _connectionName, "POOL");
+                        var poolFilters = new List<AppFilter>
                         {
-                            var poolRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, typeof(POOL), _connectionName, "POOL");
-                            var poolFilters = new List<AppFilter>
+                            new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = assetId },
+                            new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                        };
+                        var pools = await poolRepo.GetAsync(poolFilters);
+                        foreach (var pool in pools?.OfType<POOL>() ?? Enumerable.Empty<POOL>())
+                        {
+                            children.Add(new AssetHierarchyNode
                             {
-                                new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = assetId },
-                                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-                            };
-                            var pools = await poolRepo.GetAsync(poolFilters);
-                            foreach (var pool in pools?.OfType<POOL>() ?? Enumerable.Empty<POOL>())
-                            {
-                                children.Add(new AssetHierarchyNode
-                                {
-                                    AssetId = pool.POOL_ID ?? string.Empty,
-                                    AssetType = "POOL",
-                                    AssetName = pool.POOL_NAME,
-                                    ParentAssetId = assetId,
-                                    ParentAssetType = "FIELD"
-                                });
-                            }
+                                AssetId = pool.POOL_ID ?? string.Empty,
+                                AssetType = "POOL",
+                                AssetName = pool.POOL_NAME,
+                                ParentAssetId = assetId,
+                                ParentAssetType = "FIELD"
+                            });
                         }
-                        break;
                     }
-                    case "POOL":
-                    {
-                        // WELLs don't have a POOL_ID FK in PPDM39; return wells linked via field (best effort using POOL.FIELD_ID as bridge)
-                        // PPDM connects wells and pools through stratigraphic units, not direct FKs.
-                        // Return empty — callers should query via the FIELD level instead.
-                        break;
-                    }
-                    case "FACILITY":
-                    {
-                        // WELLs don't have a FACILITY_ID FK in standard PPDM39.
-                        // WELL_FACILITY junction table would be required for a proper traversal.
-                        // Return empty — callers should query WELL_FACILITY if available.
-                        break;
-                    }
-                    default:
-                        break;
+                    break;
                 }
-            }
-            catch (Exception)
-            {
-                // Return whatever we collected so far
+                case "POOL":
+                {
+                    // WELLs don't have a POOL_ID FK in PPDM39; return wells linked via field (best effort using POOL.FIELD_ID as bridge)
+                    // PPDM connects wells and pools through stratigraphic units, not direct FKs.
+                    // Return empty — callers should query via the FIELD level instead.
+                    break;
+                }
+                case "FACILITY":
+                {
+                    // WELLs don't have a FACILITY_ID FK in standard PPDM39.
+                    // WELL_FACILITY junction table would be required for a proper traversal.
+                    // Return empty — callers should query WELL_FACILITY if available.
+                    break;
+                }
+                default:
+                    break;
             }
 
             return children;
@@ -143,96 +134,89 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
         {
             var path = new List<AssetHierarchyNode>();
 
-            try
+            // Add current node first
+            string? currentName = null;
+            string? parentId = null;
+            string? parentType = null;
+
+            switch (assetType.ToUpperInvariant())
             {
-                // Add current node first
-                string? currentName = null;
-                string? parentId = null;
-                string? parentType = null;
-
-                switch (assetType.ToUpperInvariant())
+                case "WELL":
                 {
-                    case "WELL":
+                    var wellMeta = await _metadata.GetTableMetadataAsync("WELL");
+                    if (wellMeta != null)
                     {
-                        var wellMeta = await _metadata.GetTableMetadataAsync("WELL");
-                        if (wellMeta != null)
+                        var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, typeof(WELL), _connectionName, "WELL");
+                        var well = await wellRepo.GetByIdAsync(_defaults.FormatIdForTable("WELL", assetId));
+                        if (well is WELL w)
                         {
-                            var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, typeof(WELL), _connectionName, "WELL");
-                            var well = await wellRepo.GetByIdAsync(_defaults.FormatIdForTable("WELL", assetId));
-                            if (well is WELL w)
-                            {
-                                currentName = w.WELL_NAME;
-                                parentId = w.ASSIGNED_FIELD;
-                                parentType = string.IsNullOrEmpty(parentId) ? null : "FIELD";
-                            }
+                            currentName = w.WELL_NAME;
+                            parentId = w.ASSIGNED_FIELD;
+                            parentType = string.IsNullOrEmpty(parentId) ? null : "FIELD";
                         }
-                        break;
                     }
-                    case "POOL":
-                    {
-                        var poolMeta = await _metadata.GetTableMetadataAsync("POOL");
-                        if (poolMeta != null)
-                        {
-                            var poolRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, typeof(POOL), _connectionName, "POOL");
-                            var pool = await poolRepo.GetByIdAsync(_defaults.FormatIdForTable("POOL", assetId));
-                            if (pool is POOL p)
-                            {
-                                currentName = p.POOL_NAME;
-                                parentId = p.FIELD_ID;
-                                parentType = string.IsNullOrEmpty(parentId) ? null : "FIELD";
-                            }
-                        }
-                        break;
-                    }
-                    case "FACILITY":
-                    {
-                        var facMeta = await _metadata.GetTableMetadataAsync("FACILITY");
-                        if (facMeta != null)
-                        {
-                            var facRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, typeof(FACILITY), _connectionName, "FACILITY");
-                            var facility = await facRepo.GetByIdAsync(_defaults.FormatIdForTable("FACILITY", assetId));
-                            if (facility is FACILITY f)
-                            {
-                                currentName = f.FACILITY_LONG_NAME ?? f.FACILITY_SHORT_NAME;
-                                parentId = f.PRIMARY_FIELD_ID;
-                                parentType = string.IsNullOrEmpty(parentId) ? null : "FIELD";
-                            }
-                        }
-                        break;
-                    }
-                    case "FIELD":
-                    {
-                        var fieldMeta = await _metadata.GetTableMetadataAsync("FIELD");
-                        if (fieldMeta != null)
-                        {
-                            var fieldRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, typeof(FIELD), _connectionName, "FIELD");
-                            var field = await fieldRepo.GetByIdAsync(_defaults.FormatIdForTable("FIELD", assetId));
-                            if (field is FIELD fld)
-                                currentName = fld.FIELD_NAME;
-                        }
-                        break;
-                    }
+                    break;
                 }
-
-                path.Insert(0, new AssetHierarchyNode
+                case "POOL":
                 {
-                    AssetId = assetId,
-                    AssetType = assetType,
-                    AssetName = currentName,
-                    ParentAssetId = parentId,
-                    ParentAssetType = parentType
-                });
-
-                // Walk up to parent FIELD if applicable
-                if (!string.IsNullOrEmpty(parentId) && !string.IsNullOrEmpty(parentType))
+                    var poolMeta = await _metadata.GetTableMetadataAsync("POOL");
+                    if (poolMeta != null)
+                    {
+                        var poolRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, typeof(POOL), _connectionName, "POOL");
+                        var pool = await poolRepo.GetByIdAsync(_defaults.FormatIdForTable("POOL", assetId));
+                        if (pool is POOL p)
+                        {
+                            currentName = p.POOL_NAME;
+                            parentId = p.FIELD_ID;
+                            parentType = string.IsNullOrEmpty(parentId) ? null : "FIELD";
+                        }
+                    }
+                    break;
+                }
+                case "FACILITY":
                 {
-                    var parentPath = await GetAssetPathAsync(parentId, parentType, organizationId);
-                    path.InsertRange(0, parentPath);
+                    var facMeta = await _metadata.GetTableMetadataAsync("FACILITY");
+                    if (facMeta != null)
+                    {
+                        var facRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, typeof(FACILITY), _connectionName, "FACILITY");
+                        var facility = await facRepo.GetByIdAsync(_defaults.FormatIdForTable("FACILITY", assetId));
+                        if (facility is FACILITY f)
+                        {
+                            currentName = f.FACILITY_LONG_NAME ?? f.FACILITY_SHORT_NAME;
+                            parentId = f.PRIMARY_FIELD_ID;
+                            parentType = string.IsNullOrEmpty(parentId) ? null : "FIELD";
+                        }
+                    }
+                    break;
+                }
+                case "FIELD":
+                {
+                    var fieldMeta = await _metadata.GetTableMetadataAsync("FIELD");
+                    if (fieldMeta != null)
+                    {
+                        var fieldRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, typeof(FIELD), _connectionName, "FIELD");
+                        var field = await fieldRepo.GetByIdAsync(_defaults.FormatIdForTable("FIELD", assetId));
+                        if (field is FIELD fld)
+                            currentName = fld.FIELD_NAME;
+                    }
+                    break;
                 }
             }
-            catch (Exception)
+
+            path.Insert(0, new AssetHierarchyNode
             {
-                // Return whatever we built
+                AssetId = assetId,
+                AssetType = assetType,
+                AssetName = currentName,
+                ParentAssetId = parentId,
+                ParentAssetType = parentType
+            });
+
+            // Walk up to parent FIELD if applicable
+            if (!string.IsNullOrEmpty(parentId) && !string.IsNullOrEmpty(parentType))
+            {
+                var parentPath = await GetAssetPathAsync(parentId, parentType, organizationId);
+                path.InsertRange(0, parentPath);
             }
 
             return path;
@@ -245,16 +229,13 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
                     || string.IsNullOrWhiteSpace(node.AssetType)))
                 return false;
 
-            // A partial check must never authorize the complete path.
+            // A partial check must never authorize the complete path. A check that cannot be made is not a "no": it
+            // reaches the caller (the API's handler reports it with its reference), which still refuses the request — it
+            // had been answered as the person having no access, and the failure was told to no one.
             foreach (var node in assetPath)
             {
-                try
-                {
-                    var accessCheck = await _accessControlService.CheckAssetAccessAsync(userId, node.AssetId, node.AssetType);
-                    if (accessCheck?.HasAccess != true) return false;
-                }
-                catch (OperationCanceledException) { throw; }
-                catch (Exception) { return false; }
+                var accessCheck = await _accessControlService.CheckAssetAccessAsync(userId, node.AssetId, node.AssetType);
+                if (accessCheck?.HasAccess != true) return false;
             }
             return true;
         }
@@ -290,165 +271,145 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
             return config.OrderBy(c => c.HierarchyLevel).ToList();
         }
 
+        /// <returns>True once every level is saved; a failure to save reaches the caller instead of a false nobody is told about.</returns>
         public async Task<bool> UpdateHierarchyConfigAsync(string organizationId, List<HierarchyConfig> config)
         {
-            try
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(object), _connectionName, "ORGANIZATION_HIERARCHY_CONFIG");
+
+            foreach (var item in config ?? Enumerable.Empty<HierarchyConfig>())
             {
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(object), _connectionName, "ORGANIZATION_HIERARCHY_CONFIG");
-
-                foreach (var item in config ?? Enumerable.Empty<HierarchyConfig>())
+                // Try to find existing record
+                var filters = new List<AppFilter>
                 {
-                    // Try to find existing record
-                    var filters = new List<AppFilter>
-                    {
-                        new AppFilter { FieldName = "ORGANIZATION_ID", Operator = "=", FilterValue = organizationId },
-                        new AppFilter { FieldName = "HIERARCHY_LEVEL", Operator = "=", FilterValue = item.HierarchyLevel.ToString() }
-                    };
-                    var existing = await repo.GetAsync(filters);
-                    var existingRecord = existing?.FirstOrDefault();
+                    new AppFilter { FieldName = "ORGANIZATION_ID", Operator = "=", FilterValue = organizationId },
+                    new AppFilter { FieldName = "HIERARCHY_LEVEL", Operator = "=", FilterValue = item.HierarchyLevel.ToString() }
+                };
+                var existing = await repo.GetAsync(filters);
+                var existingRecord = existing?.FirstOrDefault();
 
-                    if (existingRecord != null)
+                if (existingRecord != null)
+                {
+                    // Update existing
+                    if (existingRecord is IDictionary<string, object> dict)
                     {
-                        // Update existing
-                        if (existingRecord is IDictionary<string, object> dict)
-                        {
-                            dict["LEVEL_NAME"] = item.LevelName ?? string.Empty;
-                            dict["ASSET_TYPE"] = item.AssetType ?? string.Empty;
-                            dict["PARENT_LEVEL"] = item.ParentLevel.HasValue ? (object)item.ParentLevel.Value : DBNull.Value;
-                            dict["ACTIVE_IND"] = item.Active ? "Y" : "N";
-                            dict["ROW_CHANGED_DATE"] = DateTime.UtcNow;
-                            await repo.UpdateAsync(existingRecord, organizationId);
-                        }
-                        else
-                        {
-                            var levelNameProp = existingRecord.GetType().GetProperty("LEVEL_NAME");
-                            var assetTypeProp = existingRecord.GetType().GetProperty("ASSET_TYPE");
-                            var activeIndProp = existingRecord.GetType().GetProperty("ACTIVE_IND");
-                            if (levelNameProp != null) levelNameProp.SetValue(existingRecord, item.LevelName);
-                            if (assetTypeProp != null) assetTypeProp.SetValue(existingRecord, item.AssetType);
-                            if (activeIndProp != null) activeIndProp.SetValue(existingRecord, item.Active ? "Y" : "N");
-                            await repo.UpdateAsync(existingRecord, organizationId);
-                        }
+                        dict["LEVEL_NAME"] = item.LevelName ?? string.Empty;
+                        dict["ASSET_TYPE"] = item.AssetType ?? string.Empty;
+                        dict["PARENT_LEVEL"] = item.ParentLevel.HasValue ? (object)item.ParentLevel.Value : DBNull.Value;
+                        dict["ACTIVE_IND"] = item.Active ? "Y" : "N";
+                        dict["ROW_CHANGED_DATE"] = DateTime.UtcNow;
+                        await repo.UpdateAsync(existingRecord, organizationId);
                     }
                     else
                     {
-                        // Insert new record
-                        var insertObj = new
-                        {
-                            ORGANIZATION_ID = (object)organizationId,
-                            HIERARCHY_LEVEL = (object)item.HierarchyLevel,
-                            LEVEL_NAME = (object)(item.LevelName ?? string.Empty),
-                            ASSET_TYPE = (object)(item.AssetType ?? string.Empty),
-                            PARENT_LEVEL = item.ParentLevel.HasValue ? (object)item.ParentLevel.Value : (object)DBNull.Value,
-                            ACTIVE_IND = (object)(item.Active ? "Y" : "N"),
-                            ROW_CREATED_BY = (object)organizationId,
-                            ROW_CREATED_DATE = (object)DateTime.UtcNow,
-                            ROW_CHANGED_BY = (object)organizationId,
-                            ROW_CHANGED_DATE = (object)DateTime.UtcNow
-                        };
-                        await repo.InsertAsync(insertObj, organizationId);
+                        var levelNameProp = existingRecord.GetType().GetProperty("LEVEL_NAME");
+                        var assetTypeProp = existingRecord.GetType().GetProperty("ASSET_TYPE");
+                        var activeIndProp = existingRecord.GetType().GetProperty("ACTIVE_IND");
+                        if (levelNameProp != null) levelNameProp.SetValue(existingRecord, item.LevelName);
+                        if (assetTypeProp != null) assetTypeProp.SetValue(existingRecord, item.AssetType);
+                        if (activeIndProp != null) activeIndProp.SetValue(existingRecord, item.Active ? "Y" : "N");
+                        await repo.UpdateAsync(existingRecord, organizationId);
                     }
                 }
+                else
+                {
+                    // Insert new record
+                    var insertObj = new
+                    {
+                        ORGANIZATION_ID = (object)organizationId,
+                        HIERARCHY_LEVEL = (object)item.HierarchyLevel,
+                        LEVEL_NAME = (object)(item.LevelName ?? string.Empty),
+                        ASSET_TYPE = (object)(item.AssetType ?? string.Empty),
+                        PARENT_LEVEL = item.ParentLevel.HasValue ? (object)item.ParentLevel.Value : (object)DBNull.Value,
+                        ACTIVE_IND = (object)(item.Active ? "Y" : "N"),
+                        ROW_CREATED_BY = (object)organizationId,
+                        ROW_CREATED_DATE = (object)DateTime.UtcNow,
+                        ROW_CHANGED_BY = (object)organizationId,
+                        ROW_CHANGED_DATE = (object)DateTime.UtcNow
+                    };
+                    await repo.InsertAsync(insertObj, organizationId);
+                }
+            }
 
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return true;
         }
 
         private async Task<AssetHierarchyNode?> BuildDefaultHierarchyAsync(string organizationId, string? rootAssetId, string? rootAssetType)
         {
-            try
+            var fieldMeta = await _metadata.GetTableMetadataAsync("FIELD");
+            if (fieldMeta == null) return null;
+
+            var fieldRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, typeof(FIELD), _connectionName, "FIELD");
+
+            if (!string.IsNullOrEmpty(rootAssetId) && !string.IsNullOrEmpty(rootAssetType))
             {
-                var fieldMeta = await _metadata.GetTableMetadataAsync("FIELD");
-                if (fieldMeta == null) return null;
-
-                var fieldRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, typeof(FIELD), _connectionName, "FIELD");
-
-                if (!string.IsNullOrEmpty(rootAssetId) && !string.IsNullOrEmpty(rootAssetType))
+                // Start from a specific root asset
+                var rootNode = new AssetHierarchyNode
                 {
-                    // Start from a specific root asset
-                    var rootNode = new AssetHierarchyNode
-                    {
-                        AssetId = rootAssetId,
-                        AssetType = rootAssetType.ToUpperInvariant()
-                    };
-                    rootNode.Children = await GetAssetChildrenAsync(rootAssetId, rootAssetType.ToUpperInvariant(), organizationId);
-                    return rootNode;
-                }
-
-                // Build from all fields — return a synthetic root containing all fields as children
-                var fieldFilters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    AssetId = rootAssetId,
+                    AssetType = rootAssetType.ToUpperInvariant()
                 };
-                var fields = await fieldRepo.GetAsync(fieldFilters);
-
-                var rootHierarchy = new AssetHierarchyNode
-                {
-                    AssetId = organizationId,
-                    AssetType = "ORGANIZATION",
-                    AssetName = organizationId
-                };
-
-                foreach (var field in fields?.OfType<FIELD>() ?? Enumerable.Empty<FIELD>())
-                {
-                    var fieldId = field.FIELD_ID ?? string.Empty;
-                    if (string.IsNullOrEmpty(fieldId)) continue;
-
-                    var fieldNode = new AssetHierarchyNode
-                    {
-                        AssetId = fieldId,
-                        AssetType = "FIELD",
-                        AssetName = field.FIELD_NAME,
-                        ParentAssetId = organizationId,
-                        ParentAssetType = "ORGANIZATION"
-                    };
-                    fieldNode.Children = await GetAssetChildrenAsync(fieldId, "FIELD", organizationId);
-                    rootHierarchy.Children.Add(fieldNode);
-                }
-
-                return rootHierarchy;
+                rootNode.Children = await GetAssetChildrenAsync(rootAssetId, rootAssetType.ToUpperInvariant(), organizationId);
+                return rootNode;
             }
-            catch (Exception)
+
+            // Build from all fields — return a synthetic root containing all fields as children
+            var fieldFilters = new List<AppFilter>
             {
-                return null;
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+            var fields = await fieldRepo.GetAsync(fieldFilters);
+
+            var rootHierarchy = new AssetHierarchyNode
+            {
+                AssetId = organizationId,
+                AssetType = "ORGANIZATION",
+                AssetName = organizationId
+            };
+
+            foreach (var field in fields?.OfType<FIELD>() ?? Enumerable.Empty<FIELD>())
+            {
+                var fieldId = field.FIELD_ID ?? string.Empty;
+                if (string.IsNullOrEmpty(fieldId)) continue;
+
+                var fieldNode = new AssetHierarchyNode
+                {
+                    AssetId = fieldId,
+                    AssetType = "FIELD",
+                    AssetName = field.FIELD_NAME,
+                    ParentAssetId = organizationId,
+                    ParentAssetType = "ORGANIZATION"
+                };
+                fieldNode.Children = await GetAssetChildrenAsync(fieldId, "FIELD", organizationId);
+                rootHierarchy.Children.Add(fieldNode);
             }
+
+            return rootHierarchy;
         }
 
         private async Task<AssetHierarchyNode?> BuildConfiguredHierarchyAsync(string organizationId, List<HierarchyConfig> config, string? rootAssetId, string? rootAssetType)
         {
-            try
+            // Use config to determine hierarchy root level
+            var rootLevel = config.OrderBy(c => c.HierarchyLevel).FirstOrDefault();
+            if (rootLevel == null) return null;
+
+            var rootType = rootLevel.AssetType ?? "FIELD";
+
+            if (!string.IsNullOrEmpty(rootAssetId) && !string.IsNullOrEmpty(rootAssetType))
             {
-                // Use config to determine hierarchy root level
-                var rootLevel = config.OrderBy(c => c.HierarchyLevel).FirstOrDefault();
-                if (rootLevel == null) return null;
-
-                var rootType = rootLevel.AssetType ?? "FIELD";
-
-                if (!string.IsNullOrEmpty(rootAssetId) && !string.IsNullOrEmpty(rootAssetType))
+                var rootNode = new AssetHierarchyNode
                 {
-                    var rootNode = new AssetHierarchyNode
-                    {
-                        AssetId = rootAssetId,
-                        AssetType = rootAssetType.ToUpperInvariant(),
-                        AssetName = rootAssetId
-                    };
-                    rootNode.Children = await GetAssetChildrenAsync(rootAssetId, rootAssetType.ToUpperInvariant(), organizationId);
-                    return rootNode;
-                }
+                    AssetId = rootAssetId,
+                    AssetType = rootAssetType.ToUpperInvariant(),
+                    AssetName = rootAssetId
+                };
+                rootNode.Children = await GetAssetChildrenAsync(rootAssetId, rootAssetType.ToUpperInvariant(), organizationId);
+                return rootNode;
+            }
 
-                // Fall back to default hierarchy using configured root type
-                return await BuildDefaultHierarchyAsync(organizationId, rootAssetId, rootType);
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+            // Fall back to default hierarchy using configured root type
+            return await BuildDefaultHierarchyAsync(organizationId, rootAssetId, rootType);
         }
 
         private async Task<AssetHierarchyNode?> FilterHierarchyByUserAccessAsync(AssetHierarchyNode node, string userId)

@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Core.Refusals;
+using TheTechIdeaWeb.Diagnostics;
 using Beep.OilandGas.PPDM39.Core;
 ﻿using System;
 using System.Collections;
@@ -44,6 +46,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         private readonly IPPDMMetadataRepository _metadata;
         private readonly PPDMMappingService _mappingService;
         private readonly string _connectionName;
+        private readonly IFailureReporter _failures;
         private readonly ILogger<PPDMDevelopmentService>? _logger;
 
         public PPDMDevelopmentService(
@@ -52,6 +55,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             PPDMMappingService mappingService,
+            IFailureReporter failures,
             string connectionName = "PPDM39",
             ILogger<PPDMDevelopmentService>? logger = null)
         {
@@ -61,6 +65,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _mappingService = mappingService ?? throw new ArgumentNullException(nameof(mappingService));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
             _logger = logger;
         }
 
@@ -145,7 +150,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 var existingPool = await GetPoolForFieldAsync(fieldId, poolId);
                 if (existingPool == null)
                 {
-                    throw new InvalidOperationException($"Pool {poolId} not found or does not belong to field {fieldId}");
+                    throw RefusalException.NotFound($"Pool {poolId} was not found in field {fieldId}.");
                 }
 
                 var metadata = await _metadata.GetTableMetadataAsync("POOL");
@@ -331,7 +336,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
 
                 if (!wells.Any())
                 {
-                    throw new InvalidOperationException($"Well {wellId} not found or does not belong to field {fieldId}");
+                    throw RefusalException.NotFound($"Well {wellId} was not found in field {fieldId}.");
                 }
 
                 // Wellbores are WELL table records with specific well_level_type, linked via WELL_XREF
@@ -538,7 +543,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 var existingFacility = await GetFacilityForFieldAsync(fieldId, facilityId);
                 if (existingFacility == null)
                 {
-                    throw new InvalidOperationException($"Facility {facilityId} not found or does not belong to field {fieldId}");
+                    throw RefusalException.NotFound($"Facility {facilityId} was not found in field {fieldId}.");
                 }
 
                 var metadata = await _metadata.GetTableMetadataAsync("FACILITY");
@@ -867,7 +872,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 var wellsList = wells?.ToList() ?? new List<object>();
                 if (wellsList.Count == 0)
                 {
-                    throw new InvalidOperationException($"Well {wellId} not found in field {fieldId}");
+                    throw RefusalException.NotFound($"Well {wellId} was not found in field {fieldId}.");
                 }
 
                 var well = wellsList[0] as WELL;
@@ -986,10 +991,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 await equipmentRepo.InsertAsync(equipmentRecord, userId);
                 _logger?.LogInformation("Stored gas lift potential results for well {WellId}", wellId);
             }
-            catch (Exception ex)
+            // The analysis is still the caller's answer when it cannot be saved: the failure is reported so the missing
+            // record is seen. Cancellation is the caller's.
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger?.LogError(ex, "Error storing gas lift potential results for well {WellId}", wellId);
-                // Don't throw - storage failure shouldn't fail the operation
+                _failures.ReportHandled(ex, $"saving the gas lift potential analysis for well {wellId} in WELL_EQUIPMENT",
+                    "the gas lift potential analysis is returned to the caller but is not saved", FailureSeverity.Degraded);
             }
         }
 
@@ -1032,10 +1039,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
 
                 _logger?.LogInformation("Stored gas lift valve design for well {WellId} ({Count} valves)", wellId, result.Valves.Count);
             }
-            catch (Exception ex)
+            // The analysis is still the caller's answer when it cannot be saved: the failure is reported so the missing
+            // record is seen. Cancellation is the caller's.
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger?.LogError(ex, "Error storing gas lift valve design for well {WellId}", wellId);
-                // Don't throw - storage failure shouldn't fail the operation
+                _failures.ReportHandled(ex, $"saving the gas lift valve design for well {wellId} in WELL_EQUIPMENT",
+                    "the valve design is returned to the caller but is not saved completely", FailureSeverity.Degraded);
             }
         }
 
@@ -1073,10 +1082,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 await equipmentRepo.InsertAsync(equipmentRecord, userId);
                 _logger?.LogInformation("Stored gas lift valve spacing for well {WellId}", wellId);
             }
-            catch (Exception ex)
+            // The analysis is still the caller's answer when it cannot be saved: the failure is reported so the missing
+            // record is seen. Cancellation is the caller's.
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger?.LogError(ex, "Error storing gas lift valve spacing for well {WellId}", wellId);
-                // Don't throw - storage failure shouldn't fail the operation
+                _failures.ReportHandled(ex, $"saving the gas lift valve spacing for well {wellId} in WELL_EQUIPMENT",
+                    "the valve spacing is returned to the caller but is not saved", FailureSeverity.Degraded);
             }
         }
 
@@ -1247,7 +1258,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 var pipelinesList = pipelines?.ToList() ?? new List<object>();
                 if (pipelinesList.Count == 0)
                 {
-                    throw new InvalidOperationException($"Pipeline {pipelineId} not found in field {fieldId}");
+                    throw RefusalException.NotFound($"Pipeline {pipelineId} was not found in field {fieldId}.");
                 }
 
                 var pipeline = pipelinesList[0] as PIPELINE;
@@ -1342,10 +1353,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 await pipelineRepo.UpdateAsync(updateData, userId);
                 _logger?.LogInformation("Stored pipeline capacity results for pipeline {PipelineId}", pipelineId);
             }
-            catch (Exception ex)
+            // The analysis is still the caller's answer when it cannot be saved: the failure is reported so the missing
+            // record is seen. Cancellation is the caller's.
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger?.LogError(ex, "Error storing pipeline capacity results for pipeline {PipelineId}", pipelineId);
-                // Don't throw - storage failure shouldn't fail the operation
+                _failures.ReportHandled(ex, $"saving the capacity analysis on pipeline {pipelineId}",
+                    "the capacity analysis is returned to the caller but is not saved on the pipeline", FailureSeverity.Degraded);
             }
         }
 
@@ -1383,10 +1396,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 await pipelineRepo.UpdateAsync(updateData, userId);
                 _logger?.LogInformation("Stored pipeline flow results for pipeline {PipelineId}", pipelineId);
             }
-            catch (Exception ex)
+            // The analysis is still the caller's answer when it cannot be saved: the failure is reported so the missing
+            // record is seen. Cancellation is the caller's.
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger?.LogError(ex, "Error storing pipeline flow results for pipeline {PipelineId}", pipelineId);
-                // Don't throw - storage failure shouldn't fail the operation
+                _failures.ReportHandled(ex, $"saving the flow analysis on pipeline {pipelineId}",
+                    "the flow analysis is returned to the caller but is not saved on the pipeline", FailureSeverity.Degraded);
             }
         }
 
@@ -1611,10 +1626,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 await equipmentRepo.InsertAsync(equipmentRecord, userId);
                 _logger?.LogInformation("Stored compressor power results for facility {FacilityId}", facilityId);
             }
-            catch (Exception ex)
+            // The analysis is still the caller's answer when it cannot be saved: the failure is reported so the missing
+            // record is seen. Cancellation is the caller's.
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger?.LogError(ex, "Error storing compressor power results for facility {FacilityId}", facilityId);
-                // Don't throw - storage failure shouldn't fail the operation
+                _failures.ReportHandled(ex, $"saving the compressor power analysis for facility {facilityId} in FACILITY_EQUIPMENT",
+                    "the compressor power analysis is returned to the caller but is not saved", FailureSeverity.Degraded);
             }
         }
 
@@ -1653,10 +1670,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 await equipmentRepo.InsertAsync(equipmentRecord, userId);
                 _logger?.LogInformation("Stored compressor pressure results for facility {FacilityId}", facilityId);
             }
-            catch (Exception ex)
+            // The analysis is still the caller's answer when it cannot be saved: the failure is reported so the missing
+            // record is seen. Cancellation is the caller's.
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger?.LogError(ex, "Error storing compressor pressure results for facility {FacilityId}", facilityId);
-                // Don't throw - storage failure shouldn't fail the operation
+                _failures.ReportHandled(ex, $"saving the compressor pressure analysis for facility {facilityId} in FACILITY_EQUIPMENT",
+                    "the compressor pressure analysis is returned to the caller but is not saved", FailureSeverity.Degraded);
             }
         }
 

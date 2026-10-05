@@ -47,22 +47,14 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-                
-                var result = await _reportingService.GenerateOperationalReportAsync(
-                    request,
-                    userId,
-                    connectionName);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating operational report");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            
+            var result = await _reportingService.GenerateOperationalReportAsync(
+                request,
+                userId,
+                connectionName);
+            return Ok(result);
         }
 
         /// <summary>Generate financial report through reporting service.</summary>
@@ -72,22 +64,14 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var result = await _reportingService.GenerateFinancialReportAsync(
-                    request,
-                    userId,
-                    connectionName);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating financial report");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _reportingService.GenerateFinancialReportAsync(
+                request,
+                userId,
+                connectionName);
+            return Ok(result);
         }
 
         /// <summary>Generate royalty statement through reporting service.</summary>
@@ -97,22 +81,14 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var result = await _reportingService.GenerateRoyaltyStatementAsync(
-                    request,
-                    userId,
-                    connectionName);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating royalty statement");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _reportingService.GenerateRoyaltyStatementAsync(
+                request,
+                userId,
+                connectionName);
+            return Ok(result);
         }
 
         /// <summary>Generate JIB statement through reporting service.</summary>
@@ -122,22 +98,14 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var result = await _reportingService.GenerateJIBStatementAsync(
-                    request,
-                    userId,
-                    connectionName);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating JIB statement");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _reportingService.GenerateJIBStatementAsync(
+                request,
+                userId,
+                connectionName);
+            return Ok(result);
         }
 
         /// <summary>Schedule report through reporting service.</summary>
@@ -147,38 +115,22 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var schedule = await _reportingService.ScheduleReportAsync(
-                    request,
-                    userId,
-                    connectionName);
-                return Ok(schedule);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error scheduling report");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var schedule = await _reportingService.ScheduleReportAsync(
+                request,
+                userId,
+                connectionName);
+            return Ok(schedule);
         }
 
         /// <summary>Get report schedules through reporting service.</summary>
         [HttpGet("schedule")]
         public async Task<ActionResult<List<ReportSchedule>>> GetSchedules([FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                var schedules = await _reportingService.GetScheduledReportsAsync(connectionName);
-                return Ok(schedules);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching report schedules");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var schedules = await _reportingService.GetScheduledReportsAsync(connectionName);
+            return Ok(schedules);
         }
 
         /// <summary>Distribute report through reporting service.</summary>
@@ -189,23 +141,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var distribution = await _reportingService.DistributeReportAsync(
-                    reportId,
-                    request,
-                    userId,
-                    connectionName);
-                return Ok(distribution);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error distributing report {ReportId}", reportId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var distribution = await _reportingService.DistributeReportAsync(
+                reportId,
+                request,
+                userId,
+                connectionName);
+            return Ok(distribution);
         }
 
         /// <summary>Get report history through reporting service.</summary>
@@ -216,16 +160,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromQuery] DateTime? endDate = null,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                var history = await _reportingService.GetReportHistoryAsync(reportType, startDate, endDate, connectionName);
-                return Ok(history);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching report history");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var history = await _reportingService.GetReportHistoryAsync(reportType, startDate, endDate, connectionName);
+            return Ok(history);
         }
 
         /// <summary>
@@ -236,33 +172,25 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             [FromBody] GenerateLeaseReportRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var lease = _service.LeaseManager.GetLease(request.LEASE_ID);
-                if (lease == null)
-                    return NotFound(new { error = $"Lease {request.LEASE_ID} not found." });
+            var lease = _service.LeaseManager.GetLease(request.LEASE_ID);
+            if (lease == null)
+                return NotFound(new { error = $"Lease {request.LEASE_ID} not found." });
 
-                var runTickets = await _tickets.ListAsync(request.StartDate, request.EndDate, request.LEASE_ID);
+            var runTickets = await _tickets.ListAsync(request.StartDate, request.EndDate, request.LEASE_ID);
 
-                var salesTransactions = new List<SalesTransaction>();
+            var salesTransactions = new List<SalesTransaction>();
 
-                var report = _service.ReportManager.GenerateLeaseReport(
-                    request.LEASE_ID,
-                    request.StartDate,
-                    request.EndDate,
-                    runTickets,
-                    salesTransactions);
+            var report = _service.ReportManager.GenerateLeaseReport(
+                request.LEASE_ID,
+                request.StartDate,
+                request.EndDate,
+                runTickets,
+                salesTransactions);
 
-                return Ok(MapToLeaseReportDto(report));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating lease report");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(MapToLeaseReportDto(report));
         }
 
         private OPERATIONAL_REPORT MapToOperationalReportDto(OPERATIONAL_REPORT report)

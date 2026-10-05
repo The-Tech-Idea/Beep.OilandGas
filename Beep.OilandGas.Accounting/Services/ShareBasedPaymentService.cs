@@ -56,7 +56,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(awardName))
                 throw new ArgumentNullException(nameof(awardName));
             if (amount <= 0m)
-                throw new InvalidOperationException("Share-based expense must be positive");
+                throw RefusalException.Invalid("Share-based expense must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 

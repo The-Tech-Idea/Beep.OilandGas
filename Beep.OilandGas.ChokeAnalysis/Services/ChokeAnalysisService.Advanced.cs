@@ -8,6 +8,7 @@ using Beep.OilandGas.ChokeAnalysis.Exceptions;
 using Beep.OilandGas.Models.Data.ChokeAnalysis;
 using Beep.OilandGas.Models.Data.Calculations;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.ChokeAnalysis.Services
 {
@@ -27,7 +28,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             decimal temperature, decimal gasSpecificGravity, string trimMaterial = "WC")
         {
             if (desiredFlowRate <= 0 || upstreamPressure <= downstreamPressure)
-                throw new ArgumentException("Invalid bean choke parameters");
+                throw RefusalException.Invalid("The flow rate must be greater than zero and the upstream pressure above the downstream pressure.");
 
             _logger?.LogInformation("Designing bean choke: Flow={Flow} Mscf/d, Î”P={Delta} psi",
                 desiredFlowRate, upstreamPressure - downstreamPressure);
@@ -76,7 +77,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error designing bean choke");
-                throw new ChokeException("Bean choke design failed", ex);
+                throw;
             }
         }
 
@@ -89,7 +90,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             decimal gasFlowRate, decimal temperature, decimal gasSpecificGravity)
         {
             if (throatDiameter <= 0 || gasFlowRate <= 0)
-                throw new ArgumentException("Invalid venturi parameters");
+                throw RefusalException.Invalid("The throat diameter and the gas flow rate must be greater than zero.");
 
             _logger?.LogInformation("Analyzing venturi: Throat={T} in, Recovery={R} in", throatDiameter, recoveryLength);
 
@@ -129,7 +130,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error analyzing venturi choke");
-                throw new ChokeException("Venturi choke analysis failed", ex);
+                throw;
             }
         }
 
@@ -146,7 +147,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             decimal chokeDiameter, decimal temperature)
         {
             if (chokeDiameter <= 0)
-                throw new ArgumentException("Invalid multiphase parameters");
+                throw RefusalException.Invalid("The choke diameter must be greater than zero.");
 
             _logger?.LogInformation("Multiphase analysis: Oil={O}, Water={W}, Gas={G}", 
                 oilFlowRate, waterFlowRate, gasFlowRate);
@@ -202,7 +203,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error analyzing multiphase flow");
-                throw new ChokeException("Multiphase analysis failed", ex);
+                throw;
             }
         }
 
@@ -217,7 +218,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             decimal? currentWearDepth = null)
         {
             if (sandProductionRate < 0 || chokeDiameter <= 0)
-                throw new ArgumentException("Invalid erosion parameters");
+                throw RefusalException.Invalid("The sand production rate cannot be negative and the choke diameter must be greater than zero.");
 
             _logger?.LogInformation("Predicting erosion: Sand={S} lb/d, Size={Size} Î¼m, Material={M}",
                 sandProductionRate, sandParticleSize, chokeMaterial);
@@ -271,7 +272,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error predicting erosion");
-                throw new ChokeException("Erosion prediction failed", ex);
+                throw;
             }
         }
 
@@ -285,7 +286,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             decimal currentProduction, decimal gasFlowRate, decimal temperature, decimal gasSpecificGravity)
         {
             if (reservoirPressure <= 0 || currentChokeDiameter <= 0)
-                throw new ArgumentException("Invalid optimization parameters");
+                throw RefusalException.Invalid("The reservoir pressure and the current choke diameter must be greater than zero.");
 
             _logger?.LogInformation("Optimizing back-pressure: Reservoir={Res} psi, Current={Prod} STB/d",
                 reservoirPressure, currentProduction);
@@ -340,7 +341,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error optimizing back-pressure");
-                throw new ChokeException("Optimization failed", ex);
+                throw;
             }
         }
 
@@ -354,7 +355,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             decimal liftSystemPower, decimal requiredHeadOrPressure, decimal gasFlowRate)
         {
             if (currentChokeSize <= 0 || liftSystemPower <= 0)
-                throw new ArgumentException("Invalid lift system parameters");
+                throw RefusalException.Invalid("The current choke size and the lift system power must be greater than zero.");
 
             _logger?.LogInformation("Analyzing {Type} interaction: Choke={Choke} in", liftSystemType, currentChokeSize);
 
@@ -401,7 +402,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error analyzing lift system");
-                throw new ChokeException("Lift system analysis failed", ex);
+                throw;
             }
         }
 
@@ -416,7 +417,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             decimal currentProduction, decimal tubeID, decimal wellDepth)
         {
             if (reservoirPressure <= 0 || chokeDiameter <= 0)
-                throw new ArgumentException("Invalid nodal parameters");
+                throw RefusalException.Invalid("The reservoir pressure and the choke diameter must be greater than zero.");
 
             _logger?.LogInformation("Nodal analysis: {Well}, PR={PR} psi", wellUWI, reservoirPressure);
 
@@ -468,7 +469,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error performing nodal analysis");
-                throw new ChokeException("Nodal analysis failed", ex);
+                throw;
             }
         }
 
@@ -482,7 +483,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             decimal chokeDiameter, decimal gasFlowRate, decimal temperature)
         {
             if (chokeDiameter <= 0 || gasFlowRate <= 0)
-                throw new ArgumentException("Invalid sand assessment parameters");
+                throw RefusalException.Invalid("The choke diameter and the gas flow rate must be greater than zero.");
 
             _logger?.LogInformation("Sand cut risk: {Well}, Sand={S} lb/d, Size={Size} Î¼m",
                 wellUWI, estimatedSandRate, sandGrainSize);
@@ -531,7 +532,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error assessing sand risk");
-                throw new ChokeException("Sand assessment failed", ex);
+                throw;
             }
         }
 
@@ -545,7 +546,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             decimal downstreamPressure, decimal chokeDiameter, decimal tempMin = 400m, decimal tempMax = 600m)
         {
             if (chokeDiameter <= 0 || baselineFlowRate <= 0)
-                throw new ArgumentException("Invalid temperature parameters");
+                throw RefusalException.Invalid("The choke diameter and the baseline flow rate must be greater than zero.");
 
             _logger?.LogInformation("Temperature analysis: Base={Base}Â°R, Flow={Flow} Mscf/d",
                 baselineTemperature, baselineFlowRate);
@@ -610,7 +611,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error analyzing temperature effects");
-                throw new ChokeException("Temperature analysis failed", ex);
+                throw;
             }
         }
 

@@ -314,15 +314,11 @@ namespace Beep.OilandGas.Drawing.Visualizations.Reservoir
 
         private SKColor ResolveWellColor(ReservoirWellMapPoint well)
         {
-            if (!string.IsNullOrWhiteSpace(well?.ColorCode) && well.ColorCode.StartsWith("#", StringComparison.Ordinal))
+            // A colour code that is not a colour falls back to the configured well colour (asked, not caught).
+            if (!string.IsNullOrWhiteSpace(well?.ColorCode) && well.ColorCode.StartsWith("#", StringComparison.Ordinal) &&
+                SKColor.TryParse(well.ColorCode, out var parsedColor))
             {
-                try
-                {
-                    return SKColor.Parse(well.ColorCode);
-                }
-                catch
-                {
-                }
+                return parsedColor;
             }
 
             return configuration.WellColor;

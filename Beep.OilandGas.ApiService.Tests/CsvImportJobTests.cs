@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers.PPDM39;
 using Beep.OilandGas.ApiService.Services;
+using Beep.OilandGas.ApiService.Tests.Infrastructure;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -31,7 +32,8 @@ public class CsvImportJobTests
         var hub = new Mock<Microsoft.AspNetCore.SignalR.IHubContext<ProgressHub>> { DefaultValue = DefaultValue.Mock };
         hub.Setup(h => h.Clients.Group(It.IsAny<string>())).Returns(client.Object);
         var queue = new Mock<IBackgroundOperationQueue>();
-        using var service = new ProgressTrackingService(hub.Object, NullLogger<ProgressTrackingService>.Instance, queue.Object);
+        using var service = new ProgressTrackingService(hub.Object, NullLogger<ProgressTrackingService>.Instance,
+            new RecordingFailureReporter(), queue.Object);
         var id = service.StartOperation("ImportCsv", "queued");
         await service.StartAsync(default);
         await sent.Task.WaitAsync(TimeSpan.FromSeconds(10));
@@ -94,7 +96,7 @@ public class CsvImportJobTests
     private static PPDM39ImportExportController Controller(IBackgroundOperationQueue queue, IProgressTrackingService progress, bool actor = true) => new(
         Mock.Of<IDMEEditor>(), Mock.Of<ICommonColumnHandler>(), Mock.Of<IPPDM39DefaultsRepository>(),
         Mock.Of<IPPDMMetadataRepository>(), NullLogger<PPDM39ImportExportController>.Instance,
-        NullLoggerFactory.Instance, progress, queue)
+        NullLoggerFactory.Instance, progress, queue, new RecordingFailureReporter())
     {
         ControllerContext = new() { HttpContext = new DefaultHttpContext
         { User = new ClaimsPrincipal(new ClaimsIdentity(actor ? new[] { new Claim("party_id", "real-actor") } : Array.Empty<Claim>(), "test")) } }
@@ -133,7 +135,7 @@ public class CsvImportJobTests
         var queue = new Mock<IBackgroundOperationQueue>(MockBehavior.Strict);
         var file = new Mock<IFormFile>();
         file.SetupGet(f => f.Length).Returns(1);
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+        await Refusals.ForbiddenAsync(() =>
             Controller(queue.Object, Mock.Of<IProgressTrackingService>(), actor: false).ImportCsv("WELL", file.Object));
         queue.VerifyNoOtherCalls();
     }

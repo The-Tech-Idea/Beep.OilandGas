@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Repository;
 using Microsoft.EntityFrameworkCore;
 using TheTechIdea.Beep.Editor;
@@ -15,16 +16,16 @@ public sealed class ModuleConnectionResolver(RepositoryDbContext repository, IDM
 
     public async Task<string> GetMigrationBindingFingerprintAsync(IReadOnlyList<string> moduleIds, string connectionName)
     {
-        if (moduleIds.Count == 0) throw new InvalidOperationException("Select at least one module.");
+        if (moduleIds.Count == 0) throw RefusalException.Invalid("Select at least one module.");
         var ids = moduleIds.Select(x => x.ToUpperInvariant()).Distinct().OrderBy(x => x, StringComparer.Ordinal).ToArray();
         var bindings = await repository.ModuleDatabases.AsNoTracking().Where(x => ids.Contains(x.ModuleId)).ToListAsync();
         if (ids.Contains("SECURITY") || bindings.Count != ids.Length || bindings.Any(x =>
             string.IsNullOrWhiteSpace(x.ConcurrencyStamp) || !string.Equals(x.ConnectionName, connectionName, StringComparison.OrdinalIgnoreCase)))
-            throw new InvalidOperationException("The selected modules must be bound to the migration connection.");
+            throw RefusalException.Conflict("The selected modules must be bound to the migration connection.");
         var connections = editor.ConfigEditor.DataConnections.Where(x =>
             string.Equals(x.ConnectionName, connectionName, StringComparison.OrdinalIgnoreCase)).ToList();
         if (connections.Count != 1)
-            throw new InvalidOperationException("The module connection is missing or ambiguous.");
+            throw RefusalException.Conflict("The module connection is missing or ambiguous.");
         var connection = connections[0];
         var snapshot = bindings.OrderBy(x => x.ModuleId, StringComparer.Ordinal)
             .Select(x => new { x.ModuleId, x.ConnectionName, x.ConcurrencyStamp });
@@ -34,7 +35,25 @@ public sealed class ModuleConnectionResolver(RepositoryDbContext repository, IDM
             System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new { Bindings = snapshot, Target = target })));
     }
 
+    /// <summary>
+    /// The connection a module's data lives on. A module with no binding yet, or whose bound connection is missing or
+    /// ambiguous, is refused (409): the administrator binds it first.
+    /// </summary>
     public async Task<string> ResolveAsync(string moduleId, CancellationToken cancellationToken = default)
+    {
+        var (connection, refusal) = await LookupAsync(moduleId, cancellationToken);
+        return connection ?? throw RefusalException.Conflict(refusal!);
+    }
+
+    /// <summary>
+    /// The connection a module's data lives on, or null while it has none to use — what a background worker asks on each
+    /// run, where a module not yet bound means "wait", not a failure (OILGAS-CATCH-01: it asked <see cref="ResolveAsync"/>
+    /// and caught its exception).
+    /// </summary>
+    public async Task<string?> FindAsync(string moduleId, CancellationToken cancellationToken = default) =>
+        (await LookupAsync(moduleId, cancellationToken)).Connection;
+
+    private async Task<(string? Connection, string? Refusal)> LookupAsync(string moduleId, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(moduleId);
         var id = moduleId.ToUpperInvariant();
@@ -42,11 +61,11 @@ public sealed class ModuleConnectionResolver(RepositoryDbContext repository, IDM
         var binding = await repository.ModuleDatabases.AsNoTracking()
             .SingleOrDefaultAsync(x => x.ModuleId == id, cancellationToken);
         if (binding is null || string.IsNullOrWhiteSpace(binding.ConnectionName))
-            throw new InvalidOperationException($"Configure a database binding for module {id} before accessing its data.");
+            return (null, $"Configure a database binding for module {id} before accessing its data.");
         var connections = editor.ConfigEditor.DataConnections.Where(x =>
             string.Equals(x.ConnectionName, binding.ConnectionName, StringComparison.OrdinalIgnoreCase)).ToList();
         if (connections.Count != 1)
-            throw new InvalidOperationException($"The database connection for module {id} is missing or ambiguous.");
-        return connections[0].ConnectionName;
+            return (null, $"The database connection for module {id} is missing or ambiguous.");
+        return (connections[0].ConnectionName, null);
     }
 }

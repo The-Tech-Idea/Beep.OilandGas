@@ -25,7 +25,7 @@ public class WorkflowBackgroundStartupTests
         readiness.Setup(x => x.CheckAsync(It.IsAny<CancellationToken>())).ReturnsAsync(status);
         var editor = new Mock<IDMEEditor>(MockBehavior.Strict);
         var gate = new WorkflowBackgroundConnection(readiness.Object, null!, editor.Object,
-            Array.Empty<IModuleSetup>(), NullLogger<WorkflowBackgroundConnection>.Instance);
+            Array.Empty<IModuleSetup>(), new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         Assert.Null(await gate.ResolveAsync(default));
         editor.VerifyNoOtherCalls();
     }

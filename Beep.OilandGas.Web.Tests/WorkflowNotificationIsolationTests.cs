@@ -294,7 +294,8 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
         var tokens = new PersonTokens();
         tokens.Set("alice", "alice");
         await using var progress = new ProgressTrackingClient(new TestAuthenticationState("alice"), tokens,
-            new OilGasApiAddress(new Uri(_baseUrl + "/")), NullLogger<ProgressTrackingClient>.Instance);
+            new OilGasApiAddress(new Uri(_baseUrl + "/")), NullLogger<ProgressTrackingClient>.Instance,
+            Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>());
 
         await progress.ConnectAsync();
 
@@ -307,7 +308,8 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
         var tokens = new PersonTokens();
         tokens.Set("bob", "bob");
         await using var progress = new ProgressTrackingClient(new TestAuthenticationState("alice"), tokens,
-            new OilGasApiAddress(new Uri(_baseUrl + "/")), NullLogger<ProgressTrackingClient>.Instance);
+            new OilGasApiAddress(new Uri(_baseUrl + "/")), NullLogger<ProgressTrackingClient>.Instance,
+            Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>());
 
         await Assert.ThrowsAnyAsync<Exception>(progress.ConnectAsync);
         Assert.False(progress.IsConnected);
@@ -383,7 +385,7 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
         // The address Program.cs resolves (https, from ApiService:BaseUrl) is handed over directly: the test hub is on a
         // loopback address over plain HTTP.
         return new NotificationService(auth, tokens, new OilGasApiAddress(new Uri(_baseUrl + "/")),
-            NullLogger<NotificationService>.Instance);
+            Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>());
     }
 
     private HubConnection Client(string? userId) => new HubConnectionBuilder()

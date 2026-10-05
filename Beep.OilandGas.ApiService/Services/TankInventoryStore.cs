@@ -1,4 +1,5 @@
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -35,9 +36,10 @@ public sealed class TankInventoryStore(
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentException.ThrowIfNullOrWhiteSpace(actor);
-        ArgumentException.ThrowIfNullOrWhiteSpace(request.TankBatteryId);
+        if (string.IsNullOrWhiteSpace(request.TankBatteryId))
+            throw RefusalException.Invalid("Tank battery ID is required.");
         if (request.OpeningInventory < 0 || request.Receipts < 0 || request.Deliveries < 0 || request.ActualClosingInventory < 0)
-            throw new ArgumentException("Inventory volumes cannot be negative.");
+            throw RefusalException.Invalid("Inventory volumes cannot be negative.");
         var repository = await RepositoryAsync();
         var inventory = new TANK_INVENTORY
         {

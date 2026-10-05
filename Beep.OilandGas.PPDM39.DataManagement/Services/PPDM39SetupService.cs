@@ -25,6 +25,8 @@ using TheTechIdea.Beep.Editor.Migration;
 using TheTechIdea.Beep.Report;
 using BeepDataSourceType = TheTechIdea.Beep.Utilities.DataSourceType;
 using Beep.OilandGas.PPDM39.Core;
+using Beep.OilandGas.Models.Core.Refusals;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Services
 {
@@ -55,6 +57,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
+        private readonly IFailureReporter _failures;
         private readonly LOVManagementService? _lovService;
         private readonly ModuleSetupOrchestrator? _moduleSetupOrchestrator;
         private readonly IBackgroundOperationQueue? _backgroundOperations;
@@ -83,6 +86,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
+            IFailureReporter failures,
             LOVManagementService? lovService = null,
             ModuleSetupOrchestrator? moduleSetupOrchestrator = null,
             IBackgroundOperationQueue? backgroundOperations = null,
@@ -93,6 +97,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults            = defaults            ?? throw new ArgumentNullException(nameof(defaults));
             _metadata            = metadata            ?? throw new ArgumentNullException(nameof(metadata));
+            _failures            = failures            ?? throw new ArgumentNullException(nameof(failures));
             _lovService          = lovService;
             _moduleSetupOrchestrator = moduleSetupOrchestrator;
             _backgroundOperations = backgroundOperations;
@@ -201,15 +206,17 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     Message = "SQLite database created successfully"
                 };
             }
-            catch (Exception ex)
+            // Broad: the setup wizard's result answers every failure of this step — the file system, the configuration
+            // store and the driver each throw their own types — and the failure is reported, never put in the result.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogError(ex, "Failed to create SQLite database for {ConnectionName}", MaskConnectionInfo(request.ConnectionName));
                 return new CreateSqliteResult
                 {
                     Success = false,
                     ConnectionName = request.ConnectionName,
-                    Message = "Failed to create SQLite database",
-                    ErrorDetails = ex.Message
+                    Message = ReportedFailure.Sentence(_failures, ex,
+                        $"creating the SQLite database for connection '{MaskConnectionInfo(request.ConnectionName)}'",
+                        "The SQLite database was not created.")
                 };
             }
         }
@@ -225,16 +232,25 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 };
             }
 
+            // What the request asks for is judged first and refused in the result's own words (OILGAS-CATCH-01): these
+            // were thrown inside the try below and answered as "the plan failed", with the exception's text as a
+            // diagnostic, alongside every genuine failure.
+            if (!TryParseEnvironmentTier(request.EnvironmentTier, out var environmentTier))
+                return RefusedPlan(request, "Environment tier must be Development, Test, Staging, Production, or Protected.");
+            if (request.ModuleIds is null || request.ModuleIds.Count == 0)
+                return RefusedPlan(request, "Select modules bound to the target database before planning a migration.");
+            if (!string.IsNullOrWhiteSpace(request.TargetAssemblyName) || !string.IsNullOrWhiteSpace(request.TargetModelNamespace))
+                return RefusedPlan(request, "Assembly and namespace migration scopes are not supported. Select modules instead.");
+
             try
             {
-                var environmentTier = ParseEnvironmentTier(request.EnvironmentTier);
-                if (request.ModuleIds is null || request.ModuleIds.Count == 0)
-                    throw new ArgumentException("Select modules bound to the target database before planning a migration.");
-                if (!string.IsNullOrWhiteSpace(request.TargetAssemblyName) || !string.IsNullOrWhiteSpace(request.TargetModelNamespace))
-                    throw new ArgumentException("Assembly and namespace migration scopes are not supported. Select modules instead.");
                 if (_migrationBindingFingerprint is null)
                     throw new InvalidOperationException("Module binding validation is unavailable.");
-                var entityTypes = ModuleMigrationScope.Resolve(request.ModuleIds, GetAvailableModules(), GetPpdm39EntityTypes());
+                var modules = GetAvailableModules();
+                var scopeRefusal = ModuleMigrationScope.Refusal(request.ModuleIds, modules);
+                if (scopeRefusal != null)
+                    return RefusedPlan(request, scopeRefusal);
+                var entityTypes = ModuleMigrationScope.Resolve(request.ModuleIds, modules, GetPpdm39EntityTypes());
                 ModuleSchemaBoundary.Validate(entityTypes);
                 var moduleIds = request.ModuleIds.ToArray();
                 var bindingFingerprint = await _migrationBindingFingerprint(moduleIds, request.ConnectionName);
@@ -289,9 +305,14 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 {
                     connectivityValidated = dataSource.Openconnection() == ConnectionState.Open;
                 }
+                // Broad: a probe — whatever the driver throws means "not validated", and the plan then keeps the
+                // migration engine's own connectivity preflight, which can block it. Reported, so the cause is kept.
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Connectivity validation probe failed for {ConnectionName}", MaskConnectionInfo(request.ConnectionName));
+                    _failures.ReportHandled(ex,
+                        $"probing connectivity of '{MaskConnectionInfo(request.ConnectionName)}' while planning a schema migration",
+                        "the plan keeps the migration engine's own connectivity preflight result, which may block it",
+                        FailureSeverity.Degraded);
                 }
 
                 var policy = migration.EvaluateMigrationPlanPolicy(plan, policyOptions);
@@ -329,18 +350,32 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
                 return MapPlanResult(session);
             }
-            catch (Exception ex)
+            // Broad: the plan result answers every failure of planning — the migration engine, the driver and the binding
+            // check each throw their own types. A refusal is not caught: it reaches the API as a refusal.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogError(ex, "Failed to plan schema migration for {ConnectionName}", MaskConnectionInfo(request.ConnectionName));
                 return new SchemaMigrationPlanResult
                 {
                     Success = false,
                     ConnectionName = request.ConnectionName,
-                    Message = "Schema migration plan failed.",
-                    DryRunDiagnostics = new List<string> { ex.Message }
+                    Message = ReportedFailure.Sentence(_failures, ex,
+                        $"planning a schema migration on '{MaskConnectionInfo(request.ConnectionName)}'",
+                        "The schema migration plan was not built.")
                 };
             }
         }
+
+        /// <summary>
+        /// A plan request refused for what it asked: answered in the result — the plan's failure, with the reason as its
+        /// diagnostic, the shape this result has always given a refusal — and nothing reported, since nothing failed.
+        /// </summary>
+        private static SchemaMigrationPlanResult RefusedPlan(SchemaMigrationPlanRequest request, string sentence) => new()
+        {
+            Success = false,
+            ConnectionName = request.ConnectionName,
+            Message = "Schema migration plan failed.",
+            DryRunDiagnostics = new List<string> { sentence }
+        };
 
         public async Task<SchemaMigrationApprovalResult> ApproveSchemaMigrationPlanAsync(SchemaMigrationApprovalRequest request)
         {
@@ -545,17 +580,20 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                         step.Status == TheTechIdea.Beep.Editor.Migration.MigrationExecutionStepStatus.Completed) ?? 0
                 });
             }
-            catch (Exception ex)
+            // Broad: the execution result answers every failure of the run — the migration engine, the driver and the
+            // schema verification each throw their own types. The exception's text used to be returned as the
+            // "compensation outcome"; it is reported, and the result carries the reference.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogError(ex, "Failed to execute schema migration plan {PlanId}", request.PlanId);
                 return new SchemaMigrationExecuteResult
                 {
                     Success = false,
                     PlanId = session.Plan.PlanId,
                     PlanHash = session.Plan.PlanHash,
                     ManifestHash = session.ManifestHash,
-                    Message = "Schema migration execution failed.",
-                    CompensationOutcome = ex.Message
+                    Message = ReportedFailure.Sentence(_failures, ex,
+                        $"executing schema migration plan {session.Plan.PlanId}",
+                        "The schema migration did not complete.")
                 };
             }
         }
@@ -696,13 +734,16 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     Message = "Schema migration queued."
                 });
             }
-            catch (Exception ex)
+            // Broad: starting a run answers every failure of opening the target and writing the checkpoint, whatever the
+            // driver throws; it was logged only, so the person was told it failed with nothing to quote.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogError(ex, "Failed to start schema migration plan {PlanId}", request.PlanId);
                 return new OperationStartResponse
                 {
                     Success = false,
-                    Message = "Schema migration could not be started."
+                    Message = ReportedFailure.Sentence(_failures, ex,
+                        $"starting schema migration plan {session.Plan.PlanId}",
+                        "The schema migration was not started.")
                 };
             }
         }
@@ -742,9 +783,14 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 return session.BindingFingerprint is not null && string.Equals(session.BindingFingerprint,
                     await _migrationBindingFingerprint(session.ModuleIds, session.ConnectionName), StringComparison.Ordinal);
             }
-            catch (Exception exception)
+            // Broad: the binding check reads the repository through whatever the host supplies. A check that cannot run
+            // is not a binding that matches: the plan is treated as stale (the caller is told to generate a new one), the
+            // safe answer for a gate, and the failure is reported rather than only logged as a warning.
+            catch (Exception exception) when (exception is not RefusalException)
             {
-                _logger.LogWarning(exception, "Module migration binding could not be validated");
+                _failures.ReportHandled(exception,
+                    $"checking that the module bindings of migration plan {session.Plan.PlanId} are current",
+                    "the plan is treated as stale: approval, execution and progress refuse it until a new plan is generated");
                 return false;
             }
         }
@@ -814,8 +860,16 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
                 if (checkpoint.IsCompleted && !checkpoint.HasFailed)
                 {
+                    // A binding that changed since the plan is the data's state, not a failure: say so in the result.
                     if (!await BindingIsCurrentAsync(session))
-                        throw new InvalidOperationException("Module binding changed; migration completion cannot be verified.");
+                        return new SchemaMigrationProgressResult
+                        {
+                            Success = false,
+                            ExecutionToken = executionToken,
+                            PlanId = session.Plan.PlanId,
+                            PlanHash = session.Plan.PlanHash,
+                            Message = "Module binding changed or is unavailable, so the migration's completion cannot be verified. Generate a new plan."
+                        };
                     ModuleSchemaVerification.Verify(_editor, dataSource, session.EntityTypes);
                 }
 
@@ -853,17 +907,19 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                         .ToList()
                 });
             }
-            catch (Exception ex)
+            // Broad: reading progress answers every failure of opening the target, reading the checkpoint and verifying
+            // the schema; the exception's text was returned as the "failure reason" of the migration itself.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogError(ex, "Failed to read schema migration progress for {ExecutionToken}", executionToken);
                 return new SchemaMigrationProgressResult
                 {
                     Success = false,
                     ExecutionToken = executionToken,
                     PlanId = session.Plan.PlanId,
                     PlanHash = session.Plan.PlanHash,
-                    Message = "Could not read schema migration progress.",
-                    FailureReason = ex.Message
+                    Message = ReportedFailure.Sentence(_failures, ex,
+                        $"reading the progress of schema migration plan {session.Plan.PlanId}",
+                        "The schema migration's progress could not be read.")
                 };
             }
         }
@@ -920,14 +976,17 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     ApprovalSummaryMarkdown = BuildApprovalSummaryMarkdown(session)
                 });
             }
-            catch (Exception ex)
+            // Narrow: serializing the plan's reports is the only work here; the serializer refuses what it cannot write
+            // (a cycle, an unsupported member) and has no question to ask first.
+            catch (Exception ex) when (ex is NotSupportedException or JsonException)
             {
-                _logger.LogError(ex, "Failed to load schema migration artifacts for {PlanId}", planId);
                 return new SchemaMigrationArtifactsResult
                 {
                     Success = false,
                     PlanId = planId,
-                    Message = "Could not load schema migration artifacts."
+                    Message = ReportedFailure.Sentence(_failures, ex,
+                        $"serializing the artifacts of schema migration plan {planId}",
+                        "The schema migration artifacts could not be loaded.")
                 };
             }
         }
@@ -992,7 +1051,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                         NuGetPackage   = driverClass.PackageName,
                         DataSourceType = driverClass.DatasourceType.ToString(),
                         DefaultPort    = GetDefaultPort(dsType),
-                        ScriptPath     = $"Scripts/{MapToScriptFolder(dsType)}"
+                        ScriptPath     = GetScriptPath(dsType)
                     };
             }
 
@@ -1071,10 +1130,17 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     ? new ConnectionTestResult { Success = true,  Message = "Connection successful" }
                     : new ConnectionTestResult { Success = false, Message = "Connection failed — could not open database" };
             }
-            catch (Exception ex)
+            // Broad: a connection test answers every failure of building and opening the datasource — each driver throws
+            // its own types. A connection that merely does not open is answered above without an exception.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogWarning(ex, "Connection test failed for {ConnectionName}", MaskConnectionInfo(config.ConnectionName));
-                return new ConnectionTestResult { Success = false, Message = "Connection test failed", ErrorDetails = ex.Message };
+                return new ConnectionTestResult
+                {
+                    Success = false,
+                    Message = ReportedFailure.Sentence(_failures, ex,
+                        $"testing connection '{MaskConnectionInfo(config.ConnectionName)}'",
+                        "The connection could not be tested.")
+                };
             }
         }
 
@@ -1114,10 +1180,16 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 _currentConnectionName = config.ConnectionName;
                 return new SaveConnectionResult { Success = true, ConnectionName = config.ConnectionName, Message = "Connection saved successfully" };
             }
-            catch (Exception ex)
+            // Broad: saving answers every failure of writing the configuration store and opening the datasource.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogError(ex, "Failed to save connection {ConnectionName}", MaskConnectionInfo(config.ConnectionName));
-                return new SaveConnectionResult { Success = false, Message = "Failed to save connection", ErrorDetails = ex.Message };
+                return new SaveConnectionResult
+                {
+                    Success = false,
+                    Message = ReportedFailure.Sentence(_failures, ex,
+                        $"saving connection '{MaskConnectionInfo(config.ConnectionName)}'",
+                        "The connection was not saved.")
+                };
             }
         }
 
@@ -1134,10 +1206,16 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
                 return SaveConnection(config, testAfterSave);
             }
-            catch (Exception ex)
+            // Broad: removing the original entry answers every failure of the configuration store.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogError(ex, "Failed to update connection {ConnectionName}", MaskConnectionInfo(originalConnectionName));
-                return new SaveConnectionResult { Success = false, Message = "Failed to update connection", ErrorDetails = ex.Message };
+                return new SaveConnectionResult
+                {
+                    Success = false,
+                    Message = ReportedFailure.Sentence(_failures, ex,
+                        $"updating connection '{MaskConnectionInfo(originalConnectionName)}'",
+                        "The connection was not updated.")
+                };
             }
         }
 
@@ -1160,10 +1238,16 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
                 return new DeleteConnectionResult { Success = true, Message = "Connection deleted" };
             }
-            catch (Exception ex)
+            // Broad: deleting answers every failure of writing the configuration store.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogError(ex, "Failed to delete connection {ConnectionName}", MaskConnectionInfo(connectionName));
-                return new DeleteConnectionResult { Success = false, Message = "Failed to delete connection", ErrorDetails = ex.Message };
+                return new DeleteConnectionResult
+                {
+                    Success = false,
+                    Message = ReportedFailure.Sentence(_failures, ex,
+                        $"deleting connection '{MaskConnectionInfo(connectionName)}'",
+                        "The connection was not deleted.")
+                };
             }
         }
 
@@ -1310,22 +1394,33 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 if (state != ConnectionState.Open)
                     return new SchemaPrivilegeCheckResult { HasCreatePrivilege = false, Message = "Could not open connection" };
 
-                // Attempt a harmless DDL to verify CREATE TABLE privilege
-                try
-                {
-                    var tempTable = $"__PRIV_CHECK_{Guid.NewGuid():N8}";
-                    ds.ExecuteSql($"CREATE TABLE {tempTable} (ID INT); DROP TABLE {tempTable};");
+                // Attempt a harmless DDL to verify CREATE TABLE privilege. The datasource answers a refused command in its
+                // result rather than by throwing, so the result is what is read (OILGAS-CATCH-01). The check used to
+                // ignore it and read only an exception — and the table name's "N8" format is not a Guid format, so the
+                // name itself threw every time and every account was told it lacked the privilege.
+                var tempTable = $"__PRIV_CHECK_{Guid.NewGuid().ToString("N")[..8]}";
+                var outcome = ds.ExecuteSql($"CREATE TABLE {tempTable} (ID INT); DROP TABLE {tempTable};");
+                if (outcome != null && outcome.Flag == Errors.Ok)
                     return new SchemaPrivilegeCheckResult { HasCreatePrivilege = true, Message = "Schema creation privileges confirmed" };
-                }
-                catch
+
+                _logger.LogInformation("Creating a test table on {ConnectionName} was refused: {Reason}",
+                    MaskConnectionInfo(connectionName), outcome?.Message);
+                return new SchemaPrivilegeCheckResult
                 {
-                    return new SchemaPrivilegeCheckResult { HasCreatePrivilege = false, Message = "Insufficient privileges to create tables" };
-                }
+                    HasCreatePrivilege = false,
+                    Message = "Creating a test table was refused, so this account may not have the privilege to create tables."
+                };
             }
-            catch (Exception ex)
+            // Broad: the check answers every failure of reaching the datasource, whatever the driver throws.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogWarning(ex, "Privilege check failed for {ConnectionName}", MaskConnectionInfo(connectionName));
-                return new SchemaPrivilegeCheckResult { HasCreatePrivilege = false, Message = "Privilege check failed", ErrorDetails = ex.Message };
+                return new SchemaPrivilegeCheckResult
+                {
+                    HasCreatePrivilege = false,
+                    Message = ReportedFailure.Sentence(_failures, ex,
+                        $"checking the privilege to create tables on '{MaskConnectionInfo(connectionName)}'",
+                        "The privilege check did not run.")
+                };
             }
         }
 
@@ -1385,13 +1480,33 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     ? (dropIfExists ? "DROP DATABASE IF EXISTS PPDM39" : "DROP DATABASE PPDM39")
                     : (dropIfExists ? $"DROP SCHEMA IF EXISTS {schemaName}" : $"DROP SCHEMA {schemaName}");
 
-                ds.ExecuteSql(ddl);
+                // The datasource answers a refused command in its result, not by throwing: it used to be ignored, and a
+                // drop that did not happen was reported as done (OILGAS-CATCH-01).
+                var outcome = ds.ExecuteSql(ddl);
+                if (outcome == null || outcome.Flag != Errors.Ok)
+                {
+                    var refused = outcome?.Ex ?? new InvalidOperationException(
+                        $"The datasource refused the drop command: {outcome?.Message ?? "no result was returned"}");
+                    return new DropDatabaseResult
+                    {
+                        Success = false,
+                        Message = ReportedFailure.Sentence(_failures, refused,
+                            $"dropping the database or schema on '{MaskConnectionInfo(connectionName)}'",
+                            "The database was not dropped.")
+                    };
+                }
                 return new DropDatabaseResult { Success = true, Message = "Database dropped" };
             }
-            catch (Exception ex)
+            // Broad: dropping answers every failure of reaching the datasource, whatever the driver throws.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogError(ex, "DropDatabase failed for {ConnectionName}", MaskConnectionInfo(connectionName));
-                return new DropDatabaseResult { Success = false, Message = "Drop failed", ErrorDetails = ex.Message };
+                return new DropDatabaseResult
+                {
+                    Success = false,
+                    Message = ReportedFailure.Sentence(_failures, ex,
+                        $"dropping the database or schema on '{MaskConnectionInfo(connectionName)}'",
+                        "The database was not dropped.")
+                };
             }
         }
 
@@ -1452,13 +1567,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         {
             try
             {
+                // Each assembly is asked for the type by name: enumerating every type of every loaded assembly threw for
+                // assemblies whose types cannot all load, and that was caught and ignored per assembly.
                 var helperType = AppDomain.CurrentDomain.GetAssemblies()
-                    .SelectMany(assembly =>
-                    {
-                        try { return assembly.GetTypes(); }
-                        catch { return Array.Empty<Type>(); }
-                    })
-                    .FirstOrDefault(type => type.FullName == "TheTechIdea.Beep.Helpers.ConnectionHelper");
+                    .Select(assembly => assembly.GetType("TheTechIdea.Beep.Helpers.ConnectionHelper", throwOnError: false))
+                    .FirstOrDefault(type => type != null);
 
                 var method = helperType?.GetMethod("GetBestMatchingDriver", new[] { typeof(ConnectionProperties), _editor.ConfigEditor.GetType() });
                 var driver = method?.Invoke(null, new object[] { props, _editor.ConfigEditor });
@@ -1474,9 +1587,14 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 if (!string.IsNullOrWhiteSpace(version))
                     props.DriverVersion = version;
             }
-            catch (Exception ex)
+            // Narrow: the helper is called by reflection, which wraps whatever it throws. The fallback is deliberate — the
+            // driver class already loaded for this database type — and the helper's failure is reported, not a debug line.
+            catch (TargetInvocationException ex)
             {
-                _logger.LogDebug(ex, "Could not resolve best matching driver for {ConnectionName}; falling back to loaded driver classes", MaskConnectionInfo(props.ConnectionName));
+                _failures.ReportHandled(ex,
+                    $"choosing the best matching driver for connection '{MaskConnectionInfo(props.ConnectionName)}'",
+                    "the connection uses the driver class already loaded for its database type",
+                    FailureSeverity.Degraded);
                 var driverClass = _editor.ConfigEditor?.DataDriversClasses?
                     .FirstOrDefault(d => d.DatasourceType == props.DatabaseType);
                 if (driverClass != null)
@@ -1510,36 +1628,14 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             }
         }
 
-        private async Task<bool> ProbeSchemaReadyAsync(string connectionName)
+        /// <summary>
+        /// Whether the PPDM schema is installed on the connection: its WELL table exists. The datasource is asked;
+        /// it used to be queried and any failure read as "not installed", so an outage looked like an empty database.
+        /// </summary>
+        private Task<bool> ProbeSchemaReadyAsync(string connectionName)
         {
-            try
-            {
-                var repo = new PPDMGenericRepository(
-                    _editor,
-                    _commonColumnHandler,
-                    _defaults,
-                    _metadata,
-                    typeof(Beep.OilandGas.PPDM39.Models.WELL),
-                    connectionName,
-                    "WELL");
-
-                await repo.GetAsync(new List<AppFilter>
-                {
-                    new AppFilter
-                    {
-                        FieldName = "UWI",
-                        Operator = "=",
-                        FilterValue = "__schema_probe__"
-                    }
-                });
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Schema probe failed for connection {ConnectionName}", MaskConnectionInfo(connectionName));
-                return false;
-            }
+            var dataSource = _editor.GetDataSource(connectionName);
+            return Task.FromResult(dataSource != null && dataSource.CheckEntityExist("WELL"));
         }
 
         /// <summary>
@@ -1646,17 +1742,25 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             return new TheTechIdea.Beep.Editor.Migration.MigrationManager(_editor, dataSource);
         }
 
-        private static TheTechIdea.Beep.Editor.Migration.MigrationEnvironmentTier ParseEnvironmentTier(string? environmentTier)
+        /// <summary>
+        /// Reads the requested environment tier; false for a value that names none ("Protected" is Production). The caller
+        /// refuses the request in its result — this threw, inside the planner's catch, and read as a failed plan.
+        /// </summary>
+        private static bool TryParseEnvironmentTier(string? environmentTier, out MigrationEnvironmentTier tier)
         {
             if (string.Equals(environmentTier, "Protected", StringComparison.OrdinalIgnoreCase))
-                return TheTechIdea.Beep.Editor.Migration.MigrationEnvironmentTier.Production;
+            {
+                tier = MigrationEnvironmentTier.Production;
+                return true;
+            }
 
             if (!string.IsNullOrWhiteSpace(environmentTier) &&
                 Enum.GetNames<MigrationEnvironmentTier>().Any(name => string.Equals(name, environmentTier, StringComparison.OrdinalIgnoreCase)) &&
-                Enum.TryParse(environmentTier, true, out MigrationEnvironmentTier tier))
-                return tier;
+                Enum.TryParse(environmentTier, true, out tier))
+                return true;
 
-            throw new ArgumentException("Environment tier must be Development, Test, Staging, Production, or Protected.");
+            tier = default;
+            return false;
         }
 
         private static bool IsProtectedEnvironmentTier(MigrationEnvironmentTier tier) =>
@@ -1968,18 +2072,13 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             if (type != null)
                 return type;
 
+            // Each assembly is asked by name without throwing; a failure to load what the type depends on is a fault of
+            // the host and reaches the caller (it was caught and ignored here).
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                try
-                {
-                    type = assembly.GetType(entityTypeName, throwOnError: false, ignoreCase: false);
-                    if (type != null)
-                        return type;
-                }
-                catch
-                {
-                    // ignore unloadable reflection metadata from dynamic or incompatible assemblies
-                }
+                type = assembly.GetType(entityTypeName, throwOnError: false, ignoreCase: false);
+                if (type != null)
+                    return type;
             }
 
             return null;
@@ -2030,24 +2129,32 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             };
         }
 
-        private static int GetDefaultPort(BeepDataSourceType dsType) => dsType switch
+        // The datasource types this setup knows a default port and a script folder for. They are tables, not switches
+        // with a catch-all: DataSourceType has well over a hundred members, and the catch-all named a folder of SQL Server
+        // scripts for every one of them (OILGAS-CATCH-01). A type without a default port answers 0, which the driver
+        // information has always used for "none" (SQLite); a type without scripts has no script path.
+        private static readonly IReadOnlyDictionary<BeepDataSourceType, int> DefaultPorts = new Dictionary<BeepDataSourceType, int>
         {
-            BeepDataSourceType.SqlServer => 1433,
-            BeepDataSourceType.Postgre   => 5432,
-            BeepDataSourceType.Mysql     => 3306,
-            BeepDataSourceType.Oracle    => 1521,
-            _                            => 0
+            [BeepDataSourceType.SqlServer] = 1433,
+            [BeepDataSourceType.Postgre]   = 5432,
+            [BeepDataSourceType.Mysql]     = 3306,
+            [BeepDataSourceType.Oracle]    = 1521,
         };
 
-        private static string MapToScriptFolder(BeepDataSourceType dsType) => dsType switch
+        private static readonly IReadOnlyDictionary<BeepDataSourceType, string> ScriptFolders = new Dictionary<BeepDataSourceType, string>
         {
-            BeepDataSourceType.SqlServer => "SqlServer",
-            BeepDataSourceType.Postgre   => "PostgreSQL",
-            BeepDataSourceType.Mysql     => "MySQL",
-            BeepDataSourceType.Oracle    => "Oracle",
-            BeepDataSourceType.SqlLite   => "SQLite",
-            _                            => "SqlServer"
+            [BeepDataSourceType.SqlServer] = "SqlServer",
+            [BeepDataSourceType.Postgre]   = "PostgreSQL",
+            [BeepDataSourceType.Mysql]     = "MySQL",
+            [BeepDataSourceType.Oracle]    = "Oracle",
+            [BeepDataSourceType.SqlLite]   = "SQLite",
         };
+
+        private static int GetDefaultPort(BeepDataSourceType dsType) =>
+            DefaultPorts.TryGetValue(dsType, out var port) ? port : 0;
+
+        private static string GetScriptPath(BeepDataSourceType dsType) =>
+            ScriptFolders.TryGetValue(dsType, out var folder) ? $"Scripts/{folder}" : string.Empty;
 
         // ── Reference Data Seeding ─────────────────────────────────────────────
 
@@ -2081,14 +2188,18 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     Errors = result.Errors
                 };
             }
-            catch (Exception ex)
+            // Broad: seeding answers every failure of writing the reference tables, whatever the driver throws. The
+            // exception's text — and its whole stack trace, as an "error" — used to be returned to the caller.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogError(ex, "Well-status facet seeding failed for {Connection}", MaskConnectionInfo(connectionName));
+                var sentence = ReportedFailure.Sentence(_failures, ex,
+                    $"seeding the well-status facets into '{MaskConnectionInfo(connectionName)}'",
+                    "The well-status facets were not seeded.");
                 return new SeedingOperationResult
                 {
                     Success = false,
-                    Message = $"Seeding failed: {ex.Message}",
-                    Errors  = new List<string> { ex.ToString() }
+                    Message = sentence,
+                    Errors  = new List<string> { sentence }
                 };
             }
         }
@@ -2122,14 +2233,17 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     TotalInserted = count
                 };
             }
-            catch (Exception ex)
+            // Broad: as above, for the enum-backed reference tables.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogError(ex, "Enum reference data seeding failed for {Connection}", MaskConnectionInfo(connectionName));
+                var sentence = ReportedFailure.Sentence(_failures, ex,
+                    $"seeding the enum reference data into '{MaskConnectionInfo(connectionName)}'",
+                    "The enum reference data was not seeded.");
                 return new SeedingOperationResult
                 {
                     Success = false,
-                    Message = $"Seeding failed: {ex.Message}",
-                    Errors  = new List<string> { ex.ToString() }
+                    Message = sentence,
+                    Errors  = new List<string> { sentence }
                 };
             }
         }
@@ -2183,29 +2297,27 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 }
                 catch (ModuleSetupAbortException ex)
                 {
-                    _logger.LogError(ex,
-                        "Module setup aborted by module {ModuleId} while seeding {Connection}",
-                        ex.ModuleId,
-                        connectionName);
-
+                    var sentence = ReportedFailure.Sentence(_failures, ex,
+                        $"seeding module {ex.ModuleId} into '{MaskConnectionInfo(connectionName)}'",
+                        $"Module setup was stopped by module {ex.ModuleId}; the remaining modules were not seeded.");
                     return new SeedingOperationResult
                     {
                         Success = false,
-                        Message = $"Module setup aborted by {ex.ModuleId}: {ex.Message}",
-                        Errors = new List<string> { ex.ToString() }
+                        Message = sentence,
+                        Errors = new List<string> { sentence }
                     };
                 }
-                catch (Exception ex)
+                // Broad: the orchestration answers every failure of the modules it runs, whatever they throw.
+                catch (Exception ex) when (ex is not RefusalException)
                 {
-                    _logger.LogError(ex,
-                        "Module setup orchestration failed while seeding {Connection}",
-                        connectionName);
-
+                    var sentence = ReportedFailure.Sentence(_failures, ex,
+                        $"seeding the required modules into '{MaskConnectionInfo(connectionName)}'",
+                        "The required module data was not seeded.");
                     return new SeedingOperationResult
                     {
                         Success = false,
-                        Message = $"Seeding failed: {ex.Message}",
-                        Errors = new List<string> { ex.ToString() }
+                        Message = sentence,
+                        Errors = new List<string> { sentence }
                     };
                 }
             }

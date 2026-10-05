@@ -8,6 +8,7 @@ using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.EconomicAnalysis.Services
 {
@@ -32,11 +33,11 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                     simulationCount, variationRange * 100, baseCashFlows?.Length ?? 0);
 
                 if (baseCashFlows == null || baseCashFlows.Length == 0)
-                    throw new ArgumentException("Cash flows cannot be null or empty", nameof(baseCashFlows));
+                    throw RefusalException.Invalid("Cash flows are required.");
                 if (variationRange < 0 || variationRange > 1.0)
-                    throw new ArgumentException("Variation range must be between 0 and 1", nameof(variationRange));
+                    throw RefusalException.Invalid("Variation range must be between 0 and 1.");
                 if (simulationCount <= 0)
-                    throw new ArgumentException("Simulation count must be positive", nameof(simulationCount));
+                    throw RefusalException.Invalid("Simulation count must be positive.");
 
                 var result = new MonteCarloSimulationResult
                 {
@@ -110,11 +111,11 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                     initialNPV, volatility * 100, projectLife);
 
                 if (volatility <= 0 || volatility > 2.0)
-                    throw new ArgumentException("Volatility must be between 0 and 2.0", nameof(volatility));
+                    throw RefusalException.Invalid("Volatility must be greater than 0 and at most 2.0.");
                 if (projectLife <= 0)
-                    throw new ArgumentException("Project life must be positive", nameof(projectLife));
+                    throw RefusalException.Invalid("Project life must be positive.");
                 if (discountRate < 0 || discountRate > 1.0)
-                    throw new ArgumentException("Discount rate must be between 0 and 1", nameof(discountRate));
+                    throw RefusalException.Invalid("Discount rate must be between 0 and 1.");
 
                 var result = new RealOptionsAnalysisResult
                 {
@@ -192,11 +193,11 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                     initialInvestment, successProbability * 100);
 
                 if (initialInvestment < 0)
-                    throw new ArgumentException("Investment cannot be negative", nameof(initialInvestment));
+                    throw RefusalException.Invalid("Initial investment cannot be negative.");
                 if (successProbability < 0 || successProbability > 1.0)
-                    throw new ArgumentException("Probability must be between 0 and 1", nameof(successProbability));
+                    throw RefusalException.Invalid("Success probability must be between 0 and 1.");
                 if (successCashFlows == null || successCashFlows.Length == 0)
-                    throw new ArgumentException("Cash flows cannot be null or empty", nameof(successCashFlows));
+                    throw RefusalException.Invalid("Success-case cash flows are required.");
 
                 var result = new DecisionTreeAnalysisResult
                 {
@@ -273,9 +274,9 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                     taxRate * 100, depreciationSchedule?.Length ?? 0);
 
                 if (taxRate < 0 || taxRate > 1.0)
-                    throw new ArgumentException("Tax rate must be between 0 and 1", nameof(taxRate));
+                    throw RefusalException.Invalid("Tax rate must be between 0 and 1.");
                 if (preTaxCashFlows == null || preTaxCashFlows.Length == 0)
-                    throw new ArgumentException("Cash flows cannot be null or empty", nameof(preTaxCashFlows));
+                    throw RefusalException.Invalid("Pre-tax cash flows are required.");
 
                 var result = new AfterTaxAnalysisResult
                 {
@@ -340,11 +341,11 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                     projectedCashFlows?.Length ?? 0, terminalGrowthRate * 100, wacc * 100);
 
                 if (projectedCashFlows == null || projectedCashFlows.Length == 0)
-                    throw new ArgumentException("Cash flows cannot be null or empty", nameof(projectedCashFlows));
+                    throw RefusalException.Invalid("Projected cash flows are required.");
                 if (terminalGrowthRate < 0 || terminalGrowthRate > 0.1)
-                    throw new ArgumentException("Terminal growth rate must be between 0 and 10%", nameof(terminalGrowthRate));
+                    throw RefusalException.Invalid("Terminal growth rate must be between 0 and 10%.");
                 if (wacc <= terminalGrowthRate)
-                    throw new ArgumentException("WACC must be greater than terminal growth rate");
+                    throw RefusalException.Invalid("WACC must be greater than the terminal growth rate.");
 
                 var result = new DCFValuationResult
                 {
@@ -416,11 +417,11 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                     assetCost, leaseTerm);
 
                 if (assetCost <= 0)
-                    throw new ArgumentException("Asset cost must be positive", nameof(assetCost));
+                    throw RefusalException.Invalid("Asset cost must be positive.");
                 if (leasePayments == null || leasePayments.Length == 0)
-                    throw new ArgumentException("Lease payments cannot be null or empty", nameof(leasePayments));
+                    throw RefusalException.Invalid("Lease payments are required.");
                 if (leaseTerm <= 0)
-                    throw new ArgumentException("Lease term must be positive", nameof(leaseTerm));
+                    throw RefusalException.Invalid("Lease term must be positive.");
 
                 var result = new LeaseBuyAnalysisResult
                 {
@@ -483,13 +484,13 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                     unleveredValue, taxRate * 100);
 
                 if (unleveredValue <= 0)
-                    throw new ArgumentException("Value must be positive", nameof(unleveredValue));
+                    throw RefusalException.Invalid("Unlevered value must be positive.");
                 if (taxRate < 0 || taxRate > 1.0)
-                    throw new ArgumentException("Tax rate must be between 0 and 1", nameof(taxRate));
+                    throw RefusalException.Invalid("Tax rate must be between 0 and 1.");
                 if (debtCost < 0 || debtCost > 1.0)
-                    throw new ArgumentException("Debt cost must be between 0 and 1", nameof(debtCost));
+                    throw RefusalException.Invalid("Debt cost must be between 0 and 1.");
                 if (equityCost < 0 || equityCost > 1.0)
-                    throw new ArgumentException("Equity cost must be between 0 and 1", nameof(equityCost));
+                    throw RefusalException.Invalid("Equity cost must be between 0 and 1.");
 
                 var result = new CapitalStructureAnalysisResult
                 {
@@ -562,11 +563,11 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                     basePrice, priceRange * 100);
 
                 if (baseCashFlows == null || baseCashFlows.Length == 0)
-                    throw new ArgumentException("Cash flows cannot be null or empty", nameof(baseCashFlows));
+                    throw RefusalException.Invalid("Cash flows are required.");
                 if (basePrice <= 0)
-                    throw new ArgumentException("Price must be positive", nameof(basePrice));
+                    throw RefusalException.Invalid("Base price must be positive.");
                 if (discountRate < 0 || discountRate > 1.0)
-                    throw new ArgumentException("Discount rate must be between 0 and 1", nameof(discountRate));
+                    throw RefusalException.Invalid("Discount rate must be between 0 and 1.");
 
                 var result = new CommodityPriceSensitivityResult
                 {

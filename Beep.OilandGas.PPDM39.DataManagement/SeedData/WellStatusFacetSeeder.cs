@@ -65,29 +65,22 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
         {
             var result = new FacetSeedResult();
 
-            try
-            {
-                // ── R_* core reference tables (must come first — RA_* FK to these) ──
-                result.FacetTypeRows       = await SeedFacetTypesAsync(userId);
-                result.FacetValueRows      = await SeedFacetValuesAsync(userId);
-                result.FacetQualifierRows  = await SeedFacetQualifiersAsync(userId);
-                result.FacetQualValueRows  = await SeedFacetQualifierValuesAsync(userId);
+            // A failure reaches the caller (OILGAS-CATCH-01), which reports it: it was caught here and returned as a
+            // failed result carrying the exception's text and its whole stack trace as an "error".
+            // ── R_* core reference tables (must come first — RA_* FK to these) ──
+            result.FacetTypeRows       = await SeedFacetTypesAsync(userId);
+            result.FacetValueRows      = await SeedFacetValuesAsync(userId);
+            result.FacetQualifierRows  = await SeedFacetQualifiersAsync(userId);
+            result.FacetQualValueRows  = await SeedFacetQualifierValuesAsync(userId);
 
-                // ── RA_* alias tables (cross-reference / extended metadata) ──────────
-                result.RaFacetTypeRows  = await SeedRaFacetTypesAsync(userId);
-                result.RaFacetValueRows = await SeedRaFacetValuesAsync(userId);
+            // ── RA_* alias tables (cross-reference / extended metadata) ──────────
+            result.RaFacetTypeRows  = await SeedRaFacetTypesAsync(userId);
+            result.RaFacetValueRows = await SeedRaFacetValuesAsync(userId);
 
-                result.Success = true;
-                result.Message = $"R_* seeded: {result.FacetTypeRows} types, {result.FacetValueRows} values, " +
-                                 $"{result.FacetQualifierRows} qualifiers, {result.FacetQualValueRows} qualifier-values. " +
-                                 $"RA_* seeded: {result.RaFacetTypeRows} types, {result.RaFacetValueRows} values.";
-            }
-            catch (Exception ex)
-            {
-                result.Success = false;
-                result.Message = $"Seeding failed: {ex.Message}";
-                result.Errors.Add(ex.ToString());
-            }
+            result.Success = true;
+            result.Message = $"R_* seeded: {result.FacetTypeRows} types, {result.FacetValueRows} values, " +
+                             $"{result.FacetQualifierRows} qualifiers, {result.FacetQualValueRows} qualifier-values. " +
+                             $"RA_* seeded: {result.RaFacetTypeRows} types, {result.RaFacetValueRows} values.";
 
             return result;
         }
@@ -100,12 +93,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
         {
             return new FacetSeedStatus
             {
-                FacetTypeCount      = await CountTableAsync("R_WELL_STATUS_TYPE"),
-                FacetValueCount     = await CountTableAsync("R_WELL_STATUS"),
-                QualifierCount      = await CountTableAsync("R_WELL_STATUS_QUAL"),
-                QualifierValueCount = await CountTableAsync("R_WELL_STATUS_QUAL_VALUE"),
-                RaFacetTypeCount    = await CountTableAsync("RA_WELL_STATUS_TYPE"),
-                RaFacetValueCount   = await CountTableAsync("RA_WELL_STATUS"),
+                FacetTypeCount      = await CountTableAsync<R_WELL_STATUS_TYPE>("R_WELL_STATUS_TYPE"),
+                FacetValueCount     = await CountTableAsync<R_WELL_STATUS>("R_WELL_STATUS"),
+                QualifierCount      = await CountTableAsync<R_WELL_STATUS_QUAL>("R_WELL_STATUS_QUAL"),
+                QualifierValueCount = await CountTableAsync<R_WELL_STATUS_QUAL_VALUE>("R_WELL_STATUS_QUAL_VALUE"),
+                RaFacetTypeCount    = await CountTableAsync<RA_WELL_STATUS_TYPE>("RA_WELL_STATUS_TYPE"),
+                RaFacetValueCount   = await CountTableAsync<RA_WELL_STATUS>("RA_WELL_STATUS"),
             };
         }
 
@@ -272,32 +265,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
             return result != null && result.Any();
         }
 
-        private static async Task<int> CountTableAsync_Internal(PPDMGenericRepository repo)
+        // A count that cannot be read reaches the caller (OILGAS-CATCH-01): it was caught and answered as -1 rows, which the
+        // status read as "not seeded" — an outage shown as tables that needed seeding.
+        private async Task<int> CountTableAsync<T>(string tableName) where T : class, IPPDMEntity, new()
         {
-            try
-            {
-                var all = await repo.GetAsync(new List<AppFilter>());
-                return all?.Count() ?? 0;
-            }
-            catch { return -1; }
-        }
-
-        private async Task<int> CountTableAsync(string tableName)
-        {
-            try
-            {
-                return tableName switch
-                {
-                    "R_WELL_STATUS_TYPE"       => await CountTableAsync_Internal(BuildRepo<R_WELL_STATUS_TYPE>(tableName)),
-                    "R_WELL_STATUS"            => await CountTableAsync_Internal(BuildRepo<R_WELL_STATUS>(tableName)),
-                    "R_WELL_STATUS_QUAL"       => await CountTableAsync_Internal(BuildRepo<R_WELL_STATUS_QUAL>(tableName)),
-                    "R_WELL_STATUS_QUAL_VALUE" => await CountTableAsync_Internal(BuildRepo<R_WELL_STATUS_QUAL_VALUE>(tableName)),
-                    "RA_WELL_STATUS_TYPE"       => await CountTableAsync_Internal(BuildRepo<RA_WELL_STATUS_TYPE>(tableName)),
-                    "RA_WELL_STATUS"            => await CountTableAsync_Internal(BuildRepo<RA_WELL_STATUS>(tableName)),
-                    _                          => -1
-                };
-            }
-            catch { return -1; }
+            var all = await BuildRepo<T>(tableName).GetAsync(new List<AppFilter>());
+            return all?.Count() ?? 0;
         }
 
         // ─────────────────────────────────────────────────────────────────────

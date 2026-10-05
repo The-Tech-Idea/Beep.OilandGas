@@ -64,7 +64,7 @@ namespace Beep.OilandGas.Accounting.Services
             var itemRepo = await CreateRepoAsync<INVENTORY_ITEM>("INVENTORY_ITEM", cn);
             var itemObj = await itemRepo.GetByIdAsync(inventoryItemId);
             if (itemObj is not INVENTORY_ITEM item)
-                throw new InvalidOperationException($"Inventory item not found: {inventoryItemId}");
+                throw RefusalException.NotFound($"Inventory item {inventoryItemId} was not found.");
 
             var valuation = await GetLatestValuationAsync(inventoryItemId, valuationDate, cn);
             var quantity = valuation?.QUANTITY ?? item.QUANTITY_ON_HAND ?? 0m;

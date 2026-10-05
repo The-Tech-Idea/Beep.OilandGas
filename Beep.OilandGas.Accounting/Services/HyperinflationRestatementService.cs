@@ -57,14 +57,14 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(accountId))
                 throw new ArgumentNullException(nameof(accountId));
             if (indexAtAcquisition <= 0m || indexAtReporting <= 0m)
-                throw new InvalidOperationException("Price indices must be positive");
+                throw RefusalException.Invalid("Price indices must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
             var restatedAmount = originalAmount * (indexAtReporting / indexAtAcquisition);
             var delta = restatedAmount - originalAmount;
             if (delta == 0m)
-                throw new InvalidOperationException("Restatement delta is zero");
+                throw RefusalException.Invalid("The price indices give no restatement: there is nothing to restate.");
 
             var cost = new ACCOUNTING_COST
             {
@@ -126,7 +126,7 @@ namespace Beep.OilandGas.Accounting.Services
             string cn = "PPDM39")
         {
             if (amount <= 0m)
-                throw new InvalidOperationException("Amount must be positive");
+                throw RefusalException.Invalid("Amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Beep.OilandGas.PumpPerformance.Calculations;
 using Beep.OilandGas.PumpPerformance.Validation;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Core.Refusals;
 using static Beep.OilandGas.PumpPerformance.Constants.PumpConstants;
 
 namespace Beep.OilandGas.PumpPerformance.Services
@@ -49,7 +50,7 @@ namespace Beep.OilandGas.PumpPerformance.Services
             double specificGravity = 1.0)
         {
             if (string.IsNullOrWhiteSpace(pumpId))
-                throw new ArgumentException("Pump ID is required", nameof(pumpId));
+                throw RefusalException.Invalid("A pump ID is required.");
             PumpDataValidator.ValidateStrictlyPositiveFlowRate(baseFlowRate, nameof(baseFlowRate));
             PumpDataValidator.ValidateStrictlyPositiveHead(baseHead, nameof(baseHead));
             PumpDataValidator.ValidateStrictlyPositivePower(motorInputPower, nameof(motorInputPower));
@@ -92,7 +93,7 @@ namespace Beep.OilandGas.PumpPerformance.Services
             if (operatingPoint == null)
                 throw new ArgumentNullException(nameof(operatingPoint));
             if (string.IsNullOrWhiteSpace(operatingPoint.PumpId))
-                throw new ArgumentException("Pump ID is required", nameof(operatingPoint));
+                throw RefusalException.Invalid("A pump ID is required.");
 
             PumpDataValidator.ValidateStrictlyPositiveFlowRate(operatingPoint.FlowRate, nameof(operatingPoint.FlowRate));
             PumpDataValidator.ValidateStrictlyPositiveHead(operatingPoint.Head, nameof(operatingPoint.Head));

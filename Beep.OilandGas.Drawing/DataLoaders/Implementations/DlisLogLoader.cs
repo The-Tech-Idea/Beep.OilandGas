@@ -33,28 +33,21 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
             this.filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
         }
 
+        /// <summary>
+        /// Opens the DLIS file: false when it does not exist; a file that exists and cannot be opened reaches the caller
+        /// as its exception (OILGAS-CATCH-01). It had been written to the console and answered false.
+        /// </summary>
         public bool Connect()
         {
             if (isConnected) return true;
 
-            try
-            {
-                if (!File.Exists(filePath))
-                {
-                    throw new FileNotFoundException($"DLIS file not found: {filePath}");
-                }
-
-                fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                reader = new BinaryReader(fileStream, Encoding.UTF8);
-                isConnected = true;
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error connecting to DLIS file: {ex.Message}");
-                isConnected = false;
+            if (!File.Exists(filePath))
                 return false;
-            }
+
+            fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            reader = new BinaryReader(fileStream, Encoding.UTF8);
+            isConnected = true;
+            return true;
         }
 
         public async Task<bool> ConnectAsync()
@@ -80,23 +73,17 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         {
             if (!isConnected || reader == null) return false;
 
-            try
-            {
-                // Check DLIS file signature (starts with Storage Unit Label)
-                long originalPosition = fileStream.Position;
-                fileStream.Position = 0;
+            // Check DLIS file signature (starts with Storage Unit Label). A file that cannot be read reaches the caller as
+            // its exception (OILGAS-CATCH-01); a short read already answers false.
+            long originalPosition = fileStream.Position;
+            fileStream.Position = 0;
 
-                // DLIS files start with Storage Unit Label (80 bytes)
-                byte[] label = reader.ReadBytes(80);
-                fileStream.Position = originalPosition;
+            // DLIS files start with Storage Unit Label (80 bytes)
+            byte[] label = reader.ReadBytes(80);
+            fileStream.Position = originalPosition;
 
-                // Check for DLIS signature (first byte should be 0x01 for Storage Unit Label)
-                return label.Length == 80 && label[0] == 0x01;
-            }
-            catch
-            {
-                return false;
-            }
+            // Check for DLIS signature (first byte should be 0x01 for Storage Unit Label)
+            return label.Length == 80 && label[0] == 0x01;
         }
 
         public List<string> GetAvailableIdentifiers()
@@ -104,15 +91,9 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
             if (!isConnected) Connect();
             if (!isConnected) return new List<string>();
 
-            try
-            {
-                ParseFileStructure();
-                return fileStructure?.LogicalFiles?.Select(lf => lf.Name).ToList() ?? new List<string>();
-            }
-            catch
-            {
-                return new List<string>();
-            }
+            // A file that cannot be parsed reaches the caller (OILGAS-CATCH-01): it had been answered as "no logs here".
+            ParseFileStructure();
+            return fileStructure?.LogicalFiles?.Select(lf => lf.Name).ToList() ?? new List<string>();
         }
 
         public Task<List<string>> GetAvailableIdentifiersAsync()
@@ -193,12 +174,8 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
 
                 result.Success = true;
             }
-            catch (Exception ex)
-            {
-                result.Success = false;
-                result.Errors.Add($"Error loading DLIS log: {ex.Message}");
-                Console.WriteLine($"Exception in LoadLogWithResult: {ex}");
-            }
+            // A file that cannot be read or parsed is a failure, not a result: it reaches the caller as its exception
+            // (OILGAS-CATCH-01). It had been written to the console and its text put in the result.
             finally
             {
                 stats.EndTime = DateTime.UtcNow;
@@ -287,27 +264,27 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         {
             if (fileStructure != null) return;
 
-            fileStructure = new DlisFileStructure();
             fileStream.Position = 0;
 
-            try
+            // A file that cannot be parsed reaches the caller as its exception (OILGAS-CATCH-01). It had been written to
+            // the console and the half-read structure kept, so every later call answered from it as though it were whole.
+            // The structure is kept only once it has been read to the end.
+            var parsed = new DlisFileStructure
             {
                 // Read Storage Unit Label (80 bytes)
-                var storageUnitLabel = ReadStorageUnitLabel();
+                StorageUnitLabel = ReadStorageUnitLabel()
+            };
 
-                // Read Logical Records
-                while (fileStream.Position < fileStream.Length)
-                {
-                    var record = ReadLogicalRecord();
-                    if (record == null) break;
-
-                    ProcessLogicalRecord(record);
-                }
-            }
-            catch (Exception ex)
+            // Read Logical Records
+            while (fileStream.Position < fileStream.Length)
             {
-                Console.WriteLine($"Error parsing DLIS file structure: {ex.Message}");
+                var record = ReadLogicalRecord();
+                if (record == null) break;
+
+                ProcessLogicalRecord(record);
             }
+
+            fileStructure = parsed;
         }
 
         private DlisStorageUnitLabel ReadStorageUnitLabel()

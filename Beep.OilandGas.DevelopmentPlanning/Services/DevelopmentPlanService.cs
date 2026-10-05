@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -119,14 +120,14 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
         public async Task<DevelopmentPlan> UpdateDevelopmentPlanAsync(string planId, UpdateDevelopmentPlan updateDto)
         {
             if (string.IsNullOrWhiteSpace(planId))
-                throw new ArgumentException("Plan ID cannot be null or empty.", nameof(planId));
+                throw RefusalException.Invalid("The development plan ID is required.");
             if (updateDto == null)
                 throw new ArgumentNullException(nameof(updateDto));
 
             var repo = await GetRepositoryAsync<FIELD_DEVELOPMENT_PLAN>("FIELD_DEVELOPMENT_PLAN");
             var entity = await repo.GetByIdAsync(planId);
             if (entity is not FIELD_DEVELOPMENT_PLAN fieldPlan)
-                throw new KeyNotFoundException($"Development plan with ID {planId} not found.");
+                throw RefusalException.NotFound($"Development plan {planId} was not found.");
 
             if (!string.IsNullOrWhiteSpace(updateDto.PlanName))
                 fieldPlan.FDP_NAME = updateDto.PlanName;
@@ -157,7 +158,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
         public async Task<DevelopmentPlan> ApproveDevelopmentPlanAsync(string planId, string approvedBy)
         {
             if (string.IsNullOrWhiteSpace(planId))
-                throw new ArgumentException("Plan ID cannot be null or empty.", nameof(planId));
+                throw RefusalException.Invalid("The development plan ID is required.");
 
             var updated = await UpdateDevelopmentPlanAsync(planId, new UpdateDevelopmentPlan { Status = DevelopmentPlanningDefaults.Approved });
             var repo = await GetRepositoryAsync<FIELD_DEVELOPMENT_PLAN>("FIELD_DEVELOPMENT_PLAN");
@@ -282,7 +283,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             if (createDto == null)
                 throw new ArgumentNullException(nameof(createDto));
             if (string.IsNullOrWhiteSpace(createDto.PlanId) || string.IsNullOrWhiteSpace(createDto.WellUwi))
-                throw new ArgumentException("PlanId and WellUwi are required.");
+                throw RefusalException.Invalid("Choose the development plan and the well.");
 
             var repo = await GetRepositoryAsync<WELL_MAINTENANCE_PLAN>("WELL_MAINTENANCE_PLAN");
             var entity = new WELL_MAINTENANCE_PLAN
@@ -312,7 +313,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             if (createDto == null)
                 throw new ArgumentNullException(nameof(createDto));
             if (string.IsNullOrWhiteSpace(createDto.PlanId) || string.IsNullOrWhiteSpace(createDto.WellUwi))
-                throw new ArgumentException("PlanId and WellUwi are required.");
+                throw RefusalException.Invalid("Choose the development plan and the well.");
 
             var repo = await GetRepositoryAsync<WELL_SERVICE_JOB>("WELL_SERVICE_JOB");
             var entity = new WELL_SERVICE_JOB

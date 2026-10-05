@@ -34,17 +34,9 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<List<LeaseSummary>> GetAvailableLeasesAsync(Dictionary<string, string>? filters = null)
         {
-            try
-            {
-                var endpoint = BuildEndpoint("/api/leaseacquisition/available", filters);
-                var result = await _apiClient.GetAsync<List<LeaseSummary>>(endpoint);
-                return result ?? new List<LeaseSummary>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting available leases");
-                return new List<LeaseSummary>();
-            }
+            var endpoint = BuildEndpoint("/api/leaseacquisition/available", filters);
+            var result = await _apiClient.GetAsync<List<LeaseSummary>>(endpoint);
+            return result ?? new List<LeaseSummary>();
         }
 
         public async Task<string> CreateLeaseAcquisitionAsync(CreateLeaseAcquisition leaseRequest)
@@ -62,18 +54,10 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> UpdateLeaseStatusAsync(string leaseId, string status)
+        public async Task UpdateLeaseStatusAsync(string leaseId, string status)
         {
-            try
-            {
-                var endpoint = $"/api/leaseacquisition/{Uri.EscapeDataString(leaseId)}/status";
-                return await _apiClient.PutAsync(endpoint, new { Status = status });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating lease status for {LeaseId}", leaseId);
-                return false;
-            }
+            var endpoint = $"/api/leaseacquisition/{Uri.EscapeDataString(leaseId)}/status";
+            await _apiClient.PutAsync(endpoint, new { Status = status });
         }
 
         private static string BuildEndpoint(string endpoint, Dictionary<string, string>? filters)

@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Core.Refusals;
+using TheTechIdeaWeb.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,17 +25,20 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes
         private readonly IProcessService _processService;
         private readonly WorkOrderManagementService _workOrderService;
         private readonly WorkOrderAccountingService? _accountingService;
+        private readonly IFailureReporter _failures;
         private readonly ILogger<WorkOrderProcessService>? _logger;
 
         public WorkOrderProcessService(
             IProcessService processService,
             WorkOrderManagementService workOrderService,
+            IFailureReporter failures,
             WorkOrderAccountingService? accountingService = null,
             ILogger<WorkOrderProcessService>? logger = null)
         {
             _processService = processService ?? throw new ArgumentNullException(nameof(processService));
             _workOrderService = workOrderService ?? throw new ArgumentNullException(nameof(workOrderService));
             _accountingService = accountingService;
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
             _logger = logger;
         }
 
@@ -142,9 +147,13 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes
                         workOrder.AfeId = afe.AFE_ID;
                         _logger?.LogInformation("AFE {AfeId} created/linked for work order {WorkOrderId}", afe.AFE_ID, workOrderId);
                     }
-                    catch (Exception afeEx)
+                    // Execution does not wait on its AFE: a failure to create or link one is reported, and the work order
+                    // goes on without it. A refusal of the AFE is the caller's answer, and cancellation the caller's.
+                    catch (Exception afeEx) when (afeEx is not RefusalException and not OperationCanceledException)
                     {
-                        _logger?.LogWarning(afeEx, "Failed to create/link AFE for work order {WorkOrderId}, continuing with execution", workOrderId);
+                        _failures.ReportHandled(afeEx, $"creating or linking the AFE for work order {workOrderId} as its execution starts",
+                            "the execution process starts without an AFE linked; its costs cannot be recorded against one until it is",
+                            FailureSeverity.Degraded);
                     }
                 }
 

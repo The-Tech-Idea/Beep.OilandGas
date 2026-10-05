@@ -14,7 +14,7 @@ public class ModuleDatabaseClientTests
         using var handler = new Handler(HttpStatusCode.OK,
             "{\"moduleId\":\"LIFECYCLE\",\"success\":true,\"recordsInserted\":3,\"tablesSeeded\":1,\"errors\":[]}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
+        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
         var result = await client.SeedAsync("LIFECYCLE", new("saved-version"));
         Assert.True(result.Success);
         Assert.Equal(3, result.RecordsInserted);
@@ -33,7 +33,7 @@ public class ModuleDatabaseClientTests
     {
         using var handler = new Handler(status, "{}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
+        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
         await Assert.ThrowsAsync<HttpRequestException>(() => client.SeedAsync("LIFECYCLE", new("saved-version")));
     }
 
@@ -42,7 +42,7 @@ public class ModuleDatabaseClientTests
     {
         using var handler = new Handler(HttpStatusCode.OK, "{\"success\":true,\"planId\":\"reviewed-plan\",\"planHash\":\"plan-hash\",\"manifestHash\":\"manifest-hash\"}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
+        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
         await client.ExecuteAsync(new() { PlanId = "reviewed-plan", PlanHash = "plan-hash", ManifestHash = "manifest-hash" }, true);
         Assert.Equal("/api/ppdm39/setup/schema/execute", handler.Path);
         using var body = JsonDocument.Parse(handler.Body!);
@@ -59,7 +59,7 @@ public class ModuleDatabaseClientTests
     {
         using var handler = new Handler(HttpStatusCode.OK, "{\"success\":true,\"planId\":\"reviewed-plan\"}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
+        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
         await client.ApproveAsync("reviewed-plan");
         Assert.Equal("/api/ppdm39/setup/schema/approve", handler.Path);
         using var body = JsonDocument.Parse(handler.Body!);
@@ -72,7 +72,7 @@ public class ModuleDatabaseClientTests
     {
         using var handler = new Handler(HttpStatusCode.OK, "{\"moduleId\":\"GAS_LIFT\",\"connectionName\":\"gas-db\",\"concurrencyStamp\":\"new\"}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
+        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
         var result = await client.BindAsync("GAS_LIFT", new("gas-db", "old"));
         Assert.Equal("new", result.ConcurrencyStamp);
         Assert.Equal(HttpMethod.Put, handler.Method);
@@ -87,7 +87,7 @@ public class ModuleDatabaseClientTests
     {
         using var handler = new Handler(HttpStatusCode.OK, "{\"success\":true,\"planId\":\"plan\"}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
+        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
         Assert.True((await client.PlanAsync("GAS_LIFT", new("Production", true, true, "restore-123", "binding-version"))).Success);
         Assert.Equal(HttpMethod.Post, handler.Method);
         Assert.Equal("/api/setup/modules/GAS_LIFT/plan", handler.Path);
@@ -103,7 +103,7 @@ public class ModuleDatabaseClientTests
     {
         using var handler = new Handler(HttpStatusCode.Conflict, "{}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
+        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
         await Assert.ThrowsAsync<HttpRequestException>(() => client.BindAsync("GAS_LIFT", new("gas-db", "stale")));
     }
 
@@ -124,7 +124,7 @@ public class ModuleDatabaseClientTests
         reply[key] = value;
         using var handler = new Handler(HttpStatusCode.OK, JsonSerializer.Serialize(reply));
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
+        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
         await Assert.ThrowsAsync<InvalidOperationException>(() => client.ExecuteAsync(
             new() { PlanId = "reviewed-plan", PlanHash = "plan-hash", ManifestHash = "manifest-hash" }, false));
     }
@@ -137,7 +137,7 @@ public class ModuleDatabaseClientTests
     {
         using var handler = new Handler(HttpStatusCode.OK, JsonSerializer.Serialize(new { success = true, planId = id }));
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
+        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
         await Assert.ThrowsAsync<InvalidOperationException>(() => client.ApproveAsync("reviewed-plan"));
     }
 
@@ -146,7 +146,7 @@ public class ModuleDatabaseClientTests
     {
         using var handler = new Handler(HttpStatusCode.OK, "{\"success\":false,\"message\":\"Plan expired\"}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, NullLogger<ApiClient>.Instance));
+        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
         var result = await client.ExecuteAsync(new() { PlanId = "plan", PlanHash = "hash", ManifestHash = "manifest" }, false);
         Assert.False(result.Success);
         Assert.Equal("Plan expired", result.Message);

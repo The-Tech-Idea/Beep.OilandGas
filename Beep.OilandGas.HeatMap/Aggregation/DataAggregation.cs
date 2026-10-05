@@ -258,7 +258,6 @@ namespace Beep.OilandGas.HeatMap.Aggregation
                 AggregationMethod.Min => points.Min(p => p.Value),
                 AggregationMethod.Median => CalculateMedian(points.Select(p => p.Value).ToList()),
                 AggregationMethod.Count => points.Count,
-                _ => points.Average(p => p.Value)
             };
         }
 

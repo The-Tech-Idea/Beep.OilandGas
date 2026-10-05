@@ -48,24 +48,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
             var userId = User.ActingUserId();
             if (request == null) return BadRequest(new { error = "Request body is required." });
 
-            try
-            {
-                var prospect = MapLegacyProspect(request);
-                var prospectId = await _service.CreateProspectAsync(prospect, userId);
-                request.PROSPECT_ID = prospectId;
-                request.PROSPECT_STATUS = string.IsNullOrWhiteSpace(request.PROSPECT_STATUS) ? "New" : request.PROSPECT_STATUS;
-                return Ok(request);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid legacy prospect identify request");
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error identifying prospect through legacy compatibility route");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var prospect = MapLegacyProspect(request);
+            var prospectId = await _service.CreateProspectAsync(prospect, userId);
+            request.PROSPECT_ID = prospectId;
+            request.PROSPECT_STATUS = string.IsNullOrWhiteSpace(request.PROSPECT_STATUS) ? "New" : request.PROSPECT_STATUS;
+            return Ok(request);
         }
 
         [HttpPost("/api/prospect/risk")]
@@ -73,30 +60,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         {
             if (request == null) return BadRequest(new { error = "Request body is required." });
 
-            try
+            ProspectEvaluation evaluation;
+            if (!string.IsNullOrWhiteSpace(request.PROSPECT_ID))
             {
-                ProspectEvaluation evaluation;
-                if (!string.IsNullOrWhiteSpace(request.PROSPECT_ID))
-                {
-                    evaluation = await _service.EvaluateProspectAsync(request.PROSPECT_ID);
-                }
-                else
-                {
-                    evaluation = BuildEvaluationFromLegacyProspect(request);
-                }
+                evaluation = await _service.EvaluateProspectAsync(request.PROSPECT_ID);
+            }
+            else
+            {
+                evaluation = BuildEvaluationFromLegacyProspect(request);
+            }
 
-                return Ok(MapRiskAssessment(evaluation, request));
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid legacy prospect risk request");
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error evaluating prospect risk through legacy compatibility route");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(MapRiskAssessment(evaluation, request));
         }
 
         [HttpGet("/api/prospect/{prospectId}")]
@@ -104,19 +78,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         {
             if (string.IsNullOrWhiteSpace(prospectId)) return BadRequest(new { error = "Prospect ID is required." });
 
-            try
-            {
-                var prospect = await GetProspectByIdAsync(prospectId);
-                if (prospect == null)
-                    return NotFound(new { error = $"Prospect {prospectId} was not found." });
+            var prospect = await GetProspectByIdAsync(prospectId);
+            if (prospect == null)
+                return NotFound(new { error = $"Prospect {prospectId} was not found." });
 
-                return Ok(MapLegacyProspect(prospect));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting prospect {ProspectId} through legacy compatibility route", prospectId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(MapLegacyProspect(prospect));
         }
 
         [HttpGet("/api/prospect/{prospectId}/volumetrics")]
@@ -124,19 +90,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         {
             if (string.IsNullOrWhiteSpace(prospectId)) return BadRequest(new { error = "Prospect ID is required." });
 
-            try
-            {
-                var prospect = await GetProspectByIdAsync(prospectId);
-                if (prospect == null)
-                    return NotFound(new { error = $"Prospect {prospectId} was not found." });
+            var prospect = await GetProspectByIdAsync(prospectId);
+            if (prospect == null)
+                return NotFound(new { error = $"Prospect {prospectId} was not found." });
 
-                return Ok(MapVolumeEstimate(prospect));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting volumetrics for prospect {ProspectId}", prospectId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(MapVolumeEstimate(prospect));
         }
 
         [HttpPost("/api/prospect/rank")]
@@ -144,38 +102,25 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         {
             if (request == null) return BadRequest(new { error = "Request body is required." });
 
-            try
+            var prospects = await GetPortfolioProspectsAsync(request.PORTFOLIO_ID);
+            if (prospects.Count == 0)
+                return NotFound(new { error = "No prospects were available to rank." });
+
+            var rankingCriteria = new Dictionary<string, decimal>
             {
-                var prospects = await GetPortfolioProspectsAsync(request.PORTFOLIO_ID);
-                if (prospects.Count == 0)
-                    return NotFound(new { error = "No prospects were available to rank." });
+                ["EstimatedReserves"] = 0.7m,
+                ["RiskFactor"] = 0.3m
+            };
 
-                var rankingCriteria = new Dictionary<string, decimal>
-                {
-                    ["EstimatedReserves"] = 0.7m,
-                    ["RiskFactor"] = 0.3m
-                };
+            var rankings = await _service.RankProspectsAsync(
+                prospects.Select(p => p.ProspectId).Where(id => !string.IsNullOrWhiteSpace(id)).ToList(),
+                rankingCriteria);
 
-                var rankings = await _service.RankProspectsAsync(
-                    prospects.Select(p => p.ProspectId).Where(id => !string.IsNullOrWhiteSpace(id)).ToList(),
-                    rankingCriteria);
+            var topRanked = rankings.OrderBy(r => r.Rank).FirstOrDefault();
+            if (topRanked == null)
+                return NotFound(new { error = "No ranked prospects were returned." });
 
-                var topRanked = rankings.OrderBy(r => r.Rank).FirstOrDefault();
-                if (topRanked == null)
-                    return NotFound(new { error = "No ranked prospects were returned." });
-
-                return Ok(MapLegacyRanking(topRanked, request));
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid legacy prospect rank request");
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error ranking prospects through legacy compatibility route");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(MapLegacyRanking(topRanked, request));
         }
 
         [HttpGet("/api/prospect/portfolio/{basinId}")]
@@ -183,78 +128,38 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         {
             if (string.IsNullOrWhiteSpace(basinId)) return BadRequest(new { error = "Basin ID is required." });
 
-            try
-            {
-                var prospects = await GetPortfolioProspectsAsync(basinId);
-                return Ok(prospects.Select(MapLegacyProspect).ToList());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting prospect portfolio for basin {BasinId}", basinId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var prospects = await GetPortfolioProspectsAsync(basinId);
+            return Ok(prospects.Select(MapLegacyProspect).ToList());
         }
 
         [HttpPost("evaluate/{prospectId}")]
         public async Task<ActionResult<ProspectEvaluation>> EvaluateProspect(string prospectId)
         {
             if (string.IsNullOrWhiteSpace(prospectId)) return BadRequest(new { error = "Prospect ID is required." });
-            try
-            {
-                var result = await _service.EvaluateProspectAsync(prospectId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error evaluating prospect {ProspectId}", prospectId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.EvaluateProspectAsync(prospectId);
+            return Ok(result);
         }
 
         [HttpGet]
         public async Task<ActionResult<List<Prospect>>> GetProspects([FromQuery] Dictionary<string, string>? filters = null)
         {
-            try
-            {
-                var result = await _service.GetProspectsAsync(filters);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting prospects");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.GetProspectsAsync(filters);
+            return Ok(result);
         }
 
         [HttpPost]
         public async Task<ActionResult<string>> CreateProspect([FromBody] Prospect prospect)
         {
             var userId = User.ActingUserId();
-            try
-            {
-                var prospectId = await _service.CreateProspectAsync(prospect, userId);
-                return Ok(new { message = "Prospect created successfully", prospectId });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating prospect");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var prospectId = await _service.CreateProspectAsync(prospect, userId);
+            return Ok(new { message = "Prospect created successfully", prospectId });
         }
 
         [HttpPost("rank")]
         public async Task<ActionResult<List<ProspectRanking>>> RankProspects([FromBody] RankProspectsRequest request)
         {
-            try
-            {
-                var result = await _service.RankProspectsAsync(request.ProspectIds, request.RankingCriteria);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error ranking prospects");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.RankProspectsAsync(request.ProspectIds, request.RankingCriteria);
+            return Ok(result);
         }
 
         private async Task<Prospect?> GetProspectByIdAsync(string prospectId)

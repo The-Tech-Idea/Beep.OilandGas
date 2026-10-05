@@ -3,6 +3,7 @@ using Beep.Foundation.IdentityServer.Shared.Authentication;
 using Beep.Foundation.IdentityServer.Shared.Identity;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Authentication;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Services;
 
@@ -24,7 +25,7 @@ namespace Beep.OilandGas.ApiService.Services;
 /// </remarks>
 public sealed class RepositoryRolesClaimsTransformation(
     IRepositoryAccessService access,
-    ILogger<RepositoryRolesClaimsTransformation> logger) : IClaimsTransformation
+    IFailureReporter failures) : IClaimsTransformation
 {
     /// <summary>Marks a principal whose roles were resolved in this request.</summary>
     public const string ResolvedMarker = "oilgas:roles-resolved";
@@ -66,8 +67,10 @@ public sealed class RepositoryRolesClaimsTransformation(
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
                 // Broad on purpose: the repository's database provider decides what it throws. The request holds no role
-                // and is not an active account, so the fallback policy refuses it; nothing is admitted on a guess.
-                logger.LogError(exception, "The roles of OilGas account {UserId} could not be read; the request holds none.", userId);
+                // and is not an active account, so the fallback policy refuses it; nothing is admitted on a guess. The
+                // failure is reported, so a refusal caused by it can be told from an account that is off.
+                failures.ReportHandled(exception, $"reading the roles of OilGas account {userId}",
+                    "the request holds no role and is not an active account, so it is refused");
             }
         }
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.PipelineAnalysis.Services
 {
@@ -12,7 +13,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<HydraulicSimulationResult> SimulateSteadyStateAsync(string pipelineId, SimulationRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -73,7 +74,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<TransientAnalysisResult> PerformTransientAnalysisAsync(string pipelineId, TransientRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -126,7 +127,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<TemperatureEffect> AnalyzeTemperatureEffectsAsync(string pipelineId, TemperatureRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -173,7 +174,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<PiggingAnalysis> EvaluatePiggingOperationsAsync(string pipelineId, PiggingRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 

@@ -4,6 +4,7 @@ using TheTechIdea.Beep.Report;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.PipelineAnalysis.Services
 {
@@ -53,7 +54,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<List<PipelineAnalysisResult>> GetAnalysisHistoryAsync(string pipelineId, DateTime startDate, DateTime endDate)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
 
             _logger?.LogInformation("Retrieving analysis history for {PipelineId} from {StartDate} to {EndDate}",
                 pipelineId, startDate, endDate);
@@ -143,7 +144,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<PipelineConfiguration?> GetPipelineConfigurationAsync(string pipelineId)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
 
             _logger?.LogInformation("Retrieving pipeline configuration for {PipelineId}", pipelineId);
 

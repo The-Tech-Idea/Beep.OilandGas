@@ -389,7 +389,6 @@ namespace Beep.OilandGas.PipelineAnalysis.Calculations
                 PigType.Ultrasonic         => (1.0, 4.0),
                 PigType.Caliper            => (1.0, 5.0),
                 PigType.BatchSeparator     => (2.0, 10.0),
-                _                          => (1.0, 8.0)
             };
     }
 }

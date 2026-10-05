@@ -30,7 +30,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                 throw new ArgumentNullException(nameof(reservoir));
 
             if (bottomHolePressure <= 0)
-                throw new ArgumentException("Bottom hole pressure must be greater than zero.", nameof(bottomHolePressure));
+                throw RefusalException.Invalid("Bottom hole pressure must be greater than zero.");
 
             var forecast = new PRODUCTION_FORECAST
             {

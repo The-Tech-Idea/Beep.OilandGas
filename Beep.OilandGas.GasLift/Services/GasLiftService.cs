@@ -18,6 +18,7 @@ using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.PPDM.Models;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.GasLift.Services
 {
@@ -71,9 +72,9 @@ namespace Beep.OilandGas.GasLift.Services
             if (wellProperties == null)
                 throw new ArgumentNullException(nameof(wellProperties));
             if (numberOfPoints < 2)
-                throw new ArgumentOutOfRangeException(nameof(numberOfPoints), numberOfPoints, "Number of analysis points must be at least 2.");
+                throw RefusalException.Invalid("Number of analysis points must be at least 2.");
             if (minGasInjectionRate > maxGasInjectionRate)
-                throw new ArgumentException("Minimum gas injection rate must not exceed maximum.", nameof(minGasInjectionRate));
+                throw RefusalException.Invalid("Minimum gas injection rate must not exceed maximum.");
 
             GasLiftValidator.ValidateWellProperties(wellProperties);
             GasLiftValidator.ValidateGasInjectionRate(minGasInjectionRate);
@@ -322,27 +323,22 @@ namespace Beep.OilandGas.GasLift.Services
 
             var optimizationResults = new List<GasLiftValveOptimizationResult>();
 
-            // Test different valve counts (3-10 valves)
+            // Test different valve counts (3-10 valves). Every count is within the validator's 1–20, so a design that is
+            // refused or fails is refused or fails for every count: it reaches the caller (OILGAS-CATCH-01). The catch here
+            // had logged a warning per count and answered an empty list, read as "no configuration was worth evaluating".
             for (int numValves = 3; numValves <= 10; numValves++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                try
+                var valveDesign = DesignValves(wellProperties, gasInjectionPressure, numValves);
+
+                optimizationResults.Add(new GasLiftValveOptimizationResult
                 {
-                    var valveDesign = DesignValves(wellProperties, gasInjectionPressure, numValves);
-                    
-                    optimizationResults.Add(new GasLiftValveOptimizationResult
-                    {
-                        NumberOfValves = numValves,
-                        TotalGasInjectionRate = valveDesign.TOTAL_GAS_INJECTION_RATE,
-                        ValveSpacing = wellProperties.WELL_DEPTH / numValves,
-                        DesignQuality = CalculateDesignQuality(valveDesign, wellProperties),
-                        CostEffectiveness = CalculateCostEffectiveness(numValves)
-                    });
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogWarning(ex, "Failed to optimize valve spacing with {ValveCount} valves", numValves);
-                }
+                    NumberOfValves = numValves,
+                    TotalGasInjectionRate = valveDesign.TOTAL_GAS_INJECTION_RATE,
+                    ValveSpacing = wellProperties.WELL_DEPTH / numValves,
+                    DesignQuality = CalculateDesignQuality(valveDesign, wellProperties),
+                    CostEffectiveness = CalculateCostEffectiveness(numValves)
+                });
             }
 
             _logger?.LogInformation("Valve spacing optimization completed: {ResultCount} configurations evaluated", optimizationResults.Count);
@@ -360,7 +356,7 @@ namespace Beep.OilandGas.GasLift.Services
         public async Task<GAS_LIFT_PERFORMANCE> GetGasLiftPerformanceAsync(string wellUWI, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
 
             _logger?.LogInformation("Retrieving gas lift performance for well {WellUWI}", wellUWI);
 

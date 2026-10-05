@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using System.Globalization;
 using System.Text.Json;
 using Beep.OilandGas.ProductionOperations.Constants;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.ProductionOperations.Services
 {
@@ -68,7 +69,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
         public async Task<List<ProductionData>> GetProductionDataAsync(string? wellUWI, string? fieldId, DateTime startDate, DateTime endDate)
         {
             if (string.IsNullOrWhiteSpace(wellUWI) && string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Either wellUWI or fieldId must be provided");
+                throw RefusalException.Invalid("Either a well UWI or a field ID must be provided.");
 
             _logger?.LogInformation("Getting production data for {WellUWI}{FieldId} from {StartDate} to {EndDate}",
                 wellUWI ?? string.Empty, fieldId ?? string.Empty, startDate, endDate);
@@ -171,7 +172,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
         public async Task<PRODUCTION_COSTS?> GetOperationStatusAsync(string operationId)
         {
             if (string.IsNullOrWhiteSpace(operationId))
-                throw new ArgumentException("Operation ID cannot be null or empty", nameof(operationId));
+                throw RefusalException.Invalid("An operation ID is required.");
 
             var repo = await CreateProductionCostsRepositoryAsync();
             var entity = await repo.GetByIdAsync(operationId);
@@ -182,13 +183,13 @@ namespace Beep.OilandGas.ProductionOperations.Services
         {
             ArgumentNullException.ThrowIfNull(request);
             if (string.IsNullOrWhiteSpace(operationId))
-                throw new ArgumentException("Operation ID cannot be null or empty", nameof(operationId));
+                throw RefusalException.Invalid("An operation ID is required.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
             var existing = await GetOperationStatusAsync(operationId);
             if (existing == null)
-                throw new InvalidOperationException($"Production operation cost record {operationId} was not found.");
+                throw RefusalException.NotFound($"Production operation cost record {operationId} was not found.");
 
             request.PRODUCTION_COST_ID = operationId;
             PrepareOperationForWrite(request, existing);
@@ -204,7 +205,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
         public async Task<List<ProductionOptimizationRecommendation>> OptimizeProductionAsync(string wellUWI, Dictionary<string, object> optimizationGoals)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
 
             optimizationGoals ??= new Dictionary<string, object>();
 
@@ -213,7 +214,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
             var productionHistory = await GetProductionDataAsync(wellUWI, null, DateTime.UtcNow.AddDays(-90), DateTime.UtcNow);
             if (productionHistory.Count == 0)
-                throw new InvalidOperationException($"No production history is available for well {wellUWI}.");
+                throw RefusalException.Conflict($"No production history is available for well {wellUWI}.");
 
             var orderedHistory = productionHistory
                 .OrderBy(record => record.ProductionDate)
@@ -321,7 +322,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
         public async Task<List<WellProductionData>> GetWellProductionAsync(string wellUWI, DateTime startDate, DateTime endDate)
         {
-            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
+            if (string.IsNullOrWhiteSpace(wellUWI)) throw RefusalException.Invalid("A well UWI is required.");
             _logger?.LogInformation("Getting well production for {WellUWI}", wellUWI);
 
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
@@ -351,7 +352,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
         public async Task<WellUptime> CalculateWellUptimeAsync(string wellUWI, DateTime startDate, DateTime endDate)
         {
-            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
+            if (string.IsNullOrWhiteSpace(wellUWI)) throw RefusalException.Invalid("A well UWI is required.");
             _logger?.LogInformation("Calculating well uptime for {WellUWI}", wellUWI);
 
             var production = await GetWellProductionAsync(wellUWI, startDate, endDate);
@@ -373,7 +374,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
         public async Task<WellStatus> GetWellStatusAsync(string wellUWI)
         {
-            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
+            if (string.IsNullOrWhiteSpace(wellUWI)) throw RefusalException.Invalid("A well UWI is required.");
             _logger?.LogInformation("Getting well status for {WellUWI}", wellUWI);
 
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
@@ -403,7 +404,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
         public async Task UpdateWellParametersAsync(string wellUWI, WellParameters parameters, string userId)
         {
-            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
+            if (string.IsNullOrWhiteSpace(wellUWI)) throw RefusalException.Invalid("A well UWI is required.");
             if (parameters == null) throw new ArgumentNullException(nameof(parameters));
             if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID required", nameof(userId));
             _logger?.LogInformation("Updating well parameters for {WellUWI}", wellUWI);
@@ -418,7 +419,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             })).Cast<WELL>().FirstOrDefault();
 
             if (existing == null)
-                throw new InvalidOperationException($"Well {wellUWI} not found");
+                throw RefusalException.NotFound($"Well {wellUWI} was not found.");
 
             var hasSupportedFieldUpdates =
                 !string.IsNullOrWhiteSpace(parameters.ArtificialLiftMethod) ||
@@ -426,7 +427,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
                 parameters.TargetRate.HasValue;
             if (!hasSupportedFieldUpdates)
             {
-                throw new InvalidOperationException(
+                throw RefusalException.Invalid(
                     "No supported WELL fields were supplied. Provide TargetRate, ArtificialLiftMethod, or ChokeSize. " +
                     "Pressure limits must be written to pressure-specific PPDM tables.");
             }
@@ -472,7 +473,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
         public async Task<List<EquipmentMaintenance>> GetEquipmentMaintenanceHistoryAsync(string equipmentId, DateTime startDate, DateTime endDate)
         {
-            if (string.IsNullOrWhiteSpace(equipmentId)) throw new ArgumentException("Equipment ID required", nameof(equipmentId));
+            if (string.IsNullOrWhiteSpace(equipmentId)) throw RefusalException.Invalid("An equipment ID is required.");
             _logger?.LogInformation("Getting maintenance history for {EquipmentId}", equipmentId);
 
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
@@ -550,7 +551,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
         public async Task<EquipmentReliability> CalculateEquipmentReliabilityAsync(string equipmentId, DateTime startDate, DateTime endDate)
         {
-            if (string.IsNullOrWhiteSpace(equipmentId)) throw new ArgumentException("Equipment ID required", nameof(equipmentId));
+            if (string.IsNullOrWhiteSpace(equipmentId)) throw RefusalException.Invalid("An equipment ID is required.");
             _logger?.LogInformation("Calculating reliability for {EquipmentId}", equipmentId);
             return await Task.FromResult(new EquipmentReliability
             {
@@ -598,7 +599,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
         public async Task<List<FacilityProduction>> GetFacilityProductionAsync(string facilityId, DateTime startDate, DateTime endDate)
         {
-            if (string.IsNullOrWhiteSpace(facilityId)) throw new ArgumentException("Facility ID required", nameof(facilityId));
+            if (string.IsNullOrWhiteSpace(facilityId)) throw RefusalException.Invalid("A facility ID is required.");
             _logger?.LogInformation("Getting facility production for {FacilityId}", facilityId);
 
             var volumes = await _facilityManagement
@@ -617,14 +618,14 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
         public async Task UpdateFacilityStatusAsync(string facilityId, FacilityStatus status, string userId)
         {
-            if (string.IsNullOrWhiteSpace(facilityId)) throw new ArgumentException("Facility ID required", nameof(facilityId));
+            if (string.IsNullOrWhiteSpace(facilityId)) throw RefusalException.Invalid("A facility ID is required.");
             if (status == null) throw new ArgumentNullException(nameof(status));
             if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID required", nameof(userId));
             _logger?.LogInformation("Updating facility status for {FacilityId}", facilityId);
 
             var facility = await _facilityManagement.GetFacilityAsync(facilityId, null, default).ConfigureAwait(false);
             if (facility == null)
-                throw new InvalidOperationException($"Facility {facilityId} not found");
+                throw RefusalException.NotFound($"Facility {facilityId} was not found.");
 
             var statusRow = new FACILITY_STATUS
             {
@@ -644,7 +645,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
         public async Task<FacilityStatus> GetFacilityStatusAsync(string facilityId)
         {
-            if (string.IsNullOrWhiteSpace(facilityId)) throw new ArgumentException("Facility ID required", nameof(facilityId));
+            if (string.IsNullOrWhiteSpace(facilityId)) throw RefusalException.Invalid("A facility ID is required.");
             _logger?.LogInformation("Getting facility status for {FacilityId}", facilityId);
 
             var facility = await _facilityManagement.GetFacilityAsync(facilityId, null, default).ConfigureAwait(false);
@@ -678,7 +679,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
         async Task<CostAnalysis> IProductionOperationsAdvancedService.CalculateCostAnalysisAsync(string wellUWI, DateTime startDate, DateTime endDate)
         {
-            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
+            if (string.IsNullOrWhiteSpace(wellUWI)) throw RefusalException.Invalid("A well UWI is required.");
             _logger?.LogInformation("Calculating cost analysis for {WellUWI}", wellUWI);
             return await Task.FromResult(new CostAnalysis
             {
@@ -726,14 +727,14 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
         async Task<List<OptimizationOpportunity>> IProductionOperationsAdvancedService.IdentifyOptimizationOpportunitiesAsync(string wellUWI)
         {
-            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
+            if (string.IsNullOrWhiteSpace(wellUWI)) throw RefusalException.Invalid("A well UWI is required.");
             _logger?.LogInformation("Identifying optimization opportunities for {WellUWI}", wellUWI);
             return await Task.FromResult(new List<OptimizationOpportunity>());
         }
 
         async Task IProductionOperationsAdvancedService.ImplementOptimizationAsync(string opportunityId, string userId)
         {
-            if (string.IsNullOrWhiteSpace(opportunityId)) throw new ArgumentException("Opportunity ID required", nameof(opportunityId));
+            if (string.IsNullOrWhiteSpace(opportunityId)) throw RefusalException.Invalid("An opportunity ID is required.");
             if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID required", nameof(userId));
             _logger?.LogInformation("Implementing optimization {OpportunityId} by user {UserId}", opportunityId, userId);
             await Task.CompletedTask;
@@ -741,7 +742,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
         async Task<OptimizationEffectiveness> IProductionOperationsAdvancedService.MonitorOptimizationEffectivenessAsync(string opportunityId)
         {
-            if (string.IsNullOrWhiteSpace(opportunityId)) throw new ArgumentException("Opportunity ID required", nameof(opportunityId));
+            if (string.IsNullOrWhiteSpace(opportunityId)) throw RefusalException.Invalid("An opportunity ID is required.");
             _logger?.LogInformation("Monitoring optimization effectiveness for opportunity {OpportunityId}", opportunityId);
             return await Task.FromResult(new OptimizationEffectiveness
             {
@@ -778,14 +779,14 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
         async Task<byte[]> IProductionOperationsAdvancedService.ExportOperationsDataAsync(string dataType, DateTime startDate, DateTime endDate, string format)
         {
-            if (string.IsNullOrWhiteSpace(dataType)) throw new ArgumentException("Data type required", nameof(dataType));
+            if (string.IsNullOrWhiteSpace(dataType)) throw RefusalException.Invalid("A data type is required.");
             _logger?.LogInformation("Exporting {DataType} data from {StartDate} to {EndDate} as {Format}", dataType, startDate, endDate, format);
             return await Task.FromResult(Array.Empty<byte>());
         }
 
         async Task<DataValidationResult> IProductionOperationsAdvancedService.ValidateOperationsDataAsync(string dataType, DateTime startDate, DateTime endDate)
         {
-            if (string.IsNullOrWhiteSpace(dataType)) throw new ArgumentException("Data type required", nameof(dataType));
+            if (string.IsNullOrWhiteSpace(dataType)) throw RefusalException.Invalid("A data type is required.");
             _logger?.LogInformation("Validating {DataType} data from {StartDate} to {EndDate}", dataType, startDate, endDate);
             return await Task.FromResult(new DataValidationResult
             {
@@ -813,7 +814,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
                 ? existing?.PROPERTY_ID ?? string.Empty
                 : request.PROPERTY_ID;
             if (string.IsNullOrWhiteSpace(request.PROPERTY_ID))
-                throw new ArgumentException("PROPERTY_ID is required.", nameof(request));
+                throw RefusalException.Invalid("PROPERTY_ID is required.");
 
             request.ROW_ID = string.IsNullOrWhiteSpace(request.ROW_ID)
                 ? existing?.ROW_ID ?? Guid.NewGuid().ToString("N")

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.Drilling;
@@ -137,7 +138,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             if (!string.IsNullOrWhiteSpace(well.ASSIGNED_FIELD)
                 && !string.Equals(well.ASSIGNED_FIELD, fieldId, StringComparison.OrdinalIgnoreCase))
             {
-                throw new KeyNotFoundException($"Well {well.UWI} is not assigned to field {fieldId}.");
+                throw RefusalException.NotFound($"Well {well.UWI} is not in field {fieldId}.");
             }
         }
 
@@ -232,7 +233,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
                 throw new ArgumentNullException(nameof(createDto));
 
             if (string.IsNullOrWhiteSpace(createDto.WellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(createDto));
+                throw RefusalException.Invalid("The well UWI is required.");
 
             _logger?.LogInformation("Creating drilling operation for well UWI: {WellUWI} in field {FieldId}", createDto.WellUWI, fieldId ?? "all");
 
@@ -308,7 +309,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
         public async Task<DRILLING_OPERATION> UpdateDrillingOperationAsync(string operationId, UpdateDrillingOperation updateDto, string? fieldId = null, string? userId = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(operationId))
-                throw new ArgumentException("Operation ID cannot be null or empty.", nameof(operationId));
+                throw RefusalException.Invalid("The drilling operation ID is required.");
 
             if (updateDto == null)
                 throw new ArgumentNullException(nameof(updateDto));
@@ -320,7 +321,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             var auditUser = ResolveAuditUser(userId);
 
             if (well == null)
-                throw new KeyNotFoundException($"Drilling operation with ID {operationId} not found.");
+                throw RefusalException.NotFound($"Drilling operation {operationId} was not found.");
 
             if (updateDto.Status != null)
             {
@@ -378,7 +379,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
 
             var well = await GetWellAsync(operationId, fieldId);
             if (well == null)
-                throw new KeyNotFoundException($"Drilling operation with ID {operationId} not found.");
+                throw RefusalException.NotFound($"Drilling operation {operationId} was not found.");
 
             var drillReportRepo = await GetDrillReportRepositoryAsync(cancellationToken);
             var filters = new List<AppFilter>
@@ -405,7 +406,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
         public async Task<DRILLING_REPORT> CreateDrillingReportAsync(string operationId, CreateDrillingReport createDto, string? fieldId = null, string? userId = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(operationId))
-                throw new ArgumentException("Operation ID cannot be null or empty.", nameof(operationId));
+                throw RefusalException.Invalid("The drilling operation ID is required.");
 
             if (createDto == null)
                 throw new ArgumentNullException(nameof(createDto));
@@ -414,7 +415,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
 
             var well = await GetWellAsync(operationId, fieldId);
             if (well == null)
-                throw new KeyNotFoundException($"Drilling operation with ID {operationId} not found.");
+                throw RefusalException.NotFound($"Drilling operation {operationId} was not found.");
             var auditUser = ResolveAuditUser(userId);
 
             var drillReportRepo = await GetDrillReportRepositoryAsync(cancellationToken);
@@ -456,7 +457,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("The well UWI is required.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
@@ -514,7 +515,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("The well UWI is required.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
@@ -580,7 +581,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("The well UWI is required.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
@@ -653,7 +654,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("The well UWI is required.");
             if (performance == null)
                 throw new ArgumentNullException(nameof(performance));
             if (costs == null)

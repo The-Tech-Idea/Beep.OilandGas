@@ -51,32 +51,24 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrEmpty(fieldId))
                     return BadRequest(new { error = "No active field selected." });
 
-            try
-            {
-                var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, "COMPLIANCE_REPORT");
-                var summaries = new List<ComplianceObligationSummary>();
+            var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, "COMPLIANCE_REPORT");
+            var summaries = new List<ComplianceObligationSummary>();
 
-                if (instances != null)
+            if (instances != null)
+            {
+                foreach (var inst in instances)
                 {
-                    foreach (var inst in instances)
+                    var summary = new ComplianceObligationSummary
                     {
-                        var summary = new ComplianceObligationSummary
-                        {
-                            ObligationId = inst.InstanceId,
-                            Status = inst.Status.ToString()
-                        };
+                        ObligationId = inst.InstanceId,
+                        Status = inst.Status.ToString()
+                    };
 
-                        summaries.Add(summary);
-                    }
+                    summaries.Add(summary);
                 }
+            }
 
-                return Ok(summaries);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving compliance obligations for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "Error retrieving obligations." });
-            }
+            return Ok(summaries);
         }
 
         /// <summary>List compliance obligations due within the specified number of days (default 30).</summary>
@@ -93,30 +85,22 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrEmpty(fieldId))
                     return BadRequest(new { error = "No active field selected." });
 
-            try
-            {
-                var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, "COMPLIANCE_REPORT");
-                var summaries = new List<ComplianceObligationSummary>();
+            var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, "COMPLIANCE_REPORT");
+            var summaries = new List<ComplianceObligationSummary>();
 
-                if (instances != null)
+            if (instances != null)
+            {
+                foreach (var inst in instances)
                 {
-                    foreach (var inst in instances)
+                    summaries.Add(new ComplianceObligationSummary
                     {
-                        summaries.Add(new ComplianceObligationSummary
-                        {
-                            ObligationId = inst.InstanceId,
-                            Status = inst.Status.ToString()
-                        });
-                    }
+                        ObligationId = inst.InstanceId,
+                        Status = inst.Status.ToString()
+                    });
                 }
+            }
 
-                return Ok(summaries);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving due obligations for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "Error retrieving due obligations." });
-            }
+            return Ok(summaries);
         }
 
         /// <summary>Submit a regulatory compliance report.</summary>
@@ -141,45 +125,37 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 
             var userId = User.ActingUserId();
 
-            try
+            // Map to the matching compliance process definition
+            var processId = $"COMPLIANCE_{request.ObligationType.ToUpperInvariant().Replace(" ", "_")}";
+            var reportEntityId = Guid.NewGuid().ToString();
+
+            var instance = await _processService.StartProcessAsync(
+                processId,
+                reportEntityId,
+                "COMPLIANCE_REPORT",
+                fieldId,
+                userId);
+
+            // Record submission details
+            await _processService.AddHistoryEntryAsync(instance.InstanceId, new ProcessHistoryEntry
             {
-                // Map to the matching compliance process definition
-                var processId = $"COMPLIANCE_{request.ObligationType.ToUpperInvariant().Replace(" ", "_")}";
-                var reportEntityId = Guid.NewGuid().ToString();
-
-                var instance = await _processService.StartProcessAsync(
-                    processId,
-                    reportEntityId,
-                    "COMPLIANCE_REPORT",
-                    fieldId,
-                    userId);
-
-                // Record submission details
-                await _processService.AddHistoryEntryAsync(instance.InstanceId, new ProcessHistoryEntry
+                HistoryId = Guid.NewGuid().ToString(),
+                InstanceId = instance.InstanceId,
+                Action = "REPORT_SUBMITTED",
+                Notes = $"Jurisdiction: {request.JurisdictionTag} | Type: {request.ObligationType} | Period: {request.PeriodStart:yyyy-MM-dd} – {request.PeriodEnd:yyyy-MM-dd}",
+                PerformedBy = userId,
+                Timestamp = DateTime.UtcNow,
+                ActionData = new Dictionary<string, object>
                 {
-                    HistoryId = Guid.NewGuid().ToString(),
-                    InstanceId = instance.InstanceId,
-                    Action = "REPORT_SUBMITTED",
-                    Notes = $"Jurisdiction: {request.JurisdictionTag} | Type: {request.ObligationType} | Period: {request.PeriodStart:yyyy-MM-dd} – {request.PeriodEnd:yyyy-MM-dd}",
-                    PerformedBy = userId,
-                    Timestamp = DateTime.UtcNow,
-                    ActionData = new Dictionary<string, object>
-                    {
-                        ["JurisdictionTag"] = request.JurisdictionTag,
-                        ["ObligationType"] = request.ObligationType,
-                        ["PeriodStart"] = request.PeriodStart,
-                        ["PeriodEnd"] = request.PeriodEnd,
-                        ["SubmissionReference"] = request.SubmissionReference
-                    }
-                });
+                    ["JurisdictionTag"] = request.JurisdictionTag,
+                    ["ObligationType"] = request.ObligationType,
+                    ["PeriodStart"] = request.PeriodStart,
+                    ["PeriodEnd"] = request.PeriodEnd,
+                    ["SubmissionReference"] = request.SubmissionReference
+                }
+            });
 
-                return CreatedAtAction(nameof(GetReportStatusAsync), new { reportId = instance.InstanceId }, instance);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error submitting compliance report for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "Error submitting compliance report." });
-            }
+            return CreatedAtAction(nameof(GetReportStatusAsync), new { reportId = instance.InstanceId }, instance);
         }
 
         /// <summary>Check the submission status of a compliance report.</summary>
@@ -191,32 +167,24 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrWhiteSpace(reportId))
                     return BadRequest(new { error = "Report ID is required." });
 
-            try
-            {
-                var instance = await _processService.GetProcessInstanceAsync(reportId);
-                if (instance == null)
-                    return NotFound(new { error = $"Report '{reportId}' not found." });
+            var instance = await _processService.GetProcessInstanceAsync(reportId);
+            if (instance == null)
+                return NotFound(new { error = $"Report '{reportId}' not found." });
 
-                var summary = new ProcessInstanceSummary
-                {
-                    InstanceId = instance.InstanceId,
-                    ProcessId = instance.ProcessId,
-                    EntityId = instance.EntityId,
-                    EntityType = instance.EntityType,
-                    CurrentStepId = instance.CurrentStepId,
-                    Status = instance.Status.ToString(),
-                    StartedAt = instance.StartDate,
-                    StartedBy = instance.StartedBy,
-                    CompletedAt = instance.CompletionDate
-                };
-
-                return Ok(summary);
-            }
-            catch (Exception ex)
+            var summary = new ProcessInstanceSummary
             {
-                _logger.LogError(ex, "Error retrieving status for report {ReportId}", reportId);
-                return StatusCode(500, new { error = "Error retrieving report status." });
-            }
+                InstanceId = instance.InstanceId,
+                ProcessId = instance.ProcessId,
+                EntityId = instance.EntityId,
+                EntityType = instance.EntityType,
+                CurrentStepId = instance.CurrentStepId,
+                Status = instance.Status.ToString(),
+                StartedAt = instance.StartDate,
+                StartedBy = instance.StartedBy,
+                CompletedAt = instance.CompletionDate
+            };
+
+            return Ok(summary);
         }
 
         /// <summary>Start a remediation workflow for a compliance report finding. Requires Compliance role.</summary>
@@ -239,38 +207,30 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 
             var userId = User.ActingUserId();
 
-            try
+            var sourceReport = await _processService.GetProcessInstanceAsync(reportId);
+            if (sourceReport == null)
+                return NotFound(new { error = $"Report '{reportId}' not found." });
+
+            // Start a remediation process linked to the source report
+            var remediationInstance = await _processService.StartProcessAsync(
+                "COMPLIANCE_OBLIGATION_MGMT",
+                reportId,
+                "COMPLIANCE_REMEDIATION",
+                fieldId,
+                userId);
+
+            await _processService.AddHistoryEntryAsync(remediationInstance.InstanceId, new ProcessHistoryEntry
             {
-                var sourceReport = await _processService.GetProcessInstanceAsync(reportId);
-                if (sourceReport == null)
-                    return NotFound(new { error = $"Report '{reportId}' not found." });
+                HistoryId = Guid.NewGuid().ToString(),
+                InstanceId = remediationInstance.InstanceId,
+                Action = "REMEDIATION_STARTED",
+                Notes = request?.Notes ?? "Remediation initiated.",
+                PerformedBy = userId,
+                Timestamp = DateTime.UtcNow,
+                ActionData = new Dictionary<string, object> { ["SourceReportId"] = reportId }
+            });
 
-                // Start a remediation process linked to the source report
-                var remediationInstance = await _processService.StartProcessAsync(
-                    "COMPLIANCE_OBLIGATION_MGMT",
-                    reportId,
-                    "COMPLIANCE_REMEDIATION",
-                    fieldId,
-                    userId);
-
-                await _processService.AddHistoryEntryAsync(remediationInstance.InstanceId, new ProcessHistoryEntry
-                {
-                    HistoryId = Guid.NewGuid().ToString(),
-                    InstanceId = remediationInstance.InstanceId,
-                    Action = "REMEDIATION_STARTED",
-                    Notes = request?.Notes ?? "Remediation initiated.",
-                    PerformedBy = userId,
-                    Timestamp = DateTime.UtcNow,
-                    ActionData = new Dictionary<string, object> { ["SourceReportId"] = reportId }
-                });
-
-                return CreatedAtAction(nameof(GetReportStatusAsync), new { reportId = remediationInstance.InstanceId }, remediationInstance);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error starting remediation for report {ReportId}", reportId);
-                return StatusCode(500, new { error = "Error starting remediation." });
-            }
+            return CreatedAtAction(nameof(GetReportStatusAsync), new { reportId = remediationInstance.InstanceId }, remediationInstance);
         }
     }
 

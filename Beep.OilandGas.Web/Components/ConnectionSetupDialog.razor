@@ -235,6 +235,7 @@
     [Parameter] public EventCallback OnConnectionCreated { get; set; }
 
     [Inject] ApiClient ApiClient { get; set; } = default!;
+    [Inject] OilGasCallFailures Calls { get; set; } = default!;
     [Inject] ISnackbar Snackbar { get; set; } = default!;
     [Inject] NavigationManager NavigationManager { get; set; } = default!;
 
@@ -338,13 +339,15 @@
                 Snackbar.Add($"Connection test failed: {_connectionTestResult?.Message}", Severity.Error);
             }
         }
+        // A component answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Error testing connection: {ex.Message}", Severity.Error);
+            var sentence = Calls.Explain(ex, "testing a new database connection", "The connection could not be tested");
+            Snackbar.Add(sentence, Severity.Error);
             _connectionTestResult = new ConnectionTestResult
             {
                 Success = false,
-                Message = ex.Message
+                Message = sentence
             };
         }
         finally
@@ -375,50 +378,75 @@
 
         try
         {
-            var config = BuildConnectionConfig();
-            var saveRequest = new SaveConnectionRequest
+            try
             {
-                Connection = config.ToConnectionProperties(),
-                TestAfterSave = false,
-                OpenAfterSave = _setAsCurrent
-            };
+                var config = BuildConnectionConfig();
+                var saveRequest = new SaveConnectionRequest
+                {
+                    Connection = config.ToConnectionProperties(),
+                    TestAfterSave = false,
+                    OpenAfterSave = _setAsCurrent
+                };
 
-            _saveResult = await ApiClient.PostAsync<SaveConnectionRequest, SaveConnectionResult>(
-                "/api/ppdm39/setup/save-connection", saveRequest);
+                _saveResult = await ApiClient.PostAsync<SaveConnectionRequest, SaveConnectionResult>(
+                    "/api/ppdm39/setup/save-connection", saveRequest);
+            }
+            // A component answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
+            {
+                var sentence = Calls.Explain(ex, "saving a new database connection", "The connection was not saved");
+                Snackbar.Add(sentence, Severity.Error);
+                _saveResult = new SaveConnectionResult
+                {
+                    Success = false,
+                    Message = sentence
+                };
+                return;
+            }
 
             if (_saveResult?.Success == true)
             {
                 Snackbar.Add("Connection saved successfully", Severity.Success);
-                
-                if (_setAsCurrent)
-                {
-                    await DataManagementService.SetCurrentConnectionAsync(_connectionName);
-                }
-
-                // Refresh connections
-                await DataManagementService.RefreshConnectionsAsync();
-
-                // Notify parent
-                await OnConnectionCreated.InvokeAsync();
+                await AfterSaveAsync();
             }
             else
             {
                 Snackbar.Add($"Failed to save connection: {_saveResult?.Message}", Severity.Error);
             }
         }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Error saving connection: {ex.Message}", Severity.Error);
-            _saveResult = new SaveConnectionResult
-            {
-                Success = false,
-                Message = ex.Message
-            };
-        }
         finally
         {
             _isSavingConnection = false;
         }
+    }
+
+    /// <summary>
+    /// What follows a saved connection: making it current when asked, reading the list again, telling the parent. The
+    /// connection is saved whatever happens here, so a failure is said as what did not follow, never as a failed save.
+    /// </summary>
+    private async Task AfterSaveAsync()
+    {
+        if (_setAsCurrent)
+        {
+            var current = await DataManagementService.SetCurrentConnectionAsync(_connectionName);
+            if (!current.Success)
+            {
+                Snackbar.Add($"The connection was saved but not made current: {current.Message}", Severity.Warning);
+            }
+        }
+
+        try
+        {
+            await DataManagementService.RefreshConnectionsAsync();
+        }
+        // A component answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Snackbar.Add(Calls.Explain(ex, "reading the connection list after a connection was saved", "The connection was saved, but the connection list was not refreshed"), Severity.Warning);
+        }
+
+        // Notify parent
+        await OnConnectionCreated.InvokeAsync();
     }
 
     private void Cancel()

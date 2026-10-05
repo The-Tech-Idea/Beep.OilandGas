@@ -56,7 +56,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(assetAccountId))
                 throw new ArgumentNullException(nameof(assetAccountId));
             if (carryingAmount <= 0m)
-                throw new InvalidOperationException("Carrying amount must be positive");
+                throw RefusalException.Invalid("Carrying amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
@@ -106,7 +106,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(assetAccountId))
                 throw new ArgumentNullException(nameof(assetAccountId));
             if (impairmentAmount <= 0m)
-                throw new InvalidOperationException("Impairment must be positive");
+                throw RefusalException.Invalid("Impairment must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 

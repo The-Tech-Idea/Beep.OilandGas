@@ -40,21 +40,13 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             [FromQuery] DateTime? to = null,
             [FromQuery] string? tableName = null)
         {
-            try
-            {
-                var fromDate = from ?? DateTime.UtcNow.AddDays(-1);
-                var toDate   = to   ?? DateTime.UtcNow;
+            var fromDate = from ?? DateTime.UtcNow.AddDays(-1);
+            var toDate   = to   ?? DateTime.UtcNow;
 
-                _logger.LogInformation("Fetching audit statistics from {From} to {To}", fromDate, toDate);
+            _logger.LogInformation("Fetching audit statistics from {From} to {To}", fromDate, toDate);
 
-                var stats = await _auditService.GetAccessStatisticsAsync(tableName, fromDate, toDate);
-                return Ok(stats);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving audit statistics");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var stats = await _auditService.GetAccessStatisticsAsync(tableName, fromDate, toDate);
+            return Ok(stats);
         }
 
         /// <summary>
@@ -67,21 +59,13 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             [FromQuery] DateTime? to = null)
         {
             var userId = User.ActingUserId();
-            try
-            {
-                var fromDate = from ?? DateTime.UtcNow.AddDays(-1);
-                var toDate   = to   ?? DateTime.UtcNow;
+            var fromDate = from ?? DateTime.UtcNow.AddDays(-1);
+            var toDate   = to   ?? DateTime.UtcNow;
 
-                _logger.LogInformation("Fetching recent audit events from {From} to {To}", fromDate, toDate);
+            _logger.LogInformation("Fetching recent audit events from {From} to {To}", fromDate, toDate);
 
-                var events = await _auditService.GetUserAccessHistoryAsync(userId, fromDate, toDate);
-                return Ok(events ?? new List<DataAccessEvent>());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving recent audit events");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var events = await _auditService.GetUserAccessHistoryAsync(userId, fromDate, toDate);
+            return Ok(events ?? new List<DataAccessEvent>());
         }
 
         /// <summary>
@@ -94,18 +78,10 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             [FromQuery] string? entityId = null)
         {
             if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
-            try
-            {
-                _logger.LogInformation("Fetching audit history for table {TableName}", tableName);
+            _logger.LogInformation("Fetching audit history for table {TableName}", tableName);
 
-                var events = await _auditService.GetAccessHistoryAsync(tableName, entityId ?? string.Empty);
-                return Ok(events ?? new List<DataAccessEvent>());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving entity audit history for {TableName}", tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var events = await _auditService.GetAccessHistoryAsync(tableName, entityId ?? string.Empty);
+            return Ok(events ?? new List<DataAccessEvent>());
         }
     }
 }

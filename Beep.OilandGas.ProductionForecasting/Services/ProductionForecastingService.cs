@@ -65,9 +65,9 @@ namespace Beep.OilandGas.ProductionForecasting.Services
         public async Task<ProductionForecastResult> GenerateForecastAsync(string? wellUWI, string? fieldId, ForecastType forecastMethod, int forecastPeriod)
         {
             if (string.IsNullOrWhiteSpace(wellUWI) && string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Either wellUWI or fieldId must be provided");
+                throw RefusalException.Invalid("Either a well UWI or a field ID must be provided.");
             if (forecastMethod == ForecastType.None)
-                throw new ArgumentException("Forecast method cannot be None", nameof(forecastMethod));
+                throw RefusalException.Invalid("A forecast method is required.");
 
             _logger?.LogInformation("Generating {Method} forecast for {WellUWI}{FieldId} over {Period} months",
                 forecastMethod, wellUWI ?? string.Empty, fieldId ?? string.Empty, forecastPeriod);

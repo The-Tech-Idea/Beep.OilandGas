@@ -1,17 +1,24 @@
 using System;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.WellTestAnalysis.Exceptions
 {
     /// <summary>
     /// Base exception class for well test analysis errors.
     /// </summary>
-    public class WellTestException : Exception
+    /// <remarks>
+    /// OILGAS-CATCH-01. Every throw of this family refuses what the caller sent — test data out of range or of the wrong
+    /// test type, or data the analysis cannot find a straight-line region in — so it is a <see cref="RefusalException"/>
+    /// (<see cref="RefusalKind.Invalid"/>) and the API answers it as a 400 with its sentence. Its message is written for
+    /// the person, never taken from a caught exception.
+    /// </remarks>
+    public class WellTestException : RefusalException
     {
-        public WellTestException() : base() { }
+        public WellTestException() : base(RefusalKind.Invalid, "The well test could not be analysed with the data given.") { }
 
-        public WellTestException(string message) : base(message) { }
+        public WellTestException(string message) : base(RefusalKind.Invalid, message) { }
 
-        public WellTestException(string message, Exception innerException) : base(message, innerException) { }
+        public WellTestException(string message, Exception innerException) : base(RefusalKind.Invalid, message, innerException) { }
     }
 
     /// <summary>
@@ -21,8 +28,8 @@ namespace Beep.OilandGas.WellTestAnalysis.Exceptions
     {
         public string ParameterName { get; }
 
-        public InvalidWellTestDataException(string parameterName, string message) 
-            : base($"Invalid {parameterName}: {message}")
+        public InvalidWellTestDataException(string parameterName, string message)
+            : base(message)
         {
             ParameterName = parameterName;
         }

@@ -10,7 +10,7 @@ namespace Beep.OilandGas.Web.Auth.Tests;
 
 public class RoyaltyDetailsTests
 {
-    private static AccountingServiceClient Client(HttpClient http) => new(new ApiClient(http, NullLogger<ApiClient>.Instance), NullLogger<AccountingServiceClient>.Instance);
+    private static AccountingServiceClient Client(HttpClient http) => new(new ApiClient(http, new RecordingFailureReporter()), NullLogger<AccountingServiceClient>.Instance);
     private static HttpResponseMessage Json(object? data) => new(HttpStatusCode.OK) { Content = new StringContent(JsonSerializer.Serialize(data)) };
     private sealed class Handler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send) : HttpMessageHandler
     {
@@ -21,11 +21,11 @@ public class RoyaltyDetailsTests
     [InlineData(HttpStatusCode.Unauthorized, "session has expired")]
     [InlineData(HttpStatusCode.Forbidden, "do not have access")]
     [InlineData(HttpStatusCode.NotFound, "could not be found")]
-    [InlineData(HttpStatusCode.InternalServerError, "Please retry")]
+    [InlineData(HttpStatusCode.InternalServerError, "quote reference")]
     public async Task ApiStatusReachesPageWithoutBecomingEmptyRecords(HttpStatusCode code, string message)
     {
         using var http = new HttpClient(new Handler((_, _) => Task.FromResult(new HttpResponseMessage(code) { Content = new StringContent("private server details") }))) { BaseAddress = new("https://api.example") };
-        using var state = new RoyaltyDetailsState(Client(http));
+        using var state = new RoyaltyDetailsState(Client(http), TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync("one");
         Assert.Contains(message, state.Error);
         Assert.DoesNotContain("private server", state.Error);
@@ -55,7 +55,7 @@ public class RoyaltyDetailsTests
         using var http = new HttpClient(new Handler((request, _) => Task.FromResult(
             request.RequestUri!.AbsolutePath.Contains("service/calculations") ? Json(new ROYALTY_CALCULATION { ROYALTY_CALCULATION_ID = "one", ROYALTY_AMOUNT = 50 }) :
             new HttpResponseMessage(request.RequestUri.AbsolutePath.EndsWith("payments") ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.Forbidden) { Content = new StringContent("") }))) { BaseAddress = new("https://api.example") };
-        using var state = new RoyaltyDetailsState(Client(http));
+        using var state = new RoyaltyDetailsState(Client(http), TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync("one");
         Assert.NotNull(state.Calculation); Assert.Null(state.Error); Assert.NotNull(state.PaymentError); Assert.Null(state.Payments);
         await state.LoadReviewAsync();
@@ -72,7 +72,7 @@ public class RoyaltyDetailsTests
             if (request.RequestUri!.AbsolutePath.EndsWith("/old")) { entered.TrySetResult(); return release.Task; }
             return Task.FromResult(request.RequestUri.AbsolutePath.EndsWith("payments") ? Json(Array.Empty<ROYALTY_PAYMENT>()) : Json(new ROYALTY_CALCULATION { ROYALTY_CALCULATION_ID = "new" }));
         })) { BaseAddress = new("https://api.example") };
-        using var state = new RoyaltyDetailsState(Client(http));
+        using var state = new RoyaltyDetailsState(Client(http), TestFailures.Calls(new RecordingFailureReporter()));
         var old = state.LoadAsync("old");
         await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
         await state.LoadAsync("new");
@@ -91,7 +91,7 @@ public class RoyaltyDetailsTests
             if (path.EndsWith("posting-review")) { reviews++; return Task.FromResult(Json(Array.Empty<RoyaltyPostingReview>())); }
             return Task.FromResult(path.EndsWith("payments") ? Json(Array.Empty<ROYALTY_PAYMENT>()) : Json(new ROYALTY_CALCULATION { ROYALTY_CALCULATION_ID = "one" }));
         })) { BaseAddress = new("https://api.example") };
-        var state = new RoyaltyDetailsState(Client(http));
+        var state = new RoyaltyDetailsState(Client(http), TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync("one"); Assert.Equal(0, reviews);
         await state.LoadReviewAsync(); Assert.Equal(1, reviews); Assert.Empty(state.Review!);
         state.Dispose(); Assert.Null(state.Calculation); Assert.Null(state.Payments); Assert.Null(state.Review);

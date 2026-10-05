@@ -65,7 +65,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error getting account {AccountNumber}: {Message}", accountNumber, ex.Message);
+                _logger?.LogError(ex, "Error getting account {AccountNumber}", accountNumber);
                 throw;
             }
         }
@@ -91,7 +91,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error getting all accounts: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error getting all accounts");
                 throw;
             }
         }
@@ -121,7 +121,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error getting accounts by type {AccountType}: {Message}", accountType, ex.Message);
+                _logger?.LogError(ex, "Error getting accounts by type {AccountType}", accountType);
                 throw;
             }
         }
@@ -139,7 +139,7 @@ namespace Beep.OilandGas.Accounting.Services
             {
                 var account = await GetAccountByNumberAsync(accountNumber);
                 if (account == null)
-                    throw new InvalidOperationException($"Account {accountNumber} not found");
+                    throw RefusalException.NotFound($"GL account {accountNumber} was not found.");
 
                 _logger?.LogInformation("Calculating balance for account {AccountNumber}", accountNumber);
 
@@ -188,7 +188,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error calculating balance for {AccountNumber}: {Message}", accountNumber, ex.Message);
+                _logger?.LogError(ex, "Error calculating balance for {AccountNumber}", accountNumber);
                 throw;
             }
         }
@@ -220,7 +220,7 @@ namespace Beep.OilandGas.Accounting.Services
                 // Check if account already exists
                 var existing = await GetAccountByNumberAsync(accountNumber);
                 if (existing != null)
-                    throw new InvalidOperationException($"Account {accountNumber} already exists");
+                    throw RefusalException.Conflict($"GL account {accountNumber} already exists.");
 
                 var account = new GL_ACCOUNT
                 {
@@ -246,7 +246,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error creating account {AccountNumber}: {Message}", accountNumber, ex.Message);
+                _logger?.LogError(ex, "Error creating account {AccountNumber}", accountNumber);
                 throw;
             }
         }
@@ -256,15 +256,13 @@ namespace Beep.OilandGas.Accounting.Services
         /// </summary>
         public async Task<bool> ValidateAccountAsync(string accountNumber)
         {
-            try
-            {
-                var account = await GetAccountByNumberAsync(accountNumber);
-                return account != null && account.ACTIVE_IND == "Y";
-            }
-            catch
-            {
+            // Asked, not caught: a blank number names no account. A failed lookup propagates — answering it as "invalid"
+            // told the caller its account did not exist when the database had not answered.
+            if (string.IsNullOrWhiteSpace(accountNumber))
                 return false;
-            }
+
+            var account = await GetAccountByNumberAsync(accountNumber);
+            return account != null && account.ACTIVE_IND == "Y";
         }
 
         /// <summary>
@@ -272,15 +270,12 @@ namespace Beep.OilandGas.Accounting.Services
         /// </summary>
         public async Task<bool> ValidateAccountTypeAsync(string accountNumber, string expectedType)
         {
-            try
-            {
-                var account = await GetAccountByNumberAsync(accountNumber);
-                return account != null && account.ACCOUNT_TYPE == expectedType;
-            }
-            catch
-            {
+            // Asked, not caught, as ValidateAccountAsync.
+            if (string.IsNullOrWhiteSpace(accountNumber))
                 return false;
-            }
+
+            var account = await GetAccountByNumberAsync(accountNumber);
+            return account != null && account.ACCOUNT_TYPE == expectedType;
         }
         /// <summary>
         /// Generates default GL accounts if they do not exist.
@@ -292,22 +287,17 @@ namespace Beep.OilandGas.Accounting.Services
 
             foreach (var def in defaults)
             {
+                // A failure propagates: the run stops with the accounts created so far kept, and running it again creates
+                // only the ones still missing. Logging and going on reported the chart as generated when it was not.
                 if (!await ValidateAccountAsync(def.AccountNumber))
                 {
-                    try
-                    {
-                        await CreateAccountAsync(
-                            def.AccountNumber,
-                            def.AccountName,
-                            def.AccountType,
-                            def.NormalBalance,
-                            def.Description,
-                            userId);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger?.LogError(ex, "Failed to generate default account {AccountNumber}", def.AccountNumber);
-                    }
+                    await CreateAccountAsync(
+                        def.AccountNumber,
+                        def.AccountName,
+                        def.AccountType,
+                        def.NormalBalance,
+                        def.Description,
+                        userId);
                 }
             }
             _logger?.LogInformation("Finished default GL account generation.");

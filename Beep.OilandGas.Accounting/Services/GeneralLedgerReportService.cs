@@ -70,7 +70,7 @@ namespace Beep.OilandGas.Accounting.Services
                 // Get account details
                 var account = await _glAccountService.GetAccountByNumberAsync(accountNumber);
                 if (account == null)
-                    throw new InvalidOperationException($"Account {accountNumber} not found");
+                    throw RefusalException.NotFound($"GL account {accountNumber} was not found.");
 
                 // Get GL entries for this account
                 var repo = await GetRepoAsync<JOURNAL_ENTRY_LINE>("JOURNAL_ENTRY_LINE", ConnectionName);
@@ -148,7 +148,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error generating GL detail report: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error generating GL detail report");
                 throw;
             }
         }
@@ -241,7 +241,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error generating GL summary report: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error generating GL summary report");
                 throw;
             }
         }
@@ -286,7 +286,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error generating GL type report: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error generating GL type report");
                 throw;
             }
         }
@@ -337,7 +337,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error exporting GL detail report: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error exporting GL detail report");
                 throw;
             }
         }
@@ -416,7 +416,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error exporting GL summary report: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error exporting GL summary report");
                 throw;
             }
         }

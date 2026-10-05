@@ -59,35 +59,27 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 
             var userId = User.ActingUserId();
 
-            try
-            {
-                // Determine the gate process definition from gateId
-                var gateProcessId = $"GATE_{gateId.ToUpperInvariant()}";
-                var instance = await _processService.StartProcessAsync(
-                    gateProcessId,
-                    request.EntityId,
-                    "GATE_REVIEW",
-                    fieldId,
-                    userId);
+            // Determine the gate process definition from gateId
+            var gateProcessId = $"GATE_{gateId.ToUpperInvariant()}";
+            var instance = await _processService.StartProcessAsync(
+                gateProcessId,
+                request.EntityId,
+                "GATE_REVIEW",
+                fieldId,
+                userId);
 
-                // Record submission in process history
-                await _processService.AddHistoryEntryAsync(instance.InstanceId, new ProcessHistoryEntry
-                {
-                    HistoryId = Guid.NewGuid().ToString(),
-                    InstanceId = instance.InstanceId,
-                    Action = "GATE_SUBMITTED",
-                    Notes = $"Entity: {request.EntityId} ({request.EntityType ?? "UNKNOWN"}) — {request.Comments}",
-                    PerformedBy = userId,
-                    Timestamp = DateTime.UtcNow
-                });
-
-                return CreatedAtAction(nameof(GetGateAsync), new { instanceId = instance.InstanceId }, instance);
-            }
-            catch (Exception ex)
+            // Record submission in process history
+            await _processService.AddHistoryEntryAsync(instance.InstanceId, new ProcessHistoryEntry
             {
-                _logger.LogError(ex, "Error submitting gate review {GateId} for entity {EntityId}", gateId, request.EntityId);
-                return StatusCode(500, new { error = "Error submitting gate review." });
-            }
+                HistoryId = Guid.NewGuid().ToString(),
+                InstanceId = instance.InstanceId,
+                Action = "GATE_SUBMITTED",
+                Notes = $"Entity: {request.EntityId} ({request.EntityType ?? "UNKNOWN"}) — {request.Comments}",
+                PerformedBy = userId,
+                Timestamp = DateTime.UtcNow
+            });
+
+            return CreatedAtAction(nameof(GetGateAsync), new { instanceId = instance.InstanceId }, instance);
         }
 
         /// <summary>Approve a gate — requires GateApprover role.</summary>
@@ -110,33 +102,25 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 
             var userId = User.ActingUserId();
 
-            try
+            var instance = await _processService.GetProcessInstanceAsync(instanceId);
+            if (instance == null)
+                return NotFound(new { error = $"Gate instance '{instanceId}' not found." });
+
+            var success = await _processService.CompleteStepAsync(instanceId, instance.CurrentStepId ?? string.Empty, "APPROVED", userId);
+            if (!success)
+                return NotFound(new { error = $"Gate instance '{instanceId}' not found or not in a state that can be approved." });
+
+            await _processService.AddHistoryEntryAsync(instanceId, new ProcessHistoryEntry
             {
-                var instance = await _processService.GetProcessInstanceAsync(instanceId);
-                if (instance == null)
-                    return NotFound(new { error = $"Gate instance '{instanceId}' not found." });
+                HistoryId = Guid.NewGuid().ToString(),
+                InstanceId = instanceId,
+                Action = "GATE_APPROVED",
+                Notes = request.Comments,
+                PerformedBy = userId,
+                Timestamp = DateTime.UtcNow
+            });
 
-                var success = await _processService.CompleteStepAsync(instanceId, instance.CurrentStepId ?? string.Empty, "APPROVED", userId);
-                if (!success)
-                    return NotFound(new { error = $"Gate instance '{instanceId}' not found or not in a state that can be approved." });
-
-                await _processService.AddHistoryEntryAsync(instanceId, new ProcessHistoryEntry
-                {
-                    HistoryId = Guid.NewGuid().ToString(),
-                    InstanceId = instanceId,
-                    Action = "GATE_APPROVED",
-                    Notes = request.Comments,
-                    PerformedBy = userId,
-                    Timestamp = DateTime.UtcNow
-                });
-
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error approving gate {InstanceId}", instanceId);
-                return StatusCode(500, new { error = "Error approving gate." });
-            }
+            return NoContent();
         }
 
         /// <summary>Reject a gate — requires GateApprover role.</summary>
@@ -161,33 +145,25 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 
             var userId = User.ActingUserId();
 
-            try
+            var instance = await _processService.GetProcessInstanceAsync(instanceId);
+            if (instance == null)
+                return NotFound(new { error = $"Gate instance '{instanceId}' not found." });
+
+            var success = await _processService.CompleteStepAsync(instanceId, instance.CurrentStepId ?? string.Empty, "REJECTED", userId);
+            if (!success)
+                return NotFound(new { error = $"Gate instance '{instanceId}' not found or not in a state that can be rejected." });
+
+            await _processService.AddHistoryEntryAsync(instanceId, new ProcessHistoryEntry
             {
-                var instance = await _processService.GetProcessInstanceAsync(instanceId);
-                if (instance == null)
-                    return NotFound(new { error = $"Gate instance '{instanceId}' not found." });
+                HistoryId = Guid.NewGuid().ToString(),
+                InstanceId = instanceId,
+                Action = "GATE_REJECTED",
+                Notes = request.Comments,
+                PerformedBy = userId,
+                Timestamp = DateTime.UtcNow
+            });
 
-                var success = await _processService.CompleteStepAsync(instanceId, instance.CurrentStepId ?? string.Empty, "REJECTED", userId);
-                if (!success)
-                    return NotFound(new { error = $"Gate instance '{instanceId}' not found or not in a state that can be rejected." });
-
-                await _processService.AddHistoryEntryAsync(instanceId, new ProcessHistoryEntry
-                {
-                    HistoryId = Guid.NewGuid().ToString(),
-                    InstanceId = instanceId,
-                    Action = "GATE_REJECTED",
-                    Notes = request.Comments,
-                    PerformedBy = userId,
-                    Timestamp = DateTime.UtcNow
-                });
-
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error rejecting gate {InstanceId}", instanceId);
-                return StatusCode(500, new { error = "Error rejecting gate." });
-            }
+            return NoContent();
         }
 
         /// <summary>Defer a gate with a target date — requires GateApprover role.</summary>
@@ -213,34 +189,26 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
                 ? $"Deferred to {request.DeferTargetDate:yyyy-MM-dd}. {request.Comments}"
                 : request.Comments;
 
-            try
-            {
-                var success = await _processService.TransitionStateAsync(instanceId, "DEFERRED", userId);
-                if (!success)
-                    return NotFound(new { error = $"Gate instance '{instanceId}' not found or cannot be deferred." });
+            var success = await _processService.TransitionStateAsync(instanceId, "DEFERRED", userId);
+            if (!success)
+                return NotFound(new { error = $"Gate instance '{instanceId}' not found or cannot be deferred." });
 
-                // Record deferral in history
-                var instance = await _processService.GetProcessInstanceAsync(instanceId);
-                if (instance != null)
+            // Record deferral in history
+            var instance = await _processService.GetProcessInstanceAsync(instanceId);
+            if (instance != null)
+            {
+                await _processService.AddHistoryEntryAsync(instance.InstanceId, new ProcessHistoryEntry
                 {
-                    await _processService.AddHistoryEntryAsync(instance.InstanceId, new ProcessHistoryEntry
-                    {
-                        HistoryId = Guid.NewGuid().ToString(),
-                        InstanceId = instance.InstanceId,
-                        Action = "GATE_DEFERRED",
-                        Notes = deferNote,
-                        PerformedBy = userId,
-                        Timestamp = DateTime.UtcNow
-                    });
-                }
+                    HistoryId = Guid.NewGuid().ToString(),
+                    InstanceId = instance.InstanceId,
+                    Action = "GATE_DEFERRED",
+                    Notes = deferNote,
+                    PerformedBy = userId,
+                    Timestamp = DateTime.UtcNow
+                });
+            }
 
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deferring gate {InstanceId}", instanceId);
-                return StatusCode(500, new { error = "Error deferring gate." });
-            }
+            return NoContent();
         }
 
         /// <summary>List all gate review process instances for the current field.</summary>
@@ -254,39 +222,31 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrEmpty(fieldId))
                     return BadRequest(new { error = "No active field selected." });
 
-            try
+            var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, "GATE_REVIEW");
+            var summaries = new List<ProcessInstanceSummary>();
+            if (instances != null)
             {
-                var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, "GATE_REVIEW");
-                var summaries = new List<ProcessInstanceSummary>();
-                if (instances != null)
+                foreach (var inst in instances)
                 {
-                    foreach (var inst in instances)
+                    var s = new ProcessInstanceSummary
                     {
-                        var s = new ProcessInstanceSummary
-                        {
-                            InstanceId     = inst.InstanceId,
-                            ProcessId      = inst.ProcessId,
-                            ProcessType    = inst.EntityType,
-                            EntityId       = inst.EntityId,
-                            EntityType     = inst.EntityType,
-                            CurrentStepId  = inst.CurrentStepId,
-                            Status         = inst.Status.ToString(),
-                            StartedAt      = inst.StartDate,
-                            StartedBy      = inst.StartedBy
-                        };
-                        if (!string.IsNullOrWhiteSpace(status) &&
-                            !string.Equals(s.Status, status, StringComparison.OrdinalIgnoreCase))
-                            continue;
-                        summaries.Add(s);
-                    }
+                        InstanceId     = inst.InstanceId,
+                        ProcessId      = inst.ProcessId,
+                        ProcessType    = inst.EntityType,
+                        EntityId       = inst.EntityId,
+                        EntityType     = inst.EntityType,
+                        CurrentStepId  = inst.CurrentStepId,
+                        Status         = inst.Status.ToString(),
+                        StartedAt      = inst.StartDate,
+                        StartedBy      = inst.StartedBy
+                    };
+                    if (!string.IsNullOrWhiteSpace(status) &&
+                        !string.Equals(s.Status, status, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    summaries.Add(s);
                 }
-                return Ok(summaries);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error listing gate reviews for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "Error retrieving gate reviews." });
-            }
+            return Ok(summaries);
         }
 
         /// <summary>Get a specific gate review process instance by ID.</summary>
@@ -298,32 +258,24 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrWhiteSpace(instanceId))
                     return BadRequest(new { error = "Instance ID is required." });
 
-            try
-            {
-                var instance = await _processService.GetProcessInstanceAsync(instanceId);
-                if (instance == null)
-                    return NotFound(new { error = $"Gate review '{instanceId}' not found." });
+            var instance = await _processService.GetProcessInstanceAsync(instanceId);
+            if (instance == null)
+                return NotFound(new { error = $"Gate review '{instanceId}' not found." });
 
-                var summary = new ProcessInstanceSummary
-                {
-                    InstanceId    = instance.InstanceId,
-                    ProcessId     = instance.ProcessId,
-                    ProcessType   = instance.EntityType,
-                    EntityId      = instance.EntityId,
-                    EntityType    = instance.EntityType,
-                    CurrentStepId = instance.CurrentStepId,
-                    Status        = instance.Status.ToString(),
-                    StartedAt     = instance.StartDate,
-                    StartedBy     = instance.StartedBy,
-                    CompletedAt   = instance.CompletionDate
-                };
-                return Ok(summary);
-            }
-            catch (Exception ex)
+            var summary = new ProcessInstanceSummary
             {
-                _logger.LogError(ex, "Error retrieving gate {InstanceId}", instanceId);
-                return StatusCode(500, new { error = "Error retrieving gate review." });
-            }
+                InstanceId    = instance.InstanceId,
+                ProcessId     = instance.ProcessId,
+                ProcessType   = instance.EntityType,
+                EntityId      = instance.EntityId,
+                EntityType    = instance.EntityType,
+                CurrentStepId = instance.CurrentStepId,
+                Status        = instance.Status.ToString(),
+                StartedAt     = instance.StartDate,
+                StartedBy     = instance.StartedBy,
+                CompletedAt   = instance.CompletionDate
+            };
+            return Ok(summary);
         }
 
         /// <summary>List gate reviews that are pending approval for the current field.</summary>
@@ -336,41 +288,33 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrEmpty(fieldId))
                     return BadRequest(new { error = "No active field selected." });
 
-            try
+            var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, "GATE_REVIEW");
+            var pending   = new List<ProcessInstanceSummary>();
+            if (instances != null)
             {
-                var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, "GATE_REVIEW");
-                var pending   = new List<ProcessInstanceSummary>();
-                if (instances != null)
+                foreach (var inst in instances)
                 {
-                    foreach (var inst in instances)
-                    {
-                        var statusStr = inst.Status.ToString();
-                        if (!string.Equals(statusStr, "IN_PROGRESS", StringComparison.OrdinalIgnoreCase) &&
-                            !string.Equals(statusStr, "SUBMITTED",   StringComparison.OrdinalIgnoreCase) &&
-                            !string.Equals(statusStr, "NOT_STARTED", StringComparison.OrdinalIgnoreCase))
-                            continue;
+                    var statusStr = inst.Status.ToString();
+                    if (!string.Equals(statusStr, "IN_PROGRESS", StringComparison.OrdinalIgnoreCase) &&
+                        !string.Equals(statusStr, "SUBMITTED",   StringComparison.OrdinalIgnoreCase) &&
+                        !string.Equals(statusStr, "NOT_STARTED", StringComparison.OrdinalIgnoreCase))
+                        continue;
 
-                        pending.Add(new ProcessInstanceSummary
-                        {
-                            InstanceId    = inst.InstanceId,
-                            ProcessId     = inst.ProcessId,
-                            ProcessType   = inst.EntityType,
-                            EntityId      = inst.EntityId,
-                            EntityType    = inst.EntityType,
-                            CurrentStepId = inst.CurrentStepId,
-                            Status        = statusStr,
-                            StartedAt     = inst.StartDate,
-                            StartedBy     = inst.StartedBy
-                        });
-                    }
+                    pending.Add(new ProcessInstanceSummary
+                    {
+                        InstanceId    = inst.InstanceId,
+                        ProcessId     = inst.ProcessId,
+                        ProcessType   = inst.EntityType,
+                        EntityId      = inst.EntityId,
+                        EntityType    = inst.EntityType,
+                        CurrentStepId = inst.CurrentStepId,
+                        Status        = statusStr,
+                        StartedAt     = inst.StartDate,
+                        StartedBy     = inst.StartedBy
+                    });
                 }
-                return Ok(pending);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving pending gates for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "Error retrieving pending gate reviews." });
-            }
+            return Ok(pending);
         }
 
         /// <summary>Retrieve the required document checklist for a gate.</summary>
@@ -382,43 +326,35 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrWhiteSpace(instanceId))
                     return BadRequest(new { error = "Instance ID is required." });
 
-            try
+            var instance = await _processService.GetProcessInstanceAsync(instanceId);
+            if (instance == null)
+                return NotFound(new { error = $"Gate review '{instanceId}' not found." });
+
+            if (string.IsNullOrWhiteSpace(instance.ProcessId))
+                return NotFound(new { error = $"Gate review '{instanceId}' does not have a process definition." });
+
+            var definition = await _processService.GetProcessDefinitionAsync(instance.ProcessId);
+            if (definition == null)
+                return NotFound(new { error = $"Gate definition '{instance.ProcessId}' not found." });
+
+            var checklist = new GateChecklistResponse { GateId = instanceId };
+            if (definition.Configuration != null &&
+                definition.Configuration.TryGetValue("RequiredDocuments", out var docs) &&
+                docs != null)
             {
-                var instance = await _processService.GetProcessInstanceAsync(instanceId);
-                if (instance == null)
-                    return NotFound(new { error = $"Gate review '{instanceId}' not found." });
-
-                if (string.IsNullOrWhiteSpace(instance.ProcessId))
-                    return NotFound(new { error = $"Gate review '{instanceId}' does not have a process definition." });
-
-                var definition = await _processService.GetProcessDefinitionAsync(instance.ProcessId);
-                if (definition == null)
-                    return NotFound(new { error = $"Gate definition '{instance.ProcessId}' not found." });
-
-                var checklist = new GateChecklistResponse { GateId = instanceId };
-                if (definition.Configuration != null &&
-                    definition.Configuration.TryGetValue("RequiredDocuments", out var docs) &&
-                    docs != null)
+                if (docs is System.Text.Json.JsonElement je && je.ValueKind == System.Text.Json.JsonValueKind.Array)
                 {
-                    if (docs is System.Text.Json.JsonElement je && je.ValueKind == System.Text.Json.JsonValueKind.Array)
-                    {
-                        foreach (var item in je.EnumerateArray())
-                            checklist.RequiredDocuments.Add(item.GetString() ?? string.Empty);
-                    }
-                    else if (docs is string str)
-                    {
-                        foreach (var item in str.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                            checklist.RequiredDocuments.Add(item.Trim());
-                    }
+                    foreach (var item in je.EnumerateArray())
+                        checklist.RequiredDocuments.Add(item.GetString() ?? string.Empty);
                 }
+                else if (docs is string str)
+                {
+                    foreach (var item in str.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                        checklist.RequiredDocuments.Add(item.Trim());
+                }
+            }
 
-                return Ok(checklist);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving checklist for gate {InstanceId}", instanceId);
-                return StatusCode(500, new { error = "Error retrieving gate checklist." });
-            }
+            return Ok(checklist);
         }
     }
 }

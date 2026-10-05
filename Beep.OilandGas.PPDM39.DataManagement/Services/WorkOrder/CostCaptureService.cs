@@ -3,12 +3,18 @@ using Beep.OilandGas.Models.Data.WorkOrder;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
+using Beep.OilandGas.Models.Core.Refusals;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Services.WorkOrder;
 
+/// <remarks>
+/// OILGAS-CATCH-01: a read that fails reaches the caller. Finding a work order's AFE answered "none" on a failure — so
+/// adding a cost line was refused as if no AFE existed — and the variance summary answered empty. A cost line for a
+/// work order with no AFE is refused in this service's words.
+/// </remarks>
 public class CostCaptureService : ICostCaptureService
 {
     private readonly IDMEEditor                _editor;
@@ -82,7 +88,7 @@ public class CostCaptureService : ICostCaptureService
         {
             var financeId = await GetFinanceIdAsync(instanceId);
             if (string.IsNullOrEmpty(financeId))
-                throw new InvalidOperationException($"No AFE finance record for work order {instanceId}. Call UpsertAFE first.");
+                throw RefusalException.Conflict($"Work order {instanceId} has no AFE yet; record its budget before adding cost lines.");
 
             var meta       = await _metadata.GetTableMetadataAsync("FIN_COMPONENT");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
@@ -138,37 +144,29 @@ public class CostCaptureService : ICostCaptureService
 
     public async Task<List<CostVarianceLine>> GetVarianceSummaryAsync(string instanceId)
     {
-        try
-        {
-            var financeId = await GetFinanceIdAsync(instanceId);
-            if (string.IsNullOrEmpty(financeId)) return new();
+        var financeId = await GetFinanceIdAsync(instanceId);
+        if (string.IsNullOrEmpty(financeId)) return new();
 
-            var meta       = await _metadata.GetTableMetadataAsync("FIN_COMPONENT");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-            var repo       = BuildRepo(entityType, "FIN_COMPONENT");
+        var meta       = await _metadata.GetTableMetadataAsync("FIN_COMPONENT");
+        var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
+        var repo       = BuildRepo(entityType, "FIN_COMPONENT");
 
-            var filters = new List<AppFilter>
-            {
-                new() { FieldName = "FINANCE_ID", Operator = "=", FilterValue = financeId },
-                new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y"       }
-            };
-            return (await repo.GetAsync(filters)).Select(r =>
-            {
-                dynamic l      = r;
-                decimal budget  = GetDecimal(l, "BUDGET_AMT");
-                decimal actual  = GetDecimal(l, "ACTUAL_AMT");
-                decimal variance = budget == 0 ? 0 : ((actual - budget) / budget) * 100;
-                return new CostVarianceLine(
-                    GetStr(l, "COMP_CODE"),
-                    GetStr(l, "COMP_DESC"),
-                    budget, actual, variance);
-            }).ToList();
-        }
-        catch (Exception ex)
+        var filters = new List<AppFilter>
         {
-            _logger.LogError(ex, "GetVarianceSummary failed for WO {InstanceId}", instanceId);
-            return new();
-        }
+            new() { FieldName = "FINANCE_ID", Operator = "=", FilterValue = financeId },
+            new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y"       }
+        };
+        return (await repo.GetAsync(filters)).Select(r =>
+        {
+            dynamic l      = r;
+            decimal budget  = WorkOrderRowValues.Decimal(l, "BUDGET_AMT");
+            decimal actual  = WorkOrderRowValues.Decimal(l, "ACTUAL_AMT");
+            decimal variance = budget == 0 ? 0 : ((actual - budget) / budget) * 100;
+            return new CostVarianceLine(
+                WorkOrderRowValues.Str(l, "COMP_CODE"),
+                WorkOrderRowValues.Str(l, "COMP_DESC"),
+                budget, actual, variance);
+        }).ToList();
     }
 
     public async Task<bool> HasAFEAsync(string instanceId)
@@ -187,42 +185,22 @@ public class CostCaptureService : ICostCaptureService
 
     private async Task<string> GetFinanceIdAsync(string instanceId)
     {
-        try
-        {
-            var meta       = await _metadata.GetTableMetadataAsync("FINANCE");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-            var repo       = BuildRepo(entityType, "FINANCE");
+        var meta       = await _metadata.GetTableMetadataAsync("FINANCE");
+        var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
+        var repo       = BuildRepo(entityType, "FINANCE");
 
-            var filters = new List<AppFilter>
-            {
-                new() { FieldName = "PROJECT_ID", Operator = "=", FilterValue = instanceId },
-                new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y"        }
-            };
-            var rows = (await repo.GetAsync(filters)).ToList();
-            if (rows.Count == 0) return string.Empty;
-            dynamic d = rows[0];
-            return GetStr(d, "FINANCE_ID");
-        }
-        catch { return string.Empty; }
+        var filters = new List<AppFilter>
+        {
+            new() { FieldName = "PROJECT_ID", Operator = "=", FilterValue = instanceId },
+            new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y"        }
+        };
+        var rows = (await repo.GetAsync(filters)).ToList();
+        if (rows.Count == 0) return string.Empty;
+        dynamic d = rows[0];
+        return WorkOrderRowValues.Str(d, "FINANCE_ID");
     }
 
     private PPDMGenericRepository BuildRepo(Type? entityType, string tableName) =>
         new(_editor, _commonColumnHandler, _defaults, _metadata,
             entityType, _connectionName, tableName);
-
-    private static string GetStr(dynamic d, string prop)
-    {
-        try { return (string?)d.GetType().GetProperty(prop)?.GetValue(d) ?? string.Empty; }
-        catch { return string.Empty; }
-    }
-
-    private static decimal GetDecimal(dynamic d, string prop)
-    {
-        try
-        {
-            var v = d.GetType().GetProperty(prop)?.GetValue(d);
-            return v is decimal dec ? dec : v is double dbl ? (decimal)dbl : v is float f ? (decimal)f : 0m;
-        }
-        catch { return 0m; }
-    }
 }

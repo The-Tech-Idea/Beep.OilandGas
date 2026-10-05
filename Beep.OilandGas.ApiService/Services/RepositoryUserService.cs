@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -46,12 +47,13 @@ public sealed class RepositoryUserService(RepositoryDbContext db, UserManager<Oi
 
     public async Task<RepositoryUserSummary?> UpdateAsync(string id, RepositoryUserUpdate input)
     {
-        if (input.FullName?.Length > 1000) throw new ArgumentException("Full name exceeds 1000 characters.");
+        if (input.FullName?.Length > 1000) throw RefusalException.Invalid("Full name exceeds 1000 characters.");
         var actor = (accessor.HttpContext?.User).ActingUserId();
         var user = await users.FindByIdAsync(id);
         if (user is null) return null;
+        // The version the caller read: a change made since is theirs to reload, not EF's concurrency failure.
         if (string.IsNullOrWhiteSpace(input.ConcurrencyStamp) || input.ConcurrencyStamp != user.ConcurrencyStamp)
-            throw new DbUpdateConcurrencyException("The user changed. Reload before saving.");
+            throw RefusalException.Conflict("The user changed. Reload before saving.");
         await using var transaction = await db.Database.BeginTransactionAsync();
         var active = input.IsActive ?? user.IsActive;
         if (!active && user.IsActive && await users.IsInRoleAsync(user, "Administrator"))
@@ -59,7 +61,7 @@ public sealed class RepositoryUserService(RepositoryDbContext db, UserManager<Oi
             var role = (await roles.FindByNameAsync("Administrator"))!;
             Require(await roles.UpdateAsync(role));
             if (await ActiveAdministratorCountAsync(role.Id) <= 1)
-                throw new InvalidOperationException("The last active administrator cannot be disabled.");
+                throw RefusalException.Conflict("The last active administrator cannot be disabled.");
         }
         user.IsActive = active;
         Require(await users.UpdateAsync(user));
@@ -112,8 +114,8 @@ public sealed class RepositoryUserService(RepositoryDbContext db, UserManager<Oi
 
     private static void Require(IdentityResult result)
     {
-        if (result.Errors.Any(x => x.Code == "ConcurrencyFailure"))
-            throw new DbUpdateConcurrencyException("The account or role changed. Reload before retrying.");
+        if (result.Errors.Any(x => x.Code == nameof(IdentityErrorDescriber.ConcurrencyFailure)))
+            throw RefusalException.Conflict("The account or role changed. Reload before retrying.");
         if (!result.Succeeded) throw new InvalidOperationException(string.Join(", ", result.Errors.Select(x => x.Code)));
     }
 }

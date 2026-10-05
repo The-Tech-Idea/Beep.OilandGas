@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.ChokeAnalysis;
 using Beep.OilandGas.Models.Data.Calculations;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.ChokeAnalysis.Calculations
 {
@@ -182,7 +183,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
             if (choke == null) throw new ArgumentNullException(nameof(choke));
 
             double dIn = (double)choke.CHOKE_DIAMETER;
-            if (dIn <= 0) throw new ArgumentOutOfRangeException(nameof(choke), "CHOKE_DIAMETER must be > 0");
+            if (dIn <= 0) throw RefusalException.Invalid("The choke diameter must be greater than zero.");
 
             double areaFt2 = Math.PI * (dIn / 12.0) * (dIn / 12.0) / 4.0;
 
@@ -192,7 +193,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
             double qGasFt3d   = gasRateMscfd   * 1000.0 / (upstreamPressurePsia / 14.73) * (520.0 / (temperatureF + 459.67)); // actual ft³/d
 
             double totalQFt3d = qOilFt3d + qWaterFt3d + qGasFt3d;
-            if (totalQFt3d <= 0) throw new ArgumentException("Total flow rate must be > 0.");
+            if (totalQFt3d <= 0) throw RefusalException.Invalid("The total flow rate must be greater than zero.");
 
             double massOil   = qOilFt3d   * oilDensityLbFt3;
             double massWater = qWaterFt3d * waterDensityLbFt3;
@@ -252,7 +253,8 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
                 ErosionRisk.Low      => $"Velocity {v:F1} ft/s is {(1 - vRatio) * 100:F0}% below erosional limit. No erosion concern.",
                 ErosionRisk.Moderate => $"Velocity {v:F1} ft/s approaches erosional limit ({ve:F1} ft/s). Monitor choke wear.",
                 ErosionRisk.High     => $"Velocity {v:F1} ft/s exceeds API RP 14E limit ({ve:F1} ft/s) by {(vRatio - 1) * 100:F0}%. Reduce rate or upsize choke.",
-                _                   => $"Velocity {v:F1} ft/s is SEVERELY above limit ({ve:F1} ft/s). Immediate choke replacement risk."
+                ErosionRisk.Severe
+                    => $"Velocity {v:F1} ft/s is SEVERELY above limit ({ve:F1} ft/s). Immediate choke replacement risk."
             };
 
             return new ErosionAssessmentResult

@@ -51,18 +51,11 @@ namespace Beep.OilandGas.ApiService.Services
         public async Task<DrillingEngineerKpi> GetKpiAsync(string? fieldId = null)
         {
             var kpi = new DrillingEngineerKpi();
-            try
-            {
-                var activeFilter = new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" };
-                var wells = (await GetRepo<PpdmEntities.WELL>("WELL").GetAsync(new List<AppFilter> { activeFilter }))
-                    .OfType<PpdmEntities.WELL>().ToList();
-                kpi.TotalWells = wells.Count;
-                kpi.ActiveWells = wells.Count;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Failed to build drilling KPI");
-            }
+            var activeFilter = new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" };
+            var wells = (await GetRepo<PpdmEntities.WELL>("WELL").GetAsync(new List<AppFilter> { activeFilter }))
+                .OfType<PpdmEntities.WELL>().ToList();
+            kpi.TotalWells = wells.Count;
+            kpi.ActiveWells = wells.Count;
             return kpi;
         }
     }

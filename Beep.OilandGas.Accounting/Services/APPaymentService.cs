@@ -67,7 +67,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(apInvoiceId))
                 throw new ArgumentNullException(nameof(apInvoiceId));
             if (paymentAmount <= 0)
-                throw new ArgumentException("Payment amount must be greater than zero", nameof(paymentAmount));
+                throw RefusalException.Invalid("Payment amount must be greater than zero.");
 
             _logger?.LogInformation("Recording AP payment for invoice {InvoiceId}: {Amount:C}",
                 apInvoiceId, paymentAmount);
@@ -128,8 +128,8 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error recording AP payment for invoice {InvoiceId}: {Message}",
-                    apInvoiceId, ex.Message);
+                _logger?.LogError(ex, "Error recording AP payment for invoice {InvoiceId}",
+                    apInvoiceId);
                 throw;
             }
         }
@@ -147,24 +147,17 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(apInvoiceId))
                 return new List<AP_PAYMENT>();
 
-            try
-            {
-                var repo = await GetRepoAsync<AP_PAYMENT>("AP_PAYMENT");
+            // A failed read propagates: as "no payments" it made GetTotalPaidAsync answer that nothing was paid.
+            var repo = await GetRepoAsync<AP_PAYMENT>("AP_PAYMENT");
 
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "AP_INVOICE_ID", Operator = "=", FilterValue = apInvoiceId },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-                };
-
-                var payments = await repo.GetAsync(filters);
-                return payments?.Cast<AP_PAYMENT>().ToList() ?? new List<AP_PAYMENT>();
-            }
-            catch (Exception ex)
+            var filters = new List<AppFilter>
             {
-                _logger?.LogError(ex, "Error getting payments for invoice {InvoiceId}", apInvoiceId);
-                return new List<AP_PAYMENT>();
-            }
+                new AppFilter { FieldName = "AP_INVOICE_ID", Operator = "=", FilterValue = apInvoiceId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            var payments = await repo.GetAsync(filters);
+            return payments?.Cast<AP_PAYMENT>().ToList() ?? new List<AP_PAYMENT>();
         }
 
         /// <summary>
@@ -211,26 +204,18 @@ namespace Beep.OilandGas.Accounting.Services
         /// </summary>
         public async Task<List<AP_PAYMENT>> GetPaymentsByDateRangeAsync(DateTime fromDate, DateTime toDate)
         {
-            try
-            {
-                var repo = await GetRepoAsync<AP_PAYMENT>("AP_PAYMENT");
+            // A failed read propagates rather than reading as "no payments in the range".
+            var repo = await GetRepoAsync<AP_PAYMENT>("AP_PAYMENT");
 
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "PAYMENT_DATE", Operator = ">=", FilterValue = fromDate.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "PAYMENT_DATE", Operator = "<=", FilterValue = toDate.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-                };
-
-                var payments = await repo.GetAsync(filters);
-                return payments?.Cast<AP_PAYMENT>().ToList() ?? new List<AP_PAYMENT>();
-            }
-            catch (Exception ex)
+            var filters = new List<AppFilter>
             {
-                _logger?.LogError(ex, "Error getting payments for date range {FromDate} to {ToDate}",
-                    fromDate, toDate);
-                return new List<AP_PAYMENT>();
-            }
+                new AppFilter { FieldName = "PAYMENT_DATE", Operator = ">=", FilterValue = fromDate.ToString("yyyy-MM-dd") },
+                new AppFilter { FieldName = "PAYMENT_DATE", Operator = "<=", FilterValue = toDate.ToString("yyyy-MM-dd") },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            var payments = await repo.GetAsync(filters);
+            return payments?.Cast<AP_PAYMENT>().ToList() ?? new List<AP_PAYMENT>();
         }
 
         /// <summary>

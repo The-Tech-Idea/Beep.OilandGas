@@ -68,13 +68,16 @@ namespace Beep.OilandGas.Accounting.Services
                     throw new ArgumentNullException(nameof(assetId));
 
                 if (purchasePrice <= 0)
-                    throw new InvalidOperationException("Purchase price must be positive");
+                    throw RefusalException.Invalid("Purchase price must be positive.");
 
                 if (usefulLifeYears <= 0)
-                    throw new InvalidOperationException("Useful life must be positive");
+                    throw RefusalException.Invalid("Useful life must be positive.");
 
                 if (salvageValue < 0)
-                    throw new InvalidOperationException("Salvage value cannot be negative");
+                    throw RefusalException.Invalid("Salvage value cannot be negative.");
+
+                if (!Enum.IsDefined(method))
+                    throw RefusalException.Invalid($"{method} is not a depreciation method.");
 
                 var asset = new FixedAsset
                 {
@@ -102,7 +105,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error creating fixed asset: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error creating fixed asset");
                 throw;
             }
         }
@@ -137,9 +140,6 @@ namespace Beep.OilandGas.Accounting.Services
                     case DepreciationMethod.MACRS:
                         remainingDepreciableBase = GenerateMACRSSchedule(asset);
                         break;
-
-                    default:
-                        throw new InvalidOperationException($"Unknown depreciation method: {asset.DepreciationMethod}");
                 }
 
                 asset.TotalScheduledDepreciation = asset.DepreciationSchedule.Sum(x => x.AnnualDepreciation);
@@ -148,7 +148,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error generating depreciation schedule: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error generating depreciation schedule");
                 throw;
             }
         }
@@ -249,13 +249,13 @@ namespace Beep.OilandGas.Accounting.Services
             {
                 var entry = asset.DepreciationSchedule.FirstOrDefault(x => x.Year == depreciationYear);
                 if (entry == null)
-                    throw new InvalidOperationException($"No depreciation entry found for year {depreciationYear}");
+                    throw RefusalException.NotFound($"The asset's schedule has no depreciation entry for year {depreciationYear}.");
 
                 return entry;
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error calculating year depreciation: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error calculating year depreciation");
                 throw;
             }
         }
@@ -302,7 +302,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error generating depreciation summary: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error generating depreciation summary");
                 throw;
             }
         }
@@ -358,7 +358,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error exporting depreciation schedule: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error exporting depreciation schedule");
                 throw;
             }
         }

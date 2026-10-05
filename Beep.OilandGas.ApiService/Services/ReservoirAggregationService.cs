@@ -34,22 +34,18 @@ namespace Beep.OilandGas.ApiService.Services
         public async Task<List<PoolSummary>> GetPoolSummaryAsync(string? fieldId = null)
         {
             var result = new List<PoolSummary>();
-            try
+            var repo = GetRepo<Beep.OilandGas.PPDM39.Models.POOL>("POOL");
+            var filters = new List<AppFilter> { new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" } };
+            if (!string.IsNullOrWhiteSpace(fieldId))
+                filters.Add(new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId });
+            var pools = (await repo.GetAsync(filters)).OfType<Beep.OilandGas.PPDM39.Models.POOL>().ToList();
+            result = pools.Select(p => new PoolSummary
             {
-                var repo = GetRepo<Beep.OilandGas.PPDM39.Models.POOL>("POOL");
-                var filters = new List<AppFilter> { new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" } };
-                if (!string.IsNullOrWhiteSpace(fieldId))
-                    filters.Add(new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId });
-                var pools = (await repo.GetAsync(filters)).OfType<Beep.OilandGas.PPDM39.Models.POOL>().ToList();
-                result = pools.Select(p => new PoolSummary
-                {
-                    PoolId = p.POOL_ID ?? "N/A",
-                    PoolName = p.POOL_NAME ?? p.POOL_ID ?? "Unknown",
-                    DiscoveryDate = p.DISCOVERY_DATE,
-                    Status = p.CURRENT_STATUS_DATE.HasValue ? "Active" : "Unknown"
-                }).OrderBy(p => p.PoolName).ToList();
-            }
-            catch (Exception ex) { _logger?.LogWarning(ex, "Failed to load pool summary"); }
+                PoolId = p.POOL_ID ?? "N/A",
+                PoolName = p.POOL_NAME ?? p.POOL_ID ?? "Unknown",
+                DiscoveryDate = p.DISCOVERY_DATE,
+                Status = p.CURRENT_STATUS_DATE.HasValue ? "Active" : "Unknown"
+            }).OrderBy(p => p.PoolName).ToList();
             return result;
         }
     }

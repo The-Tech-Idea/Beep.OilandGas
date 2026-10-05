@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Beep.OilandGas.ApiService.Controllers;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data.Calculations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -73,8 +74,26 @@ public class ChokeCalculationsControllerTests
         Assert.Equal("user-42", captured!.UserId);
     }
 
+    /// <summary>
+    /// OILGAS-CATCH-01: the calculation's refusal reaches the API's handler as itself (answered 400 with its sentence); the
+    /// controller no longer answers an <see cref="ArgumentException"/> — which the framework throws too — as a refusal.
+    /// </summary>
     [Fact]
-    public async Task PerformChokeAnalysis_ReturnsBadRequest_OnArgumentException()
+    public async Task PerformChokeAnalysis_PassesTheCalculationsRefusalThrough()
+    {
+        var calc = new Mock<ICalculationService>(MockBehavior.Strict);
+        var refusal = RefusalException.Invalid("bad");
+        calc.Setup(s => s.PerformChokeAnalysisAsync(It.IsAny<ChokeAnalysisRequest>()))
+            .ThrowsAsync(refusal);
+
+        var controller = CreateController(calc.Object);
+
+        Assert.Same(refusal, await Refusals.RefusedAsync(RefusalKind.Invalid,
+            () => controller.PerformChokeAnalysis(new ChokeAnalysisRequest())));
+    }
+
+    [Fact]
+    public async Task PerformChokeAnalysis_LetsAFrameworkArgumentExceptionFailAsItself()
     {
         var calc = new Mock<ICalculationService>(MockBehavior.Strict);
         calc.Setup(s => s.PerformChokeAnalysisAsync(It.IsAny<ChokeAnalysisRequest>()))
@@ -82,9 +101,7 @@ public class ChokeCalculationsControllerTests
 
         var controller = CreateController(calc.Object);
 
-        var actionResult = await controller.PerformChokeAnalysis(new ChokeAnalysisRequest());
-
-        Assert.IsType<BadRequestObjectResult>(actionResult.Result);
+        await Assert.ThrowsAsync<ArgumentException>(() => controller.PerformChokeAnalysis(new ChokeAnalysisRequest()));
     }
 
     [Fact]

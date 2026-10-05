@@ -130,25 +130,21 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
             if (string.IsNullOrWhiteSpace(json))
                 return request;
 
-            try
+            // The step's data is written by the process engine; a document that cannot be read is a fault in the stored
+            // step and reaches the caller (reported with its reference). It had been passed over, and the prospect created
+            // under a default name in place of the one the person entered.
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("ProspectName", out var nameEl) && nameEl.ValueKind == JsonValueKind.String)
             {
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-                if (root.TryGetProperty("ProspectName", out var nameEl) && nameEl.ValueKind == JsonValueKind.String)
-                {
-                    var n = nameEl.GetString();
-                    if (!string.IsNullOrWhiteSpace(n))
-                        request.ProspectName = n!;
-                }
-                if (root.TryGetProperty("Description", out var descEl) && descEl.ValueKind == JsonValueKind.String)
-                    request.Description = descEl.GetString();
-                if (root.TryGetProperty("ProspectType", out var typeEl) && typeEl.ValueKind == JsonValueKind.String)
-                    request.ProspectType = typeEl.GetString();
+                var n = nameEl.GetString();
+                if (!string.IsNullOrWhiteSpace(n))
+                    request.ProspectName = n!;
             }
-            catch (JsonException)
-            {
-                // Keep defaults from lead id
-            }
+            if (root.TryGetProperty("Description", out var descEl) && descEl.ValueKind == JsonValueKind.String)
+                request.Description = descEl.GetString();
+            if (root.TryGetProperty("ProspectType", out var typeEl) && typeEl.ValueKind == JsonValueKind.String)
+                request.ProspectType = typeEl.GetString();
 
             return request;
         }

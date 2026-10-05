@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Beep.OilandGas.Models.Data.NodalAnalysis;
 using Beep.OilandGas.GasProperties.Calculations;
 using System.Linq;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.NodalAnalysis.Calculations
 {
@@ -36,13 +37,13 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             decimal productivityIndex)
         {
             if (reservoirPressure <= 0)
-                throw new ArgumentException("Reservoir pressure must be greater than zero.", nameof(reservoirPressure));
+                throw RefusalException.Invalid("Reservoir pressure must be greater than zero.");
 
             if (wellheadPressure <= 0)
-                throw new ArgumentException("Wellhead pressure must be greater than zero.", nameof(wellheadPressure));
+                throw RefusalException.Invalid("Wellhead pressure must be greater than zero.");
 
             if (productivityIndex <= 0)
-                throw new ArgumentException("Productivity index must be greater than zero.", nameof(productivityIndex));
+                throw RefusalException.Invalid("Productivity index must be greater than zero.");
 
             // Generate IPR curve
             var iprCurve = GenerateIPRCurve(reservoirPressure, productivityIndex);
@@ -243,10 +244,10 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
         public static OperatingPoint FindOperatingPoint(List<IPRPoint> iprCurve, List<VLPPoint> vlpCurve)
         {
             if (iprCurve == null || iprCurve.Count == 0)
-                throw new ArgumentException("IPR curve cannot be null or empty.", nameof(iprCurve));
+                throw RefusalException.Invalid("An IPR curve with at least one point is required.");
 
             if (vlpCurve == null || vlpCurve.Count == 0)
-                throw new ArgumentException("VLP curve cannot be null or empty.", nameof(vlpCurve));
+                throw RefusalException.Invalid("A VLP curve with at least one point is required.");
 
             // Convert to tuples for internal method
             var iprTuples = iprCurve.Select(p => (p.FlowRate, p.FlowingBottomholePressure)).ToList();

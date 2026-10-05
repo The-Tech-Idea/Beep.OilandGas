@@ -44,26 +44,18 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<List<Prospect>> GetProspectsAsync(Dictionary<string, string>? filters = null)
         {
-            try
+            var endpoint = "/api/prospectidentification";
+            if (filters != null && filters.Count > 0)
             {
-                var endpoint = "/api/prospectidentification";
-                if (filters != null && filters.Count > 0)
+                var queryParams = new List<string>();
+                foreach (var filter in filters)
                 {
-                    var queryParams = new List<string>();
-                    foreach (var filter in filters)
-                    {
-                        queryParams.Add($"{Uri.EscapeDataString(filter.Key)}={Uri.EscapeDataString(filter.Value)}");
-                    }
-                    endpoint += "?" + string.Join("&", queryParams);
+                    queryParams.Add($"{Uri.EscapeDataString(filter.Key)}={Uri.EscapeDataString(filter.Value)}");
                 }
-                var result = await _apiClient.GetAsync<List<Prospect>>(endpoint);
-                return result ?? new List<Prospect>();
+                endpoint += "?" + string.Join("&", queryParams);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting prospects");
-                return new List<Prospect>();
-            }
+            var result = await _apiClient.GetAsync<List<Prospect>>(endpoint);
+            return result ?? new List<Prospect>();
         }
 
         public async Task<string> CreateProspectAsync(Prospect prospect)
@@ -84,22 +76,14 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<List<ProspectRanking>> RankProspectsAsync(List<string> prospectIds, Dictionary<string, decimal> rankingCriteria)
         {
-            try
+            var request = new
             {
-                var request = new
-                {
-                    ProspectIds = prospectIds,
-                    RankingCriteria = rankingCriteria
-                };
-                var result = await _apiClient.PostAsync<object, List<ProspectRanking>>(
-                    "/api/prospectidentification/rank", request);
-                return result ?? new List<ProspectRanking>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error ranking prospects");
-                return new List<ProspectRanking>();
-            }
+                ProspectIds = prospectIds,
+                RankingCriteria = rankingCriteria
+            };
+            var result = await _apiClient.PostAsync<object, List<ProspectRanking>>(
+                "/api/prospectidentification/rank", request);
+            return result ?? new List<ProspectRanking>();
         }
 
         #endregion
@@ -186,26 +170,18 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<List<LeaseSummary>> GetAvailableLeasesAsync(Dictionary<string, string>? filters = null)
         {
-            try
+            var endpoint = "/api/leaseacquisition/available";
+            if (filters != null && filters.Count > 0)
             {
-                var endpoint = "/api/leaseacquisition/available";
-                if (filters != null && filters.Count > 0)
+                var queryParams = new List<string>();
+                foreach (var filter in filters)
                 {
-                    var queryParams = new List<string>();
-                    foreach (var filter in filters)
-                    {
-                        queryParams.Add($"{Uri.EscapeDataString(filter.Key)}={Uri.EscapeDataString(filter.Value)}");
-                    }
-                    endpoint += "?" + string.Join("&", queryParams);
+                    queryParams.Add($"{Uri.EscapeDataString(filter.Key)}={Uri.EscapeDataString(filter.Value)}");
                 }
-                var result = await _apiClient.GetAsync<List<LeaseSummary>>(endpoint);
-                return result ?? new List<LeaseSummary>();
+                endpoint += "?" + string.Join("&", queryParams);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting available leases");
-                return new List<LeaseSummary>();
-            }
+            var result = await _apiClient.GetAsync<List<LeaseSummary>>(endpoint);
+            return result ?? new List<LeaseSummary>();
         }
 
         public async Task<string> CreateLeaseAcquisitionAsync(CreateLeaseAcquisition leaseRequest)
@@ -223,19 +199,11 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> UpdateLeaseStatusAsync(string leaseId, string status)
+        public async Task UpdateLeaseStatusAsync(string leaseId, string status)
         {
-            try
-            {
-                var request = new { Status = status };
-                var endpoint = $"/api/leaseacquisition/{Uri.EscapeDataString(leaseId)}/status";
-                return await _apiClient.PutAsync(endpoint, request);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating lease status for {LeaseId}", leaseId);
-                return false;
-            }
+            var request = new { Status = status };
+            var endpoint = $"/api/leaseacquisition/{Uri.EscapeDataString(leaseId)}/status";
+            await _apiClient.PutAsync(endpoint, request);
         }
 
         #endregion

@@ -89,30 +89,31 @@ public class ProductionForecastingControllerTests
         core.VerifyAll();
     }
 
+    // OILGAS-CATCH-01: the forecasting service's refusal reaches the API's handler as itself (400 with its sentence).
     [Fact]
-    public async Task GenerateForecast_ReturnsBadRequest_WhenArgumentException()
+    public async Task GenerateForecast_PassesTheServicesRefusalThrough()
     {
         var core = new Mock<IProductionForecastingService>(MockBehavior.Strict);
+        var refusal = Beep.OilandGas.Models.Core.Refusals.RefusalException.Invalid("bad");
         core.Setup(s => s.GenerateForecastAsync(It.Is<GenerateForecastRequest>(r =>
             r.WellUWI == "UWI-1" &&
             r.ForecastMethod == ForecastType.None &&
             r.ForecastPeriod == 12)))
-            .ThrowsAsync(new ArgumentException("bad"));
+            .ThrowsAsync(refusal);
         var controller = new ProductionForecastingController(core.Object, NullLogger<ProductionForecastingController>.Instance);
 
-        var result = await controller.GenerateForecast(new GenerateForecastRequest
-        {
-            WellUWI = "UWI-1",
-            ForecastMethod = ForecastType.None,
-            ForecastPeriod = 12
-        });
-
-        Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Same(refusal, await Refusals.RefusedAsync(Beep.OilandGas.Models.Core.Refusals.RefusalKind.Invalid,
+            () => controller.GenerateForecast(new GenerateForecastRequest
+            {
+                WellUWI = "UWI-1",
+                ForecastMethod = ForecastType.None,
+                ForecastPeriod = 12
+            })));
         core.VerifyAll();
     }
 
     [Fact]
-    public async Task GenerateForecast_Returns500_WhenUnexpectedException()
+    public async Task GenerateForecast_LeavesAnUnexpectedFailureToTheApiHandler()
     {
         var core = new Mock<IProductionForecastingService>(MockBehavior.Strict);
         core.Setup(s => s.GenerateForecastAsync(It.Is<GenerateForecastRequest>(r =>
@@ -122,15 +123,14 @@ public class ProductionForecastingControllerTests
             .ThrowsAsync(new InvalidOperationException("db"));
         var controller = new ProductionForecastingController(core.Object, NullLogger<ProductionForecastingController>.Instance);
 
-        var result = await controller.GenerateForecast(new GenerateForecastRequest
+        // OILGAS-CATCH-01: the controller no longer answers a failure itself; it reaches the API's exception handler,
+        // which reports it and answers 500 with its reference and never its text (ExceptionAnswerTests).
+        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.GenerateForecast(new GenerateForecastRequest
         {
             WellUWI = "UWI-1",
             ForecastMethod = ForecastType.Hyperbolic,
             ForecastPeriod = 12
-        });
-
-        var obj = Assert.IsType<ObjectResult>(result.Result);
-        Assert.Equal(500, obj.StatusCode);
+        }));
         core.VerifyAll();
     }
 
@@ -217,16 +217,15 @@ public class ProductionForecastingControllerTests
     }
 
     [Fact]
-    public async Task SaveForecast_ReturnsBadRequest_WhenArgumentException()
+    public async Task SaveForecast_PassesTheServicesRefusalThrough()
     {
         var core = new Mock<IProductionForecastingService>(MockBehavior.Strict);
-        core.Setup(s => s.SaveForecastAsync(It.IsAny<ProductionForecastResult>(), It.IsAny<string>()))
-            .ThrowsAsync(new ArgumentException("bad forecast"));
+        var refusal = Beep.OilandGas.Models.Core.Refusals.RefusalException.Invalid("bad forecast");
+        core.Setup(s => s.SaveForecastAsync(It.IsAny<ProductionForecastResult>(), It.IsAny<string>())).ThrowsAsync(refusal);
         var controller = SignedIn(new ProductionForecastingController(core.Object, NullLogger<ProductionForecastingController>.Instance), "u1");
 
-        var result = await controller.SaveForecast(new ProductionForecastResult { ForecastId = "F-1" });
-
-        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Same(refusal, await Refusals.RefusedAsync(Beep.OilandGas.Models.Core.Refusals.RefusalKind.Invalid,
+            () => controller.SaveForecast(new ProductionForecastResult { ForecastId = "F-1" })));
         core.VerifyAll();
     }
 

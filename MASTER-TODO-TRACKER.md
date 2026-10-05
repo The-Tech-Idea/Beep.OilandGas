@@ -32,6 +32,16 @@ to an existing BeepDM connection — in development that is `PPDM39`, a SQLite c
 locally, and personas and field settings in the header do not load. The development LocalDB repository had one pending
 migration (`FinancialOperationClaims`), applied with `dotnet ef database update` as the repository README documents.
 
+**Failure reporting, 2026-10-02 (in progress; OILGAS-CATCH-01):** the identity server's analyzers load into every
+project but tests and benchmarks — 2,554 findings in 517 files at the start. Done so far: the API answers through ASP.NET
+Core's exception handler (`RefusalExceptionHandler` for `RefusalException`, the shared library's report and a referenced
+500 for anything else) in place of `GlobalExceptionMiddleware`, which answered every framework `ArgumentException` 400 and
+`InvalidOperationException` 409 in the framework's words; 578 controller catches that logged and wrote their own 500
+removed; the web's `ApiClient` throws `OilGasApiException` instead of bool results and a sentence-carrying
+`HttpRequestException`; the shared page notifier and dialog boundary wired. API tests 1023/1023. In progress: the
+controllers' typed catches, the libraries' refusal throws and catches, and the web, by project group. Each project with
+findings carries a TEMPORARY `.editorconfig` lowering BEEP0001–0004 to warnings until it reaches zero.
+
 **Log and failures, 2026-09-27 (done; the identity server's CLIENT-CATCH-01 stage 3):** both hosts keep their failures in one EF store of their own, `Beep.OilandGas.Diagnostics` (the shared `TheTechIdeaWeb.Diagnostics` table; SQL Server, PostgreSQL and Oracle migrations; history table `__OilGasDiagnosticsMigrations`, so it may share the repository's database). Configure `Diagnostics:Provider` and `Diagnostics:ConnectionString` on both hosts — the same values — and `Diagnostics:MigrateOnStartup` on the API, which owns the schema; the server copies of `appsettings.Production.json` need the section before this deploys, or neither host starts. Without a reporter the identity server's client library refused to start either host. The API's `GlobalExceptionMiddleware` reports everything it takes and answers a 500 with the reference, not the exception's text; the Web's `/Error` shows the stored reference, pages sit in a `ReportingErrorBoundary`, and administrators read `/admin/failures` (linked from the account menu — the navigation menus still do not open). The code's own ~2,900 catches are the identity server tracker's OILGAS-CATCH-01.
 
 **IdentityServer integration, 2026-09-25 (done):** the account menu opens again — MudBlazor 9 requires a custom activator to call the menu's context, so sign-in, the account page and sign-out had been unreachable (MENU-01, `SignInSurfaceTests.The_sign_in_and_account_menu_opens`). Deleting the account is refused beforehand for OilGas's only active administrator (`GET api/auth/repository/me/deletion`, `RepositoryUserService.IsLastActiveAdministratorAsync`, the rule `UpdateAsync` already applied): the identity server deletes first, so `me/deactivate`'s refusal came too late (DELETE-01). Not changed, being the Web's own UI: the navigation and notification menus (`NavMenu`, `AccountantNavMenu`, `PetroleumEngineerNavMenu`, `NotificationCenter`) have the same MudBlazor 9 activator defect and do not open.

@@ -42,29 +42,24 @@ namespace Beep.OilandGas.HSE.Modules
             var result = NewResult();
             cancellationToken.ThrowIfCancellationRequested();
 
-            try
-            {
-                var seed = await _referenceSeeder.SeedIndustryStandardsDataAsync(
-                    connectionName,
-                    tableNames: null,
-                    skipExisting: true,
-                    userId: userId);
+            // A failure of the seeder is not caught here: it reaches the module orchestrator, which records this module
+            // as failed and goes on with the others, or the API's handler, which reports it and answers with its
+            // reference. Copying the exception's text into the result put a fault's words in front of the operator.
+            var seed = await _referenceSeeder.SeedIndustryStandardsDataAsync(
+                connectionName,
+                tableNames: null,
+                skipExisting: true,
+                userId: userId);
 
-                result.Success = seed.Success;
-                result.TablesSeeded = seed.TablesSeeded;
-                result.RecordsInserted = seed.RecordsInserted;
+            result.Success = seed.Success;
+            result.TablesSeeded = seed.TablesSeeded;
+            result.RecordsInserted = seed.RecordsInserted;
 
-                if (!seed.Success && !string.IsNullOrWhiteSpace(seed.Message))
-                    result.Errors.Add(seed.Message);
+            if (!seed.Success && !string.IsNullOrWhiteSpace(seed.Message))
+                result.Errors.Add(seed.Message);
 
-                if (seed.Errors != null)
-                    result.Errors.AddRange(seed.Errors);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                result.Success = false;
-                result.Errors.Add(ex.Message);
-            }
+            if (seed.Errors != null)
+                result.Errors.AddRange(seed.Errors);
 
             return result;
         }

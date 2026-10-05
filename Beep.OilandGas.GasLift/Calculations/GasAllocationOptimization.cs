@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.GasLift;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.GasLift.Calculations
 {
@@ -69,8 +70,8 @@ namespace Beep.OilandGas.GasLift.Calculations
             double minInjectionMscfd = 0,
             double maxInjectionMscfd = 5_000)
         {
-            if (qMaxOilBopd <= 0)        throw new ArgumentOutOfRangeException(nameof(qMaxOilBopd));
-            if (knownInjectionMscfd <= 0) throw new ArgumentOutOfRangeException(nameof(knownInjectionMscfd));
+            if (qMaxOilBopd <= 0)        throw RefusalException.Invalid("The maximum oil rate must be greater than zero.");
+            if (knownInjectionMscfd <= 0) throw RefusalException.Invalid("The known gas injection rate must be greater than zero.");
 
             double fraction = Math.Min(0.999, knownOilBopd / qMaxOilBopd);
             double a = -Math.Log(1.0 - fraction) / knownInjectionMscfd;

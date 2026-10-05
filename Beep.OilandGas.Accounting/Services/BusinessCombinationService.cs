@@ -59,9 +59,9 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(acquisitionName))
                 throw new ArgumentNullException(nameof(acquisitionName));
             if (considerationPaid <= 0m)
-                throw new InvalidOperationException("Consideration must be positive");
+                throw RefusalException.Invalid("Consideration must be positive.");
             if (netAssetsFairValue <= 0m)
-                throw new InvalidOperationException("Net assets fair value must be positive");
+                throw RefusalException.Invalid("Net assets fair value must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 

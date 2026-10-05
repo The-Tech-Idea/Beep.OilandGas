@@ -12,6 +12,7 @@ using TheTechIdea.Beep.Addin;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.SetUp.Seeding;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Services
 {
@@ -28,12 +29,14 @@ namespace Beep.OilandGas.ApiService.Services
         private readonly IModuleSetup _module;
         private readonly string _connectionName;
         private readonly ILogger _logger;
+        private readonly IFailureReporter _failures;
 
-        public PpdmModuleSeeder(IModuleSetup module, string connectionName, ILogger logger)
+        public PpdmModuleSeeder(IModuleSetup module, string connectionName, ILogger logger, IFailureReporter failures)
         {
             _module = module ?? throw new ArgumentNullException(nameof(module));
             _connectionName = connectionName;
             _logger = logger;
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
         }
 
         /// <summary>Uses the PPDM module ID as the seeder ID.</summary>
@@ -86,17 +89,22 @@ namespace Beep.OilandGas.ApiService.Services
                         _module.ModuleId, result.RecordsInserted, result.TablesSeeded);
                 }
             }
+            // The seeding step's contract is an outcome, not an exception: whatever stops the module, the step is told it
+            // failed, with the reference its failure is filed under — never the exception's own text (OILGAS-CATCH-01).
+            // Cancellation is the run ending.
             catch (ModuleSetupAbortException ex)
             {
-                _logger.LogError(ex, "PPDM seeder {Id} ABORTED", _module.ModuleId);
+                var reference = _failures.ReportHandled(ex, $"seeding PPDM module {_module.ModuleId}",
+                    "the module aborted its seeding; the seeding step is told it failed, with this reference");
                 errors.Flag = Errors.Failed;
-                errors.Message = $"Module {_module.ModuleId} aborted: {ex.Message}";
+                errors.Message = $"Module {_module.ModuleId} aborted its seeding (reference {reference}).";
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger.LogError(ex, "PPDM seeder {Id} failed", _module.ModuleId);
+                var reference = _failures.ReportHandled(ex, $"seeding PPDM module {_module.ModuleId}",
+                    "the module is not seeded; the seeding step is told it failed, with this reference");
                 errors.Flag = Errors.Failed;
-                errors.Message = $"Module {_module.ModuleId} failed: {ex.Message}";
+                errors.Message = $"Module {_module.ModuleId} was not seeded (reference {reference}).";
             }
 
             return errors;
@@ -120,14 +128,15 @@ namespace Beep.OilandGas.ApiService.Services
             ISeederRegistry registry,
             IEnumerable<IModuleSetup> modules,
             string connectionName,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            IFailureReporter failures)
         {
             var ordered = modules.OrderBy(m => m.Order).ThenBy(m => m.ModuleId).ToList();
 
             foreach (var module in ordered)
             {
                 var logger = loggerFactory.CreateLogger($"{typeof(PpdmModuleSeeder).FullName}.{module.ModuleId}");
-                var seeder = new PpdmModuleSeeder(module, connectionName, logger);
+                var seeder = new PpdmModuleSeeder(module, connectionName, logger, failures);
                 registry.Register(seeder);
             }
         }

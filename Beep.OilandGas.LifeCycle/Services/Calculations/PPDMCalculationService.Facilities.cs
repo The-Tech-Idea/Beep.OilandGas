@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using System;
 using System.Threading.Tasks;
 using Beep.OilandGas.CompressorAnalysis.Constants;
@@ -57,15 +58,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     ApplyCompressorPowerResult(result, powerResult, operatingConditions);
                 }
             }
-            catch (OperationCanceledException)
+            // A packaged calculation answers a failure as a failed run carrying the reference; a refusal of what was
+            // sent goes on to the caller with its own sentence, and cancellation is the caller's.
+            catch (Exception ex) when (ex is not RefusalException and not OperationCanceledException)
             {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Compressor Analysis failed for FacilityId: {FacilityId}", request.FacilityId);
                 result.Status = CalculationRunStatus.Failed;
-                result.ErrorMessage = ex.Message;
+                result.ErrorMessage = ReportedFailure.Sentence(_failures, ex,
+                    $"running the compressor analysis for facility {request.FacilityId}", "The compressor analysis did not complete");
             }
 
             return await Task.FromResult(result);
@@ -275,15 +274,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 result.OutletPressure = (result.InletPressure ?? 0m) - (result.PressureDrop ?? 0m);
             }
-            catch (OperationCanceledException)
+            // A packaged calculation answers a failure as a failed run carrying the reference; a refusal of what was
+            // sent goes on to the caller with its own sentence, and cancellation is the caller's.
+            catch (Exception ex) when (ex is not RefusalException and not OperationCanceledException)
             {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Pipeline Analysis failed for PipelineId: {PipelineId}", request.PipelineId);
                 result.Status = CalculationRunStatus.Failed;
-                result.ErrorMessage = ex.Message;
+                result.ErrorMessage = ReportedFailure.Sentence(_failures, ex,
+                    $"running the pipeline analysis for pipeline {request.PipelineId}", "The pipeline analysis did not complete");
             }
 
             return await Task.FromResult(result);

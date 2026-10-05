@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TheTechIdea.Data.OilGas;
+using TheTechIdeaWeb.Diagnostics;
 using Xunit;
 
 namespace Beep.OilandGas.Repository.Tests;
@@ -23,6 +24,7 @@ public class RepositoryRegistrationTests
         }).Build();
         var services = new ServiceCollection();
         services.AddLogging();
+        services.AddSingleton<IFailureReporter, RecordingFailureReporter>();
         services.AddOilGasRepository(config);
         using var root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         using var scope = root.CreateScope();

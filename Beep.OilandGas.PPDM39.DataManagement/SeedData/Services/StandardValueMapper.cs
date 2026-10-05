@@ -14,6 +14,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
     /// Maps values from different standards (PPDM, IHS, API, ISO) to PPDM structure
     /// Handles value conflicts and cross-references between standards
     /// </summary>
+    /// <remarks>
+    /// OILGAS-CATCH-01: a mapping that cannot be written — the metadata, the existence check or the insert failing — reaches
+    /// the caller. Each method caught it and answered an "error" carrying the exception's own words, so an outage read as
+    /// one value that could not be mapped and the import carried on.
+    /// </remarks>
     public class StandardValueMapper
     {
         private readonly IDMEEditor _editor;
@@ -47,35 +52,17 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
         /// </summary>
         public async Task<ImportResult> MapIHSToPPDMAsync(string ihsCode, string ihsName, string ppdmTableName, bool skipExisting = true, string userId = "SYSTEM")
         {
-            var result = new ImportResult
+            // Check if mapping exists
+            if (_ihsToPPDMMappings.ContainsKey(ppdmTableName) && 
+                _ihsToPPDMMappings[ppdmTableName].ContainsKey(ihsCode))
             {
-                Success = true,
-                RecordsProcessed = 0,
-                RecordsInserted = 0,
-                RecordsSkipped = 0,
-                Errors = new List<string>()
-            };
-
-            try
-            {
-                // Check if mapping exists
-                if (_ihsToPPDMMappings.ContainsKey(ppdmTableName) && 
-                    _ihsToPPDMMappings[ppdmTableName].ContainsKey(ihsCode))
-                {
-                    var ppdmCode = _ihsToPPDMMappings[ppdmTableName][ihsCode];
-                    // Use mapped PPDM code
-                    return await InsertToPPDMTableAsync(ppdmTableName, ppdmCode, ihsName, skipExisting, userId);
-                }
-
-                // Try direct mapping (IHS code = PPDM code)
-                return await InsertToPPDMTableAsync(ppdmTableName, ihsCode, ihsName, skipExisting, userId);
+                var ppdmCode = _ihsToPPDMMappings[ppdmTableName][ihsCode];
+                // Use mapped PPDM code
+                return await InsertToPPDMTableAsync(ppdmTableName, ppdmCode, ihsName, skipExisting, userId);
             }
-            catch (Exception ex)
-            {
-                result.Success = false;
-                result.Errors.Add($"Mapping error: {ex.Message}");
-                return result;
-            }
+
+            // Try direct mapping (IHS code = PPDM code)
+            return await InsertToPPDMTableAsync(ppdmTableName, ihsCode, ihsName, skipExisting, userId);
         }
 
         /// <summary>
@@ -83,33 +70,15 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
         /// </summary>
         public async Task<ImportResult> MapAPIToPPDMAsync(string apiCode, string apiName, string ppdmTableName, bool skipExisting = true, string userId = "SYSTEM")
         {
-            var result = new ImportResult
+            // Check if mapping exists
+            if (_apiToPPDMMappings.ContainsKey(ppdmTableName) && 
+                _apiToPPDMMappings[ppdmTableName].ContainsKey(apiCode))
             {
-                Success = true,
-                RecordsProcessed = 0,
-                RecordsInserted = 0,
-                RecordsSkipped = 0,
-                Errors = new List<string>()
-            };
-
-            try
-            {
-                // Check if mapping exists
-                if (_apiToPPDMMappings.ContainsKey(ppdmTableName) && 
-                    _apiToPPDMMappings[ppdmTableName].ContainsKey(apiCode))
-                {
-                    var ppdmCode = _apiToPPDMMappings[ppdmTableName][apiCode];
-                    return await InsertToPPDMTableAsync(ppdmTableName, ppdmCode, apiName, skipExisting, userId);
-                }
-
-                return await InsertToPPDMTableAsync(ppdmTableName, apiCode, apiName, skipExisting, userId);
+                var ppdmCode = _apiToPPDMMappings[ppdmTableName][apiCode];
+                return await InsertToPPDMTableAsync(ppdmTableName, ppdmCode, apiName, skipExisting, userId);
             }
-            catch (Exception ex)
-            {
-                result.Success = false;
-                result.Errors.Add($"Mapping error: {ex.Message}");
-                return result;
-            }
+
+            return await InsertToPPDMTableAsync(ppdmTableName, apiCode, apiName, skipExisting, userId);
         }
 
         /// <summary>
@@ -117,33 +86,15 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
         /// </summary>
         public async Task<ImportResult> MapISOToPPDMAsync(string isoCode, string isoName, string ppdmTableName, bool skipExisting = true, string userId = "SYSTEM")
         {
-            var result = new ImportResult
+            // Check if mapping exists
+            if (_isoToPPDMMappings.ContainsKey(ppdmTableName) && 
+                _isoToPPDMMappings[ppdmTableName].ContainsKey(isoCode))
             {
-                Success = true,
-                RecordsProcessed = 0,
-                RecordsInserted = 0,
-                RecordsSkipped = 0,
-                Errors = new List<string>()
-            };
-
-            try
-            {
-                // Check if mapping exists
-                if (_isoToPPDMMappings.ContainsKey(ppdmTableName) && 
-                    _isoToPPDMMappings[ppdmTableName].ContainsKey(isoCode))
-                {
-                    var ppdmCode = _isoToPPDMMappings[ppdmTableName][isoCode];
-                    return await InsertToPPDMTableAsync(ppdmTableName, ppdmCode, isoName, skipExisting, userId);
-                }
-
-                return await InsertToPPDMTableAsync(ppdmTableName, isoCode, isoName, skipExisting, userId);
+                var ppdmCode = _isoToPPDMMappings[ppdmTableName][isoCode];
+                return await InsertToPPDMTableAsync(ppdmTableName, ppdmCode, isoName, skipExisting, userId);
             }
-            catch (Exception ex)
-            {
-                result.Success = false;
-                result.Errors.Add($"Mapping error: {ex.Message}");
-                return result;
-            }
+
+            return await InsertToPPDMTableAsync(ppdmTableName, isoCode, isoName, skipExisting, userId);
         }
 
         private async Task<ImportResult> InsertToPPDMTableAsync(string tableName, string code, string name, bool skipExisting, string userId)
@@ -157,76 +108,68 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
                 Errors = new List<string>()
             };
 
-            try
-            {
-                var metadata = await _metadata.GetTableMetadataAsync(tableName);
-                if (metadata == null)
-                {
-                    result.Success = false;
-                    result.Errors.Add($"Table metadata not found: {tableName}");
-                    return result;
-                }
-
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}") ??
-                                Type.GetType($"Beep.OilandGas.Models.Data.{metadata.EntityTypeName}");
-
-                if (entityType == null)
-                {
-                    result.Success = false;
-                    result.Errors.Add($"Entity type not found for table: {tableName}");
-                    return result;
-                }
-
-                var repository = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, _connectionName, tableName);
-
-                // Check if exists
-                if (skipExisting)
-                {
-                    var primaryKeyColumn = metadata.PrimaryKeyColumn;
-                    if (!string.IsNullOrEmpty(primaryKeyColumn))
-                    {
-                        var existing = await repository.GetByIdAsync(code);
-                        if (existing != null)
-                        {
-                            result.RecordsSkipped = 1;
-                            return result;
-                        }
-                    }
-                }
-
-                // Create entity
-                var entity = Activator.CreateInstance(entityType);
-                var primaryKeyProp = entityType.GetProperty(metadata.PrimaryKeyColumn, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                if (primaryKeyProp != null && primaryKeyProp.CanWrite)
-                {
-                    primaryKeyProp.SetValue(entity, code);
-                }
-
-                // Set name property (usually ends with _NAME or _DESC)
-                var nameProp = entityType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
-                    .FirstOrDefault(p => p.Name.EndsWith("_NAME", StringComparison.OrdinalIgnoreCase) || 
-                                        p.Name.EndsWith("_DESC", StringComparison.OrdinalIgnoreCase));
-                if (nameProp != null && nameProp.CanWrite)
-                {
-                    nameProp.SetValue(entity, name);
-                }
-
-                // Set common columns
-                if (entity is IPPDMEntity ppdmEntity)
-                    _commonColumnHandler.PrepareForInsert(ppdmEntity, userId);
-
-                // Insert
-                var inserted = await repository.InsertAsync(entity, userId);
-                if (inserted != null)
-                {
-                    result.RecordsInserted = 1;
-                }
-            }
-            catch (Exception ex)
+            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            if (metadata == null)
             {
                 result.Success = false;
-                result.Errors.Add($"Error inserting to {tableName}: {ex.Message}");
+                result.Errors.Add($"Table metadata not found: {tableName}");
+                return result;
+            }
+
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}") ??
+                            Type.GetType($"Beep.OilandGas.Models.Data.{metadata.EntityTypeName}");
+
+            if (entityType == null)
+            {
+                result.Success = false;
+                result.Errors.Add($"Entity type not found for table: {tableName}");
+                return result;
+            }
+
+            var repository = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, _connectionName, tableName);
+
+            // Check if exists
+            if (skipExisting)
+            {
+                var primaryKeyColumn = metadata.PrimaryKeyColumn;
+                if (!string.IsNullOrEmpty(primaryKeyColumn))
+                {
+                    var existing = await repository.GetByIdAsync(code);
+                    if (existing != null)
+                    {
+                        result.RecordsSkipped = 1;
+                        return result;
+                    }
+                }
+            }
+
+            // Create entity
+            var entity = Activator.CreateInstance(entityType);
+            var primaryKeyProp = entityType.GetProperty(metadata.PrimaryKeyColumn, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+            if (primaryKeyProp != null && primaryKeyProp.CanWrite)
+            {
+                primaryKeyProp.SetValue(entity, code);
+            }
+
+            // Set name property (usually ends with _NAME or _DESC)
+            var nameProp = entityType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+                .FirstOrDefault(p => p.Name.EndsWith("_NAME", StringComparison.OrdinalIgnoreCase) || 
+                                    p.Name.EndsWith("_DESC", StringComparison.OrdinalIgnoreCase));
+            if (nameProp != null && nameProp.CanWrite)
+            {
+                nameProp.SetValue(entity, name);
+            }
+
+            // Set common columns
+            if (entity is IPPDMEntity ppdmEntity)
+                _commonColumnHandler.PrepareForInsert(ppdmEntity, userId);
+
+            // Insert
+            var inserted = await repository.InsertAsync(entity, userId);
+            if (inserted != null)
+            {
+                result.RecordsInserted = 1;
             }
 
             return result;

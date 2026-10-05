@@ -59,22 +59,14 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<List<WorkflowDefinition>>> GetWorkflowsByPhase(string phase, [FromQuery] string? fieldId = null)
         {
             if (string.IsNullOrWhiteSpace(phase)) return BadRequest(new { error = "Phase is required." });
-            try
+            // Use current field if available and fieldId not specified
+            if (_fieldOrchestrator != null && string.IsNullOrEmpty(fieldId) && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId))
             {
-                // Use current field if available and fieldId not specified
-                if (_fieldOrchestrator != null && string.IsNullOrEmpty(fieldId) && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId))
-                {
-                    fieldId = _fieldOrchestrator.CurrentFieldId;
-                }
+                fieldId = _fieldOrchestrator.CurrentFieldId;
+            }
 
-                var workflows = await _workflowService.GetWorkflowsByPhaseAsync(phase.ToUpperInvariant(), fieldId);
-                return Ok(workflows);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting workflows for phase {Phase}", phase);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var workflows = await _workflowService.GetWorkflowsByPhaseAsync(phase.ToUpperInvariant(), fieldId);
+            return Ok(workflows);
         }
 
         /// <summary>
@@ -83,22 +75,14 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet]
         public async Task<ActionResult<List<WorkflowDefinition>>> GetWorkflows([FromQuery] string? fieldId = null, [FromQuery] string? phase = null)
         {
-            try
+            // Use current field if available and fieldId not specified
+            if (_fieldOrchestrator != null && string.IsNullOrEmpty(fieldId) && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId))
             {
-                // Use current field if available and fieldId not specified
-                if (_fieldOrchestrator != null && string.IsNullOrEmpty(fieldId) && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId))
-                {
-                    fieldId = _fieldOrchestrator.CurrentFieldId;
-                }
+                fieldId = _fieldOrchestrator.CurrentFieldId;
+            }
 
-                var workflows = await _workflowService.GetWorkflowsAsync(fieldId, phase);
-                return Ok(workflows);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting workflows");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var workflows = await _workflowService.GetWorkflowsAsync(fieldId, phase);
+            return Ok(workflows);
         }
 
         /// <summary>
@@ -107,31 +91,23 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPost]
         public async Task<ActionResult<WorkflowDefinition>> CreateWorkflow([FromBody] WorkflowDefinition workflow, [FromQuery] string? phase = null)
         {
-            try
+            // Set field context if available
+            if (_fieldOrchestrator != null && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId))
             {
-                // Set field context if available
-                if (_fieldOrchestrator != null && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId))
+                if (workflow.Parameters == null)
                 {
-                    if (workflow.Parameters == null)
-                    {
-                        workflow.Parameters = new Dictionary<string, object>();
-                    }
-                    workflow.Parameters["FIELD_ID"] = _fieldOrchestrator.CurrentFieldId;
-
-                    if (!string.IsNullOrEmpty(phase))
-                    {
-                        workflow.Parameters["PHASE"] = phase.ToUpperInvariant();
-                    }
+                    workflow.Parameters = new Dictionary<string, object>();
                 }
+                workflow.Parameters["FIELD_ID"] = _fieldOrchestrator.CurrentFieldId;
 
-                var savedWorkflow = await _workflowService.SaveWorkflowDefinitionAsync(workflow);
-                return Ok(savedWorkflow);
+                if (!string.IsNullOrEmpty(phase))
+                {
+                    workflow.Parameters["PHASE"] = phase.ToUpperInvariant();
+                }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving workflow definition");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+
+            var savedWorkflow = await _workflowService.SaveWorkflowDefinitionAsync(workflow);
+            return Ok(savedWorkflow);
         }
 
         /// <summary>
@@ -141,16 +117,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<List<WorkflowExecutionResult>>> GetWorkflowHistory(string workflowId, [FromQuery] int limit = 50)
         {
             if (string.IsNullOrWhiteSpace(workflowId)) return BadRequest(new { error = "Workflow ID is required." });
-            try
-            {
-                var history = await _workflowService.GetWorkflowExecutionHistoryAsync(workflowId, limit);
-                return Ok(history);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting workflow history for {WorkflowId}", workflowId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var history = await _workflowService.GetWorkflowExecutionHistoryAsync(workflowId, limit);
+            return Ok(history);
         }
 
         /// <summary>
@@ -160,20 +128,12 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public ActionResult<WorkflowProgress> GetWorkflowProgress(string workflowId)
         {
             if (string.IsNullOrWhiteSpace(workflowId)) return BadRequest(new { error = "Workflow ID is required." });
-            try
+            var progress = _progressTracking?.GetWorkflowProgress(workflowId);
+            if (progress == null)
             {
-                var progress = _progressTracking?.GetWorkflowProgress(workflowId);
-                if (progress == null)
-                {
-                        return NotFound(new { error = "Workflow not found." });
-                }
-                return Ok(progress);
+                    return NotFound(new { error = "Workflow not found." });
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting workflow progress for {WorkflowId}", workflowId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(progress);
         }
 
         /// <summary>
@@ -183,17 +143,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public ActionResult CancelWorkflow(string workflowId)
         {
             if (string.IsNullOrWhiteSpace(workflowId)) return BadRequest(new { error = "Workflow ID is required." });
-            try
-            {
-                _progressTracking?.CancelOperation(workflowId);
-                _logger.LogInformation("Cancelled workflow {WorkflowId}", workflowId);
-                return Ok(new { message = "Workflow cancellation requested" });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error cancelling workflow {WorkflowId}", workflowId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            _progressTracking?.CancelOperation(workflowId);
+            _logger.LogInformation("Cancelled workflow {WorkflowId}", workflowId);
+            return Ok(new { message = "Workflow cancellation requested" });
         }
     }
 }

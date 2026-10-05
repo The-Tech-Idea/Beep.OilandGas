@@ -43,35 +43,24 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var accounting = _service.CreateFullCostAccounting(connectionName);
-                accounting.RecordExplorationCosts(request.CostCenterId, request.Costs, connectionName);
+            var accounting = _service.CreateFullCostAccounting(connectionName);
+            accounting.RecordExplorationCosts(request.CostCenterId, request.Costs, connectionName);
 
-                // Post to GL: Debit Capitalized Cost, Credit AP/Cash
-                var journalEntryId = await _glIntegration.PostCostToGL(
+            // Post to GL: Debit Capitalized Cost, Credit AP/Cash
+            var journalEntryId = await LedgerPosting.PostAsync(
+                () => _glIntegration.PostCostToGL(
                     request.Costs.PropertyId,
                     request.Costs.TotalExplorationCosts,
                     isCapitalized: true,
                     isCash: false,
                     transactionDate: DateTime.UtcNow,
-                    userId: userId);
+                    userId: userId),
+                $"Exploration costs for cost center {request.CostCenterId}", request.CostCenterId, "FULL_COST");
 
-                return Ok(new { CostCenterId = request.CostCenterId, JournalEntryId = journalEntryId });
-            }
-            catch (GLPostingException ex)
-            {
-                _logger.LogError(ex, "GL posting failed for exploration costs");
-                    return StatusCode(500, new { error = "Transaction created but GL posting failed." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error recording exploration costs");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { CostCenterId = request.CostCenterId, JournalEntryId = journalEntryId });
         }
 
         /// <summary>
@@ -83,35 +72,24 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var accounting = _service.CreateFullCostAccounting(connectionName);
-                accounting.RecordDevelopmentCosts(request.CostCenterId, request.Costs, connectionName);
+            var accounting = _service.CreateFullCostAccounting(connectionName);
+            accounting.RecordDevelopmentCosts(request.CostCenterId, request.Costs, connectionName);
 
-                // Post to GL: Debit Capitalized Cost, Credit AP/Cash
-                var journalEntryId = await _glIntegration.PostCostToGL(
+            // Post to GL: Debit Capitalized Cost, Credit AP/Cash
+            var journalEntryId = await LedgerPosting.PostAsync(
+                () => _glIntegration.PostCostToGL(
                     request.Costs.PropertyId,
                     request.Costs.TotalDevelopmentCosts,
                     isCapitalized: true,
                     isCash: false,
                     transactionDate: DateTime.UtcNow,
-                    userId: userId);
+                    userId: userId),
+                $"Development costs for cost center {request.CostCenterId}", request.CostCenterId, "FULL_COST");
 
-                return Ok(new { CostCenterId = request.CostCenterId, JournalEntryId = journalEntryId });
-            }
-            catch (GLPostingException ex)
-            {
-                _logger.LogError(ex, "GL posting failed for development costs");
-                    return StatusCode(500, new { error = "Transaction created but GL posting failed." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error recording development costs");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { CostCenterId = request.CostCenterId, JournalEntryId = journalEntryId });
         }
 
         /// <summary>
@@ -123,43 +101,32 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var accounting = _service.CreateFullCostAccounting(connectionName);
+            var property = new UnprovedProperty
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+                PropertyId = request.Property.PropertyId,
+                AcquisitionCost = request.Property.AcquisitionCost,
+                ProvedDate = request.Property.ProvedDate,
+                IsProved = true
+            };
 
-                var accounting = _service.CreateFullCostAccounting(connectionName);
-                var property = new UnprovedProperty
-                {
-                    PropertyId = request.Property.PropertyId,
-                    AcquisitionCost = request.Property.AcquisitionCost,
-                    ProvedDate = request.Property.ProvedDate,
-                    IsProved = true
-                };
+            accounting.RecordAcquisitionCosts(request.CostCenterId, property, connectionName);
 
-                accounting.RecordAcquisitionCosts(request.CostCenterId, property, connectionName);
-
-                // Post to GL: Debit Capitalized Cost, Credit AP/Cash
-                var journalEntryId = await _glIntegration.PostCostToGL(
+            // Post to GL: Debit Capitalized Cost, Credit AP/Cash
+            var journalEntryId = await LedgerPosting.PostAsync(
+                () => _glIntegration.PostCostToGL(
                     request.Property.PropertyId,
                     request.Property.AcquisitionCost,
                     isCapitalized: true,
                     isCash: false,
                     transactionDate: DateTime.UtcNow,
-                    userId: userId);
+                    userId: userId),
+                $"Acquisition costs for cost center {request.CostCenterId}", request.CostCenterId, "FULL_COST");
 
-                return Ok(new { CostCenterId = request.CostCenterId, JournalEntryId = journalEntryId });
-            }
-            catch (GLPostingException ex)
-            {
-                _logger.LogError(ex, "GL posting failed for acquisition costs");
-                    return StatusCode(500, new { error = "Transaction created but GL posting failed." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error recording acquisition costs");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { CostCenterId = request.CostCenterId, JournalEntryId = journalEntryId });
         }
 
         /// <summary>
@@ -172,17 +139,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         {
             if (string.IsNullOrWhiteSpace(costCenterId))
                 return BadRequest(new { error = "Cost center ID is required." });
-            try
-            {
-                var accounting = _service.CreateFullCostAccounting(connectionName);
-                var totalCosts = accounting.CalculateTotalCapitalizedCosts(costCenterId, connectionName);
-                return Ok(new { CostCenterId = costCenterId, TotalCapitalizedCosts = totalCosts });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating total capitalized costs");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var accounting = _service.CreateFullCostAccounting(connectionName);
+            var totalCosts = accounting.CalculateTotalCapitalizedCosts(costCenterId, connectionName);
+            return Ok(new { CostCenterId = costCenterId, TotalCapitalizedCosts = totalCosts });
         }
 
         /// <summary>
@@ -193,21 +152,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             [FromBody] CeilingTestRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var accounting = _service.CreateFullCostAccounting(connectionName);
-                var result = accounting.PerformCeilingTest(request.CostCenterId, request.Reserves, request.DiscountRate ?? 0.10m, connectionName);
-                
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error performing ceiling test");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var accounting = _service.CreateFullCostAccounting(connectionName);
+            var result = accounting.PerformCeilingTest(request.CostCenterId, request.Reserves, request.DiscountRate ?? 0.10m, connectionName);
+            
+            return Ok(result);
         }
     }
 

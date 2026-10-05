@@ -105,7 +105,9 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
                 PermitApplicationType.Facility => "FACILITY",
                 PermitApplicationType.Seismic => "SEISMIC",
                 PermitApplicationType.Groundwater => "GROUNDWATER",
-                _ => "OTHER"
+                // DRILLING_PERMIT names a drilling permit; the catch-all had stored it as OTHER.
+                PermitApplicationType.DRILLING_PERMIT => "DRILLING",
+                PermitApplicationType.Other => "OTHER"
             };
         }
 
@@ -165,13 +167,15 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
                 RegulatoryAuthority.NOPSEMA => "NOPSEMA",
                 RegulatoryAuthority.QLD_DNRME => "QLD_DNRME",
                 RegulatoryAuthority.WA_DMIRS => "WA_DMIRS",
+                RegulatoryAuthority.NT_DITT => "NT_DITT",
+                RegulatoryAuthority.SA_DMRE => "SA_DMRE",
                 RegulatoryAuthority.ANP => "ANP",
                 RegulatoryAuthority.ARG_NEUQUEN => "ARG_NEUQUEN",
                 RegulatoryAuthority.ARG_MENDOZA => "ARG_MENDOZA",
                 RegulatoryAuthority.DPR => "DPR",
                 RegulatoryAuthority.SKKMigas => "SKKMigas",
                 RegulatoryAuthority.KZ_MOE => "KZ_MOE",
-                _ => "OTHER"
+                RegulatoryAuthority.Other => "OTHER"
             };
         }
     }

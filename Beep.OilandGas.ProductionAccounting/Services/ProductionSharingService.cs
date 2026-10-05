@@ -47,37 +47,29 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         {
             if (string.IsNullOrWhiteSpace(propertyId))
                 throw new ArgumentNullException(nameof(propertyId));
-            try
+            var metadata = await _metadata.GetTableMetadataAsync("PRODUCTION_SHARING_AGREEMENT");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(PRODUCTION_SHARING_AGREEMENT);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, connectionName, "PRODUCTION_SHARING_AGREEMENT");
+
+            var filters = new List<AppFilter>
             {
-                var metadata = await _metadata.GetTableMetadataAsync("PRODUCTION_SHARING_AGREEMENT");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(PRODUCTION_SHARING_AGREEMENT);
+                new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = propertyId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+            };
 
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "PRODUCTION_SHARING_AGREEMENT");
+            var results = await repo.GetAsync(filters);
+            var agreements = results?.Cast<PRODUCTION_SHARING_AGREEMENT>().ToList()
+                ?? new List<PRODUCTION_SHARING_AGREEMENT>();
 
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = propertyId },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                };
-
-                var results = await repo.GetAsync(filters);
-                var agreements = results?.Cast<PRODUCTION_SHARING_AGREEMENT>().ToList()
-                    ?? new List<PRODUCTION_SHARING_AGREEMENT>();
-
-                return agreements
-                    .Where(a => (a.EFFECTIVE_DATE == null || a.EFFECTIVE_DATE <= asOfDate)
-                        && (a.EXPIRY_DATE == null || a.EXPIRY_DATE >= asOfDate))
-                    .OrderByDescending(a => a.EFFECTIVE_DATE)
-                    .FirstOrDefault();
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "PSA agreement lookup failed for property {PropertyId}", propertyId);
-                return null;
-            }
+            return agreements
+                .Where(a => (a.EFFECTIVE_DATE == null || a.EFFECTIVE_DATE <= asOfDate)
+                    && (a.EXPIRY_DATE == null || a.EXPIRY_DATE >= asOfDate))
+                .OrderByDescending(a => a.EFFECTIVE_DATE)
+                .FirstOrDefault();
         }
 
         public async Task<PRODUCTION_SHARING_ENTITLEMENT> CalculateEntitlementAsync(
@@ -90,80 +82,72 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new ArgumentNullException(nameof(ALLOCATION_DETAIL));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
-            try
-            {
-                var RUN_TICKET = await GetRunTicketAsync(ALLOCATION_DETAIL, connectionName);
-                if (RUN_TICKET == null || string.IsNullOrWhiteSpace(RUN_TICKET.LEASE_ID))
-                    return null;
-
-                var agreement = await GetActiveAgreementAsync(RUN_TICKET.LEASE_ID, productionDate, connectionName);
-                if (agreement == null)
-                    return null;
-
-                var totalVolume = ALLOCATION_DETAIL.ALLOCATED_VOLUME ?? 0m;
-                if (totalVolume <= 0m)
-                    return null;
-
-                var costRecoveryLimit = NormalizePercent(
-                    agreement.COST_RECOVERY_LIMIT_PCT,
-                    PsaEntitlementCalculationDefaults.DefaultCostRecoveryLimitFraction);
-                var governmentSplit = NormalizePercent(
-                    agreement.GOVERNMENT_PROFIT_SPLIT_PCT,
-                    PsaEntitlementCalculationDefaults.DefaultGovernmentProfitSplitFraction);
-                var contractorSplit = NormalizePercent(
-                    agreement.CONTRACTOR_PROFIT_SPLIT_PCT,
-                    LeaseEconomicInterestValidation.FullInterestFraction - governmentSplit);
-
-                if (governmentSplit + contractorSplit == 0m)
-                {
-                    governmentSplit = PsaEntitlementCalculationDefaults.DefaultGovernmentProfitSplitFraction;
-                    contractorSplit = PsaEntitlementCalculationDefaults.DefaultGovernmentProfitSplitFraction;
-                }
-
-                var costOilVolume = totalVolume * costRecoveryLimit;
-                var profitVolume = Math.Max(0m, totalVolume - costOilVolume);
-                var contractorVolume = costOilVolume + (profitVolume * contractorSplit);
-                var governmentVolume = profitVolume * governmentSplit;
-
-                var entitlement = new PRODUCTION_SHARING_ENTITLEMENT
-                {
-                    PSA_ENTITLEMENT_ID = Guid.NewGuid().ToString(),
-                    PSA_ID = agreement.PSA_ID,
-                    PROPERTY_ID = RUN_TICKET.LEASE_ID,
-                    ALLOCATION_DETAIL_ID = ALLOCATION_DETAIL.ALLOCATION_DETAIL_ID,
-                    PRODUCTION_DATE = productionDate,
-                    TOTAL_VOLUME = totalVolume,
-                    COST_OIL_VOLUME = costOilVolume,
-                    PROFIT_OIL_VOLUME = profitVolume,
-                    CONTRACTOR_VOLUME = contractorVolume,
-                    GOVERNMENT_VOLUME = governmentVolume,
-                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
-                    PPDM_GUID = Guid.NewGuid().ToString(),
-                    ROW_CREATED_BY = userId,
-                    ROW_CREATED_DATE = DateTime.UtcNow
-                };
-
-                var metadata = await _metadata.GetTableMetadataAsync("PRODUCTION_SHARING_ENTITLEMENT");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(PRODUCTION_SHARING_ENTITLEMENT);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "PRODUCTION_SHARING_ENTITLEMENT");
-
-                await repo.InsertAsync(entitlement, userId);
-
-                _logger?.LogInformation(
-                    "PSA entitlement calculated for allocation {AllocationDetailId}: ContractorVolume={Contractor}, GovVolume={Government}",
-                    ALLOCATION_DETAIL.ALLOCATION_DETAIL_ID, contractorVolume, governmentVolume);
-
-                return entitlement;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "PSA entitlement calculation failed for allocation {AllocationDetailId}", ALLOCATION_DETAIL.ALLOCATION_DETAIL_ID);
+            var RUN_TICKET = await GetRunTicketAsync(ALLOCATION_DETAIL, connectionName);
+            if (RUN_TICKET == null || string.IsNullOrWhiteSpace(RUN_TICKET.LEASE_ID))
                 return null;
+
+            var agreement = await GetActiveAgreementAsync(RUN_TICKET.LEASE_ID, productionDate, connectionName);
+            if (agreement == null)
+                return null;
+
+            var totalVolume = ALLOCATION_DETAIL.ALLOCATED_VOLUME ?? 0m;
+            if (totalVolume <= 0m)
+                return null;
+
+            var costRecoveryLimit = NormalizePercent(
+                agreement.COST_RECOVERY_LIMIT_PCT,
+                PsaEntitlementCalculationDefaults.DefaultCostRecoveryLimitFraction);
+            var governmentSplit = NormalizePercent(
+                agreement.GOVERNMENT_PROFIT_SPLIT_PCT,
+                PsaEntitlementCalculationDefaults.DefaultGovernmentProfitSplitFraction);
+            var contractorSplit = NormalizePercent(
+                agreement.CONTRACTOR_PROFIT_SPLIT_PCT,
+                LeaseEconomicInterestValidation.FullInterestFraction - governmentSplit);
+
+            if (governmentSplit + contractorSplit == 0m)
+            {
+                governmentSplit = PsaEntitlementCalculationDefaults.DefaultGovernmentProfitSplitFraction;
+                contractorSplit = PsaEntitlementCalculationDefaults.DefaultGovernmentProfitSplitFraction;
             }
+
+            var costOilVolume = totalVolume * costRecoveryLimit;
+            var profitVolume = Math.Max(0m, totalVolume - costOilVolume);
+            var contractorVolume = costOilVolume + (profitVolume * contractorSplit);
+            var governmentVolume = profitVolume * governmentSplit;
+
+            var entitlement = new PRODUCTION_SHARING_ENTITLEMENT
+            {
+                PSA_ENTITLEMENT_ID = Guid.NewGuid().ToString(),
+                PSA_ID = agreement.PSA_ID,
+                PROPERTY_ID = RUN_TICKET.LEASE_ID,
+                ALLOCATION_DETAIL_ID = ALLOCATION_DETAIL.ALLOCATION_DETAIL_ID,
+                PRODUCTION_DATE = productionDate,
+                TOTAL_VOLUME = totalVolume,
+                COST_OIL_VOLUME = costOilVolume,
+                PROFIT_OIL_VOLUME = profitVolume,
+                CONTRACTOR_VOLUME = contractorVolume,
+                GOVERNMENT_VOLUME = governmentVolume,
+                ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
+                PPDM_GUID = Guid.NewGuid().ToString(),
+                ROW_CREATED_BY = userId,
+                ROW_CREATED_DATE = DateTime.UtcNow
+            };
+
+            var metadata = await _metadata.GetTableMetadataAsync("PRODUCTION_SHARING_ENTITLEMENT");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(PRODUCTION_SHARING_ENTITLEMENT);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, connectionName, "PRODUCTION_SHARING_ENTITLEMENT");
+
+            await repo.InsertAsync(entitlement, userId);
+
+            _logger?.LogInformation(
+                "PSA entitlement calculated for allocation {AllocationDetailId}: ContractorVolume={Contractor}, GovVolume={Government}",
+                ALLOCATION_DETAIL.ALLOCATION_DETAIL_ID, contractorVolume, governmentVolume);
+
+            return entitlement;
         }
 
         private async Task<RUN_TICKET> GetRunTicketAsync(ALLOCATION_DETAIL ALLOCATION_DETAIL, string connectionName)

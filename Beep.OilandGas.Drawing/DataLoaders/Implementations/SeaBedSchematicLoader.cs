@@ -45,17 +45,10 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         /// </summary>
         public bool Connect()
         {
-            try
-            {
-                // Establish connection; queries use apiEndpoint or connectionString depending on deployment
-                isConnected = true;
-                return true;
-            }
-            catch
-            {
-                isConnected = false;
-                return false;
-            }
+            // Establish connection; queries use apiEndpoint or connectionString depending on deployment.
+            // (Setting a flag throws nothing; the catch that answered false around it is gone, OILGAS-CATCH-01.)
+            isConnected = true;
+            return true;
         }
 
         /// <summary>
@@ -123,55 +116,49 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
             var stats = new DataLoadStatistics();
             configuration = configuration ?? new WellSchematicLoadConfiguration();
 
-            try
+            if (!isConnected)
+                Connect();
+
+            // A load that fails is a failure, not a result: it reaches the caller as its exception (OILGAS-CATCH-01).
+            // The failed result had carried the exception's text and stack for anyone to show.
+            var wellData = new WellData
             {
-                if (!isConnected)
-                    Connect();
+                UWI = wellIdentifier
+            };
 
-                var wellData = new WellData
-                {
-                    UWI = wellIdentifier
-                };
+            // Load boreholes
+            wellData.BoreHoles = LoadBoreholesFromSeaBed(wellIdentifier, configuration);
 
-                // Load boreholes
-                wellData.BoreHoles = LoadBoreholesFromSeaBed(wellIdentifier, configuration);
-
-                // Load components based on configuration
-                foreach (var borehole in wellData.BoreHoles)
-                {
-                    if (configuration.LoadCasing)
-                        borehole.Casing = LoadCasingFromSeaBed(borehole.BoreHoleIndex, wellIdentifier, configuration);
-                    else
-                        borehole.Casing = new List<WellData_Casing>();
-
-                    if (configuration.LoadTubing)
-                        borehole.Tubing = LoadTubingFromSeaBed(borehole.BoreHoleIndex, wellIdentifier, configuration);
-                    else
-                        borehole.Tubing = new List<WellData_Tubing>();
-
-                    if (configuration.LoadEquipment)
-                        borehole.Equip = LoadEquipmentFromSeaBed(borehole.BoreHoleIndex, wellIdentifier, configuration);
-                    else
-                        borehole.Equip = new List<WellData_Equip>();
-
-                    if (configuration.LoadPerforations)
-                        borehole.Perforation = LoadPerforationsFromSeaBed(borehole.BoreHoleIndex, wellIdentifier, configuration);
-                    else
-                        borehole.Perforation = new List<WellData_Perf>();
-                }
-
-                stats.RecordsLoaded = wellData.BoreHoles?.Count ?? 0;
-                stats.Complete();
-
-                var result = DataLoadResult<WellData>.CreateSuccess(wellData, stats.RecordsLoaded);
-                result.LoadDuration = stats.Duration;
-                return result;
-            }
-            catch (Exception ex)
+            // Load components based on configuration
+            foreach (var borehole in wellData.BoreHoles)
             {
-                stats.Complete();
-                return DataLoadResult<WellData>.CreateFailure($"Failed to load schematic: {ex.Message}", ex.ToString());
+                if (configuration.LoadCasing)
+                    borehole.Casing = LoadCasingFromSeaBed(borehole.BoreHoleIndex, wellIdentifier, configuration);
+                else
+                    borehole.Casing = new List<WellData_Casing>();
+
+                if (configuration.LoadTubing)
+                    borehole.Tubing = LoadTubingFromSeaBed(borehole.BoreHoleIndex, wellIdentifier, configuration);
+                else
+                    borehole.Tubing = new List<WellData_Tubing>();
+
+                if (configuration.LoadEquipment)
+                    borehole.Equip = LoadEquipmentFromSeaBed(borehole.BoreHoleIndex, wellIdentifier, configuration);
+                else
+                    borehole.Equip = new List<WellData_Equip>();
+
+                if (configuration.LoadPerforations)
+                    borehole.Perforation = LoadPerforationsFromSeaBed(borehole.BoreHoleIndex, wellIdentifier, configuration);
+                else
+                    borehole.Perforation = new List<WellData_Perf>();
             }
+
+            stats.RecordsLoaded = wellData.BoreHoles?.Count ?? 0;
+            stats.Complete();
+
+            var result = DataLoadResult<WellData>.CreateSuccess(wellData, stats.RecordsLoaded);
+            result.LoadDuration = stats.Duration;
+            return result;
         }
 
         /// <summary>

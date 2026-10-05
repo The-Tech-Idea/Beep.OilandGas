@@ -580,31 +580,13 @@ namespace Beep.OilandGas.DCA.Rendering
         /// </summary>
         private void DrawLegend(SKCanvas canvas, float width, float height)
         {
-            float legendX, legendY;
-            
-            switch (configuration.LegendPosition)
+            var (legendX, legendY) = configuration.LegendPosition switch
             {
-                case LegendPosition.TopLeft:
-                    legendX = plotAreaX + 10;
-                    legendY = plotAreaY + 10;
-                    break;
-                case LegendPosition.TopRight:
-                    legendX = plotAreaX + plotAreaWidth - 120;
-                    legendY = plotAreaY + 10;
-                    break;
-                case LegendPosition.BottomLeft:
-                    legendX = plotAreaX + 10;
-                    legendY = plotAreaY + plotAreaHeight - 80;
-                    break;
-                case LegendPosition.BottomRight:
-                    legendX = plotAreaX + plotAreaWidth - 120;
-                    legendY = plotAreaY + plotAreaHeight - 80;
-                    break;
-                default:
-                    legendX = plotAreaX + plotAreaWidth - 120;
-                    legendY = plotAreaY + 10;
-                    break;
-            }
+                LegendPosition.TopLeft => (plotAreaX + 10, plotAreaY + 10),
+                LegendPosition.TopRight => (plotAreaX + plotAreaWidth - 120, plotAreaY + 10),
+                LegendPosition.BottomLeft => (plotAreaX + 10, plotAreaY + plotAreaHeight - 80),
+                LegendPosition.BottomRight => (plotAreaX + plotAreaWidth - 120, plotAreaY + plotAreaHeight - 80),
+            };
 
             using (var textPaint = new SKPaint
             {

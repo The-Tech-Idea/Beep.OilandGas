@@ -34,18 +34,10 @@ public class FacilityMaintenanceController : ControllerBase
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
 
-        try
-        {
-            var rows = await _facilities
-                .ListFacilityMaintenanceAsync(facilityId, facilityType, startDate, endDate, cancellationToken)
-                .ConfigureAwait(false);
-            return Ok(rows);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "List maintenance for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var rows = await _facilities
+            .ListFacilityMaintenanceAsync(facilityId, facilityType, startDate, endDate, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(rows);
     }
 
     [HttpPost]
@@ -60,23 +52,10 @@ public class FacilityMaintenanceController : ControllerBase
         if (maintenance == null)
             return BadRequest(new { error = "Request body is required." });
 
-        try
-        {
-            maintenance.FACILITY_ID ??= facilityId;
-            var row = await _facilities
-                .CreateFacilityMaintenanceAsync(maintenance, userId, cancellationToken)
-                .ConfigureAwait(false);
-            return Ok(row);
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Create maintenance for {FacilityId} failed", facilityId);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Create maintenance for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        maintenance.FACILITY_ID ??= facilityId;
+        var row = await _facilities
+            .CreateFacilityMaintenanceAsync(maintenance, userId, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(row);
     }
 }

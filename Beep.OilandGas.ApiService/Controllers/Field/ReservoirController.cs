@@ -37,16 +37,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            try
-            {
-                var summary = await _developmentService.GetReservoirDashboardSummaryAsync(fieldId);
-                return Ok(summary);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching reservoir dashboard summary for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var summary = await _developmentService.GetReservoirDashboardSummaryAsync(fieldId);
+            return Ok(summary);
         }
 
         /// <summary>GET /api/field/current/reservoir/dashboard/pools</summary>
@@ -55,16 +47,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            try
-            {
-                var pools = await _developmentService.GetReservoirPoolsAsync(fieldId);
-                return Ok(pools);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching reservoir pools for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var pools = await _developmentService.GetReservoirPoolsAsync(fieldId);
+            return Ok(pools);
         }
     }
 }

@@ -16,18 +16,10 @@ public sealed class ProductionDashboardController(IPPDMProductionService product
     public async Task<ActionResult<ProductionDashboardResponse>> Get(string fieldId)
     {
         if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest();
-        try
-        {
-            var summary = await production.GetProductionDashboardSummaryAsync(fieldId);
-            if (summary is null || summary.FieldId != fieldId) throw new InvalidOperationException("Field summary mismatch.");
-            var wells = await production.GetProductionWellStatusAsync(fieldId)
-                ?? throw new InvalidOperationException("Well response unavailable.");
-            return Ok(new ProductionDashboardResponse { Summary = summary, Wells = wells });
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Unable to load production dashboard for field {FieldId}", fieldId);
-            return StatusCode(500, new { error = "Production dashboard could not be loaded." });
-        }
+        var summary = await production.GetProductionDashboardSummaryAsync(fieldId);
+        if (summary is null || summary.FieldId != fieldId) throw new InvalidOperationException("Field summary mismatch.");
+        var wells = await production.GetProductionWellStatusAsync(fieldId)
+            ?? throw new InvalidOperationException("Well response unavailable.");
+        return Ok(new ProductionDashboardResponse { Summary = summary, Wells = wells });
     }
 }

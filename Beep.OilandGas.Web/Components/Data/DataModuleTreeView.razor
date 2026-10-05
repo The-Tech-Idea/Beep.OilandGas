@@ -2,6 +2,9 @@
 @using Beep.OilandGas.Web.Services
 
 @inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 @* ─── Module-Centric Data Management Tree ─────────────────────────────── *@
 <div class="pa-2">
@@ -154,7 +157,16 @@
                     .ToList();
             }
         }
-        catch { /* static list still usable */ }
+        // The module's own table list is still usable without the extra tables; the person is told what is missing.
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading a module's additional tables", $"The additional {mod.ModuleName} tables could not be loaded"), Severity.Warning);
+        }
+        // A component answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading a module's additional tables", $"The additional {mod.ModuleName} tables could not be loaded", FailureSeverity.Degraded);
+        }
 
         StateHasChanged();
     }

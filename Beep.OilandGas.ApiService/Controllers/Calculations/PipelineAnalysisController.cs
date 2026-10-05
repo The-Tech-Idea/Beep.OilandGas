@@ -27,52 +27,28 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         [HttpPost("analyze-flow")]
         public async Task<ActionResult<PipelineAnalysisResult>> AnalyzeFlow([FromBody] AnalyzePipelineFlowRequest request)
         {
-            try
-            {
-                var result = await _service.AnalyzePipelineFlowAsync(
-                    request.PipelineId,
-                    request.FlowRate,
-                    request.InletPressure);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error analyzing pipeline flow for pipeline {PipelineId}", request.PipelineId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.AnalyzePipelineFlowAsync(
+                request.PipelineId,
+                request.FlowRate,
+                request.InletPressure);
+            return Ok(result);
         }
 
         [HttpPost("pressure-drop")]
         public async Task<ActionResult<PressureDropResult>> CalculatePressureDrop([FromBody] CalculatePressureDropRequest request)
         {
-            try
-            {
-                var result = await _service.CalculatePressureDropAsync(
-                    request.PipelineId,
-                    request.FlowRate);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating pressure drop for pipeline {PipelineId}", request.PipelineId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.CalculatePressureDropAsync(
+                request.PipelineId,
+                request.FlowRate);
+            return Ok(result);
         }
 
         [HttpPost("result")]
         public async Task<ActionResult> SaveResult([FromBody] PipelineAnalysisResult result)
         {
             var userId = User.ActingUserId();
-            try
-            {
-                await _service.SaveAnalysisResultAsync(result, userId);
-                return Ok(new { message = "Pipeline analysis result saved successfully", analysisId = result.AnalysisId });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving pipeline analysis result");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            await _service.SaveAnalysisResultAsync(result, userId);
+            return Ok(new { message = "Pipeline analysis result saved successfully", analysisId = result.AnalysisId });
         }
     }
 }

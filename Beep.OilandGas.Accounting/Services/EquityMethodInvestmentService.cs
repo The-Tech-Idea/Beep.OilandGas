@@ -58,7 +58,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(investmentName))
                 throw new ArgumentNullException(nameof(investmentName));
             if (amount <= 0m)
-                throw new InvalidOperationException("Investment amount must be positive");
+                throw RefusalException.Invalid("Investment amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
@@ -118,7 +118,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(investmentName))
                 throw new ArgumentNullException(nameof(investmentName));
             if (amount <= 0m)
-                throw new InvalidOperationException("Amount must be positive");
+                throw RefusalException.Invalid("Amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
@@ -187,7 +187,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(investmentName))
                 throw new ArgumentNullException(nameof(investmentName));
             if (amount <= 0m)
-                throw new InvalidOperationException("Dividend amount must be positive");
+                throw RefusalException.Invalid("Dividend amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 

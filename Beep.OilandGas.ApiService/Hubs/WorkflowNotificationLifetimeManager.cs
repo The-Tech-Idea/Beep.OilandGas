@@ -4,6 +4,7 @@ using Beep.OilandGas.ApiService.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Hubs;
 
@@ -13,8 +14,8 @@ namespace Beep.OilandGas.ApiService.Hubs;
 /// </summary>
 public sealed class WorkflowNotificationLifetimeManager(
     ILogger<DefaultHubLifetimeManager<WorkflowNotificationHub>> transportLogger,
-    ILogger<WorkflowNotificationLifetimeManager> logger,
-    IServiceScopeFactory scopeFactory) : DefaultHubLifetimeManager<WorkflowNotificationHub>(transportLogger)
+    IServiceScopeFactory scopeFactory,
+    IFailureReporter failures) : DefaultHubLifetimeManager<WorkflowNotificationHub>(transportLogger)
 {
     private sealed class ConnectionState(HubConnectionContext connection)
     {
@@ -81,10 +82,13 @@ public sealed class WorkflowNotificationLifetimeManager(
                 if (!state.Groups.ContainsKey(group)) continue;
                 var allowed = false;
                 try { allowed = await CanDeliverAsync(state.Connection.User, group); }
+                // Whatever stops the access lookup, this connection is not sent the notification and leaves the group:
+                // failure resolving current app access must never reuse an earlier grant. The other connections are
+                // still served.
                 catch (Exception exception)
                 {
-                    // Failure resolving current app access must never reuse an earlier grant.
-                    logger.LogWarning(exception, "Workflow notification access lookup failed for connection {ConnectionId}", connectionId);
+                    failures.ReportHandled(exception, $"checking access to workflow notifications ({group}) for connection {connectionId}",
+                        "the notification is not delivered to this connection, which leaves the group; it can subscribe again");
                 }
                 if (!allowed)
                 {
@@ -104,9 +108,11 @@ public sealed class WorkflowNotificationLifetimeManager(
                             if (subject is null || !await scope.ServiceProvider.GetRequiredService<WorkflowNotificationAuthorization>()
                                 .HasRoleAsync(subject, notification.RequiredRole)) continue;
                         }
+                        // Whatever stops the role lookup, this connection is not sent the notification; the others still are.
                         catch (Exception exception)
                         {
-                            logger.LogWarning(exception, "Workflow notification role lookup failed");
+                            failures.ReportHandled(exception, $"checking the role a workflow notification requires for connection {connectionId}",
+                                "the notification is not delivered to this connection");
                             continue;
                         }
                         deliveryArgs = new object?[] { notification.Payload };

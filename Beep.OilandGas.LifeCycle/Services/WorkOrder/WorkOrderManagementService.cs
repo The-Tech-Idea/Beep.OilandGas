@@ -306,19 +306,13 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder
                 var workOrderRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
                     typeof(WORK_ORDER), _connectionName, "WORK_ORDER", null);
 
+                // A work order that cannot be read fails the list (reported with its reference): it had been passed over,
+                // and the list answered as though the entity had only the others.
                 var results = new List<WorkOrderResponse>();
                 foreach (var workOrderId in workOrderIds)
                 {
-                    try
-                    {
-                        var workOrder = await GetWorkOrderAsync(workOrderId);
-                        results.Add(workOrder);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger?.LogWarning(ex, "Error getting work order {WorkOrderId} for entity {EntityType} {EntityId}",
-                            workOrderId, entityType, entityId);
-                    }
+                    var workOrder = await GetWorkOrderAsync(workOrderId);
+                    results.Add(workOrder);
                 }
 
                 return results;

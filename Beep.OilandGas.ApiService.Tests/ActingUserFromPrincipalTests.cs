@@ -176,9 +176,9 @@ public sealed class ActingUserFromPrincipalTests
             new Claim("sub", "identity-server-subject"),
             new Claim(ClaimTypes.Name, "display-name"));
 
-        Assert.Throws<UnauthorizedAccessException>(() => principal.ActingUserId());
-        Assert.Throws<UnauthorizedAccessException>(() => ((ClaimsPrincipal?)null).ActingUserId());
-        Assert.Throws<UnauthorizedAccessException>(() => new ClaimsPrincipal(new ClaimsIdentity()).ActingUserId());
+        Refusals.Forbidden(() => principal.ActingUserId());
+        Refusals.Forbidden(() => ((ClaimsPrincipal?)null).ActingUserId());
+        Refusals.Forbidden(() => new ClaimsPrincipal(new ClaimsIdentity()).ActingUserId());
         Assert.Null(principal.FindActingUserId());
     }
 
@@ -187,7 +187,7 @@ public sealed class ActingUserFromPrincipalTests
     {
         var principal = Principal(new Claim("party_id", "x", ClaimValueTypes.String, "https://idp.example.test/"));
 
-        Assert.Throws<UnauthorizedAccessException>(() => principal.ActingUserId());
+        Refusals.Forbidden(() => principal.ActingUserId());
         Assert.Null(principal.FindActingUserId());
     }
 
@@ -200,7 +200,7 @@ public sealed class ActingUserFromPrincipalTests
         data.Setup(x => x.InsertEntityAsync("WELL", It.IsAny<Dictionary<string, object>>(), "real-actor", "PPDM39"))
             .ReturnsAsync(new GenericEntityResponse { Success = true });
         var controller = new PPDM39DataController(data.Object, NullLogger<PPDM39DataController>.Instance,
-            Mock.Of<IProgressTrackingService>())
+            Mock.Of<IProgressTrackingService>(), new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter())
         {
             ControllerContext = SignedIn("real-actor", "?userId=someone-else")
         };

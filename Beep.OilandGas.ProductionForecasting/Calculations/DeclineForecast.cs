@@ -239,7 +239,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
             ValidateForecastInputs(qi, di, forecastDuration, timeSteps);
 
             if (b < 0 || b > 1)
-                throw new ArgumentException("Decline exponent b must be between 0 and 1.", nameof(b));
+                throw RefusalException.Invalid("Decline exponent b must be between 0 and 1.");
 
             var forecast = new PRODUCTION_FORECAST
             {
@@ -318,9 +318,9 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         {
             ValidateForecastInputs(qi, di, forecastDuration, timeSteps);
             if (b < 0 || b > 1)
-                throw new ArgumentException("Decline exponent b must be between 0 and 1.", nameof(b));
+                throw RefusalException.Invalid("Decline exponent b must be between 0 and 1.");
             if (terminalDi <= 0 || terminalDi > di)
-                throw new ArgumentException("Terminal decline Dlim must be positive and less than initial Di.", nameof(terminalDi));
+                throw RefusalException.Invalid("Terminal decline Dlim must be positive and less than initial Di.");
 
             var forecast = new PRODUCTION_FORECAST
             {
@@ -447,16 +447,16 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         private static void ValidateForecastInputs(decimal qi, decimal di, decimal forecastDuration, int timeSteps)
         {
             if (qi <= 0)
-                throw new ArgumentException("Initial production rate (qi) must be positive.", nameof(qi));
+                throw RefusalException.Invalid("Initial production rate (qi) must be positive.");
 
             if (di <= 0 || di > 2.0m)
-                throw new ArgumentException("Decline rate (di) must be positive and â‰¤ 2.0.", nameof(di));
+                throw RefusalException.Invalid("Decline rate (di) must be positive and at most 2.0.");
 
             if (forecastDuration <= 0)
-                throw new ArgumentException("Forecast duration must be positive.", nameof(forecastDuration));
+                throw RefusalException.Invalid("Forecast duration must be positive.");
 
             if (timeSteps < 2)
-                throw new ArgumentException(" TIME steps must be at least 2.", nameof(timeSteps));
+                throw RefusalException.Invalid("Time steps must be at least 2.");
         }
 
         /// <summary>
@@ -485,10 +485,10 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         public static decimal CalculateDeclineReserves(decimal qi, decimal di, decimal b, decimal economicLimit)
         {
             if (economicLimit <= 0 || economicLimit >= qi)
-                throw new ArgumentException("Economic limit must be positive and less than qi.");
+                throw RefusalException.Invalid("Economic limit must be positive and less than qi.");
 
             if (b < 0 || b > 1)
-                throw new ArgumentException("Decline exponent must be between 0 and 1.");
+                throw RefusalException.Invalid("Decline exponent must be between 0 and 1.");
 
             // Use hyperbolic method for all cases
             double reserves = ArpsDeclineMethods.HyperbolicReserves(

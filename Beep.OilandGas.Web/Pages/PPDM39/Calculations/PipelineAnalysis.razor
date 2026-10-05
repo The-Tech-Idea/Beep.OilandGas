@@ -5,6 +5,7 @@
 @inject ISnackbar Snackbar
 @inject ICalculationServiceClient CalculationService
 @inject ILifeCycleService LifeCycleService
+@inject OilGasApiFailures Answers
 
 <PageTitle>Analyse Pipeline Flow</PageTitle>
 
@@ -101,9 +102,15 @@
             _analysisResult = await CalculationService.AnalyzePipelineFlowAsync(_pipelineId, _flowRate, _inletPressure);
             
             // Save the result
-            await CalculationService.SavePipelineAnalysisResultAsync(_analysisResult);
-            
-            Snackbar.Add("Pipeline flow analysis completed", Severity.Success);
+            try
+            {
+                await CalculationService.SavePipelineAnalysisResultAsync(_analysisResult);
+                Snackbar.Add("Pipeline flow analysis completed", Severity.Success);
+            }
+            catch (OilGasApiException answer)
+            {
+                Snackbar.Add(Answers.Explain(answer, "saving the pipeline analysis result", "The pipeline flow analysis finished but its result was not saved"), Severity.Warning);
+            }
         }
         catch (Exception)
         {

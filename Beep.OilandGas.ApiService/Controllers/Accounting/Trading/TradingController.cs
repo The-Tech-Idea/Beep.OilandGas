@@ -36,22 +36,14 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
             [FromQuery] string? contractId = null,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                if (string.IsNullOrEmpty(contractId))
-                        return BadRequest(new { error = "Contract ID parameter is required." });
+            if (string.IsNullOrEmpty(contractId))
+                    return BadRequest(new { error = "Contract ID parameter is required." });
 
-                var contract = await _service.TradingService.GetContractAsync(contractId, connectionName);
-                if (contract == null)
-                    return NotFound(new { error = $"Exchange contract {contractId} not found." });
-                
-                return Ok(new List<EXCHANGE_CONTRACT> { MapToExchangeContractDto(contract) });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting exchange contracts");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var contract = await _service.TradingService.GetContractAsync(contractId, connectionName);
+            if (contract == null)
+                return NotFound(new { error = $"Exchange contract {contractId} not found." });
+            
+            return Ok(new List<EXCHANGE_CONTRACT> { MapToExchangeContractDto(contract) });
         }
 
         /// <summary>
@@ -63,19 +55,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var contract = await _service.TradingService.RegisterContractAsync(request, userId, connectionName);
-                return Ok(MapToExchangeContractDto(contract));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating exchange contract");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var contract = await _service.TradingService.RegisterContractAsync(request, userId, connectionName);
+            return Ok(MapToExchangeContractDto(contract));
         }
 
         private EXCHANGE_CONTRACT MapToExchangeContractDto(Beep.OilandGas.Models.Data.ProductionAccounting.EXCHANGE_CONTRACT contract)

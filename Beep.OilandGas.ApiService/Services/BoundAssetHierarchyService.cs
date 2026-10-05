@@ -1,4 +1,5 @@
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data;
 using TheTechIdea.Data.OilGas;
 
@@ -15,7 +16,7 @@ public sealed class BoundAssetHierarchyService(
             throw new InvalidOperationException("A reviewed module database scope is required for the hierarchy.");
         var result = await action(createService(scope));
         if (scope != await resolveScope())
-            throw new InvalidOperationException("The hierarchy database binding changed during this operation.");
+            throw RefusalException.Conflict("The hierarchy database binding changed during this operation. Reload and try again.");
         return result;
     }
 

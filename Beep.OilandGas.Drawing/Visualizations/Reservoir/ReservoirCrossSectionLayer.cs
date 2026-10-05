@@ -266,21 +266,17 @@ namespace Beep.OilandGas.Drawing.Visualizations.Reservoir
                 ReservoirSurfaceKind.Isochore => new SKColor(245, 124, 0),
                 ReservoirSurfaceKind.Fault => new SKColor(132, 35, 27),
                 ReservoirSurfaceKind.GridDerived => new SKColor(96, 125, 139),
-                _ => new SKColor(84, 110, 122)
+                ReservoirSurfaceKind.Unknown => new SKColor(84, 110, 122)
             };
         }
 
         private SKColor ResolveWellColor(ReservoirWellSectionMarker marker)
         {
-            if (!string.IsNullOrWhiteSpace(marker?.ColorCode) && marker.ColorCode.StartsWith("#", StringComparison.Ordinal))
+            // A colour code that is not a colour falls back to the configured well colour (asked, not caught).
+            if (!string.IsNullOrWhiteSpace(marker?.ColorCode) && marker.ColorCode.StartsWith("#", StringComparison.Ordinal) &&
+                SKColor.TryParse(marker.ColorCode, out var parsedColor))
             {
-                try
-                {
-                    return SKColor.Parse(marker.ColorCode);
-                }
-                catch
-                {
-                }
+                return parsedColor;
             }
 
             return configuration.WellColor;

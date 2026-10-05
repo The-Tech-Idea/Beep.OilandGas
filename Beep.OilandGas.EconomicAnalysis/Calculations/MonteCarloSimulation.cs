@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.EconomicAnalysis.Calculations
 {
@@ -29,7 +30,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Calculations
             double costVolatility = 0.1)
         {
             if (baseCashFlows == null || baseCashFlows.Length == 0)
-                throw new ArgumentException("Cash flows cannot be null or empty.", nameof(baseCashFlows));
+                throw RefusalException.Invalid("Cash flows are required.");
 
             var npvResults = new List<double>(iterations);
             var irrResults = new List<double>(iterations);
@@ -52,15 +53,9 @@ namespace Beep.OilandGas.EconomicAnalysis.Calculations
 
                 npvResults.Add(EconomicCalculator.CalculateNPV(scenarioCashFlows, discountRate));
                 
-                // IRR calculation can fail or be negative, handle gracefully
-                try
-                {
-                    irrResults.Add(EconomicCalculator.CalculateIRR(scenarioCashFlows));
-                }
-                catch
-                {
-                    irrResults.Add(0); // or NaN, but 0 safer for stats if failure rare
-                }
+                // The IRR's only throw is for empty cash flows, refused above. A catch here could only turn a failure
+                // into a scenario with an IRR of 0 % that nobody computed, skewing every IRR statistic.
+                irrResults.Add(EconomicCalculator.CalculateIRR(scenarioCashFlows));
             }
 
             npvResults.Sort();

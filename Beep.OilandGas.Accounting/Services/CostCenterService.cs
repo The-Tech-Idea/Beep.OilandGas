@@ -47,7 +47,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (costCenter == null)
                 throw new ArgumentNullException(nameof(costCenter));
             if (string.IsNullOrWhiteSpace(costCenter.COST_CENTER_NAME))
-                throw new InvalidOperationException("COST_CENTER_NAME is required");
+                throw RefusalException.Invalid("COST_CENTER_NAME is required.");
 
             costCenter.COST_CENTER_ID ??= Guid.NewGuid().ToString();
             costCenter.ACTIVE_IND = _defaults.GetActiveIndicatorYes();
@@ -90,7 +90,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (costCenter == null)
                 throw new ArgumentNullException(nameof(costCenter));
             if (string.IsNullOrWhiteSpace(costCenter.COST_CENTER_ID))
-                throw new InvalidOperationException("COST_CENTER_ID is required");
+                throw RefusalException.Invalid("COST_CENTER_ID is required.");
 
             var repo = await GetRepoAsync<COST_CENTER>("COST_CENTER", cn);
             costCenter.ROW_CHANGED_BY = userId;

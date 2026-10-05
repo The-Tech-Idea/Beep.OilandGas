@@ -44,33 +44,24 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         /// <summary>
         /// Connects to the database.
         /// </summary>
+        /// <remarks>
+        /// OILGAS-CATCH-01. A loader built without a connection factory, or a database that refuses the connection, is a
+        /// failure the caller hears as its exception; it had been answered <c>false</c>, the reason dropped, and every
+        /// later load reported only "connection is not open".
+        /// </remarks>
         public bool Connect()
         {
-            try
-            {
-                if (connectionFactory != null)
-                {
-                    connection = connectionFactory();
-                }
-                else
-                {
-                    throw new InvalidOperationException("A connection factory must be provided to DatabaseLogLoader. Pass a Func<DbConnection> via the constructor.");
-                }
+            isConnected = false;
+            connection = CreateConnection();
 
-                if (connection.State != ConnectionState.Open)
-                {
-                    connection.ConnectionString = connectionString;
-                    connection.Open();
-                }
-
-                isConnected = true;
-                return true;
-            }
-            catch
+            if (connection.State != ConnectionState.Open)
             {
-                isConnected = false;
-                return false;
+                connection.ConnectionString = connectionString;
+                connection.Open();
             }
+
+            isConnected = true;
+            return true;
         }
 
         /// <summary>
@@ -78,31 +69,25 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         /// </summary>
         public async Task<bool> ConnectAsync()
         {
-            try
-            {
-                if (connectionFactory != null)
-                {
-                    connection = connectionFactory();
-                }
-                else
-                {
-                    throw new InvalidOperationException("A connection factory must be provided to DatabaseLogLoader. Pass a Func<DbConnection> via the constructor.");
-                }
+            isConnected = false;
+            connection = CreateConnection();
 
-                if (connection.State != ConnectionState.Open)
-                {
-                    connection.ConnectionString = connectionString;
-                    await connection.OpenAsync();
-                }
-
-                isConnected = true;
-                return true;
-            }
-            catch
+            if (connection.State != ConnectionState.Open)
             {
-                isConnected = false;
-                return false;
+                connection.ConnectionString = connectionString;
+                await connection.OpenAsync();
             }
+
+            isConnected = true;
+            return true;
+        }
+
+        private DbConnection CreateConnection()
+        {
+            if (connectionFactory == null)
+                throw new InvalidOperationException("A connection factory must be provided to DatabaseLogLoader. Pass a Func<DbConnection> via the constructor.");
+
+            return connectionFactory();
         }
 
         /// <summary>
@@ -168,51 +153,44 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
             var stats = new DataLoadStatistics();
             configuration = configuration ?? new LogLoadConfiguration();
 
-            try
+            if (!isConnected)
+                Connect();
+
+            if (connection == null || connection.State != ConnectionState.Open)
+                return DataLoadResult<LogData>.CreateFailure("Database connection is not open.");
+
+            var logData = new LogData
             {
-                if (!isConnected)
-                    Connect();
+                WellIdentifier = wellIdentifier,
+                LogName = logName
+            };
 
-                if (connection == null || connection.State != ConnectionState.Open)
-                    return DataLoadResult<LogData>.CreateFailure("Database connection is not open.");
+            // A query that fails is a failure, not a result: it reaches the caller as its exception (OILGAS-CATCH-01).
+            // The failed result had carried the database's own text and the stack for anyone to show.
+            var query = BuildLogQuery(wellIdentifier, logName, configuration);
 
-                var logData = new LogData
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = query;
+                AddQueryParameters(command, wellIdentifier, logName, configuration);
+
+                using (var reader = command.ExecuteReader())
                 {
-                    WellIdentifier = wellIdentifier,
-                    LogName = logName
-                };
-
-                // Build query based on configuration
-                var query = BuildLogQuery(wellIdentifier, logName, configuration);
-                
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = query;
-                    AddQueryParameters(command, wellIdentifier, logName, configuration);
-
-                    using (var reader = command.ExecuteReader())
+                    if (reader.HasRows)
                     {
-                        if (reader.HasRows)
-                        {
-                            LoadLogDataFromReader(reader, logData, configuration);
-                        }
+                        LoadLogDataFromReader(reader, logData, configuration);
                     }
                 }
-
-                LogDataIngestionNormalizer.Normalize(logData, configuration);
-
-                stats.RecordsLoaded = logData.DataPointCount;
-                stats.Complete();
-
-                var result = DataLoadResult<LogData>.CreateSuccess(logData, logData.DataPointCount);
-                result.LoadDuration = stats.Duration;
-                return result;
             }
-            catch (Exception ex)
-            {
-                stats.Complete();
-                return DataLoadResult<LogData>.CreateFailure($"Failed to load log data: {ex.Message}", ex.ToString());
-            }
+
+            LogDataIngestionNormalizer.Normalize(logData, configuration);
+
+            stats.RecordsLoaded = logData.DataPointCount;
+            stats.Complete();
+
+            var result = DataLoadResult<LogData>.CreateSuccess(logData, logData.DataPointCount);
+            result.LoadDuration = stats.Duration;
+            return result;
         }
 
         /// <summary>
@@ -421,23 +399,17 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
             if (connection == null || connection.State != ConnectionState.Open)
                 throw new InvalidOperationException("Database connection is not open.");
 
+            // A query that fails reaches the caller (OILGAS-CATCH-01): it had been answered as "this well has no logs".
             var logNames = new List<string>();
-            try
-            {
-                using var command = connection.CreateCommand();
-                command.CommandText = "SELECT DISTINCT LOG_ID FROM WELL_LOG WHERE UWI = @uwi ORDER BY LOG_ID";
-                var param = command.CreateParameter();
-                param.ParameterName = "@uwi";
-                param.Value = wellIdentifier;
-                command.Parameters.Add(param);
-                using var reader = command.ExecuteReader();
-                while (reader.Read())
-                    if (!reader.IsDBNull(0)) logNames.Add(reader.GetString(0));
-            }
-            catch
-            {
-                // Return empty list if table doesn't exist in this database schema
-            }
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT DISTINCT LOG_ID FROM WELL_LOG WHERE UWI = @uwi ORDER BY LOG_ID";
+            var param = command.CreateParameter();
+            param.ParameterName = "@uwi";
+            param.Value = wellIdentifier;
+            command.Parameters.Add(param);
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+                if (!reader.IsDBNull(0)) logNames.Add(reader.GetString(0));
             return logNames;
         }
 
@@ -450,26 +422,20 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         }
 
         /// <summary>
-        /// Validates the connection.
+        /// Validates the connection: false when no connection is open; a probe the database refuses reaches the caller as
+        /// its exception (OILGAS-CATCH-01), with the database's reason, rather than as an unexplained false.
         /// </summary>
         public bool ValidateConnection()
         {
-            try
-            {
-                if (connection == null || connection.State != ConnectionState.Open)
-                    return false;
-
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "SELECT 1";
-                    command.ExecuteScalar();
-                }
-                return true;
-            }
-            catch
-            {
+            if (connection == null || connection.State != ConnectionState.Open)
                 return false;
+
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "SELECT 1";
+                command.ExecuteScalar();
             }
+            return true;
         }
 
         /// <summary>
@@ -480,19 +446,13 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
             if (!isConnected || connection == null || connection.State != ConnectionState.Open)
                 return new List<string>();
 
+            // A query that fails reaches the caller (OILGAS-CATCH-01): it had been answered as "there are no wells".
             var identifiers = new List<string>();
-            try
-            {
-                using var command = connection.CreateCommand();
-                command.CommandText = "SELECT DISTINCT UWI FROM WELL ORDER BY UWI";
-                using var reader = command.ExecuteReader();
-                while (reader.Read())
-                    if (!reader.IsDBNull(0)) identifiers.Add(reader.GetString(0));
-            }
-            catch
-            {
-                // Return empty list if table doesn't exist in this database schema
-            }
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT DISTINCT UWI FROM WELL ORDER BY UWI";
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+                if (!reader.IsDBNull(0)) identifiers.Add(reader.GetString(0));
             return identifiers;
         }
 

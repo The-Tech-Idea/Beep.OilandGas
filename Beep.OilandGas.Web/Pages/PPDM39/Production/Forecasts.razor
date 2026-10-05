@@ -9,6 +9,7 @@
 @inject IDialogService DialogService
 @inject ICalculationServiceClient CalculationService
 @inject IProductionServiceClient ProductionService
+@inject OilGasApiFailures Answers
 
 <PageTitle>Track Production Forecasts</PageTitle>
 
@@ -174,17 +175,13 @@
                 var forecast = await CalculationService.GenerateForecastAsync(wellUWI, fieldId, forecastMethod, forecastPeriod);
                 
                 // Save the forecast
-                var saved = await CalculationService.SaveForecastAsync(forecast);
-                
-                if (saved)
-                {
-                    Snackbar.Add("Production forecast created and saved successfully", Severity.Success);
-                    await LoadForecasts();
-                }
-                else
-                {
-                    Snackbar.Add("Forecast generated but failed to save", Severity.Warning);
-                }
+                await CalculationService.SaveForecastAsync(forecast);
+                Snackbar.Add("Production forecast created and saved successfully", Severity.Success);
+                await LoadForecasts();
+            }
+            catch (OilGasApiException answer)
+            {
+                Snackbar.Add(Answers.Explain(answer, "creating and saving a production forecast", "The production forecast was not created and saved"), Severity.Error);
             }
             catch (Exception)
             {

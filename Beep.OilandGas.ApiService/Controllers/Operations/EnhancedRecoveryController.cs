@@ -30,16 +30,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         public async Task<ActionResult<EnhancedRecoveryOperation>> AnalyzeEOR([FromBody] AnalyzeEORRequest request)
         {
             var userId = User.ActingUserId();
-            try
-            {
-                var result = await _service.AnalyzeEORPotentialAsync(request.FieldId, request.EorMethod, userId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error analyzing EOR potential for field {FieldId}", request.FieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.AnalyzeEORPotentialAsync(request.FieldId, request.EorMethod, userId);
+            return Ok(result);
         }
 
         [HttpPost("recovery-factor")]
@@ -52,36 +44,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
             if (string.IsNullOrWhiteSpace(operationId))
                 return BadRequest(new { error = "Operation ID is required." });
 
-            try
-            {
-                var result = await _service.CalculateRecoveryFactorAsync(operationId);
-                return Ok(result);
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Enhanced recovery operation {OperationId} was not found for recovery-factor calculation", operationId);
-                return NotFound(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating recovery factor for operation {OperationId}", operationId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.CalculateRecoveryFactorAsync(operationId);
+            return Ok(result);
         }
 
         [HttpGet("injection")]
         public async Task<ActionResult<List<InjectionOperation>>> GetInjectionOperations([FromQuery] string? wellUWI = null)
         {
-            try
-            {
-                var result = await _service.GetInjectionOperationsAsync(wellUWI);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting injection operations for well {InjectionWellId}", wellUWI);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.GetInjectionOperationsAsync(wellUWI);
+            return Ok(result);
         }
 
         [HttpPost("economics")]
@@ -96,44 +67,23 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
             if (request.ProjectLifeYears <= 0)
                 return BadRequest(new { error = "Project life must be greater than zero." });
 
-            try
-            {
-                var result = await _service.AnalyzeEOReconomicsAsync(
-                    request.FieldId,
-                    request.EstimatedIncrementalOil,
-                    request.OilPrice,
-                    request.CapitalCostMm * 1_000_000d,
-                    request.OperatingCostPerBarrel,
-                    request.ProjectLifeYears,
-                    request.DiscountRatePct / 100d);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error analyzing EOR economics for field {FieldId}", request.FieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.AnalyzeEOReconomicsAsync(
+                request.FieldId,
+                request.EstimatedIncrementalOil,
+                request.OilPrice,
+                request.CapitalCostMm * 1_000_000d,
+                request.OperatingCostPerBarrel,
+                request.ProjectLifeYears,
+                request.DiscountRatePct / 100d);
+            return Ok(result);
         }
 
         [HttpPost("injection")]
         public async Task<ActionResult<InjectionOperation>> ManageInjection([FromBody] ManageInjectionRequest request)
         {
             var userId = User.ActingUserId();
-            try
-            {
-                var result = await _service.ManageInjectionAsync(request.InjectionWellId, request.InjectionRate, userId);
-                return Ok(result);
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Injection management request failed for well {InjectionWellId}", request.InjectionWellId);
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error managing injection for well {InjectionWellId}", request.InjectionWellId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.ManageInjectionAsync(request.InjectionWellId, request.InjectionRate, userId);
+            return Ok(result);
         }
     }
 }

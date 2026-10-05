@@ -1,6 +1,7 @@
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.ProductionOperations.Constants;
@@ -151,53 +152,27 @@ namespace Beep.OilandGas.ProductionOperations.Modules
             foreach (var row in ProductionOperationsReferenceCodeSeed.GetMonitoringReferenceRows())
             {
                 ct.ThrowIfCancellationRequested();
-                try
+
+                // A failed read propagates to the module orchestrator, which isolates and records a module's failure; a
+                // failed insert is the base's TryInsertAsync's to record, as it is for every module's rows.
+                var existing = await repo.GetAsync(new List<AppFilter>
                 {
-                    await UpsertFacilityMonitoringReferenceCodeIfMissingAsync(
-                        repo,
-                        row.ReferenceSet,
-                        row.ReferenceCode,
-                        row.LongName,
-                        row.ShortName,
-                        userId);
-                }
-                catch (OperationCanceledException)
+                    new AppFilter { FieldName = "REFERENCE_SET", Operator = "=", FilterValue = row.ReferenceSet },
+                    new AppFilter { FieldName = "REFERENCE_CODE", Operator = "=", FilterValue = row.ReferenceCode }
+                });
+                if (existing.Any())
+                    continue;
+
+                var entity = new R_FACILITY_MONITORING_CODE
                 {
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    result.Errors.Add($"MonitoringRef:{row.ReferenceSet}:{row.ReferenceCode}: {ex.Message}");
-                }
+                    REFERENCE_SET = row.ReferenceSet,
+                    REFERENCE_CODE = row.ReferenceCode,
+                    LONG_NAME = row.LongName,
+                    SHORT_NAME = row.ShortName,
+                    ACTIVE_IND = "Y"
+                };
+                await TryInsertAsync(repo, entity, userId, result, $"MonitoringRef:{row.ReferenceSet}:{row.ReferenceCode}");
             }
-        }
-
-        private async Task UpsertFacilityMonitoringReferenceCodeIfMissingAsync(
-            dynamic repo,
-            string referenceSet,
-            string referenceCode,
-            string longName,
-            string shortName,
-            string userId)
-        {
-            var filters = new List<AppFilter>
-            {
-                new AppFilter { FieldName = "REFERENCE_SET", Operator = "=", FilterValue = referenceSet },
-                new AppFilter { FieldName = "REFERENCE_CODE", Operator = "=", FilterValue = referenceCode }
-            };
-
-            var existing = await repo.GetAsync(filters);
-            foreach (var _ in existing) return;
-
-            var row = new R_FACILITY_MONITORING_CODE
-            {
-                REFERENCE_SET = referenceSet,
-                REFERENCE_CODE = referenceCode,
-                LONG_NAME = longName,
-                SHORT_NAME = shortName,
-                ACTIVE_IND = "Y"
-            };
-            await repo.InsertAsync(row, userId);
         }
     }
 }

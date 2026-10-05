@@ -32,16 +32,8 @@ public class FacilityWorkOrderController : ControllerBase
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
 
-        try
-        {
-            var rows = await _facilities.ListFacilityWorkOrdersAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
-            return Ok(rows);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "List work orders for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var rows = await _facilities.ListFacilityWorkOrdersAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
+        return Ok(rows);
     }
 
     [HttpPost]
@@ -59,27 +51,9 @@ public class FacilityWorkOrderController : ControllerBase
         if (string.IsNullOrWhiteSpace(facilityType))
             return BadRequest(new { error = "facilityType query parameter is required (PPDM composite key)." });
 
-        try
-        {
-            var row = await _facilities
-                .CreateFacilityWorkOrderAsync(workOrder, facilityId, facilityType.Trim(), userId, cancellationToken)
-                .ConfigureAwait(false);
-            return Ok(row);
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Create work order for {FacilityId} failed", facilityId);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Create work order for {FacilityId} failed", facilityId);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Create work order for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var row = await _facilities
+            .CreateFacilityWorkOrderAsync(workOrder, facilityId, facilityType.Trim(), userId, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(row);
     }
 }

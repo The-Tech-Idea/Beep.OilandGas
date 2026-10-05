@@ -38,18 +38,10 @@ public class FacilityMonitoringController : ControllerBase
         if (startDate.HasValue && endDate.HasValue && startDate > endDate)
             return BadRequest(new { error = "startDate must be on or before endDate." });
 
-        try
-        {
-            var rows = await _facilities
-                .ListFacilityMeasurementsAsync(facilityId, facilityType, equipmentId, measurementType, startDate, endDate, cancellationToken)
-                .ConfigureAwait(false);
-            return Ok(rows);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "List measurements for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var rows = await _facilities
+            .ListFacilityMeasurementsAsync(facilityId, facilityType, equipmentId, measurementType, startDate, endDate, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(rows);
     }
 
     [HttpPost("measurements")]
@@ -65,32 +57,14 @@ public class FacilityMonitoringController : ControllerBase
         if (measurement == null)
             return BadRequest(new { error = "Request body is required." });
 
-        try
-        {
-            measurement.FACILITY_ID = facilityId;
-            if (!string.IsNullOrWhiteSpace(facilityType))
-                measurement.FACILITY_TYPE = facilityType.Trim();
+        measurement.FACILITY_ID = facilityId;
+        if (!string.IsNullOrWhiteSpace(facilityType))
+            measurement.FACILITY_TYPE = facilityType.Trim();
 
-            var row = await _facilities
-                .RecordFacilityMeasurementAsync(measurement, userId, cancellationToken)
-                .ConfigureAwait(false);
-            return Ok(row);
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Record measurement for {FacilityId} failed", facilityId);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Record measurement for {FacilityId} failed", facilityId);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Record measurement for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var row = await _facilities
+            .RecordFacilityMeasurementAsync(measurement, userId, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(row);
     }
 
     [HttpGet("equipment/{equipmentId}/activity")]
@@ -109,18 +83,10 @@ public class FacilityMonitoringController : ControllerBase
         if (startDate.HasValue && endDate.HasValue && startDate > endDate)
             return BadRequest(new { error = "startDate must be on or before endDate." });
 
-        try
-        {
-            var rows = await _facilities
-                .ListEquipmentActivityAsync(facilityId, facilityType, equipmentId, startDate, endDate, cancellationToken)
-                .ConfigureAwait(false);
-            return Ok(rows);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "List equipment activity for {FacilityId}/{EquipmentId} failed", facilityId, equipmentId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var rows = await _facilities
+            .ListEquipmentActivityAsync(facilityId, facilityType, equipmentId, startDate, endDate, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(rows);
     }
 
     [HttpPost("equipment/{equipmentId}/activity")]
@@ -139,33 +105,15 @@ public class FacilityMonitoringController : ControllerBase
         if (activity == null)
             return BadRequest(new { error = "Request body is required." });
 
-        try
-        {
-            activity.FACILITY_ID = facilityId;
-            activity.EQUIPMENT_ID = equipmentId;
-            if (!string.IsNullOrWhiteSpace(facilityType))
-                activity.FACILITY_TYPE = facilityType.Trim();
+        activity.FACILITY_ID = facilityId;
+        activity.EQUIPMENT_ID = equipmentId;
+        if (!string.IsNullOrWhiteSpace(facilityType))
+            activity.FACILITY_TYPE = facilityType.Trim();
 
-            var row = await _facilities
-                .RecordEquipmentActivityAsync(activity, userId, cancellationToken)
-                .ConfigureAwait(false);
-            return Ok(row);
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Record equipment activity for {FacilityId}/{EquipmentId} failed", facilityId, equipmentId);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Record equipment activity for {FacilityId}/{EquipmentId} failed", facilityId, equipmentId);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Record equipment activity for {FacilityId}/{EquipmentId} failed", facilityId, equipmentId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var row = await _facilities
+            .RecordEquipmentActivityAsync(activity, userId, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(row);
     }
 }
 

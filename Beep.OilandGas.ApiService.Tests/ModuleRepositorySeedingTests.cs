@@ -1,7 +1,9 @@
 using System.Data;
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers;
+using Beep.OilandGas.ApiService.Tests.Infrastructure;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.Repository;
@@ -170,7 +172,7 @@ public class ModuleRepositorySeedingTests
     {
         using var fixture = new Fixture();
         fixture.Connections.Add(new() { ConnectionName = "MODULE-DB" });
-        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Resolver.GetMigrationBindingFingerprintAsync(["PRODUCTION"], "module-db"));
+        await Refusals.RefusedAsync(RefusalKind.Conflict, () => fixture.Resolver.GetMigrationBindingFingerprintAsync(["PRODUCTION"], "module-db"));
         fixture.Editor.Verify(x => x.OpenDataSource(It.IsAny<string>()), Times.Never);
     }
 
@@ -182,10 +184,10 @@ public class ModuleRepositorySeedingTests
         Assert.Equal(fingerprint, await fixture.Resolver.GetMigrationBindingFingerprintAsync(["PRODUCTION", "production"], "module-db"));
         Assert.IsType<OkObjectResult>(await fixture.Controller.Bind("PRODUCTION", new("module-db", "version"), default));
         Assert.NotEqual(fingerprint, await fixture.Resolver.GetMigrationBindingFingerprintAsync(["PRODUCTION"], "module-db"));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Resolver.GetMigrationBindingFingerprintAsync(["PRODUCTION"], "other-db"));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Resolver.GetMigrationBindingFingerprintAsync(["UNBOUND"], "module-db"));
+        await Refusals.RefusedAsync(RefusalKind.Conflict, () => fixture.Resolver.GetMigrationBindingFingerprintAsync(["PRODUCTION"], "other-db"));
+        await Refusals.RefusedAsync(RefusalKind.Conflict, () => fixture.Resolver.GetMigrationBindingFingerprintAsync(["UNBOUND"], "module-db"));
         fixture.Connections.Clear();
-        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Resolver.GetMigrationBindingFingerprintAsync(["PRODUCTION"], "module-db"));
+        await Refusals.RefusedAsync(RefusalKind.Conflict, () => fixture.Resolver.GetMigrationBindingFingerprintAsync(["PRODUCTION"], "module-db"));
         fixture.Editor.Verify(x => x.OpenDataSource(It.IsAny<string>()), Times.Never);
     }
 
@@ -224,10 +226,13 @@ public class ModuleRepositorySeedingTests
         using var fixture = new Fixture();
         Assert.Equal("module-db", await fixture.Resolver.ResolveAsync("production"));
         fixture.Connections.Add(fixture.Connections[0]);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Resolver.ResolveAsync("PRODUCTION"));
+        await Refusals.RefusedAsync(RefusalKind.Conflict, () => fixture.Resolver.ResolveAsync("PRODUCTION"));
+        Assert.Null(await fixture.Resolver.FindAsync("PRODUCTION"));
         fixture.Connections.Clear();
-        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Resolver.ResolveAsync("PRODUCTION"));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Resolver.ResolveAsync("UNBOUND"));
+        await Refusals.RefusedAsync(RefusalKind.Conflict, () => fixture.Resolver.ResolveAsync("PRODUCTION"));
+        await Refusals.RefusedAsync(RefusalKind.Conflict, () => fixture.Resolver.ResolveAsync("UNBOUND"));
+        Assert.Null(await fixture.Resolver.FindAsync("UNBOUND"));
+        // The default repository's own module is the program asking the wrong question, not a binding to configure.
         await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Resolver.ResolveAsync("SECURITY"));
         fixture.Editor.Verify(x => x.OpenDataSource(It.IsAny<string>()), Times.Never);
     }
@@ -269,7 +274,7 @@ public class ModuleRepositorySeedingTests
         using var fixture = new Fixture();
         fixture.Controller.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(
             [new Claim(ClaimTypes.NameIdentifier, "external-subject"), new Claim("sub", "external-subject")], "external"));
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => fixture.Controller.Seed("PRODUCTION", new("version"), default));
+        await Refusals.ForbiddenAsync(() => fixture.Controller.Seed("PRODUCTION", new("version"), default));
         fixture.Editor.VerifyNoOtherCalls();
     }
 
@@ -294,6 +299,7 @@ public class ModuleRepositorySeedingTests
         public Mock<IModuleSetup> Module { get; } = new(MockBehavior.Strict);
         public Mock<IModuleSetup> Other { get; } = new(MockBehavior.Strict);
         public Mock<IPPDM39SchemaMigrationService> Migration { get; } = new(MockBehavior.Strict);
+        public RecordingFailureReporter Failures { get; } = new();
         public List<ConnectionProperties> Connections { get; } = [new() { ConnectionName = "module-db" }];
         public ModuleRepositoryController Controller { get; }
         public Beep.OilandGas.ApiService.Services.ModuleConnectionResolver Resolver { get; }
@@ -323,7 +329,7 @@ public class ModuleRepositorySeedingTests
             Source.Setup(x => x.Openconnection()).Returns(ConnectionState.Open);
             Source.Setup(x => x.GetEntityStructure(It.IsAny<EntityStructure>(), true))
                 .Returns(() => creator.ConvertToEntityStructure(typeof(Beep.OilandGas.Models.Data.Common.OIL_COMPOSITION)));
-            Controller = new(db, Editor.Object, [Module.Object, Other.Object], Migration.Object);
+            Controller = new(db, Editor.Object, [Module.Object, Other.Object], Migration.Object, Failures);
             Resolver = new(db, Editor.Object);
             Controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext
             {

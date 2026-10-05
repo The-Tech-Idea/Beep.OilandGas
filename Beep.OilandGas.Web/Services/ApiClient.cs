@@ -1,153 +1,82 @@
 using System.Net.Http;
 using System.Text.Json;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.Web.Services
 {
     /// <summary>
-    /// HTTP client service for calling the API service endpoints
+    /// HTTP client service for calling the API service endpoints.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Every call either succeeds or throws (OILGAS-CATCH-01): a non-success answer is an <see cref="OilGasApiException"/>
+    /// carrying the API's status, its sentence and — for a failure — the reference it filed it under, which a page words
+    /// through <see cref="OilGasApiFailures"/>; a request that did not complete is the framework's
+    /// <see cref="HttpRequestException"/>; an answer that cannot be read is <see cref="JsonException"/>.
+    /// </para>
+    /// <para>
+    /// The calls that send and expect nothing back return <see cref="Task"/>. They returned <c>bool</c>, answering a refusal,
+    /// a failure and a lost connection alike as <c>false</c>, logged and reported nowhere — and two pages discarded even
+    /// that, so a delete the API refused looked done.
+    /// </para>
+    /// </remarks>
     public class ApiClient
     {
         private readonly HttpClient _httpClient;
-        private readonly ILogger<ApiClient> _logger;
-        
-        private static readonly System.Text.Json.JsonSerializerOptions JsonOptions = new()
+        private readonly IFailureReporter _failures;
+
+        private static readonly JsonSerializerOptions JsonOptions = new()
         {
-            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             PropertyNameCaseInsensitive = true
         };
 
-        public ApiClient(HttpClient httpClient, ILogger<ApiClient> logger)
+        public ApiClient(HttpClient httpClient, IFailureReporter failures)
         {
-            _httpClient = httpClient;
-            _logger = logger;
+            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
         }
 
         public async Task<T?> GetAsync<T>(string endpoint, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                _logger.LogDebug("GET {Endpoint}", endpoint);
-                using var response = await _httpClient.GetAsync(endpoint, cancellationToken);
-                if (!response.IsSuccessStatusCode)
-                {
-                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                    _logger.LogWarning("GET {Endpoint} returned status {StatusCode}. Body: {Body}", endpoint, (int)response.StatusCode, errorBody);
-                    throw new HttpRequestException(BuildHttpErrorMessage(response, errorBody, endpoint), null, response.StatusCode);
-                }
-
-                var content = await response.Content.ReadAsStringAsync(cancellationToken);
-                return System.Text.Json.JsonSerializer.Deserialize<T>(content, JsonOptions);
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, "HTTP error on GET {Endpoint}", endpoint);
-                throw;
-            }
+            using var response = await _httpClient.GetAsync(endpoint, cancellationToken);
+            return await ReadAsync<T>(response, cancellationToken);
         }
 
         public async Task<TResponse?> PostAsync<TRequest, TResponse>(
-            string endpoint, 
-            TRequest data, 
+            string endpoint,
+            TRequest data,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                _logger.LogDebug("POST {Endpoint}", endpoint);
-                var json = System.Text.Json.JsonSerializer.Serialize(data, JsonOptions);
-                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-                
-                using var response = await _httpClient.PostAsync(endpoint, content, cancellationToken);
-                if (!response.IsSuccessStatusCode)
-                {
-                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                    _logger.LogWarning("POST {Endpoint} returned status {StatusCode}. Body: {Body}", endpoint, (int)response.StatusCode, errorBody);
-                    throw new HttpRequestException(BuildHttpErrorMessage(response, errorBody, endpoint), null, response.StatusCode);
-                }
-
-                var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-                return System.Text.Json.JsonSerializer.Deserialize<TResponse>(responseContent, JsonOptions);
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, "HTTP error on POST {Endpoint}", endpoint);
-                throw;
-            }
+            using var response = await _httpClient.PostAsync(endpoint, Json(data), cancellationToken);
+            return await ReadAsync<TResponse>(response, cancellationToken);
         }
 
-        public async Task<bool> PostAsync<TRequest>(
-            string endpoint, 
-            TRequest data, 
+        public async Task PostAsync<TRequest>(
+            string endpoint,
+            TRequest data,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                _logger.LogDebug("POST {Endpoint}", endpoint);
-                var json = System.Text.Json.JsonSerializer.Serialize(data, JsonOptions);
-                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-                
-                var response = await _httpClient.PostAsync(endpoint, content, cancellationToken);
-                if (!response.IsSuccessStatusCode)
-                    _logger.LogWarning("POST {Endpoint} returned status {StatusCode}", endpoint, (int)response.StatusCode);
-                return response.IsSuccessStatusCode;
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, "HTTP error on POST {Endpoint}", endpoint);
-                return false;
-            }
+            using var response = await _httpClient.PostAsync(endpoint, Json(data), cancellationToken);
+            await EnsureSuccessAsync(response, cancellationToken);
         }
 
         public async Task<TResponse?> PutAsync<TRequest, TResponse>(
-            string endpoint, 
-            TRequest data, 
+            string endpoint,
+            TRequest data,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                _logger.LogDebug("PUT {Endpoint}", endpoint);
-                var json = System.Text.Json.JsonSerializer.Serialize(data, JsonOptions);
-                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-                
-                var response = await _httpClient.PutAsync(endpoint, content, cancellationToken);
-                if (!response.IsSuccessStatusCode)
-                {
-                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                    _logger.LogWarning("PUT {Endpoint} returned status {StatusCode}. Body: {Body}", endpoint, (int)response.StatusCode, errorBody);
-                    throw new HttpRequestException(BuildHttpErrorMessage(response, errorBody, endpoint));
-                }
-
-                var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-                return System.Text.Json.JsonSerializer.Deserialize<TResponse>(responseContent, JsonOptions);
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, "HTTP error on PUT {Endpoint}", endpoint);
-                throw;
-            }
+            using var response = await _httpClient.PutAsync(endpoint, Json(data), cancellationToken);
+            return await ReadAsync<TResponse>(response, cancellationToken);
         }
 
-        public async Task<bool> PutAsync<TRequest>(
-            string endpoint, 
-            TRequest data, 
+        public async Task PutAsync<TRequest>(
+            string endpoint,
+            TRequest data,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                _logger.LogDebug("PUT {Endpoint}", endpoint);
-                var json = System.Text.Json.JsonSerializer.Serialize(data, JsonOptions);
-                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-                
-                var response = await _httpClient.PutAsync(endpoint, content, cancellationToken);
-                if (!response.IsSuccessStatusCode)
-                    _logger.LogWarning("PUT {Endpoint} returned status {StatusCode}", endpoint, (int)response.StatusCode);
-                return response.IsSuccessStatusCode;
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, "HTTP error on PUT {Endpoint}", endpoint);
-                return false;
-            }
+            using var response = await _httpClient.PutAsync(endpoint, Json(data), cancellationToken);
+            await EnsureSuccessAsync(response, cancellationToken);
         }
 
         public async Task<TResponse?> PatchAsync<TRequest, TResponse>(
@@ -155,91 +84,31 @@ namespace Beep.OilandGas.Web.Services
             TRequest data,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                _logger.LogDebug("PATCH {Endpoint}", endpoint);
-                var json = System.Text.Json.JsonSerializer.Serialize(data, JsonOptions);
-                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-                var request = new HttpRequestMessage(HttpMethod.Patch, endpoint) { Content = content };
-                var response = await _httpClient.SendAsync(request, cancellationToken);
-                if (!response.IsSuccessStatusCode)
-                {
-                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                    _logger.LogWarning("PATCH {Endpoint} returned status {StatusCode}. Body: {Body}", endpoint, (int)response.StatusCode, errorBody);
-                    throw new HttpRequestException(BuildHttpErrorMessage(response, errorBody, endpoint));
-                }
-
-                var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-                return System.Text.Json.JsonSerializer.Deserialize<TResponse>(responseContent, JsonOptions);
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, "HTTP error on PATCH {Endpoint}", endpoint);
-                throw;
-            }
+            using var request = new HttpRequestMessage(HttpMethod.Patch, endpoint) { Content = Json(data) };
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            return await ReadAsync<TResponse>(response, cancellationToken);
         }
 
-        public async Task<bool> PatchAsync<TRequest>(
+        public async Task PatchAsync<TRequest>(
             string endpoint,
             TRequest data,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                _logger.LogDebug("PATCH {Endpoint}", endpoint);
-                var json = System.Text.Json.JsonSerializer.Serialize(data, JsonOptions);
-                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-                var request = new HttpRequestMessage(HttpMethod.Patch, endpoint) { Content = content };
-                var response = await _httpClient.SendAsync(request, cancellationToken);
-                if (!response.IsSuccessStatusCode)
-                    _logger.LogWarning("PATCH {Endpoint} returned status {StatusCode}", endpoint, (int)response.StatusCode);
-                return response.IsSuccessStatusCode;
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, "HTTP error on PATCH {Endpoint}", endpoint);
-                return false;
-            }
+            using var request = new HttpRequestMessage(HttpMethod.Patch, endpoint) { Content = Json(data) };
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            await EnsureSuccessAsync(response, cancellationToken);
         }
 
-        public async Task<bool> DeleteAsync(string endpoint, CancellationToken cancellationToken = default)
+        public async Task DeleteAsync(string endpoint, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                _logger.LogDebug("DELETE {Endpoint}", endpoint);
-                var response = await _httpClient.DeleteAsync(endpoint, cancellationToken);
-                if (!response.IsSuccessStatusCode)
-                    _logger.LogWarning("DELETE {Endpoint} returned status {StatusCode}", endpoint, (int)response.StatusCode);
-                return response.IsSuccessStatusCode;
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, "HTTP error on DELETE {Endpoint}", endpoint);
-                return false;
-            }
+            using var response = await _httpClient.DeleteAsync(endpoint, cancellationToken);
+            await EnsureSuccessAsync(response, cancellationToken);
         }
 
         public async Task<TResult?> DeleteAsync<TResult>(string endpoint, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                _logger.LogDebug("DELETE {Endpoint}", endpoint);
-                var response = await _httpClient.DeleteAsync(endpoint, cancellationToken);
-                if (!response.IsSuccessStatusCode)
-                {
-                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                    _logger.LogWarning("DELETE {Endpoint} returned status {StatusCode}. Body: {Body}", endpoint, (int)response.StatusCode, errorBody);
-                    throw new HttpRequestException(BuildHttpErrorMessage(response, errorBody, endpoint));
-                }
-
-                var content = await response.Content.ReadAsStringAsync(cancellationToken);
-                return System.Text.Json.JsonSerializer.Deserialize<TResult>(content, JsonOptions);
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, "HTTP error on DELETE {Endpoint}", endpoint);
-                throw;
-            }
+            using var response = await _httpClient.DeleteAsync(endpoint, cancellationToken);
+            return await ReadAsync<TResult>(response, cancellationToken);
         }
 
         /// <summary>
@@ -250,93 +119,45 @@ namespace Beep.OilandGas.Web.Services
             HttpContent? content,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                _logger.LogDebug("POST {Endpoint} (multipart)", endpoint);
-                var response = await _httpClient.PostAsync(endpoint, content, cancellationToken);
-                if (!response.IsSuccessStatusCode)
-                {
-                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                    _logger.LogWarning("POST {Endpoint} (multipart) returned status {StatusCode}. Body: {Body}", endpoint, (int)response.StatusCode, errorBody);
-                    throw new HttpRequestException(BuildHttpErrorMessage(response, errorBody, endpoint));
-                }
-
-                var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-                return System.Text.Json.JsonSerializer.Deserialize<TResponse>(responseContent, JsonOptions);
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, "HTTP error on POST {Endpoint}", endpoint);
-                throw;
-            }
+            using var response = await _httpClient.PostAsync(endpoint, content, cancellationToken);
+            return await ReadAsync<TResponse>(response, cancellationToken);
         }
 
         /// <summary>
-        /// Post with object and get stream response
+        /// Post with object and get stream response. The response stays open for the stream; the caller disposes the stream.
         /// </summary>
         public async Task<Stream?> PostStreamAsync<TRequest>(
             string endpoint,
             TRequest data,
             CancellationToken cancellationToken = default)
         {
-            try
+            var response = await _httpClient.PostAsync(endpoint, Json(data), cancellationToken);
+            if (!response.IsSuccessStatusCode)
             {
-                _logger.LogDebug("POST {Endpoint} (stream response)", endpoint);
-                var json = System.Text.Json.JsonSerializer.Serialize(data, JsonOptions);
-                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-                
-                var response = await _httpClient.PostAsync(endpoint, content, cancellationToken);
-                if (!response.IsSuccessStatusCode)
+                using (response)
                 {
-                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                    _logger.LogWarning("POST {Endpoint} (stream response) returned status {StatusCode}. Body: {Body}", endpoint, (int)response.StatusCode, errorBody);
-                    throw new HttpRequestException(BuildHttpErrorMessage(response, errorBody, endpoint));
+                    throw await OilGasApiException.ReadAsync(response, _failures, cancellationToken);
                 }
+            }
 
-                return await response.Content.ReadAsStreamAsync(cancellationToken);
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, "HTTP error on POST {Endpoint}", endpoint);
-                throw;
-            }
+            return await response.Content.ReadAsStreamAsync(cancellationToken);
         }
 
-        private static string BuildHttpErrorMessage(HttpResponseMessage response, string? responseBody, string endpoint)
-        {
-            var parsed = TryParseApiErrorMessage(responseBody);
-            if (!string.IsNullOrWhiteSpace(parsed))
-                return parsed;
+        private static StringContent Json<TRequest>(TRequest data) =>
+            new(JsonSerializer.Serialize(data, JsonOptions), System.Text.Encoding.UTF8, "application/json");
 
-            return $"HTTP {(int)response.StatusCode} {response.ReasonPhrase} for {endpoint}.";
+        private async Task<T?> ReadAsync<T>(HttpResponseMessage response, CancellationToken cancellationToken)
+        {
+            await EnsureSuccessAsync(response, cancellationToken);
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
+            return JsonSerializer.Deserialize<T>(content, JsonOptions);
         }
 
-        private static string? TryParseApiErrorMessage(string? body)
+        private async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(body))
-                return null;
-
-            try
+            if (!response.IsSuccessStatusCode)
             {
-                using var doc = JsonDocument.Parse(body);
-                var root = doc.RootElement;
-                if (root.ValueKind != JsonValueKind.Object)
-                    return null;
-
-                if (root.TryGetProperty("error", out var err) && err.ValueKind == JsonValueKind.String)
-                    return err.GetString();
-
-                if (root.TryGetProperty("title", out var title) && title.ValueKind == JsonValueKind.String)
-                    return title.GetString();
-
-                if (root.TryGetProperty("detail", out var detail) && detail.ValueKind == JsonValueKind.String)
-                    return detail.GetString();
-
-                return null;
-            }
-            catch (JsonException)
-            {
-                return body.Length > 400 ? body.Substring(0, 400) + "..." : body;
+                throw await OilGasApiException.ReadAsync(response, _failures, cancellationToken);
             }
         }
     }

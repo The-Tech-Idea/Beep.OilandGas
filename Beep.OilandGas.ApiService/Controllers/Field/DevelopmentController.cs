@@ -51,16 +51,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            try
-            {
-                var wells = await _developmentService.GetDevelopmentWellsForFieldAsync(fieldId);
-                return Ok(wells ?? new List<WELL>());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching development wells for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var wells = await _developmentService.GetDevelopmentWellsForFieldAsync(fieldId);
+            return Ok(wells ?? new List<WELL>());
         }
 
         /// <summary>GET /api/field/current/development/facilities</summary>
@@ -69,16 +61,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            try
-            {
-                var facilities = await _developmentService.GetFacilitiesForFieldAsync(fieldId);
-                return Ok(facilities ?? new List<FACILITY>());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching development facilities for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var facilities = await _developmentService.GetFacilitiesForFieldAsync(fieldId);
+            return Ok(facilities ?? new List<FACILITY>());
         }
 
         /// <summary>GET /api/field/current/development/pools</summary>
@@ -87,16 +71,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            try
-            {
-                var pools = await _developmentService.GetPoolsForFieldAsync(fieldId);
-                return Ok(pools ?? new List<POOL>());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching development pools for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var pools = await _developmentService.GetPoolsForFieldAsync(fieldId);
+            return Ok(pools ?? new List<POOL>());
         }
 
         /// <summary>POST /api/field/current/development/pools</summary>
@@ -112,16 +88,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
-            try
-            {
-                var pool = await _developmentService.CreatePoolForFieldAsync(fieldId, request, userId);
-                return Ok(pool);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating pool for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var pool = await _developmentService.CreatePoolForFieldAsync(fieldId, request, userId);
+            return Ok(pool);
         }
 
         /// <summary>PUT /api/field/current/development/pools/{poolId}</summary>
@@ -139,21 +107,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
-            try
-            {
-                var pool = await _developmentService.UpdatePoolForFieldAsync(fieldId, poolId, request, userId);
-                return Ok(pool);
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Pool {PoolId} not found for field {FieldId}", poolId, fieldId);
-                return NotFound(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating pool {PoolId} for field {FieldId}", poolId, fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var pool = await _developmentService.UpdatePoolForFieldAsync(fieldId, poolId, request, userId);
+            return Ok(pool);
         }
 
         /// <summary>POST /api/field/current/development/facilities</summary>
@@ -169,16 +124,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
-            try
-            {
-                var facility = await _developmentService.CreateFacilityForFieldAsync(fieldId, request, userId);
-                return Ok(facility);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating facility for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var facility = await _developmentService.CreateFacilityForFieldAsync(fieldId, request, userId);
+            return Ok(facility);
         }
 
         /// <summary>PUT /api/field/current/development/facilities/{facilityId}</summary>
@@ -196,21 +143,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
-            try
-            {
-                var facility = await _developmentService.UpdateFacilityForFieldAsync(fieldId, facilityId, request, userId);
-                return Ok(facility);
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Facility {FacilityId} not found for field {FieldId}", facilityId, fieldId);
-                return NotFound(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating facility {FacilityId} for field {FieldId}", facilityId, fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var facility = await _developmentService.UpdateFacilityForFieldAsync(fieldId, facilityId, request, userId);
+            return Ok(facility);
         }
 
         /// <summary>GET /api/field/current/development/wells/{uwi}</summary>
@@ -220,18 +154,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            try
-            {
-                var wells = await _developmentService.GetDevelopmentWellsForFieldAsync(fieldId);
-                var well = wells?.FirstOrDefault(w => w.UWI == uwi);
-                if (well == null) return NotFound(new { error = $"Well {uwi} not found in field {fieldId}." });
-                return Ok(well);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching well {Uwi}", uwi);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var wells = await _developmentService.GetDevelopmentWellsForFieldAsync(fieldId);
+            var well = wells?.FirstOrDefault(w => w.UWI == uwi);
+            if (well == null) return NotFound(new { error = $"Well {uwi} not found in field {fieldId}." });
+            return Ok(well);
         }
 
         // ============================================
@@ -248,31 +174,23 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             [FromBody] StartPoolDefinitionRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(currentFieldId))
             {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                        return BadRequest(new { error = "No active field selected." });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.PoolId))
-                {
-                        return BadRequest(new { error = "Pool ID is required." });
-                }
-
-                var instance = await _developmentProcessService.StartPoolDefinitionProcessAsync(
-                    request.PoolId, 
-                    currentFieldId, 
-                    userId);
-                
-                return Ok(instance);
+                    return BadRequest(new { error = "No active field selected." });
             }
-            catch (Exception ex)
+
+            if (string.IsNullOrWhiteSpace(request.PoolId))
             {
-                _logger.LogError(ex, "Error starting Pool Definition process");
-                return StatusCode(500, new { error = "An internal error occurred." });
+                    return BadRequest(new { error = "Pool ID is required." });
             }
+
+            var instance = await _developmentProcessService.StartPoolDefinitionProcessAsync(
+                request.PoolId, 
+                currentFieldId, 
+                userId);
+            
+            return Ok(instance);
         }
 
         /// <summary>
@@ -282,25 +200,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<bool>> DelineatePool([FromBody] DelineatePoolRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
             {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                {
-                        return BadRequest(new { error = "Instance ID is required." });
-                }
+                    return BadRequest(new { error = "Instance ID is required." });
+            }
 
-                var result = await _developmentProcessService.DelineatePoolAsync(
-                    request.InstanceId, 
-                    new PROCESS_STEP_DATA { Data = request.DelineationData ?? new Dictionary<string, object>() }, 
-                    userId);
-                
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error delineating pool");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _developmentProcessService.DelineatePoolAsync(
+                request.InstanceId, 
+                new PROCESS_STEP_DATA { Data = request.DelineationData ?? new Dictionary<string, object>() }, 
+                userId);
+            
+            return Ok(result);
         }
 
         /// <summary>
@@ -310,25 +220,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<bool>> AssignReserves([FromBody] AssignReservesRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
             {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                {
-                        return BadRequest(new { error = "Instance ID is required." });
-                }
+                    return BadRequest(new { error = "Instance ID is required." });
+            }
 
-                var result = await _developmentProcessService.AssignReservesAsync(
-                    request.InstanceId, 
-                    new PROCESS_STEP_DATA { Data = request.ReserveData ?? new Dictionary<string, object>() }, 
-                    userId);
-                
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error assigning reserves");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _developmentProcessService.AssignReservesAsync(
+                request.InstanceId, 
+                new PROCESS_STEP_DATA { Data = request.ReserveData ?? new Dictionary<string, object>() }, 
+                userId);
+            
+            return Ok(result);
         }
 
         /// <summary>
@@ -338,21 +240,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<bool>> ApprovePool([FromBody] ApprovePoolRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
             {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                {
-                        return BadRequest(new { error = "Instance ID is required." });
-                }
+                    return BadRequest(new { error = "Instance ID is required." });
+            }
 
-                var result = await _developmentProcessService.ApprovePoolAsync(request.InstanceId, userId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error approving pool");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _developmentProcessService.ApprovePoolAsync(request.InstanceId, userId);
+            return Ok(result);
         }
 
         /// <summary>
@@ -362,21 +256,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<bool>> ActivatePool([FromBody] ActivatePoolRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
             {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                {
-                        return BadRequest(new { error = "Instance ID is required." });
-                }
+                    return BadRequest(new { error = "Instance ID is required." });
+            }
 
-                var result = await _developmentProcessService.ActivatePoolAsync(request.InstanceId, userId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error activating pool");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _developmentProcessService.ActivatePoolAsync(request.InstanceId, userId);
+            return Ok(result);
         }
 
         #endregion
@@ -391,31 +277,23 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             [FromBody] StartFacilityDevelopmentRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(currentFieldId))
             {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                        return BadRequest(new { error = "No active field selected." });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.FacilityId))
-                {
-                        return BadRequest(new { error = "Facility ID is required." });
-                }
-
-                var instance = await _developmentProcessService.StartFacilityDevelopmentProcessAsync(
-                    request.FacilityId, 
-                    currentFieldId, 
-                    userId);
-                
-                return Ok(instance);
+                    return BadRequest(new { error = "No active field selected." });
             }
-            catch (Exception ex)
+
+            if (string.IsNullOrWhiteSpace(request.FacilityId))
             {
-                _logger.LogError(ex, "Error starting Facility Development process");
-                return StatusCode(500, new { error = "An internal error occurred." });
+                    return BadRequest(new { error = "Facility ID is required." });
             }
+
+            var instance = await _developmentProcessService.StartFacilityDevelopmentProcessAsync(
+                request.FacilityId, 
+                currentFieldId, 
+                userId);
+            
+            return Ok(instance);
         }
 
         #endregion
@@ -430,31 +308,23 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             [FromBody] StartWellDevelopmentRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(currentFieldId))
             {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                        return BadRequest(new { error = "No active field selected." });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.WellId))
-                {
-                        return BadRequest(new { error = "Well ID is required." });
-                }
-
-                var instance = await _developmentProcessService.StartWellDevelopmentProcessAsync(
-                    request.WellId, 
-                    currentFieldId, 
-                    userId);
-                
-                return Ok(instance);
+                    return BadRequest(new { error = "No active field selected." });
             }
-            catch (Exception ex)
+
+            if (string.IsNullOrWhiteSpace(request.WellId))
             {
-                _logger.LogError(ex, "Error starting Well Development process");
-                return StatusCode(500, new { error = "An internal error occurred." });
+                    return BadRequest(new { error = "Well ID is required." });
             }
+
+            var instance = await _developmentProcessService.StartWellDevelopmentProcessAsync(
+                request.WellId, 
+                currentFieldId, 
+                userId);
+            
+            return Ok(instance);
         }
 
         #endregion
@@ -469,31 +339,23 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             [FromBody] StartPipelineDevelopmentRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(currentFieldId))
             {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                        return BadRequest(new { error = "No active field selected." });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.PipelineId))
-                {
-                        return BadRequest(new { error = "Pipeline ID is required." });
-                }
-
-                var instance = await _developmentProcessService.StartPipelineDevelopmentProcessAsync(
-                    request.PipelineId, 
-                    currentFieldId, 
-                    userId);
-                
-                return Ok(instance);
+                    return BadRequest(new { error = "No active field selected." });
             }
-            catch (Exception ex)
+
+            if (string.IsNullOrWhiteSpace(request.PipelineId))
             {
-                _logger.LogError(ex, "Error starting Pipeline Development process");
-                return StatusCode(500, new { error = "An internal error occurred." });
+                    return BadRequest(new { error = "Pipeline ID is required." });
             }
+
+            var instance = await _developmentProcessService.StartPipelineDevelopmentProcessAsync(
+                request.PipelineId, 
+                currentFieldId, 
+                userId);
+            
+            return Ok(instance);
         }
 
         #endregion
@@ -506,16 +368,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            try
-            {
-                var summary = await _developmentService.GetDevelopmentDashboardSummaryAsync(fieldId);
-                return Ok(summary);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching development dashboard summary for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var summary = await _developmentService.GetDevelopmentDashboardSummaryAsync(fieldId);
+            return Ok(summary);
         }
 
         /// <summary>GET /api/field/current/development/dashboard/wells</summary>
@@ -524,16 +378,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            try
-            {
-                var wells = await _developmentService.GetDevelopmentWellStatusAsync(fieldId);
-                return Ok(wells);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching development well status for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var wells = await _developmentService.GetDevelopmentWellStatusAsync(fieldId);
+            return Ok(wells);
         }
 
         /// <summary>GET /api/field/current/development/construction-progress</summary>
@@ -542,56 +388,48 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            try
+            var wells      = await _developmentService.GetDevelopmentWellsForFieldAsync(fieldId);
+            var facilities = await _developmentService.GetFacilitiesForFieldAsync(fieldId);
+
+            // Build "Wells" work group from well records
+            var wellPackages = (wells ?? new()).Select(w =>
             {
-                var wells      = await _developmentService.GetDevelopmentWellsForFieldAsync(fieldId);
-                var facilities = await _developmentService.GetFacilitiesForFieldAsync(fieldId);
+                var statusCode = w.CURRENT_STATUS ?? "PLANNED";
+                bool isCompleted = statusCode is "PRODUCING" or "COMPLETED" or "ABANDONED";
+                bool isActive    = statusCode is "DRILLING" or "COMPLETING" or "TESTING";
+                double pct = isCompleted ? 100 : isActive ? 50 : 0;
+                return new WorkPackageDto(
+                    Name:       w.UWI ?? w.CURRENT_STATUS ?? "Unknown Well",
+                    TargetDate: w.SPUD_DATE.HasValue ? w.SPUD_DATE.Value.ToString("MMM yyyy") : string.Empty,
+                    IsCompleted: isCompleted,
+                    IsActive:    isActive,
+                    PercentComplete: pct,
+                    Note:        statusCode);
+            }).ToList();
 
-                // Build "Wells" work group from well records
-                var wellPackages = (wells ?? new()).Select(w =>
-                {
-                    var statusCode = w.CURRENT_STATUS ?? "PLANNED";
-                    bool isCompleted = statusCode is "PRODUCING" or "COMPLETED" or "ABANDONED";
-                    bool isActive    = statusCode is "DRILLING" or "COMPLETING" or "TESTING";
-                    double pct = isCompleted ? 100 : isActive ? 50 : 0;
-                    return new WorkPackageDto(
-                        Name:       w.UWI ?? w.CURRENT_STATUS ?? "Unknown Well",
-                        TargetDate: w.SPUD_DATE.HasValue ? w.SPUD_DATE.Value.ToString("MMM yyyy") : string.Empty,
-                        IsCompleted: isCompleted,
-                        IsActive:    isActive,
-                        PercentComplete: pct,
-                        Note:        statusCode);
-                }).ToList();
-
-                // Build "Facilities" work group
-                var facilityPackages = (facilities ?? new()).Select(f =>
-                {
-                    var statusCode = f.ACTIVE_IND == "Y" ? "OPERATIONAL" : "PLANNED";
-                    bool isCompleted = statusCode is "OPERATIONAL";
-                    bool isActive    = false;
-                    double pct = isCompleted ? 100 : 0;
-                    return new WorkPackageDto(
-                        Name:       f.FACILITY_LONG_NAME ?? f.FACILITY_SHORT_NAME ?? f.FACILITY_ID ?? "Unknown Facility",
-                        TargetDate: string.Empty,
-                        IsCompleted: isCompleted,
-                        IsActive:    isActive,
-                        PercentComplete: pct,
-                        Note:        f.FACILITY_TYPE ?? string.Empty);
-                }).ToList();
-
-                var workGroups = new List<WorkGroupDto>();
-                if (facilityPackages.Count > 0)
-                    workGroups.Add(new WorkGroupDto("Facilities & Infrastructure", facilityPackages));
-                if (wellPackages.Count > 0)
-                    workGroups.Add(new WorkGroupDto("Wells", wellPackages));
-
-                return Ok(new ConstructionProgressDto(workGroups, new List<PunchItemDto>()));
-            }
-            catch (Exception ex)
+            // Build "Facilities" work group
+            var facilityPackages = (facilities ?? new()).Select(f =>
             {
-                _logger.LogError(ex, "Error fetching construction progress for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                var statusCode = f.ACTIVE_IND == "Y" ? "OPERATIONAL" : "PLANNED";
+                bool isCompleted = statusCode is "OPERATIONAL";
+                bool isActive    = false;
+                double pct = isCompleted ? 100 : 0;
+                return new WorkPackageDto(
+                    Name:       f.FACILITY_LONG_NAME ?? f.FACILITY_SHORT_NAME ?? f.FACILITY_ID ?? "Unknown Facility",
+                    TargetDate: string.Empty,
+                    IsCompleted: isCompleted,
+                    IsActive:    isActive,
+                    PercentComplete: pct,
+                    Note:        f.FACILITY_TYPE ?? string.Empty);
+            }).ToList();
+
+            var workGroups = new List<WorkGroupDto>();
+            if (facilityPackages.Count > 0)
+                workGroups.Add(new WorkGroupDto("Facilities & Infrastructure", facilityPackages));
+            if (wellPackages.Count > 0)
+                workGroups.Add(new WorkGroupDto("Wells", wellPackages));
+
+            return Ok(new ConstructionProgressDto(workGroups, new List<PunchItemDto>()));
         }
 
         #endregion
@@ -607,20 +445,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
-            try
-            {
-                var success = await _developmentService.AssignRigToWellAsync(fieldId, uwi, request.RigName, userId);
-                if (!success)
-                    return NotFound(new { error = $"Well {uwi} not found in field {fieldId}." });
+            var success = await _developmentService.AssignRigToWellAsync(fieldId, uwi, request.RigName, userId);
+            if (!success)
+                return NotFound(new { error = $"Well {uwi} not found in field {fieldId}." });
 
-                _logger.LogInformation("Rig {RigName} assigned to well {Uwi} by {UserId}", request.RigName, uwi, userId);
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error assigning rig to well {Uwi}", uwi);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            _logger.LogInformation("Rig {RigName} assigned to well {Uwi} by {UserId}", request.RigName, uwi, userId);
+            return NoContent();
         }
 
 // ── FDP Gate Review ────────────────────────────────────────────────────────────
@@ -644,38 +474,30 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            try
-            {
-                var instance = await _developmentProcessService.GetCurrentFdpStatusAsync(fieldId);
-                if (instance == null)
-                    return Ok(new FdpStatusResponse { HasFdp = false });
+            var instance = await _developmentProcessService.GetCurrentFdpStatusAsync(fieldId);
+            if (instance == null)
+                return Ok(new FdpStatusResponse { HasFdp = false });
 
-                var steps = instance.StepInstances
-                    .OrderBy(s => s.SequenceNumber)
-                    .Select(s => new FdpStepStatus
-                    {
-                        StepId        = s.StepId,
-                        StepName      = _fdpStepNames.TryGetValue(s.StepId, out var n) ? n : s.StepId,
-                        IsCompleted   = s.Status == Beep.OilandGas.Models.Processes.StepStatus.COMPLETED,
-                        IsActive      = s.Status == Beep.OilandGas.Models.Processes.StepStatus.IN_PROGRESS,
-                        CompletedDate = s.CompletionDate?.ToString("MMM yyyy") ?? string.Empty,
-                    }).ToList();
-
-                return Ok(new FdpStatusResponse
+            var steps = instance.StepInstances
+                .OrderBy(s => s.SequenceNumber)
+                .Select(s => new FdpStepStatus
                 {
-                    HasFdp            = true,
-                    ProcessInstanceId = instance.InstanceId,
-                    Status            = instance.Status.ToString(),
-                    CurrentStepId     = instance.CurrentStepId,
-                    StartDate         = instance.StartDate,
-                    Steps             = steps,
-                });
-            }
-            catch (Exception ex)
+                    StepId        = s.StepId,
+                    StepName      = _fdpStepNames.TryGetValue(s.StepId, out var n) ? n : s.StepId,
+                    IsCompleted   = s.Status == Beep.OilandGas.Models.Processes.StepStatus.COMPLETED,
+                    IsActive      = s.Status == Beep.OilandGas.Models.Processes.StepStatus.IN_PROGRESS,
+                    CompletedDate = s.CompletionDate?.ToString("MMM yyyy") ?? string.Empty,
+                }).ToList();
+
+            return Ok(new FdpStatusResponse
             {
-                _logger.LogError(ex, "Error fetching FDP status for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                HasFdp            = true,
+                ProcessInstanceId = instance.InstanceId,
+                Status            = instance.Status.ToString(),
+                CurrentStepId     = instance.CurrentStepId,
+                StartDate         = instance.StartDate,
+                Steps             = steps,
+            });
         }
 
         /// <summary>
@@ -690,20 +512,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
-            try
+            var instance = await _developmentProcessService.StartFdpGateProcessAsync(fieldId, userId);
+            return Ok(new SubmitFdpDraftResponse
             {
-                var instance = await _developmentProcessService.StartFdpGateProcessAsync(fieldId, userId);
-                return Ok(new SubmitFdpDraftResponse
-                {
-                    InstanceId = instance?.InstanceId ?? string.Empty,
-                    Status     = instance != null ? instance.Status.ToString() : "SUBMITTED"
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error submitting FDP for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                InstanceId = instance?.InstanceId ?? string.Empty,
+                Status     = instance != null ? instance.Status.ToString() : "SUBMITTED"
+            });
         }
 
     }

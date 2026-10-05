@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Core.Refusals;
+using Beep.OilandGas.PermitsAndApplications.Exceptions;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
@@ -40,7 +42,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             string userId)
         {
             if (string.IsNullOrWhiteSpace(applicationId))
-                throw new ArgumentNullException(nameof(applicationId));
+                throw new InvalidApplicationException("The permit application ID is required.");
             if (attachment == null)
                 throw new ArgumentNullException(nameof(attachment));
 
@@ -65,7 +67,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
         public async Task<IReadOnlyList<APPLICATION_ATTACHMENT>> GetAttachmentsAsync(string applicationId)
         {
             if (string.IsNullOrWhiteSpace(applicationId))
-                throw new ArgumentNullException(nameof(applicationId));
+                throw new InvalidApplicationException("The permit application ID is required.");
 
             var repo = await CreateRepositoryAsync<APPLICATION_ATTACHMENT>("APPLICATION_ATTACHMENT");
             var filters = new List<AppFilter>
@@ -81,12 +83,12 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
         public async Task RemoveAttachmentAsync(string attachmentId, string userId)
         {
             if (string.IsNullOrWhiteSpace(attachmentId))
-                throw new ArgumentNullException(nameof(attachmentId));
+                throw new InvalidApplicationException("The attachment ID is required.");
 
             var repo = await CreateRepositoryAsync<APPLICATION_ATTACHMENT>("APPLICATION_ATTACHMENT");
             var attachment = await repo.GetByIdAsync(attachmentId) as APPLICATION_ATTACHMENT;
             if (attachment == null)
-                throw new InvalidOperationException($"Attachment not found: {attachmentId}");
+                throw RefusalException.NotFound($"Attachment {attachmentId} was not found.");
 
             attachment.ACTIVE_IND = "N";
             SetAuditFields(attachment, userId);

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.HeatMap.Interpolation
 {
@@ -72,7 +73,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
             double maxDistance = double.MaxValue)
         {
             if (dataPoints == null || dataPoints.Count == 0)
-                throw new ArgumentException("Data points list cannot be null or empty.");
+                throw RefusalException.Invalid("At least one data point is required.");
 
             double numerator = 0.0;
             double denominator = 0.0;
@@ -119,7 +120,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
             double power = 2.0)
         {
             if (dataPoints == null || dataPoints.Count == 0)
-                throw new ArgumentException("Data points list cannot be null or empty.");
+                throw RefusalException.Invalid("At least one data point is required.");
 
             int cols = (int)(gridWidth / cellSize);
             int rows = (int)(gridHeight / cellSize);
@@ -148,7 +149,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
             double targetY)
         {
             if (dataPoints == null || dataPoints.Count == 0)
-                throw new ArgumentException("Data points list cannot be null or empty.");
+                throw RefusalException.Invalid("At least one data point is required.");
 
             if (dataPoints.Count < 4)
                 return InverseDistanceWeighting(dataPoints, targetX, targetY);
@@ -205,7 +206,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
             double nugget = 0.0)
         {
             if (dataPoints == null || dataPoints.Count == 0)
-                throw new ArgumentException("Data points list cannot be null or empty.");
+                throw RefusalException.Invalid("At least one data point is required.");
 
             // Simplified Kriging using exponential variogram
             // This is a basic implementation - full Kriging requires solving a system of equations
@@ -269,7 +270,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
             if (grid == null)
                 throw new ArgumentNullException(nameof(grid));
             if (contourLevels == null || contourLevels.Length == 0)
-                throw new ArgumentException("Contour levels cannot be null or empty.");
+                throw RefusalException.Invalid("At least one contour level is required.");
 
             var contours = new List<(double, double, double, double)>();
             int rows = grid.GetLength(0);
@@ -366,7 +367,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
         {
             return methodType switch
             {
-                InterpolationMethodType.None => throw new ArgumentException("Cannot interpolate with None method."),
+                InterpolationMethodType.None => throw RefusalException.Invalid("Choose an interpolation method: none was selected."),
                 InterpolationMethodType.InverseDistanceWeighting => 
                     InverseDistanceWeighting(dataPoints, targetX, targetY, power, maxDistance),
                 InterpolationMethodType.OptimizedIdw => 
@@ -381,7 +382,6 @@ namespace Beep.OilandGas.HeatMap.Interpolation
                     EnhancedInterpolation.SplineInterpolation(dataPoints, targetX, targetY, splineTension),
                 InterpolationMethodType.Bilinear => 
                     BilinearInterpolation(dataPoints, targetX, targetY),
-                _ => InverseDistanceWeighting(dataPoints, targetX, targetY, power, maxDistance)
             };
         }
 
@@ -418,7 +418,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
             double splineTension = 0.5)
         {
             if (dataPoints == null || dataPoints.Count == 0)
-                throw new ArgumentException("Data points list cannot be null or empty.");
+                throw RefusalException.Invalid("At least one data point is required.");
 
             int gridWidth = (int)((maxX - minX) / cellSize) + 1;
             int gridHeight = (int)((maxY - minY) / cellSize) + 1;

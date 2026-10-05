@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.DevelopmentPlanning.Constants;
 using System;
 using System.Collections.Generic;
@@ -695,113 +696,113 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
         private void ValidateStrategyInputs(string fieldId, double fieldArea, double reserves, int depth)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty.", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (fieldArea <= 0)
-                throw new ArgumentException("Field area must be greater than 0.", nameof(fieldArea));
+                throw RefusalException.Invalid("Field area must be greater than 0.");
             if (reserves <= 0)
-                throw new ArgumentException("Reserves must be greater than 0.", nameof(reserves));
+                throw RefusalException.Invalid("Reserves must be greater than 0.");
             if (depth <= 0)
-                throw new ArgumentException("Depth must be greater than 0.", nameof(depth));
+                throw RefusalException.Invalid("Depth must be greater than 0.");
         }
 
         private void ValidateReserveInputs(string fieldId, double reserves, double rf)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty.", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (reserves <= 0)
-                throw new ArgumentException("Initial reserves must be greater than 0.", nameof(reserves));
+                throw RefusalException.Invalid("Initial reserves must be greater than 0.");
             if (rf <= 0 || rf > 1.0)
-                throw new ArgumentException("Recovery factor must be between 0 and 1.", nameof(rf));
+                throw RefusalException.Invalid("Recovery factor must be between 0 and 1.");
         }
 
         private void ValidateDrillingInputs(string fieldId, int wells, int duration)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty.", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (wells <= 0)
-                throw new ArgumentException("Well count must be greater than 0.", nameof(wells));
+                throw RefusalException.Invalid("Well count must be greater than 0.");
             if (duration <= 0)
-                throw new ArgumentException("Phase duration must be greater than 0.", nameof(duration));
+                throw RefusalException.Invalid("Phase duration must be greater than 0.");
         }
 
         private void ValidateInfrastructureInputs(string fieldId, double production, double distance)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty.", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (production <= 0)
-                throw new ArgumentException("Production must be greater than 0.", nameof(production));
+                throw RefusalException.Invalid("Production must be greater than 0.");
             if (distance < 0)
-                throw new ArgumentException("Distance cannot be negative.", nameof(distance));
+                throw RefusalException.Invalid("Distance cannot be negative.");
         }
 
         private void ValidateCostInputs(string fieldId, int wells, double cost)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty.", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (wells <= 0)
-                throw new ArgumentException("Well count must be greater than 0.", nameof(wells));
+                throw RefusalException.Invalid("Well count must be greater than 0.");
             if (cost < 0)
-                throw new ArgumentException("Cost cannot be negative.", nameof(cost));
+                throw RefusalException.Invalid("Cost cannot be negative.");
         }
 
         private void ValidateScheduleInputs(string fieldId, double production, double price)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty.", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (production <= 0)
-                throw new ArgumentException("Production capacity must be greater than 0.", nameof(production));
+                throw RefusalException.Invalid("Production capacity must be greater than 0.");
             if (price < 0)
-                throw new ArgumentException("Price cannot be negative.", nameof(price));
+                throw RefusalException.Invalid("Price cannot be negative.");
         }
 
         private void ValidateScheduleInputs(string fieldId, int phases)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty.", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (phases <= 0)
-                throw new ArgumentException("Phase count must be greater than 0.", nameof(phases));
+                throw RefusalException.Invalid("Phase count must be greater than 0.");
         }
 
         private void ValidateEnvironmentalInputs(string fieldId, string location)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty.", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (string.IsNullOrWhiteSpace(location))
-                throw new ArgumentException("Location cannot be null or empty.", nameof(location));
+                throw RefusalException.Invalid("The location is required.");
         }
 
         private void ValidateRiskInputs(string fieldId, int duration)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty.", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (duration <= 0)
-                throw new ArgumentException("Project duration must be greater than 0.", nameof(duration));
+                throw RefusalException.Invalid("Project duration must be greater than 0.");
         }
 
         private void ValidateFacilityInputs(string fieldId, double rate)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty.", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (rate <= 0)
-                throw new ArgumentException("Production rate must be greater than 0.", nameof(rate));
+                throw RefusalException.Invalid("Production rate must be greater than 0.");
         }
 
         private void ValidateInvestmentInputs(string fieldId, double capex, double discount)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty.", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (capex < 0)
-                throw new ArgumentException("CAPEX cannot be negative.", nameof(capex));
+                throw RefusalException.Invalid("CAPEX cannot be negative.");
             if (discount < 0 || discount > 1.0)
-                throw new ArgumentException("Discount rate must be between 0 and 1.", nameof(discount));
+                throw RefusalException.Invalid("Discount rate must be between 0 and 1.");
         }
 
         private void ValidateStrategyComparison(string fieldId, List<DevelopmentStrategy> strategies)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty.", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (strategies == null || strategies.Count < 2)
-                throw new ArgumentException("At least 2 strategies required for comparison.", nameof(strategies));
+                throw RefusalException.Invalid("Choose at least two strategies to compare.");
         }
 
         // ==================== HELPER CALCULATION METHODS ====================

@@ -236,13 +236,13 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                 throw new ArgumentNullException(nameof(well));
 
             if (initialPressure <= 0)
-                throw new ArgumentException("Initial pressure must be positive.", nameof(initialPressure));
+                throw RefusalException.Invalid("Initial pressure must be positive.");
 
             if (bottomHolePressure < 0 || bottomHolePressure >= initialPressure)
-                throw new ArgumentException("Bottom hole pressure must be positive and less than initial pressure.", nameof(bottomHolePressure));
+                throw RefusalException.Invalid("Bottom hole pressure must be positive and less than initial pressure.");
 
             if (forecastDuration <= 0)
-                throw new ArgumentException("Forecast duration must be positive.", nameof(forecastDuration));
+                throw RefusalException.Invalid("Forecast duration must be positive.");
         }
 
         /// <summary>

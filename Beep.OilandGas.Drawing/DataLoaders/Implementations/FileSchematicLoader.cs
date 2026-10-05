@@ -160,44 +160,38 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
             var stats = new DataLoadStatistics();
             configuration = configuration ?? new WellSchematicLoadConfiguration();
 
-            try
-            {
-                var wellData = LoadSchematic(wellIdentifier, configuration);
-                
-                // Apply configuration filters
-                if (wellData.BoreHoles != null)
-                {
-                    foreach (var borehole in wellData.BoreHoles)
-                    {
-                        if (!configuration.LoadCasing)
-                            borehole.Casing = new List<WellData_Casing>();
-                        if (!configuration.LoadTubing)
-                            borehole.Tubing = new List<WellData_Tubing>();
-                        if (!configuration.LoadEquipment)
-                            borehole.Equip = new List<WellData_Equip>();
-                        if (!configuration.LoadPerforations)
-                            borehole.Perforation = new List<WellData_Perf>();
+            // A file that is missing, cannot be read or is not valid JSON reaches the caller as its exception
+            // (OILGAS-CATCH-01). The failed result had carried the exception's text and stack for anyone to show.
+            var wellData = LoadSchematic(wellIdentifier, configuration);
 
-                        // Apply depth filtering
-                        if (configuration.MinDepth > 0 || configuration.MaxDepth > 0)
-                        {
-                            FilterByDepth(borehole, configuration.MinDepth, configuration.MaxDepth);
-                        }
+            // Apply configuration filters
+            if (wellData.BoreHoles != null)
+            {
+                foreach (var borehole in wellData.BoreHoles)
+                {
+                    if (!configuration.LoadCasing)
+                        borehole.Casing = new List<WellData_Casing>();
+                    if (!configuration.LoadTubing)
+                        borehole.Tubing = new List<WellData_Tubing>();
+                    if (!configuration.LoadEquipment)
+                        borehole.Equip = new List<WellData_Equip>();
+                    if (!configuration.LoadPerforations)
+                        borehole.Perforation = new List<WellData_Perf>();
+
+                    // Apply depth filtering
+                    if (configuration.MinDepth > 0 || configuration.MaxDepth > 0)
+                    {
+                        FilterByDepth(borehole, configuration.MinDepth, configuration.MaxDepth);
                     }
                 }
-
-                stats.RecordsLoaded = wellData.BoreHoles?.Count ?? 0;
-                stats.Complete();
-
-                var result = DataLoadResult<WellData>.CreateSuccess(wellData, stats.RecordsLoaded);
-                result.LoadDuration = stats.Duration;
-                return result;
             }
-            catch (Exception ex)
-            {
-                stats.Complete();
-                return DataLoadResult<WellData>.CreateFailure($"Failed to load schematic: {ex.Message}", ex.ToString());
-            }
+
+            stats.RecordsLoaded = wellData.BoreHoles?.Count ?? 0;
+            stats.Complete();
+
+            var result = DataLoadResult<WellData>.CreateSuccess(wellData, stats.RecordsLoaded);
+            result.LoadDuration = stats.Duration;
+            return result;
         }
 
         /// <summary>
@@ -289,45 +283,35 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         }
 
         /// <summary>
-        /// Loads multiple well schematics.
+        /// Loads multiple well schematics: every one asked for, or the failure that stopped one.
         /// </summary>
+        /// <remarks>
+        /// OILGAS-CATCH-01. A well whose file failed to load had been left out of the answer without a word, so the
+        /// caller could not tell a well with no file from one whose file it never saw.
+        /// </remarks>
         public Dictionary<string, WellData> LoadSchematics(List<string> wellIdentifiers, WellSchematicLoadConfiguration configuration = null)
         {
             var result = new Dictionary<string, WellData>();
             foreach (var identifier in wellIdentifiers)
             {
-                try
-                {
-                    result[identifier] = LoadSchematic(identifier, configuration);
-                }
-                catch
-                {
-                    // Skip failed loads
-                }
+                result[identifier] = LoadSchematic(identifier, configuration);
             }
             return result;
         }
 
         /// <summary>
-        /// Loads multiple well schematics asynchronously.
+        /// Loads multiple well schematics asynchronously: every one asked for, or the failure that stopped one.
         /// </summary>
         public async Task<Dictionary<string, WellData>> LoadSchematicsAsync(List<string> wellIdentifiers, WellSchematicLoadConfiguration configuration = null)
         {
             var tasks = wellIdentifiers.Select(async id =>
             {
-                try
-                {
-                    var data = await LoadSchematicAsync(id, configuration);
-                    return new { Id = id, Data = data };
-                }
-                catch
-                {
-                    return null;
-                }
+                var data = await LoadSchematicAsync(id, configuration);
+                return new { Id = id, Data = data };
             });
 
             var results = await Task.WhenAll(tasks);
-            return results.Where(r => r != null).ToDictionary(r => r.Id, r => r.Data);
+            return results.ToDictionary(r => r.Id, r => r.Data);
         }
 
         /// <summary>

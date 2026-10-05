@@ -39,7 +39,7 @@ namespace Beep.OilandGas.DCA.Services
             double confidenceLevel = 0.95)
         {
             if (productionData == null || productionData.Count == 0)
-                throw new ArgumentException("Production data cannot be null or empty", nameof(productionData));
+                throw RefusalException.Invalid("Production data is required.");
 
             _logger?.LogInformation("Starting DCA analysis: {Count} data points, qi={qi}, di={di}",
                 productionData.Count, qi, di);

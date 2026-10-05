@@ -67,7 +67,7 @@ public class UserProfileAuthorizationTests
                 User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, "owner") }, "test"))
             } }
         };
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => controller.RecordUserLogin());
+        await Refusals.ForbiddenAsync(() => controller.RecordUserLogin());
         service.VerifyNoOtherCalls();
     }
 

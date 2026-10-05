@@ -60,7 +60,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(vendorBaId))
                 throw new ArgumentNullException(nameof(vendorBaId));
             if (totalAmount <= 0)
-                throw new ArgumentException("PO amount must be greater than zero", nameof(totalAmount));
+                throw RefusalException.Invalid("PO amount must be greater than zero.");
 
             _logger?.LogInformation("Creating PO for vendor {VendorId}, amount {Amount:C}", vendorBaId, totalAmount);
 
@@ -90,7 +90,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error creating PO: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error creating PO");
                 throw;
             }
         }
@@ -109,10 +109,10 @@ namespace Beep.OilandGas.Accounting.Services
             {
                 var po = await GetPOByIdAsync(poId);
                 if (po == null)
-                    throw new InvalidOperationException($"PO {poId} not found");
+                    throw RefusalException.NotFound($"Purchase order {poId} was not found.");
 
                 if (po.STATUS != "DRAFT")
-                    throw new InvalidOperationException($"Only DRAFT POs can be approved (current: {po.STATUS})");
+                    throw RefusalException.Conflict($"Only a DRAFT purchase order can be approved; this one is {po.STATUS}.");
 
                 po.STATUS = AccountingReferenceCodes.POStatusCodes.Approved;
                 po.ROW_CHANGED_BY = userId;
@@ -126,7 +126,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error approving PO {POId}: {Message}", poId, ex.Message);
+                _logger?.LogError(ex, "Error approving PO {POId}", poId);
                 throw;
             }
         }
@@ -145,7 +145,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(poLineItemId))
                 throw new ArgumentNullException(nameof(poLineItemId));
             if (receivedQuantity <= 0)
-                throw new ArgumentException("Received quantity must be greater than zero", nameof(receivedQuantity));
+                throw RefusalException.Invalid("Received quantity must be greater than zero.");
 
             _logger?.LogInformation("Recording goods receipt for PO line {LineId}: Qty {Qty}",
                 poLineItemId, receivedQuantity);
@@ -154,7 +154,7 @@ namespace Beep.OilandGas.Accounting.Services
             {
                 var lineItem = await GetPoLineItemAsync(poLineItemId);
                 if (lineItem == null || string.IsNullOrWhiteSpace(lineItem.PURCHASE_ORDER_ID))
-                    throw new InvalidOperationException($"PO line item {poLineItemId} not found or missing PO reference");
+                    throw RefusalException.NotFound($"Purchase order line item {poLineItemId} was not found, or names no purchase order.");
 
                 var receipt = new PO_RECEIPT
                 {
@@ -183,7 +183,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error recording goods receipt for PO line {LineId}: {Message}", poLineItemId, ex.Message);
+                _logger?.LogError(ex, "Error recording goods receipt for PO line {LineId}", poLineItemId);
                 throw;
             }
         }
@@ -218,24 +218,17 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(vendorBaId))
                 return new List<PURCHASE_ORDER>();
 
-            try
-            {
-                var repo = await GetRepoAsync<PURCHASE_ORDER>("PURCHASE_ORDER", ConnectionName);
+            // A failed read propagates rather than reading as "this vendor has no purchase orders".
+            var repo = await GetRepoAsync<PURCHASE_ORDER>("PURCHASE_ORDER", ConnectionName);
 
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "VENDOR_BA_ID", Operator = "=", FilterValue = vendorBaId },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-                };
-
-                var pos = await repo.GetAsync(filters);
-                return pos?.Cast<PURCHASE_ORDER>().ToList() ?? new List<PURCHASE_ORDER>();
-            }
-            catch (Exception ex)
+            var filters = new List<AppFilter>
             {
-                _logger?.LogError(ex, "Error getting POs for vendor {VendorId}", vendorBaId);
-                return new List<PURCHASE_ORDER>();
-            }
+                new AppFilter { FieldName = "VENDOR_BA_ID", Operator = "=", FilterValue = vendorBaId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            var pos = await repo.GetAsync(filters);
+            return pos?.Cast<PURCHASE_ORDER>().ToList() ?? new List<PURCHASE_ORDER>();
         }
 
         /// <summary>
@@ -246,24 +239,17 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(poId))
                 return new List<PO_RECEIPT>();
 
-            try
-            {
-                var repo = await GetRepoAsync<PO_RECEIPT>("PO_RECEIPT", ConnectionName);
+            // A failed read propagates rather than reading as "nothing was received".
+            var repo = await GetRepoAsync<PO_RECEIPT>("PO_RECEIPT", ConnectionName);
 
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "PURCHASE_ORDER_ID", Operator = "=", FilterValue = poId },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-                };
-
-                var receipts = await repo.GetAsync(filters);
-                return receipts?.Cast<PO_RECEIPT>().ToList() ?? new List<PO_RECEIPT>();
-            }
-            catch (Exception ex)
+            var filters = new List<AppFilter>
             {
-                _logger?.LogError(ex, "Error getting receipts for PO {POId}", poId);
-                return new List<PO_RECEIPT>();
-            }
+                new AppFilter { FieldName = "PURCHASE_ORDER_ID", Operator = "=", FilterValue = poId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            var receipts = await repo.GetAsync(filters);
+            return receipts?.Cast<PO_RECEIPT>().ToList() ?? new List<PO_RECEIPT>();
         }
 
         /// <summary>
@@ -278,7 +264,7 @@ namespace Beep.OilandGas.Accounting.Services
             {
                 var po = await GetPOByIdAsync(poId);
                 if (po == null)
-                    throw new InvalidOperationException($"PO {poId} not found");
+                    throw RefusalException.NotFound($"Purchase order {poId} was not found.");
 
                 po.STATUS = AccountingReferenceCodes.POStatusCodes.Closed;
                 po.ROW_CHANGED_BY = userId;
@@ -292,7 +278,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error closing PO {POId}: {Message}", poId, ex.Message);
+                _logger?.LogError(ex, "Error closing PO {POId}", poId);
                 throw;
             }
         }

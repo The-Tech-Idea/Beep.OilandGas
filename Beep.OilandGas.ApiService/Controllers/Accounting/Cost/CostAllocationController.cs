@@ -46,40 +46,29 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             [FromBody] CostAllocationRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                if (string.IsNullOrEmpty(request.FieldId))
-                        return BadRequest(new { error = "Field ID is required." });
+            if (string.IsNullOrEmpty(request.FieldId))
+                    return BadRequest(new { error = "Field ID is required." });
 
-                if (!Enum.TryParse<CostAllocationMethod>(request.AllocationMethod, true, out var allocationMethod) || !Enum.IsDefined(allocationMethod))
-                    return BadRequest(new { error = $"Invalid allocation method: {request.AllocationMethod}" });
+            if (!Enum.TryParse<CostAllocationMethod>(request.AllocationMethod, true, out var allocationMethod) || !Enum.IsDefined(allocationMethod))
+                return BadRequest(new { error = $"Invalid allocation method: {request.AllocationMethod}" });
 
-                if (request.TotalOperatingCosts.HasValue || request.TotalCapitalCosts.HasValue)
-                    return BadRequest(new { error = "Totals are derived from recorded costs and cannot be overridden." });
+            if (request.TotalOperatingCosts.HasValue || request.TotalCapitalCosts.HasValue)
+                return BadRequest(new { error = "Totals are derived from recorded costs and cannot be overridden." });
 
-                var startDate = request.AllocationDate.Date;
-                var endDate = request.AllocationDate.Date;
+            var startDate = request.AllocationDate.Date;
+            var endDate = request.AllocationDate.Date;
 
-                var result = await _accountingService.AllocateCostsAsync(
-                    request.FieldId,
-                    startDate,
-                    endDate,
-                    allocationMethod,
-                    connectionName);
+            var result = await _accountingService.AllocateCostsAsync(
+                request.FieldId,
+                startDate,
+                endDate,
+                allocationMethod,
+                connectionName);
 
-                return Ok(result);
-            }
-            catch (NotSupportedException ex) { return BadRequest(new { error = ex.Message }); }
-            catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
-            catch (InvalidOperationException ex) { return UnprocessableEntity(new { error = ex.Message }); }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error allocating costs");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(result);
         }
 
         /// <summary>Service-backed production allocation from a run ticket.</summary>
@@ -89,28 +78,20 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-                if (request == null || request.RunTicket == null)
-                    return BadRequest(new { error = "Run ticket payload is required." });
-                if (string.IsNullOrWhiteSpace(request.Method))
-                    return BadRequest(new { error = "Allocation method is required." });
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            if (request == null || request.RunTicket == null)
+                return BadRequest(new { error = "Run ticket payload is required." });
+            if (string.IsNullOrWhiteSpace(request.Method))
+                return BadRequest(new { error = "Allocation method is required." });
 
-                var result = await _allocationService.AllocateAsync(
-                    request.RunTicket,
-                    request.Method,
-                    userId,
-                    connectionName ?? _service.DefaultConnectionName);
+            var result = await _allocationService.AllocateAsync(
+                request.RunTicket,
+                request.Method,
+                userId,
+                connectionName ?? _service.DefaultConnectionName);
 
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error allocating production via service endpoint");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(result);
         }
 
         /// <summary>Service-backed allocation lookup by id.</summary>
@@ -119,22 +100,14 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             string allocationId,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(allocationId))
-                    return BadRequest(new { error = "Allocation ID is required." });
+            if (string.IsNullOrWhiteSpace(allocationId))
+                return BadRequest(new { error = "Allocation ID is required." });
 
-                var result = await _allocationService.GetAsync(allocationId, connectionName ?? _service.DefaultConnectionName);
-                if (result == null)
-                    return NotFound(new { error = $"Allocation {allocationId} not found." });
+            var result = await _allocationService.GetAsync(allocationId, connectionName ?? _service.DefaultConnectionName);
+            if (result == null)
+                return NotFound(new { error = $"Allocation {allocationId} not found." });
 
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving allocation {AllocationId}", allocationId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(result);
         }
 
         /// <summary>Service-backed allocation detail lookup.</summary>
@@ -143,19 +116,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             string allocationId,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(allocationId))
-                    return BadRequest(new { error = "Allocation ID is required." });
+            if (string.IsNullOrWhiteSpace(allocationId))
+                return BadRequest(new { error = "Allocation ID is required." });
 
-                var details = await _allocationService.GetDetailsAsync(allocationId, connectionName ?? _service.DefaultConnectionName);
-                return Ok(details);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving allocation details for {AllocationId}", allocationId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var details = await _allocationService.GetDetailsAsync(allocationId, connectionName ?? _service.DefaultConnectionName);
+            return Ok(details);
         }
 
         /// <summary>Service-backed reverse allocation endpoint.</summary>
@@ -165,23 +130,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (string.IsNullOrWhiteSpace(allocationId))
-                    return BadRequest(new { error = "Allocation ID is required." });
+            if (string.IsNullOrWhiteSpace(allocationId))
+                return BadRequest(new { error = "Allocation ID is required." });
 
-                await _allocationService.ReverseAsync(
-                    allocationId,
-                    userId,
-                    connectionName ?? _service.DefaultConnectionName);
+            await _allocationService.ReverseAsync(
+                allocationId,
+                userId,
+                connectionName ?? _service.DefaultConnectionName);
 
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error reversing allocation {AllocationId}", allocationId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return NoContent();
         }
     }
 

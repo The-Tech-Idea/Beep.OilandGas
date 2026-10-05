@@ -49,88 +49,77 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var transaction = _service.TraditionalAccounting.Inventory.CreateTransaction(
+                request.InventoryItemId,
+                request.TransactionType,
+                request.TransactionDate,
+                request.Quantity,
+                request.UnitCost,
+                request.Description ?? "",
+                userId);
+
+            // Post to GL based on transaction type
+            // Receipt: Debit Inventory, Credit AP/Cash
+            // Issue: Debit Expense/COGS, Credit Inventory
+            var lines = new List<JournalEntryLineData>();
+            
+            if (request.TransactionType == "Receipt")
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-
-                var transaction = _service.TraditionalAccounting.Inventory.CreateTransaction(
-                    request.InventoryItemId,
-                    request.TransactionType,
-                    request.TransactionDate,
-                    request.Quantity,
-                    request.UnitCost,
-                    request.Description ?? "",
-                    userId);
-
-                // Post to GL based on transaction type
-                // Receipt: Debit Inventory, Credit AP/Cash
-                // Issue: Debit Expense/COGS, Credit Inventory
-                var lines = new List<JournalEntryLineData>();
-                
-                if (request.TransactionType == "Receipt")
+                lines.Add(new JournalEntryLineData
                 {
-                    lines.Add(new JournalEntryLineData
-                    {
-                        GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
-                            .FirstOrDefault(a => a.ACCOUNT_NUMBER == "1300")?.GL_ACCOUNT_ID ?? "",
-                        DebitAmount = transaction.TOTAL_COST,
-                        CreditAmount = null,
-                        Description = $"Inventory Receipt - {request.Description}"
-                    });
-                    lines.Add(new JournalEntryLineData
-                    {
-                        GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
-                            .FirstOrDefault(a => a.ACCOUNT_NUMBER == "2000")?.GL_ACCOUNT_ID ?? "",
-                        DebitAmount = null,
-                        CreditAmount = transaction.TOTAL_COST,
-                        Description = $"Inventory Receipt - {request.Description}"
-                    });
-                }
-                else if (request.TransactionType == "Issue")
+                    GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
+                        .FirstOrDefault(a => a.ACCOUNT_NUMBER == "1300")?.GL_ACCOUNT_ID ?? "",
+                    DebitAmount = transaction.TOTAL_COST,
+                    CreditAmount = null,
+                    Description = $"Inventory Receipt - {request.Description}"
+                });
+                lines.Add(new JournalEntryLineData
                 {
-                    lines.Add(new JournalEntryLineData
-                    {
-                        GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
-                            .FirstOrDefault(a => a.ACCOUNT_NUMBER == "5100")?.GL_ACCOUNT_ID ?? "",
-                        DebitAmount = transaction.TOTAL_COST,
-                        CreditAmount = null,
-                        Description = $"Inventory Issue - {request.Description}"
-                    });
-                    lines.Add(new JournalEntryLineData
-                    {
-                        GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
-                            .FirstOrDefault(a => a.ACCOUNT_NUMBER == "1300")?.GL_ACCOUNT_ID ?? "",
-                        DebitAmount = null,
-                        CreditAmount = transaction.TOTAL_COST,
-                        Description = $"Inventory Issue - {request.Description}"
-                    });
-                }
+                    GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
+                        .FirstOrDefault(a => a.ACCOUNT_NUMBER == "2000")?.GL_ACCOUNT_ID ?? "",
+                    DebitAmount = null,
+                    CreditAmount = transaction.TOTAL_COST,
+                    Description = $"Inventory Receipt - {request.Description}"
+                });
+            }
+            else if (request.TransactionType == "Issue")
+            {
+                lines.Add(new JournalEntryLineData
+                {
+                    GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
+                        .FirstOrDefault(a => a.ACCOUNT_NUMBER == "5100")?.GL_ACCOUNT_ID ?? "",
+                    DebitAmount = transaction.TOTAL_COST,
+                    CreditAmount = null,
+                    Description = $"Inventory Issue - {request.Description}"
+                });
+                lines.Add(new JournalEntryLineData
+                {
+                    GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
+                        .FirstOrDefault(a => a.ACCOUNT_NUMBER == "1300")?.GL_ACCOUNT_ID ?? "",
+                    DebitAmount = null,
+                    CreditAmount = transaction.TOTAL_COST,
+                    Description = $"Inventory Issue - {request.Description}"
+                });
+            }
 
-                if (lines.Count > 0)
-                {
-                    var journalEntryId = await _glIntegration.PostTraditionalAccountingToGL(
+            if (lines.Count > 0)
+            {
+                var journalEntryId = await LedgerPosting.PostAsync(
+                    () => _glIntegration.PostTraditionalAccountingToGL(
                         transaction.INVENTORY_TRANSACTION_ID,
                         "Inventory",
                         lines,
                         transaction.TRANSACTION_DATE ?? DateTime.UtcNow,
-                        userId);
+                        userId),
+                    $"Inventory transaction {transaction.INVENTORY_TRANSACTION_ID}", transaction.INVENTORY_TRANSACTION_ID, "Inventory");
 
-                    return Ok(new { TransactionId = transaction.INVENTORY_TRANSACTION_ID, JournalEntryId = journalEntryId });
-                }
+                return Ok(new { TransactionId = transaction.INVENTORY_TRANSACTION_ID, JournalEntryId = journalEntryId });
+            }
 
-                return Ok(new { TransactionId = transaction.INVENTORY_TRANSACTION_ID });
-            }
-            catch (GLPostingException ex)
-            {
-                _logger.LogError(ex, "GL posting failed for inventory transaction");
-                    return StatusCode(500, new { error = "Transaction created but GL posting failed." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating inventory transaction");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { TransactionId = transaction.INVENTORY_TRANSACTION_ID });
         }
 
         /// <summary>
@@ -143,28 +132,20 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Transaction ID is required." });
-            try
-            {
-                var transaction = _service.TraditionalAccounting.Inventory.GetTransaction(id);
-                if (transaction == null)
-                        return NotFound(new { error = $"Inventory transaction with ID {id} not found." });
+            var transaction = _service.TraditionalAccounting.Inventory.GetTransaction(id);
+            if (transaction == null)
+                    return NotFound(new { error = $"Inventory transaction with ID {id} not found." });
 
-                return Ok(new
-                {
-                    TransactionId = transaction.INVENTORY_TRANSACTION_ID,
-                    InventoryItemId = transaction.INVENTORY_ITEM_ID,
-                    TransactionType = transaction.TRANSACTION_TYPE,
-                    TransactionDate = transaction.TRANSACTION_DATE,
-                    Quantity = transaction.QUANTITY,
-                    UnitCost = transaction.UNIT_COST,
-                    TotalCost = transaction.TOTAL_COST
-                });
-            }
-            catch (Exception ex)
+            return Ok(new
             {
-                _logger.LogError(ex, "Error getting inventory transaction {TransactionId}", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                TransactionId = transaction.INVENTORY_TRANSACTION_ID,
+                InventoryItemId = transaction.INVENTORY_ITEM_ID,
+                TransactionType = transaction.TRANSACTION_TYPE,
+                TransactionDate = transaction.TRANSACTION_DATE,
+                Quantity = transaction.QUANTITY,
+                UnitCost = transaction.UNIT_COST,
+                TotalCost = transaction.TOTAL_COST
+            });
         }
 
         /// <summary>Service-backed tank inventory update (delta volume).</summary>
@@ -175,26 +156,18 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-                if (string.IsNullOrWhiteSpace(tankId))
-                    return BadRequest(new { error = "Tank ID is required." });
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            if (string.IsNullOrWhiteSpace(tankId))
+                return BadRequest(new { error = "Tank ID is required." });
 
-                var inventory = await _inventoryService.UpdateInventoryAsync(
-                    tankId,
-                    request.VolumeDelta,
-                    userId,
-                    connectionName ?? _service.DefaultConnectionName);
+            var inventory = await _inventoryService.UpdateInventoryAsync(
+                tankId,
+                request.VolumeDelta,
+                userId,
+                connectionName ?? _service.DefaultConnectionName);
 
-                return Ok(inventory);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating inventory for tank {TankId}", tankId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(inventory);
         }
 
         /// <summary>Service-backed tank inventory lookup.</summary>
@@ -203,25 +176,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             string tankId,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(tankId))
-                    return BadRequest(new { error = "Tank ID is required." });
+            if (string.IsNullOrWhiteSpace(tankId))
+                return BadRequest(new { error = "Tank ID is required." });
 
-                var inventory = await _inventoryService.GetInventoryAsync(
-                    tankId,
-                    connectionName ?? _service.DefaultConnectionName);
+            var inventory = await _inventoryService.GetInventoryAsync(
+                tankId,
+                connectionName ?? _service.DefaultConnectionName);
 
-                if (inventory == null)
-                    return NotFound(new { error = $"Tank inventory {tankId} not found." });
+            if (inventory == null)
+                return NotFound(new { error = $"Tank inventory {tankId} not found." });
 
-                return Ok(inventory);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting inventory for tank {TankId}", tankId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(inventory);
         }
 
         /// <summary>Service-backed inventory validation.</summary>
@@ -230,24 +195,16 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             [FromBody] TANK_INVENTORY inventory,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-                if (inventory == null)
-                    return BadRequest(new { error = "Inventory payload is required." });
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            if (inventory == null)
+                return BadRequest(new { error = "Inventory payload is required." });
 
-                var isValid = await _inventoryService.ValidateAsync(
-                    inventory,
-                    connectionName ?? _service.DefaultConnectionName);
+            var isValid = await _inventoryService.ValidateAsync(
+                inventory,
+                connectionName ?? _service.DefaultConnectionName);
 
-                return Ok(new { IsValid = isValid });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error validating inventory");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { IsValid = isValid });
         }
 
         /// <summary>Service-backed valuation calculation for an inventory item.</summary>
@@ -258,27 +215,19 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-                if (string.IsNullOrWhiteSpace(inventoryItemId))
-                    return BadRequest(new { error = "Inventory item ID is required." });
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            if (string.IsNullOrWhiteSpace(inventoryItemId))
+                return BadRequest(new { error = "Inventory item ID is required." });
 
-                var valuation = await _inventoryService.CalculateValuationAsync(
-                    inventoryItemId,
-                    request.ValuationDate,
-                    request.Method,
-                    userId,
-                    connectionName ?? _service.DefaultConnectionName);
+            var valuation = await _inventoryService.CalculateValuationAsync(
+                inventoryItemId,
+                request.ValuationDate,
+                request.Method,
+                userId,
+                connectionName ?? _service.DefaultConnectionName);
 
-                return Ok(valuation);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating valuation for inventory item {InventoryItemId}", inventoryItemId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(valuation);
         }
 
         /// <summary>Service-backed inventory reconciliation summary.</summary>
@@ -289,27 +238,19 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-                if (string.IsNullOrWhiteSpace(inventoryItemId))
-                    return BadRequest(new { error = "Inventory item ID is required." });
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            if (string.IsNullOrWhiteSpace(inventoryItemId))
+                return BadRequest(new { error = "Inventory item ID is required." });
 
-                var report = await _inventoryService.GenerateReconciliationReportAsync(
-                    inventoryItemId,
-                    request.PeriodStart,
-                    request.PeriodEnd,
-                    userId,
-                    connectionName ?? _service.DefaultConnectionName);
+            var report = await _inventoryService.GenerateReconciliationReportAsync(
+                inventoryItemId,
+                request.PeriodStart,
+                request.PeriodEnd,
+                userId,
+                connectionName ?? _service.DefaultConnectionName);
 
-                return Ok(report);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating reconciliation report for inventory item {InventoryItemId}", inventoryItemId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(report);
         }
     }
 

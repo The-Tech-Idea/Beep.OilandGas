@@ -18,6 +18,8 @@
     <ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.PPDM39\Beep.OilandGas.PPDM39.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.PPDM39.DataManagement\Beep.OilandGas.PPDM39.DataManagement.csproj" />
+    <!-- The failure reporter (OILGAS-CATCH-01): a failure the caller is told about another way is still reported. -->
+    <ProjectReference Include="..\..\Beep.Web\TheTechIdeaWeb.Diagnostics.Abstractions\TheTechIdeaWeb.Diagnostics.Abstractions.csproj" />
   </ItemGroup>
 
   <ItemGroup>

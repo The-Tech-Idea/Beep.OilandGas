@@ -119,43 +119,37 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
             var stats = new DataLoadStatistics();
             configuration = configuration ?? new LogLoadConfiguration();
 
-            try
+            if (!isConnected)
+                Connect();
+
+            if (!File.Exists(filePath))
+                return DataLoadResult<LogData>.CreateFailure($"CSV file not found: {filePath}");
+
+            // A file that cannot be read or parsed is a failure, not a result: it reaches the caller as its exception
+            // (OILGAS-CATCH-01). The failed result carried the exception's text and stack for anyone to show.
+            var logData = ParseCsvFile(filePath);
+            logData.WellIdentifier = wellIdentifier ?? logData.WellIdentifier;
+            logData.LogName = logName ?? logData.LogName;
+
+            // Apply depth filtering if configured
+            if (configuration.MinDepth > 0 || configuration.MaxDepth > 0)
             {
-                if (!isConnected)
-                    Connect();
-
-                if (!File.Exists(filePath))
-                    return DataLoadResult<LogData>.CreateFailure($"CSV file not found: {filePath}");
-
-                var logData = ParseCsvFile(filePath);
-                logData.WellIdentifier = wellIdentifier ?? logData.WellIdentifier;
-                logData.LogName = logName ?? logData.LogName;
-
-                // Apply depth filtering if configured
-                if (configuration.MinDepth > 0 || configuration.MaxDepth > 0)
-                {
-                    FilterByDepth(logData, configuration.MinDepth, configuration.MaxDepth);
-                }
-
-                LogDataIngestionNormalizer.Normalize(logData, configuration);
-
-                stats.RecordsLoaded = logData.DataPointCount;
-                stats.Complete();
-
-                var result = DataLoadResult<LogData>.CreateSuccess(logData, logData.DataPointCount);
-                result.LoadDuration = stats.Duration;
-                result.Metadata = new Dictionary<string, object>
-                {
-                    ["FileSize"] = new FileInfo(filePath).Length,
-                    ["CurveCount"] = logData.Curves.Count
-                };
-                return result;
+                FilterByDepth(logData, configuration.MinDepth, configuration.MaxDepth);
             }
-            catch (Exception ex)
+
+            LogDataIngestionNormalizer.Normalize(logData, configuration);
+
+            stats.RecordsLoaded = logData.DataPointCount;
+            stats.Complete();
+
+            var result = DataLoadResult<LogData>.CreateSuccess(logData, logData.DataPointCount);
+            result.LoadDuration = stats.Duration;
+            result.Metadata = new Dictionary<string, object>
             {
-                stats.Complete();
-                return DataLoadResult<LogData>.CreateFailure($"Failed to load CSV file: {ex.Message}", ex.ToString());
-            }
+                ["FileSize"] = new FileInfo(filePath).Length,
+                ["CurveCount"] = logData.Curves.Count
+            };
+            return result;
         }
 
         /// <summary>

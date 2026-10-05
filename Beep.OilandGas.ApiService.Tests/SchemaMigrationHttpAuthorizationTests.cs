@@ -48,7 +48,7 @@ public class SchemaMigrationHttpAuthorizationTests
         var common = Mock.Of<ICommonColumnHandler>();
         var defaults = Mock.Of<IPPDM39DefaultsRepository>();
         var metadata = Mock.Of<IPPDMMetadataRepository>();
-        var setup = new PPDM39SetupService(editor, NullLogger<PPDM39SetupService>.Instance, common, defaults, metadata);
+        var setup = new PPDM39SetupService(editor, NullLogger<PPDM39SetupService>.Instance, common, defaults, metadata, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
 
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Testing" });
         builder.Logging.ClearProviders();
@@ -58,7 +58,7 @@ public class SchemaMigrationHttpAuthorizationTests
         builder.AddApiIdentity();
         builder.Services.AddSingleton<ICanonicalUserStore<string>>(new OneAccount(resolves: scenario != "unresolved"));
         builder.Services.AddTransient(_ => new PPDM39SetupController(setup, migration.Object, editor,
-            NullLogger<PPDM39SetupController>.Instance, commonColumnHandler: common, defaults: defaults, metadata: metadata));
+            NullLogger<PPDM39SetupController>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), commonColumnHandler: common, defaults: defaults, metadata: metadata));
         builder.Services.AddControllers().AddApplicationPart(typeof(PPDM39SetupController).Assembly)
             .ConfigureApplicationPartManager(parts => parts.FeatureProviders.Add(new OnlySetupController()))
             .AddControllersAsServices();

@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -13,9 +14,9 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             Dictionary<string, decimal> riskScores)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
-                throw new ArgumentException("Prospect ID cannot be null or empty", nameof(prospectId));
+                throw RefusalException.Invalid("The prospect ID is required.");
             if (string.IsNullOrWhiteSpace(assessedBy))
-                throw new ArgumentException("Assessed by cannot be null or empty", nameof(assessedBy));
+                throw RefusalException.Invalid("Say who made the risk assessment.");
 
             _logger?.LogInformation("Performing risk assessment for prospect {ProspectId}",
                 prospectId);
@@ -66,7 +67,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             decimal gasPrice)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
-                throw new ArgumentException("Prospect ID cannot be null or empty", nameof(prospectId));
+                throw RefusalException.Invalid("The prospect ID is required.");
 
             _logger?.LogInformation("Analyzing economic viability for prospect {ProspectId}: Oil={Oil}MMbbl, Gas={Gas}Bcf",
                 prospectId, estimatedOil, estimatedGas);

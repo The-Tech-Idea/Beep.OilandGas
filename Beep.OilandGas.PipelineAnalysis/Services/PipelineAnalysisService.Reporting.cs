@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.PipelineAnalysis.Services
 {
@@ -13,7 +14,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<PipelineReport> GenerateAnalysisReportAsync(string pipelineId, ReportRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -68,7 +69,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<PressureProfileReport> GeneratePressureProfileReportAsync(string pipelineId, PressureReportRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -120,7 +121,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<IntegrityReport> GenerateIntegrityReportAsync(string pipelineId, IntegrityReportRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -164,7 +165,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<byte[]> ExportAnalysisDataAsync(string pipelineId, DateTime startDate, DateTime endDate, string format = "CSV")
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
 
             _logger?.LogInformation("Exporting analysis data for {PipelineId} from {StartDate} to {EndDate} in {Format} format",
                 pipelineId, startDate, endDate, format);

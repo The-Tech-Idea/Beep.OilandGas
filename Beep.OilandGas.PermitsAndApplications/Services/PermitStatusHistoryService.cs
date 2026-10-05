@@ -1,3 +1,4 @@
+using Beep.OilandGas.PermitsAndApplications.Exceptions;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
@@ -38,7 +39,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
         public async Task<PERMIT_APPLICATION?> GetCurrentAsync(string applicationId)
         {
             if (string.IsNullOrWhiteSpace(applicationId))
-                throw new ArgumentNullException(nameof(applicationId));
+                throw new InvalidApplicationException("The permit application ID is required.");
 
             var repo = await CreateRepositoryAsync<PERMIT_APPLICATION>("PERMIT_APPLICATION");
             return await repo.GetByIdAsync(applicationId) as PERMIT_APPLICATION;
@@ -47,7 +48,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
         public async Task<IReadOnlyList<PERMIT_STATUS_HISTORY>> GetHistoryAsync(string applicationId)
         {
             if (string.IsNullOrWhiteSpace(applicationId))
-                throw new ArgumentNullException(nameof(applicationId));
+                throw new InvalidApplicationException("The permit application ID is required.");
 
             var repo = await CreateRepositoryAsync<PERMIT_STATUS_HISTORY>("PERMIT_STATUS_HISTORY");
             var filters = new List<AppFilter>
@@ -70,19 +71,19 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             string userId)
         {
             if (string.IsNullOrWhiteSpace(applicationId))
-                throw new ArgumentNullException(nameof(applicationId));
+                throw new InvalidApplicationException("The permit application ID is required.");
             if (string.IsNullOrWhiteSpace(status))
-                throw new ArgumentNullException(nameof(status));
+                throw new InvalidApplicationException("Choose the permit application's new status.", applicationId);
 
             var applicationRepo = await CreateRepositoryAsync<PERMIT_APPLICATION>("PERMIT_APPLICATION");
             var application = await applicationRepo.GetByIdAsync(applicationId) as PERMIT_APPLICATION;
             if (application == null)
-                throw new InvalidOperationException($"Permit application not found: {applicationId}");
+                throw new PermitNotFoundException($"Permit application {applicationId} was not found.", applicationId);
 
             var currentStatus = PermitStatusTransitionRules.Normalize(application.STATUS.ToString());
             var nextStatus = PermitStatusTransitionRules.Normalize(status);
             if (!PermitStatusTransitionRules.IsTransitionAllowed(currentStatus, nextStatus))
-                throw new InvalidOperationException($"Invalid status transition: {currentStatus} -> {nextStatus}");
+                throw PermitStatusTransitionRules.RefuseTransition(currentStatus, nextStatus);
             // Convert normalized nextStatus to enum value
             // Convert "UNDER_REVIEW" -> "UnderReview" etc for Enum.TryParse
             string ToPascal(string s)
@@ -97,7 +98,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             var nextStatusEnumParsed = ToPascal(nextStatus);
             if (!Enum.TryParse<PermitApplicationStatus>(nextStatusEnumParsed, ignoreCase: true, out var nextStatusEnum))
             {
-                throw new InvalidOperationException($"Unknown permit status: {status}");
+                throw new InvalidApplicationException($"\"{status}\" is not a permit application status.", applicationId);
             }
 
             // If moving to Submitted, set submitted date if not already set

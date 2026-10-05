@@ -101,7 +101,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(fieldId))
                 throw new ArgumentNullException(nameof(fieldId));
             if (periodEnd == default)
-                throw new ArgumentException("periodEnd must be valid", nameof(periodEnd));
+                throw RefusalException.Invalid("A period end date is required.");
 
             connectionName = await ResolveConnectionAsync();
 
@@ -173,12 +173,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     fieldId);
                 throw;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not RefusalException)
             {
                 _logger?.LogError(
                     ex,
-                    "Error validating period closing readiness for field {FieldId}: {ErrorMessage}",
-                    fieldId, ex.Message);
+                    "Error validating period closing readiness for field {FieldId}",
+                    fieldId);
                 throw new ProductionAccountingException(
                     $"Failed to validate period closing readiness for field {fieldId}", ex);
             }
@@ -198,7 +198,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
             if (periodEnd == default)
-                throw new ArgumentException("periodEnd must be valid", nameof(periodEnd));
+                throw RefusalException.Invalid("A period end date is required.");
 
             connectionName = await ResolveConnectionAsync();
 
@@ -215,8 +215,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     _logger?.LogError(
                         "Cannot close period: Validation failed for field {FieldId}",
                         fieldId);
-                    throw new InvalidOperationException(
-                        $"Period is not ready for closing. Please reconcile all items for field {fieldId}");
+                    throw RefusalException.Conflict(
+                        $"The period is not ready to close: reconcile all items for field {fieldId} first.");
                 }
 
                 // Mark all allocation results as closed
@@ -271,12 +271,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     fieldId);
                 throw;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not RefusalException)
             {
                 _logger?.LogError(
                     ex,
-                    "Error closing period for field {FieldId}: {ErrorMessage}",
-                    fieldId, ex.Message);
+                    "Error closing period for field {FieldId}",
+                    fieldId);
                 throw new ProductionAccountingException(
                     $"Failed to close period for field {fieldId}", ex);
             }
@@ -346,7 +346,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(fieldId))
                 throw new ArgumentNullException(nameof(fieldId));
             if (periodEnd == default)
-                throw new ArgumentException("periodEnd must be valid", nameof(periodEnd));
+                throw RefusalException.Invalid("A period end date is required.");
 
             connectionName = await ResolveConnectionAsync();
 
@@ -452,12 +452,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     fieldId);
                 throw;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not RefusalException)
             {
                 _logger?.LogError(
                     ex,
-                    "Error retrieving unreconciled items for field {FieldId}: {ErrorMessage}",
-                    fieldId, ex.Message);
+                    "Error retrieving unreconciled items for field {FieldId}",
+                    fieldId);
                 throw new ProductionAccountingException(
                     $"Failed to retrieve unreconciled items for field {fieldId}", ex);
             }
@@ -518,15 +518,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     periodEnd);
                 throw;
             }
-            catch (Exception ex)
-            {
-                _logger?.LogError(
-                    ex,
-                    "Error retrieving unreconciled allocations for field {FieldId} as of {PeriodEnd}",
-                    fieldId,
-                    periodEnd);
-                return new List<string>();
-            }
         }
 
         private async Task<List<string>> GetUnreconciledRoyaltiesAsync(
@@ -568,15 +559,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     fieldId,
                     periodEnd);
                 throw;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(
-                    ex,
-                    "Error retrieving unreconciled royalties for field {FieldId} as of {PeriodEnd}",
-                    fieldId,
-                    periodEnd);
-                return new List<string>();
             }
         }
 
@@ -638,15 +620,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     periodEnd);
                 throw;
             }
-            catch (Exception ex)
-            {
-                _logger?.LogError(
-                    ex,
-                    "Error retrieving unreconciled revenue for field {FieldId} as of {PeriodEnd}",
-                    fieldId,
-                    periodEnd);
-                return new List<string>();
-            }
         }
 
         private async Task<List<string>> GetUnbalancedGLEntriesAsync(
@@ -691,15 +664,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     fieldId,
                     periodEnd);
                 throw;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(
-                    ex,
-                    "Error retrieving unbalanced GL entries for field {FieldId} as of {PeriodEnd}",
-                    fieldId,
-                    periodEnd);
-                return new List<string>();
             }
         }
 
@@ -757,8 +721,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 _logger?.LogError(
                     ex,
-                    "Error marking allocations closed for field {FieldId}: {ErrorMessage}",
-                    fieldId, ex.Message);
+                    "Error marking allocations closed for field {FieldId}",
+                    fieldId);
                 throw;
             }
         }
@@ -819,8 +783,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 _logger?.LogError(
                     ex,
-                    "Error marking royalties closed for field {FieldId}: {ErrorMessage}",
-                    fieldId, ex.Message);
+                    "Error marking royalties closed for field {FieldId}",
+                    fieldId);
                 throw;
             }
         }
@@ -876,8 +840,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 _logger?.LogError(
                     ex,
-                    "Error marking revenue closed for field {FieldId}: {ErrorMessage}",
-                    fieldId, ex.Message);
+                    "Error marking revenue closed for field {FieldId}",
+                    fieldId);
                 throw;
             }
         }
@@ -907,7 +871,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 {
                     if (existing.Cast<JOURNAL_ENTRY>().Any(entry =>
                         !string.Equals(entry.STATUS, JournalEntryStatusCodes.Posted, StringComparison.OrdinalIgnoreCase)))
-                        throw new InvalidOperationException("An unfinished closing journal requires review before closing this period.");
+                        throw RefusalException.Conflict("An unfinished closing journal requires review before this period can be closed.");
 
                     _logger?.LogInformation(
                         "Period close entry already exists for field {FieldId} as of {PeriodEnd}",
@@ -986,7 +950,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var entry = await _journalEntries.CreateEntryAsync(
                     periodEnd, entryDescription, lines, userId,
                     referenceNumber, AccountingSourceModuleCodes.PeriodClosing);
-                await _journalEntries.PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId);
+                if (!await _journalEntries.PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId))
+                    throw new InvalidOperationException($"Period close journal {entry.JOURNAL_ENTRY_ID} was created but not posted.");
 
                 _logger?.LogInformation(
                     "Period close GL entry {EntryId} posted for field {FieldId} as of {PeriodEnd}",
@@ -1003,8 +968,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 _logger?.LogError(
                     ex,
-                    "Error posting period close entry for field {FieldId}: {ErrorMessage}",
-                    fieldId, ex.Message);
+                    "Error posting period close entry for field {FieldId}",
+                    fieldId);
                 throw;
             }
         }
@@ -1158,10 +1123,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     fieldId);
                 throw;
             }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Impairment testing failed for field {FieldId}", fieldId);
-            }
         }
 
         private async Task ApplyDecommissioningAccretionAsync(
@@ -1198,10 +1159,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     fieldId);
                 throw;
             }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "ARO accretion failed for field {FieldId}", fieldId);
-            }
         }
 
         private async Task ApplyFunctionalCurrencyTranslationAsync(
@@ -1221,10 +1178,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     "Functional currency translation cancelled for field {FieldId}",
                     fieldId);
                 throw;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Functional currency translation failed for field {FieldId}", fieldId);
             }
         }
 
@@ -1261,10 +1214,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     "Lease remeasurement cancelled for field {FieldId}",
                     fieldId);
                 throw;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Lease remeasurement failed for field {FieldId}", fieldId);
             }
         }
 
@@ -1305,10 +1254,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     "Hedge measurement cancelled for period {PeriodEnd}",
                     periodEnd);
                 throw;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Hedge measurement failed for period {PeriodEnd}", periodEnd);
             }
         }
 
@@ -1351,10 +1296,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     periodEnd);
                 throw;
             }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Emissions obligation update failed for period {PeriodEnd}", periodEnd);
-            }
         }
 
         private async Task ApplyInventoryLcmAsync(
@@ -1395,10 +1336,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     "Inventory LCM adjustment cancelled for period {PeriodEnd}",
                     periodEnd);
                 throw;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Inventory LCM adjustments failed for period {PeriodEnd}", periodEnd);
             }
         }
 
@@ -1447,10 +1384,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     periodEnd);
                 throw;
             }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Unproved property impairment tests failed for period {PeriodEnd}", periodEnd);
-            }
         }
 
         private async Task BuildReserveDisclosuresAsync(
@@ -1470,10 +1403,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     "Reserve disclosure build cancelled for field {FieldId}",
                     fieldId);
                 throw;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Reserve disclosure build failed for field {FieldId}", fieldId);
             }
         }
 

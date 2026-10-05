@@ -69,7 +69,7 @@ namespace Beep.OilandGas.Accounting.Services
                     throw new ArgumentNullException(nameof(accountNumber));
 
                 if (bankStatementBalance < 0)
-                    throw new InvalidOperationException("Bank statement balance cannot be negative");
+                    throw RefusalException.Invalid("Bank statement balance cannot be negative.");
 
                 if (string.IsNullOrWhiteSpace(reportName))
                     reportName = $"Bank Reconciliation - {accountNumber} as of {statementDate:MMMM dd, yyyy}";
@@ -77,7 +77,7 @@ namespace Beep.OilandGas.Accounting.Services
                 // Get GL account balance
                 var account = await _glAccountService.GetAccountByNumberAsync(accountNumber);
                 if (account == null)
-                    throw new InvalidOperationException($"Account {accountNumber} not found");
+                    throw RefusalException.NotFound($"GL account {accountNumber} was not found.");
 
                 var glBalance = await _glAccountService.GetAccountBalanceAsync(accountNumber, statementDate);
 
@@ -127,7 +127,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error performing bank reconciliation: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error performing bank reconciliation");
                 throw;
             }
         }
@@ -191,7 +191,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error analyzing check clearing: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error analyzing check clearing");
                 throw;
             }
         }
@@ -272,7 +272,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error analyzing aged outstanding items: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error analyzing aged outstanding items");
                 throw;
             }
         }
@@ -349,7 +349,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error exporting bank reconciliation: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error exporting bank reconciliation");
                 throw;
             }
         }

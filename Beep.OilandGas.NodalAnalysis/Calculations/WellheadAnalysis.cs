@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.NodalAnalysis;
+using Beep.OilandGas.Models.Core.Refusals;
 using OperatingPointModel = Beep.OilandGas.Models.Data.NodalAnalysis.OperatingPoint;
 
 namespace Beep.OilandGas.NodalAnalysis.Calculations
@@ -35,10 +36,10 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
                 throw new ArgumentNullException(nameof(reservoir));
 
             if (wellheadPressure <= 0)
-                throw new ArgumentException("Wellhead pressure must be greater than zero.", nameof(wellheadPressure));
+                throw RefusalException.Invalid("Wellhead pressure must be greater than zero.");
 
             if (depth <= 0)
-                throw new ArgumentException("Depth must be greater than zero.", nameof(depth));
+                throw RefusalException.Invalid("Depth must be greater than zero.");
 
             var result = new WellheadNodalResult
             {

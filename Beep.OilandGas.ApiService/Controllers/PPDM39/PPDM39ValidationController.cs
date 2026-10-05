@@ -42,11 +42,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
                 if (string.IsNullOrWhiteSpace(tableName))
                     return BadRequest(new { error = "Table name is required." });
-                try
-                {
                 if (request == null || request.EntityData == null)
                 {
-                        return BadRequest(new { error = "Entity data is required." });
+                    return BadRequest(new { error = "Entity data is required." });
                 }
 
                 _logger.LogInformation("Validating entity in table {TableName}", tableName);
@@ -55,24 +53,14 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
 
                 return Ok(new ValidationResult
                 {
-                    IsValid = validationResult.IsValid,
-                    Errors = validationResult.Errors?.Select(e => new ValidationError
-                    {
-                        FieldName = e.FieldName ?? string.Empty,
-                        ErrorMessage = e.ErrorMessage ?? string.Empty,
-                        ErrorCode = e.RuleName // Map RuleName to ErrorCode
-                    }).ToList() ?? new List<ValidationError>()
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error validating entity in table {TableName}", tableName);
-                return StatusCode(500, new ValidationResult
+                IsValid = validationResult.IsValid,
+                Errors = validationResult.Errors?.Select(e => new ValidationError
                 {
-                    IsValid = false,
-                    Errors = new List<ValidationError> { new ValidationError { ErrorMessage = "An internal error occurred." } }
+                    FieldName = e.FieldName ?? string.Empty,
+                    ErrorMessage = e.ErrorMessage ?? string.Empty,
+                    ErrorCode = e.RuleName // Map RuleName to ErrorCode
+                }).ToList() ?? new List<ValidationError>()
                 });
-            }
         }
 
         /// <summary>
@@ -85,50 +73,33 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
                 if (string.IsNullOrWhiteSpace(tableName))
                     return BadRequest(new { error = "Table name is required." });
-                try
-                {
                 if (request == null || request.Entities == null || !request.Entities.Any())
                 {
-                    return BadRequest(new List<ValidationResult>());
+                return BadRequest(new List<ValidationResult>());
                 }
 
                 _logger.LogInformation("Validating {Count} entities in table {TableName}", request.Entities.Count, tableName);
 
+                // An entity the validator fails on is not an invalid entity: the batch is answered as the failure it is (the
+                // API's handler reports it, with its reference) rather than one of its results reading "not valid"
+                // (OILGAS-CATCH-01).
                 var results = new List<ValidationResult>();
                 foreach (var entityData in request.Entities)
                 {
-                    try
+                    var validationResult = await _validationService.ValidateAsync(entityData, tableName);
+                    results.Add(new ValidationResult
                     {
-                        var validationResult = await _validationService.ValidateAsync(entityData, tableName);
-                        results.Add(new ValidationResult
+                        IsValid = validationResult.IsValid,
+                        Errors = validationResult.Errors?.Select(e => new ValidationError
                         {
-                            IsValid = validationResult.IsValid,
-                            Errors = validationResult.Errors?.Select(e => new ValidationError
-                            {
-                                FieldName = e.FieldName ?? string.Empty,
-                                ErrorMessage = e.ErrorMessage ?? string.Empty,
-                                ErrorCode = e.RuleName // Map RuleName to ErrorCode
-                            }).ToList() ?? new List<ValidationError>()
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "Error validating entity in batch");
-                        results.Add(new ValidationResult
-                        {
-                            IsValid = false,
-                            Errors = new List<ValidationError> { new ValidationError { ErrorMessage = "An internal error occurred." } }
-                        });
-                    }
+                            FieldName = e.FieldName ?? string.Empty,
+                            ErrorMessage = e.ErrorMessage ?? string.Empty,
+                            ErrorCode = e.RuleName // Map RuleName to ErrorCode
+                        }).ToList() ?? new List<ValidationError>()
+                    });
                 }
 
                 return Ok(results);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error validating batch entities in table {TableName}", tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
         }
 
         /// <summary>
@@ -139,17 +110,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
-            try
-            {
-                _logger.LogInformation("Getting validation rules for table {TableName}", tableName);
-                var rules = await _validationService.GetValidationRulesAsync(tableName);
-                return Ok(rules ?? new List<ValidationRule>());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting validation rules for table {TableName}", tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            _logger.LogInformation("Getting validation rules for table {TableName}", tableName);
+            var rules = await _validationService.GetValidationRulesAsync(tableName);
+            return Ok(rules ?? new List<ValidationRule>());
         }
     }
 }

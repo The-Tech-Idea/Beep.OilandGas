@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -123,6 +124,10 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         {
             if (createDto == null)
                 throw new ArgumentNullException(nameof(createDto));
+            // The agreement's expiry is required; reading the missing value had thrown "Nullable object must have a
+            // value", a fault in the framework's words.
+            if (createDto.ExpirationDate is null)
+                throw RefusalException.Invalid("The lease's expiration date is required.");
 
             var landRightUow = GetLandRightUnitOfWork();
             var landRight = new LAND_RIGHT
@@ -164,7 +169,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         public async Task<Lease> UpdateLeaseAsync(string leaseId, UpdateLease updateDto)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
-                throw new ArgumentException("Lease ID cannot be null or empty.", nameof(leaseId));
+                throw RefusalException.Invalid("The lease ID is required.");
 
             if (updateDto == null)
                 throw new ArgumentNullException(nameof(updateDto));
@@ -172,7 +177,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             var landRightUow = GetLandRightUnitOfWork();
             var landRight = landRightUow.Read(leaseId) as LAND_RIGHT;
             if (landRight == null)
-                throw new KeyNotFoundException($"Lease with ID {leaseId} not found.");
+                throw RefusalException.NotFound($"Lease {leaseId} was not found.");
 
             var agreementUow = GetLandAgreementUnitOfWork();
             var agreementFilters = new List<AppFilter>
@@ -221,11 +226,11 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         public async Task<Lease> RenewLeaseAsync(string leaseId, DateTime newExpirationDate)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
-                throw new ArgumentException("Lease ID cannot be null or empty.", nameof(leaseId));
+                throw RefusalException.Invalid("The lease ID is required.");
 
             var lease = await GetLeaseAsync(leaseId);
             if (lease == null)
-                throw new KeyNotFoundException($"Lease with ID {leaseId} not found.");
+                throw RefusalException.NotFound($"Lease {leaseId} was not found.");
 
             lease.ExpirationDate = newExpirationDate;
             

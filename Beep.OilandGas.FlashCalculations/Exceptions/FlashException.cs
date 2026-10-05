@@ -1,24 +1,31 @@
 using System;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.FlashCalculations.Exceptions
 {
     /// <summary>
     /// Base exception for flash calculations.
     /// </summary>
-    public class FlashException : Exception
+    /// <remarks>
+    /// OILGAS-CATCH-01. Every throw of this family refuses what the caller sent — flash conditions or components out
+    /// of range, or a feed the flash cannot converge on — so it is a <see cref="RefusalException"/> (<see
+    /// cref="RefusalKind.Invalid"/>) and the API answers it as a 400 with its sentence. Its message is written for
+    /// the person, never taken from a caught exception.
+    /// </remarks>
+    public class FlashException : RefusalException
     {
         public FlashException()
-            : base()
+            : base(RefusalKind.Invalid, "The flash calculation could not be done with the values given.")
         {
         }
 
         public FlashException(string message)
-            : base(message)
+            : base(RefusalKind.Invalid, message)
         {
         }
 
         public FlashException(string message, Exception innerException)
-            : base(message, innerException)
+            : base(RefusalKind.Invalid, message, innerException)
         {
         }
     }

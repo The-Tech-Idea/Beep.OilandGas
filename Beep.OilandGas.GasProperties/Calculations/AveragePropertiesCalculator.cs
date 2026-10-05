@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.GasProperties;
 using Beep.OilandGas.GasProperties.Calculations;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.GasProperties.Calculations
 {
@@ -26,16 +27,16 @@ namespace Beep.OilandGas.GasProperties.Calculations
             Func<decimal, decimal, decimal, decimal> zFactorMethod)
         {
             if (pressures == null || pressures.Count == 0)
-                throw new ArgumentException("Pressures list cannot be null or empty.", nameof(pressures));
+                throw RefusalException.Invalid("At least one pressure is required.");
 
             if (temperatures == null || temperatures.Count == 0)
-                throw new ArgumentException("Temperatures list cannot be null or empty.", nameof(temperatures));
+                throw RefusalException.Invalid("At least one temperature is required.");
 
             if (pressures.Count != temperatures.Count)
-                throw new ArgumentException("Pressures and temperatures lists must have the same count.");
+                throw RefusalException.Invalid("Each pressure needs a temperature: the pressure and temperature lists must be the same length.");
 
             if (specificGravity <= 0)
-                throw new ArgumentException("Specific gravity must be greater than zero.", nameof(specificGravity));
+                throw RefusalException.Invalid("Specific gravity must be greater than zero.");
 
             decimal totalPressure = 0m;
             decimal totalTemperature = 0m;
@@ -57,7 +58,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
             }
 
             if (totalWeight == 0)
-                throw new InvalidOperationException("Total weight cannot be zero.");
+                throw RefusalException.Invalid("The pressures sum to zero, so a pressure-weighted average cannot be taken.");
 
             return new AVERAGE_GAS_PROPERTIES
             {
@@ -77,13 +78,13 @@ namespace Beep.OilandGas.GasProperties.Calculations
             Func<decimal, decimal, decimal, decimal> zFactorMethod)
         {
             if (pressures == null || pressures.Count == 0)
-                throw new ArgumentException("Pressures list cannot be null or empty.", nameof(pressures));
+                throw RefusalException.Invalid("At least one pressure is required.");
 
             if (temperatures == null || temperatures.Count == 0)
-                throw new ArgumentException("Temperatures list cannot be null or empty.", nameof(temperatures));
+                throw RefusalException.Invalid("At least one temperature is required.");
 
             if (pressures.Count != temperatures.Count)
-                throw new ArgumentException("Pressures and temperatures lists must have the same count.");
+                throw RefusalException.Invalid("Each pressure needs a temperature: the pressure and temperature lists must be the same length.");
 
             decimal averagePressure = pressures.Average();
             decimal averageTemperature = temperatures.Average();
@@ -116,13 +117,13 @@ namespace Beep.OilandGas.GasProperties.Calculations
             Func<decimal, decimal, decimal, decimal, decimal> viscosityMethod)
         {
             if (minPressure <= 0)
-                throw new ArgumentException("Minimum pressure must be greater than zero.", nameof(minPressure));
+                throw RefusalException.Invalid("Minimum pressure must be greater than zero.");
 
             if (maxPressure <= minPressure)
-                throw new ArgumentException("Maximum pressure must be greater than minimum pressure.", nameof(maxPressure));
+                throw RefusalException.Invalid("Maximum pressure must be greater than minimum pressure.");
 
             if (numberOfPoints < 2)
-                throw new ArgumentException("Number of points must be at least 2.", nameof(numberOfPoints));
+                throw RefusalException.Invalid("Number of points must be at least 2.");
 
             decimal pressureStep = (maxPressure - minPressure) / (numberOfPoints - 1);
             decimal totalZFactor = 0m;

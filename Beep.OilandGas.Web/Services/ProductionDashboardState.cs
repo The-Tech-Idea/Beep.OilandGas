@@ -4,8 +4,10 @@ using Beep.OilandGas.Models.Data.Production;
 namespace Beep.OilandGas.Web.Services;
 
 public sealed class ProductionDashboardState(
-    Func<string, Task<ProductionDashboardResponse>> load) : IDisposable
+    Func<string, Task<ProductionDashboardResponse>> load, OilGasCallFailures failures) : IDisposable
 {
+    private const string Operation = "loading the production dashboard";
+
     private int _version;
     private bool _disposed;
     public ProductionDashboardSummary? Summary { get; private set; }
@@ -35,17 +37,27 @@ public sealed class ProductionDashboardState(
             if (!Current(version)) return;
             Summary = result; Wells = rows;
         }
+        // The page renders a sentence for every failure of this load, in place of the figures; the store keeps the
+        // exception (a superseded load's too, though nobody is shown it).
         catch (Exception ex)
         {
-            if (Current(version)) Error = ex is HttpRequestException http ? http.StatusCode switch
-            {
-                HttpStatusCode.Unauthorized => "Your session has expired. Sign in again to load production data.",
-                HttpStatusCode.Forbidden => "You do not have access to this field's production data.",
-                _ => "Production data could not be loaded. Refresh to retry."
-            } : "Production data could not be confirmed for this field. Refresh to retry.";
+            var sentence = Refusal(ex) is { } own
+                ? failures.Told(ex, Operation, own)
+                : failures.Explain(ex, Operation, OilGasCallFailures.IsCallFailure(ex)
+                    ? "Production data could not be loaded"
+                    : "Production data could not be confirmed for this field");
+            if (Current(version)) Error = sentence;
         }
         finally { if (Current(version)) Loading = false; }
     }
     private bool Current(int version) => !_disposed && version == _version;
+
+    /// <summary>This page's own words for a refusal it recognises; null for anything else.</summary>
+    private static string? Refusal(Exception ex) => ex switch
+    {
+        OilGasApiException { StatusCode: HttpStatusCode.Unauthorized } => "Your session has expired. Sign in again to load production data.",
+        OilGasApiException { StatusCode: HttpStatusCode.Forbidden } => "You do not have access to this field's production data.",
+        _ => null,
+    };
     public void Dispose() { _disposed = true; ++_version; Summary = null; Wells = Array.Empty<ProductionWellStatusDto>(); }
 }

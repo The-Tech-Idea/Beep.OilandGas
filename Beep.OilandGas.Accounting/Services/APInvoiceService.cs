@@ -69,9 +69,9 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(vendorBaId))
                 throw new ArgumentNullException(nameof(vendorBaId));
             if (invoiceAmount <= 0)
-                throw new ArgumentException("Invoice amount must be greater than zero", nameof(invoiceAmount));
+                throw RefusalException.Invalid("Invoice amount must be greater than zero.");
             if (dueDate.HasValue && dueDate.Value.Date < invoiceDate.Date)
-                throw new InvalidOperationException("Due date cannot be earlier than invoice date");
+                throw RefusalException.Invalid("Due date cannot be earlier than the invoice date.");
 
             _logger?.LogInformation("Creating AP invoice for vendor {VendorId}, amount {Amount:C}",
                 vendorBaId, invoiceAmount);
@@ -104,7 +104,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error creating bill: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error creating bill");
                 throw;
             }
         }
@@ -124,10 +124,10 @@ namespace Beep.OilandGas.Accounting.Services
             {
                 var bill = await GetBillByIdAsync(billId);
                 if (bill == null)
-                    throw new InvalidOperationException($"Bill {billId} not found");
+                    throw RefusalException.NotFound($"Bill {billId} was not found.");
 
                 if (bill.STATUS != "DRAFT")
-                    throw new InvalidOperationException($"Only DRAFT bills can be received (current: {bill.STATUS})");
+                    throw RefusalException.Conflict($"Only DRAFT bills can be received; this bill is {bill.STATUS}.");
 
                 // Create GL journal entry: Debit Expense, Credit AP
                 var lineItems = new List<JOURNAL_ENTRY_LINE>
@@ -169,7 +169,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error receiving bill {BillId}: {Message}", billId, ex.Message);
+                _logger?.LogError(ex, "Error receiving bill {BillId}", billId);
                 throw;
             }
         }
@@ -187,7 +187,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(billId))
                 throw new ArgumentNullException(nameof(billId));
             if (paymentAmount <= 0)
-                throw new ArgumentException("Payment amount must be greater than zero", nameof(paymentAmount));
+                throw RefusalException.Invalid("Payment amount must be greater than zero.");
 
             _logger?.LogInformation("Recording payment for bill {BillId}: {Amount:C}", billId, paymentAmount);
 
@@ -195,14 +195,14 @@ namespace Beep.OilandGas.Accounting.Services
             {
                 var bill = await GetBillByIdAsync(billId);
                 if (bill == null)
-                    throw new InvalidOperationException($"Bill {billId} not found");
+                    throw RefusalException.NotFound($"Bill {billId} was not found.");
 
                 if (bill.STATUS != "RECEIVED" && bill.STATUS != InvoiceStatuses.PartiallyPaid)
-                    throw new InvalidOperationException($"Bill must be RECEIVED or PARTIALLY_PAID (current: {bill.STATUS})");
+                    throw RefusalException.Conflict($"A payment can be recorded only against a RECEIVED or PARTIALLY_PAID bill; this bill is {bill.STATUS}.");
 
                 decimal currentBalance = bill.BALANCE_DUE ?? 0m;
                 if (paymentAmount > currentBalance)
-                    throw new InvalidOperationException($"Payment {paymentAmount:C} exceeds balance {currentBalance:C}");
+                    throw RefusalException.Conflict($"Payment {paymentAmount:C} exceeds the bill's balance of {currentBalance:C}.");
 
                 // Create GL journal entry: Debit AP, Credit Cash
                 var lineItems = new List<JOURNAL_ENTRY_LINE>
@@ -259,7 +259,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error recording payment for bill {BillId}: {Message}", billId, ex.Message);
+                _logger?.LogError(ex, "Error recording payment for bill {BillId}", billId);
                 throw;
             }
         }
@@ -294,24 +294,17 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(vendorBaId))
                 return new List<AP_INVOICE>();
 
-            try
-            {
-                var repo = await GetRepoAsync<AP_INVOICE>("AP_INVOICE");
+            // A failed read propagates: answering it as "no bills" would tell the caller the vendor owes nothing.
+            var repo = await GetRepoAsync<AP_INVOICE>("AP_INVOICE");
 
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "VENDOR_BA_ID", Operator = "=", FilterValue = vendorBaId },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-                };
-
-                var bills = await repo.GetAsync(filters);
-                return bills?.Cast<AP_INVOICE>().ToList() ?? new List<AP_INVOICE>();
-            }
-            catch (Exception ex)
+            var filters = new List<AppFilter>
             {
-                _logger?.LogError(ex, "Error getting bills for vendor {VendorId}", vendorBaId);
-                return new List<AP_INVOICE>();
-            }
+                new AppFilter { FieldName = "VENDOR_BA_ID", Operator = "=", FilterValue = vendorBaId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            var bills = await repo.GetAsync(filters);
+            return bills?.Cast<AP_INVOICE>().ToList() ?? new List<AP_INVOICE>();
         }
 
         /// <summary>
@@ -372,7 +365,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error generating AP aging: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error generating AP aging");
                 throw;
             }
         }
@@ -383,25 +376,18 @@ namespace Beep.OilandGas.Accounting.Services
         /// </summary>
         public async Task<bool> HasUnpostedInvoicesAsync(DateTime periodEndDate)
         {
-            try
+            // A failed check propagates, which stops the period close as surely as "yes" did — without telling the
+            // person there are unposted invoices when nobody looked.
+            var repo = await GetRepoAsync<AP_INVOICE>("AP_INVOICE");
+            var filters = new List<AppFilter>
             {
-                var repo = await GetRepoAsync<AP_INVOICE>("AP_INVOICE");
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "STATUS", Operator = "=", FilterValue = "DRAFT" },
-                    new AppFilter { FieldName = "INVOICE_DATE", Operator = "<=", FilterValue = periodEndDate.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-                };
+                new AppFilter { FieldName = "STATUS", Operator = "=", FilterValue = "DRAFT" },
+                new AppFilter { FieldName = "INVOICE_DATE", Operator = "<=", FilterValue = periodEndDate.ToString("yyyy-MM-dd") },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
 
-                var results = await repo.GetAsync(filters);
-                return results != null && results.Any();
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error checking for unposted AP invoices");
-                // Fail safe: assume yes if error, to prevent closing
-                return true;
-            }
+            var results = await repo.GetAsync(filters);
+            return results != null && results.Any();
         }
 
         private async Task<string> GenerateInvoiceNumberAsync()

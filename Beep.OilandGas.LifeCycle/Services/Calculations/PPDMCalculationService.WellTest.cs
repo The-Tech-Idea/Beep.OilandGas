@@ -1,3 +1,5 @@
+using TheTechIdeaWeb.Diagnostics;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.Core;
 ﻿using System;
 using System.Collections.Generic;
@@ -27,8 +29,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// </summary>
         /// <param name="request">Well test analysis request containing well ID, test ID, pressure-time data, and analysis parameters</param>
         /// <returns>Well test analysis result with permeability, skin factor, reservoir pressure, productivity index, and diagnostic data</returns>
-        /// <exception cref="ArgumentException">Thrown when request validation fails</exception>
-        /// <exception cref="InvalidOperationException">Thrown when well test data is unavailable or calculation fails</exception>
+        /// <exception cref="RefusalException">What was sent cannot be analysed, or the well's recorded test data does not allow it.</exception>
         public async Task<WELL_TEST_ANALYSIS_RESULT> PerformWellTestAnalysisAsync(WellTestAnalysisCalculationRequest request)
         {
             WELL_TEST_DATA? assembledWellTestData = null;
@@ -39,7 +40,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     throw new ArgumentNullException(nameof(request));
 
                 if (string.IsNullOrWhiteSpace(request.WellId))
-                    throw new ArgumentException("WellId is required for well test analysis.");
+                    throw RefusalException.Invalid("Choose the well for the well test analysis.");
 
                 var explicitAnalysisType = string.IsNullOrWhiteSpace(request.AnalysisType)
                     ? null
@@ -48,21 +49,21 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     && !WellTestAnalysisWellKnown.ClassificationEqualsBuildUp(explicitAnalysisType)
                     && !WellTestAnalysisWellKnown.ClassificationEqualsDrawDown(explicitAnalysisType))
                 {
-                    throw new ArgumentException(
-                        $"AnalysisType must be {WellTestAnalysisWellKnown.AnalysisClassification.BuildUp}, {WellTestAnalysisWellKnown.AnalysisClassification.DrawDown}, or omitted so it can be inferred from PPDM WELL_TEST.TEST_TYPE.");
+                    throw RefusalException.Invalid(
+                        $"The analysis type must be {WellTestAnalysisWellKnown.AnalysisClassification.BuildUp} or {WellTestAnalysisWellKnown.AnalysisClassification.DrawDown}, or left out so it is taken from the recorded well test.");
                 }
 
                 var usePpdmPressureSeries = request.PressureTimeData == null || request.PressureTimeData.Count == 0;
                 if (usePpdmPressureSeries && string.IsNullOrWhiteSpace(request.TestId))
                 {
-                    throw new ArgumentException(
-                        "TestId is required to load WELL_TEST_PRESS_MEAS from PPDM for a specific test. Select a stored well test or provide manual pressure-time data.");
+                    throw RefusalException.Invalid(
+                        "Select a stored well test, or give the pressure-time data.");
                 }
 
                 if (request.PressureTimeData is { Count: > 0 and < 3 })
                 {
-                    throw new ArgumentException(
-                        "At least three pressure-time points are required when PressureTimeData is supplied.");
+                    throw RefusalException.Invalid(
+                        "Give at least three pressure-time points.");
                 }
 
                 _logger?.LogInformation("Starting Well Test Analysis for WellId: {WellId}, TestId: {TestId}",
@@ -116,8 +117,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 if (!WellTestAnalysisWellKnown.ClassificationEqualsBuildUp(effectiveAnalysisType)
                     && !WellTestAnalysisWellKnown.ClassificationEqualsDrawDown(effectiveAnalysisType))
                 {
-                    throw new ArgumentException(
-                        $"Could not resolve well test analysis type as {WellTestAnalysisWellKnown.AnalysisClassification.BuildUp} or {WellTestAnalysisWellKnown.AnalysisClassification.DrawDown}. Set {nameof(WellTestAnalysisCalculationRequest.AnalysisType)} explicitly.");
+                    throw RefusalException.Invalid(
+                        $"The recorded well test does not say whether it is a {WellTestAnalysisWellKnown.AnalysisClassification.BuildUp} or a {WellTestAnalysisWellKnown.AnalysisClassification.DrawDown}; choose the analysis type.");
                 }
 
                 SyncWellTestDataTestTypeFromEffectiveAnalysis(WELL_TEST_DATA, effectiveAnalysisType);
@@ -129,36 +130,35 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     && methodUpper != WellTestAnalysisWellKnown.AnalysisMethod.Horner
                     && methodUpper != WellTestAnalysisWellKnown.AnalysisMethod.Mdh)
                 {
-                    throw new ArgumentException(
-                        $"AnalysisMethod must be {WellTestAnalysisWellKnown.AnalysisMethod.Horner} or {WellTestAnalysisWellKnown.AnalysisMethod.Mdh} for oil build-up.");
+                    throw RefusalException.Invalid(
+                        $"The analysis method for an oil build-up must be {WellTestAnalysisWellKnown.AnalysisMethod.Horner} or {WellTestAnalysisWellKnown.AnalysisMethod.Mdh}.");
                 }
 
                 if (WellTestAnalysisWellKnown.ClassificationEqualsDrawDown(effectiveAnalysisType)
                     && methodUpper == WellTestAnalysisWellKnown.AnalysisMethod.Mdh)
                 {
-                    throw new ArgumentException(
-                        $"MDH (Miller-Dyes-Hutchinson) applies to build-up tests only. Use AnalysisType {WellTestAnalysisWellKnown.AnalysisClassification.BuildUp} for MDH, or set AnalysisMethod to {WellTestAnalysisWellKnown.AnalysisMethod.Horner} for drawdown.");
+                    throw RefusalException.Invalid(
+                        $"MDH (Miller-Dyes-Hutchinson) applies to build-up tests only: choose {WellTestAnalysisWellKnown.AnalysisClassification.BuildUp} for MDH, or {WellTestAnalysisWellKnown.AnalysisMethod.Horner} for a drawdown.");
                 }
 
                 if (string.Equals(WELL_TEST_DATA.TEST_TYPE, WellTestType.BuildUp.ToString(), StringComparison.OrdinalIgnoreCase)
                     && (!WELL_TEST_DATA.PRODUCTION_TIME.HasValue || WELL_TEST_DATA.PRODUCTION_TIME.Value <= 0))
                 {
-                    throw new ArgumentException(
-                        "ProductionTime (hours of flow prior to shut-in) must be positive for build-up Horner/MDH analysis. " +
-                        "Set WellTestAnalysisCalculationRequest.ProductionTime or supply PPDM data that includes flowing time.");
+                    throw RefusalException.Invalid(
+                        "A build-up analysis needs the production time (hours of flow before shut-in): give it, or choose a recorded test that has its flowing time.");
                 }
 
                 if (WELL_TEST_DATA.FLOW_RATE <= 0)
                 {
-                    throw new ArgumentException(
-                        "Flow rate must be positive. Set FlowRate on the calculation request or ensure WELL_TEST has MAX_OIL_FLOW_RATE or MAX_GAS_FLOW_RATE.");
+                    throw RefusalException.Invalid(
+                        "The flow rate must be greater than zero: give it, or choose a recorded test that has its oil or gas flow rate.");
                 }
 
                 if ((double)WELL_TEST_DATA.FLOW_RATE < WellTestConstants.MinFlowRate
                     || (double)WELL_TEST_DATA.FLOW_RATE > WellTestConstants.MaxFlowRate)
                 {
-                    throw new ArgumentException(
-                        $"Flow rate must be between {WellTestConstants.MinFlowRate} and {WellTestConstants.MaxFlowRate} (BPD or Mscf/d per model assumptions).");
+                    throw RefusalException.Invalid(
+                        $"The flow rate must be between {WellTestConstants.MinFlowRate} and {WellTestConstants.MaxFlowRate} (BPD or Mscf/d).");
                 }
 
                 // Step 2: Perform well test analysis
@@ -170,15 +170,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     {
                         if (!WELL_TEST_DATA.GAS_SPECIFIC_GRAVITY.HasValue || WELL_TEST_DATA.GAS_SPECIFIC_GRAVITY.Value <= 0)
                         {
-                            throw new ArgumentException(
-                                "Gas specific gravity is required for gas well build-up (pseudo-pressure m(p)). Set GasSpecificGravity on the request (air = 1.0).");
+                            throw RefusalException.Invalid(
+                                "A gas well build-up needs the gas specific gravity (air = 1.0).");
                         }
 
                         var gasGrav = (double)WELL_TEST_DATA.GAS_SPECIFIC_GRAVITY.Value;
                         if (gasGrav < 0.05 || gasGrav > 3.0)
                         {
-                            throw new ArgumentException(
-                                "Gas specific gravity must be between 0.05 and 3.0 (air = 1.0) for pseudo-pressure m(p) build-up.");
+                            throw RefusalException.Invalid(
+                                "The gas specific gravity must be between 0.05 and 3.0 (air = 1.0).");
                         }
 
                         if (WellTestAnalysisWellKnown.MethodEqualsMdh(request.AnalysisMethod?.Trim()))
@@ -207,8 +207,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 {
                     if (WELL_TEST_DATA.IS_GAS_WELL is true)
                     {
-                        throw new ArgumentException(
-                            "Gas well drawdown is not supported in this release. Use build-up with the gas-well option (m(p) Horner), or turn off Gas well to run the oil drawdown model as an approximation.");
+                        throw RefusalException.Invalid(
+                            "A gas well drawdown cannot be analysed: use a build-up with the gas well option, or turn off Gas well to run the oil drawdown model as an approximation.");
                     }
 
                     analysisResult = WellTestAnalyzer.AnalyzeDrawdown(WELL_TEST_DATA);
@@ -227,10 +227,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                         identifiedModel = WellTestAnalyzer.IdentifyReservoirModel(derivativePoints);
                     }
                 }
-                catch (Exception diagnosticEx)
+                // The derivative and the model it identifies are diagnostics beside the analysis, which stands without them;
+                // a refusal of the data and cancellation still go on.
+                catch (Exception diagnosticEx) when (diagnosticEx is not RefusalException and not OperationCanceledException)
                 {
-                    _logger?.LogWarning(diagnosticEx, "Well Test diagnostics could not be derived for WellId: {WellId}, TestId: {TestId}",
-                        request.WellId, request.TestId);
+                    _failures.ReportHandled(diagnosticEx,
+                        $"deriving the pressure derivative for the well test analysis of well {request.WellId}, test {request.TestId}",
+                        "the analysis is returned without derivative diagnostics or an identified reservoir model",
+                        FailureSeverity.Degraded);
                 }
 
                 // Step 5: Map to DTO
@@ -243,59 +247,48 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     derivativePoints,
                     effectiveAnalysisType);
 
-                // Step 6: Store result in PPDM database
-                try
+                // Step 6: Store result in PPDM database (the result is the caller's answer even when saving fails)
+                result.DIAGNOSTIC_DATA_JSON = JsonSerializer.Serialize(result.DiagnosticPoints ?? new List<WellTestDataPoint>());
+                result.DERIVATIVE_DATA_JSON = JsonSerializer.Serialize(result.DerivativePoints ?? new List<WellTestDataPoint>());
+                await SaveCompletedRunAsync("well test analysis", async () =>
                 {
                     var repository = await GetWellTestResultRepositoryAsync();
-                    result.DIAGNOSTIC_DATA_JSON = JsonSerializer.Serialize(result.DiagnosticPoints ?? new List<WellTestDataPoint>());
-                    result.DERIVATIVE_DATA_JSON = JsonSerializer.Serialize(result.DerivativePoints ?? new List<WellTestDataPoint>());
-
                     await InsertAnalysisResultAsync(repository, result, request.UserId);
                     _logger?.LogInformation("Stored Well Test Analysis result with ID: {CalculationId}", result.CALCULATION_ID);
-                }
-                catch (Exception storeEx)
-                {
-                    _logger?.LogError(storeEx, "Error storing Well Test Analysis result");
-                    // Continue - don't fail the operation if storage fails
-                }
+                });
 
                 return result;
             }
+            // Every way the run ends short of a result is recorded in the calculation history, then goes on to the
+            // caller: the API's handler answers a refusal with its sentence and reports anything else.
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error performing Well Test Analysis for WellId: {WellId}, TestId: {TestId}",
-                    request?.WellId, request?.TestId);
-
-                // Try to store error result (skip when request was never constructed — e.g. null body)
+                // A request that was never constructed (a null body) has no run to record.
                 if (request != null)
                 {
-                    try
+                    var analysisTypeForError = effectiveAnalysisType
+                        ?? (string.IsNullOrWhiteSpace(request.AnalysisType) ? null : request.AnalysisType.Trim())
+                        ?? (assembledWellTestData != null ? InferAnalysisTypeFromWellTestData(assembledWellTestData) : null)
+                        ?? WellTestAnalysisWellKnown.AnalysisClassification.BuildUp;
+                    var errorResult = new WELL_TEST_ANALYSIS_RESULT
+                    {
+                        CALCULATION_ID = Guid.NewGuid().ToString(),
+                        WELL_ID = request.WellId,
+                        FIELD_ID = string.IsNullOrWhiteSpace(request.FieldId) ? null : request.FieldId.Trim(),
+                        TEST_ID = request.TestId,
+                        ANALYSIS_TYPE = NormalizeAnalysisTypeForStorage(analysisTypeForError) ?? string.Empty,
+                        ANALYSIS_METHOD = ResolvePersistedWellTestAnalysisMethod(request, assembledWellTestData, analysisTypeForError),
+                        CALCULATION_DATE = DateTime.UtcNow,
+                        STATUS = "FAILED",
+                        ERROR_MESSAGE = FailedRunMessage(ex, "well test analysis"),
+                        USER_ID = request.UserId,
+                        IS_GAS_WELL = (assembledWellTestData?.IS_GAS_WELL ?? request.IsGasWell) ?? false
+                    };
+                    await RecordFailedRunAsync("well test analysis", async () =>
                     {
                         var repository = await GetWellTestResultRepositoryAsync();
-                        var analysisTypeForError = effectiveAnalysisType
-                            ?? (string.IsNullOrWhiteSpace(request.AnalysisType) ? null : request.AnalysisType.Trim())
-                            ?? (assembledWellTestData != null ? InferAnalysisTypeFromWellTestData(assembledWellTestData) : null)
-                            ?? WellTestAnalysisWellKnown.AnalysisClassification.BuildUp;
-                        var errorResult = new WELL_TEST_ANALYSIS_RESULT
-                        {
-                            CALCULATION_ID = Guid.NewGuid().ToString(),
-                            WELL_ID = request.WellId,
-                            FIELD_ID = string.IsNullOrWhiteSpace(request.FieldId) ? null : request.FieldId.Trim(),
-                            TEST_ID = request.TestId,
-                            ANALYSIS_TYPE = NormalizeAnalysisTypeForStorage(analysisTypeForError) ?? string.Empty,
-                            ANALYSIS_METHOD = ResolvePersistedWellTestAnalysisMethod(request, assembledWellTestData, analysisTypeForError),
-                            CALCULATION_DATE = DateTime.UtcNow,
-                            STATUS = "FAILED",
-                            ERROR_MESSAGE = ex.Message,
-                            USER_ID = request.UserId,
-                            IS_GAS_WELL = (assembledWellTestData?.IS_GAS_WELL ?? request.IsGasWell) ?? false
-                        };
                         await InsertAnalysisResultAsync(repository, errorResult, request.UserId);
-                    }
-                    catch (Exception storeEx)
-                    {
-                        _logger?.LogError(storeEx, "Error storing Well Test Analysis error result");
-                    }
+                    });
                 }
 
                 throw;
@@ -325,79 +318,72 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 TEST_TYPE = WellTestType.BuildUp.ToString()
             };
 
-            try
+            // Query WELL_TEST header for flow rate and test metadata
+            var testMetadata = await _metadata.GetTableMetadataAsync("WELL_TEST");
+            if (testMetadata != null)
             {
-                // Query WELL_TEST header for flow rate and test metadata
-                var testMetadata = await _metadata.GetTableMetadataAsync("WELL_TEST");
-                if (testMetadata != null)
+                var testEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{testMetadata.EntityTypeName}") ?? typeof(WELL_TEST);
+                var testRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, testEntityType, _connectionName, "WELL_TEST");
+
+                var testFilters = new List<AppFilter>
                 {
-                    var testEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{testMetadata.EntityTypeName}") ?? typeof(WELL_TEST);
-                    var testRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, testEntityType, _connectionName, "WELL_TEST");
+                    new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellId },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+                if (!string.IsNullOrEmpty(testId))
+                    testFilters.Add(new AppFilter { FieldName = "TEST_NUM", Operator = "=", FilterValue = testId });
 
-                    var testFilters = new List<AppFilter>
-                    {
-                        new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellId },
-                        new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-                    };
-                    if (!string.IsNullOrEmpty(testId))
-                        testFilters.Add(new AppFilter { FieldName = "TEST_NUM", Operator = "=", FilterValue = testId });
-
-                    var testResults = await testRepo.GetAsync(testFilters);
-                    var testRecord = testResults?.OfType<WELL_TEST>().OrderByDescending(t => t.EFFECTIVE_DATE).FirstOrDefault();
-                    if (testRecord != null)
-                    {
-                        data.FLOW_RATE = testRecord.MAX_OIL_FLOW_RATE > 0 ? testRecord.MAX_OIL_FLOW_RATE
-                            : testRecord.MAX_GAS_FLOW_RATE > 0 ? testRecord.MAX_GAS_FLOW_RATE : 0m;
-                        data.RESERVOIR_TEMPERATURE = testRecord.FLOW_TEMPERATURE > 0 ? testRecord.FLOW_TEMPERATURE : 150m;
-                        data.TEST_TYPE = testRecord.TEST_TYPE ?? WellTestType.BuildUp.ToString();
-
-                        var durationHours = ConvertWellTestDurationToHours(testRecord.TEST_DURATION, testRecord.TEST_DURATION_OUOM);
-                        if (durationHours.HasValue && durationHours.Value > 0)
-                            data.PRODUCTION_TIME = durationHours.Value;
-                    }
-                }
-
-                // Query WELL_TEST_PRESS_MEAS for time-pressure series
-                var measMetadata = await _metadata.GetTableMetadataAsync("WELL_TEST_PRESS_MEAS");
-                if (measMetadata != null)
+                var testResults = await testRepo.GetAsync(testFilters);
+                var testRecord = testResults?.OfType<WELL_TEST>().OrderByDescending(t => t.EFFECTIVE_DATE).FirstOrDefault();
+                if (testRecord != null)
                 {
-                    var measEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{measMetadata.EntityTypeName}") ?? typeof(WELL_TEST_PRESS_MEAS);
-                    var measRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, measEntityType, _connectionName, "WELL_TEST_PRESS_MEAS");
+                    data.FLOW_RATE = testRecord.MAX_OIL_FLOW_RATE > 0 ? testRecord.MAX_OIL_FLOW_RATE
+                        : testRecord.MAX_GAS_FLOW_RATE > 0 ? testRecord.MAX_GAS_FLOW_RATE : 0m;
+                    data.RESERVOIR_TEMPERATURE = testRecord.FLOW_TEMPERATURE > 0 ? testRecord.FLOW_TEMPERATURE : 150m;
+                    data.TEST_TYPE = testRecord.TEST_TYPE ?? WellTestType.BuildUp.ToString();
 
-                    var measFilters = new List<AppFilter>
-                    {
-                        new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellId },
-                        new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-                    };
-                    if (!string.IsNullOrEmpty(testId))
-                        measFilters.Add(new AppFilter { FieldName = "TEST_NUM", Operator = "=", FilterValue = testId });
-
-                    var measResults = await measRepo.GetAsync(measFilters);
-                    var measurements = measResults?.OfType<WELL_TEST_PRESS_MEAS>().ToList();
-
-                    if (measurements != null && measurements.Count > 0)
-                    {
-                        var points = measurements
-                            .Select(m =>
-                            {
-                                var hours = ConvertWellTestDurationToHours(m.MEASUREMENT_TIME_ELAPSED, m.MEASUREMENT_TIME_ELAPSED_OUOM);
-                                var tHours = (double)(hours ?? m.MEASUREMENT_TIME_ELAPSED);
-                                var psi = ConvertWellTestPressureToPsi(m.MEASUREMENT_PRESSURE, m.MEASUREMENT_PRESSURE_OUOM);
-                                return (TimeHours: tHours, PressurePsi: psi, ObsNo: (double)m.MEASUREMENT_OBS_NO);
-                            })
-                            .OrderBy(p => p.TimeHours)
-                            .ThenBy(p => p.ObsNo)
-                            .ToList();
-
-                        data.Time = points.Select(p => p.TimeHours).ToList();
-                        data.Pressure = points.Select(p => p.PressurePsi).ToList();
-                        return data;
-                    }
+                    var durationHours = ConvertWellTestDurationToHours(testRecord.TEST_DURATION, testRecord.TEST_DURATION_OUOM);
+                    if (durationHours.HasValue && durationHours.Value > 0)
+                        data.PRODUCTION_TIME = durationHours.Value;
                 }
             }
-            catch (Exception ex)
+
+            // Query WELL_TEST_PRESS_MEAS for time-pressure series
+            var measMetadata = await _metadata.GetTableMetadataAsync("WELL_TEST_PRESS_MEAS");
+            if (measMetadata != null)
             {
-                _logger?.LogWarning(ex, "Error retrieving well test data from PPDM for well {WellId}. Provide PressureTimeData in the request.", wellId);
+                var measEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{measMetadata.EntityTypeName}") ?? typeof(WELL_TEST_PRESS_MEAS);
+                var measRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, measEntityType, _connectionName, "WELL_TEST_PRESS_MEAS");
+
+                var measFilters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellId },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+                if (!string.IsNullOrEmpty(testId))
+                    measFilters.Add(new AppFilter { FieldName = "TEST_NUM", Operator = "=", FilterValue = testId });
+
+                var measResults = await measRepo.GetAsync(measFilters);
+                var measurements = measResults?.OfType<WELL_TEST_PRESS_MEAS>().ToList();
+
+                if (measurements != null && measurements.Count > 0)
+                {
+                    var points = measurements
+                        .Select(m =>
+                        {
+                            var hours = ConvertWellTestDurationToHours(m.MEASUREMENT_TIME_ELAPSED, m.MEASUREMENT_TIME_ELAPSED_OUOM);
+                            var tHours = (double)(hours ?? m.MEASUREMENT_TIME_ELAPSED);
+                            var psi = ConvertWellTestPressureToPsi(m.MEASUREMENT_PRESSURE, m.MEASUREMENT_PRESSURE_OUOM);
+                            return (TimeHours: tHours, PressurePsi: psi, ObsNo: (double)m.MEASUREMENT_OBS_NO);
+                        })
+                        .OrderBy(p => p.TimeHours)
+                        .ThenBy(p => p.ObsNo)
+                        .ToList();
+
+                    data.Time = points.Select(p => p.TimeHours).ToList();
+                    data.Pressure = points.Select(p => p.PressurePsi).ToList();
+                    return data;
+                }
             }
 
             if (data.Time.Count == 0)
@@ -405,9 +391,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 var testScope = string.IsNullOrEmpty(testId)
                     ? $"well '{wellId}'"
                     : $"well '{wellId}', test '{testId}'";
-                throw new InvalidOperationException(
-                    $"No pressure-time measurements found in PPDM for {testScope}. " +
-                    "Provide PressureTimeData in the request.");
+                throw RefusalException.Conflict(
+                    $"No pressure-time measurements are recorded for {testScope}; give the pressure-time data with the request.");
             }
 
             return data;

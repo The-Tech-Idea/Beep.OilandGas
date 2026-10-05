@@ -1,5 +1,7 @@
 using System.Reflection;
 using System.Security.Claims;
+using System.Buffers.Text;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data.Security;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Identity;
@@ -18,10 +20,10 @@ public sealed class RepositoryRoleAssignmentService(
     public async Task<RepositoryUserRole> AssignRoleAsync(string userId, string roleId, string grantedByUserId, string? reason = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(grantedByUserId);
-        if (reason?.Length > 1000) throw new ArgumentException("Assignment reason exceeds 1000 characters.");
-        var user = await users.FindByIdAsync(userId) ?? throw new ArgumentException("User not found.");
-        if (!user.IsActive) throw new InvalidOperationException("Cannot assign a role to a disabled user.");
-        var role = await roles.FindByIdAsync(roleId) ?? throw new ArgumentException("Role not found.");
+        if (reason?.Length > 1000) throw RefusalException.Invalid("Assignment reason exceeds 1000 characters.");
+        var user = await users.FindByIdAsync(userId) ?? throw RefusalException.NotFound("User not found.");
+        if (!user.IsActive) throw RefusalException.Conflict("Cannot assign a role to a disabled user.");
+        var role = await roles.FindByIdAsync(roleId) ?? throw RefusalException.NotFound("Role not found.");
         await using var transaction = await db.Database.BeginTransactionAsync();
         Require(await roles.UpdateAsync(role));
         if (!await users.IsInRoleAsync(user, role.Name!)) Require(await users.AddToRoleAsync(user, role.Name!));
@@ -47,9 +49,7 @@ public sealed class RepositoryRoleAssignmentService(
         string userId, roleId;
         if (userRoleId.StartsWith("identity:", StringComparison.Ordinal))
         {
-            string[]? keys;
-            try { keys = JsonSerializer.Deserialize<string[]>(WebEncoders.Base64UrlDecode(userRoleId[9..])); }
-            catch (Exception ex) when (ex is FormatException or JsonException) { return false; }
+            var keys = IdentityMembershipKeys(userRoleId[9..]);
             if (keys is not { Length: 2 } || keys.Any(string.IsNullOrWhiteSpace)) return false;
             userId = keys[0];
             roleId = keys[1];
@@ -77,7 +77,7 @@ public sealed class RepositoryRoleAssignmentService(
                                       join account in db.Users on membership.UserId equals account.Id
                                       where membership.RoleId == role.Id && account.IsActive
                                       select account.Id).CountAsync();
-            if (activeAdmins <= 1) throw new InvalidOperationException("The last active administrator cannot be removed.");
+            if (activeAdmins <= 1) throw RefusalException.Conflict("The last active administrator cannot be removed.");
         }
         Require(await users.RemoveFromRoleAsync(user, role.Name!));
         if (extension is null)
@@ -117,10 +117,10 @@ public sealed class RepositoryRoleAssignmentService(
         metadata ??= await db.Set<AppPermissionExtension>().SingleOrDefaultAsync(x => x.PermissionKey == permissionId);
         if (metadata is null && !PermissionCodes().Contains(permissionId) &&
             !await db.RoleClaims.AnyAsync(x => x.ClaimType == "permission" && x.ClaimValue == permissionId))
-            throw new ArgumentException("Unknown permission code.");
+            throw RefusalException.Invalid("Unknown permission code.");
         var code = metadata?.PermissionKey ?? permissionId;
         permissionId = metadata?.PermissionId ?? permissionId;
-        var role = await roles.FindByIdAsync(roleId) ?? throw new ArgumentException("Role not found.");
+        var role = await roles.FindByIdAsync(roleId) ?? throw RefusalException.NotFound("Role not found.");
         await using var transaction = await db.Database.BeginTransactionAsync();
         Require(await roles.UpdateAsync(role));
         var existing = await db.RoleClaims.Where(x => x.RoleId == roleId &&
@@ -163,7 +163,8 @@ public sealed class RepositoryRoleAssignmentService(
             if (!int.TryParse(rolePermissionId[6..], out var claimId)) return false;
             var claim = await db.RoleClaims.SingleOrDefaultAsync(x => x.Id == claimId && x.ClaimType == "permission");
             if (claim is null) return false;
-            var identityRole = await roles.FindByIdAsync(claim.RoleId) ?? throw new ArgumentException("Role not found.");
+            var identityRole = await roles.FindByIdAsync(claim.RoleId)
+                ?? throw RefusalException.Conflict("The role no longer exists. Reload before retrying.");
             await using var claimTransaction = await db.Database.BeginTransactionAsync();
             Require(await roles.UpdateAsync(identityRole));
             var linked = await db.Set<AppRolePermissionExtension>().Where(x => x.RoleClaimId == claimId).ToListAsync();
@@ -187,7 +188,8 @@ public sealed class RepositoryRoleAssignmentService(
         var grant = await db.RoleClaims.SingleOrDefaultAsync(x => x.Id == extension.RoleClaimId &&
             x.RoleId == extension.RoleId && x.ClaimType == "permission" && x.ClaimValue == permission.PermissionKey);
         if (grant is null) return false;
-        var role = await roles.FindByIdAsync(grant.RoleId) ?? throw new ArgumentException("Role not found.");
+        var role = await roles.FindByIdAsync(grant.RoleId)
+            ?? throw RefusalException.Conflict("The role no longer exists. Reload before retrying.");
         await using var transaction = await db.Database.BeginTransactionAsync();
         Require(await roles.UpdateAsync(role));
         // Preserve every history row linked to this exact claim before deleting it.
@@ -280,8 +282,30 @@ public sealed class RepositoryRoleAssignmentService(
         ApprovedByUserId = extension.ApprovedByUserId, ApprovedAtUtc = extension.ApprovedAtUtc
     };
 
+    // Identity answers a stale concurrency stamp — somebody changed the role or account first — as a failed result; that is
+    // the person's to reload. Any other failed result is a fault, named by its codes.
     private static void Require(IdentityResult result)
     {
-        if (!result.Succeeded) throw new InvalidOperationException(string.Join(", ", result.Errors.Select(x => x.Code)));
+        if (result.Succeeded) return;
+        if (result.Errors.Any(x => x.Code == nameof(IdentityErrorDescriber.ConcurrencyFailure)))
+            throw RefusalException.Conflict("The grant changed. Reload before retrying.");
+        throw new InvalidOperationException(string.Join(", ", result.Errors.Select(x => x.Code)));
+    }
+
+    // An identity membership's id is this service's own encoding of its user and role (GetUserRoleAssignmentsAsync), carried
+    // back in a route the caller writes: one that does not decode names no assignment. The Base64url question is asked;
+    // System.Text.Json has none, so its refusal is the answer.
+    private static string[]? IdentityMembershipKeys(string encoded)
+    {
+        if (!Base64Url.IsValid(encoded))
+            throw RefusalException.NotFound("The role assignment was not found.");
+        try
+        {
+            return JsonSerializer.Deserialize<string[]>(Base64Url.DecodeFromChars(encoded));
+        }
+        catch (JsonException notAMembership)
+        {
+            throw new RefusalException(RefusalKind.NotFound, "The role assignment was not found.", notAMembership);
+        }
     }
 }

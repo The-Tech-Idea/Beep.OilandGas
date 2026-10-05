@@ -4,7 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using SkiaSharp;
-using SKSvg = SkiaSharp.Extended.Svg.SKSvg;
+using SKSvg = Svg.Skia.SKSvg;
 
 namespace Beep.OilandGas.Drawing.Styling
 {
@@ -67,76 +67,70 @@ namespace Beep.OilandGas.Drawing.Styling
             if (svgCache.ContainsKey(cacheKey))
                 return svgCache[cacheKey];
 
-            try
-            {
-                string resourceName = null;
+            // Null answers "this library has no such pattern". A pattern it ships that will not load is a defect in the
+            // build, and reaches the caller as its exception (OILGAS-CATCH-01): it had been written to the debug output
+            // and answered null, so the lithology was drawn without its pattern and nobody heard why.
+            string resourceName = null;
 
-                // Check if it's a USGS-FGDC pattern code
-                if (UsgsFgdcPatternMapping.IsValidPatternCode(patternName))
+            // Check if it's a USGS-FGDC pattern code
+            if (UsgsFgdcPatternMapping.IsValidPatternCode(patternName))
+            {
+                resourceName = GetEmbeddedResourceName(patternName);
+            }
+            else
+            {
+                // Try common resource name patterns
+                string[] possibleNames = new[]
                 {
-                    resourceName = GetEmbeddedResourceName(patternName);
+                    $"Beep.OilandGas.Drawing.LithologySymbols.USGS-FGDC-master.SED.{patternName}.svg",
+                    $"Beep.OilandGas.Drawing.LithologySymbols.USGS-FGDC-master.IGM.{patternName}.svg",
+                    $"Beep.OilandGas.Drawing.LithologyPatterns.{patternName}.svg"
+                };
+
+                foreach (var name in possibleNames)
+                {
+                    if (resourceAssembly.GetManifestResourceStream(name) != null)
+                    {
+                        resourceName = name;
+                        break;
+                    }
+                }
+            }
+
+            if (string.IsNullOrEmpty(resourceName))
+                return null;
+
+            using (var stream = resourceAssembly.GetManifestResourceStream(resourceName))
+            {
+                if (stream == null)
+                    return null;
+
+                var svg = new SKSvg();
+
+                // If colors are provided, process the SVG to replace parameters
+                if (strokeColor.HasValue)
+                {
+                    using (var reader = new StreamReader(stream))
+                    {
+                        string svgContent = reader.ReadToEnd();
+                        string strokeHex = SvgColorProcessor.SkColorToHex(strokeColor.Value);
+                        string fillHex = fillColor.HasValue ? SvgColorProcessor.SkColorToHex(fillColor.Value) : "none";
+                        string processedSvg = SvgColorProcessor.ProcessSvgColors(svgContent, strokeHex, fillHex);
+
+                        using (var processedStream = new MemoryStream(Encoding.UTF8.GetBytes(processedSvg)))
+                        {
+                            svg.Load(processedStream);
+                        }
+                    }
                 }
                 else
                 {
-                    // Try common resource name patterns
-                    string[] possibleNames = new[]
-                    {
-                        $"Beep.OilandGas.Drawing.LithologySymbols.USGS-FGDC-master.SED.{patternName}.svg",
-                        $"Beep.OilandGas.Drawing.LithologySymbols.USGS-FGDC-master.IGM.{patternName}.svg",
-                        $"Beep.OilandGas.Drawing.LithologyPatterns.{patternName}.svg"
-                    };
-
-                    foreach (var name in possibleNames)
-                    {
-                        if (resourceAssembly.GetManifestResourceStream(name) != null)
-                        {
-                            resourceName = name;
-                            break;
-                        }
-                    }
+                    svg.Load(stream);
                 }
 
-                if (string.IsNullOrEmpty(resourceName))
-                    return null;
-
-                using (var stream = resourceAssembly.GetManifestResourceStream(resourceName))
-                {
-                    if (stream == null)
-                        return null;
-
-                    var svg = new SKSvg();
-                    
-                    // If colors are provided, process the SVG to replace parameters
-                    if (strokeColor.HasValue)
-                    {
-                        using (var reader = new StreamReader(stream))
-                        {
-                            string svgContent = reader.ReadToEnd();
-                            string strokeHex = SvgColorProcessor.SkColorToHex(strokeColor.Value);
-                            string fillHex = fillColor.HasValue ? SvgColorProcessor.SkColorToHex(fillColor.Value) : "none";
-                            string processedSvg = SvgColorProcessor.ProcessSvgColors(svgContent, strokeHex, fillHex);
-                            
-                            using (var processedStream = new MemoryStream(Encoding.UTF8.GetBytes(processedSvg)))
-                            {
-                                svg.Load(processedStream);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        svg.Load(stream);
-                    }
-                    
-                    svgCache[cacheKey] = svg;
-                    return svg;
-                }
+                svgCache[cacheKey] = svg;
+                return svg;
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error loading SVG pattern {patternName} from embedded resource: {ex.Message}");
-            }
-
-            return null;
         }
 
         /// <summary>
@@ -182,43 +176,37 @@ namespace Beep.OilandGas.Drawing.Styling
             if (svg == null || svg.Picture == null)
                 return null;
 
-            try
+            // A tile that cannot be drawn reaches the caller as its exception (OILGAS-CATCH-01); it had been written to the
+            // debug output and answered null, read by the caller as "no such pattern".
+            // Create bitmap for pattern tile
+            var bitmap = new SKBitmap(patternSize, patternSize);
+            using (var canvas = new SKCanvas(bitmap))
             {
-                // Create bitmap for pattern tile
-                var bitmap = new SKBitmap(patternSize, patternSize);
-                using (var canvas = new SKCanvas(bitmap))
-                {
-                    // Fill with base color
-                    canvas.Clear(baseColor);
+                // Fill with base color
+                canvas.Clear(baseColor);
 
-                    // Calculate scale to fit SVG in pattern size
-                    var svgBounds = svg.Picture.CullRect;
-                    float scaleX = patternSize / svgBounds.Width;
-                    float scaleY = patternSize / svgBounds.Height;
-                    float scale = Math.Min(scaleX, scaleY);
+                // Calculate scale to fit SVG in pattern size
+                var svgBounds = svg.Picture.CullRect;
+                float scaleX = patternSize / svgBounds.Width;
+                float scaleY = patternSize / svgBounds.Height;
+                float scale = Math.Min(scaleX, scaleY);
 
-                    // Center the SVG in the pattern tile
-                    float offsetX = (patternSize - svgBounds.Width * scale) / 2;
-                    float offsetY = (patternSize - svgBounds.Height * scale) / 2;
+                // Center the SVG in the pattern tile
+                float offsetX = (patternSize - svgBounds.Width * scale) / 2;
+                float offsetY = (patternSize - svgBounds.Height * scale) / 2;
 
-                    canvas.Save();
-                    canvas.Translate(offsetX, offsetY);
-                    canvas.Scale(scale);
+                canvas.Save();
+                canvas.Translate(offsetX, offsetY);
+                canvas.Scale(scale);
 
-                    // Draw SVG
-                    canvas.DrawPicture(svg.Picture);
+                // Draw SVG
+                canvas.DrawPicture(svg.Picture);
 
-                    canvas.Restore();
-                }
-
-                patternCache[cacheKey] = bitmap;
-                return bitmap;
+                canvas.Restore();
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error creating pattern bitmap for {patternName}: {ex.Message}");
-                return null;
-            }
+
+            patternCache[cacheKey] = bitmap;
+            return bitmap;
         }
 
         /// <summary>
@@ -296,21 +284,15 @@ namespace Beep.OilandGas.Drawing.Styling
         /// <returns>List of all embedded resource names.</returns>
         public List<string> GetAvailableResources()
         {
+            // Listing an assembly's resource names throws nothing to ignore; the catch around it answered nothing.
             var resources = new List<string>();
-            try
+            string[] resourceNames = resourceAssembly.GetManifestResourceNames();
+            foreach (string name in resourceNames)
             {
-                string[] resourceNames = resourceAssembly.GetManifestResourceNames();
-                foreach (string name in resourceNames)
+                if (name.Contains("LithologySymbols") || name.Contains(".svg"))
                 {
-                    if (name.Contains("LithologySymbols") || name.Contains(".svg"))
-                    {
-                        resources.Add(name);
-                    }
+                    resources.Add(name);
                 }
-            }
-            catch
-            {
-                // Ignore errors
             }
             return resources;
         }
@@ -320,7 +302,10 @@ namespace Beep.OilandGas.Drawing.Styling
         /// </summary>
         public void ClearCache()
         {
-            // SKSvg doesn't implement IDisposable, just clear the cache
+            foreach (var svg in svgCache.Values)
+            {
+                svg?.Dispose();
+            }
             svgCache.Clear();
 
             foreach (var bitmap in patternCache.Values)

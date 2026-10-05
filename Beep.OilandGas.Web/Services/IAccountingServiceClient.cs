@@ -21,5 +21,5 @@ public interface IAccountingServiceClient
     Task<ROYALTY_CALCULATION> GetRoyaltyAsync(string calculationId, CancellationToken cancellationToken = default);
     Task<List<ROYALTY_PAYMENT>> GetRoyaltyPaymentsAsync(string calculationId, CancellationToken cancellationToken = default);
     Task<List<RoyaltyPostingReview>> GetRoyaltyPostingReviewAsync(string calculationId, CancellationToken cancellationToken = default);
-    Task<bool> ClosePeriodAsync(CloseAccountingPeriodRequest request, CancellationToken cancellationToken = default);
+    Task ClosePeriodAsync(CloseAccountingPeriodRequest request, CancellationToken cancellationToken = default);
 }

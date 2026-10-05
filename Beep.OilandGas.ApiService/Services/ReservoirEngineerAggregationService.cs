@@ -51,18 +51,11 @@ namespace Beep.OilandGas.ApiService.Services
         public async Task<ReservoirEngineerKpi> GetKpiAsync(string? fieldId = null)
         {
             var kpi = new ReservoirEngineerKpi();
-            try
-            {
-                var activeFilter = new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" };
-                var pools = (await GetRepo<PpdmEntities.POOL>("POOL").GetAsync(new List<AppFilter> { activeFilter }))
-                    .OfType<PpdmEntities.POOL>().ToList();
-                kpi.ActivePools = pools.Count;
-                kpi.PoolsWithDiscovery = pools.Count(p => p.DISCOVERY_DATE.HasValue);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Failed to compute reservoir KPI");
-            }
+            var activeFilter = new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" };
+            var pools = (await GetRepo<PpdmEntities.POOL>("POOL").GetAsync(new List<AppFilter> { activeFilter }))
+                .OfType<PpdmEntities.POOL>().ToList();
+            kpi.ActivePools = pools.Count;
+            kpi.PoolsWithDiscovery = pools.Count(p => p.DISCOVERY_DATE.HasValue);
             return kpi;
         }
     }

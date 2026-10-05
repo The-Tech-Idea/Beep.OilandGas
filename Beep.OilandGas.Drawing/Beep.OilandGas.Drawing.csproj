@@ -31,7 +31,10 @@
 	<ItemGroup>
     <ProjectReference Include="..\Beep.OilandGas.PPDM.Models\Beep.OilandGas.PPDM.Models.csproj" />
 	  <PackageReference Include="SkiaSharp" Version="3.119.4" />
-	  <PackageReference Include="SkiaSharp.Svg" Version="1.60.0" />
+	  <!-- OILGAS-CATCH-01: SkiaSharp.Svg 1.60 calls SkiaSharp 1.x APIs (SKMatrix.MakeTranslation) that SkiaSharp 3 does
+	       not have, so every SVG load threw MissingMethodException, which catches turned into "no such symbol". Svg.Skia
+	       is the maintained SVG renderer for SkiaSharp; 5.1.1 is its last release on SkiaSharp 3.119. -->
+	  <PackageReference Include="Svg.Skia" Version="5.1.1" />
 	</ItemGroup>
 
 	<ItemGroup>

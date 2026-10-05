@@ -14,6 +14,11 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
     /// Implements <see cref="IReservoirLoader"/> for loading reservoir data from RESQML v2.2 files.
     /// RESQML (Reservoir Model) is an Energistics standard for exchanging reservoir geological models.
     /// </summary>
+    /// <remarks>
+    /// OILGAS-CATCH-01. A file that cannot be read, or is not well-formed XML, reaches the caller as its exception. Every
+    /// part of the load had been wrapped in a catch that wrote to the console and answered what had been read so far —
+    /// so a failed read of layers, grids, surfaces, contacts or properties came back as a reservoir that simply had none.
+    /// </remarks>
     public class ResqmlReservoirLoader : IReservoirLoader
     {
         private readonly string filePath;
@@ -37,53 +42,35 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
             this.filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
         }
 
+        /// <summary>
+        /// Reads the RESQML document: false when the file does not exist; a file that cannot be read or is not
+        /// well-formed XML reaches the caller as its exception.
+        /// </summary>
         public bool Connect()
         {
             if (isConnected) return true;
 
-            try
-            {
-                if (!File.Exists(filePath))
-                {
-                    throw new FileNotFoundException($"RESQML file not found: {filePath}");
-                }
-
-                document = XDocument.Load(filePath);
-                isConnected = true;
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error connecting to RESQML file: {ex.Message}");
-                isConnected = false;
+            if (!File.Exists(filePath))
                 return false;
-            }
+
+            document = XDocument.Load(filePath);
+            isConnected = true;
+            return true;
         }
 
         public async Task<bool> ConnectAsync()
         {
             if (isConnected) return true;
 
-            try
-            {
-                if (!File.Exists(filePath))
-                {
-                    throw new FileNotFoundException($"RESQML file not found: {filePath}");
-                }
-
-                using (var stream = File.OpenRead(filePath))
-                {
-                    document = await XDocument.LoadAsync(stream, LoadOptions.None, default);
-                }
-                isConnected = true;
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error connecting to RESQML file: {ex.Message}");
-                isConnected = false;
+            if (!File.Exists(filePath))
                 return false;
+
+            using (var stream = File.OpenRead(filePath))
+            {
+                document = await XDocument.LoadAsync(stream, LoadOptions.None, default);
             }
+            isConnected = true;
+            return true;
         }
 
         public void Disconnect()
@@ -101,17 +88,10 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         {
             if (!isConnected || document == null) return false;
 
-            try
-            {
-                // Check if document has RESQML root element
-                var root = document.Root;
-                return root != null && root.Name.LocalName.Contains("EpcExternalPartReference") ||
-                       root?.Elements().Any(e => e.Name.Namespace == resqml) == true;
-            }
-            catch
-            {
-                return false;
-            }
+            // Check if document has RESQML root element
+            var root = document.Root;
+            return root != null && root.Name.LocalName.Contains("EpcExternalPartReference") ||
+                   root?.Elements().Any(e => e.Name.Namespace == resqml) == true;
         }
 
         public List<string> GetAvailableIdentifiers()
@@ -121,33 +101,26 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
 
             var identifiers = new List<string>();
 
-            try
-            {
-                // Find all reservoir representation objects
-                var reservoirObjects = document.Descendants()
-                    .Where(e => e.Name.Namespace == resqml && 
-                                (e.Name.LocalName.Contains("RepresentationSetRepresentation") ||
-                                 e.Name.LocalName.Contains("Grid2dRepresentation") ||
-                                 e.Name.LocalName.Contains("Grid3dRepresentation")));
+            // Find all reservoir representation objects
+            var reservoirObjects = document.Descendants()
+                .Where(e => e.Name.Namespace == resqml && 
+                            (e.Name.LocalName.Contains("RepresentationSetRepresentation") ||
+                             e.Name.LocalName.Contains("Grid2dRepresentation") ||
+                             e.Name.LocalName.Contains("Grid3dRepresentation")));
 
-                foreach (var obj in reservoirObjects)
-                {
-                    var uuid = obj.Attribute("uuid")?.Value;
-                    var title = obj.Element(resqml + "Citation")?.Element(eml + "Title")?.Value;
-                    
-                    if (!string.IsNullOrEmpty(uuid))
-                    {
-                        identifiers.Add(uuid);
-                    }
-                    else if (!string.IsNullOrEmpty(title))
-                    {
-                        identifiers.Add(title);
-                    }
-                }
-            }
-            catch (Exception ex)
+            foreach (var obj in reservoirObjects)
             {
-                Console.WriteLine($"Error getting available identifiers: {ex.Message}");
+                var uuid = obj.Attribute("uuid")?.Value;
+                var title = obj.Element(resqml + "Citation")?.Element(eml + "Title")?.Value;
+                
+                if (!string.IsNullOrEmpty(uuid))
+                {
+                    identifiers.Add(uuid);
+                }
+                else if (!string.IsNullOrEmpty(title))
+                {
+                    identifiers.Add(title);
+                }
             }
 
             return identifiers;
@@ -261,12 +234,8 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
 
                 result.Success = true;
             }
-            catch (Exception ex)
-            {
-                result.Success = false;
-                result.Errors.Add($"Error loading RESQML reservoir: {ex.Message}");
-                Console.WriteLine($"Exception in LoadReservoirWithResult: {ex}");
-            }
+            // A document that cannot be read is a failure, not a result: it reaches the caller as its exception. It had
+            // been written to the console and its text put in the result.
             finally
             {
                 stats.EndTime = DateTime.UtcNow;
@@ -369,36 +338,29 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         {
             var layers = new List<LayerData>();
 
-            try
-            {
-                var gridElements = GetGridRepresentationElements(reservoirElement);
+            var gridElements = GetGridRepresentationElements(reservoirElement);
 
-                foreach (var grid in gridElements)
+            foreach (var grid in gridElements)
+            {
+                var layer = new LayerData
                 {
-                    var layer = new LayerData
-                    {
-                        LayerId = grid.Attribute("uuid")?.Value ?? Guid.NewGuid().ToString(),
-                        LayerName = grid.Element(resqml + "Citation")?.Element(eml + "Title")?.Value ?? "Unnamed Layer"
-                    };
+                    LayerId = grid.Attribute("uuid")?.Value ?? Guid.NewGuid().ToString(),
+                    LayerName = grid.Element(resqml + "Citation")?.Element(eml + "Title")?.Value ?? "Unnamed Layer"
+                };
 
-                    ExtractLayerDepths(grid, layer, configuration);
+                ExtractLayerDepths(grid, layer, configuration);
 
-                    // Extract properties if requested
-                    if (configuration.LoadProperties)
-                    {
-                        ExtractLayerProperties(grid, layer);
-                    }
-
-                    // Apply depth filter
-                    if (configuration.MinDepth > 0 && layer.TopDepth < configuration.MinDepth) continue;
-                    if (configuration.MaxDepth > 0 && layer.BottomDepth > configuration.MaxDepth) continue;
-
-                    layers.Add(layer);
+                // Extract properties if requested
+                if (configuration.LoadProperties)
+                {
+                    ExtractLayerProperties(grid, layer);
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading layers from RESQML: {ex.Message}");
+
+                // Apply depth filter
+                if (configuration.MinDepth > 0 && layer.TopDepth < configuration.MinDepth) continue;
+                if (configuration.MaxDepth > 0 && layer.BottomDepth > configuration.MaxDepth) continue;
+
+                layers.Add(layer);
             }
 
             return layers;
@@ -408,37 +370,30 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         {
             var grids = new List<ReservoirGridData>();
 
-            try
+            foreach (var gridElement in GetGridRepresentationElements(reservoirElement))
             {
-                foreach (var gridElement in GetGridRepresentationElements(reservoirElement))
+                var points = ExtractGeometryPoints(gridElement);
+                var grid = new ReservoirGridData
                 {
-                    var points = ExtractGeometryPoints(gridElement);
-                    var grid = new ReservoirGridData
-                    {
-                        GridId = gridElement.Attribute("uuid")?.Value ?? Guid.NewGuid().ToString(),
-                        GridName = gridElement.Element(resqml + "Citation")?.Element(eml + "Title")?.Value ?? "Unnamed Grid",
-                        GridKind = ResolveGridKind(gridElement.Name.LocalName),
-                        BoundingBox = CreateBoundingBox(points)
-                    };
+                    GridId = gridElement.Attribute("uuid")?.Value ?? Guid.NewGuid().ToString(),
+                    GridName = gridElement.Element(resqml + "Citation")?.Element(eml + "Title")?.Value ?? "Unnamed Grid",
+                    GridKind = ResolveGridKind(gridElement.Name.LocalName),
+                    BoundingBox = CreateBoundingBox(points)
+                };
 
-                    ExtractGridDimensions(gridElement, grid);
+                ExtractGridDimensions(gridElement, grid);
 
-                    if (configuration.LoadGeometry && points.Count > 0)
-                    {
-                        grid.Nodes = CreateGridNodes(points, grid.ColumnCount, grid.RowCount, grid.LayerCount);
-                    }
-
-                    grid.Metadata["RepresentationType"] = gridElement.Name.LocalName;
-
-                    if (!PassesDepthFilter(grid.BoundingBox, configuration))
-                        continue;
-
-                    grids.Add(grid);
+                if (configuration.LoadGeometry && points.Count > 0)
+                {
+                    grid.Nodes = CreateGridNodes(points, grid.ColumnCount, grid.RowCount, grid.LayerCount);
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading grid models from RESQML: {ex.Message}");
+
+                grid.Metadata["RepresentationType"] = gridElement.Name.LocalName;
+
+                if (!PassesDepthFilter(grid.BoundingBox, configuration))
+                    continue;
+
+                grids.Add(grid);
             }
 
             return grids;
@@ -448,37 +403,30 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         {
             var surfaces = new List<ReservoirSurfaceData>();
 
-            try
+            foreach (var surfaceElement in GetSurfaceRepresentationElements(reservoirElement))
             {
-                foreach (var surfaceElement in GetSurfaceRepresentationElements(reservoirElement))
+                var points = ExtractGeometryPoints(surfaceElement);
+                if (points.Count == 0)
+                    continue;
+
+                string title = surfaceElement.Element(resqml + "Citation")?.Element(eml + "Title")?.Value;
+                var surface = new ReservoirSurfaceData
                 {
-                    var points = ExtractGeometryPoints(surfaceElement);
-                    if (points.Count == 0)
-                        continue;
+                    SurfaceId = surfaceElement.Attribute("uuid")?.Value ?? Guid.NewGuid().ToString(),
+                    SurfaceName = title ?? surfaceElement.Name.LocalName,
+                    SurfaceKind = ResolveSurfaceKind(surfaceElement.Name.LocalName, title),
+                    SourceRepresentationType = surfaceElement.Name.LocalName,
+                    SourceGridId = surfaceElement.Name.LocalName.Contains("Grid2dRepresentation") ? surfaceElement.Attribute("uuid")?.Value : null,
+                    Points = configuration.LoadGeometry ? points : new List<Point3D>(),
+                    BoundingBox = CreateBoundingBox(points)
+                };
 
-                    string title = surfaceElement.Element(resqml + "Citation")?.Element(eml + "Title")?.Value;
-                    var surface = new ReservoirSurfaceData
-                    {
-                        SurfaceId = surfaceElement.Attribute("uuid")?.Value ?? Guid.NewGuid().ToString(),
-                        SurfaceName = title ?? surfaceElement.Name.LocalName,
-                        SurfaceKind = ResolveSurfaceKind(surfaceElement.Name.LocalName, title),
-                        SourceRepresentationType = surfaceElement.Name.LocalName,
-                        SourceGridId = surfaceElement.Name.LocalName.Contains("Grid2dRepresentation") ? surfaceElement.Attribute("uuid")?.Value : null,
-                        Points = configuration.LoadGeometry ? points : new List<Point3D>(),
-                        BoundingBox = CreateBoundingBox(points)
-                    };
+                surface.Metadata["RepresentationType"] = surfaceElement.Name.LocalName;
 
-                    surface.Metadata["RepresentationType"] = surfaceElement.Name.LocalName;
+                if (!PassesDepthFilter(surface.BoundingBox, configuration))
+                    continue;
 
-                    if (!PassesDepthFilter(surface.BoundingBox, configuration))
-                        continue;
-
-                    surfaces.Add(surface);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading surfaces from RESQML: {ex.Message}");
+                surfaces.Add(surface);
             }
 
             return surfaces;
@@ -552,41 +500,34 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         {
             var contacts = new FluidContacts();
 
-            try
-            {
-                // Find fluid contact representations
-                var contactElements = reservoirElement.Descendants()
-                    .Where(e => e.Name.Namespace == resqml &&
-                                e.Name.LocalName.Contains("HorizonInterpretation"));
+            // Find fluid contact representations
+            var contactElements = reservoirElement.Descendants()
+                .Where(e => e.Name.Namespace == resqml &&
+                            e.Name.LocalName.Contains("HorizonInterpretation"));
 
-                foreach (var contact in contactElements)
+            foreach (var contact in contactElements)
+            {
+                var title = contact.Element(resqml + "Citation")?.Element(eml + "Title")?.Value?.ToLower() ?? "";
+                var depth = ExtractContactDepth(contact);
+
+                if (!depth.HasValue) continue;
+
+                if (title.Contains("fwl") || title.Contains("free water level"))
                 {
-                    var title = contact.Element(resqml + "Citation")?.Element(eml + "Title")?.Value?.ToLower() ?? "";
-                    var depth = ExtractContactDepth(contact);
-
-                    if (!depth.HasValue) continue;
-
-                    if (title.Contains("fwl") || title.Contains("free water level"))
-                    {
-                        contacts.FreeWaterLevel = depth;
-                    }
-                    else if (title.Contains("owc") || title.Contains("oil water contact"))
-                    {
-                        contacts.OilWaterContact = depth;
-                    }
-                    else if (title.Contains("goc") || title.Contains("gas oil contact"))
-                    {
-                        contacts.GasOilContact = depth;
-                    }
-                    else if (title.Contains("gwc") || title.Contains("gas water contact"))
-                    {
-                        contacts.GasWaterContact = depth;
-                    }
+                    contacts.FreeWaterLevel = depth;
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading fluid contacts from RESQML: {ex.Message}");
+                else if (title.Contains("owc") || title.Contains("oil water contact"))
+                {
+                    contacts.OilWaterContact = depth;
+                }
+                else if (title.Contains("goc") || title.Contains("gas oil contact"))
+                {
+                    contacts.GasOilContact = depth;
+                }
+                else if (title.Contains("gwc") || title.Contains("gas water contact"))
+                {
+                    contacts.GasWaterContact = depth;
+                }
             }
 
             return contacts;
@@ -619,42 +560,35 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         {
             var properties = new ReservoirProperties();
 
-            try
+            // Extract properties from property sets
+            var propertySets = reservoirElement.Descendants(resqml + "PropertySet");
+            
+            foreach (var propSet in propertySets)
             {
-                // Extract properties from property sets
-                var propertySets = reservoirElement.Descendants(resqml + "PropertySet");
+                var props = propSet.Elements(resqml + "Property").ToList();
                 
-                foreach (var propSet in propertySets)
+                foreach (var prop in props)
                 {
-                    var props = propSet.Elements(resqml + "Property").ToList();
-                    
-                    foreach (var prop in props)
+                    var propName = prop.Element(resqml + "Citation")?.Element(eml + "Title")?.Value?.ToLower() ?? "";
+                    var values = prop.Descendants(resqml + "Values")
+                        .SelectMany(v => v.Elements().Select(e => e.Value))
+                        .Where(v => double.TryParse(v, out _))
+                        .Select(v => double.Parse(v))
+                        .ToList();
+
+                    if (!values.Any()) continue;
+
+                    var avgValue = values.Average();
+
+                    if (propName.Contains("porosity"))
                     {
-                        var propName = prop.Element(resqml + "Citation")?.Element(eml + "Title")?.Value?.ToLower() ?? "";
-                        var values = prop.Descendants(resqml + "Values")
-                            .SelectMany(v => v.Elements().Select(e => e.Value))
-                            .Where(v => double.TryParse(v, out _))
-                            .Select(v => double.Parse(v))
-                            .ToList();
-
-                        if (!values.Any()) continue;
-
-                        var avgValue = values.Average();
-
-                        if (propName.Contains("porosity"))
-                        {
-                            properties.AveragePorosity = avgValue;
-                        }
-                        else if (propName.Contains("permeability"))
-                        {
-                            properties.AveragePermeability = avgValue;
-                        }
+                        properties.AveragePorosity = avgValue;
+                    }
+                    else if (propName.Contains("permeability"))
+                    {
+                        properties.AveragePermeability = avgValue;
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading properties from RESQML: {ex.Message}");
             }
 
             return properties;
@@ -662,16 +596,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
 
         private BoundingBox ExtractBoundingBox(XElement reservoirElement)
         {
-            try
-            {
-                return CreateBoundingBox(ExtractGeometryPoints(reservoirElement)) ?? new BoundingBox();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error extracting bounding box: {ex.Message}");
-            }
-
-            return new BoundingBox();
+            return CreateBoundingBox(ExtractGeometryPoints(reservoirElement)) ?? new BoundingBox();
         }
 
         private List<XElement> GetGridRepresentationElements(XElement reservoirElement)

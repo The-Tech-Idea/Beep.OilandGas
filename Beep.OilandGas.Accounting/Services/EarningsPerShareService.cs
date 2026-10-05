@@ -48,7 +48,7 @@ namespace Beep.OilandGas.Accounting.Services
             string cn = "PPDM39")
         {
             if (weightedAverageShares <= 0m)
-                throw new InvalidOperationException("Weighted average shares must be positive");
+                throw RefusalException.Invalid("Weighted average shares must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 

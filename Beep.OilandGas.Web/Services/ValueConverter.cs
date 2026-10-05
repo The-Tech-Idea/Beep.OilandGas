@@ -1,4 +1,6 @@
 using System;
+using System.ComponentModel;
+using System.Globalization;
 
 namespace Beep.OilandGas.Web.Services
 {
@@ -8,6 +10,12 @@ namespace Beep.OilandGas.Web.Services
     ///
     /// Previously each component had its own copy of this logic (M-24).
     /// </summary>
+    /// <remarks>
+    /// Nothing here converts by attempting and catching (OILGAS-CATCH-01): a value is asked of the target type's own
+    /// converter first (<see cref="TypeConverter.IsValid(object)"/>, the framework's question), and a property is set only
+    /// with a value it can hold. <see cref="SetPropertyValue"/> says whether it took the value — it dropped one it could not
+    /// convert in silence, so a person's entry vanished from the record without a word.
+    /// </remarks>
     public static class ValueConverter
     {
         /// <summary>
@@ -71,15 +79,50 @@ namespace Beep.OilandGas.Web.Services
                     return DateTimeOffset.TryParse(numericStr, out var dto) ? dto : null;
             }
 
-            // Fallback: Convert.ChangeType for other conversions
-            try
+            // Anything else is asked of the target type's own converter, in the invariant culture, rather than attempted
+            // and caught; a value it cannot take is returned as given.
+            return TryConvertWithTypeConverter(value, underlyingType, out var converted) ? converted : value;
+        }
+
+        /// <summary>
+        /// Converts <paramref name="value"/> for a property of <paramref name="targetType"/>, and says whether it could: false
+        /// when a value was given (not null, not blank) and came out as nothing ("abc" for a number), or as something the
+        /// property cannot hold. A blank value converts to the type's empty value and succeeds.
+        /// </summary>
+        public static bool TryConvertValue(object? value, Type targetType, out object? converted)
+        {
+            ArgumentNullException.ThrowIfNull(targetType);
+            converted = ConvertValue(value, targetType);
+            var given = value is not null && !(value is string text && string.IsNullOrWhiteSpace(text));
+            return (!given || converted is not null) && CanAssign(converted, targetType);
+        }
+
+        /// <summary>
+        /// Whether <paramref name="value"/> — as converted by <see cref="ConvertValue"/> — can be assigned to a property of
+        /// <paramref name="targetType"/>. A null can: reflection sets a non-nullable value type to its default.
+        /// </summary>
+        public static bool CanAssign(object? value, Type targetType)
+        {
+            ArgumentNullException.ThrowIfNull(targetType);
+            return value is null || targetType.IsInstanceOfType(value)
+                || (Nullable.GetUnderlyingType(targetType) is { } underlying && underlying.IsInstanceOfType(value));
+        }
+
+        private static bool TryConvertWithTypeConverter(object value, Type targetType, out object? converted)
+        {
+            var text = value is IFormattable formattable
+                ? formattable.ToString(null, CultureInfo.InvariantCulture)
+                : value.ToString();
+            var converter = TypeDescriptor.GetConverter(targetType);
+
+            if (text is not null && converter.CanConvertFrom(typeof(string)) && converter.IsValid(text))
             {
-                return Convert.ChangeType(value, underlyingType);
+                converted = converter.ConvertFromInvariantString(text);
+                return true;
             }
-            catch
-            {
-                return value;
-            }
+
+            converted = null;
+            return false;
         }
 
         /// <summary>
@@ -89,16 +132,20 @@ namespace Beep.OilandGas.Web.Services
         /// <param name="obj">The target object (may be a Dictionary&lt;string,object&gt;).</param>
         /// <param name="propertyName">Name of the property to set.</param>
         /// <param name="value">The value to convert and assign.</param>
-        public static void SetPropertyValue(object obj, string propertyName, object? value)
+        /// <returns>
+        /// Whether the value was taken: false when the property's type cannot hold it (the property keeps its value, and the
+        /// caller tells the person), and when there is no writable property of that name.
+        /// </returns>
+        public static bool SetPropertyValue(object obj, string propertyName, object? value)
         {
             if (obj == null || string.IsNullOrWhiteSpace(propertyName))
-                return;
+                return false;
 
             // Handle Dictionary<string, object> for dynamic entity bags
             if (obj is System.Collections.Generic.Dictionary<string, object> dict)
             {
                 dict[propertyName] = value ?? string.Empty;
-                return;
+                return true;
             }
 
             var prop = obj.GetType().GetProperty(propertyName,
@@ -107,17 +154,13 @@ namespace Beep.OilandGas.Web.Services
                 System.Reflection.BindingFlags.IgnoreCase);
 
             if (prop == null || !prop.CanWrite)
-                return;
+                return false;
 
-            try
-            {
-                var converted = ConvertValue(value, prop.PropertyType);
-                prop.SetValue(obj, converted);
-            }
-            catch
-            {
-                // Silently fail — the value will remain unchanged
-            }
+            if (!TryConvertValue(value, prop.PropertyType, out var converted))
+                return false;
+
+            prop.SetValue(obj, converted);
+            return true;
         }
     }
 }

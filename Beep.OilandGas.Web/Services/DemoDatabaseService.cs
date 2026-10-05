@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.DataManagement;
-using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.Web.Services
 {
@@ -22,14 +21,12 @@ namespace Beep.OilandGas.Web.Services
     public class DemoDatabaseService : IDemoDatabaseService
     {
         private readonly ApiClient _apiClient;
-        private readonly ILogger<DemoDatabaseService> _logger;
+        private readonly OilGasCallFailures _calls;
 
-        public DemoDatabaseService(
-            ApiClient apiClient,
-            ILogger<DemoDatabaseService> logger)
+        public DemoDatabaseService(ApiClient apiClient, OilGasCallFailures calls)
         {
             _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _calls = calls ?? throw new ArgumentNullException(nameof(calls));
         }
 
         /// <summary>
@@ -56,14 +53,13 @@ namespace Beep.OilandGas.Web.Services
                     Message = "Failed to create demo database"
                 };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error creating demo database");
                 return new CreateDemoDatabaseResponse
                 {
                     Success = false,
-                    Message = "Failed to create demo database",
-                    ErrorDetails = ex.Message
+                    Message = _calls.Explain(failure, "creating a demo database", "The demo database was not created")
                 };
             }
         }
@@ -73,17 +69,9 @@ namespace Beep.OilandGas.Web.Services
         /// </summary>
         public async Task<List<DemoDatabaseMetadata>> GetMyDemoDatabasesAsync()
         {
-            try
-            {
-                var databases = await _apiClient.GetAsync<List<DemoDatabaseMetadata>>("/api/demo/my-databases");
+            var databases = await _apiClient.GetAsync<List<DemoDatabaseMetadata>>("/api/demo/my-databases");
 
-                return databases ?? new List<DemoDatabaseMetadata>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting demo databases");
-                return new List<DemoDatabaseMetadata>();
-            }
+            return databases ?? new List<DemoDatabaseMetadata>();
         }
 
         /// <summary>
@@ -91,18 +79,10 @@ namespace Beep.OilandGas.Web.Services
         /// </summary>
         public async Task<bool> DeleteDemoDatabaseAsync(string connectionName)
         {
-            try
-            {
-                var response = await _apiClient.DeleteAsync<DeleteDemoDatabaseResponse>(
-                    $"/api/demo/{Uri.EscapeDataString(connectionName)}");
+            var response = await _apiClient.DeleteAsync<DeleteDemoDatabaseResponse>(
+                $"/api/demo/{Uri.EscapeDataString(connectionName)}");
 
-                return response?.Success ?? false;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting demo database {ConnectionName}", connectionName);
-                return false;
-            }
+            return response?.Success ?? false;
         }
     }
 }

@@ -7,9 +7,13 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.DataManagement;
+using Beep.OilandGas.Models.Core.Refusals;
+using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Microsoft.Extensions.Logging;
+using System.Reflection;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.Editor;
+using TheTechIdeaWeb.Diagnostics;
 using BeepDataSourceType = TheTechIdea.Beep.Utilities.DataSourceType;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Services.Setup
@@ -28,6 +32,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.Setup
     {
         private readonly IDMEEditor _editor;
         private readonly ILogger<PPDM39SetupConnectionService> _logger;
+        private readonly IFailureReporter _failures;
         private string? _currentConnectionName;
 
         // Static fallback driver map — used when BeepDM has not yet loaded the driver assembly
@@ -44,10 +49,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.Setup
                 ["SQLite"]     = new DatabaseDriverInfo { NuGetPackage = "TheTechIdea.Beep.Winform.Net8.SQLiteDataSource",   DataSourceType = "SqlLite",   DefaultPort = 0,    ScriptPath = "Scripts/SQLite" },
             };
 
-        public PPDM39SetupConnectionService(IDMEEditor editor, ILogger<PPDM39SetupConnectionService> logger)
+        public PPDM39SetupConnectionService(IDMEEditor editor, ILogger<PPDM39SetupConnectionService> logger,
+            IFailureReporter failures)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
         }
 
         // ── DRIVER RESOLUTION ─────────────────────────────────────────────────
@@ -78,7 +85,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.Setup
                         NuGetPackage   = driverClass.PackageName,
                         DataSourceType = driverClass.DatasourceType.ToString(),
                         DefaultPort    = GetDefaultPort(dsType),
-                        ScriptPath     = $"Scripts/{MapToScriptFolder(dsType)}"
+                        ScriptPath     = GetScriptPath(dsType)
                     };
             }
 
@@ -172,10 +179,17 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.Setup
                     ? new ConnectionTestResult { Success = true,  Message = "Connection successful" }
                     : new ConnectionTestResult { Success = false, Message = "Connection failed — could not open database" };
             }
-            catch (Exception ex)
+            // Broad: a connection test answers every failure of building and opening the datasource — each driver throws
+            // its own types. A connection that merely does not open is answered above without an exception. The
+            // exception's text was returned as the result's details (OILGAS-CATCH-01); it is reported instead.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogWarning(ex, "Connection test failed for {ConnectionName}", config.ConnectionName);
-                return new ConnectionTestResult { Success = false, Message = "Connection test failed", ErrorDetails = ex.Message };
+                return new ConnectionTestResult
+                {
+                    Success = false,
+                    Message = ReportedFailure.Sentence(_failures, ex,
+                        $"testing connection '{config.ConnectionName}'", "The connection could not be tested.")
+                };
             }
         }
 
@@ -215,10 +229,15 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.Setup
                 _currentConnectionName = config.ConnectionName;
                 return new SaveConnectionResult { Success = true, ConnectionName = config.ConnectionName, Message = "Connection saved successfully" };
             }
-            catch (Exception ex)
+            // Broad: saving answers every failure of writing the configuration store and opening the datasource.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogError(ex, "Failed to save connection {ConnectionName}", config.ConnectionName);
-                return new SaveConnectionResult { Success = false, Message = "Failed to save connection", ErrorDetails = ex.Message };
+                return new SaveConnectionResult
+                {
+                    Success = false,
+                    Message = ReportedFailure.Sentence(_failures, ex,
+                        $"saving connection '{config.ConnectionName}'", "The connection was not saved.")
+                };
             }
         }
 
@@ -235,10 +254,15 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.Setup
 
                 return SaveConnection(config, testAfterSave);
             }
-            catch (Exception ex)
+            // Broad: removing the original entry answers every failure of the configuration store.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogError(ex, "Failed to update connection {ConnectionName}", originalConnectionName);
-                return new SaveConnectionResult { Success = false, Message = "Failed to update connection", ErrorDetails = ex.Message };
+                return new SaveConnectionResult
+                {
+                    Success = false,
+                    Message = ReportedFailure.Sentence(_failures, ex,
+                        $"updating connection '{originalConnectionName}'", "The connection was not updated.")
+                };
             }
         }
 
@@ -261,10 +285,15 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.Setup
 
                 return new DeleteConnectionResult { Success = true, Message = "Connection deleted" };
             }
-            catch (Exception ex)
+            // Broad: deleting answers every failure of writing the configuration store.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogError(ex, "Failed to delete connection {ConnectionName}", connectionName);
-                return new DeleteConnectionResult { Success = false, Message = "Failed to delete connection", ErrorDetails = ex.Message };
+                return new DeleteConnectionResult
+                {
+                    Success = false,
+                    Message = ReportedFailure.Sentence(_failures, ex,
+                        $"deleting connection '{connectionName}'", "The connection was not deleted.")
+                };
             }
         }
 
@@ -372,13 +401,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.Setup
         {
             try
             {
+                // Each assembly is asked for the type by name: enumerating every type of every loaded assembly threw for
+                // assemblies whose types cannot all load, and that was caught and ignored per assembly.
                 var helperType = AppDomain.CurrentDomain.GetAssemblies()
-                    .SelectMany(assembly =>
-                    {
-                        try { return assembly.GetTypes(); }
-                        catch { return Array.Empty<Type>(); }
-                    })
-                    .FirstOrDefault(t => t.FullName == "TheTechIdea.Beep.Helpers.ConnectionHelper");
+                    .Select(assembly => assembly.GetType("TheTechIdea.Beep.Helpers.ConnectionHelper", throwOnError: false))
+                    .FirstOrDefault(type => type != null);
 
                 var method = helperType?.GetMethod("GetBestMatchingDriver",
                     new[] { typeof(ConnectionProperties), _editor.ConfigEditor.GetType() });
@@ -397,9 +424,15 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.Setup
                     props.DriverVersion = version;
                 return;
             }
-            catch (Exception ex)
+            // Narrow: the helper is called by reflection, which wraps whatever it throws. The fallback below is
+            // deliberate — the driver class already loaded for this database type — and the helper's failure is
+            // reported, not a debug line.
+            catch (TargetInvocationException ex)
             {
-                _logger.LogDebug(ex, "ConnectionHelper.GetBestMatchingDriver lookup failed; using fallback for {ConnectionName}", props.ConnectionName);
+                _failures.ReportHandled(ex,
+                    $"choosing the best matching driver for connection '{props.ConnectionName}'",
+                    "the connection uses the driver class already loaded for its database type",
+                    FailureSeverity.Degraded);
             }
 
             Fallback:
@@ -439,23 +472,31 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.Setup
             };
         }
 
-        private static int GetDefaultPort(BeepDataSourceType dsType) => dsType switch
+        // The datasource types this setup knows a default port and a script folder for. They are tables, not switches
+        // with a catch-all: DataSourceType has well over a hundred members, and the catch-all named a folder of SQL Server
+        // scripts for every one of them (OILGAS-CATCH-01). A type without a default port answers 0, which the driver
+        // information has always used for "none" (SQLite); a type without scripts has no script path.
+        private static readonly IReadOnlyDictionary<BeepDataSourceType, int> DefaultPorts = new Dictionary<BeepDataSourceType, int>
         {
-            BeepDataSourceType.SqlServer => 1433,
-            BeepDataSourceType.Postgre   => 5432,
-            BeepDataSourceType.Mysql     => 3306,
-            BeepDataSourceType.Oracle    => 1521,
-            _                            => 0
+            [BeepDataSourceType.SqlServer] = 1433,
+            [BeepDataSourceType.Postgre]   = 5432,
+            [BeepDataSourceType.Mysql]     = 3306,
+            [BeepDataSourceType.Oracle]    = 1521,
         };
 
-        private static string MapToScriptFolder(BeepDataSourceType dsType) => dsType switch
+        private static readonly IReadOnlyDictionary<BeepDataSourceType, string> ScriptFolders = new Dictionary<BeepDataSourceType, string>
         {
-            BeepDataSourceType.SqlServer => "SqlServer",
-            BeepDataSourceType.Postgre   => "PostgreSQL",
-            BeepDataSourceType.Mysql     => "MySQL",
-            BeepDataSourceType.Oracle    => "Oracle",
-            BeepDataSourceType.SqlLite   => "SQLite",
-            _                            => "SqlServer"
+            [BeepDataSourceType.SqlServer] = "SqlServer",
+            [BeepDataSourceType.Postgre]   = "PostgreSQL",
+            [BeepDataSourceType.Mysql]     = "MySQL",
+            [BeepDataSourceType.Oracle]    = "Oracle",
+            [BeepDataSourceType.SqlLite]   = "SQLite",
         };
+
+        private static int GetDefaultPort(BeepDataSourceType dsType) =>
+            DefaultPorts.TryGetValue(dsType, out var port) ? port : 0;
+
+        private static string GetScriptPath(BeepDataSourceType dsType) =>
+            ScriptFolders.TryGetValue(dsType, out var folder) ? $"Scripts/{folder}" : string.Empty;
     }
 }

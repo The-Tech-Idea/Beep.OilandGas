@@ -6,6 +6,7 @@
 @inject ILeaseServiceClient LeaseService
 @inject ApiClient ApiClient
 @inject ILifeCycleService LifeCycleService
+@inject OilGasApiFailures Answers
 
 <PageTitle>Manage Lease Acquisitions</PageTitle>
 
@@ -363,16 +364,13 @@
         {
             try
             {
-                var updated = await LeaseService.UpdateLeaseStatusAsync(leaseId, "Active");
-                if (updated)
-                {
-                    Snackbar.Add("Lease status updated successfully", Severity.Success);
-                    await LoadLeases();
-                }
-                else
-                {
-                    Snackbar.Add("Failed to update lease status", Severity.Warning);
-                }
+                await LeaseService.UpdateLeaseStatusAsync(leaseId, "Active");
+                Snackbar.Add("Lease status updated successfully", Severity.Success);
+                await LoadLeases();
+            }
+            catch (OilGasApiException answer)
+            {
+                Snackbar.Add(Answers.Explain(answer, "marking a lease active", "The lease status was not updated"), Severity.Error);
             }
             catch (Exception)
             {

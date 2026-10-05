@@ -54,7 +54,7 @@ namespace Beep.OilandGas.Accounting.Services
             string? bookId = null)
         {
             if (periodEnd < periodStart)
-                throw new ArgumentException("periodEnd must be >= periodStart", nameof(periodEnd));
+                throw RefusalException.Invalid("The period end must be on or after the period start.");
 
             var cashAccount = GetAccountId(AccountMappingKeys.Cash, DefaultGlAccounts.Cash);
 
@@ -179,7 +179,7 @@ namespace Beep.OilandGas.Accounting.Services
                 case CashFlowCategory.Financing:
                     statement.Financing += amount;
                     break;
-                default:
+                case CashFlowCategory.Operating:
                     statement.Operating += amount;
                     break;
             }

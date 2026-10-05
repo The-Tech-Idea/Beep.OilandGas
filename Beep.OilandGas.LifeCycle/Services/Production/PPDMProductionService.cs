@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Core.Refusals;
+using TheTechIdeaWeb.Diagnostics;
 using Beep.OilandGas.PPDM39.Core;
 ﻿using System;
 using System.Collections;
@@ -43,6 +45,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         private readonly IPPDMMetadataRepository _metadata;
         private readonly PPDMMappingService _mappingService;
         private readonly string _connectionName;
+        private readonly IFailureReporter _failures;
         private readonly ILogger<PPDMProductionService>? _logger;
 
         public PPDMProductionService(
@@ -51,6 +54,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             PPDMMappingService mappingService,
+            IFailureReporter failures,
             string connectionName = "PPDM39",
             ILogger<PPDMProductionService>? logger = null)
         {
@@ -60,6 +64,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _mappingService = mappingService ?? throw new ArgumentNullException(nameof(mappingService));
             _connectionName = connectionName;
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
             _logger = logger;
         }
 
@@ -288,9 +293,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         public async Task<WellPerformanceAnalysisResponse> GetWellPerformanceAnalysisAsync(string fieldId, string wellId)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID is required", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (string.IsNullOrWhiteSpace(wellId))
-                throw new ArgumentException("Well ID is required", nameof(wellId));
+                throw RefusalException.Invalid("The well ID is required.");
 
             var tests = await GetWellTestsForWellAsync(fieldId, wellId);
             var orderedTests = (tests ?? new List<WellTestResponse>())
@@ -327,9 +332,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         public async Task<PerformanceDeviationResult> LogWellPerformanceDeviationAsync(string fieldId, string wellId, PerformanceDeviationRequest request, string userId)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID is required", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (string.IsNullOrWhiteSpace(wellId))
-                throw new ArgumentException("Well ID is required", nameof(wellId));
+                throw RefusalException.Invalid("The well ID is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(userId))
@@ -393,7 +398,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             });
 
             if (!wellResults.OfType<WELL>().Any())
-                throw new InvalidOperationException($"Well {wellId} is not part of the active field {fieldId}.");
+                throw RefusalException.NotFound($"Well {wellId} is not in the active field {fieldId}.");
         }
 
         private async Task<List<WELL_ACTIVITY>> GetWellActivitiesForWellAsync(string fieldId, string wellId)
@@ -573,16 +578,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             if (activity.START_DATE.HasValue)
                 return activity.START_DATE.Value;
 
-            try
-            {
-                var seconds = decimal.ToInt64(activity.ACTIVITY_OBS_NO);
-                return DateTimeOffset.FromUnixTimeSeconds(seconds).UtcDateTime;
-            }
-            catch
-            {
-                return DateTime.MinValue;
-            }
+            // The observation number is read as a Unix time only when it lies in the range a date can hold: asked, not
+            // caught.
+            var observation = decimal.Truncate(activity.ACTIVITY_OBS_NO);
+            return observation >= MinUnixSeconds && observation <= MaxUnixSeconds
+                ? DateTimeOffset.FromUnixTimeSeconds(decimal.ToInt64(observation)).UtcDateTime
+                : DateTime.MinValue;
         }
+
+        private static readonly decimal MinUnixSeconds = DateTimeOffset.MinValue.ToUnixTimeSeconds();
+        private static readonly decimal MaxUnixSeconds = DateTimeOffset.MaxValue.ToUnixTimeSeconds();
 
         private static string DescribeWellActivity(WELL_ACTIVITY activity)
         {
@@ -745,7 +750,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 var well = await wellRepo.GetByIdAsync(formattedWellId);
 
                 if (well == null)
-                    throw new InvalidOperationException($"Well {wellId} not found");
+                    throw RefusalException.NotFound($"Well {wellId} was not found.");
 
                 // Validate well belongs to field using ASSIGNED_FIELD (WELL's field link column)
                 var wellEntity = well as WELL;
@@ -754,7 +759,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                     var formattedFieldId = _defaults.FormatIdForTable("WELL", fieldId);
                     if (!string.IsNullOrEmpty(wellEntity.ASSIGNED_FIELD) &&
                         !string.Equals(wellEntity.ASSIGNED_FIELD, formattedFieldId, StringComparison.OrdinalIgnoreCase))
-                        throw new InvalidOperationException($"Well {wellId} does not belong to field {fieldId}");
+                        throw RefusalException.NotFound($"Well {wellId} is not in field {fieldId}.");
                 }
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
@@ -779,7 +784,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 var dtoList = _mappingService.ConvertPPDMModelListToDTOListRuntime(results, typeof(WellTestResponse), typeof(WELL_TEST));
                 return dtoList.Cast<WellTestResponse>().ToList();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not RefusalException)
             {
                 throw new InvalidOperationException($"Error getting well tests for well {wellId} in field: {fieldId}", ex);
             }
@@ -1073,6 +1078,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                     {
                         var remark = (rec as WELL_EQUIPMENT)?.REMARK;
                         if (string.IsNullOrEmpty(remark) || !remark.Contains("ChokeDiameter")) continue;
+                        // Only a remark written as a JSON object can hold a stored choke; plain text naming one is passed over.
+                        if (!remark.TrimStart().StartsWith('{')) continue;
 
                         try
                         {
@@ -1093,7 +1100,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                                 };
                             }
                         }
-                        catch { /* skip malformed remark */ }
+                        // System.Text.Json has no question to ask before parsing: an unreadable stored choke is reported
+                        // and passed over, and the analysis goes on to the next record or the request's diameter.
+                        catch (Exception ex) when (ex is System.Text.Json.JsonException or FormatException or InvalidOperationException)
+                        {
+                            _failures.ReportHandled(ex, $"reading a stored choke diameter from a WELL_EQUIPMENT remark of well {wellId}",
+                                "that record is passed over; the choke analysis uses another stored choke or the request's diameter",
+                                FailureSeverity.Degraded);
+                        }
                     }
                 }
 
@@ -1224,10 +1238,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 await equipmentRepo.InsertAsync(equipmentRecord, userId);
                 _logger?.LogInformation("Stored choke flow results for well {WellId}", wellId);
             }
-            catch (Exception ex)
+            // The analysis is still the caller's answer when it cannot be saved: the failure is reported so the missing
+            // record is seen. Cancellation is the caller's.
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger?.LogError(ex, "Error storing choke flow results for well {WellId}", wellId);
-                // Don't throw - storage failure shouldn't fail the operation
+                _failures.ReportHandled(ex, $"saving the choke flow analysis for well {wellId} in WELL_EQUIPMENT",
+                    "the choke flow analysis is returned to the caller but is not saved", FailureSeverity.Degraded);
             }
         }
 
@@ -1275,10 +1291,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 await equipmentRepo.InsertAsync(equipmentRecord, userId);
                 _logger?.LogInformation("Stored choke sizing results for well {WellId}", wellId);
             }
-            catch (Exception ex)
+            // The analysis is still the caller's answer when it cannot be saved: the failure is reported so the missing
+            // record is seen. Cancellation is the caller's.
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger?.LogError(ex, "Error storing choke sizing results for well {WellId}", wellId);
-                // Don't throw - storage failure shouldn't fail the operation
+                _failures.ReportHandled(ex, $"saving the choke sizing for well {wellId} in WELL_EQUIPMENT",
+                    "the choke sizing is returned to the caller but is not saved", FailureSeverity.Degraded);
             }
         }
 
@@ -1575,10 +1593,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                     }
                 };
             }
-            catch (Exception ex)
+            // The analysis goes on with a single uniform rod section over the well depth — the same string it uses when no
+            // sections are recorded — and the failure to read the recorded string is reported. Cancellation is the caller's.
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger?.LogError(ex, "Error building sucker rod string for well {WellId}", wellId);
-                // Safe fallback so analysis can still proceed
+                _failures.ReportHandled(ex, $"reading the sucker rod string of well {wellId} from WELL_EQUIPMENT",
+                    "the sucker rod analysis uses a single uniform rod section over the well depth instead of the recorded string",
+                    FailureSeverity.Degraded);
                 return new SUCKER_ROD_STRING
                 {
                     TOTAL_LENGTH = systemProperties.WELL_DEPTH,
@@ -1641,10 +1662,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 await equipmentRepo.InsertAsync(equipmentRecord, userId);
                 _logger?.LogInformation("Stored sucker rod load results for well {WellId}", wellId);
             }
-            catch (Exception ex)
+            // The analysis is still the caller's answer when it cannot be saved: the failure is reported so the missing
+            // record is seen. Cancellation is the caller's.
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger?.LogError(ex, "Error storing sucker rod load results for well {WellId}", wellId);
-                // Don't throw - storage failure shouldn't fail the operation
+                _failures.ReportHandled(ex, $"saving the sucker rod load analysis for well {wellId} in WELL_EQUIPMENT",
+                    "the sucker rod load analysis is returned to the caller but is not saved", FailureSeverity.Degraded);
             }
         }
 
@@ -1694,10 +1717,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 await equipmentRepo.InsertAsync(equipmentRecord, userId);
                 _logger?.LogInformation("Stored sucker rod power results for well {WellId}", wellId);
             }
-            catch (Exception ex)
+            // The analysis is still the caller's answer when it cannot be saved: the failure is reported so the missing
+            // record is seen. Cancellation is the caller's.
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger?.LogError(ex, "Error storing sucker rod power results for well {WellId}", wellId);
-                // Don't throw - storage failure shouldn't fail the operation
+                _failures.ReportHandled(ex, $"saving the sucker rod power analysis for well {wellId} in WELL_EQUIPMENT",
+                    "the sucker rod power analysis is returned to the caller but is not saved", FailureSeverity.Degraded);
             }
         }
 
@@ -1742,7 +1767,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 var currentProd = production.FirstOrDefault();
                 if (currentProd == null)
                 {
-                    throw new InvalidOperationException($"No production data found for well {wellId}");
+                    throw RefusalException.Conflict($"No production is recorded for well {wellId}, so there is nothing to optimize.");
                 }
 
                 // Record the optimization event in FACILITY_STATUS so it is traceable

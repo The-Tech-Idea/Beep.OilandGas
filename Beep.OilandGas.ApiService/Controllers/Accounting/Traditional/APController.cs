@@ -45,29 +45,21 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Invoice ID is required." });
-            try
-            {
-                var invoice = _service.TraditionalAccounting.AccountsPayable.GetAPInvoice(id);
-                if (invoice == null)
-                        return NotFound(new { error = $"AP invoice with ID {id} not found." });
+            var invoice = _service.TraditionalAccounting.AccountsPayable.GetAPInvoice(id);
+            if (invoice == null)
+                    return NotFound(new { error = $"AP invoice with ID {id} not found." });
 
-                return Ok(new
-                {
-                    ApInvoiceId = invoice.AP_INVOICE_ID,
-                    InvoiceNumber = invoice.INVOICE_NUMBER,
-                    VendorBaId = invoice.VENDOR_BA_ID,
-                    InvoiceDate = invoice.INVOICE_DATE,
-                    DueDate = invoice.DUE_DATE,
-                    TotalAmount = invoice.TOTAL_AMOUNT,
-                    BalanceDue = invoice.BALANCE_DUE,
-                    Status = invoice.STATUS
-                });
-            }
-            catch (Exception ex)
+            return Ok(new
             {
-                _logger.LogError(ex, "Error getting AP invoice {InvoiceId}", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                ApInvoiceId = invoice.AP_INVOICE_ID,
+                InvoiceNumber = invoice.INVOICE_NUMBER,
+                VendorBaId = invoice.VENDOR_BA_ID,
+                InvoiceDate = invoice.INVOICE_DATE,
+                DueDate = invoice.DUE_DATE,
+                TotalAmount = invoice.TOTAL_AMOUNT,
+                BalanceDue = invoice.BALANCE_DUE,
+                Status = invoice.STATUS
+            });
         }
 
         /// <summary>
@@ -79,53 +71,42 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var invoice = _service.TraditionalAccounting.AccountsPayable.CreateAPInvoice(request, userId);
+
+            // Post to GL: Debit Expense, Credit AP
+            var lines = new List<JournalEntryLineData>
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-
-                var invoice = _service.TraditionalAccounting.AccountsPayable.CreateAPInvoice(request, userId);
-
-                // Post to GL: Debit Expense, Credit AP
-                var lines = new List<JournalEntryLineData>
+                new JournalEntryLineData
                 {
-                    new JournalEntryLineData
-                    {
-                        GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
-                            .FirstOrDefault(a => a.ACCOUNT_NUMBER == "5000")?.GL_ACCOUNT_ID ?? "",
-                        DebitAmount = invoice.TOTAL_AMOUNT,
-                        CreditAmount = null,
-                        Description = $"AP Invoice {invoice.INVOICE_NUMBER}"
-                    },
-                    new JournalEntryLineData
-                    {
-                        GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
-                            .FirstOrDefault(a => a.ACCOUNT_NUMBER == "2000")?.GL_ACCOUNT_ID ?? "",
-                        DebitAmount = null,
-                        CreditAmount = invoice.TOTAL_AMOUNT,
-                        Description = $"AP Invoice {invoice.INVOICE_NUMBER}"
-                    }
-                };
+                    GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
+                        .FirstOrDefault(a => a.ACCOUNT_NUMBER == "5000")?.GL_ACCOUNT_ID ?? "",
+                    DebitAmount = invoice.TOTAL_AMOUNT,
+                    CreditAmount = null,
+                    Description = $"AP Invoice {invoice.INVOICE_NUMBER}"
+                },
+                new JournalEntryLineData
+                {
+                    GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
+                        .FirstOrDefault(a => a.ACCOUNT_NUMBER == "2000")?.GL_ACCOUNT_ID ?? "",
+                    DebitAmount = null,
+                    CreditAmount = invoice.TOTAL_AMOUNT,
+                    Description = $"AP Invoice {invoice.INVOICE_NUMBER}"
+                }
+            };
 
-                var journalEntryId = await _glIntegration.PostTraditionalAccountingToGL(
+            var journalEntryId = await LedgerPosting.PostAsync(
+                () => _glIntegration.PostTraditionalAccountingToGL(
                     invoice.AP_INVOICE_ID,
                     "AP_Invoice",
                     lines,
                     invoice.INVOICE_DATE,
-                    userId);
+                    userId),
+                $"AP invoice {invoice.INVOICE_NUMBER}", invoice.AP_INVOICE_ID, "AP_Invoice");
 
-                return Ok(new { ApInvoiceId = invoice.AP_INVOICE_ID, InvoiceNumber = invoice.INVOICE_NUMBER, JournalEntryId = journalEntryId });
-            }
-            catch (GLPostingException ex)
-            {
-                _logger.LogError(ex, "GL posting failed for AP invoice");
-                    return StatusCode(500, new { error = "AP invoice created but GL posting failed." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating AP invoice");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { ApInvoiceId = invoice.AP_INVOICE_ID, InvoiceNumber = invoice.INVOICE_NUMBER, JournalEntryId = journalEntryId });
         }
     }
 }

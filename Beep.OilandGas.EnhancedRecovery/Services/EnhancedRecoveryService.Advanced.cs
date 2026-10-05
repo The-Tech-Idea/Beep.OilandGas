@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,9 +29,9 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             double waterInjectionRate, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (productionHistory == null || productionHistory.Count == 0)
-                throw new ArgumentException("Production history cannot be null or empty", nameof(productionHistory));
+                throw RefusalException.Invalid("Give the production history to analyse.");
 
             _logger?.LogInformation("Starting waterfload analysis: field={FieldId}, OOIP={OOIP:F0}, " +
                 "injection rate={Rate:F2} bbl/day", fieldId, initialOilInPlace, waterInjectionRate);
@@ -98,7 +99,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             List<double> productionHistory, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
 
             _logger?.LogInformation("Analyzing gas injection: field={FieldId}, type={Type}, " +
                 "pressure={Pressure:F0} psi, MMP={MMP:F0} psi",
@@ -162,9 +163,9 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             double crudePaveViscosity, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (string.IsNullOrWhiteSpace(chemicalType))
-                throw new ArgumentException("Chemical type must be specified", nameof(chemicalType));
+                throw RefusalException.Invalid("Choose the chemical type.");
 
             _logger?.LogInformation("Analyzing chemical EOR: field={FieldId}, type={Type}, " +
                 "temperature={Temp:F1}°F, salinity={Sal:F0} ppm",
@@ -229,7 +230,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             double oilSaturation, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
 
             _logger?.LogInformation("Analyzing thermal recovery: field={FieldId}, method={Method}, " +
                 "temp={Temp:F1}°F, viscosity={Visc:F0} cp, saturation={Sat:F2}",
@@ -297,9 +298,9 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             Dictionary<string, double> reservoirProperties, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (methodsToEvaluate == null || methodsToEvaluate.Count == 0)
-                throw new ArgumentException("Methods to evaluate cannot be null or empty", nameof(methodsToEvaluate));
+                throw RefusalException.Invalid("Choose at least one recovery method to evaluate.");
 
             _logger?.LogInformation("Comparing EOR methods for field {FieldId}: {Methods}",
                 fieldId, string.Join(", ", methodsToEvaluate));
@@ -360,9 +361,9 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             double permeability, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (desiredWellCount <= 0)
-                throw new ArgumentException("Well count must be positive", nameof(desiredWellCount));
+                throw RefusalException.Invalid("The well count must be greater than zero.");
 
             _logger?.LogInformation("Optimizing injection well placement: field={FieldId}, wells={Count}, " +
                 "area={Area:F0} acres, thickness={Thick:F1} ft, perm={Perm:F0} md",
@@ -432,7 +433,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             double reservoirVolume, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
 
             _logger?.LogInformation("Analyzing pressure performance: field={FieldId}, initial={Init:F0} psi, " +
                 "current={Curr:F0} psi, injection={Inj:F0} bbl/day",
@@ -500,9 +501,9 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             double discountRate = 0.10, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID cannot be null or empty", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (estimatedIncrementalOil <= 0)
-                throw new ArgumentException("Incremental oil must be positive", nameof(estimatedIncrementalOil));
+                throw RefusalException.Invalid("The estimated incremental oil must be greater than zero.");
 
             _logger?.LogInformation("Analyzing EOR economics: field={FieldId}, oil={Oil:F0} bbl, " +
                 "price=${Price:F2}, capex=${Capex:F0}, opex=${Opex:F2}/bbl",

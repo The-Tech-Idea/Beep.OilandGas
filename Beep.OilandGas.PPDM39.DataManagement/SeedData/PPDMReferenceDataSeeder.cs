@@ -11,7 +11,9 @@ using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
+using Beep.OilandGas.Models.Core.Refusals;
 using TheTechIdea.Beep.Editor;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
 {
@@ -27,6 +29,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly LOVManagementService _lovService;
+        private readonly IFailureReporter _failures;
         private readonly string _connectionName;
 
         public PPDMReferenceDataSeeder(
@@ -35,6 +38,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             LOVManagementService lovService,
+            IFailureReporter failures,
             string connectionName = "PPDM39")
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
@@ -42,6 +46,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _lovService = lovService ?? throw new ArgumentNullException(nameof(lovService));
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
             _connectionName = connectionName;
         }
 
@@ -70,41 +75,36 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
                     if (tableType == Beep.OilandGas.PPDM39.DataManagement.Services.ReferenceTableType.ListOfValue && entityType == typeof(LIST_OF_VALUE))
                     {
                         var lovsToImport = new List<LIST_OF_VALUE>();
-                        
+
+                        // OILGAS-CATCH-01: a row the template gets wrong fails the table's seeding, which the caller
+                        // reports and records against the table. It was written to the console and left out, and the
+                        // table counted as seeded without it.
                         foreach (var dataRow in seedData)
                         {
-                            try
-                            {
-                                var lov = new LIST_OF_VALUE();
-                                
-                                // Set properties from seed data
-                                foreach (var kvp in dataRow)
-                                {
-                                    var prop = typeof(LIST_OF_VALUE).GetProperty(kvp.Key, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                                    if (prop != null && prop.CanWrite)
-                                    {
-                                        var value = ConvertValue(kvp.Value, prop.PropertyType);
-                                        prop.SetValue(lov, value);
-                                    }
-                                }
+                            var lov = new LIST_OF_VALUE();
 
-                                // Set defaults if not provided
-                                if (string.IsNullOrEmpty(lov.LIST_OF_VALUE_ID))
-                                {
-                                    lov.LIST_OF_VALUE_ID = Guid.NewGuid().ToString();
-                                }
-                                if (string.IsNullOrEmpty(lov.ACTIVE_IND))
-                                {
-                                    lov.ACTIVE_IND = "Y";
-                                }
-
-                                lovsToImport.Add(lov);
-                            }
-                            catch (Exception ex)
+                            // Set properties from seed data
+                            foreach (var kvp in dataRow)
                             {
-                                // Log error but continue with next row
-                                Console.WriteLine($"Error preparing LOV row: {ex.Message}");
+                                var prop = typeof(LIST_OF_VALUE).GetProperty(kvp.Key, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+                                if (prop != null && prop.CanWrite)
+                                {
+                                    var value = ConvertValue(kvp.Value, prop.PropertyType);
+                                    prop.SetValue(lov, value);
+                                }
                             }
+
+                            // Set defaults if not provided
+                            if (string.IsNullOrEmpty(lov.LIST_OF_VALUE_ID))
+                            {
+                                lov.LIST_OF_VALUE_ID = Guid.NewGuid().ToString();
+                            }
+                            if (string.IsNullOrEmpty(lov.ACTIVE_IND))
+                            {
+                                lov.ACTIVE_IND = "Y";
+                            }
+
+                            lovsToImport.Add(lov);
                         }
 
                         // Bulk import using LOVManagementService
@@ -121,44 +121,34 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
                         // Use generic method for R_* and RA_* tables
                         var entitiesToImport = new List<object>();
                         
+                        // As above: a row the template gets wrong fails the table rather than being left out.
                         foreach (var dataRow in seedData)
                         {
-                            try
+                            var entity = Activator.CreateInstance(entityType)
+                                ?? throw new InvalidOperationException($"Cannot create an instance of {entityType.Name} to seed {tableName}.");
+
+                            // Set properties from seed data
+                            foreach (var kvp in dataRow)
                             {
-                                var entity = Activator.CreateInstance(entityType);
-                                if (entity == null)
+                                var prop = entityType.GetProperty(kvp.Key, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+                                if (prop != null && prop.CanWrite)
                                 {
-                                    continue;
+                                    var value = ConvertValue(kvp.Value, prop.PropertyType);
+                                    prop.SetValue(entity, value);
                                 }
-
-                                // Set properties from seed data
-                                foreach (var kvp in dataRow)
-                                {
-                                    var prop = entityType.GetProperty(kvp.Key, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                                    if (prop != null && prop.CanWrite)
-                                    {
-                                        var value = ConvertValue(kvp.Value, prop.PropertyType);
-                                        prop.SetValue(entity, value);
-                                    }
-                                }
-
-                                // Set defaults if needed
-                                if (entity is IPPDMEntity ppdmEntity)
-                                {
-                                    var activeIndProp = entityType.GetProperty("ACTIVE_IND", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                                    if (activeIndProp != null && activeIndProp.GetValue(entity) == null)
-                                    {
-                                        activeIndProp.SetValue(entity, "Y");
-                                    }
-                                }
-
-                                entitiesToImport.Add(entity);
                             }
-                            catch (Exception ex)
+
+                            // Set defaults if needed
+                            if (entity is IPPDMEntity ppdmEntity)
                             {
-                                // Log error but continue with next row
-                                Console.WriteLine($"Error preparing {tableName} row: {ex.Message}");
+                                var activeIndProp = entityType.GetProperty("ACTIVE_IND", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+                                if (activeIndProp != null && activeIndProp.GetValue(entity) == null)
+                                {
+                                    activeIndProp.SetValue(entity, "Y");
+                                }
                             }
+
+                            entitiesToImport.Add(entity);
                         }
 
                         // Use reflection to call generic BulkAddReferenceValuesAsync
@@ -201,39 +191,33 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
 
                 int seeded = 0;
 
+                // A row that cannot be prepared or written fails the table (OILGAS-CATCH-01): it was written to the
+                // console and skipped, and the count returned read as the table's whole seeding.
                 foreach (var dataRow in seedData)
                 {
-                    try
+                    var entity = Activator.CreateInstance(fallbackEntityType);
+                    var entityTypeInfo = fallbackEntityType;
+
+                    // Set properties from seed data
+                    foreach (var kvp in dataRow)
                     {
-                        var entity = Activator.CreateInstance(fallbackEntityType);
-                        var entityTypeInfo = fallbackEntityType;
-
-                        // Set properties from seed data
-                        foreach (var kvp in dataRow)
+                        var prop = entityTypeInfo.GetProperty(kvp.Key, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+                        if (prop != null && prop.CanWrite)
                         {
-                            var prop = entityTypeInfo.GetProperty(kvp.Key, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                            if (prop != null && prop.CanWrite)
-                            {
-                                var value = ConvertValue(kvp.Value, prop.PropertyType);
-                                prop.SetValue(entity, value);
-                            }
-                        }
-
-                        // Set common columns
-                        if (entity is IPPDMEntity ppdmEntity)
-                            _commonColumnHandler.PrepareForInsert(ppdmEntity, userId);
-
-                        // Insert entity
-                        var result = await repository.InsertAsync(entity, userId);
-                        if (result != null)
-                        {
-                            seeded++;
+                            var value = ConvertValue(kvp.Value, prop.PropertyType);
+                            prop.SetValue(entity, value);
                         }
                     }
-                    catch (Exception ex)
+
+                    // Set common columns
+                    if (entity is IPPDMEntity ppdmEntity)
+                        _commonColumnHandler.PrepareForInsert(ppdmEntity, userId);
+
+                    // Insert entity
+                    var result = await repository.InsertAsync(entity, userId);
+                    if (result != null)
                     {
-                        // Log error but continue with next row
-                        Console.WriteLine($"Error seeding row in {tableName}: {ex.Message}");
+                        seeded++;
                     }
                 }
 
@@ -387,42 +371,20 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
         public async Task<SeedDataResponse> SeedIHSReferenceDataAsync(string connectionName = "PPDM39", List<string>? tableNames = null, bool skipExisting = true, string userId = "SYSTEM")
         {
             connectionName ??= _connectionName;
-            var response = new SeedDataResponse
+
+            // This route seeds nothing: the IHS template is imported by IHSStandardValueImporter through the import
+            // endpoint. It answered "seeding completed" with Success = true after reading the template and doing nothing,
+            // and a template it could not parse was caught and answered in the parser's words (OILGAS-CATCH-01). It now
+            // says what it does, so a caller choosing the IHS category is not told data was seeded.
+            var templatePath = GetTemplatePath("IHSReferenceData.json");
+            return await Task.FromResult(new SeedDataResponse
             {
-                Success = true,
-                Message = "IHS reference data seeding completed",
+                Success = false,
+                Message = File.Exists(templatePath)
+                    ? "IHS reference data is not seeded by this route. Import it through the IHS import endpoint."
+                    : $"Template file not found: {Path.GetFileName(templatePath)}",
                 TableResults = new List<TableSeedResult>()
-            };
-
-            try
-            {
-                var templatePath = GetTemplatePath("IHSReferenceData.json");
-                if (!File.Exists(templatePath))
-                {
-                    response.Success = false;
-                    response.Message = $"Template file not found: {templatePath}";
-                    return response;
-                }
-
-                var jsonContent = await File.ReadAllTextAsync(templatePath);
-                var jsonDoc = JsonDocument.Parse(jsonContent);
-                var root = jsonDoc.RootElement;
-
-                if (root.TryGetProperty("ihsData", out var ihsData))
-                {
-                    // Use IHSStandardValueImporter to import IHS data
-                    // This would require injecting the importer, but for now we'll use a simplified approach
-                    // The importer can be called separately via API
-                    response.Message = "IHS data import requires IHSStandardValueImporter. Use import endpoint instead.";
-                }
-            }
-            catch (Exception ex)
-            {
-                response.Success = false;
-                response.Message = $"Error seeding IHS reference data: {ex.Message}";
-            }
-
-            return response;
+            });
         }
 
         /// <summary>
@@ -438,21 +400,27 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
                 TableResults = new List<TableSeedResult>()
             };
 
-            try
+            var templatePath = GetTemplatePath("IndustryStandardsReferenceData.json");
+            if (!File.Exists(templatePath))
             {
-                var templatePath = GetTemplatePath("IndustryStandardsReferenceData.json");
-                if (!File.Exists(templatePath))
-                {
-                    response.Success = false;
-                    response.Message = $"Template file not found: {templatePath}";
-                    return response;
-                }
+                response.Success = false;
+                response.Message = $"Template file not found: {Path.GetFileName(templatePath)}";
+                return response;
+            }
 
-                var jsonContent = await File.ReadAllTextAsync(templatePath);
-                var jsonDoc = JsonDocument.Parse(jsonContent);
+            var jsonContent = await File.ReadAllTextAsync(templatePath);
+            if (!TryParseTemplate(jsonContent, templatePath, out var jsonDoc, out var unreadable))
+            {
+                response.Success = false;
+                response.Message = unreadable;
+                return response;
+            }
+
+            using (jsonDoc)
+            {
                 var root = jsonDoc.RootElement;
 
-                if (root.TryGetProperty("standards", out var standards))
+                if (root.TryGetProperty("standards", out var standards) && standards.ValueKind == JsonValueKind.Object)
                 {
                     // Import API, ISO, and Regulatory standards to LIST_OF_VALUE using LOVManagementService
                     var lovsToImport = new List<LIST_OF_VALUE>();
@@ -466,40 +434,43 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
                         {
                             foreach (var item in standardData.EnumerateArray())
                             {
-                                try
+                                // Each value is asked for by kind (OILGAS-CATCH-01): an item without a code or name was
+                                // thrown on, caught, and recorded in the reader's own words.
+                                var code = SeedTemplateJson.StringProperty(item, "code");
+                                var name = SeedTemplateJson.StringProperty(item, "name");
+                                if (code == null || name == null)
                                 {
-                                    var code = item.GetProperty("code").GetString();
-                                    var name = item.GetProperty("name").GetString();
-                                    var description = item.TryGetProperty("description", out var desc) ? desc.GetString() : null;
-                                    var valueType = item.TryGetProperty("valueType", out var vt) ? vt.GetString() : standardName;
-                                    var storeInLOV = item.TryGetProperty("storeInLOV", out var sil) && sil.GetBoolean();
-
-                                    if (storeInLOV)
-                                    {
-                                        var lov = new LIST_OF_VALUE
-                                        {
-                                            LIST_OF_VALUE_ID = Guid.NewGuid().ToString(),
-                                            VALUE_TYPE = valueType ?? standardName,
-                                            VALUE_CODE = code ?? string.Empty,
-                                            VALUE_NAME = name ?? string.Empty,
-                                            DESCRIPTION = description,
-                                            CATEGORY = "IndustryStandards",
-                                            SOURCE = standardName,
-                                            ACTIVE_IND = "Y"
-                                        };
-
-                                        lovsToImport.Add(lov);
-                                    }
+                                    response.Errors.Add($"A {standardName} item in the industry standards template has no code or name and was not imported.");
+                                    continue;
                                 }
-                                catch (Exception ex)
+
+                                var description = SeedTemplateJson.StringProperty(item, "description");
+                                var valueType = SeedTemplateJson.StringProperty(item, "valueType") ?? standardName;
+                                var storeInLOV = item.ValueKind == JsonValueKind.Object &&
+                                                 item.TryGetProperty("storeInLOV", out var sil) && sil.ValueKind == JsonValueKind.True;
+
+                                if (storeInLOV)
                                 {
-                                    response.Errors.Add($"Error importing {standardName} item: {ex.Message}");
+                                    var lov = new LIST_OF_VALUE
+                                    {
+                                        LIST_OF_VALUE_ID = Guid.NewGuid().ToString(),
+                                        VALUE_TYPE = valueType,
+                                        VALUE_CODE = code,
+                                        VALUE_NAME = name,
+                                        DESCRIPTION = description,
+                                        CATEGORY = "IndustryStandards",
+                                        SOURCE = standardName,
+                                        ACTIVE_IND = "Y"
+                                    };
+
+                                    lovsToImport.Add(lov);
                                 }
                             }
                         }
                     }
 
-                    // Bulk import using LOVManagementService
+                    // Bulk import using LOVManagementService. A failure to write reaches the caller: it was caught and
+                    // answered in the provider's words.
                     if (lovsToImport.Any())
                     {
                         var bulkResult = await _lovService.BulkAddLOVsAsync(lovsToImport, userId, skipExisting, connectionName);
@@ -509,13 +480,36 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
                     }
                 }
             }
-            catch (Exception ex)
+
+            if (response.Errors.Count > 0)
             {
                 response.Success = false;
-                response.Message = $"Error seeding industry standards data: {ex.Message}";
+                response.Message = $"Industry standards data seeded with {response.Errors.Count} problem(s).";
             }
 
             return response;
+        }
+
+        /// <summary>
+        /// Parses a shipped seed template. The JSON reader has no question to ask before parsing, so a template it refuses
+        /// is caught here — narrowly — reported, and answered with a sentence carrying the reference.
+        /// </summary>
+        private bool TryParseTemplate(string jsonContent, string templatePath, out JsonDocument document, out string unreadable)
+        {
+            try
+            {
+                document = JsonDocument.Parse(jsonContent);
+                unreadable = string.Empty;
+                return true;
+            }
+            catch (JsonException ex)
+            {
+                document = null!;
+                unreadable = ReportedFailure.Sentence(_failures, ex,
+                    $"reading the seed template {Path.GetFileName(templatePath)}",
+                    $"The seed template {Path.GetFileName(templatePath)} could not be read, so nothing was seeded from it.");
+                return false;
+            }
         }
 
         /// <summary>
@@ -530,55 +524,59 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
                 TableResults = new List<TableSeedResult>()
             };
 
-            try
+            if (!File.Exists(templatePath))
             {
-                if (!File.Exists(templatePath))
-                {
-                    response.Success = false;
-                    response.Message = $"Template file not found: {templatePath}";
-                    return response;
-                }
+                response.Success = false;
+                response.Message = $"Template file not found: {Path.GetFileName(templatePath)}";
+                return response;
+            }
 
-                var jsonContent = await File.ReadAllTextAsync(templatePath);
-                var jsonDoc = JsonDocument.Parse(jsonContent);
+            var jsonContent = await File.ReadAllTextAsync(templatePath);
+            if (!TryParseTemplate(jsonContent, templatePath, out var jsonDoc, out var unreadable))
+            {
+                response.Success = false;
+                response.Message = unreadable;
+                return response;
+            }
+
+            // The template is read by asking each element for its kind (OILGAS-CATCH-01): a missing or mistyped property
+            // was thrown on and caught with the whole template, and answered in the reader's own words.
+            var template = new SeedDataTemplate { Tables = new List<TableTemplate>() };
+            using (jsonDoc)
+            {
                 var root = jsonDoc.RootElement;
-                
-                var template = new SeedDataTemplate
-                {
-                    Category = root.GetProperty("category").GetString() ?? string.Empty,
-                    Version = root.GetProperty("version").GetString() ?? string.Empty,
-                    Description = root.GetProperty("description").GetString() ?? string.Empty,
-                    Tables = new List<TableTemplate>()
-                };
+                template.Category = SeedTemplateJson.StringProperty(root, "category") ?? string.Empty;
+                template.Version = SeedTemplateJson.StringProperty(root, "version") ?? string.Empty;
+                template.Description = SeedTemplateJson.StringProperty(root, "description") ?? string.Empty;
 
-                if (root.TryGetProperty("tables", out var tablesElement))
+                if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("tables", out var tablesElement) &&
+                    tablesElement.ValueKind == JsonValueKind.Array)
                 {
                     foreach (var tableElement in tablesElement.EnumerateArray())
                     {
+                        var tableName = SeedTemplateJson.StringProperty(tableElement, "tableName");
+                        if (string.IsNullOrWhiteSpace(tableName))
+                        {
+                            response.Errors.Add($"A table in the template {Path.GetFileName(templatePath)} has no table name and was not seeded.");
+                            continue;
+                        }
+
                         var tableTemplate = new TableTemplate
                         {
-                            TableName = tableElement.GetProperty("tableName").GetString() ?? string.Empty,
-                            Description = tableElement.GetProperty("description").GetString() ?? string.Empty,
+                            TableName = tableName,
+                            Description = SeedTemplateJson.StringProperty(tableElement, "description") ?? string.Empty,
                             Data = new List<Dictionary<string, object>>()
                         };
 
-                        if (tableElement.TryGetProperty("data", out var dataElement))
+                        if (tableElement.TryGetProperty("data", out var dataElement) && dataElement.ValueKind == JsonValueKind.Array)
                         {
                             foreach (var dataRow in dataElement.EnumerateArray())
                             {
+                                if (dataRow.ValueKind != JsonValueKind.Object)
+                                    continue;
                                 var rowDict = new Dictionary<string, object>();
                                 foreach (var prop in dataRow.EnumerateObject())
-                                {
-                                    rowDict[prop.Name] = prop.Value.ValueKind switch
-                                    {
-                                        JsonValueKind.String => prop.Value.GetString() ?? string.Empty,
-                                        JsonValueKind.Number => prop.Value.GetDecimal(),
-                                        JsonValueKind.True => true,
-                                        JsonValueKind.False => false,
-                                        JsonValueKind.Null => null!,
-                                        _ => prop.Value.GetRawText()
-                                    };
-                                }
+                                    rowDict[prop.Name] = SeedTemplateJson.Value(prop.Value);
                                 tableTemplate.Data.Add(rowDict);
                             }
                         }
@@ -586,80 +584,80 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
                         template.Tables.Add(tableTemplate);
                     }
                 }
+            }
 
-                if (template == null || template.Tables == null)
-                {
-                    response.Success = false;
-                    response.Message = "Invalid template format";
-                    return response;
-                }
+            var tablesToSeed = template.Tables;
+            if (tableNames != null && tableNames.Any())
+            {
+                tablesToSeed = tablesToSeed.Where(t => tableNames.Contains(t.TableName, StringComparer.OrdinalIgnoreCase)).ToList();
+            }
 
-                var tablesToSeed = template.Tables;
-                if (tableNames != null && tableNames.Any())
+            foreach (var tableTemplate in tablesToSeed)
+            {
+                var tableResult = new TableSeedResult
                 {
-                    tablesToSeed = tablesToSeed.Where(t => tableNames.Contains(t.TableName, StringComparer.OrdinalIgnoreCase)).ToList();
-                }
+                    TableName = tableTemplate.TableName,
+                    Success = false
+                };
 
-                foreach (var tableTemplate in tablesToSeed)
+                try
                 {
-                    var tableResult = new TableSeedResult
+                    if (skipExisting)
                     {
-                        TableName = tableTemplate.TableName,
-                        Success = false
-                    };
-
-                    try
-                    {
-                        if (skipExisting)
+                        // Check if table already has data
+                        var metadata = await _metadata.GetTableMetadataAsync(tableTemplate.TableName);
+                        if (metadata != null)
                         {
-                            // Check if table already has data
-                            var metadata = await _metadata.GetTableMetadataAsync(tableTemplate.TableName);
-                            if (metadata != null)
+                            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}") ??
+                                            Type.GetType($"Beep.OilandGas.Models.Data.{metadata.EntityTypeName}");
+                            if (entityType != null)
                             {
-                                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}") ??
-                                                Type.GetType($"Beep.OilandGas.Models.Data.{metadata.EntityTypeName}");
-                                if (entityType != null)
+                                var repository = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                                    entityType, connectionName, tableTemplate.TableName);
+                                var existing = await repository.GetAsync(new List<TheTechIdea.Beep.Report.AppFilter>());
+                                if (existing.Any())
                                 {
-                                    var repository = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                                        entityType, connectionName, tableTemplate.TableName);
-                                    var existing = await repository.GetAsync(new List<TheTechIdea.Beep.Report.AppFilter>());
-                                    if (existing.Any())
-                                    {
-                                        tableResult.Success = true;
-                                        tableResult.RecordsSkipped = tableTemplate.Data?.Count ?? 0;
-                                        response.RecordsSkipped += tableResult.RecordsSkipped;
-                                        response.TableResults.Add(tableResult);
-                                        continue;
-                                    }
+                                    tableResult.Success = true;
+                                    tableResult.RecordsSkipped = tableTemplate.Data?.Count ?? 0;
+                                    response.RecordsSkipped += tableResult.RecordsSkipped;
+                                    response.TableResults.Add(tableResult);
+                                    continue;
                                 }
                             }
                         }
-
-                        var seedData = tableTemplate.Data?.Select(d => 
-                            d.ToDictionary(kvp => kvp.Key, kvp => kvp.Value)).ToList() ?? new List<Dictionary<string, object>>();
-
-                        var seeded = await SeedReferenceTableAsync(tableTemplate.TableName, seedData, userId);
-                        tableResult.Success = true;
-                        tableResult.RecordsInserted = seeded;
-                        response.RecordsInserted += seeded;
-                        response.TablesSeeded++;
-                    }
-                    catch (Exception ex)
-                    {
-                        tableResult.Success = false;
-                        tableResult.ErrorMessage = ex.Message;
                     }
 
-                    response.TableResults.Add(tableResult);
+                    var seedData = tableTemplate.Data?.Select(d =>
+                        d.ToDictionary(kvp => kvp.Key, kvp => kvp.Value)).ToList() ?? new List<Dictionary<string, object>>();
+
+                    var seeded = await SeedReferenceTableAsync(tableTemplate.TableName, seedData, userId);
+                    tableResult.Success = true;
+                    tableResult.RecordsInserted = seeded;
+                    response.RecordsInserted += seeded;
+                    response.TablesSeeded++;
+                }
+                // Broad: each table is seeded on its own and its result says how it went — the metadata, the repository
+                // and the driver each throw their own types. A table that fails is reported and recorded with the
+                // reference; the others are still seeded. It used to carry the exception's text, and the response stayed
+                // "successful" whatever its tables did.
+                catch (Exception ex) when (ex is not RefusalException)
+                {
+                    tableResult.Success = false;
+                    tableResult.ErrorMessage = ReportedFailure.Sentence(_failures, ex,
+                        $"seeding reference table {tableTemplate.TableName} from {Path.GetFileName(templatePath)}",
+                        $"Table {tableTemplate.TableName} was not seeded.");
+                    response.Errors.Add(tableResult.ErrorMessage);
                 }
 
-                response.Message = $"Seeded {response.TablesSeeded} table(s), inserted {response.RecordsInserted} record(s), skipped {response.RecordsSkipped} record(s)";
+                response.TableResults.Add(tableResult);
             }
-            catch (Exception ex)
-            {
+
+            var failedTables = response.TableResults.Count(table => !table.Success);
+            if (failedTables > 0 || response.Errors.Count > 0)
                 response.Success = false;
-                response.Message = $"Error seeding from template: {ex.Message}";
-            }
+            response.Message = failedTables > 0
+                ? $"Seeded {response.TablesSeeded} table(s), inserted {response.RecordsInserted} record(s), skipped {response.RecordsSkipped} record(s); {failedTables} table(s) failed"
+                : $"Seeded {response.TablesSeeded} table(s), inserted {response.RecordsInserted} record(s), skipped {response.RecordsSkipped} record(s)";
 
             return response;
         }

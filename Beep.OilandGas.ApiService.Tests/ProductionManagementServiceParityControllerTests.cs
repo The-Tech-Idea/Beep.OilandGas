@@ -50,7 +50,7 @@ public class ProductionManagementServiceParityControllerTests
     }
 
     [Fact]
-    public async Task FacilityController_ListFacilityPdenAsync_Returns500_WhenServiceThrows()
+    public async Task FacilityController_ListFacilityPdenAsync_LeavesAFailureToTheApiHandler()
     {
         var productionManagement = new Mock<IProductionManagementService>(MockBehavior.Strict);
         productionManagement
@@ -66,10 +66,9 @@ public class ProductionManagementServiceParityControllerTests
             productionManagement.Object,
             NullLogger<FacilityController>.Instance);
 
-        var result = await controller.ListFacilityPdenAsync(null, null, CancellationToken.None);
-
-        var status = Assert.IsType<ObjectResult>(result.Result);
-        Assert.Equal(500, status.StatusCode);
+        // OILGAS-CATCH-01: the controller no longer answers a failure itself; it reaches the API's exception handler,
+        // which reports it and answers 500 with its reference and never its text (ExceptionAnswerTests).
+        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.ListFacilityPdenAsync(null, null, CancellationToken.None));
         productionManagement.VerifyAll();
     }
 

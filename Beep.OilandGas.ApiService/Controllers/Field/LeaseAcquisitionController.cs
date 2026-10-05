@@ -37,48 +37,15 @@ public class LeaseAcquisitionController : ControllerBase
     public async Task<ActionResult<LeaseSummary>> EvaluateLease(string leaseId)
     {
         if (string.IsNullOrWhiteSpace(leaseId)) return BadRequest(new { error = "Lease ID is required." });
-        try
-        {
-            var result = await _service.EvaluateLeaseAsync(leaseId);
-            return Ok(result);
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning(ex, "Lease not found: {LeaseId}", leaseId);
-            return NotFound(new { error = ex.Message });
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error evaluating lease {LeaseId}", leaseId);
-            return StatusCode(500, new { error = "An internal error occurred." });
-        }
+        var result = await _service.EvaluateLeaseAsync(leaseId);
+        return Ok(result);
     }
 
     [HttpGet("available")]
     public async Task<ActionResult<List<LeaseSummary>>> GetAvailableLeases([FromQuery] Dictionary<string, string>? filters = null)
     {
-        try
-        {
-            var result = await _service.GetAvailableLeasesAsync(filters);
-            return Ok(result);
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting available leases");
-            return StatusCode(500, new { error = "An internal error occurred." });
-        }
+        var result = await _service.GetAvailableLeasesAsync(filters);
+        return Ok(result);
     }
 
     [HttpPost]
@@ -86,24 +53,8 @@ public class LeaseAcquisitionController : ControllerBase
     {
         var userId = User.ActingUserId();
         if (leaseRequest is null) return BadRequest(new { error = "Request body is required." });
-        try
-        {
-            var id = await _service.CreateLeaseAcquisitionAsync(leaseRequest, userId);
-            return Ok(new { message = "Lease acquisition created successfully", leaseId = id });
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating lease acquisition");
-            return StatusCode(500, new { error = "An internal error occurred." });
-        }
+        var id = await _service.CreateLeaseAcquisitionAsync(leaseRequest, userId);
+        return Ok(new { message = "Lease acquisition created successfully", leaseId = id });
     }
 
     [HttpPut("{leaseId}/status")]
@@ -112,27 +63,7 @@ public class LeaseAcquisitionController : ControllerBase
         var userId = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(leaseId)) return BadRequest(new { error = "Lease ID is required." });
         if (request is null) return BadRequest(new { error = "Request body is required." });
-        try
-        {
-            await _service.UpdateLeaseStatusAsync(leaseId, request.Status, userId);
-            return Ok(new { message = "Lease status updated successfully" });
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating lease status for {LeaseId}", leaseId);
-            return StatusCode(500, new { error = "An internal error occurred." });
-        }
+        await _service.UpdateLeaseStatusAsync(leaseId, request.Status, userId);
+        return Ok(new { message = "Lease status updated successfully" });
     }
 }

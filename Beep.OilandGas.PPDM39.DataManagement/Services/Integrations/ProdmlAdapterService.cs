@@ -1,4 +1,5 @@
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data.Integrations;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Services.Integrations;
 
@@ -17,6 +19,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.Integrations;
 ///   m³  → BBL  × 6.2898
 ///   ft³ → MCF  ÷ 1 000
 /// </summary>
+/// <remarks>
+/// OILGAS-CATCH-01, as for <see cref="WitsmlAdapterService"/>: a sync answers with its result — a paused connection in
+/// this adapter's words, any other failure counted against the circuit breaker, reported, and answered with the reference
+/// (the result carried the exception's text). Listing the endpoint's wells lets a failure reach its caller after counting
+/// it, where it used to answer an empty list.
+/// </remarks>
 public class ProdmlAdapterService : IProdmlAdapter
 {
     private const string AdapterName = "PRODML";
@@ -29,6 +37,7 @@ public class ProdmlAdapterService : IProdmlAdapter
     private readonly string                         _connectionName;
     private readonly IHttpClientFactory             _httpFactory;
     private readonly ILogger<ProdmlAdapterService>  _logger;
+    private readonly IFailureReporter               _failures;
 
     private const double CubicMetreToBbl = 6.2898;
     private const double CubicFeetToMcf  = 0.001;
@@ -41,7 +50,8 @@ public class ProdmlAdapterService : IProdmlAdapter
         IPPDMMetadataRepository        metadata,
         string                         connectionName,
         IHttpClientFactory             httpFactory,
-        ILogger<ProdmlAdapterService>  logger)
+        ILogger<ProdmlAdapterService>  logger,
+        IFailureReporter               failures)
     {
         _health         = health;
         _editor         = editor;
@@ -51,18 +61,22 @@ public class ProdmlAdapterService : IProdmlAdapter
         _connectionName = connectionName;
         _httpFactory    = httpFactory;
         _logger         = logger;
+        _failures       = failures ?? throw new ArgumentNullException(nameof(failures));
     }
 
     // ── IProdmlAdapter ────────────────────────────────────────────────────────
 
     public async Task<List<ProdmlWellSummary>> GetAvailableWellsAsync(string prodmlEndpoint)
     {
+        var paused = await PausedAsync();
+        if (paused != null)
+            throw new IntegrationUnavailableException(paused);
+
         try
         {
-            await CheckCircuitBreakerAsync();
             using var client = MakeClient(prodmlEndpoint);
             var json = await client.GetStringAsync("wells");
-            var doc  = JsonDocument.Parse(json);
+            using var doc  = JsonDocument.Parse(json);
             var list = new List<ProdmlWellSummary>();
             foreach (var el in doc.RootElement.EnumerateArray())
             {
@@ -74,27 +88,29 @@ public class ProdmlAdapterService : IProdmlAdapter
             _health.RecordSuccess(AdapterName);
             return list;
         }
-        catch (IntegrationUnavailableException) { return new(); }
-        catch (Exception ex)
+        // Broad: every failure of the call — the HTTP client, the endpoint's answer, its JSON — counts against the
+        // circuit breaker. It is then rethrown, for the caller's handler to report.
+        catch (Exception ex) when (ex is not RefusalException)
         {
             _health.RecordFailure(AdapterName, ex);
-            _logger.LogError(ex, "[PRODML] GetAvailableWells failed");
-            return new();
+            throw;
         }
     }
 
     public async Task<ProdmlSyncResult> SyncMonthlyVolumesAsync(
         string prodmlEndpoint, string fieldId, int year, int month, string userId)
     {
+        var paused = await PausedAsync();
+        if (paused != null)
+            return Fail(year, month, paused);
+
         try
         {
-            await CheckCircuitBreakerAsync();
-
             using var client = MakeClient(prodmlEndpoint);
             var json = await client.GetStringAsync(
                 $"volumes/monthly?fieldId={Uri.EscapeDataString(fieldId)}&year={year}&month={month}");
 
-            var doc           = JsonDocument.Parse(json);
+            using var doc     = JsonDocument.Parse(json);
             var volRepo       = await MakeRepoAsync("PDEN_VOL_SUMMARY");
             int volRows       = 0;
 
@@ -114,30 +130,28 @@ public class ProdmlAdapterService : IProdmlAdapter
                 AdapterName, DateTime.UtcNow, true, volRows, null));
             return new ProdmlSyncResult(true, volRows, 0, period, null);
         }
-        catch (IntegrationUnavailableException ex)
+        // Broad: a sync answers every failure of the call and of the write in its result (see the class remarks).
+        catch (Exception ex) when (ex is not RefusalException)
         {
-            return Fail(year, month, ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _health.RecordFailure(AdapterName, ex);
-            _logger.LogError(ex, "[PRODML] SyncMonthlyVolumes {Year}/{Month} failed", year, month);
-            return Fail(year, month, ex.Message);
+            return Fail(year, month, Failed(ex, $"syncing PRODML monthly volumes for field {fieldId}, {year}-{month:00}",
+                $"The PRODML monthly volumes for {year}-{month:00} were not synced."));
         }
     }
 
     public async Task<ProdmlSyncResult> SyncDailyAllocationsAsync(
         string prodmlEndpoint, string fieldId, DateTime date, string userId)
     {
+        var paused = await PausedAsync();
+        if (paused != null)
+            return Fail(date.Year, date.Month, paused);
+
         try
         {
-            await CheckCircuitBreakerAsync();
-
             using var client = MakeClient(prodmlEndpoint);
             var json = await client.GetStringAsync(
                 $"volumes/daily?fieldId={Uri.EscapeDataString(fieldId)}&date={date:yyyy-MM-dd}");
 
-            var doc      = JsonDocument.Parse(json);
+            using var doc = JsonDocument.Parse(json);
             var dispRepo = await MakeRepoAsync("PDEN_VOL_DISPOSITION");
             int rows     = 0;
 
@@ -155,25 +169,37 @@ public class ProdmlAdapterService : IProdmlAdapter
                 AdapterName, DateTime.UtcNow, true, rows, null));
             return new ProdmlSyncResult(true, 0, rows, period, null);
         }
-        catch (IntegrationUnavailableException ex)
+        // Broad: as for monthly volumes.
+        catch (Exception ex) when (ex is not RefusalException)
         {
-            return Fail(date.Year, date.Month, ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _health.RecordFailure(AdapterName, ex);
-            _logger.LogError(ex, "[PRODML] SyncDailyAllocations {Date} failed", date.ToString("yyyy-MM-dd"));
-            return Fail(date.Year, date.Month, ex.Message);
+            return Fail(date.Year, date.Month, Failed(ex,
+                $"syncing PRODML daily allocations for field {fieldId}, {date:yyyy-MM-dd}",
+                $"The PRODML daily allocations for {date:yyyy-MM-dd} were not synced."));
         }
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
-    private async Task CheckCircuitBreakerAsync()
+    /// <summary>
+    /// Counts a failed call against the circuit breaker, records it in the sync history, reports it, and answers the
+    /// sentence the result carries.
+    /// </summary>
+    [ReportsFailure]
+    private string Failed(Exception exception, string operation, string whatDidNotHappen)
+    {
+        var sentence = ReportedFailure.Sentence(_failures, exception, operation, whatDidNotHappen);
+        _health.RecordFailure(AdapterName, exception);
+        _health.AppendHistory(new IntegrationSyncHistoryEntry(AdapterName, DateTime.UtcNow, false, 0, sentence));
+        return sentence;
+    }
+
+    /// <summary>The sentence for a paused connection (the circuit breaker open); null when calls may go through.</summary>
+    private async Task<string?> PausedAsync()
     {
         var s = await _health.GetStatusAsync(AdapterName);
-        if (s.State == CircuitBreakerState.Open)
-            throw new IntegrationUnavailableException($"{AdapterName} circuit breaker is OPEN");
+        return s.State == CircuitBreakerState.Open
+            ? $"The {AdapterName} connection is paused after repeated failures; try again in a few minutes."
+            : null;
     }
 
     private HttpClient MakeClient(string baseUrl)

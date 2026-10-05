@@ -3,6 +3,7 @@
 @implements IDisposable
 @inject ILifeCycleService LifeCycleService
 @inject IDataManagementService DataManagementService
+@inject OilGasCallFailures Calls
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
     <MudText Typo="Typo.h6">Active field overview</MudText>
@@ -63,7 +64,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _state = new(LifeCycleService.GetFieldDashboardAsync);
+        _state = new(LifeCycleService.GetFieldDashboardAsync, Calls);
         DataManagementService.CurrentFieldChanged += FieldChanged;
         await Reload();
     }

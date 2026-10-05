@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.Core;
 ﻿using System;
 using System.Collections.Generic;
@@ -35,7 +36,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 // Validate request
                 if (string.IsNullOrEmpty(request.WellId) && string.IsNullOrEmpty(request.PoolId) && string.IsNullOrEmpty(request.FieldId))
                 {
-                    throw new ArgumentException("At least one of WellId, PoolId, or FieldId must be provided");
+                    throw RefusalException.Invalid("Choose the well, pool or field to analyse.");
                 }
 
                 _logger?.LogInformation("Starting DCA analysis for WellId: {WellId}, PoolId: {PoolId}, FieldId: {FieldId}", 
@@ -59,7 +60,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 
                 if (productionDataPoints.Count == 0)
                 {
-                    throw new InvalidOperationException("No production data found for the specified criteria. Cannot perform DCA analysis.");
+                    throw RefusalException.Conflict("No production is recorded for the chosen well, pool or field in that period, so there is nothing to fit a decline curve to.");
                 }
 
                 // Step 2: Extract production rates and dates for DCAManager
@@ -67,7 +68,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 if (productionRates.Count < 3)
                 {
-                    throw new InvalidOperationException($"Insufficient production data points ({productionRates.Count}). At least 3 data points are required for DCA analysis.");
+                    throw RefusalException.Conflict($"Only {productionRates.Count} production rates are recorded for that period; a decline curve needs at least 3.");
                 }
 
                 // Step 3: Perform DCA analysis using DCAManager
@@ -110,11 +111,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 return result;
             }
+            // Every way the run ends short of a result is recorded in the calculation history, then goes on to the
+            // caller: the API's handler answers a refusal with its sentence and reports anything else.
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error performing DCA analysis");
-                
-                // Return error result
                 var errorResult = new DCAResult
                 {
                     CalculationId = Guid.NewGuid().ToString(),
@@ -125,23 +125,17 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     CalculationDate = DateTime.UtcNow,
                     ProductionFluidType = request.ProductionFluidType,
                     Status = "FAILED",
-                    ErrorMessage = ex.Message,
+                    ErrorMessage = FailedRunMessage(ex, "decline curve analysis"),
                     UserId = request.UserId,
                     ForecastPoints = new List<DCAForecastPoint>(),
                     AdditionalResults = new DcaAdditionalResults()
                 };
 
-                // Try to store error result
-                try
+                await RecordFailedRunAsync("decline curve analysis", async () =>
                 {
                     var repository = await GetDCAResultRepositoryAsync();
-
                     await repository.InsertAsync(errorResult, request.UserId ?? "system");
-                }
-                catch (Exception storeEx)
-                {
-                    _logger?.LogError(storeEx, "Error storing DCA error result");
-                }
+                });
 
                 throw;
             }
@@ -391,124 +385,93 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             return forecastPoints;
         }
 
+        /// <remarks>
+        /// Runs inside <see cref="PerformDCAAnalysisAsync(DCARequest, string?, object?)"/>'s try, which records a run that
+        /// does not complete; this method had its own catch that recorded a second failed row for the same run.
+        /// </remarks>
         private async Task<Beep.OilandGas.Models.Data.Calculations.DCAResult> PerformPhysicsBasedForecastAsync(
-            Beep.OilandGas.Models.Data.Calculations.DCARequest request, 
-            string? operationId, 
+            Beep.OilandGas.Models.Data.Calculations.DCARequest request,
+            string? operationId,
             object? progressTracking)
         {
-            try
+            _logger?.LogInformation("Starting physics-based forecast for WellId: {WellId}, PoolId: {PoolId}",
+                request.WellId, request.PoolId);
+
+            var reservoirProperties = await GetReservoirPropertiesForForecastAsync(request);
+
+            if (reservoirProperties == null)
             {
-                _logger?.LogInformation("Starting physics-based forecast for WellId: {WellId}, PoolId: {PoolId}", 
-                    request.WellId, request.PoolId);
+                throw RefusalException.Conflict("No reservoir properties are recorded for the chosen well or pool, so a physics-based forecast cannot be made.");
+            }
 
-                var reservoirProperties = await GetReservoirPropertiesForForecastAsync(request);
-                
-                if (reservoirProperties == null)
-                {
-                    throw new InvalidOperationException("Reservoir properties not found. Cannot perform physics-based forecast.");
-                }
+            var forecastTypeStr = request.AdditionalParameters?.ForecastType ?? "PSEUDO_STEADY_STATE_SINGLE_PHASE";
 
-                var forecastTypeStr = request.AdditionalParameters?.ForecastType ?? "PSEUDO_STEADY_STATE_SINGLE_PHASE";
+            var bottomHolePressure = (decimal)(request.AdditionalParameters?.BottomHolePressure ?? 1000m);
+            var forecastDuration = (decimal)(request.AdditionalParameters?.ForecastDuration ?? 1825m);
+            var timeSteps = request.AdditionalParameters?.TimeSteps ?? 100;
+            var bubblePointPressure = (decimal)(request.AdditionalParameters?.BubblePointPressure ?? 0m);
 
-                var bottomHolePressure = (decimal)(request.AdditionalParameters?.BottomHolePressure ?? 1000m);
-                var forecastDuration = (decimal)(request.AdditionalParameters?.ForecastDuration ?? 1825m);
-                var timeSteps = request.AdditionalParameters?.TimeSteps ?? 100;
-                var bubblePointPressure = (decimal)(request.AdditionalParameters?.BubblePointPressure ?? 0m);
-
-                PRODUCTION_FORECAST forecast;
-                
-                switch (forecastTypeStr.ToUpperInvariant())
-                {
-                    case "PSEUDO_STEADY_STATE_SINGLE_PHASE":
-                    case "PSEUDO_STEADY_STATE":
-                        forecast = PseudoSteadyStateForecast.GenerateSinglePhaseForecast(
-                            reservoirProperties!, bottomHolePressure, forecastDuration, timeSteps);
-                        break;
-                        
-                    case "PSEUDO_STEADY_STATE_TWO_PHASE":
-                        if (bubblePointPressure <= 0)
-                            throw new ArgumentException("BubblePointPressure is required for two-phase forecast");
-                        
-                        var res2 = PseudoSteadyStateForecast.GenerateTwoPhaseForecast(
-                            reservoirProperties!, bottomHolePressure, bubblePointPressure, forecastDuration, timeSteps);
-                        
-                        // Map PRODUCTION_FORECAST to PRODUCTION_FORECAST if needed
-                        forecast = new PRODUCTION_FORECAST
+            PRODUCTION_FORECAST forecast;
+            
+            switch (forecastTypeStr.ToUpperInvariant())
+            {
+                case "PSEUDO_STEADY_STATE_SINGLE_PHASE":
+                case "PSEUDO_STEADY_STATE":
+                    forecast = PseudoSteadyStateForecast.GenerateSinglePhaseForecast(
+                        reservoirProperties!, bottomHolePressure, forecastDuration, timeSteps);
+                    break;
+                    
+                case "PSEUDO_STEADY_STATE_TWO_PHASE":
+                    if (bubblePointPressure <= 0)
+                        throw RefusalException.Invalid("Give the bubble point pressure for a two-phase forecast.");
+                    
+                    var res2 = PseudoSteadyStateForecast.GenerateTwoPhaseForecast(
+                        reservoirProperties!, bottomHolePressure, bubblePointPressure, forecastDuration, timeSteps);
+                    
+                    // Map PRODUCTION_FORECAST to PRODUCTION_FORECAST if needed
+                    forecast = new PRODUCTION_FORECAST
+                    {
+                        FORECAST_TYPE = ForecastType.PseudoSteadyStateTwoPhase,
+                        FORECAST_DURATION = res2.FORECAST_DURATION,
+                        INITIAL_PRODUCTION_RATE = res2.INITIAL_PRODUCTION_RATE,
+                        FINAL_PRODUCTION_RATE = res2.FINAL_PRODUCTION_RATE,
+                        TOTAL_CUMULATIVE_PRODUCTION = res2.TOTAL_CUMULATIVE_PRODUCTION,
+                        FORECAST_POINTS = res2.FORECAST_POINTS?.Select(p => new FORECAST_POINT
                         {
-                            FORECAST_TYPE = ForecastType.PseudoSteadyStateTwoPhase,
-                            FORECAST_DURATION = res2.FORECAST_DURATION,
-                            INITIAL_PRODUCTION_RATE = res2.INITIAL_PRODUCTION_RATE,
-                            FINAL_PRODUCTION_RATE = res2.FINAL_PRODUCTION_RATE,
-                            TOTAL_CUMULATIVE_PRODUCTION = res2.TOTAL_CUMULATIVE_PRODUCTION,
-                            FORECAST_POINTS = res2.FORECAST_POINTS?.Select(p => new FORECAST_POINT
-                            {
-                                TIME = p.TIME,
-                                PRODUCTION_RATE = p.PRODUCTION_RATE,
-                                CUMULATIVE_PRODUCTION = p.CUMULATIVE_PRODUCTION,
-                                RESERVOIR_PRESSURE = p.RESERVOIR_PRESSURE,
-                                BOTTOM_HOLE_PRESSURE = p.BOTTOM_HOLE_PRESSURE
-                            }).ToList() ?? new List<FORECAST_POINT>(),
-                        };
-                        break;
-                        
-                    case "TRANSIENT":
-                        forecast = TransientForecast.GenerateTransientForecast(
-                            reservoirProperties!, bottomHolePressure, forecastDuration, timeSteps);
-                        break;
-                        
-                    case "GAS_WELL":
-                        forecast = GasWellForecast.GenerateGasWellForecast(
-                            reservoirProperties!, bottomHolePressure, forecastDuration, timeSteps);
-                        break;
-                        
-                    default:
-                        forecast = PseudoSteadyStateForecast.GenerateSinglePhaseForecast(
-                            reservoirProperties!, bottomHolePressure, forecastDuration, timeSteps);
-                        break;
-                }
-
-                var result = MapProductionForecastToDCAResult(forecast, request);
-
-                var repository = await GetDCAResultRepositoryAsync();
-                await repository.InsertAsync(result, request.UserId ?? "system");
-
-                _logger?.LogInformation("Physics-based forecast completed successfully: {CalculationId}, ForecastType: {ForecastType}", 
-                    result.CalculationId, forecastTypeStr);
-
-                return result;
+                            TIME = p.TIME,
+                            PRODUCTION_RATE = p.PRODUCTION_RATE,
+                            CUMULATIVE_PRODUCTION = p.CUMULATIVE_PRODUCTION,
+                            RESERVOIR_PRESSURE = p.RESERVOIR_PRESSURE,
+                            BOTTOM_HOLE_PRESSURE = p.BOTTOM_HOLE_PRESSURE
+                        }).ToList() ?? new List<FORECAST_POINT>(),
+                    };
+                    break;
+                    
+                case "TRANSIENT":
+                    forecast = TransientForecast.GenerateTransientForecast(
+                        reservoirProperties!, bottomHolePressure, forecastDuration, timeSteps);
+                    break;
+                    
+                case "GAS_WELL":
+                    forecast = GasWellForecast.GenerateGasWellForecast(
+                        reservoirProperties!, bottomHolePressure, forecastDuration, timeSteps);
+                    break;
+                    
+                default:
+                    forecast = PseudoSteadyStateForecast.GenerateSinglePhaseForecast(
+                        reservoirProperties!, bottomHolePressure, forecastDuration, timeSteps);
+                    break;
             }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error performing physics-based forecast");
-                
-                var errorResult = new DCAResult
-                {
-                    CalculationId = Guid.NewGuid().ToString(),
-                    WellId = request.WellId,
-                    PoolId = request.PoolId,
-                    FieldId = request.FieldId,
-                    CalculationType = request.CalculationType,
-                    CalculationDate = DateTime.UtcNow,
-                    ProductionFluidType = request.ProductionFluidType,
-                    Status = "FAILED",
-                    ErrorMessage = ex.Message,
-                    UserId = request.UserId,
-                    ForecastPoints = new List<DCAForecastPoint>(),
-                    AdditionalResults = new DcaAdditionalResults()
-                };
 
-                try
-                {
-                    var repository = await GetDCAResultRepositoryAsync();
-                    await repository.InsertAsync(errorResult, request.UserId ?? "system");
-                }
-                catch (Exception storeEx)
-                {
-                    _logger?.LogError(storeEx, "Error storing physics-based forecast error result");
-                }
+            var result = MapProductionForecastToDCAResult(forecast, request);
 
-                throw;
-            }
+            var repository = await GetDCAResultRepositoryAsync();
+            await repository.InsertAsync(result, request.UserId ?? "system");
+
+            _logger?.LogInformation("Physics-based forecast completed successfully: {CalculationId}, ForecastType: {ForecastType}", 
+                result.CalculationId, forecastTypeStr);
+
+            return result;
         }
 
     }

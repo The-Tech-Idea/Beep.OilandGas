@@ -122,88 +122,66 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
         private async Task<decimal> GetScheduleRateAsync(string leaseId, DateTime asOfDate, string connectionName)
         {
-            try
+            var repo = await CreateRepoAsync<COPAS_OVERHEAD_SCHEDULE>("COPAS_OVERHEAD_SCHEDULE", connectionName);
+            var filters = new List<AppFilter>
             {
-                var repo = await CreateRepoAsync<COPAS_OVERHEAD_SCHEDULE>("COPAS_OVERHEAD_SCHEDULE", connectionName);
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                };
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+            };
 
-                if (!string.IsNullOrWhiteSpace(leaseId))
-                    filters.Add(new AppFilter { FieldName = "LEASE_ID", Operator = "=", FilterValue = leaseId });
+            if (!string.IsNullOrWhiteSpace(leaseId))
+                filters.Add(new AppFilter { FieldName = "LEASE_ID", Operator = "=", FilterValue = leaseId });
 
-                var results = await repo.GetAsync(filters);
-                var schedules = results?.Cast<COPAS_OVERHEAD_SCHEDULE>().ToList()
-                    ?? new List<COPAS_OVERHEAD_SCHEDULE>();
+            var results = await repo.GetAsync(filters);
+            var schedules = results?.Cast<COPAS_OVERHEAD_SCHEDULE>().ToList()
+                ?? new List<COPAS_OVERHEAD_SCHEDULE>();
 
-                var schedule = schedules.FirstOrDefault(s =>
-                    (!s.EFFECTIVE_DATE.HasValue || s.EFFECTIVE_DATE.Value.Date <= asOfDate.Date) &&
-                    (!s.EXPIRY_DATE.HasValue || s.EXPIRY_DATE.Value.Date >= asOfDate.Date));
+            var schedule = schedules.FirstOrDefault(s =>
+                (!s.EFFECTIVE_DATE.HasValue || s.EFFECTIVE_DATE.Value.Date <= asOfDate.Date) &&
+                (!s.EXPIRY_DATE.HasValue || s.EXPIRY_DATE.Value.Date >= asOfDate.Date));
 
-                if (schedule?.OVERHEAD_RATE == null)
-                    return 0m;
-
-                var rate = schedule.OVERHEAD_RATE.Value;
-                if (rate > 1m)
-                    rate /= 100m;
-                return rate;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(
-                    ex,
-                    "Failed to resolve COPAS overhead rate for lease {LeaseId} as of {AsOfDate}",
-                    leaseId,
-                    asOfDate);
+            if (schedule?.OVERHEAD_RATE == null)
                 return 0m;
-            }
+
+            var rate = schedule.OVERHEAD_RATE.Value;
+            if (rate > 1m)
+                rate /= 100m;
+            return rate;
         }
 
         private async Task RecordOverheadAuditAsync(string leaseId, DateTime asOfDate, string userId, string connectionName)
         {
-            try
+            var scheduleRepo = await CreateRepoAsync<COPAS_OVERHEAD_SCHEDULE>("COPAS_OVERHEAD_SCHEDULE", connectionName);
+            var scheduleFilters = new List<AppFilter>
             {
-                var scheduleRepo = await CreateRepoAsync<COPAS_OVERHEAD_SCHEDULE>("COPAS_OVERHEAD_SCHEDULE", connectionName);
-                var scheduleFilters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() },
-                    new AppFilter { FieldName = "LEASE_ID", Operator = "=", FilterValue = leaseId }
-                };
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() },
+                new AppFilter { FieldName = "LEASE_ID", Operator = "=", FilterValue = leaseId }
+            };
 
-                var schedules = await scheduleRepo.GetAsync(scheduleFilters);
-                var schedule = schedules?.Cast<COPAS_OVERHEAD_SCHEDULE>()
-                    .FirstOrDefault(s =>
-                        (!s.EFFECTIVE_DATE.HasValue || s.EFFECTIVE_DATE.Value.Date <= asOfDate.Date) &&
-                        (!s.EXPIRY_DATE.HasValue || s.EXPIRY_DATE.Value.Date >= asOfDate.Date));
+            var schedules = await scheduleRepo.GetAsync(scheduleFilters);
+            var schedule = schedules?.Cast<COPAS_OVERHEAD_SCHEDULE>()
+                .FirstOrDefault(s =>
+                    (!s.EFFECTIVE_DATE.HasValue || s.EFFECTIVE_DATE.Value.Date <= asOfDate.Date) &&
+                    (!s.EXPIRY_DATE.HasValue || s.EXPIRY_DATE.Value.Date >= asOfDate.Date));
 
-                if (schedule == null)
-                    return;
+            if (schedule == null)
+                return;
 
-                var audit = new COPAS_OVERHEAD_AUDIT
-                {
-                    COPAS_OVERHEAD_AUDIT_ID = Guid.NewGuid().ToString(),
-                    COPAS_OVERHEAD_SCHEDULE_ID = schedule.COPAS_OVERHEAD_SCHEDULE_ID,
-                    CHANGE_DATE = asOfDate,
-                    OLD_RATE = null,
-                    NEW_RATE = schedule.OVERHEAD_RATE,
-                    CHANGE_REASON = CopasOverheadAuditChangeReasons.AppliedOverheadSchedule,
-                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
-                    PPDM_GUID = Guid.NewGuid().ToString(),
-                    ROW_CREATED_BY = userId,
-                    ROW_CREATED_DATE = DateTime.UtcNow
-                };
-
-                var auditRepo = await CreateRepoAsync<COPAS_OVERHEAD_AUDIT>("COPAS_OVERHEAD_AUDIT", connectionName);
-                await auditRepo.InsertAsync(audit, userId);
-            }
-            catch (Exception ex)
+            var audit = new COPAS_OVERHEAD_AUDIT
             {
-                _logger?.LogWarning(
-                    ex,
-                    "Skipping COPAS overhead audit write for lease {LeaseId}; optional audit table or metadata unavailable",
-                    leaseId);
-            }
+                COPAS_OVERHEAD_AUDIT_ID = Guid.NewGuid().ToString(),
+                COPAS_OVERHEAD_SCHEDULE_ID = schedule.COPAS_OVERHEAD_SCHEDULE_ID,
+                CHANGE_DATE = asOfDate,
+                OLD_RATE = null,
+                NEW_RATE = schedule.OVERHEAD_RATE,
+                CHANGE_REASON = CopasOverheadAuditChangeReasons.AppliedOverheadSchedule,
+                ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
+                PPDM_GUID = Guid.NewGuid().ToString(),
+                ROW_CREATED_BY = userId,
+                ROW_CREATED_DATE = DateTime.UtcNow
+            };
+
+            var auditRepo = await CreateRepoAsync<COPAS_OVERHEAD_AUDIT>("COPAS_OVERHEAD_AUDIT", connectionName);
+            await auditRepo.InsertAsync(audit, userId);
         }
 
         private static bool RemarkHasLease(string remark, string leaseId)

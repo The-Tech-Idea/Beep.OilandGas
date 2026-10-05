@@ -7,6 +7,7 @@ using Beep.OilandGas.Models.Data.ProductionOperations;
 using Beep.OilandGas.PPDM.Models;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Report;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.ProductionOperations.Services;
 
@@ -31,9 +32,9 @@ public sealed partial class FacilityManagementService
 
     public async Task<FACILITY_EQUIPMENT> LinkEquipmentToFacilityAsync(string facilityId, string? facilityType, string equipmentId, string userId, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(equipmentId)) throw new ArgumentException("Equipment ID is required.", nameof(equipmentId));
+        if (string.IsNullOrWhiteSpace(equipmentId)) throw RefusalException.Invalid("Equipment ID is required.");
         var f = await ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false)
-                ?? throw new InvalidOperationException("Facility not found.");
+                ?? throw RefusalException.NotFound("Facility not found.");
 
         var repo = await RepoAsync<FACILITY_EQUIPMENT>("FACILITY_EQUIPMENT");
         var existing = (await repo.GetAsync(new List<AppFilter>
@@ -123,7 +124,7 @@ public sealed partial class FacilityManagementService
     {
         if (workOrder == null) throw new ArgumentNullException(nameof(workOrder));
         var f = await ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false)
-                ?? throw new InvalidOperationException("Facility not found.");
+                ?? throw RefusalException.NotFound("Facility not found.");
 
         if (string.IsNullOrWhiteSpace(workOrder.WORK_ORDER_ID))
             workOrder.WORK_ORDER_ID = Guid.NewGuid().ToString("N");
@@ -154,7 +155,7 @@ public sealed partial class FacilityManagementService
     public async Task<string> EnsureFacilityPdenAsync(string facilityId, string? facilityType, string userId, CancellationToken cancellationToken = default)
     {
         var f = await ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false)
-                ?? throw new InvalidOperationException("Facility not found.");
+                ?? throw RefusalException.NotFound("Facility not found.");
 
         var linkRepo = await RepoAsync<PDEN_FACILITY>("PDEN_FACILITY");
         var existing = (await linkRepo.GetAsync(new List<AppFilter>
@@ -239,7 +240,7 @@ public sealed partial class FacilityManagementService
     public async Task<PDEN_VOL_SUMMARY> RecordFacilityProductionVolumeAsync(PDEN_VOL_SUMMARY volume, string userId, CancellationToken cancellationToken = default)
     {
         if (volume == null) throw new ArgumentNullException(nameof(volume));
-        if (string.IsNullOrWhiteSpace(volume.PDEN_ID)) throw new ArgumentException("PDEN_ID is required on the volume row.", nameof(volume));
+        if (string.IsNullOrWhiteSpace(volume.PDEN_ID)) throw RefusalException.Invalid("PDEN_ID is required on the volume row.");
         volume.PDEN_SUBTYPE = PdenSubtypeFacility;
         volume.ACTIVE_IND ??= "Y";
         if (volume is IPPDMEntity e)
@@ -339,7 +340,7 @@ public sealed partial class FacilityManagementService
         if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID is required.", nameof(userId));
 
         var f = await ResolveFacilityRowAsync(measurement.FACILITY_ID, measurement.FACILITY_TYPE, cancellationToken).ConfigureAwait(false)
-                ?? throw new InvalidOperationException("Facility not found.");
+                ?? throw RefusalException.NotFound("Facility not found.");
 
         measurement.FACILITY_ID = f.FACILITY_ID;
         measurement.FACILITY_TYPE = f.FACILITY_TYPE;
@@ -364,7 +365,7 @@ public sealed partial class FacilityManagementService
         DateTime? endDate,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(equipmentId)) throw new ArgumentException("Equipment ID is required.", nameof(equipmentId));
+        if (string.IsNullOrWhiteSpace(equipmentId)) throw RefusalException.Invalid("Equipment ID is required.");
         var f = await ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
         if (f == null) return Array.Empty<FACILITY_EQUIPMENT_ACTIVITY>();
 
@@ -392,10 +393,10 @@ public sealed partial class FacilityManagementService
     {
         if (activity == null) throw new ArgumentNullException(nameof(activity));
         if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID is required.", nameof(userId));
-        if (string.IsNullOrWhiteSpace(activity.EQUIPMENT_ID)) throw new ArgumentException("Equipment ID is required.", nameof(activity));
+        if (string.IsNullOrWhiteSpace(activity.EQUIPMENT_ID)) throw RefusalException.Invalid("Equipment ID is required.");
 
         var f = await ResolveFacilityRowAsync(activity.FACILITY_ID, activity.FACILITY_TYPE, cancellationToken).ConfigureAwait(false)
-                ?? throw new InvalidOperationException("Facility not found.");
+                ?? throw RefusalException.NotFound("Facility not found.");
 
         activity.FACILITY_ID = f.FACILITY_ID;
         activity.FACILITY_TYPE = f.FACILITY_TYPE;

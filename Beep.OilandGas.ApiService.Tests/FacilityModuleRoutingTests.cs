@@ -41,5 +41,6 @@ public sealed class FacilityModuleRoutingTests
 
     private static FacilityManagementService Create(Mock<IDMEEditor> editor, Func<string, Task<string>> resolver) =>
         new(editor.Object, Mock.Of<ICommonColumnHandler>(), Mock.Of<IPPDM39DefaultsRepository>(),
-            Mock.Of<IPPDMMetadataRepository>(), "global-db", resolveModuleConnection: resolver);
+            Mock.Of<IPPDMMetadataRepository>(), new Infrastructure.RecordingFailureReporter(), "global-db",
+            resolveModuleConnection: resolver);
 }

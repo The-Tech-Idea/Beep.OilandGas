@@ -1,5 +1,6 @@
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
@@ -27,7 +28,7 @@ public sealed class RunTicketStore(
 
     public async Task<List<RUN_TICKET>> ListAsync(DateTime start, DateTime end, string? leaseId = null)
     {
-        if (end < start) throw new ArgumentException("End date must not precede start date.");
+        if (end < start) throw RefusalException.Invalid("End date must not precede start date.");
         var repository = await RepositoryAsync();
         var filters = new List<AppFilter>
         {

@@ -144,7 +144,6 @@ namespace Beep.OilandGas.HeatMap.Density
                 KernelType.Epanechnikov => absU <= 1 ? 0.75 * (1 - u * u) : 0,
                 KernelType.Uniform => absU <= 1 ? 0.5 : 0,
                 KernelType.Triangular => absU <= 1 ? (1 - absU) : 0,
-                _ => Math.Exp(-0.5 * u * u) / Math.Sqrt(2 * Math.PI)
             };
         }
 

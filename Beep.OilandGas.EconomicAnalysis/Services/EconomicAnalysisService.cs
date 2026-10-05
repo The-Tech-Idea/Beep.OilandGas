@@ -17,6 +17,7 @@ using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.PPDM.Models;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.EconomicAnalysis.Services
 {
@@ -89,7 +90,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         public async Task SaveAnalysisResultAsync(string analysisId, EconomicResult result, string userId)
         {
             if (string.IsNullOrWhiteSpace(analysisId))
-                throw new ArgumentException("Analysis ID cannot be null or empty", nameof(analysisId));
+                throw RefusalException.Invalid("An analysis ID is required.");
             if (result == null)
                 throw new ArgumentNullException(nameof(result));
             if (string.IsNullOrWhiteSpace(userId))
@@ -172,7 +173,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         public async Task<EconomicSensitivityAnalysis> PerformSensitivityAnalysisAsync(CashFlow[] cashFlows, double discountRate)
         {
             if (cashFlows == null || cashFlows.Length == 0)
-                throw new ArgumentException("Cash flows cannot be null or empty", nameof(cashFlows));
+                throw RefusalException.Invalid("Cash flows are required.");
 
             _logger?.LogInformation("Performing sensitivity analysis for {Count} cash flows", cashFlows.Length);
 
@@ -236,7 +237,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         public async Task<ScenarioAnalysis> PerformScenarioAnalysisAsync(CashFlow[] baseCase, CashFlow[] bestCase, CashFlow[] worstCase, double discountRate)
         {
             if (baseCase == null || baseCase.Length == 0)
-                throw new ArgumentException("Base case cash flows cannot be null or empty", nameof(baseCase));
+                throw RefusalException.Invalid("Base case cash flows are required.");
 
             _logger?.LogInformation("Performing scenario analysis with three scenarios");
 
@@ -300,7 +301,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         public async Task<FinancialMetrics> CalculateFinancialMetricsAsync(CashFlow[] cashFlows, double discountRate, double financeRate = 0.1, double reinvestRate = 0.1)
         {
             if (cashFlows == null || cashFlows.Length == 0)
-                throw new ArgumentException("Cash flows cannot be null or empty", nameof(cashFlows));
+                throw RefusalException.Invalid("Cash flows are required.");
 
             _logger?.LogInformation("Calculating comprehensive financial metrics");
 
@@ -337,7 +338,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         public async Task<BreakevenAnalysis> PerformBreakevenAnalysisAsync(CashFlow[] baseCashFlows, double discountRate, string variableType = "Price")
         {
             if (baseCashFlows == null || baseCashFlows.Length == 0)
-                throw new ArgumentException("Cash flows cannot be null or empty", nameof(baseCashFlows));
+                throw RefusalException.Invalid("Cash flows are required.");
 
             _logger?.LogInformation("Performing breakeven analysis for variable: {VariableType}", variableType);
 
@@ -392,7 +393,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         public async Task<RiskMetrics> AnalyzeRiskMetricsAsync(CashFlow[] cashFlows, double discountRate, int simulationCount = 1000)
         {
             if (cashFlows == null || cashFlows.Length == 0)
-                throw new ArgumentException("Cash flows cannot be null or empty", nameof(cashFlows));
+                throw RefusalException.Invalid("Cash flows are required.");
 
             _logger?.LogInformation("Analyzing risk metrics with {SimulationCount} simulations", simulationCount);
 
@@ -442,7 +443,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         public async Task<ProjectComparison> CompareProjectsAsync(Dictionary<string, CashFlow[]> projects, double discountRate, string rankingMethod = "NPV")
         {
             if (projects == null || projects.Count == 0)
-                throw new ArgumentException("Projects dictionary cannot be null or empty", nameof(projects));
+                throw RefusalException.Invalid("At least one project is required.");
 
             _logger?.LogInformation("Comparing {ProjectCount} projects using {RankingMethod} method", projects.Count, rankingMethod);
 

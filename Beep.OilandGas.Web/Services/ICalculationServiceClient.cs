@@ -44,7 +44,7 @@ namespace Beep.OilandGas.Web.Services
         // Flash Calculations Operations
         Task<FlashResult> PerformIsothermalFlashAsync(FLASH_CONDITIONS conditions);
         Task<List<FlashResult>> PerformMultiStageFlashAsync(MultiStageFlashRequest request);
-        Task<bool> SaveFlashResultAsync(FlashResult result);
+        Task SaveFlashResultAsync(FlashResult result);
         Task<List<FlashResult>> GetFlashHistoryAsync(string? componentId = null);
 
         // Gas Properties Operations
@@ -72,7 +72,7 @@ namespace Beep.OilandGas.Web.Services
             int numberOfValves,
             bool useSIUnits = false,
             CancellationToken cancellationToken = default);
-        Task<bool> SaveGasLiftDesignAsync(GAS_LIFT_DESIGN design, CancellationToken cancellationToken = default);
+        Task SaveGasLiftDesignAsync(GAS_LIFT_DESIGN design, CancellationToken cancellationToken = default);
         Task<GAS_LIFT_PERFORMANCE> GetGasLiftPerformanceAsync(string wellUWI, CancellationToken cancellationToken = default);
 
         // Nodal Analysis Operations
@@ -81,7 +81,7 @@ namespace Beep.OilandGas.Web.Services
         /// <summary>Nodal optimize — <see cref="NodalAnalysisHttpRoutes.Optimize"/>.</summary>
         Task<OptimizationResult> OptimizeSystemAsync(string wellUWI, OptimizationGoals optimizationGoals);
         /// <summary>Save nodal result — <see cref="NodalAnalysisHttpRoutes.Result"/>.</summary>
-        Task<bool> SaveNodalAnalysisResultAsync(NodalAnalysisRunResult result);
+        Task SaveNodalAnalysisResultAsync(NodalAnalysisRunResult result);
         /// <summary>Nodal history — GET <see cref="NodalAnalysisHttpRoutes.Prefix"/>/history/{{wellUWI}}.</summary>
         Task<List<NodalAnalysisRunResult>> GetNodalAnalysisHistoryAsync(string wellUWI);
         /// <summary>Performance matching — <see cref="NodalAnalysisHttpRoutes.PerformanceMatching"/>.</summary>
@@ -100,19 +100,19 @@ namespace Beep.OilandGas.Web.Services
         // Production Forecasting Operations
         Task<ProductionForecastResult> GenerateForecastAsync(string? wellUWI, string? fieldId, string forecastMethod, int forecastPeriod);
         Task<DeclineCurveAnalysis> PerformDeclineCurveAnalysisAsync(string wellUWI, DateTime startDate, DateTime endDate);
-        Task<bool> SaveForecastAsync(ProductionForecastResult forecast);
+        Task SaveForecastAsync(ProductionForecastResult forecast);
 
         // Pipeline Analysis Operations
         Task<PipelineAnalysisResult> AnalyzePipelineFlowAsync(string pipelineId, decimal flowRate, decimal inletPressure);
         Task<PressureDropResult> CalculatePressureDropAsync(string pipelineId, decimal flowRate);
-        Task<bool> SavePipelineAnalysisResultAsync(PipelineAnalysisResult result);
+        Task SavePipelineAnalysisResultAsync(PipelineAnalysisResult result);
 
         // Economic Analysis Operations
         Task<double> CalculateNPVAsync(CashFlow[] cashFlows, double discountRate);
         Task<double> CalculateIRRAsync(CashFlow[] cashFlows, double initialGuess = 0.1);
         Task<EconomicResult> AnalyzeEconomicAsync(CashFlow[] cashFlows, double discountRate, double financeRate = 0.1, double reinvestRate = 0.1);
         Task<List<NPV_PROFILE_POINT>> GenerateNPVProfileAsync(CashFlow[] cashFlows, double minRate = 0.0, double maxRate = 1.0, int points = 50);
-        Task<bool> SaveEconomicAnalysisResultAsync(string analysisId, EconomicResult result);
+        Task SaveEconomicAnalysisResultAsync(string analysisId, EconomicResult result);
         Task<EconomicResult?> GetEconomicAnalysisResultAsync(string analysisId);
     }
 }

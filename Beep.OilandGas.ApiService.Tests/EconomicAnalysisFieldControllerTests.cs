@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -42,21 +43,20 @@ public class EconomicAnalysisFieldControllerTests
         service.VerifyAll();
     }
 
+    // OILGAS-CATCH-01: the analysis's refusal reaches the API's handler as itself (answered 400 with its sentence).
     [Fact]
-    public void CalculateNPV_ReturnsBadRequest_WhenServiceThrowsArgumentException()
+    public void CalculateNPV_PassesTheAnalysisRefusalThrough()
     {
         var service = new Mock<IEconomicAnalysisService>(MockBehavior.Strict);
-        service.Setup(s => s.CalculateNPV(It.IsAny<CashFlow[]>(), 0.1))
-            .Throws(new ArgumentException("Discount rate is invalid"));
+        var refusal = RefusalException.Invalid("Discount rate is invalid");
+        service.Setup(s => s.CalculateNPV(It.IsAny<CashFlow[]>(), 0.1)).Throws(refusal);
         var controller = new FieldEconomicAnalysisController(service.Object, NullLogger<FieldEconomicAnalysisController>.Instance);
 
-        var result = controller.CalculateNPV(new CalculateNPVRequest
+        Assert.Same(refusal, Refusals.Refused(RefusalKind.Invalid, () => controller.CalculateNPV(new CalculateNPVRequest
         {
             CashFlows = new(),
             DISCOUNT_RATE = 0.1
-        });
-
-        Assert.IsType<BadRequestObjectResult>(result.Result);
+        })));
         service.VerifyAll();
     }
 

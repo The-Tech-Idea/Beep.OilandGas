@@ -145,39 +145,35 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
             if (conditions == null) throw new ArgumentNullException(nameof(conditions));
 
             var result = new FlashResult();
-            try
+
+            // A flash that fails reaches the caller as its exception (OILGAS-CATCH-01). It had been answered as a result
+            // whose status carried the exception's text; "CONVERGENCE_FAILED" stays the answer for a solve that does not
+            // converge, which is an outcome rather than a failure.
+            var components = conditions.FEED_COMPOSITION ?? new List<FLASH_COMPONENT>();
+
+            int iterations;
+            bool converged;
+            decimal vaporFraction = SolveRachfordRice(components, conditions.PRESSURE, conditions.TEMPERATURE, out iterations, out converged);
+
+            result.VaporFraction = vaporFraction;
+            result.LiquidFraction = 1.0m - vaporFraction;
+            result.Iterations = iterations;
+            result.Converged = converged;
+
+            CalculatePhaseCompositions(vaporFraction, components, conditions.PRESSURE, conditions.TEMPERATURE, out var phaseResults);
+
+            result.VaporComposition = new List<FlashComponentFraction>();
+            result.LiquidComposition = new List<FlashComponentFraction>();
+            result.KValues = new List<FlashComponentKValue>();
+
+            foreach (var phaseRes in phaseResults)
             {
-                var components = conditions.FEED_COMPOSITION ?? new List<FLASH_COMPONENT>();
-
-                int iterations;
-                bool converged;
-                decimal vaporFraction = SolveRachfordRice(components, conditions.PRESSURE, conditions.TEMPERATURE, out iterations, out converged);
-
-                result.VaporFraction = vaporFraction;
-                result.LiquidFraction = 1.0m - vaporFraction;
-                result.Iterations = iterations;
-                result.Converged = converged;
-
-                CalculatePhaseCompositions(vaporFraction, components, conditions.PRESSURE, conditions.TEMPERATURE, out var phaseResults);
-
-                result.VaporComposition = new List<FlashComponentFraction>();
-                result.LiquidComposition = new List<FlashComponentFraction>();
-                result.KValues = new List<FlashComponentKValue>();
-
-                foreach (var phaseRes in phaseResults)
-                {
-                    result.VaporComposition.Add(new FlashComponentFraction { ComponentName = phaseRes.Name, MoleFraction = phaseRes.yi });
-                    result.LiquidComposition.Add(new FlashComponentFraction { ComponentName = phaseRes.Name, MoleFraction = phaseRes.xi });
-                    result.KValues.Add(new FlashComponentKValue { ComponentName = phaseRes.Name, KValue = phaseRes.K });
-                }
-
-                result.Status = converged ? "SUCCESS" : "CONVERGENCE_FAILED";
+                result.VaporComposition.Add(new FlashComponentFraction { ComponentName = phaseRes.Name, MoleFraction = phaseRes.yi });
+                result.LiquidComposition.Add(new FlashComponentFraction { ComponentName = phaseRes.Name, MoleFraction = phaseRes.xi });
+                result.KValues.Add(new FlashComponentKValue { ComponentName = phaseRes.Name, KValue = phaseRes.K });
             }
-            catch (Exception ex)
-            {
-                result.Converged = false;
-                result.Status = $"FAILED: {ex.Message}";
-            }
+
+            result.Status = converged ? "SUCCESS" : "CONVERGENCE_FAILED";
 
             return result;
         }

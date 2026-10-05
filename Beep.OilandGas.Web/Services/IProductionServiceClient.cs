@@ -21,7 +21,7 @@ public interface IProductionServiceClient
     Task<ProductionInterventionDecisionResult> RecordInterventionDecisionAsync(string wellId, ProductionInterventionDecisionRequest request, CancellationToken cancellationToken = default);
     Task<ProductionDecommissioningTriggerResult> TransitionToDecommissioningAsync(string wellId, ProductionDecommissioningTriggerRequest request, CancellationToken cancellationToken = default);
     Task<List<WellTestResponse>> GetWellTestsAsync(string wellId, CancellationToken cancellationToken = default);
-    Task<bool> PatchAllocationAsync(string period, string wellId, ProductionAllocationPatchRequest request, CancellationToken cancellationToken = default);
+    Task PatchAllocationAsync(string period, string wellId, ProductionAllocationPatchRequest request, CancellationToken cancellationToken = default);
     Task<List<FIELD>> GetFieldsAsync(CancellationToken cancellationToken = default);
     Task<List<POOL>> GetPoolsAsync(CancellationToken cancellationToken = default);
     Task<List<RESERVE_ENTITY>> GetReservesAsync(CancellationToken cancellationToken = default);

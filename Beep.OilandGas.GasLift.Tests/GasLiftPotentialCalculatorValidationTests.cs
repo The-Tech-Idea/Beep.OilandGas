@@ -2,6 +2,7 @@ using System;
 using Beep.OilandGas.GasLift.Calculations;
 using Beep.OilandGas.Models.Data.GasLift;
 using Xunit;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.GasLift.Tests;
 
@@ -24,16 +25,18 @@ public class GasLiftPotentialCalculatorValidationTests
     [Fact]
     public void AnalyzeGasLiftPotential_ThrowsWhenNumberOfPointsBelowTwo()
     {
-        var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
+        var refusal = Assert.Throws<RefusalException>(() =>
             GasLiftPotentialCalculator.AnalyzeGasLiftPotential(MinimalWell(), 100m, 500m, 1, default));
-        Assert.Equal("numberOfPoints", ex.ParamName);
+        Assert.Equal(RefusalKind.Invalid, refusal.Kind);
+        Assert.Equal("Number of analysis points must be at least 2.", refusal.Sentence);
     }
 
     [Fact]
     public void AnalyzeGasLiftPotential_ThrowsWhenMinExceedsMax()
     {
-        var ex = Assert.Throws<ArgumentException>(() =>
+        var refusal = Assert.Throws<RefusalException>(() =>
             GasLiftPotentialCalculator.AnalyzeGasLiftPotential(MinimalWell(), 600m, 500m, 10, default));
-        Assert.Equal("minGasInjectionRate", ex.ParamName);
+        Assert.Equal(RefusalKind.Invalid, refusal.Kind);
+        Assert.Equal("Minimum gas injection rate must not exceed maximum.", refusal.Sentence);
     }
 }

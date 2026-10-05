@@ -182,7 +182,7 @@ public sealed class HSEServiceClient : IHSEServiceClient
         }
     }
 
-    public async Task<bool> UpdateHazopDeviationStatusAsync(string studyId, int nodeSeq, int condSeq, string status, CancellationToken cancellationToken = default)
+    public async Task UpdateHazopDeviationStatusAsync(string studyId, int nodeSeq, int condSeq, string status, CancellationToken cancellationToken = default)
     {
         if (nodeSeq <= 0)
             throw new ArgumentOutOfRangeException(nameof(nodeSeq), "Node sequence must be positive.");
@@ -193,7 +193,7 @@ public sealed class HSEServiceClient : IHSEServiceClient
 
         try
         {
-            return await _apiClient.PutAsync(
+            await _apiClient.PutAsync(
                 BuildHazopStudyEndpoint(studyId, $"nodes/{nodeSeq}/deviations/{condSeq}/status?status={Uri.EscapeDataString(status)}"),
                 new { },
                 cancellationToken);

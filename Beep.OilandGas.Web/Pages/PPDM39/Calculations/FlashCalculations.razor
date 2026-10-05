@@ -7,6 +7,7 @@
 @inject ICalculationServiceClient CalculationService
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
 
 <PageTitle>Run Flash Calculations</PageTitle>
 
@@ -494,15 +495,13 @@
         _isSaving = true;
         try
         {
-            var saved = await CalculationService.SaveFlashResultAsync(_currentResult);
-            if (!saved)
-            {
-                Snackbar.Add("The flash result could not be saved.", Severity.Warning);
-                return;
-            }
-
+            await CalculationService.SaveFlashResultAsync(_currentResult);
             await ReloadHistoryAsync();
             Snackbar.Add("Flash result saved.", Severity.Success);
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "saving the flash calculation result", "The flash result was not saved"), Severity.Error);
         }
         finally
         {

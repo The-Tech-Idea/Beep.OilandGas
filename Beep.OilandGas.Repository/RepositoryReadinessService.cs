@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using TheTechIdea.Data.OilGas;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.Repository;
 
@@ -9,7 +9,7 @@ public interface IRepositoryReadinessService
     Task<RepositoryReadiness> CheckAsync(CancellationToken cancellationToken = default);
 }
 
-public sealed class RepositoryReadinessService(RepositoryDbContext context, ILogger<RepositoryReadinessService> logger)
+public sealed class RepositoryReadinessService(RepositoryDbContext context, IFailureReporter failures)
     : IRepositoryReadinessService
 {
     public async Task<RepositoryReadiness> CheckAsync(CancellationToken cancellationToken = default)
@@ -34,9 +34,15 @@ public sealed class RepositoryReadinessService(RepositoryDbContext context, ILog
         {
             throw;
         }
+        // Broad by design: a readiness check answers "unavailable" for whatever stopped it reading the repository, and the
+        // three providers (SQL Server, PostgreSQL, Oracle) and EF's execution strategy each throw their own types.
+        // "Unavailable" is this method's answer for exactly that — the setup gate and the health check act on it — and the
+        // failure itself is reported (OILGAS-CATCH-01), so its cause is in the store, not only in a log line.
         catch (Exception exception)
         {
-            logger.LogError(exception, "Default repository readiness check failed");
+            failures.ReportHandled(exception, "checking whether the default repository is ready",
+                "readiness answers Unavailable: the setup gate holds requests with 503 and the health check reports the repository down",
+                FailureSeverity.Error);
             return RepositoryReadiness.Unavailable;
         }
     }

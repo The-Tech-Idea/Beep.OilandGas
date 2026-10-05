@@ -3,6 +3,7 @@
 @using Beep.OilandGas.Models.Data.Accounting
 @inject IAccountingServiceClient AccountingClient
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
 
 <PageTitle>Close Accounting Period</PageTitle>
 
@@ -122,22 +123,19 @@
             {
                 PeriodEnd = _periodEnd.Value
             };
-            var success = await AccountingClient.ClosePeriodAsync(request);
-            if (success)
+            await AccountingClient.ClosePeriodAsync(request);
+            Snackbar.Add($"Period ending {_periodEnd.Value:yyyy-MM-dd} closed successfully.", Severity.Success);
+            _closeHistory.Insert(0, new PeriodCloseRecord
             {
-                Snackbar.Add($"Period ending {_periodEnd.Value:yyyy-MM-dd} closed successfully.", Severity.Success);
-                _closeHistory.Insert(0, new PeriodCloseRecord
-                {
-                    PeriodEnd = _periodEnd.Value,
-                    ClosedDate = DateTime.UtcNow,
-                    ClosedBy = "current_user",
-                    Notes = _closingNotes
-                });
-            }
-            else
-            {
-                Snackbar.Add("Period close failed. Check logs for details.", Severity.Error);
-            }
+                PeriodEnd = _periodEnd.Value,
+                ClosedDate = DateTime.UtcNow,
+                ClosedBy = "current_user",
+                Notes = _closingNotes
+            });
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "closing the accounting period", "The accounting period was not closed"), Severity.Error);
         }
         catch (Exception ex)
         {

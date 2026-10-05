@@ -72,16 +72,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            try
-            {
-                var prospects = await _explorationService.GetProspectsForFieldAsync(fieldId);
-                return Ok(prospects ?? new List<PROSPECT>());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching prospects for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var prospects = await _explorationService.GetProspectsForFieldAsync(fieldId);
+            return Ok(prospects ?? new List<PROSPECT>());
         }
 
         /// <summary>POST /api/field/current/exploration/prospects</summary>
@@ -94,16 +86,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             if (request == null) return BadRequest(new { error = "Prospect payload is required." });
             if (string.IsNullOrWhiteSpace(request.ProspectName)) return BadRequest(new { error = "Prospect name is required." });
 
-            try
-            {
-                var createdProspect = await _explorationService.CreateProspectForFieldAsync(fieldId, request, userId);
-                return Ok(createdProspect);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating prospect for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var createdProspect = await _explorationService.CreateProspectForFieldAsync(fieldId, request, userId);
+            return Ok(createdProspect);
         }
 
         /// <summary>GET /api/field/current/exploration/prospects/{id}</summary>
@@ -113,17 +97,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "Prospect ID is required." });
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            try
-            {
-                var prospect = await _explorationService.GetProspectForFieldAsync(fieldId, id);
-                if (prospect == null) return NotFound(new { error = $"Prospect {id} not found in field {fieldId}." });
-                return Ok(prospect);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching prospect {Id}", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var prospect = await _explorationService.GetProspectForFieldAsync(fieldId, id);
+            if (prospect == null) return NotFound(new { error = $"Prospect {id} not found in field {fieldId}." });
+            return Ok(prospect);
         }
 
         /// <summary>GET /api/field/current/exploration/prospects/{id}/afe-lines</summary>
@@ -135,41 +111,33 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
-            try
+            var prospect = await _explorationService.GetProspectForFieldAsync(fieldId, id);
+            if (prospect == null) return NotFound(new { error = $"Prospect {id} not found in field {fieldId}." });
+
+            var afes = (await _productionAccountingService.GetAfesAsync(propertyId: id))
+                .Where(afe => string.IsNullOrWhiteSpace(afe.FIELD_ID) || string.Equals(afe.FIELD_ID, fieldId, StringComparison.OrdinalIgnoreCase))
+                .Where(afe => !string.IsNullOrWhiteSpace(afe.AFE_ID))
+                .OrderByDescending(GetAfeSortDate)
+                .ToList();
+
+            var results = new List<ProspectAfeLineDto>();
+
+            foreach (var afe in afes)
             {
-                var prospect = await _explorationService.GetProspectForFieldAsync(fieldId, id);
-                if (prospect == null) return NotFound(new { error = $"Prospect {id} not found in field {fieldId}." });
+                var afeId = afe.AFE_ID ?? string.Empty;
+                var lineItems = await _productionAccountingService.GetAfeLineItemsAsync(afeId);
 
-                var afes = (await _productionAccountingService.GetAfesAsync(propertyId: id))
-                    .Where(afe => string.IsNullOrWhiteSpace(afe.FIELD_ID) || string.Equals(afe.FIELD_ID, fieldId, StringComparison.OrdinalIgnoreCase))
-                    .Where(afe => !string.IsNullOrWhiteSpace(afe.AFE_ID))
-                    .OrderByDescending(GetAfeSortDate)
-                    .ToList();
-
-                var results = new List<ProspectAfeLineDto>();
-
-                foreach (var afe in afes)
-                {
-                    var afeId = afe.AFE_ID ?? string.Empty;
-                    var lineItems = await _productionAccountingService.GetAfeLineItemsAsync(afeId);
-
-                    results.AddRange(lineItems.Select(lineItem => new ProspectAfeLineDto(
-                        afeId,
-                        afe.AFE_NUMBER ?? afeId,
-                        afe.AFE_NAME ?? afe.DESCRIPTION ?? afe.AFE_NUMBER ?? afeId,
-                        lineItem.COST_CATEGORY ?? "Uncategorized",
-                        string.IsNullOrWhiteSpace(lineItem.DESCRIPTION) ? afe.DESCRIPTION ?? "AFE line item" : lineItem.DESCRIPTION,
-                        lineItem.BUDGET_AMOUNT ?? lineItem.ACTUAL_AMOUNT ?? 0m,
-                        afe.STATUS ?? afe.ACTIVE_IND ?? string.Empty)));
-                }
-
-                return Ok(results);
+                results.AddRange(lineItems.Select(lineItem => new ProspectAfeLineDto(
+                    afeId,
+                    afe.AFE_NUMBER ?? afeId,
+                    afe.AFE_NAME ?? afe.DESCRIPTION ?? afe.AFE_NUMBER ?? afeId,
+                    lineItem.COST_CATEGORY ?? "Uncategorized",
+                    string.IsNullOrWhiteSpace(lineItem.DESCRIPTION) ? afe.DESCRIPTION ?? "AFE line item" : lineItem.DESCRIPTION,
+                    lineItem.BUDGET_AMOUNT ?? lineItem.ACTUAL_AMOUNT ?? 0m,
+                    afe.STATUS ?? afe.ACTIVE_IND ?? string.Empty)));
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching AFE lines for prospect {ProspectId}", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+
+            return Ok(results);
         }
 
         /// <summary>PUT /api/field/current/exploration/prospects/{id}</summary>
@@ -182,19 +150,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
             if (request == null) return BadRequest(new { error = "Prospect payload is required." });
 
-            try
-            {
-                var existing = await _explorationService.GetProspectForFieldAsync(fieldId, id);
-                if (existing == null) return NotFound(new { error = $"Prospect {id} not found in field {fieldId}." });
+            var existing = await _explorationService.GetProspectForFieldAsync(fieldId, id);
+            if (existing == null) return NotFound(new { error = $"Prospect {id} not found in field {fieldId}." });
 
-                var updatedProspect = await _explorationService.UpdateProspectForFieldAsync(fieldId, id, request, userId);
-                return Ok(updatedProspect);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating prospect {ProspectId} for field {FieldId}", id, fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var updatedProspect = await _explorationService.UpdateProspectForFieldAsync(fieldId, id, request, userId);
+            return Ok(updatedProspect);
         }
 
         /// <summary>DELETE /api/field/current/exploration/prospects/{id}</summary>
@@ -206,17 +166,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
-            try
-            {
-                var deleted = await _explorationService.DeleteProspectForFieldAsync(fieldId, id, userId);
-                if (!deleted) return NotFound(new { error = $"Prospect {id} not found in field {fieldId}." });
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting prospect {ProspectId} for field {FieldId}", id, fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var deleted = await _explorationService.DeleteProspectForFieldAsync(fieldId, id, userId);
+            if (!deleted) return NotFound(new { error = $"Prospect {id} not found in field {fieldId}." });
+            return NoContent();
         }
 
         /// <summary>GET /api/field/current/exploration/seismic-surveys</summary>
@@ -225,16 +177,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            try
-            {
-                var surveys = await _explorationService.GetSeismicSurveysForFieldAsync(fieldId);
-                return Ok(surveys ?? new List<SEIS_ACQTN_SURVEY>());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching seismic surveys for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var surveys = await _explorationService.GetSeismicSurveysForFieldAsync(fieldId);
+            return Ok(surveys ?? new List<SEIS_ACQTN_SURVEY>());
         }
 
         /// <summary>POST /api/field/current/exploration/seismic-surveys</summary>
@@ -247,16 +191,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             if (request == null) return BadRequest(new { error = "Seismic survey payload is required." });
             if (string.IsNullOrWhiteSpace(request.SurveyName)) return BadRequest(new { error = "Survey name is required." });
 
-            try
-            {
-                var createdSurvey = await _explorationService.CreateSeismicSurveyForFieldAsync(fieldId, request, userId);
-                return Ok(createdSurvey);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating seismic survey for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var createdSurvey = await _explorationService.CreateSeismicSurveyForFieldAsync(fieldId, request, userId);
+            return Ok(createdSurvey);
         }
 
         /// <summary>GET /api/field/current/exploration/seismic-surveys/{surveyId}/lines</summary>
@@ -268,20 +204,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
-            try
-            {
-                var surveys = await _explorationService.GetSeismicSurveysForFieldAsync(fieldId);
-                if (!surveys.Any(s => string.Equals(s.SEIS_ACQTN_SURVEY_ID, surveyId, StringComparison.OrdinalIgnoreCase)))
-                    return NotFound(new { error = $"Survey {surveyId} not found in field {fieldId}." });
+            var surveys = await _explorationService.GetSeismicSurveysForFieldAsync(fieldId);
+            if (!surveys.Any(s => string.Equals(s.SEIS_ACQTN_SURVEY_ID, surveyId, StringComparison.OrdinalIgnoreCase)))
+                return NotFound(new { error = $"Survey {surveyId} not found in field {fieldId}." });
 
-                var lines = await _explorationService.GetSeismicLinesForSurveyAsync(surveyId);
-                return Ok(lines ?? new List<SEIS_LINE>());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching seismic lines for survey {SurveyId}", surveyId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var lines = await _explorationService.GetSeismicLinesForSurveyAsync(surveyId);
+            return Ok(lines ?? new List<SEIS_LINE>());
         }
 
         /// <summary>GET /api/field/current/exploration/dashboard-summary</summary>
@@ -290,49 +218,41 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            try
+            var prospects = await _explorationService.GetProspectsForFieldAsync(fieldId);
+            var surveys   = await _explorationService.GetSeismicSurveysForFieldAsync(fieldId);
+            var wells     = await _explorationService.GetExploratoryWellsForFieldAsync(fieldId);
+
+            var pending = (prospects ?? new())
+                .Where(p => p.PROSPECT_STATUS == "REVIEW" || p.PROSPECT_STATUS == "IN_PROGRESS" || p.PROSPECT_STATUS == "SCREENING")
+                .Select(p => new PendingDecisionDto(
+                    p.PROSPECT_NAME ?? p.PROSPECT_ID,
+                    $"Status: {p.PROSPECT_STATUS}",
+                    p.PROSPECT_STATUS ?? "UNKNOWN"))
+                .Take(5)
+                .ToList();
+
+            var upcoming = (prospects ?? new())
+                .Where(p => p.ACTIVE_IND == "Y")
+                .Take(3)
+                .Select(p => new WellProgramDto(
+                    p.PROSPECT_NAME ?? p.PROSPECT_ID,
+                    p.DISCOVERY_DATE.HasValue ? p.DISCOVERY_DATE.Value.ToString("Q? yyyy") : "TBD",
+                    p.PROSPECT_STATUS ?? "PLANNED"))
+                .ToList();
+
+            var summary = new ExplorationDashboardSummary
             {
-                var prospects = await _explorationService.GetProspectsForFieldAsync(fieldId);
-                var surveys   = await _explorationService.GetSeismicSurveysForFieldAsync(fieldId);
-                var wells     = await _explorationService.GetExploratoryWellsForFieldAsync(fieldId);
-
-                var pending = (prospects ?? new())
-                    .Where(p => p.PROSPECT_STATUS == "REVIEW" || p.PROSPECT_STATUS == "IN_PROGRESS" || p.PROSPECT_STATUS == "SCREENING")
-                    .Select(p => new PendingDecisionDto(
-                        p.PROSPECT_NAME ?? p.PROSPECT_ID,
-                        $"Status: {p.PROSPECT_STATUS}",
-                        p.PROSPECT_STATUS ?? "UNKNOWN"))
-                    .Take(5)
-                    .ToList();
-
-                var upcoming = (prospects ?? new())
-                    .Where(p => p.ACTIVE_IND == "Y")
-                    .Take(3)
-                    .Select(p => new WellProgramDto(
-                        p.PROSPECT_NAME ?? p.PROSPECT_ID,
-                        p.DISCOVERY_DATE.HasValue ? p.DISCOVERY_DATE.Value.ToString("Q? yyyy") : "TBD",
-                        p.PROSPECT_STATUS ?? "PLANNED"))
-                    .ToList();
-
-                var summary = new ExplorationDashboardSummary
-                {
-                    LeadCount      = prospects?.Count(p => p.PROSPECT_TYPE == "LEAD") ?? 0,
-                    ProspectCount  = prospects?.Count(p => p.PROSPECT_TYPE != "LEAD") ?? 0,
-                    WellCount      = wells?.Count ?? 0,
-                    SurveyCount    = surveys?.Count ?? 0,
-                    SuccessRatePct = wells?.Count > 0
-                        ? wells.Count(w => w.CURRENT_STATUS != null && w.CURRENT_STATUS.Contains("PRODUCER", StringComparison.OrdinalIgnoreCase)) * 100.0 / wells.Count
-                        : 0,
-                    PendingDecisions = pending,
-                    UpcomingPrograms = upcoming,
-                };
-                return Ok(summary);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching exploration dashboard summary for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                LeadCount      = prospects?.Count(p => p.PROSPECT_TYPE == "LEAD") ?? 0,
+                ProspectCount  = prospects?.Count(p => p.PROSPECT_TYPE != "LEAD") ?? 0,
+                WellCount      = wells?.Count ?? 0,
+                SurveyCount    = surveys?.Count ?? 0,
+                SuccessRatePct = wells?.Count > 0
+                    ? wells.Count(w => w.CURRENT_STATUS != null && w.CURRENT_STATUS.Contains("PRODUCER", StringComparison.OrdinalIgnoreCase)) * 100.0 / wells.Count
+                    : 0,
+                PendingDecisions = pending,
+                UpcomingPrograms = upcoming,
+            };
+            return Ok(summary);
         }
 
         // ============================================
@@ -348,47 +268,35 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             CancellationToken cancellationToken)
         {
             var userId = User.ActingUserId();
-            try
+            var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(currentFieldId))
             {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                        return BadRequest(new { error = "No active field selected." });
-                }
+                    return BadRequest(new { error = "No active field selected." });
+            }
 
-                if (string.IsNullOrWhiteSpace(request.LeadId))
-                {
-                        return BadRequest(new { error = "Lead ID is required." });
-                }
+            if (string.IsNullOrWhiteSpace(request.LeadId))
+            {
+                    return BadRequest(new { error = "Lead ID is required." });
+            }
 
-                if (!await _explorationService.EnsureLeadInFieldForWorkflowStartAsync(
-                        currentFieldId,
-                        request.LeadId,
-                        userId).ConfigureAwait(false))
-                {
-                    return NotFound(new
-                    {
-                        error = $"Lead '{request.LeadId}' was not found for the current field."
-                    });
-                }
-
-                var instance = await _explorationProcessService.StartLeadToProspectProcessAsync(
-                    request.LeadId,
+            if (!await _explorationService.EnsureLeadInFieldForWorkflowStartAsync(
                     currentFieldId,
-                    userId,
-                    cancellationToken);
+                    request.LeadId,
+                    userId).ConfigureAwait(false))
+            {
+                return NotFound(new
+                {
+                    error = $"Lead '{request.LeadId}' was not found for the current field."
+                });
+            }
 
-                return Ok(instance);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error starting Lead to Prospect process");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var instance = await _explorationProcessService.StartLeadToProspectProcessAsync(
+                request.LeadId,
+                currentFieldId,
+                userId,
+                cancellationToken);
+
+            return Ok(instance);
         }
 
         /// <summary>
@@ -400,36 +308,24 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             CancellationToken cancellationToken)
         {
             var userId = User.ActingUserId();
-            try
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
             {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                {
-                        return BadRequest(new { error = "Instance ID is required." });
-                }
-
-                var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
-                    request.InstanceId,
-                    cancellationToken).ConfigureAwait(false);
-                if (scopeDenied != null)
-                    return scopeDenied;
-
-                var result = await _explorationProcessService.EvaluateLeadAsync(
-                    request.InstanceId,
-                    new PROCESS_STEP_DATA { Data = request.EvaluationData ?? new Dictionary<string, object>() },
-                    userId,
-                    cancellationToken);
-
-                return Ok(result);
+                    return BadRequest(new { error = "Instance ID is required." });
             }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error evaluating lead");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+
+            var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
+                request.InstanceId,
+                cancellationToken).ConfigureAwait(false);
+            if (scopeDenied != null)
+                return scopeDenied;
+
+            var result = await _explorationProcessService.EvaluateLeadAsync(
+                request.InstanceId,
+                new PROCESS_STEP_DATA { Data = request.EvaluationData ?? new Dictionary<string, object>() },
+                userId,
+                cancellationToken);
+
+            return Ok(result);
         }
 
         /// <summary>
@@ -441,34 +337,22 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             CancellationToken cancellationToken)
         {
             var userId = User.ActingUserId();
-            try
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
             {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                {
-                        return BadRequest(new { error = "Instance ID is required." });
-                }
+                    return BadRequest(new { error = "Instance ID is required." });
+            }
 
-                var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
-                    request.InstanceId,
-                    cancellationToken).ConfigureAwait(false);
-                if (scopeDenied != null)
-                    return scopeDenied;
+            var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
+                request.InstanceId,
+                cancellationToken).ConfigureAwait(false);
+            if (scopeDenied != null)
+                return scopeDenied;
 
-                var result = await _explorationProcessService.ApproveLeadAsync(
-                    request.InstanceId,
-                    userId,
-                    cancellationToken);
-                return Ok(result);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error approving lead");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _explorationProcessService.ApproveLeadAsync(
+                request.InstanceId,
+                userId,
+                cancellationToken);
+            return Ok(result);
         }
 
         /// <summary>
@@ -480,33 +364,21 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             CancellationToken cancellationToken)
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                    return BadRequest(new { error = "Instance ID is required." });
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
+                return BadRequest(new { error = "Instance ID is required." });
 
-                var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
-                    request.InstanceId,
-                    cancellationToken).ConfigureAwait(false);
-                if (scopeDenied != null)
-                    return scopeDenied;
+            var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
+                request.InstanceId,
+                cancellationToken).ConfigureAwait(false);
+            if (scopeDenied != null)
+                return scopeDenied;
 
-                var result = await _explorationProcessService.RejectLeadAsync(
-                    request.InstanceId,
-                    request.Reason ?? string.Empty,
-                    userId,
-                    cancellationToken);
-                return Ok(result);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error rejecting lead");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _explorationProcessService.RejectLeadAsync(
+                request.InstanceId,
+                request.Reason ?? string.Empty,
+                userId,
+                cancellationToken);
+            return Ok(result);
         }
 
         /// <summary>
@@ -518,34 +390,22 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             CancellationToken cancellationToken)
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                    return BadRequest(new { error = "Instance ID is required." });
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
+                return BadRequest(new { error = "Instance ID is required." });
 
-                var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
-                    request.InstanceId,
-                    cancellationToken).ConfigureAwait(false);
-                if (scopeDenied != null)
-                    return scopeDenied;
+            var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
+                request.InstanceId,
+                cancellationToken).ConfigureAwait(false);
+            if (scopeDenied != null)
+                return scopeDenied;
 
-                var stepData = new PROCESS_STEP_DATA { Data = request.ProspectData ?? new Dictionary<string, object>() };
-                var ok = await _explorationProcessService.PromoteLeadToProspectAsync(
-                    request.InstanceId,
-                    stepData,
-                    userId,
-                    cancellationToken);
-                return Ok(ok);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error promoting lead to prospect");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var stepData = new PROCESS_STEP_DATA { Data = request.ProspectData ?? new Dictionary<string, object>() };
+            var ok = await _explorationProcessService.PromoteLeadToProspectAsync(
+                request.InstanceId,
+                stepData,
+                userId,
+                cancellationToken);
+            return Ok(ok);
         }
 
         /// <summary>
@@ -557,44 +417,32 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             CancellationToken cancellationToken)
         {
             var userId = User.ActingUserId();
-            try
+            var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(currentFieldId))
             {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                        return BadRequest(new { error = "No active field selected." });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.ProspectId))
-                {
-                        return BadRequest(new { error = "Prospect ID is required." });
-                }
-
-                if (await _explorationService.GetProspectForFieldAsync(currentFieldId, request.ProspectId).ConfigureAwait(false) == null)
-                {
-                    return NotFound(new
-                    {
-                        error = $"Prospect '{request.ProspectId}' was not found for the current field."
-                    });
-                }
-
-                var instance = await _explorationProcessService.StartProspectToDiscoveryProcessAsync(
-                    request.ProspectId,
-                    currentFieldId,
-                    userId,
-                    cancellationToken);
-
-                return Ok(instance);
+                    return BadRequest(new { error = "No active field selected." });
             }
-            catch (OperationCanceledException)
+
+            if (string.IsNullOrWhiteSpace(request.ProspectId))
             {
-                throw;
+                    return BadRequest(new { error = "Prospect ID is required." });
             }
-            catch (Exception ex)
+
+            if (await _explorationService.GetProspectForFieldAsync(currentFieldId, request.ProspectId).ConfigureAwait(false) == null)
             {
-                _logger.LogError(ex, "Error starting Prospect to Discovery process");
-                return StatusCode(500, new { error = "An internal error occurred." });
+                return NotFound(new
+                {
+                    error = $"Prospect '{request.ProspectId}' was not found for the current field."
+                });
             }
+
+            var instance = await _explorationProcessService.StartProspectToDiscoveryProcessAsync(
+                request.ProspectId,
+                currentFieldId,
+                userId,
+                cancellationToken);
+
+            return Ok(instance);
         }
 
         /// <summary>
@@ -682,44 +530,32 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             CancellationToken cancellationToken)
         {
             var userId = User.ActingUserId();
-            try
+            var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(currentFieldId))
             {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                        return BadRequest(new { error = "No active field selected." });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.DiscoveryId))
-                {
-                        return BadRequest(new { error = "Discovery ID is required." });
-                }
-
-                if (!await _explorationService.IsProspectDiscoveryInFieldAsync(currentFieldId, request.DiscoveryId).ConfigureAwait(false))
-                {
-                    return NotFound(new
-                    {
-                        error = $"Discovery '{request.DiscoveryId}' was not found for the current field."
-                    });
-                }
-
-                var instance = await _explorationProcessService.StartDiscoveryToDevelopmentProcessAsync(
-                    request.DiscoveryId,
-                    currentFieldId,
-                    userId,
-                    cancellationToken);
-
-                return Ok(instance);
+                    return BadRequest(new { error = "No active field selected." });
             }
-            catch (OperationCanceledException)
+
+            if (string.IsNullOrWhiteSpace(request.DiscoveryId))
             {
-                throw;
+                    return BadRequest(new { error = "Discovery ID is required." });
             }
-            catch (Exception ex)
+
+            if (!await _explorationService.IsProspectDiscoveryInFieldAsync(currentFieldId, request.DiscoveryId).ConfigureAwait(false))
             {
-                _logger.LogError(ex, "Error starting Discovery to Development process");
-                return StatusCode(500, new { error = "An internal error occurred." });
+                return NotFound(new
+                {
+                    error = $"Discovery '{request.DiscoveryId}' was not found for the current field."
+                });
             }
+
+            var instance = await _explorationProcessService.StartDiscoveryToDevelopmentProcessAsync(
+                request.DiscoveryId,
+                currentFieldId,
+                userId,
+                cancellationToken);
+
+            return Ok(instance);
         }
 
         /// <summary>Execute <c>APPRAISAL</c> for an active Discovery-to-Development process instance.</summary>
@@ -778,27 +614,19 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             if (string.IsNullOrWhiteSpace(request.Decision))
                     return BadRequest(new { error = "Decision is required." });
 
-            try
-            {
-                var prospect = await _explorationService.GetProspectForFieldAsync(fieldId, id);
-                    if (prospect == null) return NotFound(new { error = $"Prospect {id} not found in field {fieldId}." });
+            var prospect = await _explorationService.GetProspectForFieldAsync(fieldId, id);
+                if (prospect == null) return NotFound(new { error = $"Prospect {id} not found in field {fieldId}." });
 
-                var newStatus = request.Decision?.ToUpperInvariant() switch
-                {
-                    "APPROVED" => "APPROVED",
-                    "DEFERRED" => "DEFERRED",
-                    "REJECTED" => "REJECTED",
-                    _          => "REVIEWED"
-                };
-
-                await _explorationService.UpdateProspectStatusAsync(fieldId, id, newStatus, userId);
-                return NoContent();
-            }
-            catch (Exception ex)
+            var newStatus = request.Decision?.ToUpperInvariant() switch
             {
-                _logger.LogError(ex, "Error recording decision for prospect {ProspectId}", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                "APPROVED" => "APPROVED",
+                "DEFERRED" => "DEFERRED",
+                "REJECTED" => "REJECTED",
+                _          => "REVIEWED"
+            };
+
+            await _explorationService.UpdateProspectStatusAsync(fieldId, id, newStatus, userId);
+            return NoContent();
         }
 
         /// <summary>
@@ -829,8 +657,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
         /// <summary>
         /// Runs a workflow step for the current field-scoped process instance.
-        /// Returns <c>200 OK</c> with the service boolean result (<c>true</c>/<c>false</c>);
-        /// prerequisite violations are mapped to <c>409 Conflict</c>.
+        /// Returns <c>200 OK</c> with the service boolean result (<c>true</c>/<c>false</c>); a step whose prerequisite has
+        /// not run is the process service's refusal, answered by the API's handler.
         /// </summary>
         private async Task<ActionResult<bool>> RunExplorationWorkflowStepAsync(
             ExplorationWorkflowStepRequest request,
@@ -839,50 +667,28 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             string errorLogMessage,
             Func<string, PROCESS_STEP_DATA, string, CancellationToken, Task<bool>> execute)
         {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                    return BadRequest(new { error = "Instance ID is required." });
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
+                return BadRequest(new { error = "Instance ID is required." });
 
-                var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
-                    request.InstanceId,
-                    cancellationToken).ConfigureAwait(false);
-                if (scopeDenied != null)
-                    return scopeDenied;
+            var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
+                request.InstanceId,
+                cancellationToken).ConfigureAwait(false);
+            if (scopeDenied != null)
+                return scopeDenied;
 
-                var payload = request.StepData ?? new Dictionary<string, object>();
-                var json = System.Text.Json.JsonSerializer.SerializeToElement(payload);
-                var stepData = new PROCESS_STEP_DATA
-                {
-                    Data = payload,
-                    DataJson = json.GetRawText(),
-                    StepType = json.TryGetProperty("StepType", out var stepType) && stepType.ValueKind == System.Text.Json.JsonValueKind.String
-                        ? stepType.GetString() ?? string.Empty : string.Empty,
-                    Status = json.TryGetProperty("Status", out var status) && status.ValueKind == System.Text.Json.JsonValueKind.String
-                        ? status.GetString() ?? string.Empty : string.Empty
-                };
-                var ok = await execute(request.InstanceId, stepData, userId, cancellationToken);
-                return Ok(ok);
-            }
-            catch (OperationCanceledException)
+            var payload = request.StepData ?? new Dictionary<string, object>();
+            var json = System.Text.Json.JsonSerializer.SerializeToElement(payload);
+            var stepData = new PROCESS_STEP_DATA
             {
-                throw;
-            }
-            catch (ExplorationWorkflowPrerequisiteException ex)
-            {
-                return Conflict(new
-                {
-                    error = "Workflow prerequisite not satisfied.",
-                    ex.InstanceId,
-                    attemptedStep = ex.AttemptedStepId,
-                    prerequisiteStep = ex.PrerequisiteStepId
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Message} (instance {InstanceId})", errorLogMessage, request.InstanceId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                Data = payload,
+                DataJson = json.GetRawText(),
+                StepType = json.TryGetProperty("StepType", out var stepType) && stepType.ValueKind == System.Text.Json.JsonValueKind.String
+                    ? stepType.GetString() ?? string.Empty : string.Empty,
+                Status = json.TryGetProperty("Status", out var status) && status.ValueKind == System.Text.Json.JsonValueKind.String
+                    ? status.GetString() ?? string.Empty : string.Empty
+            };
+            var ok = await execute(request.InstanceId, stepData, userId, cancellationToken);
+            return Ok(ok);
         }
 
         private async Task<ActionResult<bool>> RunApproveDevelopmentWorkflowAsync(
@@ -890,42 +696,20 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             string userId,
             CancellationToken cancellationToken)
         {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                    return BadRequest(new { error = "Instance ID is required." });
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
+                return BadRequest(new { error = "Instance ID is required." });
 
-                var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
-                    request.InstanceId,
-                    cancellationToken).ConfigureAwait(false);
-                if (scopeDenied != null)
-                    return scopeDenied;
+            var scopeDenied = await EnsureWorkflowProcessMatchesCurrentFieldAsync(
+                request.InstanceId,
+                cancellationToken).ConfigureAwait(false);
+            if (scopeDenied != null)
+                return scopeDenied;
 
-                var ok = await _explorationProcessService.ApproveDevelopmentAsync(
-                    request.InstanceId,
-                    userId,
-                    cancellationToken);
-                return Ok(ok);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (ExplorationWorkflowPrerequisiteException ex)
-            {
-                return Conflict(new
-                {
-                    error = "Workflow prerequisite not satisfied.",
-                    ex.InstanceId,
-                    attemptedStep = ex.AttemptedStepId,
-                    prerequisiteStep = ex.PrerequisiteStepId
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error approving development (instance {InstanceId})", request.InstanceId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var ok = await _explorationProcessService.ApproveDevelopmentAsync(
+                request.InstanceId,
+                userId,
+                cancellationToken);
+            return Ok(ok);
         }
 
         private static DateTime GetAfeSortDate(AFE afe)

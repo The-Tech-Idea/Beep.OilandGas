@@ -6,6 +6,7 @@ using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using Moq;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Models.Core.Refusals;
 using Xunit;
 
 namespace Beep.OilandGas.GasProperties.Tests;
@@ -43,23 +44,26 @@ public class GasPropertiesServiceAdvancedTests
     public async Task CalculateRealGasPropertiesAsync_throws_when_specific_gravity_invalid()
     {
         var sut = CreateSut();
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+        var refusal = await Assert.ThrowsAsync<RefusalException>(() =>
             sut.CalculateRealGasPropertiesAsync(0m, 500m, 600m, 50m, 580m));
+        Assert.Equal(RefusalKind.Invalid, refusal.Kind);
     }
 
     [Fact]
     public async Task CalculateRealGasPropertiesAsync_throws_when_step_non_positive()
     {
         var sut = CreateSut();
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+        var refusal = await Assert.ThrowsAsync<RefusalException>(() =>
             sut.CalculateRealGasPropertiesAsync(0.65m, 500m, 600m, 0m, 580m));
+        Assert.Equal(RefusalKind.Invalid, refusal.Kind);
     }
 
     [Fact]
     public async Task CalculateRealGasPropertiesAsync_throws_when_end_before_start()
     {
         var sut = CreateSut();
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        var refusal = await Assert.ThrowsAsync<RefusalException>(() =>
             sut.CalculateRealGasPropertiesAsync(0.65m, 600m, 500m, 50m, 580m));
+        Assert.Equal(RefusalKind.Invalid, refusal.Kind);
     }
 }

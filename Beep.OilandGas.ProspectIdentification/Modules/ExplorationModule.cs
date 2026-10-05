@@ -84,59 +84,34 @@ namespace Beep.OilandGas.ProspectIdentification.Modules
             var result = NewResult();
             cancellationToken.ThrowIfCancellationRequested();
 
-            try
-            {
-                var seed = await _referenceSeeder.SeedAnalysisReferenceDataAsync(
-                    connectionName,
-                    tableNames: null,
-                    skipExisting: true,
-                    userId: userId);
+            // A failure of a step is not caught here: it reaches the module orchestrator, which records this module as
+            // failed and goes on with the others, or the API's handler, which reports it and answers with its
+            // reference. Each step had copied the exception's text into the result, a fault's words in front of the
+            // operator, and gone on to the next step as though the table it could not reach were seeded.
+            var seed = await _referenceSeeder.SeedAnalysisReferenceDataAsync(
+                connectionName,
+                tableNames: null,
+                skipExisting: true,
+                userId: userId);
 
-                result.Success = seed.Success;
-                result.TablesSeeded = seed.TablesSeeded;
-                result.RecordsInserted = seed.RecordsInserted;
+            result.Success = seed.Success;
+            result.TablesSeeded = seed.TablesSeeded;
+            result.RecordsInserted = seed.RecordsInserted;
 
-                if (!seed.Success && !string.IsNullOrWhiteSpace(seed.Message))
-                    result.Errors.Add(seed.Message);
+            if (!seed.Success && !string.IsNullOrWhiteSpace(seed.Message))
+                result.Errors.Add(seed.Message);
 
-                if (seed.Errors != null)
-                    result.Errors.AddRange(seed.Errors);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                result.Success = false;
-                result.Errors.Add(ex.Message);
-            }
+            if (seed.Errors != null)
+                result.Errors.AddRange(seed.Errors);
 
-            try
-            {
-                await SeedRLeadStatusReferenceRowsAsync(connectionName, userId, result, cancellationToken)
-                    .ConfigureAwait(false);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                result.Errors.Add($"R_LEAD_STATUS: {ex.Message}");
-            }
+            await SeedRLeadStatusReferenceRowsAsync(connectionName, userId, result, cancellationToken)
+                .ConfigureAwait(false);
 
-            try
-            {
-                await SeedRPlayTypeReferenceRowsAsync(connectionName, userId, result, cancellationToken)
-                    .ConfigureAwait(false);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                result.Errors.Add($"R_PLAY_TYPE: {ex.Message}");
-            }
+            await SeedRPlayTypeReferenceRowsAsync(connectionName, userId, result, cancellationToken)
+                .ConfigureAwait(false);
 
-            try
-            {
-                await SeedExplorationReferenceCodeRowsAsync(connectionName, userId, result, cancellationToken)
-                    .ConfigureAwait(false);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                result.Errors.Add($"R_EXPLORATION_REFERENCE_CODE: {ex.Message}");
-            }
+            await SeedExplorationReferenceCodeRowsAsync(connectionName, userId, result, cancellationToken)
+                .ConfigureAwait(false);
 
             return result;
         }

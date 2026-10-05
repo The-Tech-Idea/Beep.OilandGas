@@ -1,0 +1,7 @@
+# TEMPORARY (OILGAS-CATCH-01): lowers the failure rules to warnings while this project's catches are being fixed,
+# so the projects that depend on it still build. Removed when this project reaches zero findings.
+[*.cs]
+dotnet_diagnostic.BEEP0001.severity = warning
+dotnet_diagnostic.BEEP0002.severity = warning
+dotnet_diagnostic.BEEP0003.severity = warning
+dotnet_diagnostic.BEEP0004.severity = warning

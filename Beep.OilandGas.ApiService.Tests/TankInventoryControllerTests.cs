@@ -42,7 +42,7 @@ public sealed class TankInventoryControllerTests
     {
         var claim = issuer is null ? new Claim(claimType, "actor") : new Claim(claimType, "actor", ClaimValueTypes.String, issuer);
         var identity = new ClaimsIdentity([claim], "test");
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+        await Refusals.ForbiddenAsync(() =>
             Controller(identity).CreateTankInventory(new CreateTankInventoryRequest { TankBatteryId = "tank" }));
         Assert.Equal(0, _resolutions);
         _editor.VerifyNoOtherCalls();
@@ -63,8 +63,9 @@ public sealed class TankInventoryControllerTests
     [Fact]
     public async Task MissingBindingReturnsServerErrorRatherThanNotFound()
     {
-        var result = await Controller(LocalIdentity()).GetTankInventory("inventory", "other-db");
-        Assert.Equal(500, Assert.IsType<ObjectResult>(result.Result).StatusCode);
+        // OILGAS-CATCH-01: the controller no longer answers a failure itself; it reaches the API's exception handler,
+        // which reports it and answers 500 with its reference and never its text (ExceptionAnswerTests).
+        await Assert.ThrowsAsync<InvalidOperationException>(() => Controller(LocalIdentity()).GetTankInventory("inventory", "other-db"));
         Assert.Equal(1, _resolutions);
         _editor.VerifyNoOtherCalls();
         _metadata.VerifyNoOtherCalls();

@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.Core;
 ﻿using System;
 using System.Collections.Generic;
@@ -25,8 +26,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// </summary>
         /// <param name="request">Economic analysis request containing entity IDs, economic parameters, and optional production forecast</param>
         /// <returns>Economic analysis result with NPV, IRR, payback period, cash flows, and additional metrics</returns>
-        /// <exception cref="ArgumentException">Thrown when request validation fails</exception>
-        /// <exception cref="InvalidOperationException">Thrown when cash flow data is unavailable or calculation fails</exception>
+        /// <exception cref="RefusalException">What was sent cannot be analysed, or no cash flows can be built for it.</exception>
         public async Task<EconomicAnalysisResult> PerformEconomicAnalysisAsync(EconomicAnalysisRequest request)
         {
             try
@@ -35,7 +35,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 if (string.IsNullOrEmpty(request.WellId) && string.IsNullOrEmpty(request.PoolId) && 
                     string.IsNullOrEmpty(request.FieldId) && string.IsNullOrEmpty(request.ProjectId))
                 {
-                    throw new ArgumentException("At least one of WellId, PoolId, FieldId, or ProjectId must be provided");
+                    throw RefusalException.Invalid("Choose the well, pool, field or project to analyse.");
                 }
 
                 _logger?.LogInformation("Starting Economic Analysis for WellId: {WellId}, PoolId: {PoolId}, FieldId: {FieldId}, ProjectId: {ProjectId}",
@@ -56,7 +56,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 if (cashFlows == null || cashFlows.Length == 0)
                 {
-                    throw new InvalidOperationException("No cash flow data available for economic analysis. Provide PRODUCTION_FORECAST or ensure PPDM data is available.");
+                    throw RefusalException.Conflict("There are no cash flows to analyse: give a production forecast, or choose a well, pool or field with recorded production.");
                 }
 
                 // Step 2: Validate discount rate
@@ -64,7 +64,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 if (discountRate < 0 || discountRate > 1)
                 {
-                    throw new ArgumentException("Discount rate must be between 0 and 100 percent");
+                    throw RefusalException.Invalid("The discount rate must be between 0 and 100 percent.");
                 }
 
                 // Step 3: Perform economic analysis
@@ -76,16 +76,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     ? request.AdditionalParameters.ReinvestRate.Value / 100.0
                     : 0.12;
 
-                EconomicResult economicResult;
-                try
-                {
-                    economicResult = EconomicAnalyzer.Analyze(cashFlows, discountRate, financeRate, reinvestRate);
-                }
-                catch (Exception calcEx)
-                {
-                    _logger?.LogError(calcEx, "Error in economic calculation");
-                    throw new InvalidOperationException($"Economic calculation failed: {calcEx.Message}", calcEx);
-                }
+                var economicResult = EconomicAnalyzer.Analyze(cashFlows, discountRate, financeRate, reinvestRate);
 
                 // Step 4: Generate NPV profile if requested
                 List<NPV_PROFILE_POINT>? npvProfile = null;
@@ -115,11 +106,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 return result;
             }
+            // Every way the run ends short of a result is recorded in the calculation history, then goes on to the
+            // caller: the API's handler answers a refusal with its sentence and reports anything else.
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error performing Economic Analysis");
-
-                // Return error result
                 var errorResult = new EconomicAnalysisResult
                 {
                     CalculationId = Guid.NewGuid().ToString(),
@@ -130,23 +120,17 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     AnalysisType = request.AnalysisType,
                     CalculationDate = DateTime.UtcNow,
                     Status = "FAILED",
-                    ErrorMessage = ex.Message,
+                    ErrorMessage = FailedRunMessage(ex, "economic analysis"),
                     UserId = request.UserId,
                     CashFlowPoints = new List<EconomicCashFlowPoint>(),
                     AdditionalResults = new EconomicAnalysisAdditionalResults()
                 };
 
-                // Try to store error result
-                try
+                await RecordFailedRunAsync("economic analysis", async () =>
                 {
                     var repository = await GetEconomicResultRepositoryAsync();
-
                     await repository.InsertAsync(errorResult, request.UserId ?? "system");
-                }
-                catch (Exception storeEx)
-                {
-                    _logger?.LogError(storeEx, "Error storing Economic Analysis error result");
-                }
+                });
 
                 throw;
             }
@@ -237,94 +221,85 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// </summary>
         private async Task<CashFlow[]> BuildCashFlowsFromPPDMDataAsync(EconomicAnalysisRequest request)
         {
-            try
+            var cashFlows = new List<CashFlow>();
+            var oilPrice = request.OilPrice ?? 50.0m; // Default $50/bbl
+            var gasPrice = request.GasPrice ?? 3.0m; // Default $3/Mscf
+            var operatingCostPerUnit = request.OperatingCostPerUnit ?? 10.0m; // Default $10/bbl equivalent
+            var royaltyRate = request.RoyaltyRate ?? 0.125m; // Default 12.5%
+            var taxRate = request.TaxRate ?? 0.35m; // Default 35%
+            var workingInterest = request.WorkingInterest ?? 1.0m; // Default 100%
+
+            // Add initial investment (period 0)
+            if (request.CapitalInvestment.HasValue && request.CapitalInvestment.Value != 0)
             {
-                var cashFlows = new List<CashFlow>();
-                var oilPrice = request.OilPrice ?? 50.0m; // Default $50/bbl
-                var gasPrice = request.GasPrice ?? 3.0m; // Default $3/Mscf
-                var operatingCostPerUnit = request.OperatingCostPerUnit ?? 10.0m; // Default $10/bbl equivalent
-                var royaltyRate = request.RoyaltyRate ?? 0.125m; // Default 12.5%
-                var taxRate = request.TaxRate ?? 0.35m; // Default 35%
-                var workingInterest = request.WorkingInterest ?? 1.0m; // Default 100%
-
-                // Add initial investment (period 0)
-                if (request.CapitalInvestment.HasValue && request.CapitalInvestment.Value != 0)
+                cashFlows.Add(new CashFlow
                 {
-                    cashFlows.Add(new CashFlow
-                    {
-                        Period = 0,
-                        Amount = -(double)request.CapitalInvestment.Value,
-                        Description = "Initial Capital Investment"
-                    });
-                }
+                    Period = 0,
+                    Amount = -(double)request.CapitalInvestment.Value,
+                    Description = "Initial Capital Investment"
+                });
+            }
 
-                // Retrieve production data from PPDM
-                var productionData = await GetProductionDataForEconomicAnalysisAsync(request);
-                
-                if (productionData.Count == 0)
-                {
-                    _logger?.LogWarning("No production data found in PPDM for economic analysis. " +
-                        "Consider providing PRODUCTION_FORECAST in request.");
-                    return cashFlows.ToArray();
-                }
-
-                // Group production data by period (monthly or yearly based on request)
-                var startDate = request.AnalysisStartDate ?? productionData.Min(p => p.Date);
-                var periodMonths = request.AnalysisPeriodYears.HasValue 
-                    ? 12 / request.AnalysisPeriodYears.Value 
-                    : 1; // Default monthly
-
-                var groupedData = productionData
-                    .GroupBy(p => GetPeriodNumber(p.Date, startDate, periodMonths))
-                    .OrderBy(g => g.Key)
-                    .ToList();
-
-                int period = 1;
-                foreach (var group in groupedData)
-                {
-                    var periodData = group.ToList();
-                    var periodDate = periodData.First().Date;
-
-                    // Aggregate production for the period
-                    decimal totalOil = periodData.Sum(p => p.OilVolume ?? 0);
-                    decimal totalGas = periodData.Sum(p => p.GasVolume ?? 0);
-
-                    // Calculate revenue
-                    decimal revenue = (totalOil * oilPrice) + (totalGas * gasPrice / 1000.0m);
-                    revenue *= workingInterest;
-
-                    // Calculate costs
-                    decimal operatingCost = periodData.Sum(p => p.OperatingCost ?? 0);
-                    if (operatingCost == 0)
-                    {
-                        decimal totalVolume = totalOil + (totalGas / 6.0m); // Convert gas to oil equivalent
-                        operatingCost = totalVolume * operatingCostPerUnit;
-                    }
-
-                    // Calculate royalties and taxes
-                    decimal royalties = revenue * royaltyRate;
-                    decimal netRevenue = revenue - royalties - operatingCost;
-                    decimal taxes = netRevenue > 0 ? netRevenue * taxRate : 0;
-
-                    // Net cash flow
-                    decimal netCashFlow = revenue - royalties - operatingCost - taxes;
-
-                    cashFlows.Add(new CashFlow
-                    {
-                        Period = period++,
-                        Amount = (double)netCashFlow,
-                        Description = $"Period {period - 1} - {periodDate:yyyy-MM}"
-                    });
-                }
-
+            // Retrieve production data from PPDM
+            var productionData = await GetProductionDataForEconomicAnalysisAsync(request);
+            
+            if (productionData.Count == 0)
+            {
+                _logger?.LogWarning("No production data found in PPDM for economic analysis. " +
+                    "Consider providing PRODUCTION_FORECAST in request.");
                 return cashFlows.ToArray();
             }
-            catch (Exception ex)
+
+            // Group production data by period (monthly or yearly based on request)
+            var startDate = request.AnalysisStartDate ?? productionData.Min(p => p.Date);
+            var periodMonths = request.AnalysisPeriodYears.HasValue 
+                ? 12 / request.AnalysisPeriodYears.Value 
+                : 1; // Default monthly
+
+            var groupedData = productionData
+                .GroupBy(p => GetPeriodNumber(p.Date, startDate, periodMonths))
+                .OrderBy(g => g.Key)
+                .ToList();
+
+            int period = 1;
+            foreach (var group in groupedData)
             {
-                _logger?.LogError(ex, "Error building cash flows from PPDM data");
-                // Return empty array on error - caller can handle
-                return Array.Empty<CashFlow>();
+                var periodData = group.ToList();
+                var periodDate = periodData.First().Date;
+
+                // Aggregate production for the period
+                decimal totalOil = periodData.Sum(p => p.OilVolume ?? 0);
+                decimal totalGas = periodData.Sum(p => p.GasVolume ?? 0);
+
+                // Calculate revenue
+                decimal revenue = (totalOil * oilPrice) + (totalGas * gasPrice / 1000.0m);
+                revenue *= workingInterest;
+
+                // Calculate costs
+                decimal operatingCost = periodData.Sum(p => p.OperatingCost ?? 0);
+                if (operatingCost == 0)
+                {
+                    decimal totalVolume = totalOil + (totalGas / 6.0m); // Convert gas to oil equivalent
+                    operatingCost = totalVolume * operatingCostPerUnit;
+                }
+
+                // Calculate royalties and taxes
+                decimal royalties = revenue * royaltyRate;
+                decimal netRevenue = revenue - royalties - operatingCost;
+                decimal taxes = netRevenue > 0 ? netRevenue * taxRate : 0;
+
+                // Net cash flow
+                decimal netCashFlow = revenue - royalties - operatingCost - taxes;
+
+                cashFlows.Add(new CashFlow
+                {
+                    Period = period++,
+                    Amount = (double)netCashFlow,
+                    Description = $"Period {period - 1} - {periodDate:yyyy-MM}"
+                });
             }
+
+            return cashFlows.ToArray();
         }
 
         /// <summary>
@@ -334,72 +309,65 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         {
             var productionPoints = new List<EconomicProductionPoint>();
 
-            try
+            // Use similar approach to GetProductionDataForDCAAsync
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(PDEN_VOL_SUMMARY), _connectionName, "PDEN_VOL_SUMMARY", null);
+
+            var filters = new List<AppFilter>();
+
+            // PDEN_VOL_SUMMARY uses PDEN_ID as the production entity key (well, pool, or field-level PDEN)
+            var pdenId = !string.IsNullOrEmpty(request.WellId) ? request.WellId
+                : !string.IsNullOrEmpty(request.PoolId) ? request.PoolId
+                : request.FieldId;
+
+            if (!string.IsNullOrEmpty(pdenId))
             {
-                // Use similar approach to GetProductionDataForDCAAsync
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PDEN_VOL_SUMMARY), _connectionName, "PDEN_VOL_SUMMARY", null);
-
-                var filters = new List<AppFilter>();
-
-                // PDEN_VOL_SUMMARY uses PDEN_ID as the production entity key (well, pool, or field-level PDEN)
-                var pdenId = !string.IsNullOrEmpty(request.WellId) ? request.WellId
-                    : !string.IsNullOrEmpty(request.PoolId) ? request.PoolId
-                    : request.FieldId;
-
-                if (!string.IsNullOrEmpty(pdenId))
+                filters.Add(new AppFilter
                 {
-                    filters.Add(new AppFilter
-                    {
-                        FieldName = "PDEN_ID",
-                        Operator = "=",
-                        FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", pdenId)
-                    });
-                }
-
-                // Date filters use EFFECTIVE_DATE (primary) — PDEN_VOL_SUMMARY has no PRODUCTION_DATE column
-                if (request.AnalysisStartDate.HasValue)
-                {
-                    filters.Add(new AppFilter
-                    {
-                        FieldName = "EFFECTIVE_DATE",
-                        Operator = ">=",
-                        FilterValue = request.AnalysisStartDate.Value.ToString("yyyy-MM-dd")
-                    });
-                }
-
-                if (request.AnalysisEndDate.HasValue)
-                {
-                    filters.Add(new AppFilter
-                    {
-                        FieldName = "EFFECTIVE_DATE",
-                        Operator = "<=",
-                        FilterValue = request.AnalysisEndDate.Value.ToString("yyyy-MM-dd")
-                    });
-                }
-
-                var entities = await repo.GetAsync(filters);
-                
-                foreach (var entity in entities.Cast<PDEN_VOL_SUMMARY>().OrderBy(e => e.EFFECTIVE_DATE ?? e.VOLUME_DATE ?? DateTime.MinValue))
-                {
-                    var date = entity.EFFECTIVE_DATE ?? entity.VOLUME_DATE ?? DateTime.UtcNow;
-                    var oilVol = entity.OIL_VOLUME == 0 ? (decimal?)null : (decimal?)entity.OIL_VOLUME;
-                    var gasVol = entity.GAS_VOLUME == 0 ? (decimal?)null : (decimal?)entity.GAS_VOLUME;
-                    var waterVol = entity.WATER_VOLUME == 0 ? (decimal?)null : (decimal?)entity.WATER_VOLUME;
-
-                    productionPoints.Add(new EconomicProductionPoint
-                    {
-                        Date = date,
-                        OilVolume = oilVol,
-                        GasVolume = gasVol,
-                        WaterVolume = waterVol
-                    });
-                }
+                    FieldName = "PDEN_ID",
+                    Operator = "=",
+                    FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", pdenId)
+                });
             }
-            catch (Exception ex)
+
+            // Date filters use EFFECTIVE_DATE (primary) — PDEN_VOL_SUMMARY has no PRODUCTION_DATE column
+            if (request.AnalysisStartDate.HasValue)
             {
-                _logger?.LogError(ex, "Error retrieving production data for economic analysis");
+                filters.Add(new AppFilter
+                {
+                    FieldName = "EFFECTIVE_DATE",
+                    Operator = ">=",
+                    FilterValue = request.AnalysisStartDate.Value.ToString("yyyy-MM-dd")
+                });
+            }
+
+            if (request.AnalysisEndDate.HasValue)
+            {
+                filters.Add(new AppFilter
+                {
+                    FieldName = "EFFECTIVE_DATE",
+                    Operator = "<=",
+                    FilterValue = request.AnalysisEndDate.Value.ToString("yyyy-MM-dd")
+                });
+            }
+
+            var entities = await repo.GetAsync(filters);
+            
+            foreach (var entity in entities.Cast<PDEN_VOL_SUMMARY>().OrderBy(e => e.EFFECTIVE_DATE ?? e.VOLUME_DATE ?? DateTime.MinValue))
+            {
+                var date = entity.EFFECTIVE_DATE ?? entity.VOLUME_DATE ?? DateTime.UtcNow;
+                var oilVol = entity.OIL_VOLUME == 0 ? (decimal?)null : (decimal?)entity.OIL_VOLUME;
+                var gasVol = entity.GAS_VOLUME == 0 ? (decimal?)null : (decimal?)entity.GAS_VOLUME;
+                var waterVol = entity.WATER_VOLUME == 0 ? (decimal?)null : (decimal?)entity.WATER_VOLUME;
+
+                productionPoints.Add(new EconomicProductionPoint
+                {
+                    Date = date,
+                    OilVolume = oilVol,
+                    GasVolume = gasVol,
+                    WaterVolume = waterVol
+                });
             }
 
             return productionPoints;

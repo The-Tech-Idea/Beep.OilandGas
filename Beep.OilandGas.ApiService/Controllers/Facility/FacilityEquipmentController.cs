@@ -32,16 +32,8 @@ public class FacilityEquipmentController : ControllerBase
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
 
-        try
-        {
-            var rows = await _facilities.ListFacilityEquipmentAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
-            return Ok(rows);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "List equipment for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var rows = await _facilities.ListFacilityEquipmentAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
+        return Ok(rows);
     }
 
     [HttpPost("{equipmentId}")]
@@ -57,22 +49,9 @@ public class FacilityEquipmentController : ControllerBase
         if (string.IsNullOrWhiteSpace(equipmentId))
             return BadRequest(new { error = "equipmentId is required." });
 
-        try
-        {
-            var row = await _facilities
-                .LinkEquipmentToFacilityAsync(facilityId, facilityType, equipmentId.Trim(), userId, cancellationToken)
-                .ConfigureAwait(false);
-            return Ok(row);
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Link equipment for {FacilityId} failed", facilityId);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Link equipment for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var row = await _facilities
+            .LinkEquipmentToFacilityAsync(facilityId, facilityType, equipmentId.Trim(), userId, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(row);
     }
 }

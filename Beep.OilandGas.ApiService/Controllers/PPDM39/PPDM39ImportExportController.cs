@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Controllers.PPDM39
 {
@@ -38,6 +39,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         private readonly ILogger<PPDM39ImportExportController> _logger;
         private readonly ILoggerFactory _loggerFactory;
         private readonly IProgressTrackingService? _progressTracking;
+        private readonly IFailureReporter _failures;
 
         public PPDM39ImportExportController(
             IDMEEditor editor,
@@ -47,8 +49,10 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             ILogger<PPDM39ImportExportController> logger,
             ILoggerFactory loggerFactory,
             IProgressTrackingService progressTracking,
-            IBackgroundOperationQueue queue)
+            IBackgroundOperationQueue queue,
+            IFailureReporter failures)
         {
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
@@ -85,20 +89,20 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 typeof(IPPDMEntity).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract &&
                 t.Name.Equals(tableName, StringComparison.OrdinalIgnoreCase));
             if (entityType == null) return BadRequest(new { error = "Unknown PPDM table." });
+            using var input = file.OpenReadStream();
+            using var content = new MemoryStream();
+            var buffer = new byte[81920];
+            int read;
+            while ((read = await input.ReadAsync(buffer, HttpContext.RequestAborted)) > 0)
+            {
+                if (content.Length + read > CsvImportJob.MaxUploadBytes)
+                    return StatusCode(413, new { error = "CSV uploads are limited to 2 MiB." });
+                await content.WriteAsync(buffer.AsMemory(0, read), HttpContext.RequestAborted);
+            }
+            if (content.Length == 0) return BadRequest(new { error = "No file uploaded." });
+            operationId = _progressTracking!.StartOperation("ImportCsv", $"Importing {entityType.Name} from CSV");
             try
             {
-                using var input = file.OpenReadStream();
-                using var content = new MemoryStream();
-                var buffer = new byte[81920];
-                int read;
-                while ((read = await input.ReadAsync(buffer, HttpContext.RequestAborted)) > 0)
-                {
-                    if (content.Length + read > CsvImportJob.MaxUploadBytes)
-                        return StatusCode(413, new { error = "CSV uploads are limited to 2 MiB." });
-                    await content.WriteAsync(buffer.AsMemory(0, read), HttpContext.RequestAborted);
-                }
-                if (content.Length == 0) return BadRequest(new { error = "No file uploaded." });
-                operationId = _progressTracking!.StartOperation("ImportCsv", $"Importing {entityType.Name} from CSV");
                 var job = new CsvImportJob(operationId, entityType.Name, connectionName, actor, validateForeignKeys, content.ToArray());
                 if (!_queue.TryEnqueue<CsvImportJobRunner, CsvImportJob>(CsvImportJob.QueueKey(operationId), job,
                     static (runner, request, token) => runner.RunAsync(request, token)))
@@ -108,12 +112,13 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 }
                 return Ok(new OperationStartResponse { OperationId = operationId, Message = "Import queued" });
             }
-            catch (OperationCanceledException) when (HttpContext.RequestAborted.IsCancellationRequested) { throw; }
-            catch (Exception ex)
+            // Whatever stops the queueing, the tracked operation is closed as not started before the exception goes on to the
+            // API's handler, which reports it and answers with its reference (OILGAS-CATCH-01: answered 500 with no reference
+            // and "see server logs").
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error starting CSV import for {TableName}", tableName);
-                if (operationId != null) _progressTracking?.CompleteOperation(operationId, false, errorMessage: "Import could not be queued.");
-                return StatusCode(500, new OperationStartResponse { Message = "Error starting import. See server logs." });
+                _progressTracking.CompleteOperation(operationId, false, errorMessage: "Import could not be queued.");
+                throw;
             }
         }
 
@@ -129,33 +134,35 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
+            connectionName ??= request?.ConnectionName ?? _editor.ConfigEditor?.DataConnections?.FirstOrDefault()?.ConnectionName ?? "PPDM39";
+
+            // Get entity type — asked before an operation is started, so an unknown table leaves none open.
+            var assembly = typeof(IPPDMEntity).Assembly;
+            var entityType = assembly.GetTypes()
+                .FirstOrDefault(t => typeof(IPPDMEntity).IsAssignableFrom(t) &&
+                                    !t.IsInterface && !t.IsAbstract &&
+                                    t.Name.Equals(tableName, StringComparison.OrdinalIgnoreCase));
+
+            if (entityType == null)
+            {
+                return BadRequest(new { error = $"Entity type not found for table: {tableName}" });
+            }
+
+            operationId ??= _progressTracking?.StartOperation("ExportCsv", $"Exporting {tableName} to CSV");
+
+            _logger.LogInformation("Starting CSV export for table {TableName} on connection {ConnectionName} (OperationId: {OperationId})",
+                tableName, connectionName, operationId);
+
+            var repository = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, connectionName, tableName, _loggerFactory.CreateLogger<PPDMGenericRepository>());
+
+            var filters = request?.Filters ?? new System.Collections.Generic.List<AppFilter>();
+            // The file name is the entity type's own, never the route's text.
+            var tempFilePath = Path.Combine(Path.GetTempPath(), $"export_{Guid.NewGuid():N}_{entityType.Name}.csv");
+
             try
             {
-                connectionName ??= request?.ConnectionName ?? _editor.ConfigEditor?.DataConnections?.FirstOrDefault()?.ConnectionName ?? "PPDM39";
-                operationId ??= _progressTracking?.StartOperation("ExportCsv", $"Exporting {tableName} to CSV");
-
-                _logger.LogInformation("Starting CSV export for table {TableName} on connection {ConnectionName} (OperationId: {OperationId})", 
-                    tableName, connectionName, operationId);
-
-                // Get entity type
-                var assembly = typeof(IPPDMEntity).Assembly;
-                var entityType = assembly.GetTypes()
-                    .FirstOrDefault(t => typeof(IPPDMEntity).IsAssignableFrom(t) && 
-                                        !t.IsInterface && !t.IsAbstract &&
-                                        t.Name.Equals(tableName, StringComparison.OrdinalIgnoreCase));
-
-                if (entityType == null)
-                {
-                    return BadRequest(new { error = $"Entity type not found for table: {tableName}" });
-                }
-
-                var repository = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, tableName, _loggerFactory.CreateLogger<PPDMGenericRepository>());
-
-                var filters = request?.Filters ?? new System.Collections.Generic.List<AppFilter>();
-                var tempFilePath = Path.Combine(Path.GetTempPath(), $"export_{Guid.NewGuid()}_{tableName}.csv");
-
                 // Wrap progress tracking in delegate
                 PPDMGenericRepository.ProgressReportDelegate? progressDelegate = null;
                 if (_progressTracking != null && !string.IsNullOrEmpty(operationId))
@@ -174,23 +181,40 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     progressDelegate,
                     operationId);
 
-                _progressTracking?.CompleteOperation(operationId!, true, 
+                _progressTracking?.CompleteOperation(operationId!, true,
                     $"Export completed: {exportedCount} entities exported");
 
                 // Return file
                 var fileBytes = await System.IO.File.ReadAllBytesAsync(tempFilePath);
-                System.IO.File.Delete(tempFilePath); // Clean up
-
                 return File(fileBytes, "text/csv", $"{tableName}_{DateTime.UtcNow:yyyyMMddHHmmss}.csv");
             }
-            catch (Exception ex)
+            // Whatever ends the export, its tracked operation is closed as failed before the exception goes on to the API's
+            // handler, which reports it and answers with its reference (OILGAS-CATCH-01: answered 500 with no reference).
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error exporting CSV for table {TableName}", tableName);
                 if (!string.IsNullOrEmpty(operationId))
                 {
-                    _progressTracking?.CompleteOperation(operationId, false, errorMessage: "Export failed. See server logs for details.");
+                    _progressTracking?.CompleteOperation(operationId, false, errorMessage: "Export failed.");
                 }
-                return StatusCode(500, new { error = "An internal error occurred." });
+                throw;
+            }
+            finally
+            {
+                DeleteTemporaryFile(tempFilePath);
+            }
+        }
+
+        // The export has already answered; a temporary copy left behind costs disk, not the result.
+        private void DeleteTemporaryFile(string tempFilePath)
+        {
+            try
+            {
+                if (System.IO.File.Exists(tempFilePath)) System.IO.File.Delete(tempFilePath);
+            }
+            catch (Exception cleanup) when (cleanup is IOException or UnauthorizedAccessException)
+            {
+                _failures.ReportHandled(cleanup, "deleting a CSV export's temporary file",
+                    "the export's answer stands; the temporary file stays in the temp folder until removed", FailureSeverity.Degraded);
             }
         }
 
@@ -202,20 +226,12 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             if (string.IsNullOrWhiteSpace(operationId))
                 return BadRequest(new { error = "Operation ID is required." });
-            try
+            var progress = _progressTracking?.GetProgress(operationId);
+            if (progress == null)
             {
-                var progress = _progressTracking?.GetProgress(operationId);
-                if (progress == null)
-                {
-                        return NotFound(new { error = "Operation not found." });
-                }
-                return Ok(progress);
+                    return NotFound(new { error = "Operation not found." });
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting progress for operation {OperationId}", operationId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(progress);
         }
     }
 }

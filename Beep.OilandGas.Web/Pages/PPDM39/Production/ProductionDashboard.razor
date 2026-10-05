@@ -4,6 +4,7 @@
 @implements IDisposable
 @inject IDataManagementService DataManagementService
 @inject IProductionServiceClient ProductionService
+@inject OilGasCallFailures Calls
 
 <PageTitle>Production Dashboard</PageTitle>
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
@@ -70,7 +71,7 @@
     private bool _disposed;
     protected override async Task OnInitializedAsync()
     {
-        _state = new(fieldId => ProductionService.GetDashboardAsync(fieldId));
+        _state = new(fieldId => ProductionService.GetDashboardAsync(fieldId), Calls);
         DataManagementService.CurrentFieldChanged += FieldChanged;
         await Reload();
     }

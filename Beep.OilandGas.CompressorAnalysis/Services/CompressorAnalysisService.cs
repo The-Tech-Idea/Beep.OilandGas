@@ -12,6 +12,7 @@ using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.CompressorAnalysis.Services
 {
@@ -58,13 +59,13 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
             string compressorType = "Centrifugal", CancellationToken cancellationToken = default)
         {
             if (requiredFlowRate <= 0)
-                throw new ArgumentException("Flow rate must be greater than zero", nameof(requiredFlowRate));
+                throw RefusalException.Invalid("Flow rate must be greater than zero.");
             if (requiredDischargePressure <= requiredInletPressure)
-                throw new ArgumentException("Discharge pressure must be greater than inlet pressure", nameof(requiredDischargePressure));
+                throw RefusalException.Invalid("Discharge pressure must be greater than inlet pressure.");
             if (GAS_SPECIFIC_GRAVITY <= 0)
-                throw new ArgumentException("Gas specific gravity must be greater than zero", nameof(GAS_SPECIFIC_GRAVITY));
+                throw RefusalException.Invalid("Gas specific gravity must be greater than zero.");
             if (designTemperature <= 0)
-                throw new ArgumentException("Design temperature must be greater than zero", nameof(designTemperature));
+                throw RefusalException.Invalid("Design temperature must be greater than zero.");
 
             _logger?.LogInformation("Starting compressor design: Type={Type}, Flow={Flow} Mscf/d, Discharge={Discharge} psia",
                 compressorType, requiredFlowRate, requiredDischargePressure);
@@ -140,7 +141,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error during compressor design");
-                throw new CompressorException("Compressor design failed", ex);
+                throw;
             }
         }
 
@@ -164,9 +165,9 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
             string compressorType = "Centrifugal", CancellationToken cancellationToken = default)
         {
             if (inletPressure <= 0 || DISCHARGE_PRESSURE <= 0 || GAS_FLOW_RATE <= 0 || inletTemperature <= 0 || GAS_SPECIFIC_GRAVITY <= 0)
-                throw new ArgumentException("All input parameters must be greater than zero");
+                throw RefusalException.Invalid("Every input value must be greater than zero.");
             if (DISCHARGE_PRESSURE <= inletPressure)
-                throw new ArgumentException("Discharge pressure must be greater than inlet pressure");
+                throw RefusalException.Invalid("Discharge pressure must be greater than inlet pressure.");
 
             _logger?.LogInformation("Starting performance analysis: Type={Type}, Inlet={Inlet} psia, Discharge={Discharge} psia",
                 compressorType, inletPressure, DISCHARGE_PRESSURE);
@@ -246,7 +247,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error during performance analysis");
-                throw new CompressorException("Performance analysis failed", ex);
+                throw;
             }
         }
 
@@ -268,9 +269,9 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
             decimal GAS_SPECIFIC_GRAVITY, CancellationToken cancellationToken = default)
         {
             if (inletPressure <= 0 || DISCHARGE_PRESSURE <= 0 || inletTemperature <= 0 || dischargeTemperature <= 0 || GAS_SPECIFIC_GRAVITY <= 0)
-                throw new ArgumentException("All input parameters must be greater than zero");
+                throw RefusalException.Invalid("Every input value must be greater than zero.");
             if (dischargeTemperature < inletTemperature)
-                throw new ArgumentException("Discharge temperature cannot be less than inlet temperature");
+                throw RefusalException.Invalid("Discharge temperature cannot be less than inlet temperature.");
 
             _logger?.LogInformation("Starting efficiency calculation: P1={P1}, P2={P2}, T1={T1}, T2={T2}",
                 inletPressure, DISCHARGE_PRESSURE, inletTemperature, dischargeTemperature);
@@ -335,7 +336,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error during efficiency calculation");
-                throw new CompressorException("Efficiency calculation failed", ex);
+                throw;
             }
         }
 
@@ -357,9 +358,9 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
             decimal designTemperature, CancellationToken cancellationToken = default)
         {
             if (requiredFlowRate <= 0 || requiredDischargePressure <= 0 || inletPressure <= 0 || GasSpecificGravity <= 0 || designTemperature <= 0)
-                throw new ArgumentException("All input parameters must be greater than zero");
+                throw RefusalException.Invalid("Every input value must be greater than zero.");
             if (requiredDischargePressure <= inletPressure)
-                throw new ArgumentException("Discharge pressure must be greater than inlet pressure");
+                throw RefusalException.Invalid("Discharge pressure must be greater than inlet pressure.");
 
             _logger?.LogInformation("Starting compressor optimization: Flow={Flow}, Discharge={Discharge}",
                 requiredFlowRate, requiredDischargePressure);
@@ -431,7 +432,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error during compressor optimization");
-                throw new CompressorException("Compressor optimization failed", ex);
+                throw;
             }
         }
 
@@ -450,9 +451,9 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
             string compressorType = "Centrifugal", CancellationToken cancellationToken = default)
         {
             if (operatingHoursPerYear <= 0 || inletPressure <= 0 || DISCHARGE_PRESSURE <= 0)
-                throw new ArgumentException("All input parameters must be greater than zero");
+                throw RefusalException.Invalid("Every input value must be greater than zero.");
             if (DISCHARGE_PRESSURE <= inletPressure)
-                throw new ArgumentException("Discharge pressure must be greater than inlet pressure");
+                throw RefusalException.Invalid("Discharge pressure must be greater than inlet pressure.");
 
             _logger?.LogInformation("Starting maintenance prediction: Type={Type}, Hours/Year={Hours}",
                 compressorType, operatingHoursPerYear);
@@ -524,7 +525,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error during maintenance prediction");
-                throw new CompressorException("Maintenance prediction failed", ex);
+                throw;
             }
         }
 
@@ -542,7 +543,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
             decimal inletTemperature, CancellationToken cancellationToken = default)
         {
             if (inletPressure <= 0 || GAS_SPECIFIC_GRAVITY <= 0 || inletTemperature <= 0)
-                throw new ArgumentException("All input parameters must be greater than zero");
+                throw RefusalException.Invalid("Every input value must be greater than zero.");
 
             _logger?.LogInformation("Starting pressure-flow analysis: P1={P1}, SG={SG}, T={T}",
                 inletPressure, GAS_SPECIFIC_GRAVITY, inletTemperature);
@@ -595,7 +596,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error during pressure-flow analysis");
-                throw new CompressorException("Pressure-flow analysis failed", ex);
+                throw;
             }
         }
 

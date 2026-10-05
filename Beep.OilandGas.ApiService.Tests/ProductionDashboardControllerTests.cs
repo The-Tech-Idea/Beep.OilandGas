@@ -41,8 +41,9 @@ public class ProductionDashboardControllerTests
         service.Setup(s => s.GetProductionDashboardSummaryAsync("a")).ReturnsAsync(new ProductionDashboardSummary { FieldId = mismatch ? "wrong" : "a" });
         if (!mismatch) service.Setup(s => s.GetProductionWellStatusAsync("a")).ThrowsAsync(new Exception("private details"));
         var controller = new ProductionDashboardController(service.Object, NullLogger<ProductionDashboardController>.Instance);
-        var result = Assert.IsType<ObjectResult>((await controller.Get("a")).Result);
-        Assert.Equal(500, result.StatusCode); Assert.DoesNotContain("private details", result.Value!.ToString());
+        // OILGAS-CATCH-01: the controller no longer answers a failure itself; it reaches the API's exception handler,
+        // which reports it and answers 500 with its reference and never its text (ExceptionAnswerTests).
+        await Assert.ThrowsAnyAsync<Exception>(() => controller.Get("a"));
         if (mismatch) service.Verify(s => s.GetProductionWellStatusAsync(It.IsAny<string>()), Times.Never);
     }
     [Theory]

@@ -71,7 +71,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error generating trial balance: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error generating trial balance");
                 throw;
             }
         }
@@ -90,7 +90,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error getting trial balance by type {AccountType}: {Message}", accountType, ex.Message);
+                _logger?.LogError(ex, "Error getting trial balance by type {AccountType}", accountType);
                 throw;
             }
         }
@@ -155,7 +155,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error validating GL: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error validating GL");
                 throw;
             }
         }
@@ -178,7 +178,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error getting post-closing trial balance: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error getting post-closing trial balance");
                 throw;
             }
         }
@@ -216,7 +216,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error exporting trial balance to CSV: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error exporting trial balance to CSV");
                 throw;
             }
         }
@@ -240,7 +240,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error checking period close readiness: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error checking period close readiness");
                 throw;
             }
         }

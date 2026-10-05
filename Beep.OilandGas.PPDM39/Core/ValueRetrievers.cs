@@ -1,4 +1,5 @@
 using System;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.Models;
 
 namespace Beep.OilandGas.PPDM39.Core
@@ -7,6 +8,13 @@ namespace Beep.OilandGas.PPDM39.Core
     /// Provides value retrieval functions for mapping PPDM39 entities to domain models.
     /// These can be overloaded to provide custom data retrieval logic.
     /// </summary>
+    /// <remarks>
+    /// A default retriever that reads the well's own records answers a record that is missing or empty with a
+    /// <see cref="RefusalException"/> (Conflict): the analysis cannot be run on that well as its data stands, and the
+    /// person is told which value is missing (OILGAS-CATCH-01). A retriever with no data source at all throws
+    /// <see cref="InvalidOperationException"/> until an application supplies one — that is a capability this server
+    /// does not have, not something the person can correct.
+    /// </remarks>
     public static class ValueRetrievers
     {
         /// <summary>
@@ -27,7 +35,7 @@ namespace Beep.OilandGas.PPDM39.Core
                 }
                 return diameter;
             }
-            throw new InvalidOperationException("Tubing diameter not available. Provide GetTubingDiameter function or WELL_TUBULAR entity.");
+            throw RefusalException.Conflict("The well has no tubing with a recorded inside diameter, so its tubing diameter is not known.");
         };
 
         /// <summary>
@@ -43,7 +51,7 @@ namespace Beep.OilandGas.PPDM39.Core
             {
                 return (double)well.BASE_DEPTH;
             }
-            throw new InvalidOperationException("Tubing length not available. Provide GetTubingLength function or WELL_TUBULAR entity.");
+            throw RefusalException.Conflict("The well has no tubing with a recorded length left in hole and no recorded base depth, so its tubing length is not known.");
         };
 
         /// <summary>
@@ -55,7 +63,7 @@ namespace Beep.OilandGas.PPDM39.Core
             {
                 return (double)wellPressure.FLOW_TUBING_PRESSURE;
             }
-            throw new InvalidOperationException("Wellhead pressure not available. Provide GetWellheadPressure function or WELL_PRESSURE entity.");
+            throw RefusalException.Conflict("The well has no recorded flowing tubing pressure, so its wellhead pressure is not known.");
         };
 
         /// <summary>
@@ -78,7 +86,7 @@ namespace Beep.OilandGas.PPDM39.Core
                 var geothermalGradient = 1.5; // °F per 100 ft
                 return surfaceTemp + (depthInFeet / 100.0) * geothermalGradient;
             }
-            throw new InvalidOperationException("Bottomhole temperature not available. Provide GetBottomholeTemperature function.");
+            throw RefusalException.Conflict("The well has no recorded base depth, so its bottomhole temperature cannot be estimated.");
         };
 
         /// <summary>
@@ -90,7 +98,7 @@ namespace Beep.OilandGas.PPDM39.Core
             {
                 return (double)wellPressure.INIT_RESERVOIR_PRESSURE;
             }
-            throw new InvalidOperationException("Reservoir pressure not available. Provide GetReservoirPressure function or WELL_PRESSURE entity.");
+            throw RefusalException.Conflict("The well has no recorded initial reservoir pressure.");
         };
 
         /// <summary>
@@ -175,7 +183,7 @@ namespace Beep.OilandGas.PPDM39.Core
                 }
                 return radius;
             }
-            throw new InvalidOperationException("Wellbore radius not available. Provide GetWellboreRadius function or WELL_TUBULAR entity.");
+            throw RefusalException.Conflict("The well has no tubing with a recorded inside diameter, so its wellbore radius is not known.");
         };
 
         /// <summary>
@@ -201,7 +209,7 @@ namespace Beep.OilandGas.PPDM39.Core
                 var tempF = surfaceTemp + (depthInFeet / 100.0m) * geothermalGradient;
                 return tempF + 459.67m; // Convert to Rankine
             }
-            throw new InvalidOperationException("Reservoir temperature not available. Provide GetReservoirTemperature function.");
+            throw RefusalException.Conflict("The well has no recorded base depth, so its reservoir temperature cannot be estimated.");
         };
 
         /// <summary>
@@ -213,7 +221,7 @@ namespace Beep.OilandGas.PPDM39.Core
             {
                 return well.BASE_DEPTH;
             }
-            throw new InvalidOperationException("Well depth not available. Provide GetWellDepth function or ensure WELL.BASE_DEPTH is set.");
+            throw RefusalException.Conflict("The well has no recorded base depth.");
         };
 
         /// <summary>
@@ -234,7 +242,7 @@ namespace Beep.OilandGas.PPDM39.Core
                 }
                 return diameter;
             }
-            throw new InvalidOperationException("Casing diameter not available. Provide GetCasingDiameter function or WELL_TUBULAR entity.");
+            throw RefusalException.Conflict("The well has no tubular with a recorded outside diameter, so its casing diameter is not known.");
         };
 
         /// <summary>
@@ -246,7 +254,7 @@ namespace Beep.OilandGas.PPDM39.Core
             {
                 return wellPressure.FLOW_CASING_PRESSURE;
             }
-            throw new InvalidOperationException("Casing pressure not available. Provide GetCasingPressure function or WELL_PRESSURE entity.");
+            throw RefusalException.Conflict("The well has no recorded flowing casing pressure.");
         };
 
         /// <summary>
@@ -258,7 +266,7 @@ namespace Beep.OilandGas.PPDM39.Core
             {
                 return well.BASE_DEPTH * 0.8m; // Default: 80% of well depth
             }
-            throw new InvalidOperationException("Pump setting depth not available. Provide GetPumpSettingDepth function.");
+            throw RefusalException.Conflict("The well has no recorded base depth, so its pump setting depth cannot be estimated.");
         };
 
         /// <summary>
@@ -296,7 +304,7 @@ namespace Beep.OilandGas.PPDM39.Core
                 var geothermalGradient = 1.5; // °F per 100 ft
                 return surfaceTemp + (depthInFeet / 100.0) * geothermalGradient;
             }
-            throw new InvalidOperationException("Reservoir temperature not available. Provide GetReservoirTemperatureFahrenheit function.");
+            throw RefusalException.Conflict("The well has no recorded base depth, so its reservoir temperature cannot be estimated.");
         };
 
         /// <summary>

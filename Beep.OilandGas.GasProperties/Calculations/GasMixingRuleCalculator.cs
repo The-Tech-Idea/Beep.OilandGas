@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.GasProperties;
 using Beep.OilandGas.GasProperties.Constants;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.GasProperties.Calculations
 {
@@ -20,15 +21,13 @@ namespace Beep.OilandGas.GasProperties.Calculations
             List<GasComponent> components)
         {
             if (components == null || components.Count == 0)
-                throw new ArgumentException("Components list cannot be null or empty.", nameof(components));
+                throw RefusalException.Invalid("At least one gas component is required.");
 
             // Validate mole fractions sum to 1.0
             decimal totalMoleFraction = components.Sum(c => c.MoleFraction);
             if (Math.Abs(totalMoleFraction - 1.0m) > 0.01m)
             {
-                throw new ArgumentException(
-                    $"Mole fractions must sum to 1.0 (current sum: {totalMoleFraction:F4}).", 
-                    nameof(components));
+                throw RefusalException.Invalid($"Mole fractions must sum to 1.0 (current sum: {totalMoleFraction:F4}).");
             }
 
             // Kay's mixing rule: weighted average of critical properties
@@ -52,7 +51,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
         public static decimal CalculateMixtureSpecificGravity(List<GasComponent> components)
         {
             if (components == null || components.Count == 0)
-                throw new ArgumentException("Components list cannot be null or empty.", nameof(components));
+                throw RefusalException.Invalid("At least one gas component is required.");
 
             // Calculate average molecular weight
             decimal averageMolecularWeight = 0m;
@@ -83,7 +82,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
             Func<decimal, decimal, decimal, decimal> zFactorMethod)
         {
             if (components == null || components.Count == 0)
-                throw new ArgumentException("Components list cannot be null or empty.", nameof(components));
+                throw RefusalException.Invalid("At least one gas component is required.");
 
             // Calculate pseudo-critical properties using Kay's mixing rule
             var (pseudoCriticalPressure, pseudoCriticalTemperature) = CalculateKaysMixingRule(components);
@@ -118,7 +117,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
             Func<decimal, decimal, decimal, decimal, decimal> viscosityMethod)
         {
             if (components == null || components.Count == 0)
-                throw new ArgumentException("Components list cannot be null or empty.", nameof(components));
+                throw RefusalException.Invalid("At least one gas component is required.");
 
             // Calculate mixture specific gravity
             decimal mixtureSpecificGravity = CalculateMixtureSpecificGravity(components);
@@ -144,7 +143,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
             decimal zFactor)
         {
             if (components == null || components.Count == 0)
-                throw new ArgumentException("Components list cannot be null or empty.", nameof(components));
+                throw RefusalException.Invalid("At least one gas component is required.");
 
             // Calculate average molecular weight
             decimal averageMolecularWeight = 0m;

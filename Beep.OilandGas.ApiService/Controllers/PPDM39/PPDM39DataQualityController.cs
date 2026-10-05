@@ -38,35 +38,27 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<DataQualityResult>> GetTableQualityMetrics(string tableName, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
-            try
+            _logger.LogInformation("Getting data quality metrics for table {TableName}", tableName);
+            var metrics = await _qualityService.CalculateTableQualityMetricsAsync(tableName);
+            
+            if (metrics == null)
             {
-                _logger.LogInformation("Getting data quality metrics for table {TableName}", tableName);
-                var metrics = await _qualityService.CalculateTableQualityMetricsAsync(tableName);
-                
-                if (metrics == null)
-                {
-                    return NotFound(new { error = "Metrics not found." });
-                }
-
-                var result = new DataQualityResult
-                {
-                    TableName = tableName,
-                    OverallQualityScore = metrics.OverallQualityScore,
-                    TotalRows = metrics.TotalRecords,
-                    CompleteRows = metrics.CompleteRecords,
-                    FieldQualityScores = metrics.FieldMetrics?.ToDictionary(
-                        f => f.Key,
-                        f => f.Value.Completeness) ?? new System.Collections.Generic.Dictionary<string, double>(),
-                    QualityIssues = new System.Collections.Generic.List<string>() // Issues are retrieved separately via FindQualityIssuesAsync
-                };
-
-                return Ok(result);
+                return NotFound(new { error = "Metrics not found." });
             }
-            catch (Exception ex)
+
+            var result = new DataQualityResult
             {
-                _logger.LogError(ex, "Error getting quality metrics for table {TableName}", tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                TableName = tableName,
+                OverallQualityScore = metrics.OverallQualityScore,
+                TotalRows = metrics.TotalRecords,
+                CompleteRows = metrics.CompleteRecords,
+                FieldQualityScores = metrics.FieldMetrics?.ToDictionary(
+                    f => f.Key,
+                    f => f.Value.Completeness) ?? new System.Collections.Generic.Dictionary<string, double>(),
+                QualityIssues = new System.Collections.Generic.List<string>() // Issues are retrieved separately via FindQualityIssuesAsync
+            };
+
+            return Ok(result);
         }
 
         /// <summary>
@@ -75,49 +67,41 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("dashboard")]
         public async Task<ActionResult<DataQualityDashboardResult>> GetQualityDashboard([FromQuery] string connectionName = "PPDM39")
         {
-            try
+            _logger.LogInformation("Getting data quality dashboard");
+            var dashboard = await _dashboardService.GetDashboardDataAsync(string.Empty);
+            
+            if (dashboard == null)
             {
-                _logger.LogInformation("Getting data quality dashboard");
-                var dashboard = await _dashboardService.GetDashboardDataAsync(string.Empty);
-                
-                if (dashboard == null)
-                {
-                    return NotFound(new { error = "Dashboard data not found." });
-                }
+                return NotFound(new { error = "Dashboard data not found." });
+            }
 
-                var dashboardTableName = dashboard.TABLE_NAME ?? dashboard.TableName ?? "Unknown";
+            var dashboardTableName = dashboard.TABLE_NAME ?? dashboard.TableName ?? "Unknown";
 
-                var result = new DataQualityDashboardResult
-                {
-                    OverallQualityScore = dashboard.OverallQualityScore,
-                    TotalTables = 1, // Single table dashboard
-                    TablesWithIssues = dashboard.ActiveAlerts?.Count(a => !a.IsResolved) ?? 0,
-                    TableQualityResults = dashboard.CurrentMetrics != null
-                        ? new System.Collections.Generic.Dictionary<string, DataQualityResult>
+            var result = new DataQualityDashboardResult
+            {
+                OverallQualityScore = dashboard.OverallQualityScore,
+                TotalTables = 1, // Single table dashboard
+                TablesWithIssues = dashboard.ActiveAlerts?.Count(a => !a.IsResolved) ?? 0,
+                TableQualityResults = dashboard.CurrentMetrics != null
+                    ? new System.Collections.Generic.Dictionary<string, DataQualityResult>
+                    {
                         {
+                            dashboardTableName,
+                            new DataQualityResult
                             {
-                                dashboardTableName,
-                                new DataQualityResult
-                                {
-                                    TableName = dashboardTableName,
-                                    OverallQualityScore = dashboard.CurrentMetrics.OverallQualityScore,
-                                    TotalRows = dashboard.CurrentMetrics.TotalRecords,
-                                    CompleteRows = dashboard.CurrentMetrics.CompleteRecords,
-                                    FieldQualityScores = dashboard.FieldQualityScores ?? new System.Collections.Generic.Dictionary<string, double>(),
-                                    QualityIssues = dashboard.ActiveAlerts?.Where(a => !a.IsResolved).Select(a => a.AlertMessage).ToList() ?? new System.Collections.Generic.List<string>()
-                                }
+                                TableName = dashboardTableName,
+                                OverallQualityScore = dashboard.CurrentMetrics.OverallQualityScore,
+                                TotalRows = dashboard.CurrentMetrics.TotalRecords,
+                                CompleteRows = dashboard.CurrentMetrics.CompleteRecords,
+                                FieldQualityScores = dashboard.FieldQualityScores ?? new System.Collections.Generic.Dictionary<string, double>(),
+                                QualityIssues = dashboard.ActiveAlerts?.Where(a => !a.IsResolved).Select(a => a.AlertMessage).ToList() ?? new System.Collections.Generic.List<string>()
                             }
                         }
-                        : new System.Collections.Generic.Dictionary<string, DataQualityResult>()
-                };
+                    }
+                    : new System.Collections.Generic.Dictionary<string, DataQualityResult>()
+            };
 
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting quality dashboard");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(result);
         }
 
         /// <summary>
@@ -127,19 +111,11 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult> GetQualityIssues(string tableName, [FromQuery] string[]? fields = null, [FromQuery] string connectionName = "PPDM39")
         {
             if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
-            try
-            {
-                _logger.LogInformation("Finding quality issues for table {TableName}", tableName);
-                var fieldList = fields?.ToList();
-                var issues = await _qualityService.FindQualityIssuesAsync(tableName, fieldList);
-                
-                return Ok(issues ?? new System.Collections.Generic.List<DATA_QUALITY_ISSUE>());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error finding quality issues for table {TableName}", tableName);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            _logger.LogInformation("Finding quality issues for table {TableName}", tableName);
+            var fieldList = fields?.ToList();
+            var issues = await _qualityService.FindQualityIssuesAsync(tableName, fieldList);
+            
+            return Ok(issues ?? new System.Collections.Generic.List<DATA_QUALITY_ISSUE>());
         }
     }
 }

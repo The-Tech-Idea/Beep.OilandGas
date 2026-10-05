@@ -58,11 +58,11 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
             if (amount < 0m)
-                throw new InvalidOperationException("Amount cannot be negative");
+                throw RefusalException.Invalid("Amount cannot be negative.");
             if (isAdjusting && amount <= 0m)
-                throw new InvalidOperationException("Adjusting events require a positive amount");
+                throw RefusalException.Invalid("Adjusting events require a positive amount.");
             if (isAdjusting && (string.IsNullOrWhiteSpace(debitAccountId) || string.IsNullOrWhiteSpace(creditAccountId)))
-                throw new InvalidOperationException("Adjusting events require debit and credit accounts");
+                throw RefusalException.Invalid("Adjusting events require debit and credit accounts.");
 
             var cost = new ACCOUNTING_COST
             {

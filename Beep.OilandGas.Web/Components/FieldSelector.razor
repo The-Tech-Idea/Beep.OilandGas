@@ -1,6 +1,7 @@
 @implements IDisposable
 @inject IDataManagementService DataManagementService
 @inject ApiClient ApiClient
+@inject OilGasCallFailures Calls
 
 <MudGrid AlignItems="AlignItems.Center" Spacing="2">
     <MudItem xs="12" sm="8" md="6">
@@ -42,7 +43,7 @@ else if (_state?.Loaded == true && _state.Fields.Count == 0)
     private bool _disposed;
     protected override async Task OnInitializedAsync()
     {
-        _state = new(ApiClient, DataManagementService);
+        _state = new(ApiClient, DataManagementService, Calls);
         _state.Changed += Changed;
         await Reload();
     }

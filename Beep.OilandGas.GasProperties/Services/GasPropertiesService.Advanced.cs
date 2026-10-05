@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Beep.OilandGas.GasProperties.Calculations;
 using Beep.OilandGas.Models.Data.GasProperties;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.GasProperties.Services
 {
@@ -18,16 +19,16 @@ namespace Beep.OilandGas.GasProperties.Services
             decimal constantTemperature)
         {
             if (specificGravity <= 0)
-                throw new ArgumentOutOfRangeException(nameof(specificGravity), specificGravity, "Specific gravity must be greater than zero.");
+                throw RefusalException.Invalid("Specific gravity must be greater than zero.");
 
             if (step <= 0)
-                throw new ArgumentOutOfRangeException(nameof(step), step, "Pressure step must be greater than zero.");
+                throw RefusalException.Invalid("Pressure step must be greater than zero.");
 
             if (variablePressureEnd < variablePressureStart)
-                throw new ArgumentException("End pressure must be greater than or equal to start pressure.", nameof(variablePressureEnd));
+                throw RefusalException.Invalid("End pressure must be greater than or equal to start pressure.");
 
             if (constantTemperature <= 0)
-                throw new ArgumentOutOfRangeException(nameof(constantTemperature), constantTemperature, "Temperature must be greater than zero Rankine.");
+                throw RefusalException.Invalid("Temperature must be greater than zero Rankine.");
 
             var results = new List<GAS_PROPERTIES>();
 

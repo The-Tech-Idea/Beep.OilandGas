@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
@@ -46,7 +47,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                         resultType = typeof(WELL_TEST_ANALYSIS_RESULT);
                         break;
                     default:
-                        throw new ArgumentException($"Unknown calculation type: {calculationType}");
+                        throw RefusalException.Invalid($"\"{calculationType}\" is not a calculation type with stored results: choose DCA, economic, nodal or well test.");
                 }
 
                 var filters = new List<AppFilter>
@@ -182,20 +183,17 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             return result;
         }
 
+        /// <remarks>
+        /// A stored series that cannot be read is a fault in the stored row: the exception reaches the caller (the API's
+        /// handler reports it with its reference). It had been answered as a result with no points, which reads as a test
+        /// that produced none.
+        /// </remarks>
         private List<WellTestDataPoint> DeserializeWellTestDataPoints(string? json)
         {
             if (string.IsNullOrWhiteSpace(json))
                 return new List<WellTestDataPoint>();
 
-            try
-            {
-                return JsonSerializer.Deserialize<List<WellTestDataPoint>>(json) ?? new List<WellTestDataPoint>();
-            }
-            catch (JsonException ex)
-            {
-                _logger?.LogWarning(ex, "Unable to deserialize stored well test data points");
-                return new List<WellTestDataPoint>();
-            }
+            return JsonSerializer.Deserialize<List<WellTestDataPoint>>(json) ?? new List<WellTestDataPoint>();
         }
     }
 }

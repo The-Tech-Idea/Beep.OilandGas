@@ -16,6 +16,7 @@ using Microsoft.Extensions.Logging;
 using Beep.OilandGas.PPDM.Models;
 using Beep.OilandGas.Models.Data.Common;
 using Beep.OilandGas.Models.Data.GasProperties;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.GasProperties.Services
 {
@@ -520,7 +521,7 @@ namespace Beep.OilandGas.GasProperties.Services
         public async Task<GasMixtureAnalysis> AnalyzeMixturePropertiesAsync(GasComposition composition)
         {
             if (composition == null || composition.Components == null || composition.Components.Count == 0)
-                throw new ArgumentException("Composition must have components", nameof(composition));
+                throw RefusalException.Invalid("The gas composition must list its components.");
 
             _logger?.LogInformation("Analyzing mixture properties for composition {CompositionId}", composition.CompositionId);
 

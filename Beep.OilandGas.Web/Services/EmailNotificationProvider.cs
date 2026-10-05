@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Mail;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.Web.Services;
 
@@ -23,6 +24,7 @@ public class EmailNotificationProvider : IEmailNotificationProvider
 {
     private readonly IConfiguration _config;
     private readonly ILogger<EmailNotificationProvider> _logger;
+    private readonly IFailureReporter _failures;
 
     private static readonly Dictionary<string, (string subject, string body)> Templates = new()
     {
@@ -36,10 +38,11 @@ public class EmailNotificationProvider : IEmailNotificationProvider
         ["SOD_WAIVER_GRANTED"] = ("SoD Waiver Granted — {{RuleName}}", "<p>A Segregation of Duties waiver has been granted for:</p><p><strong>{{RuleName}}</strong></p><p>Compensating Control: {{ControlType}}</p><p>Expires: {{ExpiryDate}} (90 days max)</p>"),
     };
 
-    public EmailNotificationProvider(IConfiguration config, ILogger<EmailNotificationProvider>? logger = null)
+    public EmailNotificationProvider(IConfiguration config, ILogger<EmailNotificationProvider> logger, IFailureReporter failures)
     {
-        _config = config;
-        _logger = logger;
+        _config = config ?? throw new ArgumentNullException(nameof(config));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _failures = failures ?? throw new ArgumentNullException(nameof(failures));
     }
 
     public async Task<bool> SendAsync(string toEmail, string subject, string body, bool isHtml = true)
@@ -53,7 +56,7 @@ public class EmailNotificationProvider : IEmailNotificationProvider
 
             if (string.IsNullOrWhiteSpace(host))
             {
-                _logger?.LogDebug("SMTP not configured — email notification skipped");
+                _logger.LogDebug("SMTP not configured — email notification skipped");
                 return false;
             }
 
@@ -72,12 +75,17 @@ public class EmailNotificationProvider : IEmailNotificationProvider
 
             await client.SendMailAsync(message);
 
-            _logger?.LogDebug("Email sent to {To}: {Subject}", toEmail, subject);
+            _logger.LogDebug("Email sent to {To}: {Subject}", toEmail, subject);
             return true;
         }
-        catch (Exception ex)
+        // What sending can throw: the relay refused or failed (SmtpException), the client was misused
+        // (InvalidOperationException), or an address could not be read (FormatException). The answer says it was not sent.
+        catch (Exception ex) when (ex is SmtpException or InvalidOperationException or FormatException)
         {
-            _logger?.LogWarning(ex, "Failed to send email to {To}: {Subject}", toEmail, subject);
+            _failures.ReportHandled(
+                ex,
+                $"sending the \"{subject}\" notification email",
+                consequence: "the email was not sent; the caller was answered false");
             return false;
         }
     }
@@ -87,7 +95,7 @@ public class EmailNotificationProvider : IEmailNotificationProvider
     {
         if (!Templates.TryGetValue(templateKey, out var template))
         {
-            _logger?.LogWarning("Unknown email template: {TemplateKey}", templateKey);
+            _logger.LogWarning("Unknown email template: {TemplateKey}", templateKey);
             return false;
         }
 

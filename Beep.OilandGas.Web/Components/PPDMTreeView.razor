@@ -390,7 +390,7 @@
             NodeKind.Phase      => Icons.Material.Filled.ExpandMore,
             NodeKind.DataFolder => Icons.Material.Filled.FolderOpen,
             NodeKind.Category   => Icons.Material.Filled.FolderOpen,
-            _                   => item.Icon ?? Icons.Material.Filled.TableChart
+            NodeKind.Page or NodeKind.Table => item.Icon ?? Icons.Material.Filled.TableChart,
         };
     }
 

@@ -4,6 +4,7 @@
 @inject ApiClient ApiClient
 @inject IDecommissioningServiceClient DecommissioningService
 @inject ILifeCycleService LifeCycleService
+@inject OilGasApiFailures Answers
 
 <PageTitle>Execute Well P&amp;A Programme</PageTitle>
 
@@ -284,17 +285,15 @@
         if (_selectedWell == null) return;
         try
         {
-            var approved = await DecommissioningService.ApprovePAAsync(_selectedWell.AbandonmentId);
-            if (!approved)
-            {
-                Snackbar.Add("Approval failed.", Severity.Error);
-                return;
-            }
-
+            await DecommissioningService.ApprovePAAsync(_selectedWell.AbandonmentId);
             Snackbar.Add($"{_selectedWell.WellId} P&A programme approved", Severity.Success);
             _selectedWell = null;
             _paSteps = BuildPaSteps(null);
             await OnInitializedAsync();
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "approving a P&A programme", "The P&A programme was not approved"), Severity.Error);
         }
         catch (Exception) { Snackbar.Add("Approval failed.", Severity.Error); }
     }

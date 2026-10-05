@@ -46,20 +46,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             [FromQuery] DateTime? endDate = null,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                var start = startDate ?? DateTime.Now.AddMonths(-1);
-                var end = endDate ?? DateTime.Now;
-                if (end < start) return BadRequest(new { error = "End date must not precede start date." });
-                var tickets = await _tickets.ListAsync(start, end);
-                var dtos = tickets.Select(MapToRunTicketDto).ToList();
-                return Ok(dtos);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting run tickets");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var start = startDate ?? DateTime.Now.AddMonths(-1);
+            var end = endDate ?? DateTime.Now;
+            if (end < start) return BadRequest(new { error = "End date must not precede start date." });
+            var tickets = await _tickets.ListAsync(start, end);
+            var dtos = tickets.Select(MapToRunTicketDto).ToList();
+            return Ok(dtos);
         }
 
         /// <summary>
@@ -70,19 +62,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Run ticket ID is required." });
-            try
-            {
-                var ticket = await _tickets.GetAsync(id);
-                if (ticket == null)
-                        return NotFound(new { error = $"Run ticket with ID {id} not found." });
+            var ticket = await _tickets.GetAsync(id);
+            if (ticket == null)
+                    return NotFound(new { error = $"Run ticket with ID {id} not found." });
 
-                return Ok(MapToRunTicketDto(ticket));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting run ticket {TicketId}", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(MapToRunTicketDto(ticket));
         }
 
         /// <summary>
@@ -96,38 +80,27 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             [FromQuery] string connectionName = "PPDM39")
         {
             var actor = User.ActingUserId();
-            try
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var ticket = await _tickets.CreateAsync(request, actor);
+
+            // Post to GL if revenue amount provided
+            if (revenueAmount.HasValue && revenueAmount.Value > 0)
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-
-                var ticket = await _tickets.CreateAsync(request, actor);
-
-                // Post to GL if revenue amount provided
-                if (revenueAmount.HasValue && revenueAmount.Value > 0)
-                {
-                    var journalEntryId = await _glIntegration.PostProductionToGL(
+                var journalEntryId = await LedgerPosting.PostAsync(
+                    () => _glIntegration.PostProductionToGL(
                         ticket.RUN_TICKET_NUMBER,
                         revenueAmount.Value,
                         isCash: isCash,
                         transactionDate: ticket.TICKET_DATE_TIME,
-                        userId: actor);
+                        userId: actor),
+                    $"Run ticket {ticket.RUN_TICKET_NUMBER}", ticket.RUN_TICKET_ID, "PRODUCTION");
 
-                    return Ok(new { Ticket = MapToRunTicketDto(ticket), JournalEntryId = journalEntryId });
-                }
+                return Ok(new { Ticket = MapToRunTicketDto(ticket), JournalEntryId = journalEntryId });
+            }
 
-                return Ok(MapToRunTicketDto(ticket));
-            }
-            catch (GLPostingException ex)
-            {
-                _logger.LogError(ex, "GL posting failed for run ticket");
-                    return StatusCode(500, new { error = "Run ticket created but GL posting failed." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating run ticket");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(MapToRunTicketDto(ticket));
         }
 
         /// <summary>Service-backed full production-accounting cycle for a ticket payload.</summary>
@@ -137,25 +110,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             [FromQuery] string connectionName = "PPDM39")
         {
             var actor = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-                if (runTicket == null)
-                    return BadRequest(new { error = "Run ticket payload is required." });
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            if (runTicket == null)
+                return BadRequest(new { error = "Run ticket payload is required." });
 
-                var processed = await _productionAccountingService.ProcessProductionCycleAsync(
-                    runTicket,
-                    actor,
-                    connectionName ?? "PPDM39");
+            var processed = await _productionAccountingService.ProcessProductionCycleAsync(
+                runTicket,
+                actor,
+                connectionName ?? "PPDM39");
 
-                return Ok(new { Processed = processed });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error processing production cycle");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { Processed = processed });
         }
 
         /// <summary>Service-backed accounting status lookup.</summary>
@@ -165,23 +130,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             [FromQuery] DateTime? asOfDate = null,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(fieldId))
-                    return BadRequest(new { error = "Field ID is required." });
+            if (string.IsNullOrWhiteSpace(fieldId))
+                return BadRequest(new { error = "Field ID is required." });
 
-                var status = await _productionAccountingService.GetAccountingStatusAsync(
-                    fieldId,
-                    asOfDate,
-                    connectionName ?? "PPDM39");
+            var status = await _productionAccountingService.GetAccountingStatusAsync(
+                fieldId,
+                asOfDate,
+                connectionName ?? "PPDM39");
 
-                return Ok(status);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting accounting status for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(status);
         }
 
         /// <summary>Service-backed revenue transactions query for a field/date window.</summary>
@@ -192,26 +149,18 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             [FromQuery] DateTime endDate,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(fieldId))
-                    return BadRequest(new { error = "Field ID is required." });
-                if (endDate < startDate)
-                    return BadRequest(new { error = "End date must be on or after start date." });
+            if (string.IsNullOrWhiteSpace(fieldId))
+                return BadRequest(new { error = "Field ID is required." });
+            if (endDate < startDate)
+                return BadRequest(new { error = "End date must be on or after start date." });
 
-                var transactions = await _productionAccountingService.GetRevenueTransactionsAsync(
-                    fieldId,
-                    startDate,
-                    endDate,
-                    connectionName ?? "PPDM39");
+            var transactions = await _productionAccountingService.GetRevenueTransactionsAsync(
+                fieldId,
+                startDate,
+                endDate,
+                connectionName ?? "PPDM39");
 
-                return Ok(transactions);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting revenue transactions for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(transactions);
         }
 
         private RUN_TICKET MapToRunTicketDto(RUN_TICKET ticket)

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.FlashCalculations;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.FlashCalculations.Calculations
 {
@@ -158,7 +159,7 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
             int maxOuterIter = 100)
         {
             if (components == null || components.Count == 0)
-                throw new ArgumentException("Components required.", nameof(components));
+                throw RefusalException.Invalid("At least one component is required.");
 
             int n = components.Count;
             double[] z = components.Select(c => (double)c.MOLE_FRACTION).ToArray();
@@ -302,7 +303,7 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
             double temperature)
         {
             if (components == null || components.Count == 0)
-                throw new ArgumentException("Components required.", nameof(components));
+                throw RefusalException.Invalid("At least one component is required.");
 
             int n = components.Count;
             double[] z = components.Select(c => (double)c.MOLE_FRACTION).ToArray();
@@ -446,7 +447,7 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
             double[,]? kij = null)
         {
             if (components == null || components.Count == 0)
-                throw new ArgumentException("Components required.", nameof(components));
+                throw RefusalException.Invalid("At least one component is required.");
 
             int n = components.Count;
             double[] z = components.Select(c => (double)c.MOLE_FRACTION).ToArray();

@@ -12,7 +12,7 @@ public class FieldDashboardStateTests
     [Fact]
     public async Task NoSelectedFieldDoesNotRequestOrInventData()
     {
-        using var state = new FieldDashboardState(() => throw new Exception("must not call"));
+        using var state = new FieldDashboardState(() => throw new Exception("must not call"), TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync(() => Task.FromResult<string?>(null));
         Assert.True(state.NeedsField); Assert.Null(state.Dashboard); Assert.Null(state.Error); Assert.False(state.Loading);
     }
@@ -20,15 +20,18 @@ public class FieldDashboardStateTests
     [Theory]
     [InlineData(HttpStatusCode.Forbidden, "do not have access")]
     [InlineData(HttpStatusCode.Unauthorized, "session has expired")]
-    [InlineData(HttpStatusCode.ServiceUnavailable, "Retry")]
+    [InlineData(HttpStatusCode.ServiceUnavailable, "quote reference")]
     public async Task FailedReloadClearsPriorFigures(HttpStatusCode status, string message)
     {
         var fail = false;
-        using var state = new FieldDashboardState(() => fail ? Task.FromException<FieldDashboard>(new HttpRequestException("secret", null, status)) : Task.FromResult(new FieldDashboard { FieldId = "a" }));
+        var reporter = new RecordingFailureReporter();
+        using var state = new FieldDashboardState(() => fail ? Task.FromException<FieldDashboard>(new OilGasApiException(status, "secret", null)) : Task.FromResult(new FieldDashboard { FieldId = "a" }), TestFailures.Calls(reporter));
         await state.LoadAsync(() => Task.FromResult<string?>("a")); Assert.NotNull(state.Dashboard);
         fail = true;
         await state.LoadAsync(() => Task.FromResult<string?>("a"));
         Assert.Null(state.Dashboard); Assert.Contains(message, state.Error); Assert.DoesNotContain("secret", state.Error); Assert.False(state.Loading);
+        // The failure is in the store, whatever the person was told.
+        Assert.IsType<OilGasApiException>(Assert.Single(reporter.Reports).Exception);
     }
 
     [Fact]
@@ -36,7 +39,7 @@ public class FieldDashboardStateTests
     {
         var pending = new TaskCompletionSource<FieldDashboard>(TaskCreationOptions.RunContinuationsAsynchronously);
         var calls = 0;
-        using var state = new FieldDashboardState(() => ++calls == 1 ? pending.Task : Task.FromResult(new FieldDashboard { FieldId = "b" }));
+        using var state = new FieldDashboardState(() => ++calls == 1 ? pending.Task : Task.FromResult(new FieldDashboard { FieldId = "b" }), TestFailures.Calls(new RecordingFailureReporter()));
         var first = state.LoadAsync(() => Task.FromResult<string?>("a"));
         await state.LoadAsync(() => Task.FromResult<string?>("b"));
         pending.SetResult(new FieldDashboard { FieldId = "a" }); await first;
@@ -46,7 +49,7 @@ public class FieldDashboardStateTests
     [Fact]
     public async Task WrongFieldPayloadIsUnavailable()
     {
-        using var state = new FieldDashboardState(() => Task.FromResult(new FieldDashboard { FieldId = "other" }));
+        using var state = new FieldDashboardState(() => Task.FromResult(new FieldDashboard { FieldId = "other" }), TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync(() => Task.FromResult<string?>("selected"));
         Assert.Null(state.Dashboard); Assert.NotNull(state.Error);
     }
@@ -69,14 +72,15 @@ public class FieldDashboardStateTests
     public async Task LifecycleClientDoesNotReturnEmptyDashboardOnFailure(HttpStatusCode code, string body)
     {
         using var http = new HttpClient(new Handler(code, body)) { BaseAddress = new("https://api.example") };
-        var client = new LifeCycleService(new ApiClient(http, NullLogger<ApiClient>.Instance), NullLogger<LifeCycleService>.Instance);
+        var reporter = new RecordingFailureReporter();
+        var client = new LifeCycleService(new ApiClient(http, reporter), TestFailures.Calls(reporter), reporter);
         await Assert.ThrowsAnyAsync<Exception>(() => client.GetFieldDashboardAsync());
     }
     [Fact]
     public async Task ClearedFieldCannotBeReplacedByPendingDashboard()
     {
         var pending = new TaskCompletionSource<FieldDashboard>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var state = new FieldDashboardState(() => pending.Task);
+        using var state = new FieldDashboardState(() => pending.Task, TestFailures.Calls(new RecordingFailureReporter()));
         var oldLoad = state.LoadAsync(() => Task.FromResult<string?>("old"));
         await state.LoadAsync(() => Task.FromResult<string?>(null));
         pending.SetResult(new FieldDashboard { FieldId = "old" });
@@ -89,7 +93,7 @@ public class FieldDashboardStateTests
     {
         var pending = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
         var calls = 0;
-        using var state = new FieldDashboardState(() => { calls++; return Task.FromResult(new FieldDashboard { FieldId = "new" }); });
+        using var state = new FieldDashboardState(() => { calls++; return Task.FromResult(new FieldDashboard { FieldId = "new" }); }, TestFailures.Calls(new RecordingFailureReporter()));
         var oldLoad = state.LoadAsync(() => pending.Task);
         await state.LoadAsync(() => Task.FromResult<string?>("new"));
         pending.SetResult("old"); await oldLoad;
@@ -100,7 +104,7 @@ public class FieldDashboardStateTests
     public async Task DisposedPageDoesNotAcceptPendingDashboard()
     {
         var pending = new TaskCompletionSource<FieldDashboard>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var state = new FieldDashboardState(() => pending.Task);
+        var state = new FieldDashboardState(() => pending.Task, TestFailures.Calls(new RecordingFailureReporter()));
         var load = state.LoadAsync(() => Task.FromResult<string?>("a"));
         state.Dispose();
         pending.SetResult(new FieldDashboard { FieldId = "a" }); await load;

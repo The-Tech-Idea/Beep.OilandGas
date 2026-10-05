@@ -57,7 +57,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(propertyName))
                 throw new ArgumentNullException(nameof(propertyName));
             if (acquisitionCost <= 0m)
-                throw new InvalidOperationException("Acquisition cost must be positive");
+                throw RefusalException.Invalid("Acquisition cost must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
@@ -111,7 +111,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(propertyName))
                 throw new ArgumentNullException(nameof(propertyName));
             if (changeAmount == 0m)
-                throw new InvalidOperationException("Fair value change cannot be zero");
+                throw RefusalException.Invalid("Fair value change cannot be zero.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 

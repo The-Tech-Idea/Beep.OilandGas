@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Components.Authorization;
 using Duende.AccessTokenManagement.OpenIdConnect;
 using Microsoft.Extensions.Configuration;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.Web.Services
 {
@@ -35,6 +36,7 @@ namespace Beep.OilandGas.Web.Services
         private readonly IUserTokenManager _tokens;
         private HubConnection? _hubConnection;
         private readonly ILogger<ProgressTrackingClient> _logger;
+        private readonly IFailureReporter _failures;
 
         public bool IsConnected => _hubConnection?.State == HubConnectionState.Connected;
         public event Action<ProgressUpdate>? OnProgressUpdate;
@@ -45,11 +47,12 @@ namespace Beep.OilandGas.Web.Services
         /// <c>https://localhost:7001</c> when the API's address was not configured.
         /// </remarks>
         public ProgressTrackingClient(AuthenticationStateProvider authentication, IUserTokenManager tokens,
-            OilGasApiAddress api, ILogger<ProgressTrackingClient> logger)
+            OilGasApiAddress api, ILogger<ProgressTrackingClient> logger, IFailureReporter failures)
         {
             _authentication = authentication;
             _tokens = tokens;
             _logger = logger;
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
             _hubUri = api.For("progressHub");
         }
 
@@ -82,9 +85,13 @@ namespace Beep.OilandGas.Web.Services
                     {
                         OnProgressUpdate?.Invoke(progress);
                     }
+                    // A subscriber's failure must not end the hub's handler: it is reported, and the next update still arrives.
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Error handling progress update");
+                        _failures.ReportHandled(
+                            ex,
+                            "handing a progress update to the page",
+                            consequence: "the page did not show this update; the next update is still delivered");
                     }
                 });
 
@@ -107,9 +114,13 @@ namespace Beep.OilandGas.Web.Services
                         };
                         OnProgressUpdate?.Invoke(progress);
                     }
+                    // A subscriber's failure must not end the hub's handler: it is reported, and the next update still arrives.
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Error handling workflow progress update");
+                        _failures.ReportHandled(
+                            ex,
+                            "handing a workflow progress update to the page",
+                            consequence: "the page did not show this update; the next update is still delivered");
                     }
                 });
 
@@ -132,9 +143,13 @@ namespace Beep.OilandGas.Web.Services
                         };
                         OnProgressUpdate?.Invoke(progress);
                     }
+                    // A subscriber's failure must not end the hub's handler: it is reported, and the next update still arrives.
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Error handling multi-operation progress update");
+                        _failures.ReportHandled(
+                            ex,
+                            "handing a multi-operation progress update to the page",
+                            consequence: "the page did not show this update; the next update is still delivered");
                     }
                 });
 

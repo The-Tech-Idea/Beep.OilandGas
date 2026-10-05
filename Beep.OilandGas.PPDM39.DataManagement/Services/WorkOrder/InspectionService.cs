@@ -9,6 +9,11 @@ using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Services.WorkOrder;
 
+/// <remarks>
+/// OILGAS-CATCH-01: a failure reaches the caller. Seeding a checklist was caught and logged, so a work order went ahead
+/// without its safety checklist; and reading the checklist answered an empty list on a failure, which
+/// <see cref="AllConditionsPassedAsync"/> read as every condition passed.
+/// </remarks>
 public class InspectionService : IInspectionService
 {
     private readonly IDMEEditor                _editor;
@@ -73,38 +78,31 @@ public class InspectionService : IInspectionService
         string instanceId, string woType, string jurisdiction, string userId)
     {
         _logger.LogInformation("Seeding checklist for WO {InstanceId} type {Type}", instanceId, woType);
-        try
+        var items = woType switch
         {
-            var items = woType switch
-            {
-                WorkOrderSubType.Turnaround => _turnaroundChecklist,
-                WorkOrderSubType.Safety     => _safetyChecklist,
-                _                           => _genericChecklist
-            };
+            WorkOrderSubType.Turnaround => _turnaroundChecklist,
+            WorkOrderSubType.Safety     => _safetyChecklist,
+            _                           => _genericChecklist
+        };
 
-            var meta       = await _metadata.GetTableMetadataAsync("PROJECT_STEP_CONDITION");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-            var repo       = BuildRepo(entityType, "PROJECT_STEP_CONDITION");
+        var meta       = await _metadata.GetTableMetadataAsync("PROJECT_STEP_CONDITION");
+        var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
+        var repo       = BuildRepo(entityType, "PROJECT_STEP_CONDITION");
 
-            foreach (var (seq, type, text, regRef) in items)
-            {
-                dynamic item = Activator.CreateInstance(entityType!)!;
-                item.PROJECT_ID    = instanceId;
-                item.STEP_SEQ      = 1;              // All checklist items on step 1 for seed
-                item.COND_SEQ      = seq;
-                item.COND_TYPE     = type;
-                item.COND_TEXT     = text;
-                item.COND_STATUS   = "PENDING";
-                item.REG_REF       = regRef;
-                item.ACTIVE_IND    = "Y";
-                await repo.InsertAsync(item, userId);
-            }
-            _logger.LogInformation("Seeded {Count} checklist items for WO {InstanceId}", items.Count, instanceId);
-        }
-        catch (Exception ex)
+        foreach (var (seq, type, text, regRef) in items)
         {
-            _logger.LogError(ex, "SeedChecklist failed for WO {InstanceId}", instanceId);
+            dynamic item = Activator.CreateInstance(entityType!)!;
+            item.PROJECT_ID    = instanceId;
+            item.STEP_SEQ      = 1;              // All checklist items on step 1 for seed
+            item.COND_SEQ      = seq;
+            item.COND_TYPE     = type;
+            item.COND_TEXT     = text;
+            item.COND_STATUS   = "PENDING";
+            item.REG_REF       = regRef;
+            item.ACTIVE_IND    = "Y";
+            await repo.InsertAsync(item, userId);
         }
+        _logger.LogInformation("Seeded {Count} checklist items for WO {InstanceId}", items.Count, instanceId);
     }
 
     public async Task RecordResultAsync(
@@ -153,38 +151,30 @@ public class InspectionService : IInspectionService
 
     public async Task<List<InspectionCondition>> GetChecklistAsync(string instanceId)
     {
-        try
-        {
-            var meta       = await _metadata.GetTableMetadataAsync("PROJECT_STEP_CONDITION");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-            var repo       = BuildRepo(entityType, "PROJECT_STEP_CONDITION");
+        var meta       = await _metadata.GetTableMetadataAsync("PROJECT_STEP_CONDITION");
+        var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
+        var repo       = BuildRepo(entityType, "PROJECT_STEP_CONDITION");
 
-            var filters = new List<AppFilter>
-            {
-                new() { FieldName = "PROJECT_ID", Operator = "=", FilterValue = instanceId },
-                new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y"        }
-            };
-            return (await repo.GetAsync(filters))
-                .Select(r =>
-                {
-                    dynamic d = r;
-                    return new InspectionCondition(
-                        GetInt(d, "COND_SEQ"),
-                        GetStr(d, "COND_TYPE"),
-                        GetStr(d, "COND_TEXT"),
-                        GetStr(d, "COND_STATUS"),
-                        GetStr(d, "RESULT_TEXT"),
-                        GetDate(d, "INSPECT_DATE"),
-                        GetStr(d, "REG_REF"));
-                })
-                .OrderBy(c => c.CondSeq)
-                .ToList();
-        }
-        catch (Exception ex)
+        var filters = new List<AppFilter>
         {
-            _logger.LogError(ex, "GetChecklist failed for WO {InstanceId}", instanceId);
-            return new();
-        }
+            new() { FieldName = "PROJECT_ID", Operator = "=", FilterValue = instanceId },
+            new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y"        }
+        };
+        return (await repo.GetAsync(filters))
+            .Select(r =>
+            {
+                dynamic d = r;
+                return new InspectionCondition(
+                    WorkOrderRowValues.Int(d, "COND_SEQ"),
+                    WorkOrderRowValues.Str(d, "COND_TYPE"),
+                    WorkOrderRowValues.Str(d, "COND_TEXT"),
+                    WorkOrderRowValues.Str(d, "COND_STATUS"),
+                    WorkOrderRowValues.Str(d, "RESULT_TEXT"),
+                    WorkOrderRowValues.Date(d, "INSPECT_DATE"),
+                    WorkOrderRowValues.Str(d, "REG_REF"));
+            })
+            .OrderBy(c => c.CondSeq)
+            .ToList();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -192,32 +182,4 @@ public class InspectionService : IInspectionService
     private PPDMGenericRepository BuildRepo(Type? entityType, string tableName) =>
         new(_editor, _commonColumnHandler, _defaults, _metadata,
             entityType, _connectionName, tableName);
-
-    private static string GetStr(dynamic d, string prop)
-    {
-        try { return (string?)d.GetType().GetProperty(prop)?.GetValue(d) ?? string.Empty; }
-        catch { return string.Empty; }
-    }
-
-    private static int GetInt(dynamic d, string prop)
-    {
-        try
-        {
-            var v = d.GetType().GetProperty(prop)?.GetValue(d);
-            return v is int i ? i : v is long l ? (int)l : 0;
-        }
-        catch { return 0; }
-    }
-
-    private static DateTime? GetDate(dynamic d, string prop)
-    {
-        try
-        {
-            var v = d.GetType().GetProperty(prop)?.GetValue(d);
-            if (v is DateTime dt) return dt;
-            if (v is string s && DateTime.TryParse(s, out var p)) return p;
-            return null;
-        }
-        catch { return null; }
-    }
 }

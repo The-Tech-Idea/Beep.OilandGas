@@ -9,11 +9,13 @@ using Microsoft.AspNetCore.Authorization;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Controllers.PPDM39
 {
@@ -30,15 +32,18 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         private readonly IPPDM39DataService _dataService;
         private readonly ILogger<PPDM39DataController> _logger;
         private readonly IProgressTrackingService? _progressTracking;
+        private readonly IFailureReporter _failures;
 
         public PPDM39DataController(
             IPPDM39DataService dataService,
             ILogger<PPDM39DataController> logger,
-            IProgressTrackingService progressTracking)
+            IProgressTrackingService progressTracking,
+            IFailureReporter failures)
         {
             _dataService = dataService ?? throw new ArgumentNullException(nameof(dataService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _progressTracking = progressTracking;
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
         }
 
         /// <summary>
@@ -48,24 +53,12 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<EntityListResult<object>>> GetEntities(string tableName, [FromBody] GetEntitiesRequest request)
         {
               if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
-            try
-            {
-                _logger.LogInformation("GET entities from table {TableName} on connection {ConnectionName}",
-                    tableName, request?.ConnectionName ?? "default");
+            _logger.LogInformation("GET entities from table {TableName} on connection {ConnectionName}",
+                tableName, request?.ConnectionName ?? "default");
 
-                var filters = request?.Filters ?? new List<AppFilter>();
-                var result = await _dataService.GetEntitiesAsync(tableName, filters, request?.ConnectionName);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting entities from table {TableName}", tableName);
-                return StatusCode(500, new EntityListResult<object>
-                {
-                    Success = false,
-                    ErrorMessage = "An internal error occurred."
-                });
-            }
+            var filters = request?.Filters ?? new List<AppFilter>();
+            var result = await _dataService.GetEntitiesAsync(tableName, filters, request?.ConnectionName);
+            return Ok(result);
         }
 
         /// <summary>
@@ -76,25 +69,13 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
               if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
               if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "Entity ID is required." });
-            try
-            {
-                _logger.LogInformation("GET entity by ID from table {TableName}, ID: {Id}", tableName, id);
-                var result = await _dataService.GetEntityByIdAsync(tableName, id, connectionName);
+            _logger.LogInformation("GET entity by ID from table {TableName}, ID: {Id}", tableName, id);
+            var result = await _dataService.GetEntityByIdAsync(tableName, id, connectionName);
 
-                if (!result.Success)
-                    return NotFound(result);
+            if (!result.Success)
+                return NotFound(result);
 
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting entity {Id} from table {TableName}", id, tableName);
-                return StatusCode(500, new EntityResult<object>
-                {
-                    Success = false,
-                    ErrorMessage = "An internal error occurred."
-                });
-            }
+            return Ok(result);
         }
 
         /// <summary>
@@ -105,36 +86,21 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             var userId = User.ActingUserId();
               if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
-            try
-            {
-                var entity = JsonSerializer.Deserialize<Dictionary<string, object>>(body.GetRawText());
-                if (entity == null)
-                    return BadRequest(new EntityResult<object> { Success = false, ErrorMessage = "Failed to deserialize entity" });
+            // The body arrives parsed; only a JSON object is an entity, and asking its kind is what the deserializer's
+            // exception used to answer.
+            if (body.ValueKind != JsonValueKind.Object)
+                return BadRequest(new EntityResult<object> { Success = false, ErrorMessage = "The entity must be a JSON object." });
+            var entity = JsonSerializer.Deserialize<Dictionary<string, object>>(body.GetRawText())!;
 
-                _logger.LogInformation("INSERT entity into table {TableName} on connection {ConnectionName}",
-                    tableName, connectionName ?? "default");
+            _logger.LogInformation("INSERT entity into table {TableName} on connection {ConnectionName}",
+                tableName, connectionName ?? "default");
 
-                var result = await _dataService.InsertEntityAsync(tableName, entity, userId, connectionName);
+            var result = await _dataService.InsertEntityAsync(tableName, entity, userId, connectionName);
 
-                if (!result.Success)
-                    return BadRequest(result);
+            if (!result.Success)
+                return BadRequest(result);
 
-                return Ok(result);
-            }
-            catch (JsonException ex)
-            {
-                _logger.LogWarning(ex, "Invalid JSON for insert into table {TableName}", tableName);
-                return BadRequest(new EntityResult<object> { Success = false, ErrorMessage = "Invalid JSON format." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error inserting entity into table {TableName}", tableName);
-                return StatusCode(500, new EntityResult<object>
-                {
-                    Success = false,
-                    ErrorMessage = "An internal error occurred."
-                });
-            }
+            return Ok(result);
         }
 
         /// <summary>
@@ -146,36 +112,19 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             var userId = User.ActingUserId();
               if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
               if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "Entity ID is required." });
-            try
-            {
-                var entity = JsonSerializer.Deserialize<Dictionary<string, object>>(body.GetRawText());
-                if (entity == null)
-                    return BadRequest(new EntityResult<object> { Success = false, ErrorMessage = "Failed to deserialize entity" });
+            if (body.ValueKind != JsonValueKind.Object)
+                return BadRequest(new EntityResult<object> { Success = false, ErrorMessage = "The entity must be a JSON object." });
+            var entity = JsonSerializer.Deserialize<Dictionary<string, object>>(body.GetRawText())!;
 
-                _logger.LogInformation("UPDATE entity {Id} in table {TableName} on connection {ConnectionName}",
-                    id, tableName, connectionName ?? "default");
+            _logger.LogInformation("UPDATE entity {Id} in table {TableName} on connection {ConnectionName}",
+                id, tableName, connectionName ?? "default");
 
-                var result = await _dataService.UpdateEntityAsync(tableName, id, entity, userId, connectionName);
+            var result = await _dataService.UpdateEntityAsync(tableName, id, entity, userId, connectionName);
 
-                if (!result.Success)
-                    return BadRequest(result);
+            if (!result.Success)
+                return BadRequest(result);
 
-                return Ok(result);
-            }
-            catch (JsonException ex)
-            {
-                _logger.LogWarning(ex, "Invalid JSON for update in table {TableName}", tableName);
-                return BadRequest(new EntityResult<object> { Success = false, ErrorMessage = "Invalid JSON format." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating entity {Id} in table {TableName}", id, tableName);
-                return StatusCode(500, new EntityResult<object>
-                {
-                    Success = false,
-                    ErrorMessage = "An internal error occurred."
-                });
-            }
+            return Ok(result);
         }
 
         /// <summary>
@@ -187,27 +136,15 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             var userId = User.ActingUserId();
               if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
               if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "Entity ID is required." });
-            try
-            {
-                _logger.LogInformation("DELETE entity {Id} from table {TableName} on connection {ConnectionName}",
-                    id, tableName, connectionName ?? "default");
+            _logger.LogInformation("DELETE entity {Id} from table {TableName} on connection {ConnectionName}",
+                id, tableName, connectionName ?? "default");
 
-                var result = await _dataService.DeleteEntityAsync(tableName, id, userId, connectionName);
+            var result = await _dataService.DeleteEntityAsync(tableName, id, userId, connectionName);
 
-                if (!result.Success)
-                    return NotFound(result);
+            if (!result.Success)
+                return NotFound(result);
 
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting entity {Id} from table {TableName}", id, tableName);
-                return StatusCode(500, new OperationResult
-                {
-                    Success = false,
-                    ErrorMessage = "An internal error occurred."
-                });
-            }
+            return Ok(result);
         }
 
         /// <summary>
@@ -219,41 +156,33 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             [FromQuery] string connectionName = "PPDM39")
         {
                 if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
-            try
+            _logger.LogInformation("EXPORT CSV from table {TableName}", tableName);
+
+            var result = await _dataService.GetEntitiesAsync(tableName, new List<AppFilter>(), connectionName);
+            if (!result.Success)
+                return BadRequest(new { success = false, message = result.ErrorMessage });
+
+            var rows = (result.Entities ?? new List<Dictionary<string, object>>())
+                .ToList();
+
+            if (rows.Count == 0)
             {
-                _logger.LogInformation("EXPORT CSV from table {TableName}", tableName);
-
-                var result = await _dataService.GetEntitiesAsync(tableName, new List<AppFilter>(), connectionName);
-                if (!result.Success)
-                    return BadRequest(new { success = false, message = result.ErrorMessage });
-
-                var rows = (result.Entities ?? new List<Dictionary<string, object>>())
-                    .ToList();
-
-                if (rows.Count == 0)
-                {
-                    var empty = Encoding.UTF8.GetBytes(string.Empty);
-                    return File(empty, "text/csv", $"{tableName}.csv");
-                }
-
-                // Build CSV
-                var columns = rows[0].Keys.ToList();
-                var sb = new StringBuilder();
-                sb.AppendLine(string.Join(",", columns.Select(CsvEscape)));
-                foreach (var row in rows)
-                {
-                    sb.AppendLine(string.Join(",", columns.Select(c =>
-                        CsvEscape(row.TryGetValue(c, out var v) ? v?.ToString() : string.Empty))));
-                }
-
-                var bytes = Encoding.UTF8.GetBytes(sb.ToString());
-                return File(bytes, "text/csv", $"{tableName}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv");
+                var empty = Encoding.UTF8.GetBytes(string.Empty);
+                return File(empty, "text/csv", $"{tableName}.csv");
             }
-            catch (Exception ex)
+
+            // Build CSV
+            var columns = rows[0].Keys.ToList();
+            var sb = new StringBuilder();
+            sb.AppendLine(string.Join(",", columns.Select(CsvEscape)));
+            foreach (var row in rows)
             {
-                _logger.LogError(ex, "Error exporting CSV for table {TableName}", tableName);
-                return StatusCode(500, new { success = false, message = "An internal error occurred." });
+                sb.AppendLine(string.Join(",", columns.Select(c =>
+                    CsvEscape(row.TryGetValue(c, out var v) ? v?.ToString() : string.Empty))));
             }
+
+            var bytes = Encoding.UTF8.GetBytes(sb.ToString());
+            return File(bytes, "text/csv", $"{tableName}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv");
         }
 
         /// <summary>
@@ -274,63 +203,61 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             if (!file.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
                 return BadRequest(new { success = false, message = "Only CSV files are supported." });
 
-            try
+            _logger.LogInformation("IMPORT CSV into table {TableName}, file={File}, size={Size}",
+                tableName, file.FileName, file.Length);
+
+            using var reader = new StreamReader(file.OpenReadStream(), Encoding.UTF8);
+            var headerLine = await reader.ReadLineAsync();
+            if (string.IsNullOrWhiteSpace(headerLine))
+                return BadRequest(new { success = false, message = "CSV file has no header row." });
+
+            var columns = ParseCsvLine(headerLine);
+            int inserted = 0, failed = 0;
+            var errors = new List<string>();
+
+            string? line;
+            int rowNum = 1;
+            while ((line = await reader.ReadLineAsync()) != null)
             {
-                _logger.LogInformation("IMPORT CSV into table {TableName}, file={File}, size={Size}",
-                    tableName, file.FileName, file.Length);
+                rowNum++;
+                if (string.IsNullOrWhiteSpace(line)) continue;
 
-                using var reader = new StreamReader(file.OpenReadStream(), Encoding.UTF8);
-                var headerLine = await reader.ReadLineAsync();
-                if (string.IsNullOrWhiteSpace(headerLine))
-                    return BadRequest(new { success = false, message = "CSV file has no header row." });
-
-                var columns = ParseCsvLine(headerLine);
-                int inserted = 0, failed = 0;
-                var errors = new List<string>();
-
-                string? line;
-                int rowNum = 1;
-                while ((line = await reader.ReadLineAsync()) != null)
+                var values = ParseCsvLine(line);
+                var entity = new Dictionary<string, object>();
+                for (int i = 0; i < columns.Count && i < values.Count; i++)
                 {
-                    rowNum++;
-                    if (string.IsNullOrWhiteSpace(line)) continue;
-
-                    var values = ParseCsvLine(line);
-                    var entity = new Dictionary<string, object>();
-                    for (int i = 0; i < columns.Count && i < values.Count; i++)
-                    {
-                        if (!string.IsNullOrWhiteSpace(columns[i]))
-                            entity[columns[i]] = values[i];
-                    }
-
-                    if (entity.Count == 0) continue;
-
-                    try
-                    {
-                        var result = await _dataService.InsertEntityAsync(tableName, entity, userId, connectionName);
-                        if (result.Success) inserted++;
-                        else { failed++; errors.Add($"Row {rowNum}: {result.ErrorMessage}"); }
-                    }
-                    catch (Exception)
-                    {
-                        failed++;
-                        errors.Add($"Row {rowNum}: Insert failed.");
-                    }
+                    if (!string.IsNullOrWhiteSpace(columns[i]))
+                        entity[columns[i]] = values[i];
                 }
 
-                return Ok(new
+                if (entity.Count == 0) continue;
+
+                try
                 {
-                    success = true,
-                    inserted,
-                    failed,
-                    errors = errors.Take(20).ToList()
-                });
+                    var result = await _dataService.InsertEntityAsync(tableName, entity, userId, connectionName);
+                    if (result.Success) inserted++;
+                    else { failed++; errors.Add($"Row {rowNum}: {result.ErrorMessage}"); }
+                }
+                // Whatever fails on one row — the store, the repository — that row is not imported and the import goes on;
+                // the row's line in the answer carries the reference its failure is filed under. A value its column cannot
+                // hold is the result's own answer above, not an exception. A refusal (a table PPDM does not have) is the
+                // whole import's and ends it; cancellation is the request ending.
+                catch (Exception rowFailure) when (rowFailure is not OperationCanceledException and not RefusalException)
+                {
+                    failed++;
+                    var reference = _failures.ReportHandled(rowFailure, $"importing CSV row {rowNum} into {tableName}",
+                        "the row is not imported; the import goes on and the answer lists the row with this reference", FailureSeverity.Degraded);
+                    errors.Add($"Row {rowNum}: not imported (reference {reference}).");
+                }
             }
-            catch (Exception ex)
+
+            return Ok(new
             {
-                _logger.LogError(ex, "Error importing CSV for table {TableName}", tableName);
-                return StatusCode(500, new { success = false, message = "An internal error occurred." });
-            }
+                success = true,
+                inserted,
+                failed,
+                errors = errors.Take(20).ToList()
+            });
         }
 
         // ── CSV helpers ───────────────────────────────────────────────────────
@@ -349,7 +276,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                         JsonValueKind.True    => true,
                         JsonValueKind.False   => false,
                         JsonValueKind.Null    => null,
-                        _                    => p.Value.ToString()
+                        JsonValueKind.Undefined or JsonValueKind.Object or JsonValueKind.Array => p.Value.ToString()
                     };
                 }
                 return d;

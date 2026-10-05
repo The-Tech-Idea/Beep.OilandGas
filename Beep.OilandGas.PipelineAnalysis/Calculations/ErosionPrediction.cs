@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.PipelineAnalysis.Calculations
 {
@@ -124,8 +125,8 @@ namespace Beep.OilandGas.PipelineAnalysis.Calculations
             double pipeIdInches,
             double materialFactor = 1.0)
         {
-            if (mixtureDensityLbFt3 <= 0) throw new ArgumentOutOfRangeException(nameof(mixtureDensityLbFt3));
-            if (pipeIdInches <= 0)        throw new ArgumentOutOfRangeException(nameof(pipeIdInches));
+            if (mixtureDensityLbFt3 <= 0) throw RefusalException.Invalid("Mixture density must be greater than zero.");
+            if (pipeIdInches <= 0)        throw RefusalException.Invalid("Pipe inside diameter must be greater than zero.");
 
             double erosionRateMpy = materialFactor
                 * Math.Pow(sandRateBblPerDay, 1.73)

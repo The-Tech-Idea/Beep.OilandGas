@@ -40,31 +40,23 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         [HttpGet]
         public async Task<ActionResult<List<object>>> GetAFEsAsync([FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                var connName = connectionName ?? _service.DefaultConnectionName;
-                var repository = _service.GetRepository(typeof(AFE), connName, "AFE");
-                var entities = await repository.GetAsync(new List<TheTechIdea.Beep.Report.AppFilter>());
-                var afes = (entities ?? new List<object>())
-                    .OfType<AFE>()
-                    .Select(afe => (object)new
-                    {
-                        AfeId         = afe.AFE_ID,
-                        AfeNumber     = afe.AFE_NUMBER,
-                        AfeName       = afe.AFE_NAME,
-                        PropertyId    = afe.PROPERTY_ID,
-                        EstimatedCost = afe.ESTIMATED_COST,
-                        Status        = afe.ACTIVE_IND == "Y" ? "ACTIVE" : "CLOSED",
-                        EffectiveDate = afe.ROW_EFFECTIVE_DATE
-                    })
-                    .ToList();
-                return Ok(afes);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error listing AFEs");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var connName = connectionName ?? _service.DefaultConnectionName;
+            var repository = _service.GetRepository(typeof(AFE), connName, "AFE");
+            var entities = await repository.GetAsync(new List<TheTechIdea.Beep.Report.AppFilter>());
+            var afes = (entities ?? new List<object>())
+                .OfType<AFE>()
+                .Select(afe => (object)new
+                {
+                    AfeId         = afe.AFE_ID,
+                    AfeNumber     = afe.AFE_NUMBER,
+                    AfeName       = afe.AFE_NAME,
+                    PropertyId    = afe.PROPERTY_ID,
+                    EstimatedCost = afe.ESTIMATED_COST,
+                    Status        = afe.ACTIVE_IND == "Y" ? "ACTIVE" : "CLOSED",
+                    EffectiveDate = afe.ROW_EFFECTIVE_DATE
+                })
+                .ToList();
+            return Ok(afes);
         }
 
         /// <summary>
@@ -76,31 +68,23 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var connName = connectionName ?? _service.DefaultConnectionName;
+
+            var afe = new AFE
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+                AFE_NUMBER = request.AfeNumber,
+                AFE_NAME = request.AfeName ?? request.AfeNumber,
+                PROPERTY_ID = request.PropertyId,
+                ESTIMATED_COST = request.BudgetAmount,
+                ROW_EFFECTIVE_DATE = request.EffectiveDate ?? DateTime.UtcNow
+            };
 
-                var connName = connectionName ?? _service.DefaultConnectionName;
+            var created = await _afeService.CreateAfeAsync(afe, userId, connName);
 
-                var afe = new AFE
-                {
-                    AFE_NUMBER = request.AfeNumber,
-                    AFE_NAME = request.AfeName ?? request.AfeNumber,
-                    PROPERTY_ID = request.PropertyId,
-                    ESTIMATED_COST = request.BudgetAmount,
-                    ROW_EFFECTIVE_DATE = request.EffectiveDate ?? DateTime.UtcNow
-                };
-
-                var created = await _afeService.CreateAfeAsync(afe, userId, connName);
-
-                return Ok(new { AfeId = created.AFE_ID, AfeNumber = created.AFE_NUMBER });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating AFE");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { AfeId = created.AFE_ID, AfeNumber = created.AFE_NUMBER });
         }
 
         /// <summary>
@@ -113,30 +97,22 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "AFE ID is required." });
-            try
-            {
-                var connName = connectionName ?? _service.DefaultConnectionName;
-                var repository = _service.GetRepository(typeof(AFE), connName, "AFE");
+            var connName = connectionName ?? _service.DefaultConnectionName;
+            var repository = _service.GetRepository(typeof(AFE), connName, "AFE");
 
-                var afe = await repository.GetByIdAsync(id) as AFE;
-                if (afe == null)
-                    return NotFound(new { error = $"AFE with ID {id} not found." });
+            var afe = await repository.GetByIdAsync(id) as AFE;
+            if (afe == null)
+                return NotFound(new { error = $"AFE with ID {id} not found." });
 
-                return Ok(new
-                {
-                    AfeId = afe.AFE_ID,
-                    AfeNumber = afe.AFE_NUMBER,
-                    AfeName = afe.AFE_NAME,
-                    PropertyId = afe.PROPERTY_ID,
-                    EstimatedCost = afe.ESTIMATED_COST,
-                    EffectiveDate = afe.ROW_EFFECTIVE_DATE
-                });
-            }
-            catch (Exception ex)
+            return Ok(new
             {
-                _logger.LogError(ex, "Error getting AFE {AfeId}", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                AfeId = afe.AFE_ID,
+                AfeNumber = afe.AFE_NUMBER,
+                AfeName = afe.AFE_NAME,
+                PropertyId = afe.PROPERTY_ID,
+                EstimatedCost = afe.ESTIMATED_COST,
+                EffectiveDate = afe.ROW_EFFECTIVE_DATE
+            });
         }
 
         /// <summary>Approve an AFE using <see cref="IAfeService"/>.</summary>
@@ -146,13 +122,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "AFE ID is required." });
-            try
-            {
-                var connName = connectionName ?? _service.DefaultConnectionName;
-                await _afeService.ApproveAfeAsync(id, DateTime.UtcNow, userId, connName);
-                return NoContent();
-            }
-            catch (Exception ex) { _logger.LogError(ex, "Error approving AFE {AfeId}", id); return StatusCode(500, new { error = "An internal error occurred." }); }
+            var connName = connectionName ?? _service.DefaultConnectionName;
+            await _afeService.ApproveAfeAsync(id, DateTime.UtcNow, userId, connName);
+            return NoContent();
         }
 
         /// <summary>Reject an AFE by reverting status to draft for revision.</summary>
@@ -162,21 +134,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "AFE ID is required." });
-            try
-            {
-                var connName = connectionName ?? _service.DefaultConnectionName;
-                var repository = _service.GetRepository(typeof(AFE), connName, "AFE");
-                var afe = await repository.GetByIdAsync(id) as AFE;
-                if (afe == null)
-                    return NotFound(new { error = $"AFE {id} not found." });
+            var connName = connectionName ?? _service.DefaultConnectionName;
+            var repository = _service.GetRepository(typeof(AFE), connName, "AFE");
+            var afe = await repository.GetByIdAsync(id) as AFE;
+            if (afe == null)
+                return NotFound(new { error = $"AFE {id} not found." });
 
-                afe.STATUS = AfeStatusCodes.Draft;
-                afe.ROW_CHANGED_BY = userId;
-                afe.ROW_CHANGED_DATE = DateTime.UtcNow;
-                await repository.UpdateAsync(afe, userId);
-                return NoContent();
-            }
-            catch (Exception ex) { _logger.LogError(ex, "Error rejecting AFE {AfeId}", id); return StatusCode(500, new { error = "An internal error occurred." }); }
+            afe.STATUS = AfeStatusCodes.Draft;
+            afe.ROW_CHANGED_BY = userId;
+            afe.ROW_CHANGED_DATE = DateTime.UtcNow;
+            await repository.UpdateAsync(afe, userId);
+            return NoContent();
         }
 
         [HttpPost("{id}/line-items")]
@@ -188,17 +156,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "AFE ID is required." });
-            try
-            {
-                lineItem.AFE_ID = id;
-                var result = await _afeService.AddLineItemAsync(lineItem, userId, connectionName ?? _service.DefaultConnectionName);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error adding AFE line item for {AfeId}", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            lineItem.AFE_ID = id;
+            var result = await _afeService.AddLineItemAsync(lineItem, userId, connectionName ?? _service.DefaultConnectionName);
+            return Ok(result);
         }
 
         [HttpPost("{id}/costs")]
@@ -210,16 +170,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "AFE ID is required." });
-            try
-            {
-                var result = await _afeService.RecordCostAsync(id, cost, userId, connectionName ?? _service.DefaultConnectionName);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error recording AFE cost for {AfeId}", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _afeService.RecordCostAsync(id, cost, userId, connectionName ?? _service.DefaultConnectionName);
+            return Ok(result);
         }
 
         [HttpGet("{id}/line-items")]
@@ -227,16 +179,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "AFE ID is required." });
-            try
-            {
-                var lineItems = await _afeService.GetLineItemsAsync(id, connectionName ?? _service.DefaultConnectionName);
-                return Ok(lineItems);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting line items for {AfeId}", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var lineItems = await _afeService.GetLineItemsAsync(id, connectionName ?? _service.DefaultConnectionName);
+            return Ok(lineItems);
         }
 
         [HttpPost("{id}/variance-report")]
@@ -248,20 +192,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "AFE ID is required." });
-            try
-            {
-                var report = await _afeService.GenerateBudgetVarianceReportAsync(
-                    id,
-                    varianceThreshold,
-                    userId,
-                    connectionName ?? _service.DefaultConnectionName);
-                return Ok(report);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating variance report for {AfeId}", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var report = await _afeService.GenerateBudgetVarianceReportAsync(
+                id,
+                varianceThreshold,
+                userId,
+                connectionName ?? _service.DefaultConnectionName);
+            return Ok(report);
         }
 
         [HttpGet("variance-reports")]
@@ -272,21 +208,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             [FromQuery] DateTime? endDate = null,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                var reports = await _afeService.GetVarianceReportsAsync(
-                    afeId,
-                    costCenterId,
-                    startDate,
-                    endDate,
-                    connectionName ?? _service.DefaultConnectionName);
-                return Ok(reports);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting AFE variance reports");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var reports = await _afeService.GetVarianceReportsAsync(
+                afeId,
+                costCenterId,
+                startDate,
+                endDate,
+                connectionName ?? _service.DefaultConnectionName);
+            return Ok(reports);
         }
     }
 }

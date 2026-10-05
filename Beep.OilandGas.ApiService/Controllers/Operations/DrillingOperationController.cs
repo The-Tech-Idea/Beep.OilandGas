@@ -28,50 +28,26 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         [HttpGet("operations")]
         public async Task<ActionResult<List<DRILLING_OPERATION>>> GetDrillingOperations([FromQuery] string? wellUWI = null)
         {
-            try
-            {
-                var result = await _service.GetDrillingOperationsAsync(wellUWI);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting drilling operations");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.GetDrillingOperationsAsync(wellUWI);
+            return Ok(result);
         }
 
         [HttpGet("operations/{operationId}")]
         public async Task<ActionResult<DRILLING_OPERATION>> GetDrillingOperation(string operationId)
         {
             if (string.IsNullOrWhiteSpace(operationId)) return BadRequest(new { error = "Operation ID is required." });
-            try
-            {
-                var result = await _service.GetDrillingOperationAsync(operationId);
-                if (result == null)
-                        return NotFound(new { error = $"Drilling operation {operationId} not found." });
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting drilling operation {OperationId}", operationId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.GetDrillingOperationAsync(operationId);
+            if (result == null)
+                    return NotFound(new { error = $"Drilling operation {operationId} not found." });
+            return Ok(result);
         }
 
         [HttpPost("operations")]
         public async Task<ActionResult<DRILLING_OPERATION>> CreateDrillingOperation([FromBody] CREATE_DRILLING_OPERATION createDto)
         {
             var userId = User.ActingUserId();
-            try
-            {
-                var result = await _service.CreateDrillingOperationAsync(createDto, userId: userId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating drilling operation");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.CreateDrillingOperationAsync(createDto, userId: userId);
+            return Ok(result);
         }
 
         [HttpPut("operations/{operationId}")]
@@ -79,32 +55,16 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         {
             var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(operationId)) return BadRequest(new { error = "Operation ID is required." });
-            try
-            {
-                var result = await _service.UpdateDrillingOperationAsync(operationId, updateDto, userId: userId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating drilling operation {OperationId}", operationId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.UpdateDrillingOperationAsync(operationId, updateDto, userId: userId);
+            return Ok(result);
         }
 
         [HttpGet("operations/{operationId}/reports")]
         public async Task<ActionResult<List<DRILLING_REPORT>>> GetDrillingReports(string operationId)
         {
             if (string.IsNullOrWhiteSpace(operationId)) return BadRequest(new { error = "Operation ID is required." });
-            try
-            {
-                var result = await _service.GetDrillingReportsAsync(operationId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting drilling reports for operation {OperationId}", operationId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.GetDrillingReportsAsync(operationId);
+            return Ok(result);
         }
 
         [HttpPost("operations/{operationId}/reports")]
@@ -112,16 +72,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         {
             var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(operationId)) return BadRequest(new { error = "Operation ID is required." });
-            try
-            {
-                var result = await _service.CreateDrillingReportAsync(operationId, createDto, userId: userId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating drilling report for operation {OperationId}", operationId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.CreateDrillingReportAsync(operationId, createDto, userId: userId);
+            return Ok(result);
         }
     }
 }

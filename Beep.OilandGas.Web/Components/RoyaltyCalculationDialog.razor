@@ -33,6 +33,7 @@
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     [Inject] IAccountingServiceClient AccountingServiceClient { get; set; } = default!;
+    [Inject] OilGasCallFailures Calls { get; set; } = default!;
     [Parameter] public string FieldId { get; set; } = string.Empty;
     private DateTime? _productionDate = DateTime.Today;
     private List<ROYALTY_CALCULATION>? _preview;
@@ -56,9 +57,11 @@
                 { FieldId = FieldId, ProductionDate = DateOnly.FromDateTime(_productionDate.Value) });
             if (_preview.Count == 0) _error = "No royalty preview was returned.";
         }
-        catch (Exception)
+        // The API refuses a preview it cannot price in its own words (shown); anything else is told with its reference.
+        // A dialog answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
         {
-            _error = "Royalty preview failed. Verify recorded allocations, effective lease interests, ticket prices and deductions.";
+            _error = Calls.Explain(ex, "previewing royalty calculations", "The royalty preview could not be calculated");
         }
         finally { _busy = false; }
     }

@@ -23,7 +23,7 @@ namespace Beep.OilandGas.DCA.DataImportExport
         /// <param name="productionColumnIndex">Index of the production rate column (0-based).</param>
         /// <returns>Tuple containing (productionData, timeData).</returns>
         /// <exception cref="ArgumentNullException">Thrown when filePath is null.</exception>
-        /// <exception cref="Exceptions.InvalidDataException">Thrown when file cannot be read or data is invalid.</exception>
+        /// <exception cref="Exceptions.InvalidDataException">Thrown when the file is missing or its data is invalid.</exception>
         public static (List<double> productionData, List<DateTime> timeData) ImportFromCsv(
             string filePath,
             bool hasHeader = true,
@@ -41,61 +41,51 @@ namespace Beep.OilandGas.DCA.DataImportExport
             var productionData = new List<double>();
             var timeData = new List<DateTime>();
 
-            try
+            // A file that cannot be read is a failure and propagates as itself; only the content is refused.
+            var lines = File.ReadAllLines(filePath);
+            int startIndex = hasHeader ? 1 : 0;
+
+            for (int i = startIndex; i < lines.Length; i++)
             {
-                var lines = File.ReadAllLines(filePath);
-                int startIndex = hasHeader ? 1 : 0;
+                if (string.IsNullOrWhiteSpace(lines[i]))
+                    continue;
 
-                for (int i = startIndex; i < lines.Length; i++)
+                var columns = lines[i].Split(',');
+                if (columns.Length <= Math.Max(dateColumnIndex, productionColumnIndex))
                 {
-                    if (string.IsNullOrWhiteSpace(lines[i]))
-                        continue;
-
-                    var columns = lines[i].Split(',');
-                    if (columns.Length <= Math.Max(dateColumnIndex, productionColumnIndex))
-                    {
-                        throw new Exceptions.InvalidDataException(
-                            $"Line {i + 1}: Insufficient columns. Expected at least {Math.Max(dateColumnIndex, productionColumnIndex) + 1} columns.");
-                    }
-
-                    // Parse date
-                    if (!DateTime.TryParse(columns[dateColumnIndex].Trim(), out DateTime date))
-                    {
-                        throw new Exceptions.InvalidDataException(
-                            $"Line {i + 1}: Invalid date format: {columns[dateColumnIndex]}");
-                    }
-
-                    // Parse production rate
-                    if (!double.TryParse(columns[productionColumnIndex].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double production))
-                    {
-                        throw new Exceptions.InvalidDataException(
-                            $"Line {i + 1}: Invalid production rate format: {columns[productionColumnIndex]}");
-                    }
-
-                    if (production < 0)
-                    {
-                        throw new Exceptions.InvalidDataException(
-                            $"Line {i + 1}: Production rate cannot be negative: {production}");
-                    }
-
-                    timeData.Add(date);
-                    productionData.Add(production);
+                    throw new Exceptions.InvalidDataException(
+                        $"Line {i + 1}: Insufficient columns. Expected at least {Math.Max(dateColumnIndex, productionColumnIndex) + 1} columns.");
                 }
 
-                // Validate imported data
-                DataValidator.ValidateProductionData(productionData, "imported production data");
-                DataValidator.ValidateTimeData(timeData, productionData.Count, "imported time data");
+                // Parse date
+                if (!DateTime.TryParse(columns[dateColumnIndex].Trim(), out DateTime date))
+                {
+                    throw new Exceptions.InvalidDataException(
+                        $"Line {i + 1}: Invalid date format: {columns[dateColumnIndex]}");
+                }
 
-                return (productionData, timeData);
+                // Parse production rate
+                if (!double.TryParse(columns[productionColumnIndex].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double production))
+                {
+                    throw new Exceptions.InvalidDataException(
+                        $"Line {i + 1}: Invalid production rate format: {columns[productionColumnIndex]}");
+                }
+
+                if (production < 0)
+                {
+                    throw new Exceptions.InvalidDataException(
+                        $"Line {i + 1}: Production rate cannot be negative: {production}");
+                }
+
+                timeData.Add(date);
+                productionData.Add(production);
             }
-            catch (Exceptions.InvalidDataException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new Exceptions.InvalidDataException($"Failed to import CSV: {ex.Message}", ex);
-            }
+
+            // Validate imported data
+            DataValidator.ValidateProductionData(productionData, "imported production data");
+            DataValidator.ValidateTimeData(timeData, productionData.Count, "imported time data");
+
+            return (productionData, timeData);
         }
     }
 }

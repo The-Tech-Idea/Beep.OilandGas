@@ -347,35 +347,27 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// </summary>
         private async Task<decimal> GetPeriodProductionAsync(string wellId, string connectionName)
         {
-            try
+            var metadata = await _metadata.GetTableMetadataAsync("MEASUREMENT_RECORD");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(MEASUREMENT_RECORD);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, connectionName, "MEASUREMENT_RECORD");
+
+            var filters = new List<AppFilter>
             {
-                var metadata = await _metadata.GetTableMetadataAsync("MEASUREMENT_RECORD");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(MEASUREMENT_RECORD);
+                new AppFilter { FieldName = "WELL_ID", Operator = "=", FilterValue = wellId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+            };
 
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "MEASUREMENT_RECORD");
+            var measurements = await repo.GetAsync(filters);
+            var measurementList = measurements?.Cast<MEASUREMENT_RECORD>().ToList() ?? new List<MEASUREMENT_RECORD>();
 
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "WELL_ID", Operator = "=", FilterValue = wellId },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                };
+            decimal totalProduction = measurementList.Sum(m => m.GROSS_VOLUME ?? 0);
+            _logger?.LogDebug("Period production for well {WellId}: {Volume} BBL", wellId, totalProduction);
 
-                var measurements = await repo.GetAsync(filters);
-                var measurementList = measurements?.Cast<MEASUREMENT_RECORD>().ToList() ?? new List<MEASUREMENT_RECORD>();
-
-                decimal totalProduction = measurementList.Sum(m => m.GROSS_VOLUME ?? 0);
-                _logger?.LogDebug("Period production for well {WellId}: {Volume} BBL", wellId, totalProduction);
-
-                return totalProduction;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Error retrieving period production for well {WellId}", wellId);
-                return 0;
-            }
+            return totalProduction;
         }
 
         /// <summary>
@@ -384,44 +376,36 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// </summary>
         private async Task<decimal> GetProvedReservesAsync(string wellId, string connectionName)
         {
-            try
+            var metadata = await _metadata.GetTableMetadataAsync("PROVED_RESERVES");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(PROVED_RESERVES);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, connectionName, "PROVED_RESERVES");
+
+            var filters = new List<AppFilter>
             {
-                var metadata = await _metadata.GetTableMetadataAsync("PROVED_RESERVES");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(PROVED_RESERVES);
+                new AppFilter { FieldName = "PROPERTY_ID", Operator = "LIKE", FilterValue = $"%{wellId}%" },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+            };
 
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "PROVED_RESERVES");
+            var reserves = await repo.GetAsync(filters);
+            var reserveList = reserves?.Cast<PROVED_RESERVES>().ToList() ?? new List<PROVED_RESERVES>();
 
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "PROPERTY_ID", Operator = "LIKE", FilterValue = $"%{wellId}%" },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                };
-
-                var reserves = await repo.GetAsync(filters);
-                var reserveList = reserves?.Cast<PROVED_RESERVES>().ToList() ?? new List<PROVED_RESERVES>();
-
-                // Use most recent reserve estimate and sum oil reserves (developed + undeveloped)
-                if (reserveList.Any())
-                {
-                    var latestReserve = reserveList.OrderByDescending(r => r.RESERVE_DATE).FirstOrDefault();
-                    decimal totalReserves = (latestReserve?.PROVED_DEVELOPED_OIL_RESERVES ?? 0) +
-                                           (latestReserve?.PROVED_UNDEVELOPED_OIL_RESERVES ?? 0);
-
-                    _logger?.LogDebug("Total proved reserves for well {WellId}: {Volume} BBL", wellId, totalReserves);
-                    return totalReserves;
-                }
-
-                _logger?.LogWarning("No proved reserves found for well {WellId}", wellId);
-                return 0;
-            }
-            catch (Exception ex)
+            // Use most recent reserve estimate and sum oil reserves (developed + undeveloped)
+            if (reserveList.Any())
             {
-                _logger?.LogWarning(ex, "Error retrieving proved reserves for well {WellId}", wellId);
-                return 0;
+                var latestReserve = reserveList.OrderByDescending(r => r.RESERVE_DATE).FirstOrDefault();
+                decimal totalReserves = (latestReserve?.PROVED_DEVELOPED_OIL_RESERVES ?? 0) +
+                                       (latestReserve?.PROVED_UNDEVELOPED_OIL_RESERVES ?? 0);
+
+                _logger?.LogDebug("Total proved reserves for well {WellId}: {Volume} BBL", wellId, totalReserves);
+                return totalReserves;
             }
+
+            _logger?.LogWarning("No proved reserves found for well {WellId}", wellId);
+            return 0;
         }
     }
 

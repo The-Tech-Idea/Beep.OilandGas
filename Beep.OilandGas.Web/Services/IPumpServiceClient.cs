@@ -14,18 +14,18 @@ namespace Beep.OilandGas.Web.Services
         // Hydraulic Pump Operations
         Task<HydraulicPumpDesign> DesignHydraulicPumpSystemAsync(string wellUWI, string pumpType, decimal wellDepth, decimal desiredFlowRate);
         Task<PumpPerformanceAnalysis> AnalyzeHydraulicPumpPerformanceAsync(string pumpId);
-        Task<bool> SaveHydraulicPumpDesignAsync(HydraulicPumpDesign design);
+        Task SaveHydraulicPumpDesignAsync(HydraulicPumpDesign design);
         Task<List<PumpPerformanceHistory>> GetHydraulicPumpPerformanceHistoryAsync(string pumpId);
 
         // Plunger Lift Operations
         Task<PlungerLiftDesign> DesignPlungerLiftSystemAsync(string wellUWI, PLUNGER_LIFT_WELL_PROPERTIES wellProperties);
         Task<PlungerLiftPerformance> AnalyzePlungerLiftPerformanceAsync(string wellUWI);
-        Task<bool> SavePlungerLiftDesignAsync(PlungerLiftDesign design);
+        Task SavePlungerLiftDesignAsync(PlungerLiftDesign design);
 
         // Sucker Rod Pumping Operations
         Task<SuckerRodPumpDesign> DesignSuckerRodPumpSystemAsync(string wellUWI, SuckerRodPumpWellProperties wellProperties);
         Task<SuckerRodPumpPerformance> AnalyzeSuckerRodPumpPerformanceAsync(string pumpId);
-        Task<bool> SaveSuckerRodPumpDesignAsync(SuckerRodPumpDesign design);
+        Task SaveSuckerRodPumpDesignAsync(SuckerRodPumpDesign design);
     }
 }
 

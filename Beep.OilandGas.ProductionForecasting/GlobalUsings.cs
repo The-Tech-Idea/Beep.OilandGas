@@ -1,4 +1,5 @@
 global using System;
+global using Beep.OilandGas.Models.Core.Refusals;
 global using System.Collections.Generic;
 global using System.Linq;
 global using System.Threading.Tasks;

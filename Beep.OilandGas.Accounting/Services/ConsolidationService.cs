@@ -55,7 +55,7 @@ namespace Beep.OilandGas.Accounting.Services
             string cn = "PPDM39")
         {
             if (amount <= 0m)
-                throw new InvalidOperationException("Elimination amount must be positive");
+                throw RefusalException.Invalid("Elimination amount must be positive.");
             if (string.IsNullOrWhiteSpace(description))
                 throw new ArgumentNullException(nameof(description));
             if (string.IsNullOrWhiteSpace(userId))

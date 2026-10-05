@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Beep.OilandGas.GasLift.Mapping;
 using Beep.OilandGas.GasLift.Validation;
 using Beep.OilandGas.Models.Data.GasLift;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.GasLift.Services;
 
@@ -20,9 +21,9 @@ public partial class GasLiftService
         if (wellProperties == null)
             throw new ArgumentNullException(nameof(wellProperties));
         if (numberOfPoints < 2)
-            throw new ArgumentOutOfRangeException(nameof(numberOfPoints), numberOfPoints, "Number of analysis points must be at least 2 (matches request validation range).");
+            throw RefusalException.Invalid("Number of analysis points must be at least 2 (matches request validation range).");
         if (minGasInjectionRate > maxGasInjectionRate)
-            throw new ArgumentException("Minimum gas injection rate must not exceed maximum.", nameof(minGasInjectionRate));
+            throw RefusalException.Invalid("Minimum gas injection rate must not exceed maximum.");
 
         cancellationToken.ThrowIfCancellationRequested();
         GasLiftValidator.ValidateWellProperties(wellProperties);

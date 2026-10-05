@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Core.Refusals;
+using TheTechIdeaWeb.Diagnostics;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Concurrent;
@@ -26,7 +28,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         private static readonly ConcurrentDictionary<Type, IReadOnlyDictionary<string, PropertyInfo>> ResultPropertyCache =
             new ConcurrentDictionary<Type, IReadOnlyDictionary<string, PropertyInfo>>();
 
-        private static Type? FindEntityTypeByName(string? entityTypeName)
+        private Type? FindEntityTypeByName(string? entityTypeName)
         {
             if (string.IsNullOrWhiteSpace(entityTypeName))
             {
@@ -40,7 +42,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 ?? FindEntityTypeInAssembly(modelAssembly, entityTypeName);
         }
 
-        private static Type? FindEntityTypeInAssembly(Assembly assembly, string entityTypeName)
+        private Type? FindEntityTypeInAssembly(Assembly assembly, string entityTypeName)
         {
             var ppdmQualified = assembly.GetType($"Beep.OilandGas.PPDM39.Models.{entityTypeName}", false, true);
             if (ppdmQualified != null && typeof(IPPDMEntity).IsAssignableFrom(ppdmQualified))
@@ -62,6 +64,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             }
             catch (ReflectionTypeLoadException ex)
             {
+                // No question answers "which types load" without loading them. The types that did load are still
+                // searched; the ones that did not are a deployment fault the operator needs to see.
+                _failures.ReportHandled(ex, $"listing the entity types in {assembly.GetName().Name}",
+                    "only the types that load are searched for a calculation result table's entity type",
+                    FailureSeverity.Degraded);
                 types = ex.Types.Where(type => type != null).ToArray()!;
             }
 
@@ -71,7 +78,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 NormalizePropertyName(type.Name).Equals(normalizedTarget, StringComparison.OrdinalIgnoreCase));
         }
 
-        private static Type ResolvePPDMEntityType(string? entityTypeName, string tableName)
+        private Type ResolvePPDMEntityType(string? entityTypeName, string tableName)
         {
             var resolvedType = FindEntityTypeByName(entityTypeName)
                 ?? FindEntityTypeByName(tableName);
@@ -218,7 +225,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 }
                 else if (targetType.IsEnum && value is string enumText)
                 {
-                    value = Enum.Parse(targetType, enumText, true);
+                    if (!Enum.TryParse(targetType, enumText, ignoreCase: true, out var member))
+                    {
+                        _logger?.LogWarning("{Value} is not a {EnumType}; {PropertyName} on {EntityType} is left unset",
+                            enumText, targetType.Name, property.Name, entity.GetType().Name);
+                        return false;
+                    }
+
+                    value = member;
                 }
                 else if (targetType.IsEnum && value != null && !targetType.IsInstanceOfType(value))
                 {
@@ -233,13 +247,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 property.SetValue(entity, value);
                 return true;
             }
-            catch (Exception ex)
+            // Convert.ChangeType has no question to ask first: these are its refusals of a value, and the setter's own.
+            catch (Exception ex) when (ex is InvalidCastException or FormatException or OverflowException
+                                           or TargetInvocationException)
             {
-                _logger?.LogWarning(
-                    ex,
-                    "Failed to set {PropertyName} on {EntityType}",
-                    property.Name,
-                    entity.GetType().Name);
+                _failures.ReportHandled(ex, $"storing {property.Name} on a {entity.GetType().Name} calculation result row",
+                    $"the stored row leaves {property.Name} empty; the calculation result returned to the caller is complete",
+                    FailureSeverity.Degraded);
                 return false;
             }
         }
@@ -295,15 +309,21 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
         private double? ConvertToDouble(object? value)
         {
-            if (value == null) return null;
-            try
+            // Asked rather than caught: a value that is not a number is answered as no value.
+            return value switch
             {
-                return Convert.ToDouble(value);
-            }
-            catch
-            {
-                return null;
-            }
+                null => null,
+                double d => d,
+                float f => f,
+                decimal m => (double)m,
+                int i => i,
+                long l => l,
+                short s => s,
+                _ => double.TryParse(Convert.ToString(value, CultureInfo.InvariantCulture), NumberStyles.Float,
+                        CultureInfo.InvariantCulture, out var parsed)
+                    ? parsed
+                    : null
+            };
         }
 
         private DateTime? GetDateValue(object? entity, string propertyName)
@@ -358,6 +378,55 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             if (value is long l) return l;
             if (decimal.TryParse(value.ToString(), out var parsed)) return parsed;
             return null;
+        }
+
+        /// <summary>
+        /// What the calculation history records for a run that did not complete: a refusal's own sentence, or that the run
+        /// did not complete. Never the exception's text — the run's failure goes on to the API's handler, which reports it
+        /// and gives the person its reference.
+        /// </summary>
+        private static string FailedRunMessage(Exception failure, string calculation) =>
+            failure is RefusalException refusal
+                ? refusal.Sentence
+                : $"The {calculation} did not complete; the failure was reported.";
+
+        /// <summary>
+        /// Writes a failed run's row to the calculation history before the run's own failure goes on to the caller.
+        /// </summary>
+        private async Task RecordFailedRunAsync(string calculation, Func<Task> store)
+        {
+            try
+            {
+                await store();
+            }
+            // Whatever stops the history row being written, the run's own failure must still reach the caller, which
+            // rethrows it after this: the history row is reported missing, and nothing is answered in its place.
+            catch (Exception storeFailure) when (storeFailure is not OperationCanceledException)
+            {
+                _failures.ReportHandled(storeFailure, $"recording a failed {calculation} run in the calculation history",
+                    $"the failed run is missing from the {calculation} history; the run's own failure still reaches the caller",
+                    FailureSeverity.Degraded);
+            }
+        }
+
+        /// <summary>
+        /// Saves a completed run's result to the calculation history. The run's result is still the caller's answer when
+        /// saving fails: the failure is reported, and the result is returned unsaved.
+        /// </summary>
+        private async Task SaveCompletedRunAsync(string calculation, Func<Task> store)
+        {
+            try
+            {
+                await store();
+            }
+            // The calculation itself succeeded; whatever stops the save, the result is still returned, and the missing
+            // history row is reported so the operator sees it.
+            catch (Exception storeFailure) when (storeFailure is not OperationCanceledException)
+            {
+                _failures.ReportHandled(storeFailure, $"saving a completed {calculation} run in the calculation history",
+                    $"the {calculation} result is returned to the caller but is not saved in the calculation history",
+                    FailureSeverity.Degraded);
+            }
         }
     }
 }

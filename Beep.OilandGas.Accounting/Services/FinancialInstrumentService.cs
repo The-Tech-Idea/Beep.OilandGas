@@ -57,7 +57,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(instrumentId))
                 throw new ArgumentNullException(nameof(instrumentId));
             if (amount <= 0m)
-                throw new InvalidOperationException("Instrument amount must be positive");
+                throw RefusalException.Invalid("Instrument amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
@@ -124,7 +124,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(instrumentId))
                 throw new ArgumentNullException(nameof(instrumentId));
             if (changeAmount == 0m)
-                throw new InvalidOperationException("Fair value change cannot be zero");
+                throw RefusalException.Invalid("Fair value change cannot be zero.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 

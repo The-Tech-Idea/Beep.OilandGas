@@ -41,32 +41,24 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var amortization = ProductionAccountingService.CalculateAmortization(
-                    request.NetCapitalizedCosts,
-                    request.TotalProvedReservesBOE,
-                    request.ProductionBOE);
+            var amortization = ProductionAccountingService.CalculateAmortization(
+                request.NetCapitalizedCosts,
+                request.TotalProvedReservesBOE,
+                request.ProductionBOE);
 
-                // Post to GL: Debit Amortization Expense, Credit Accumulated Amortization
-                var journalEntryId = await _glIntegration.PostFinancialAccountingToGL(
-                    request.PropertyId ?? Guid.NewGuid().ToString(),
-                    "AmortizationExpense",
-                    amortization,
-                    isCash: false,
-                    transactionDate: DateTime.UtcNow,
-                    userId: userId);
+            // Post to GL: Debit Amortization Expense, Credit Accumulated Amortization
+            var journalEntryId = await _glIntegration.PostFinancialAccountingToGL(
+                request.PropertyId ?? Guid.NewGuid().ToString(),
+                "AmortizationExpense",
+                amortization,
+                isCash: false,
+                transactionDate: DateTime.UtcNow,
+                userId: userId);
 
-                return Ok(new { AmortizationAmount = amortization, JournalEntryId = journalEntryId });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating amortization");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { AmortizationAmount = amortization, JournalEntryId = journalEntryId });
         }
 
         /// <summary>
@@ -78,29 +70,21 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var capitalizedInterest = ProductionAccountingService.CalculateInterestCapitalization(data);
+            var capitalizedInterest = ProductionAccountingService.CalculateInterestCapitalization(data);
 
-                // Post to GL: Debit Capitalized Cost, Credit Interest Expense
-                var journalEntryId = await _glIntegration.PostFinancialAccountingToGL(
-                    data.PropertyId ?? Guid.NewGuid().ToString(),
-                    "DevelopmentCost",
-                    capitalizedInterest,
-                    isCash: false,
-                    transactionDate: DateTime.UtcNow,
-                    userId: userId);
+            // Post to GL: Debit Capitalized Cost, Credit Interest Expense
+            var journalEntryId = await _glIntegration.PostFinancialAccountingToGL(
+                data.PropertyId ?? Guid.NewGuid().ToString(),
+                "DevelopmentCost",
+                capitalizedInterest,
+                isCash: false,
+                transactionDate: DateTime.UtcNow,
+                userId: userId);
 
-                return Ok(new { CapitalizedInterest = capitalizedInterest, JournalEntryId = journalEntryId });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating interest capitalization");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { CapitalizedInterest = capitalizedInterest, JournalEntryId = journalEntryId });
         }
 
         /// <summary>
@@ -111,19 +95,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             [FromBody] ProductionData production,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var boe = ProductionAccountingService.ConvertProductionToBOE(production);
-                return Ok(new { BOE = boe });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error converting production to BOE");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var boe = ProductionAccountingService.ConvertProductionToBOE(production);
+            return Ok(new { BOE = boe });
         }
 
         /// <summary>
@@ -134,19 +110,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             [FromBody] ProvedReserves reserves,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var boe = ProductionAccountingService.ConvertReservesToBOE(reserves);
-                return Ok(new { BOE = boe });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error converting reserves to BOE");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var boe = ProductionAccountingService.ConvertReservesToBOE(reserves);
+            return Ok(new { BOE = boe });
         }
     }
 }

@@ -13,7 +13,7 @@ namespace Beep.OilandGas.Web.Services
         Task<List<string>> GetTransitionsAsync(string instanceId);
         Task<WorkOrderSummary?> TransitionAsync(string instanceId, TransitionWorkOrderRequest request);
         Task<List<InspectionCondition>> GetChecklistAsync(string instanceId);
-        Task<bool> RecordConditionAsync(string instanceId, int condSeq, RecordInspectionResultRequest request);
+        Task RecordConditionAsync(string instanceId, int condSeq, RecordInspectionResultRequest request);
         Task<List<CostVarianceLine>> GetCostsAsync(string instanceId);
         Task<List<ContractorAssignment>> GetContractorsAsync(string instanceId);
         Task<List<CalendarSlot>> GetCalendarAsync(DateTime from, DateTime to);

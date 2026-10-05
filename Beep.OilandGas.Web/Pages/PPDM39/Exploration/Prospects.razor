@@ -6,6 +6,7 @@
 @inject NavigationManager NavigationManager
 @inject IExplorationServiceClient ExplorationService
 @inject ILifeCycleService LifeCycleService
+@inject OilGasApiFailures Answers
 
 <PageTitle>Evaluate Exploration Prospects</PageTitle>
 
@@ -272,6 +273,10 @@
                 await ExplorationService.DeleteProspectAsync(prospect.Id);
                 Snackbar.Add("Prospect deleted successfully", Severity.Success);
                 await LoadProspects();
+            }
+            catch (OilGasApiException answer)
+            {
+                Snackbar.Add(Answers.Explain(answer, "deleting a prospect", "The prospect was not deleted"), Severity.Error);
             }
             catch (Exception)
             {

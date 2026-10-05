@@ -95,10 +95,12 @@ namespace Beep.OilandGas.HeatMap.Animation
                         lastFrameTime = currentTime;
                     }
 
-                    // Small delay to prevent CPU spinning
-                    await Task.Delay(1, cancellationTokenSource.Token);
+                    // Small delay to prevent CPU spinning. A stop ends the delay without throwing, and the loop
+                    // condition ends the task (OILGAS-CATCH-01): Stop() had waited on a task that ended cancelled and
+                    // caught the AggregateException, which hid a frame handler's failure along with the cancellation.
+                    await Task.Delay(1, cancellationTokenSource.Token).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
                 }
-            }, cancellationTokenSource.Token);
+            });
         }
 
         /// <summary>
@@ -112,14 +114,9 @@ namespace Beep.OilandGas.HeatMap.Animation
             cancellationTokenSource?.Cancel();
             animation.Stop();
 
-            try
-            {
-                animationTask?.Wait(1000);
-            }
-            catch (AggregateException)
-            {
-                // Task cancellation expected
-            }
+            // The loop ends normally once cancelled, so a wait that throws is a frame handler's failure, and reaches the
+            // caller.
+            animationTask?.Wait(1000);
 
             animationTask = null;
         }

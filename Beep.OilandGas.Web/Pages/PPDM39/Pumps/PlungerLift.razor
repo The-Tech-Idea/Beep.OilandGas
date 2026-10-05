@@ -9,6 +9,7 @@
 @inject ApiClient ApiClient
 @inject IDevelopmentServiceClient DevelopmentClient
 @inject ILifeCycleService LifeCycleService
+@inject OilGasApiFailures Answers
 
 <PageTitle>Design Plunger Lift System</PageTitle>
 
@@ -231,11 +232,12 @@
 
         try
         {
-            var saved = await PumpService.SavePlungerLiftDesignAsync(_plungerDesign);
-            if (saved)
-            {
-                Snackbar.Add("Plunger lift design saved successfully", Severity.Success);
-            }
+            await PumpService.SavePlungerLiftDesignAsync(_plungerDesign);
+            Snackbar.Add("Plunger lift design saved successfully", Severity.Success);
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "saving the plunger lift design", "The plunger lift design was not saved"), Severity.Error);
         }
         catch (Exception)
         {

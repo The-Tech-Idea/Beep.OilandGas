@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.EconomicAnalysis.Calculations
 {
@@ -28,7 +29,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Calculations
             Func<CashFlow, double, CashFlow> scalingFunction)
         {
             if (baseCaseCashFlows == null || baseCaseCashFlows.Length == 0)
-                throw new ArgumentException("Cash flows cannot be null or empty.", nameof(baseCaseCashFlows));
+                throw RefusalException.Invalid("Cash flows are required.");
 
             if (scalingFunction == null)
                 throw new ArgumentNullException(nameof(scalingFunction));

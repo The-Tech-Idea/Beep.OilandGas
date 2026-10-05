@@ -173,7 +173,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error generating income statement: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error generating income statement");
                 throw;
             }
         }
@@ -396,7 +396,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error generating balance sheet: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error generating balance sheet");
                 throw;
             }
         }
@@ -743,7 +743,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error generating cash flow statement: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error generating cash flow statement");
                 throw;
             }
         }
@@ -877,7 +877,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error exporting financial statements: {Message}", ex.Message);
+                _logger?.LogError(ex, "Error exporting financial statements");
                 throw;
             }
         }

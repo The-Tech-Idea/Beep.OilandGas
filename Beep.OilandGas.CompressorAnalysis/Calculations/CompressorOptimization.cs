@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.CompressorAnalysis.Data;
 using Beep.OilandGas.GasProperties.Calculations;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.CompressorAnalysis.Calculations
 {
@@ -152,7 +153,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
             if (compressorProperties.OPERATING_CONDITIONS == null)
                 throw new ArgumentNullException(nameof(compressorProperties.OPERATING_CONDITIONS));
             if (numberOfStages < 1)
-                throw new ArgumentOutOfRangeException(nameof(numberOfStages));
+                throw RefusalException.Invalid("At least one compression stage is required.");
 
             var conditions = compressorProperties.OPERATING_CONDITIONS;
             decimal overallRatio = conditions.DISCHARGE_PRESSURE / conditions.SUCTION_PRESSURE;
@@ -168,7 +169,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
             if (customRatios != null)
             {
                 if (customRatios.Length != numberOfStages)
-                    throw new ArgumentException("customRatios length must match numberOfStages.");
+                    throw RefusalException.Invalid("Give one compression ratio for each stage.");
                 ratios = customRatios;
             }
             else
@@ -326,20 +327,19 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
                 int projectLifeYears = 20,
                 decimal discountRate = 0.10m)
         {
+            // The stage counts the multistage analysis can evaluate are 1–12; the range is asked here rather than each
+            // count tried and its failure skipped (OILGAS-CATCH-01). That catch had also skipped every real failure, and
+            // when all were skipped answered with First() on an empty list.
+            if (maxStages < 1 || maxStages > 12)
+                throw RefusalException.Invalid("The number of stages to compare must be between 1 and 12.");
+
             var options = new List<LifeCycleCostResult>();
             for (int n = 1; n <= maxStages; n++)
             {
-                try
-                {
-                    var lcc = CalculateLifeCycleCost(
-                        compressorProperties, n, "Centrifugal",
-                        electricityPriceKwh, 8000m, projectLifeYears, discountRate);
-                    options.Add(lcc);
-                }
-                catch
-                {
-                    // Skip infeasible configurations
-                }
+                var lcc = CalculateLifeCycleCost(
+                    compressorProperties, n, "Centrifugal",
+                    electricityPriceKwh, 8000m, projectLifeYears, discountRate);
+                options.Add(lcc);
             }
 
             var sorted = options.OrderBy(o => o.LifeCycleCostNpvUsd).ToList();

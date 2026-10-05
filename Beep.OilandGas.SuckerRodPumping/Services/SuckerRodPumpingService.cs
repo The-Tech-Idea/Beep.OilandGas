@@ -10,6 +10,7 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Editor;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.SuckerRodPumping.Services
 {
@@ -54,7 +55,7 @@ namespace Beep.OilandGas.SuckerRodPumping.Services
         public async Task<SuckerRodPumpDesign> DesignPumpSystemAsync(string wellUWI, SuckerRodPumpWellProperties wellProperties)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (wellProperties == null)
                 throw new ArgumentNullException(nameof(wellProperties));
 
@@ -101,7 +102,7 @@ namespace Beep.OilandGas.SuckerRodPumping.Services
             string userId)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
@@ -159,7 +160,7 @@ namespace Beep.OilandGas.SuckerRodPumping.Services
         /// </summary>
         public async Task<SuckerRodPumpPerformance> AnalyzePerformanceAsync(string pumpId, SuckerRodAnalyzeRequest request)
         {
-            if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentException("Pump ID cannot be null or empty", nameof(pumpId));
+            if (string.IsNullOrWhiteSpace(pumpId)) throw RefusalException.Invalid("A pump ID is required.");
             if (request == null) throw new ArgumentNullException(nameof(request));
 
             _logger?.LogInformation("Analyzing sucker rod pump performance for pump {PumpId}", pumpId);
@@ -196,7 +197,7 @@ namespace Beep.OilandGas.SuckerRodPumping.Services
             string userId)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 

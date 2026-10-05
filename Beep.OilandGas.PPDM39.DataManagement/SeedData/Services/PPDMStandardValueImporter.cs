@@ -55,92 +55,71 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
                 Errors = new List<string>()
             };
 
-            try
-            {
-                // Use PPDMReferenceData.json from Templates folder (consolidated data)
-                var referenceDataPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "SeedData", "Templates", "PPDMReferenceData.json");
-                if (!File.Exists(referenceDataPath))
-                {
-                    result.Success = false;
-                    result.Errors.Add($"PPDMReferenceData.json not found at: {referenceDataPath}");
-                    return result;
-                }
-
-                var jsonContent = await File.ReadAllTextAsync(referenceDataPath);
-                var jsonDoc = JsonDocument.Parse(jsonContent);
-                var root = jsonDoc.RootElement;
-
-                // PPDMReferenceData.json has structure: { "category": "...", "tables": [ { "tableName": "...", "data": [...] } ] }
-                if (root.TryGetProperty("tables", out var tablesElement) && tablesElement.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var tableElement in tablesElement.EnumerateArray())
-                    {
-                        if (!tableElement.TryGetProperty("tableName", out var tableNameElement))
-                            continue;
-
-                        var currentTableName = tableNameElement.GetString();
-                        if (string.IsNullOrEmpty(currentTableName))
-                            continue;
-
-                        // Filter by tableName if specified
-                        if (!string.IsNullOrEmpty(tableName) && !currentTableName.Equals(tableName, StringComparison.OrdinalIgnoreCase))
-                        {
-                            continue;
-                        }
-
-                        // Only process RA_* tables
-                        if (!currentTableName.StartsWith("RA_", StringComparison.OrdinalIgnoreCase))
-                        {
-                            continue;
-                        }
-
-                        try
-                        {
-                            if (tableElement.TryGetProperty("data", out var dataElement) && dataElement.ValueKind == JsonValueKind.Array)
-                            {
-                                var records = new List<Dictionary<string, object>>();
-                                foreach (var record in dataElement.EnumerateArray())
-                                {
-                                    var recordDict = new Dictionary<string, object>();
-                                    foreach (var prop in record.EnumerateObject())
-                                    {
-                                        recordDict[prop.Name] = prop.Value.ValueKind switch
-                                        {
-                                            JsonValueKind.String => prop.Value.GetString() ?? string.Empty,
-                                            JsonValueKind.Number => prop.Value.GetDecimal(),
-                                            JsonValueKind.True => true,
-                                            JsonValueKind.False => false,
-                                            JsonValueKind.Null => null!,
-                                            _ => prop.Value.GetRawText()
-                                        };
-                                    }
-                                    records.Add(recordDict);
-                                }
-
-                                // Import to RA_* table
-                                var importResult = await ImportToRATableAsync(currentTableName, records, skipExisting, userId);
-                                result.RecordsProcessed += importResult.RecordsProcessed;
-                                result.RecordsInserted += importResult.RecordsInserted;
-                                result.RecordsSkipped += importResult.RecordsSkipped;
-                                result.Errors.AddRange(importResult.Errors);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            result.Errors.Add($"Error importing {currentTableName}: {ex.Message}");
-                        }
-                    }
-                }
-
-                if (result.Errors.Any())
-                {
-                    result.Success = false;
-                }
-            }
-            catch (Exception ex)
+            // OILGAS-CATCH-01: the template is shipped with the application, so a template that cannot be read, a table that
+            // cannot be imported and a record that cannot be written are failures, and they reach the caller. Each was
+            // caught — the record's, the table's, the whole import's — and recorded in the exception's own words, and the
+            // import went on as if the rest had worked.
+            // Use PPDMReferenceData.json from Templates folder (consolidated data)
+            var referenceDataPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "SeedData", "Templates", "PPDMReferenceData.json");
+            if (!File.Exists(referenceDataPath))
             {
                 result.Success = false;
-                result.Errors.Add($"Import error: {ex.Message}");
+                result.Errors.Add("PPDMReferenceData.json was not found with the application's seed templates.");
+                return result;
+            }
+
+            var jsonContent = await File.ReadAllTextAsync(referenceDataPath);
+            using var jsonDoc = JsonDocument.Parse(jsonContent);
+            var root = jsonDoc.RootElement;
+
+            // PPDMReferenceData.json has structure: { "category": "...", "tables": [ { "tableName": "...", "data": [...] } ] }
+            if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("tables", out var tablesElement) &&
+                tablesElement.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var tableElement in tablesElement.EnumerateArray())
+                {
+                    var currentTableName = SeedTemplateJson.StringProperty(tableElement, "tableName");
+                    if (string.IsNullOrEmpty(currentTableName))
+                        continue;
+
+                    // Filter by tableName if specified
+                    if (!string.IsNullOrEmpty(tableName) && !currentTableName.Equals(tableName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    // Only process RA_* tables
+                    if (!currentTableName.StartsWith("RA_", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    if (tableElement.TryGetProperty("data", out var dataElement) && dataElement.ValueKind == JsonValueKind.Array)
+                    {
+                        var records = new List<Dictionary<string, object>>();
+                        foreach (var record in dataElement.EnumerateArray())
+                        {
+                            if (record.ValueKind != JsonValueKind.Object)
+                                continue;
+                            var recordDict = new Dictionary<string, object>();
+                            foreach (var prop in record.EnumerateObject())
+                                recordDict[prop.Name] = SeedTemplateJson.Value(prop.Value);
+                            records.Add(recordDict);
+                        }
+
+                        // Import to RA_* table
+                        var importResult = await ImportToRATableAsync(currentTableName, records, skipExisting, userId);
+                        result.RecordsProcessed += importResult.RecordsProcessed;
+                        result.RecordsInserted += importResult.RecordsInserted;
+                        result.RecordsSkipped += importResult.RecordsSkipped;
+                        result.Errors.AddRange(importResult.Errors);
+                    }
+                }
+            }
+
+            if (result.Errors.Any())
+            {
+                result.Success = false;
             }
 
             return result;
@@ -160,89 +139,74 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
                 Errors = new List<string>()
             };
 
-            try
-            {
-                var metadata = await _metadata.GetTableMetadataAsync(tableName);
-                if (metadata == null)
-                {
-                    result.Success = false;
-                    result.Errors.Add($"Table metadata not found: {tableName}");
-                    return result;
-                }
-
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}") ??
-                                Type.GetType($"Beep.OilandGas.Models.Data.{metadata.EntityTypeName}");
-
-                if (entityType == null)
-                {
-                    result.Success = false;
-                    result.Errors.Add($"Entity type not found for table: {tableName}");
-                    return result;
-                }
-
-                var repository = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, _connectionName, tableName);
-
-                foreach (var record in records)
-                {
-                    try
-                    {
-                        var entity = Activator.CreateInstance(entityType);
-                        var entityTypeInfo = entityType;
-
-                        // Set properties from record
-                        foreach (var kvp in record)
-                        {
-                            var prop = entityTypeInfo.GetProperty(kvp.Key, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                            if (prop != null && prop.CanWrite)
-                            {
-                                var value = ConvertValue(kvp.Value, prop.PropertyType);
-                                prop.SetValue(entity, value);
-                            }
-                        }
-
-                        // Check if exists
-                        if (skipExisting)
-                        {
-                            var primaryKeyColumn = metadata.PrimaryKeyColumn;
-                            if (!string.IsNullOrEmpty(primaryKeyColumn) && record.ContainsKey(primaryKeyColumn))
-                            {
-                                var pkValue = record[primaryKeyColumn]?.ToString();
-                                if (!string.IsNullOrEmpty(pkValue))
-                                {
-                                    var existing = await repository.GetByIdAsync(pkValue);
-                                    if (existing != null)
-                                    {
-                                        result.RecordsSkipped++;
-                                        result.RecordsProcessed++;
-                                        continue;
-                                    }
-                                }
-                            }
-                        }
-
-                        // Set common columns
-                        if (entity is IPPDMEntity ppdmEntity)
-                            _commonColumnHandler.PrepareForInsert(ppdmEntity, userId);
-
-                        // Insert
-                        var inserted = await repository.InsertAsync(entity, userId);
-                        if (inserted != null)
-                        {
-                            result.RecordsInserted++;
-                        }
-                        result.RecordsProcessed++;
-                    }
-                    catch (Exception ex)
-                    {
-                        result.Errors.Add($"Error importing record in {tableName}: {ex.Message}");
-                    }
-                }
-            }
-            catch (Exception ex)
+            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            if (metadata == null)
             {
                 result.Success = false;
-                result.Errors.Add($"Error importing {tableName}: {ex.Message}");
+                result.Errors.Add($"Table metadata not found: {tableName}");
+                return result;
+            }
+
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}") ??
+                            Type.GetType($"Beep.OilandGas.Models.Data.{metadata.EntityTypeName}");
+
+            if (entityType == null)
+            {
+                result.Success = false;
+                result.Errors.Add($"Entity type not found for table: {tableName}");
+                return result;
+            }
+
+            var repository = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, _connectionName, tableName);
+
+            foreach (var record in records)
+            {
+                var entity = Activator.CreateInstance(entityType);
+                var entityTypeInfo = entityType;
+
+                // Set properties from record
+                foreach (var kvp in record)
+                {
+                    var prop = entityTypeInfo.GetProperty(kvp.Key, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+                    if (prop != null && prop.CanWrite)
+                    {
+                        var value = ConvertValue(kvp.Value, prop.PropertyType);
+                        prop.SetValue(entity, value);
+                    }
+                }
+
+                // Check if exists
+                if (skipExisting)
+                {
+                    var primaryKeyColumn = metadata.PrimaryKeyColumn;
+                    if (!string.IsNullOrEmpty(primaryKeyColumn) && record.ContainsKey(primaryKeyColumn))
+                    {
+                        var pkValue = record[primaryKeyColumn]?.ToString();
+                        if (!string.IsNullOrEmpty(pkValue))
+                        {
+                            var existing = await repository.GetByIdAsync(pkValue);
+                            if (existing != null)
+                            {
+                                result.RecordsSkipped++;
+                                result.RecordsProcessed++;
+                                continue;
+                            }
+                        }
+                    }
+                }
+
+                // Set common columns
+                if (entity is IPPDMEntity ppdmEntity)
+                    _commonColumnHandler.PrepareForInsert(ppdmEntity, userId);
+
+                // Insert
+                var inserted = await repository.InsertAsync(entity, userId);
+                if (inserted != null)
+                {
+                    result.RecordsInserted++;
+                }
+                result.RecordsProcessed++;
             }
 
             return result;

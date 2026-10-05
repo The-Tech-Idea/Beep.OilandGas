@@ -1070,26 +1070,14 @@ namespace Beep.OilandGas.PumpPerformance.Rendering
             float legendWidth = 150f;
             float legendHeight = legendItems.Count * itemHeight + padding * 2;
 
-            switch (configuration.LegendPosition)
+            // Every position is named (OILGAS-CATCH-01): a position added later is a build error here, not a default.
+            (legendX, legendY) = configuration.LegendPosition switch
             {
-                case LegendPosition.TopLeft:
-                    legendX = plotAreaX + 10f;
-                    legendY = plotAreaY + 10f;
-                    break;
-                case LegendPosition.TopRight:
-                    legendX = plotAreaX + plotAreaWidth - legendWidth - 10f;
-                    legendY = plotAreaY + 10f;
-                    break;
-                case LegendPosition.BottomLeft:
-                    legendX = plotAreaX + 10f;
-                    legendY = plotAreaY + plotAreaHeight - legendHeight - 10f;
-                    break;
-                case LegendPosition.BottomRight:
-                default:
-                    legendX = plotAreaX + plotAreaWidth - legendWidth - 10f;
-                    legendY = plotAreaY + plotAreaHeight - legendHeight - 10f;
-                    break;
-            }
+                LegendPosition.TopLeft => (plotAreaX + 10f, plotAreaY + 10f),
+                LegendPosition.TopRight => (plotAreaX + plotAreaWidth - legendWidth - 10f, plotAreaY + 10f),
+                LegendPosition.BottomLeft => (plotAreaX + 10f, plotAreaY + plotAreaHeight - legendHeight - 10f),
+                LegendPosition.BottomRight => (plotAreaX + plotAreaWidth - legendWidth - 10f, plotAreaY + plotAreaHeight - legendHeight - 10f)
+            };
 
             // Draw legend background
             using (var paint = new SKPaint

@@ -43,26 +43,18 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Purchase order ID is required." });
-            try
-            {
-                var po = _service.TraditionalAccounting.PurchaseOrder.GetPurchaseOrder(id);
-                if (po == null)
-                        return NotFound(new { error = $"Purchase order with ID {id} not found." });
+            var po = _service.TraditionalAccounting.PurchaseOrder.GetPurchaseOrder(id);
+            if (po == null)
+                    return NotFound(new { error = $"Purchase order with ID {id} not found." });
 
-                return Ok(new
-                {
-                    PurchaseOrderId = po.PURCHASE_ORDER_ID,
-                    PoNumber = po.PO_NUMBER,
-                    VendorBaId = po.VENDOR_BA_ID,
-                    PoDate = po.PO_DATE,
-                    Status = po.STATUS
-                });
-            }
-            catch (Exception ex)
+            return Ok(new
             {
-                _logger.LogError(ex, "Error getting purchase order {POId}", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                PurchaseOrderId = po.PURCHASE_ORDER_ID,
+                PoNumber = po.PO_NUMBER,
+                VendorBaId = po.VENDOR_BA_ID,
+                PoDate = po.PO_DATE,
+                Status = po.STATUS
+            });
         }
 
         /// <summary>
@@ -74,20 +66,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                var po = _service.TraditionalAccounting.PurchaseOrder.CreatePurchaseOrder(request, userId);
-                // Note: PO creation doesn't post to GL until receipt
-                return Ok(new { PurchaseOrderId = po.PURCHASE_ORDER_ID, PoNumber = po.PO_NUMBER });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating purchase order");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var po = _service.TraditionalAccounting.PurchaseOrder.CreatePurchaseOrder(request, userId);
+            // Note: PO creation doesn't post to GL until receipt
+            return Ok(new { PurchaseOrderId = po.PURCHASE_ORDER_ID, PoNumber = po.PO_NUMBER });
         }
     }
 }

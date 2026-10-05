@@ -18,19 +18,9 @@ public sealed class RoyaltyAccrualController(IRoyaltyService royalties, IAccessC
     {
         var actor = User.ActingUserId();
         if (string.IsNullOrWhiteSpace(allocationDetailId)) return BadRequest();
-        try
-        {
-            if (!await access.HasPermissionAsync(actor, "Accounting.PostJournal", null)) return Forbid();
-            var field = await royalties.GetAllocationFieldAsync(allocationDetailId);
-            if (!(await access.CheckAssetAccessAsync(actor, field, "FIELD", null)).HasAccess) return Forbid();
-            return Ok(await royalties.CalculateAsync(allocationDetailId, actor));
-        }
-        catch (RoyaltyException ex) { return Conflict(new { error = ex.Message }); }
-        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Royalty accrual failed for allocation detail {DetailId}", allocationDetailId);
-            return StatusCode(500, new { error = "Royalty accrual could not be confirmed. Check its recorded status before retrying." });
-        }
+        if (!await access.HasPermissionAsync(actor, "Accounting.PostJournal", null)) return Forbid();
+        var field = await royalties.GetAllocationFieldAsync(allocationDetailId);
+        if (!(await access.CheckAssetAccessAsync(actor, field, "FIELD", null)).HasAccess) return Forbid();
+        return Ok(await royalties.CalculateAsync(allocationDetailId, actor));
     }
 }

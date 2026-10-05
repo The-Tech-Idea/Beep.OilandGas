@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using Beep.OilandGas.Repository;
 using Microsoft.EntityFrameworkCore;
@@ -32,7 +33,7 @@ public sealed class RepositoryApplicationRolePermissionStore(RepositoryRoleAssig
         var grants = (await assignments.GetRolePermissionsAsync(roleId)).Where(x =>
             x.PermissionId == permissionId || x.PermissionId == permission?.PermissionId || x.PermissionId == permission?.PermissionKey).ToList();
         if (grants.Count == 0) return false;
-        if (grants.Count != 1) throw new InvalidOperationException("Multiple permission grants match. Reconcile the role grants before revoking by permission.");
+        if (grants.Count != 1) throw RefusalException.Conflict("Multiple permission grants match. Reconcile the role grants before revoking by permission.");
         return await assignments.RevokePermissionFromRoleAsync(grants[0].RolePermissionId, actor);
     }
 
@@ -40,7 +41,7 @@ public sealed class RepositoryApplicationRolePermissionStore(RepositoryRoleAssig
     {
         var user = accessor.HttpContext?.User;
         if (user?.Identity?.IsAuthenticated != true || !user.IsInRole("Administrator"))
-            throw new UnauthorizedAccessException("A local administrator is required to change role permissions.");
+            throw RefusalException.Forbidden("A local administrator is required to change role permissions.");
         return user.ActingUserId();
     }
 }

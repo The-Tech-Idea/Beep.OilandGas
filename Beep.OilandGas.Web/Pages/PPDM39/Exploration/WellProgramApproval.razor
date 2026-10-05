@@ -7,6 +7,7 @@
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
 
 <PageTitle>Approve Well Programme</PageTitle>
 
@@ -470,6 +471,11 @@
         try
         {
             await ExplorationService.RecordProspectDecisionAsync(prospectId, decision, _form.ApproverComments);
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "recording a well program decision", "The well program decision was not recorded"), Severity.Error);
+            return;
         }
         catch (Exception)
         {

@@ -164,18 +164,18 @@ public class NodalAnalysisControllerTests
         core.VerifyAll();
     }
 
+    // OILGAS-CATCH-01: the analysis service's refusal reaches the API's handler as itself (400 with its sentence).
     [Fact]
-    public async Task SaveResult_ReturnsBadRequest_WhenServiceThrowsArgumentException()
+    public async Task SaveResult_PassesTheServicesRefusalThrough()
     {
         var core = new Mock<INodalAnalysisService>(MockBehavior.Strict);
         var payload = new NodalAnalysisRunResult { AnalysisId = "A-1", WellUWI = "UWI-1" };
-        core.Setup(s => s.SaveAnalysisResultAsync(It.IsAny<NodalAnalysisRunResult>(), "user-1"))
-            .ThrowsAsync(new ArgumentException("Persist rejected for test."));
+        var refusal = Beep.OilandGas.Models.Core.Refusals.RefusalException.Invalid("Persist rejected for test.");
+        core.Setup(s => s.SaveAnalysisResultAsync(It.IsAny<NodalAnalysisRunResult>(), "user-1")).ThrowsAsync(refusal);
         var controller = SignedIn(new NodalAnalysisController(core.Object, NullLogger<NodalAnalysisController>.Instance), "user-1");
 
-        var result = await controller.SaveResult(payload);
-
-        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Same(refusal, await Refusals.RefusedAsync(Beep.OilandGas.Models.Core.Refusals.RefusalKind.Invalid,
+            () => controller.SaveResult(payload)));
         core.VerifyAll();
     }
 

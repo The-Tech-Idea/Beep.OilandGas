@@ -30,69 +30,37 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         [HttpPost("generate")]
         public async Task<ActionResult<HeatMapResult>> GenerateHeatMap([FromBody] GenerateHeatMapRequest request)
         {
-            try
-            {
-                if (request.Configuration == null)
-                        return BadRequest(new { error = "Configuration is required." });
-                var result = await _service.GenerateHeatMapAsync(request.DataPoints, request.Configuration);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating heat map");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            if (request.Configuration == null)
+                    return BadRequest(new { error = "Configuration is required." });
+            var result = await _service.GenerateHeatMapAsync(request.DataPoints, request.Configuration);
+            return Ok(result);
         }
 
         [HttpPost("configuration")]
         public async Task<ActionResult<string>> SaveConfiguration([FromBody] HeatMapConfigurationRecord configuration)
         {
             var userId = User.ActingUserId();
-            try
-            {
-                var heatMapId = await _service.SaveHeatMapConfigurationAsync(configuration, userId);
-                return Ok(new { message = "Heat map configuration saved successfully", heatMapId });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving heat map configuration");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var heatMapId = await _service.SaveHeatMapConfigurationAsync(configuration, userId);
+            return Ok(new { message = "Heat map configuration saved successfully", heatMapId });
         }
 
         [HttpGet("configuration/{heatMapId}")]
         public async Task<ActionResult<HeatMapConfigurationRecord>> GetConfiguration(string heatMapId)
         {
             if (string.IsNullOrWhiteSpace(heatMapId)) return BadRequest(new { error = "Heat map ID is required." });
-            try
-            {
-                var result = await _service.GetHeatMapConfigurationAsync(heatMapId);
-                if (result == null)
-                        return NotFound(new { error = $"Heat map configuration {heatMapId} not found." });
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting heat map configuration {HeatMapId}", heatMapId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.GetHeatMapConfigurationAsync(heatMapId);
+            if (result == null)
+                    return NotFound(new { error = $"Heat map configuration {heatMapId} not found." });
+            return Ok(result);
         }
 
         [HttpPost("production")]
         public async Task<ActionResult<HeatMapResult>> GenerateProductionHeatMap([FromBody] GenerateProductionHeatMapRequest request)
         {
-            try
-            {
-                var startDate = request.StartDate ?? DateTime.UtcNow.AddDays(-30);
-                var endDate = request.EndDate ?? DateTime.UtcNow;
-                var result = await _service.GenerateProductionHeatMapAsync(request.FieldId, startDate, endDate);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating production heat map for field {FieldId}", request.FieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var startDate = request.StartDate ?? DateTime.UtcNow.AddDays(-30);
+            var endDate = request.EndDate ?? DateTime.UtcNow;
+            var result = await _service.GenerateProductionHeatMapAsync(request.FieldId, startDate, endDate);
+            return Ok(result);
         }
     }
 }

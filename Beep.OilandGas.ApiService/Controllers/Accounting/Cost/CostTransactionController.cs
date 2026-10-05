@@ -42,55 +42,44 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var connName = connectionName ?? _service.DefaultConnectionName;
+            var repository = _service.GetRepository(typeof(COST_TRANSACTION), connName, "COST_TRANSACTION");
+
+            var transaction = new COST_TRANSACTION
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+                COST_TRANSACTION_ID = Guid.NewGuid().ToString(),
+                PROPERTY_ID = request.PropertyId,
+                TRANSACTION_DATE = request.TransactionDate ?? DateTime.UtcNow,
+                AMOUNT = request.CostAmount,
+                IS_CAPITALIZED = request.IsCapitalized ? "Y" : "N",
+                IS_EXPENSED = request.IsCapitalized ? "N" : "Y",
+                COST_TYPE = request.IsCapitalized ? "Capital" : "Operating",
+                ACTIVE_IND = "Y",
+                ROW_CREATED_DATE = DateTime.UtcNow,
+                ROW_CREATED_BY = userId
+            };
 
-                var connName = connectionName ?? _service.DefaultConnectionName;
-                var repository = _service.GetRepository(typeof(COST_TRANSACTION), connName, "COST_TRANSACTION");
+            if (!string.IsNullOrEmpty(request.Description))
+            {
+                transaction.REMARK = request.Description;
+            }
 
-                var transaction = new COST_TRANSACTION
-                {
-                    COST_TRANSACTION_ID = Guid.NewGuid().ToString(),
-                    PROPERTY_ID = request.PropertyId,
-                    TRANSACTION_DATE = request.TransactionDate ?? DateTime.UtcNow,
-                    AMOUNT = request.CostAmount,
-                    IS_CAPITALIZED = request.IsCapitalized ? "Y" : "N",
-                    IS_EXPENSED = request.IsCapitalized ? "N" : "Y",
-                    COST_TYPE = request.IsCapitalized ? "Capital" : "Operating",
-                    ACTIVE_IND = "Y",
-                    ROW_CREATED_DATE = DateTime.UtcNow,
-                    ROW_CREATED_BY = userId
-                };
+            await repository.InsertAsync(transaction, userId);
 
-                if (!string.IsNullOrEmpty(request.Description))
-                {
-                    transaction.REMARK = request.Description;
-                }
-
-                await repository.InsertAsync(transaction, userId);
-
-                var journalEntryId = await _glIntegration.PostCostToGL(
+            var journalEntryId = await LedgerPosting.PostAsync(
+                () => _glIntegration.PostCostToGL(
                     transaction.COST_TRANSACTION_ID,
                     transaction.AMOUNT ?? 0m,
                     isCapitalized: request.IsCapitalized,
                     isCash: request.IsCash,
                     transactionDate: transaction.TRANSACTION_DATE ?? DateTime.UtcNow,
-                    userId: userId);
+                    userId: userId),
+                $"Cost transaction {transaction.COST_TRANSACTION_ID}", transaction.COST_TRANSACTION_ID, "COST");
 
-                return Ok(new { TransactionId = transaction.COST_TRANSACTION_ID, JournalEntryId = journalEntryId });
-            }
-            catch (GLPostingException ex)
-            {
-                _logger.LogError(ex, "GL posting failed for cost transaction");
-                    return StatusCode(500, new { error = "Cost transaction created but GL posting failed." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating cost transaction");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { TransactionId = transaction.COST_TRANSACTION_ID, JournalEntryId = journalEntryId });
         }
     }
 

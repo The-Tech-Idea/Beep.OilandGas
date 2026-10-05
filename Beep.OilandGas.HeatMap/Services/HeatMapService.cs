@@ -17,6 +17,7 @@ using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using SkiaSharp;
 using Beep.OilandGas.PPDM.Models;
+using Beep.OilandGas.Models.Core.Refusals;
 using HeatMapConfigModel = Beep.OilandGas.Models.Data.HeatMap.HEAT_MAP_CONFIGURATION;
 
 namespace Beep.OilandGas.HeatMap.Services
@@ -53,7 +54,7 @@ namespace Beep.OilandGas.HeatMap.Services
         public async Task<HeatMapResult> GenerateHeatMapAsync(List<Beep.OilandGas.Models.Data.HeatMap.HEAT_MAP_DATA_POINT> dataPoints, HeatMapConfigurationRecord configuration)
         {
             if (dataPoints == null || dataPoints.Count == 0)
-                throw new ArgumentException("Data points cannot be null or empty", nameof(dataPoints));
+                throw RefusalException.Invalid("At least one data point is required.");
             if (configuration == null)
                 throw new ArgumentNullException(nameof(configuration));
 
@@ -175,7 +176,7 @@ namespace Beep.OilandGas.HeatMap.Services
          public async Task<HeatMapResult> GenerateProductionHeatMapAsync(string fieldId, DateTime startDate, DateTime endDate)
          {
              if (string.IsNullOrWhiteSpace(fieldId))
-                 throw new ArgumentException("Field ID cannot be null or empty", nameof(fieldId));
+                 throw RefusalException.Invalid("A field ID is required.");
 
              _logger?.LogInformation("Generating production heat map for field {FieldId} from {StartDate} to {EndDate}",
                  fieldId, startDate, endDate);
@@ -205,9 +206,9 @@ namespace Beep.OilandGas.HeatMap.Services
              List<Beep.OilandGas.Models.Data.HeatMap.HEAT_MAP_DATA_POINT> dataPoints)
          {
              if (string.IsNullOrWhiteSpace(locationId))
-                 throw new ArgumentException("Location ID cannot be null or empty", nameof(locationId));
+                 throw RefusalException.Invalid("A location ID is required.");
              if (dataPoints == null || dataPoints.Count == 0)
-                 throw new ArgumentException("Data points cannot be null or empty", nameof(dataPoints));
+                 throw RefusalException.Invalid("At least one data point is required.");
 
              _logger?.LogInformation("Analyzing thermal pattern for location {LocationId} with {Count} data points",
                  locationId, dataPoints.Count);
@@ -259,9 +260,9 @@ namespace Beep.OilandGas.HeatMap.Services
              decimal stdDevThreshold = 2.0m)
          {
              if (string.IsNullOrWhiteSpace(locationId))
-                 throw new ArgumentException("Location ID cannot be null or empty", nameof(locationId));
+                 throw RefusalException.Invalid("A location ID is required.");
              if (dataPoints == null || dataPoints.Count == 0)
-                 throw new ArgumentException("Data points cannot be null or empty", nameof(dataPoints));
+                 throw RefusalException.Invalid("At least one data point is required.");
 
              _logger?.LogInformation("Detecting thermal anomalies for location {LocationId} with threshold {Threshold}",
                  locationId, stdDevThreshold);
@@ -323,9 +324,9 @@ namespace Beep.OilandGas.HeatMap.Services
              int forecastMonths = 6)
          {
              if (string.IsNullOrWhiteSpace(locationId))
-                 throw new ArgumentException("Location ID cannot be null or empty", nameof(locationId));
+                 throw RefusalException.Invalid("A location ID is required.");
              if (historicalTemperatures == null || historicalTemperatures.Count < 2)
-                 throw new ArgumentException("At least 2 historical temperature values required", nameof(historicalTemperatures));
+                 throw RefusalException.Invalid("At least two historical temperature values are required.");
 
              _logger?.LogInformation("Analyzing temperature trend for location {LocationId} with {Count} historical points",
                  locationId, historicalTemperatures.Count);
@@ -392,9 +393,9 @@ namespace Beep.OilandGas.HeatMap.Services
              List<Beep.OilandGas.Models.Data.HeatMap.HEAT_MAP_DATA_POINT> dataPoints)
          {
              if (string.IsNullOrWhiteSpace(locationId))
-                 throw new ArgumentException("Location ID cannot be null or empty", nameof(locationId));
+                 throw RefusalException.Invalid("A location ID is required.");
              if (dataPoints == null || dataPoints.Count < 2)
-                 throw new ArgumentException("At least 2 data points required for gradient analysis", nameof(dataPoints));
+                 throw RefusalException.Invalid("At least two data points are required for a gradient analysis.");
 
              _logger?.LogInformation("Analyzing temperature gradient for location {LocationId}",
                  locationId);
@@ -461,9 +462,9 @@ namespace Beep.OilandGas.HeatMap.Services
              List<Beep.OilandGas.Models.Data.HeatMap.HEAT_MAP_DATA_POINT> dataPoints)
          {
              if (string.IsNullOrWhiteSpace(locationId))
-                 throw new ArgumentException("Location ID cannot be null or empty", nameof(locationId));
+                 throw RefusalException.Invalid("A location ID is required.");
              if (dataPoints == null || dataPoints.Count == 0)
-                 throw new ArgumentException("Data points cannot be null or empty", nameof(dataPoints));
+                 throw RefusalException.Invalid("At least one data point is required.");
 
              _logger?.LogInformation("Identifying temperature zones for location {LocationId}",
                  locationId);
@@ -499,9 +500,9 @@ namespace Beep.OilandGas.HeatMap.Services
              List<Beep.OilandGas.Models.Data.HeatMap.HEAT_MAP_DATA_POINT> dataPoints)
          {
              if (string.IsNullOrWhiteSpace(imageId))
-                 throw new ArgumentException("Image ID cannot be null or empty", nameof(imageId));
+                 throw RefusalException.Invalid("An image ID is required.");
              if (dataPoints == null || dataPoints.Count == 0)
-                 throw new ArgumentException("Data points cannot be null or empty", nameof(dataPoints));
+                 throw RefusalException.Invalid("At least one data point is required.");
 
              _logger?.LogInformation("Assessing thermal image quality for image {ImageId}",
                  imageId);
@@ -565,11 +566,11 @@ namespace Beep.OilandGas.HeatMap.Services
              List<Beep.OilandGas.Models.Data.HeatMap.HEAT_MAP_DATA_POINT> currentData)
          {
              if (string.IsNullOrWhiteSpace(locationId))
-                 throw new ArgumentException("Location ID cannot be null or empty", nameof(locationId));
+                 throw RefusalException.Invalid("A location ID is required.");
              if (baselineData == null || baselineData.Count == 0)
-                 throw new ArgumentException("Baseline data cannot be null or empty", nameof(baselineData));
+                 throw RefusalException.Invalid("Baseline data points are required.");
              if (currentData == null || currentData.Count == 0)
-                 throw new ArgumentException("Current data cannot be null or empty", nameof(currentData));
+                 throw RefusalException.Invalid("Current data points are required.");
 
              _logger?.LogInformation("Comparing thermal data for location {LocationId}",
                  locationId);

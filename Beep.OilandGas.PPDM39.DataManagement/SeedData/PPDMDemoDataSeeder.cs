@@ -56,6 +56,10 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
         /// <summary>
         /// Seed full demo dataset
         /// </summary>
+        /// <remarks>
+        /// OILGAS-CATCH-01: a failure reaches the caller (the demo database service reports it and says the data was not
+        /// completely seeded). It was caught and answered as a failed result carrying the exception's text.
+        /// </remarks>
         public async Task<SeedDataResult> SeedFullDemoDatasetAsync(string userId = "SYSTEM")
         {
             var result = new SeedDataResult
@@ -66,50 +70,40 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
                 RecordsInserted = 0
             };
 
-            try
-            {
-                _logger?.LogInformation("Starting full demo dataset seeding for connection {ConnectionName}", _connectionName);
+            _logger?.LogInformation("Starting full demo dataset seeding for connection {ConnectionName}", _connectionName);
 
-                // Step 1: Seed reference data
-                _logger?.LogInformation("Seeding reference data...");
-                var referenceResult = await _referenceDataSeeder.SeedPPDMReferenceTablesAsync(
-                    _connectionName, null, true, userId);
-                
-                if (!referenceResult.Success)
-                {
-                    _logger?.LogWarning("Reference data seeding had issues: {Message}", referenceResult.Message);
-                }
-                else
-                {
-                    result.TablesSeeded += referenceResult.TablesSeeded;
-                    result.RecordsInserted += referenceResult.RecordsInserted;
-                }
-
-                // Step 2: Seed sample fields
-                _logger?.LogInformation("Seeding sample fields...");
-                await SeedSampleFieldsAsync(userId);
-
-                // Step 3: Seed sample wells
-                _logger?.LogInformation("Seeding sample wells...");
-                await SeedSampleWellsAsync(userId);
-
-                // Step 4: Seed sample facilities
-                _logger?.LogInformation("Seeding sample facilities...");
-                await SeedSampleFacilitiesAsync(userId);
-
-                // Step 5: Seed sample production data
-                _logger?.LogInformation("Seeding sample production data...");
-                await SeedSampleProductionDataAsync(userId);
-
-                _logger?.LogInformation("Full demo dataset seeding completed successfully");
-                result.Message = $"Demo dataset seeded: {result.TablesSeeded} tables, {result.RecordsInserted} records";
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error seeding full demo dataset");
+            // Step 1: Seed reference data
+            _logger?.LogInformation("Seeding reference data...");
+            var referenceResult = await _referenceDataSeeder.SeedPPDMReferenceTablesAsync(
+                _connectionName, null, true, userId);
+            
+            // The reference data's own problems are the dataset's: they were logged as a warning and the dataset
+            // still answered "completed" (OILGAS-CATCH-01).
+            result.TablesSeeded += referenceResult.TablesSeeded;
+            result.RecordsInserted += referenceResult.RecordsInserted;
+            if (!referenceResult.Success)
                 result.Success = false;
-                result.Message = $"Failed to seed demo dataset: {ex.Message}";
-            }
+
+            // Step 2: Seed sample fields
+            _logger?.LogInformation("Seeding sample fields...");
+            await SeedSampleFieldsAsync(userId);
+
+            // Step 3: Seed sample wells
+            _logger?.LogInformation("Seeding sample wells...");
+            await SeedSampleWellsAsync(userId);
+
+            // Step 4: Seed sample facilities
+            _logger?.LogInformation("Seeding sample facilities...");
+            await SeedSampleFacilitiesAsync(userId);
+
+            // Step 5: Seed sample production data
+            _logger?.LogInformation("Seeding sample production data...");
+            await SeedSampleProductionDataAsync(userId);
+
+            _logger?.LogInformation("Full demo dataset seeding completed: success={Success}", result.Success);
+            result.Message = result.Success
+                ? $"Demo dataset seeded: {result.TablesSeeded} tables, {result.RecordsInserted} records"
+                : $"Demo dataset seeded with problems: {result.TablesSeeded} tables, {result.RecordsInserted} records; reference data: {referenceResult.Message}";
 
             return result;
         }
@@ -288,20 +282,10 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
                 var fileName = Path.GetFileName(csvFile);
                 _logger?.LogInformation("Processing: {FileName}", fileName);
 
-                try
-                {
-                    var recordsSeeded = await _csvSeeder.SeedAsync(csvFile, userId);
-                    summary.TotalRecordsSeeded += recordsSeeded;
-                    summary.ProcessedFiles++;
-                    _logger?.LogInformation("Seeded {Count} records from {FileName}", recordsSeeded, fileName);
-                }
-                catch (Exception ex)
-                {
-                    summary.SkippedFiles++;
-                    var errorMsg = $"Error processing {fileName}: {ex.Message}";
-                    summary.Errors.Add(errorMsg);
-                    _logger?.LogError(ex, "Error processing CSV file {FileName}", fileName);
-                }
+                var recordsSeeded = await _csvSeeder.SeedAsync(csvFile, userId);
+                summary.TotalRecordsSeeded += recordsSeeded;
+                summary.ProcessedFiles++;
+                _logger?.LogInformation("Seeded {Count} records from {FileName}", recordsSeeded, fileName);
             }
 
             return summary;
@@ -355,16 +339,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
                 {
                     _logger?.LogInformation("Seeding well status facet: {StatusType} from {FileName}", statusType, Path.GetFileName(csvFile));
                     
-                    try
-                    {
-                        var recordsSeeded = await SeedWellStatusFromCSVAsync(csvFile, statusType, userId);
-                        totalSeeded += recordsSeeded;
-                        _logger?.LogInformation("Seeded {Count} records for {StatusType}", recordsSeeded, statusType);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger?.LogError(ex, "Error seeding well status facet {StatusType}", statusType);
-                    }
+                    var recordsSeeded = await SeedWellStatusFromCSVAsync(csvFile, statusType, userId);
+                    totalSeeded += recordsSeeded;
+                    _logger?.LogInformation("Seeded {Count} records for {StatusType}", recordsSeeded, statusType);
                 }
             }
 
@@ -404,80 +381,73 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
                 if (IsEmptyRow(row))
                     continue;
 
-                try
+                var values = ParseCSVLine(row);
+                
+                if (values.All(v => string.IsNullOrWhiteSpace(v)) || values.Count <= name1Index)
+                    continue;
+
+                var status = values[name1Index].Trim();
+                if (string.IsNullOrWhiteSpace(status))
+                    continue;
+
+                var entity = Activator.CreateInstance(entityType);
+                var entityTypeInfo = entityType;
+
+                entityTypeInfo.GetProperty("STATUS_TYPE")?.SetValue(entity, statusType);
+                entityTypeInfo.GetProperty("STATUS")?.SetValue(entity, status);
+                
+                var statusIdProp = entityTypeInfo.GetProperty("STATUS_ID");
+                if (statusIdProp != null)
                 {
-                    var values = ParseCSVLine(row);
-                    
-                    if (values.All(v => string.IsNullOrWhiteSpace(v)) || values.Count <= name1Index)
-                        continue;
-
-                    var status = values[name1Index].Trim();
-                    if (string.IsNullOrWhiteSpace(status))
-                        continue;
-
-                    var entity = Activator.CreateInstance(entityType);
-                    var entityTypeInfo = entityType;
-
-                    entityTypeInfo.GetProperty("STATUS_TYPE")?.SetValue(entity, statusType);
-                    entityTypeInfo.GetProperty("STATUS")?.SetValue(entity, status);
-                    
-                    var statusIdProp = entityTypeInfo.GetProperty("STATUS_ID");
-                    if (statusIdProp != null)
+                    statusIdProp.SetValue(entity, $"{statusType},{status}");
+                }
+                
+                entityTypeInfo.GetProperty("LONG_NAME")?.SetValue(entity, status);
+                var shortName = status.Length > 20 ? status.Substring(0, 20) : status;
+                entityTypeInfo.GetProperty("SHORT_NAME")?.SetValue(entity, shortName);
+                
+                if (definitionIndex >= 0 && definitionIndex < values.Count)
+                {
+                    entityTypeInfo.GetProperty("DESCRIPTION")?.SetValue(entity, values[definitionIndex].Trim());
+                }
+                
+                if (valueStatusIndex >= 0 && valueStatusIndex < values.Count)
+                {
+                    var valueStatus = values[valueStatusIndex].Trim();
+                    if (!string.IsNullOrWhiteSpace(valueStatus))
                     {
-                        statusIdProp.SetValue(entity, $"{statusType},{status}");
-                    }
-                    
-                    entityTypeInfo.GetProperty("LONG_NAME")?.SetValue(entity, status);
-                    var shortName = status.Length > 20 ? status.Substring(0, 20) : status;
-                    entityTypeInfo.GetProperty("SHORT_NAME")?.SetValue(entity, shortName);
-                    
-                    if (definitionIndex >= 0 && definitionIndex < values.Count)
-                    {
-                        entityTypeInfo.GetProperty("DESCRIPTION")?.SetValue(entity, values[definitionIndex].Trim());
-                    }
-                    
-                    if (valueStatusIndex >= 0 && valueStatusIndex < values.Count)
-                    {
-                        var valueStatus = values[valueStatusIndex].Trim();
-                        if (!string.IsNullOrWhiteSpace(valueStatus))
-                        {
-                            entityTypeInfo.GetProperty("VALUE_STATUS")?.SetValue(entity, valueStatus);
-                        }
-                    }
-                    
-                    if (sourceIndex >= 0 && sourceIndex < values.Count)
-                    {
-                        var source = values[sourceIndex].Trim();
-                        if (!string.IsNullOrWhiteSpace(source))
-                        {
-                            entityTypeInfo.GetProperty("SOURCE")?.SetValue(entity, source);
-                        }
-                    }
-                    
-                    if (resourceIndex >= 0 && resourceIndex < values.Count)
-                    {
-                        var resource = values[resourceIndex].Trim();
-                        if (!string.IsNullOrWhiteSpace(resource))
-                        {
-                            entityTypeInfo.GetProperty("RESOURCE")?.SetValue(entity, resource);
-                        }
-                    }
-                    
-                    entityTypeInfo.GetProperty("ACTIVE_IND")?.SetValue(entity, "Y");
-                    entityTypeInfo.GetProperty("PPDM_GUID")?.SetValue(entity, Guid.NewGuid().ToString().ToUpper());
-                    entityTypeInfo.GetProperty("EFFECTIVE_DATE")?.SetValue(entity, DateTime.Now);
-                    entityTypeInfo.GetProperty("EXPIRY_DATE")?.SetValue(entity, DateTime.MinValue);
-                    
-                    var result = await repository.InsertAsync(entity, userId);
-                    
-                    if (result != null)
-                    {
-                        seededCount++;
+                        entityTypeInfo.GetProperty("VALUE_STATUS")?.SetValue(entity, valueStatus);
                     }
                 }
-                catch (Exception ex)
+                
+                if (sourceIndex >= 0 && sourceIndex < values.Count)
                 {
-                    _logger?.LogError(ex, "Error seeding row {RowIndex} in {FileName}", rowIndex + 1, Path.GetFileName(csvFilePath));
+                    var source = values[sourceIndex].Trim();
+                    if (!string.IsNullOrWhiteSpace(source))
+                    {
+                        entityTypeInfo.GetProperty("SOURCE")?.SetValue(entity, source);
+                    }
+                }
+                
+                if (resourceIndex >= 0 && resourceIndex < values.Count)
+                {
+                    var resource = values[resourceIndex].Trim();
+                    if (!string.IsNullOrWhiteSpace(resource))
+                    {
+                        entityTypeInfo.GetProperty("RESOURCE")?.SetValue(entity, resource);
+                    }
+                }
+                
+                entityTypeInfo.GetProperty("ACTIVE_IND")?.SetValue(entity, "Y");
+                entityTypeInfo.GetProperty("PPDM_GUID")?.SetValue(entity, Guid.NewGuid().ToString().ToUpper());
+                entityTypeInfo.GetProperty("EFFECTIVE_DATE")?.SetValue(entity, DateTime.Now);
+                entityTypeInfo.GetProperty("EXPIRY_DATE")?.SetValue(entity, DateTime.MinValue);
+                
+                var result = await repository.InsertAsync(entity, userId);
+                
+                if (result != null)
+                {
+                    seededCount++;
                 }
             }
 
@@ -881,36 +851,27 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
                 Errors = new List<string>()
             };
 
-            try
-            {
-                var metadata = await _metadata.GetTableMetadataAsync(tableName);
-                if (metadata == null)
-                {
-                    result.IsValid = false;
-                    result.Errors.Add($"Table metadata not found for: {tableName}");
-                    return result;
-                }
-
-                // Validate each row
-                for (int i = 0; i < seedData.Count; i++)
-                {
-                    var row = seedData[i];
-                    var rowErrors = await ValidateRowAsync(metadata, row, i);
-                    result.Errors.AddRange(rowErrors);
-                }
-
-                result.IsValid = result.Errors.Count == 0;
-                result.ValidRows = seedData.Count - result.Errors.Count;
-                result.InvalidRows = result.Errors.Count;
-
-                return result;
-            }
-            catch (Exception ex)
+            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            if (metadata == null)
             {
                 result.IsValid = false;
-                result.Errors.Add($"Error validating seed data: {ex.Message}");
+                result.Errors.Add($"Table metadata not found for: {tableName}");
                 return result;
             }
+
+            // Validate each row
+            for (int i = 0; i < seedData.Count; i++)
+            {
+                var row = seedData[i];
+                var rowErrors = await ValidateRowAsync(metadata, row, i);
+                result.Errors.AddRange(rowErrors);
+            }
+
+            result.IsValid = result.Errors.Count == 0;
+            result.ValidRows = seedData.Count - result.Errors.Count;
+            result.InvalidRows = result.Errors.Count;
+
+            return result;
         }
 
         private async Task<List<string>> ValidateRowAsync(PPDMTableMetadata metadata, Dictionary<string, object> row, int rowIndex)

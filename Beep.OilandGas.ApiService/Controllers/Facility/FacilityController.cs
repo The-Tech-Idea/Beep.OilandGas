@@ -35,16 +35,8 @@ public class FacilityController : ControllerBase
         [FromQuery] string? primaryFieldId,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var rows = await _facilities.ListFacilitiesAsync(primaryFieldId, cancellationToken).ConfigureAwait(false);
-            return Ok(rows);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "List facilities failed");
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var rows = await _facilities.ListFacilitiesAsync(primaryFieldId, cancellationToken).ConfigureAwait(false);
+        return Ok(rows);
     }
 
     /// <summary>PDEN rows with subtype FACILITY (registry query).</summary>
@@ -55,18 +47,10 @@ public class FacilityController : ControllerBase
         [FromQuery] DateTime? endDate,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var rows = await _productionManagement
-                .ListFacilityPdenDeclarationsAsync(startDate, endDate, cancellationToken)
-                .ConfigureAwait(false);
-            return Ok(rows);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "List facility PDEN declarations failed");
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var rows = await _productionManagement
+            .ListFacilityPdenDeclarationsAsync(startDate, endDate, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(rows);
     }
 
     [HttpGet("{facilityId}")]
@@ -80,18 +64,10 @@ public class FacilityController : ControllerBase
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
 
-        try
-        {
-            var row = await _facilities.GetFacilityAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
-            if (row == null)
-                return NotFound(new { error = $"Facility {facilityId} was not found." });
-            return Ok(row);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Get facility {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var row = await _facilities.GetFacilityAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
+        if (row == null)
+            return NotFound(new { error = $"Facility {facilityId} was not found." });
+        return Ok(row);
     }
 
     [HttpPost]
@@ -105,23 +81,10 @@ public class FacilityController : ControllerBase
         if (facility == null)
             return BadRequest(new { error = "Request body is required." });
 
-        try
-        {
-            var created = await _facilities
-                .CreateFacilityAsync(facility, userId, cancellationToken)
-                .ConfigureAwait(false);
-            return Ok(created);
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Create facility validation failed");
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Create facility failed");
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var created = await _facilities
+            .CreateFacilityAsync(facility, userId, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(created);
     }
 
     [HttpPut("{facilityId}")]
@@ -138,28 +101,15 @@ public class FacilityController : ControllerBase
         if (facility == null)
             return BadRequest(new { error = "Request body is required." });
 
-        try
-        {
-            if (!string.IsNullOrWhiteSpace(facility.FACILITY_ID) &&
-                !string.Equals(facility.FACILITY_ID, facilityId, StringComparison.OrdinalIgnoreCase))
-                return BadRequest(new { error = "Route facilityId and body FACILITY_ID must match." });
+        if (!string.IsNullOrWhiteSpace(facility.FACILITY_ID) &&
+            !string.Equals(facility.FACILITY_ID, facilityId, StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { error = "Route facilityId and body FACILITY_ID must match." });
 
-            facility.FACILITY_ID = facilityId;
-            await _facilities
-                .UpdateFacilityAsync(facility, userId, cancellationToken)
-                .ConfigureAwait(false);
-            return NoContent();
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Update facility {FacilityId} validation failed", facilityId);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Update facility {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        facility.FACILITY_ID = facilityId;
+        await _facilities
+            .UpdateFacilityAsync(facility, userId, cancellationToken)
+            .ConfigureAwait(false);
+        return NoContent();
     }
 
     [HttpGet("{facilityId}/classes")]
@@ -171,16 +121,8 @@ public class FacilityController : ControllerBase
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
 
-        try
-        {
-            var rows = await _facilities.ListFacilityClassesAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
-            return Ok(rows);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "List classes for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var rows = await _facilities.ListFacilityClassesAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
+        return Ok(rows);
     }
 
     [HttpPost("{facilityId}/classes")]
@@ -196,23 +138,10 @@ public class FacilityController : ControllerBase
         if (string.IsNullOrWhiteSpace(facilityClassType))
             return BadRequest(new { error = "facilityClassType query parameter is required." });
 
-        try
-        {
-            var row = await _facilities
-                .AddFacilityClassAsync(facilityId, facilityType, facilityClassType.Trim(), userId, cancellationToken)
-                .ConfigureAwait(false);
-            return Ok(row);
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Add facility class for {FacilityId} failed", facilityId);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Add facility class for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var row = await _facilities
+            .AddFacilityClassAsync(facilityId, facilityType, facilityClassType.Trim(), userId, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(row);
     }
 
     [HttpGet("{facilityId}/components")]
@@ -224,16 +153,8 @@ public class FacilityController : ControllerBase
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
 
-        try
-        {
-            var rows = await _facilities.ListFacilityComponentsAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
-            return Ok(rows);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "List components for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var rows = await _facilities.ListFacilityComponentsAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
+        return Ok(rows);
     }
 
     [HttpPost("{facilityId}/components")]
@@ -248,24 +169,11 @@ public class FacilityController : ControllerBase
         if (component == null)
             return BadRequest(new { error = "Request body is required." });
 
-        try
-        {
-            component.FACILITY_ID ??= facilityId;
-            var row = await _facilities
-                .AddFacilityComponentAsync(component, userId, cancellationToken)
-                .ConfigureAwait(false);
-            return Ok(row);
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Add component for {FacilityId} failed", facilityId);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Add component for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        component.FACILITY_ID ??= facilityId;
+        var row = await _facilities
+            .AddFacilityComponentAsync(component, userId, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(row);
     }
 
     [HttpGet("{facilityId}/status")]
@@ -277,16 +185,8 @@ public class FacilityController : ControllerBase
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
 
-        try
-        {
-            var rows = await _facilities.ListFacilityStatusHistoryAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
-            return Ok(rows);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "List status for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var rows = await _facilities.ListFacilityStatusHistoryAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
+        return Ok(rows);
     }
 
     [HttpPost("{facilityId}/status")]
@@ -302,29 +202,11 @@ public class FacilityController : ControllerBase
         if (status == null)
             return BadRequest(new { error = "Request body is required." });
 
-        try
-        {
-            status.FACILITY_ID ??= facilityId;
-            var row = await _facilities
-                .AddFacilityStatusAsync(status, userId, enforceActiveLicenseForOperationalStatus, cancellationToken)
-                .ConfigureAwait(false);
-            return Ok(row);
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Add status for {FacilityId} rejected", facilityId);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Add status for {FacilityId} validation failed", facilityId);
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Add status for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        status.FACILITY_ID ??= facilityId;
+        var row = await _facilities
+            .AddFacilityStatusAsync(status, userId, enforceActiveLicenseForOperationalStatus, cancellationToken)
+            .ConfigureAwait(false);
+        return Ok(row);
     }
 
     [HttpGet("{facilityId}/rates")]
@@ -336,15 +218,7 @@ public class FacilityController : ControllerBase
         if (string.IsNullOrWhiteSpace(facilityId))
             return BadRequest(new { error = "facilityId is required." });
 
-        try
-        {
-            var rows = await _facilities.ListFacilityRatesAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
-            return Ok(rows);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "List rates for {FacilityId} failed", facilityId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An internal error occurred." });
-        }
+        var rows = await _facilities.ListFacilityRatesAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);
+        return Ok(rows);
     }
 }

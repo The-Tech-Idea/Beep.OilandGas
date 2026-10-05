@@ -17,7 +17,7 @@ public interface IDevelopmentServiceClient
     Task<DevelopmentConstructionProgressDto?> GetConstructionProgressAsync(CancellationToken cancellationToken = default);
     Task<List<WELL>> GetWellsAsync(CancellationToken cancellationToken = default);
     Task<WELL?> GetWellAsync(string uwi, CancellationToken cancellationToken = default);
-    Task<bool> AssignRigAsync(string uwi, DevelopmentAssignRigRequest request, CancellationToken cancellationToken = default);
+    Task AssignRigAsync(string uwi, DevelopmentAssignRigRequest request, CancellationToken cancellationToken = default);
     Task<FdpStatusResponse?> GetFdpStatusAsync(CancellationToken cancellationToken = default);
     Task<SubmitFdpDraftResponse?> SubmitFdpAsync(SubmitFdpDraftRequest request, CancellationToken cancellationToken = default);
     Task<List<POOL>> GetPoolsAsync(CancellationToken cancellationToken = default);

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.ProductionOperations;
 using Microsoft.AspNetCore.Authorization;
@@ -44,21 +45,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
             var userId = User.ActingUserId();
             if (request == null) return BadRequest(new { error = "Request body is required." });
 
-            try
-            {
-                var created = await _service.CreateOperationAsync(request, userId);
-                return Ok(created);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid production operation create request");
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating production operation");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var created = await _service.CreateOperationAsync(request, userId);
+            return Ok(created);
         }
 
         [HttpPost("/api/productionoperations/create")]
@@ -67,34 +55,16 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
             var userId = User.ActingUserId();
             if (request == null) return BadRequest(new { error = "Request body is required." });
 
-            try
+            var created = await _managementService.CreateProductionOperationAsync(new CreateProductionOperationRequest
             {
-                var created = await _managementService.CreateProductionOperationAsync(new CreateProductionOperationRequest
-                {
-                    OperationDate = request.ScheduledDate == default ? null : request.ScheduledDate,
-                    OperationType = string.IsNullOrWhiteSpace(request.OperationType) ? null : request.OperationType,
-                    Status = string.IsNullOrWhiteSpace(request.Status) ? null : request.Status,
-                    AssignedTo = string.IsNullOrWhiteSpace(request.AssignedTo) ? null : request.AssignedTo,
-                    Remarks = string.IsNullOrWhiteSpace(request.Remarks) ? null : request.Remarks
-                }, userId, HttpContext.RequestAborted);
+                OperationDate = request.ScheduledDate == default ? null : request.ScheduledDate,
+                OperationType = string.IsNullOrWhiteSpace(request.OperationType) ? null : request.OperationType,
+                Status = string.IsNullOrWhiteSpace(request.Status) ? null : request.Status,
+                AssignedTo = string.IsNullOrWhiteSpace(request.AssignedTo) ? null : request.AssignedTo,
+                Remarks = string.IsNullOrWhiteSpace(request.Remarks) ? null : request.Remarks
+            }, userId, HttpContext.RequestAborted);
 
-                return Ok(MapToLegacyOperation(created, request));
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid legacy production operation create request");
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Legacy production operation creation failed");
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating production operation through compatibility route");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(MapToLegacyOperation(created, request));
         }
 
         [HttpGet("{operationId}")]
@@ -102,24 +72,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
         {
             if (string.IsNullOrWhiteSpace(operationId)) return BadRequest(new { error = "Operation ID is required." });
 
-            try
-            {
-                var operation = await _service.GetOperationStatusAsync(operationId);
-                if (operation == null)
-                    return NotFound(new { error = $"Production operation {operationId} was not found." });
+            var operation = await _service.GetOperationStatusAsync(operationId);
+            if (operation == null)
+                return NotFound(new { error = $"Production operation {operationId} was not found." });
 
-                return Ok(operation);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid production operation lookup request");
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting production operation {OperationId}", operationId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(operation);
         }
 
         [HttpPut("{operationId}")]
@@ -129,26 +86,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
             if (string.IsNullOrWhiteSpace(operationId)) return BadRequest(new { error = "Operation ID is required." });
             if (request == null) return BadRequest(new { error = "Request body is required." });
 
-            try
-            {
-                var updated = await _service.UpdateOperationAsync(operationId, request, userId);
-                return Ok(updated);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid production operation update request for {OperationId}", operationId);
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Production operation update target not found for {OperationId}", operationId);
-                return NotFound(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating production operation {OperationId}", operationId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var updated = await _service.UpdateOperationAsync(operationId, request, userId);
+            return Ok(updated);
         }
 
         [HttpGet("/api/production/data/{wellId}")]
@@ -156,28 +95,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
         {
             if (string.IsNullOrWhiteSpace(wellId)) return BadRequest(new { error = "Well ID is required." });
 
-            try
-            {
-                var records = await _service.GetProductionDataAsync(wellId, null, DateTime.UtcNow.AddMonths(-1), DateTime.UtcNow);
-                var latest = records
-                    .OrderByDescending(record => record.ProductionDate)
-                    .FirstOrDefault();
+            var records = await _service.GetProductionDataAsync(wellId, null, DateTime.UtcNow.AddMonths(-1), DateTime.UtcNow);
+            var latest = records
+                .OrderByDescending(record => record.ProductionDate)
+                .FirstOrDefault();
 
-                if (latest == null)
-                    return NotFound(new { error = $"Production data for well {wellId} was not found." });
+            if (latest == null)
+                return NotFound(new { error = $"Production data for well {wellId} was not found." });
 
-                return Ok(MapToAllocation(latest));
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid production data compatibility request for {WellId}", wellId);
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting compatibility production data for {WellId}", wellId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(MapToAllocation(latest));
         }
 
         [HttpPost("/api/production/history/{wellId}")]
@@ -192,26 +118,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
             if (startDate > endDate)
                 return BadRequest(new { error = "StartDate must be on or before EndDate." });
 
-            try
-            {
-                var records = await _service.GetProductionDataAsync(wellId, null, startDate, endDate);
-                var response = records
-                    .OrderByDescending(record => record.ProductionDate)
-                    .Select(record => MapToAllocation(record))
-                    .ToList();
+            var records = await _service.GetProductionDataAsync(wellId, null, startDate, endDate);
+            var response = records
+                .OrderByDescending(record => record.ProductionDate)
+                .Select(record => MapToAllocation(record))
+                .ToList();
 
-                return Ok(response);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid production history compatibility request for {WellId}", wellId);
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting compatibility production history for {WellId}", wellId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(response);
         }
 
         [HttpPost("/api/production/record")]
@@ -221,23 +134,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
             var userId = User.ActingUserId();
             if (productionRecord == null) return BadRequest(new { error = "Request body is required." });
 
-            try
-            {
-                var productionData = MapFromAllocation(productionRecord);
-                await _service.RecordProductionDataAsync(productionData, userId);
+            var productionData = MapFromAllocation(productionRecord);
+            await _service.RecordProductionDataAsync(productionData, userId);
 
-                return Ok(MapToAllocation(productionData, productionRecord));
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid compatibility production record request for well {WellId}", productionRecord.WELL_ID ?? productionRecord.PDEN_ID);
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error recording compatibility production data for well {WellId}", productionRecord.WELL_ID ?? productionRecord.PDEN_ID);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(MapToAllocation(productionData, productionRecord));
         }
 
         [HttpGet("data")]
@@ -247,34 +147,18 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null)
         {
-            try
-            {
-                var start = startDate ?? DateTime.UtcNow.AddMonths(-1);
-                var end = endDate ?? DateTime.UtcNow;
-                var result = await _service.GetProductionDataAsync(wellUWI, fieldId, start, end);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting production data");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var start = startDate ?? DateTime.UtcNow.AddMonths(-1);
+            var end = endDate ?? DateTime.UtcNow;
+            var result = await _service.GetProductionDataAsync(wellUWI, fieldId, start, end);
+            return Ok(result);
         }
 
         [HttpPost("data")]
         public async Task<ActionResult> RecordProductionData([FromBody] ProductionData productionData)
         {
             var userId = User.ActingUserId();
-            try
-            {
-                await _service.RecordProductionDataAsync(productionData, userId);
-                return Ok(new { message = "Production data recorded successfully", productionId = productionData.ProductionId });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error recording production data");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            await _service.RecordProductionDataAsync(productionData, userId);
+            return Ok(new { message = "Production data recorded successfully", productionId = productionData.ProductionId });
         }
 
         [HttpPost("optimize")]
@@ -283,26 +167,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
             [FromBody] Dictionary<string, object> optimizationGoals)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) return BadRequest(new { error = "Well UWI is required." });
-            try
-            {
-                var result = await _service.OptimizeProductionAsync(wellUWI, optimizationGoals);
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid optimize request for {WellUWI}", wellUWI);
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Unable to optimize production for {WellUWI}", wellUWI);
-                return NotFound(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error optimizing production");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.OptimizeProductionAsync(wellUWI, optimizationGoals);
+            return Ok(result);
         }
 
         private static PRODUCTION_ALLOCATION MapToAllocation(ProductionData data, PRODUCTION_ALLOCATION? seed = null)
@@ -350,9 +216,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
 
             var wellId = allocation.WELL_ID ?? allocation.PDEN_ID;
             if (string.IsNullOrWhiteSpace(wellId))
-                throw new ArgumentException("WELL_ID or PDEN_ID is required.", nameof(allocation));
+                throw RefusalException.Invalid("WELL_ID or PDEN_ID is required.");
 
-            var payload = TryParsePayload(allocation.ALLOCATION_RESULTS_JSON);
+            var payload = ParsePayload(allocation.ALLOCATION_RESULTS_JSON);
 
             return new ProductionData
             {
@@ -367,7 +233,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
             };
         }
 
-        private static ProductionAllocationPayload? TryParsePayload(string? json)
+        // The allocation results the caller sent. Unreadable, they were taken as absent and the total recorded as oil — a
+        // record that is not what was sent; now they are refused. System.Text.Json has no question for "is this JSON".
+        private static ProductionAllocationPayload? ParsePayload(string? json)
         {
             if (string.IsNullOrWhiteSpace(json))
                 return null;
@@ -376,9 +244,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
             {
                 return JsonSerializer.Deserialize<ProductionAllocationPayload>(json);
             }
-            catch (JsonException)
+            catch (JsonException notAllocationResults)
             {
-                return null;
+                throw new RefusalException(RefusalKind.Invalid,
+                    "ALLOCATION_RESULTS_JSON is not valid allocation results JSON.", notAllocationResults);
             }
         }
 

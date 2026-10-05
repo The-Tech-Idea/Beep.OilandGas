@@ -62,17 +62,9 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<HeatMapConfigurationRecord?> GetHeatMapConfigurationAsync(string heatMapId)
         {
-            try
-            {
-                var result = await _apiClient.GetAsync<HeatMapConfigurationRecord>(
-                    $"/api/heatmap/configuration/{Uri.EscapeDataString(heatMapId)}");
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting heat map configuration {HeatMapId}", heatMapId);
-                return null;
-            }
+            var result = await _apiClient.GetAsync<HeatMapConfigurationRecord>(
+                $"/api/heatmap/configuration/{Uri.EscapeDataString(heatMapId)}");
+            return result;
         }
 
         public async Task<HeatMapResult> GenerateProductionHeatMapAsync(string fieldId, DateTime startDate, DateTime endDate)

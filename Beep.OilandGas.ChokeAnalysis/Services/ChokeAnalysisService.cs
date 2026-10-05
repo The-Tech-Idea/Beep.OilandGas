@@ -206,55 +206,53 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                 var errors = new System.Collections.Generic.List<string>();
                 var warnings = new System.Collections.Generic.List<string>();
 
-                try
+                _logger?.LogInformation("Validating choke configuration");
+
+                // The validator is asked for its answer rather than made to refuse and caught (OILGAS-CATCH-01). The catch
+                // here had also turned every other failure into a "validation error" carrying the exception's text.
+                var problem = ChokeAnalysis.Validation.ChokeValidator.FindChokeProblem(choke)
+                    ?? ChokeAnalysis.Validation.ChokeValidator.FindGasChokeProblem(gasProperties);
+                if (problem is not null)
                 {
-                    _logger?.LogInformation("Validating choke configuration");
-
-                    // Use existing validator for basic validation
-                    ChokeAnalysis.Validation.ChokeValidator.ValidateChokeProperties(choke);
-                    ChokeAnalysis.Validation.ChokeValidator.ValidateGasChokeProperties(gasProperties);
-
-                    // Additional engineering validations
-                    if (choke.CHOKE_DIAMETER > 1.5m)
-                    {
-                        warnings.Add("Large choke size detected. Consider flow control implications.");
-                    }
-
-                    if (gasProperties.UPSTREAM_PRESSURE > 10000m)
-                    {
-                        warnings.Add("High upstream pressure. Ensure choke rating is adequate.");
-                    }
-
-                    var pressureRatio = gasProperties.DOWNSTREAM_PRESSURE / gasProperties.UPSTREAM_PRESSURE;
-                    if (pressureRatio < 0.3m)
-                    {
-                        warnings.Add("Very low downstream pressure. Verify critical flow conditions.");
-                    }
-
-                    if (Math.Abs(gasProperties.GAS_SPECIFIC_GRAVITY - 0.65m) > 0.2m)
-                    {
-                        warnings.Add("Gas specific gravity outside typical range. Verify Z-factor correlations.");
-                    }
-
-                    result.IsValid = errors.Count == 0;
-                    result.Errors = errors.ToArray();
-                    result.Warnings = warnings.ToArray();
-
-                    _logger?.LogInformation("Choke validation completed. Valid: {IsValid}, Errors: {ErrorCount}, Warnings: {WarningCount}", 
-                        result.IsValid, result.Errors.Length, result.Warnings.Length);
-
-                    return result;
-                }
-                catch (Exception ex)
-                {
-                    errors.Add($"Validation error: {ex.Message}");
                     result.IsValid = false;
-                    result.Errors = errors.ToArray();
+                    result.Errors = new[] { problem.Sentence };
                     result.Warnings = warnings.ToArray();
 
-                    _logger?.LogError(ex, "Error during choke validation");
+                    _logger?.LogInformation("Choke validation completed. Valid: {IsValid}, failed on {Parameter}",
+                        result.IsValid, problem.ParameterName ?? "the pressure pair");
                     return result;
                 }
+
+                // Additional engineering validations
+                if (choke.CHOKE_DIAMETER > 1.5m)
+                {
+                    warnings.Add("Large choke size detected. Consider flow control implications.");
+                }
+
+                if (gasProperties.UPSTREAM_PRESSURE > 10000m)
+                {
+                    warnings.Add("High upstream pressure. Ensure choke rating is adequate.");
+                }
+
+                var pressureRatio = gasProperties.DOWNSTREAM_PRESSURE / gasProperties.UPSTREAM_PRESSURE;
+                if (pressureRatio < 0.3m)
+                {
+                    warnings.Add("Very low downstream pressure. Verify critical flow conditions.");
+                }
+
+                if (Math.Abs(gasProperties.GAS_SPECIFIC_GRAVITY - 0.65m) > 0.2m)
+                {
+                    warnings.Add("Gas specific gravity outside typical range. Verify Z-factor correlations.");
+                }
+
+                result.IsValid = errors.Count == 0;
+                result.Errors = errors.ToArray();
+                result.Warnings = warnings.ToArray();
+
+                _logger?.LogInformation("Choke validation completed. Valid: {IsValid}, Errors: {ErrorCount}, Warnings: {WarningCount}",
+                    result.IsValid, result.Errors.Length, result.Warnings.Length);
+
+                return result;
             });
         }
 
@@ -327,49 +325,43 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             {
                 var recommendations = new System.Collections.Generic.List<string>();
 
-                try
+                // A calculation that fails, or refuses the inputs, reaches the caller (OILGAS-CATCH-01). It had been
+                // answered as a recommendation carrying the exception's text.
+                _logger?.LogInformation("Generating choke optimization recommendations");
+
+                var validation = ValidateChokeConfigurationAsync(choke, gasProperties).Result;
+
+                // Add warnings as recommendations
+                foreach (var warning in validation.Warnings)
                 {
-                    _logger?.LogInformation("Generating choke optimization recommendations");
-
-                    var validation = ValidateChokeConfigurationAsync(choke, gasProperties).Result;
-                    
-                    // Add warnings as recommendations
-                    foreach (var warning in validation.Warnings)
-                    {
-                        recommendations.Add($"RECOMMENDATION: {warning}");
-                    }
-
-                    // Flow regime specific recommendations
-                    var flowResult = GasChokeCalculator.CalculateDownholeChokeFlow(choke, gasProperties);
-                    
-                    if (string.Equals(flowResult.FLOW_REGIME, ChokeAnalysisReferenceCodes.RegimeSonic, StringComparison.OrdinalIgnoreCase))
-                    {
-                        recommendations.Add("Choke is in critical flow. Consider monitoring for erosion and wear.");
-                    }
-                    else if (string.Equals(flowResult.FLOW_REGIME, ChokeAnalysisReferenceCodes.RegimeSubsonic, StringComparison.OrdinalIgnoreCase))
-                    {
-                        recommendations.Add("Subsonic flow detected. Downstream pressure changes will affect flow rate.");
-                    }
-
-                    if (flowResult.PRESSURE_RATIO > 0.9m)
-                    {
-                        recommendations.Add("High pressure ratio. Flow is pressure-sensitive - consider flow control improvements.");
-                    }
-
-                    if (choke.DISCHARGE_COEFFICIENT < 0.8m)
-                    {
-                        recommendations.Add("Low discharge coefficient. Consider choke cleaning or replacement.");
-                    }
-
-                    _logger?.LogInformation("Generated {Count} optimization recommendations", recommendations.Count);
-                    
-                    return recommendations.ToArray();
+                    recommendations.Add($"RECOMMENDATION: {warning}");
                 }
-                catch (Exception ex)
+
+                // Flow regime specific recommendations
+                var flowResult = GasChokeCalculator.CalculateDownholeChokeFlow(choke, gasProperties);
+
+                if (string.Equals(flowResult.FLOW_REGIME, ChokeAnalysisReferenceCodes.RegimeSonic, StringComparison.OrdinalIgnoreCase))
                 {
-                    _logger?.LogError(ex, "Error generating optimization recommendations");
-                    return new[] { $"Error generating recommendations: {ex.Message}" };
+                    recommendations.Add("Choke is in critical flow. Consider monitoring for erosion and wear.");
                 }
+                else if (string.Equals(flowResult.FLOW_REGIME, ChokeAnalysisReferenceCodes.RegimeSubsonic, StringComparison.OrdinalIgnoreCase))
+                {
+                    recommendations.Add("Subsonic flow detected. Downstream pressure changes will affect flow rate.");
+                }
+
+                if (flowResult.PRESSURE_RATIO > 0.9m)
+                {
+                    recommendations.Add("High pressure ratio. Flow is pressure-sensitive - consider flow control improvements.");
+                }
+
+                if (choke.DISCHARGE_COEFFICIENT < 0.8m)
+                {
+                    recommendations.Add("Low discharge coefficient. Consider choke cleaning or replacement.");
+                }
+
+                _logger?.LogInformation("Generated {Count} optimization recommendations", recommendations.Count);
+
+                return recommendations.ToArray();
             });
         }
     }

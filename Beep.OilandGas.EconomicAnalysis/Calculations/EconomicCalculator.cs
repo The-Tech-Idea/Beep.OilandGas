@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.EconomicAnalysis.Calculations
 {
@@ -16,10 +17,10 @@ namespace Beep.OilandGas.EconomicAnalysis.Calculations
         public static double CalculateNPV(CashFlow[] cashFlows, double discountRate)
         {
             if (cashFlows == null || cashFlows.Length == 0)
-                throw new ArgumentException("Cash flows cannot be null or empty.", nameof(cashFlows));
+                throw RefusalException.Invalid("Cash flows are required.");
 
             if (discountRate < 0 || discountRate > 1)
-                throw new ArgumentException("Discount rate must be between 0 and 1.", nameof(discountRate));
+                throw RefusalException.Invalid("Discount rate must be between 0 and 1.");
 
             double npv = 0.0;
 
@@ -38,7 +39,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Calculations
         public static double CalculateIRR(CashFlow[] cashFlows, double initialGuess = 0.1, double tolerance = 1e-6, int maxIterations = 100)
         {
             if (cashFlows == null || cashFlows.Length == 0)
-                throw new ArgumentException("Cash flows cannot be null or empty.", nameof(cashFlows));
+                throw RefusalException.Invalid("Cash flows are required.");
 
             double rate = initialGuess;
 
@@ -102,7 +103,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Calculations
         public static double CalculateMIRR(CashFlow[] cashFlows, double financeRate, double reinvestRate)
         {
             if (cashFlows == null || cashFlows.Length == 0)
-                throw new ArgumentException("Cash flows cannot be null or empty.", nameof(cashFlows));
+                throw RefusalException.Invalid("Cash flows are required.");
 
             double positivePV = 0.0;
             double negativeFV = 0.0;
@@ -135,7 +136,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Calculations
         public static double CalculatePaybackPeriod(CashFlow[] cashFlows)
         {
             if (cashFlows == null || cashFlows.Length == 0)
-                throw new ArgumentException("Cash flows cannot be null or empty.", nameof(cashFlows));
+                throw RefusalException.Invalid("Cash flows are required.");
 
             double cumulative = 0.0;
             int lastNegativePeriod = -1;
@@ -166,7 +167,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Calculations
         public static double CalculateDiscountedPaybackPeriod(CashFlow[] cashFlows, double discountRate)
         {
             if (cashFlows == null || cashFlows.Length == 0)
-                throw new ArgumentException("Cash flows cannot be null or empty.", nameof(cashFlows));
+                throw RefusalException.Invalid("Cash flows are required.");
 
             double cumulativePV = 0.0;
             int lastNegativePeriod = -1;
@@ -197,7 +198,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Calculations
         public static double CalculateProfitabilityIndex(CashFlow[] cashFlows, double discountRate)
         {
             if (cashFlows == null || cashFlows.Length == 0)
-                throw new ArgumentException("Cash flows cannot be null or empty.", nameof(cashFlows));
+                throw RefusalException.Invalid("Cash flows are required.");
 
             double pvInflows = 0.0;
             double pvOutflows = 0.0;
@@ -223,7 +224,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Calculations
         public static double CalculateROI(CashFlow[] cashFlows)
         {
             if (cashFlows == null || cashFlows.Length == 0)
-                throw new ArgumentException("Cash flows cannot be null or empty.", nameof(cashFlows));
+                throw RefusalException.Invalid("Cash flows are required.");
 
             double totalReturn = cashFlows.Sum(cf => cf.Amount);
             double initialInvestment = Math.Abs(cashFlows.Where(cf => cf.Amount < 0).Sum(cf => cf.Amount));
@@ -241,7 +242,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Calculations
             double minRate = 0.0, double maxRate = 1.0, int points = 50)
         {
             if (cashFlows == null || cashFlows.Length == 0)
-                throw new ArgumentException("Cash flows cannot be null or empty.", nameof(cashFlows));
+                throw RefusalException.Invalid("Cash flows are required.");
 
             var profile = new List<NPV_PROFILE_POINT>();
 
@@ -262,7 +263,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Calculations
             double financeRate = 0.1, double reinvestRate = 0.1)
         {
             if (cashFlows == null || cashFlows.Length == 0)
-                throw new ArgumentException("Cash flows cannot be null or empty.", nameof(cashFlows));
+                throw RefusalException.Invalid("Cash flows are required.");
 
             var result = new EconomicResult
             {

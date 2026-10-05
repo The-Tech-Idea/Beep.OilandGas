@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.NodalAnalysis;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.NodalAnalysis.Calculations
 {
@@ -19,7 +20,7 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
                 throw new ArgumentNullException(nameof(reservoir));
 
             if (reservoir.ReservoirPressure <= 0)
-                throw new ArgumentException("Reservoir pressure must be positive.", nameof(reservoir));
+                throw RefusalException.Invalid("Reservoir pressure must be positive.");
 
             var ipr = new List<IPRPoint>();
 
@@ -62,7 +63,7 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
                 throw new ArgumentNullException(nameof(reservoir));
 
             if (testPoints == null || testPoints.Count < 2)
-                throw new ArgumentException("At least 2 test points are required for Fetkovich method.", nameof(testPoints));
+                throw RefusalException.Invalid("At least 2 test points are required for Fetkovich method.");
 
             var ipr = new List<IPRPoint>();
 
@@ -82,7 +83,7 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             double term2 = Math.Log((pr2 - pwf1_2) / (pr2 - pwf2_2));
 
             if (Math.Abs(term2) < 1e-10)
-                throw new ArgumentException("Invalid test points for Fetkovich method.", nameof(testPoints));
+                throw RefusalException.Invalid("Invalid test points for Fetkovich method.");
 
             double n = term1 / term2;
             double c = p1.flowRate / Math.Pow(pr2 - pwf1_2, n);
@@ -222,9 +223,9 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             if (reservoir == null)
                 throw new ArgumentNullException(nameof(reservoir));
             if (reservoir.ReservoirPressure <= 0)
-                throw new ArgumentException("Reservoir pressure must be positive.", nameof(reservoir));
+                throw RefusalException.Invalid("Reservoir pressure must be positive.");
             if (flowEfficiency <= 0)
-                throw new ArgumentException("Flow efficiency must be positive.", nameof(flowEfficiency));
+                throw RefusalException.Invalid("Flow efficiency must be positive.");
 
             var ipr = new List<IPRPoint>();
 
@@ -271,9 +272,9 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             if (reservoir == null)
                 throw new ArgumentNullException(nameof(reservoir));
             if (reservoir.ReservoirPressure <= 0)
-                throw new ArgumentException("Reservoir pressure must be positive.", nameof(reservoir));
+                throw RefusalException.Invalid("Reservoir pressure must be positive.");
             if (darcyCoefficient <= 0)
-                throw new ArgumentException("Darcy coefficient must be positive.", nameof(darcyCoefficient));
+                throw RefusalException.Invalid("Darcy coefficient must be positive.");
 
             var ipr = new List<IPRPoint>();
 
@@ -329,12 +330,12 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             darcyCoefficient = y1 - turbulenceCoefficient * x1;  // intercept = b
 
             if (darcyCoefficient <= 0)
-                throw new InvalidOperationException("Darcy coefficient must be positive; check test data quality.");
+                throw RefusalException.Invalid("The test points give a Darcy coefficient that is not positive: check the test data.");
 
             // AOF: solve a·q² + b·q - Pr = 0 (quadratic, take positive root)
             double discriminant = darcyCoefficient * darcyCoefficient + 4.0 * turbulenceCoefficient * reservoirPressure;
             if (discriminant < 0)
-                throw new InvalidOperationException("Unable to compute AOF: discriminant is negative.");
+                throw RefusalException.Invalid("The test points give no real absolute open flow (the discriminant is negative): check the test data.");
 
             double aof = (-darcyCoefficient + Math.Sqrt(discriminant)) / (2.0 * turbulenceCoefficient);
             return aof;
@@ -364,13 +365,13 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             int points = 50)
         {
             if (reservoirPressure <= 0)
-                throw new ArgumentException("Reservoir pressure must be positive.", nameof(reservoirPressure));
+                throw RefusalException.Invalid("Reservoir pressure must be positive.");
             if (dewPointPressure <= 0 || dewPointPressure > reservoirPressure)
-                throw new ArgumentException("Dew point pressure must be positive and ≤ reservoir pressure.", nameof(dewPointPressure));
+                throw RefusalException.Invalid("Dew point pressure must be positive and ≤ reservoir pressure.");
             if (aof <= 0)
-                throw new ArgumentException("AOF must be positive.", nameof(aof));
+                throw RefusalException.Invalid("AOF must be positive.");
             if (backpressureExponent <= 0 || backpressureExponent > 1.0)
-                throw new ArgumentException("Backpressure exponent must be between 0 and 1.", nameof(backpressureExponent));
+                throw RefusalException.Invalid("Backpressure exponent must be between 0 and 1.");
 
             var ipr = new List<IPRPoint>();
             double pr2 = reservoirPressure * reservoirPressure;

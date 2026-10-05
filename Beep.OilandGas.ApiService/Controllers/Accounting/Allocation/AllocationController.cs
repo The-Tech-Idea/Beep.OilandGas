@@ -38,29 +38,21 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
             [FromBody] VolumeReconciliationRequest request,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-                if (string.IsNullOrEmpty(request.FieldId))
-                        return BadRequest(new { error = "Field ID is required." });
+            if (string.IsNullOrEmpty(request.FieldId))
+                    return BadRequest(new { error = "Field ID is required." });
 
-                var result = await _accountingService.ReconcileVolumesAsync(
-                    request.FieldId,
-                    request.StartDate,
-                    request.EndDate,
-                    connectionName);
+            var result = await _accountingService.ReconcileVolumesAsync(
+                request.FieldId,
+                request.StartDate,
+                request.EndDate,
+                connectionName);
 
-                result.Issues ??= new List<VolumeReconciliationIssue>();
+            result.Issues ??= new List<VolumeReconciliationIssue>();
 
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error reconciling volumes");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(result);
         }
 
         /// <summary>
@@ -71,33 +63,25 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
             [FromBody] AllocationRequest request, 
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var wells = request.Entities.Select(e => new WellAllocationData
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+                WellId = e.ENTITY_ID,
+                WellName = e.ENTITY_NAME ?? e.ENTITY_ID,
+                WorkingInterest = e.WorkingInterest ?? 0m,
+                NetRevenueInterest = e.NetRevenueInterest ?? 0m,
+                MeasuredProduction = e.ProductionHistory ?? 0m,
+                EstimatedProduction = e.ProductionHistory ?? 0m
+            }).ToList();
 
-                var wells = request.Entities.Select(e => new WellAllocationData
-                {
-                    WellId = e.ENTITY_ID,
-                    WellName = e.ENTITY_NAME ?? e.ENTITY_ID,
-                    WorkingInterest = e.WorkingInterest ?? 0m,
-                    NetRevenueInterest = e.NetRevenueInterest ?? 0m,
-                    MeasuredProduction = e.ProductionHistory ?? 0m,
-                    EstimatedProduction = e.ProductionHistory ?? 0m
-                }).ToList();
+            var result = AllocationEngine.AllocateToWells(
+                request.TOTAL_VOLUME,
+                wells,
+                request.METHOD);
 
-                var result = AllocationEngine.AllocateToWells(
-                    request.TOTAL_VOLUME,
-                    wells,
-                    request.METHOD);
-
-                return Ok(MapToAllocationResultDto(result));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error performing allocation");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(MapToAllocationResultDto(result));
         }
 
         private ALLOCATION_RESULT MapToAllocationResultDto(ALLOCATION_RESULT result)

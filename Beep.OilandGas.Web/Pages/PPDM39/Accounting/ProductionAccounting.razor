@@ -2,6 +2,7 @@
 @using Beep.OilandGas.Models.Data.Accounting
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
 @inject ApiClient ApiClient
 @inject IAccountingServiceClient AccountingClient
 @inject ILifeCycleService LifeCycleService
@@ -272,17 +273,15 @@
         _loading = true;
         try
         {
-            var succeeded = await AccountingClient.ClosePeriodAsync(
+            await AccountingClient.ClosePeriodAsync(
                 new CloseAccountingPeriodRequest { PeriodEnd = GetPeriodEnd(_period) });
-
-            if (!succeeded)
-            {
-                Snackbar.Add($"Failed to close period {_period}.", Severity.Error);
-                return;
-            }
 
             await LoadAccountingDataAsync();
             Snackbar.Add($"Period {_period} has been closed", Severity.Success);
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "closing the accounting period", $"Period {_period} was not closed"), Severity.Error);
         }
         catch (Exception)
         {

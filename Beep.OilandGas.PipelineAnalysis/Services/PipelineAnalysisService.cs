@@ -13,6 +13,7 @@ using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.PipelineAnalysis;
 using Beep.OilandGas.PPDM.Models;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.PipelineAnalysis.Services
 {
@@ -54,7 +55,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<PipelineAnalysisResult> AnalyzePipelineFlowAsync(string pipelineId, decimal flowRate, decimal inletPressure)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
 
             _logger?.LogInformation("Analyzing pipeline flow for {PipelineId} at flow rate {FlowRate} bbl/d and inlet pressure {InletPressure} psia",
                 pipelineId, flowRate, inletPressure);
@@ -96,7 +97,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<PressureDropResult> CalculatePressureDropAsync(string pipelineId, decimal flowRate)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
 
             _logger?.LogInformation("Calculating pressure drop for pipeline {PipelineId} at flow rate {FlowRate} bbl/d",
                 pipelineId, flowRate);
@@ -139,7 +140,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<FlowRegimeAnalysis> AnalyzeFlowRegimeAsync(string pipelineId, FlowRegimeRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -179,7 +180,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<MultiphaseFlowResult> CalculateBeggsbrillAsync(string pipelineId, MultiphaseFlowRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -216,7 +217,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<MultiphaseFlowResult> CalculateHagedornBrownAsync(string pipelineId, MultiphaseFlowRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -253,7 +254,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<MultiphaseFlowResult> CalculateDunsRosAsync(string pipelineId, MultiphaseFlowRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -291,7 +292,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         public async Task<PipelineSizing> PerformPipelineSizingAsync(string pipelineId, PipelineSizingRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
-                throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
+                throw RefusalException.Invalid("A pipeline ID is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 

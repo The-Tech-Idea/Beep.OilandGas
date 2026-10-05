@@ -88,25 +88,17 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 if (value is T typedValue)
                     return typedValue;
 
-                try
+                // A value that cannot become the requested type is the caller's type mismatch and propagates: skipping to
+                // the next name read it as absent, so an amount the request carried became zero without a word.
+                if (targetType.IsEnum)
                 {
-                    if (targetType.IsEnum)
-                    {
-                        if (value is string enumText && Enum.TryParse(targetType, enumText, true, out var enumValue))
-                            return (T)enumValue;
+                    if (value is string enumText && Enum.TryParse(targetType, enumText, true, out var enumValue))
+                        return (T)enumValue;
 
-                        return (T)Enum.ToObject(targetType, value);
-                    }
+                    return (T)Enum.ToObject(targetType, value);
+                }
 
-                    return (T)Convert.ChangeType(value, targetType);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Trace.TraceWarning(
-                        "Compatibility ReadValue conversion failed for source type {0}: {1}",
-                        source.GetType().Name,
-                        ex.Message);
-                }
+                return (T)Convert.ChangeType(value, targetType);
             }
 
             return default;
@@ -129,22 +121,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
         private async Task<T?> GetEntityByIdAsync<T>(string tableName, string id, string connectionName = "PPDM39") where T : class
         {
-            try
-            {
-                var entity = await GetRepository(typeof(T), connectionName ?? ConnectionName, tableName)
-                    .GetByIdAsync(id)
-                    .ConfigureAwait(false);
-                return entity as T;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(
-                    ex,
-                    "Compatibility GetEntityByIdAsync failed for table {TableName}, id {EntityId}",
-                    tableName,
-                    id);
-                return null;
-            }
+            // A failed read propagates: as null it told the caller the record does not exist.
+            var entity = await GetRepository(typeof(T), connectionName ?? ConnectionName, tableName)
+                .GetByIdAsync(id)
+                .ConfigureAwait(false);
+            return entity as T;
         }
 
         private List<T> GetEntities<T>(string tableName, IEnumerable<AppFilter>? filters = null, string connectionName = "PPDM39") where T : class
@@ -162,7 +143,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ?? new List<T>();
         }
 
-        private void TryInsertEntity(object entity, string tableName, string userId, string connectionName = "PPDM39")
+        private void InsertEntity(object entity, string tableName, string userId, string connectionName = "PPDM39")
         {
             RunSyncCompatibility(
                 async () =>
@@ -171,62 +152,40 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         .InsertAsync(entity, userId)
                         .ConfigureAwait(false);
                 },
-                "TryInsertEntity",
+                "InsertEntity",
                 tableName,
                 entity.GetType().Name);
         }
 
-        private async Task TryInsertEntityAsync(object entity, string tableName, string userId, string connectionName = "PPDM39")
+        private async Task InsertEntityAsync(object entity, string tableName, string userId, string connectionName = "PPDM39")
         {
-            try
-            {
-                await GetRepository(entity.GetType(), connectionName ?? ConnectionName, tableName)
-                    .InsertAsync(entity, userId)
-                    .ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(
-                    ex,
-                    "Compatibility TryInsertEntityAsync failed for table {TableName}, entity {EntityType}",
-                    tableName,
-                    entity.GetType().Name);
-            }
+            // A failed insert propagates: the caller returned the record as created when nothing was stored.
+            await GetRepository(entity.GetType(), connectionName ?? ConnectionName, tableName)
+                .InsertAsync(entity, userId)
+                .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Runs an async operation for a synchronous compatibility caller. A failure propagates as itself: the bridge used to
+        /// answer it as default (null, an empty record, "not posted"), which the callers then returned as a result.
+        /// </summary>
         private T? RunSyncCompatibility<T>(Func<Task<T>> operation, string operationName, params object?[] contextValues)
         {
-            try
-            {
-                return operation().ConfigureAwait(false).GetAwaiter().GetResult();
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(
-                    ex,
-                    "Compatibility sync bridge failed for operation {OperationName} with context [{ContextValues}]",
-                    operationName,
-                    string.Join(", ", contextValues.Select(v => v?.ToString() ?? "<null>")));
-                return default;
-            }
+            _logger?.LogDebug(
+                "Compatibility sync bridge running {OperationName} with context [{ContextValues}]",
+                operationName,
+                string.Join(", ", contextValues.Select(v => v?.ToString() ?? "<null>")));
+            return operation().ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
-        private bool RunSyncCompatibility(Func<Task> operation, string operationName, params object?[] contextValues)
+        /// <inheritdoc cref="RunSyncCompatibility{T}(Func{Task{T}}, string, object?[])"/>
+        private void RunSyncCompatibility(Func<Task> operation, string operationName, params object?[] contextValues)
         {
-            try
-            {
-                operation().ConfigureAwait(false).GetAwaiter().GetResult();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(
-                    ex,
-                    "Compatibility sync bridge failed for operation {OperationName} with context [{ContextValues}]",
-                    operationName,
-                    string.Join(", ", contextValues.Select(v => v?.ToString() ?? "<null>")));
-                return false;
-            }
+            _logger?.LogDebug(
+                "Compatibility sync bridge running {OperationName} with context [{ContextValues}]",
+                operationName,
+                string.Join(", ", contextValues.Select(v => v?.ToString() ?? "<null>")));
+            operation().ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -301,7 +260,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                _service.TryInsertEntity(purchaseOrder, "PURCHASE_ORDER", userId);
+                _service.InsertEntity(purchaseOrder, "PURCHASE_ORDER", userId);
                 return purchaseOrder;
             }
         }
@@ -338,7 +297,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                             "Invoices.CreateInvoiceAsync",
                             request?.InvoiceNumber,
                             userId)
-                        ?? new INVOICE();
+                        ?? throw new InvalidOperationException("The invoice service created no invoice.");
 
                 var invoice = new INVOICE
                 {
@@ -357,7 +316,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                _service.TryInsertEntity(invoice, "INVOICE", userId);
+                _service.InsertEntity(invoice, "INVOICE", userId);
                 return invoice;
             }
         }
@@ -407,7 +366,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                             "GlAccounts.CreateAccountAsync",
                             request?.AccountNumber,
                             userId)
-                        ?? new GL_ACCOUNT();
+                        ?? throw new InvalidOperationException("The GL account service created no account.");
                 }
 
                 var account = new GL_ACCOUNT
@@ -426,7 +385,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                _service.TryInsertEntity(account, "GL_ACCOUNT", userId);
+                _service.InsertEntity(account, "GL_ACCOUNT", userId);
                 return account;
             }
         }
@@ -471,7 +430,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         entryNumber,
                         userId);
                     if (bridgedEntry == null)
-                        return new JOURNAL_ENTRY();
+                        throw new InvalidOperationException("The journal entry service created no journal entry.");
                     bridgedEntry.ENTRY_TYPE = entryType;
                     return bridgedEntry;
                 }
@@ -491,18 +450,23 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                _service.TryInsertEntity(manualEntry, "JOURNAL_ENTRY", userId);
+                _service.InsertEntity(manualEntry, "JOURNAL_ENTRY", userId);
                 return manualEntry;
             }
 
             public void PostJournalEntry(string id, string userId)
             {
-                if (_service._accountingServices?.JournalEntries != null)
-                    _service.RunSyncCompatibility(
-                        () => _service._accountingServices.JournalEntries.PostEntryAsync(id, userId),
-                        "JournalEntries.PostEntryAsync",
-                        id,
-                        userId);
+                // Without the journal service nothing posts, and the caller must not read the call as posted.
+                if (_service._accountingServices?.JournalEntries == null)
+                    throw new InvalidOperationException("Journal posting needs the accounting journal entry service, and none is registered.");
+
+                var posted = _service.RunSyncCompatibility(
+                    () => _service._accountingServices.JournalEntries.PostEntryAsync(id, userId),
+                    "JournalEntries.PostEntryAsync",
+                    id,
+                    userId);
+                if (!posted)
+                    throw new InvalidOperationException($"Journal entry {id} was not posted.");
             }
 
             public JOURNAL_ENTRY? GetJournalEntry(string id)
@@ -548,7 +512,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                _service.TryInsertEntity(transaction, "INVENTORY_TRANSACTION", userId);
+                _service.InsertEntity(transaction, "INVENTORY_TRANSACTION", userId);
                 return transaction;
             }
 
@@ -590,7 +554,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                             "AccountsReceivable.CreateInvoiceAsync",
                             request?.InvoiceNumber,
                             userId)
-                        ?? new AR_INVOICE();
+                        ?? throw new InvalidOperationException("The receivables service created no invoice.");
 
                 var invoice = new AR_INVOICE
                 {
@@ -607,7 +571,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                _service.TryInsertEntity(invoice, "AR_INVOICE", userId);
+                _service.InsertEntity(invoice, "AR_INVOICE", userId);
                 return invoice;
             }
         }
@@ -646,7 +610,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                             "AccountsPayableInvoices.CreateBillAsync",
                             request?.InvoiceNumber,
                             userId)
-                        ?? new AP_INVOICE();
+                        ?? throw new InvalidOperationException("The payables service created no bill.");
                 }
 
                 var bill = new AP_INVOICE
@@ -664,7 +628,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                _service.TryInsertEntity(bill, "AP_INVOICE", userId);
+                _service.InsertEntity(bill, "AP_INVOICE", userId);
                 return bill;
             }
         }
@@ -739,32 +703,22 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 if (Indices.TryGetValue(indexName, out var cached))
                     return cached;
 
-                try
-                {
-                    var price = _service.RunSyncCompatibility(
-                        () => _service._pricingService.GetPriceAsync(indexName, DateTime.UtcNow, ConnectionName),
-                        "PricingService.GetPriceAsync",
-                        indexName);
-                    if (price <= 0m)
-                        return null;
-                    var resolved = new PriceIndex
-                    {
-                        IndexName = indexName,
-                        IndexDate = DateTime.UtcNow,
-                        Price = price,
-                        Currency = AccountingCurrencyCodes.Usd
-                    };
-                    Indices[indexName] = resolved;
-                    return resolved;
-                }
-                catch (Exception ex)
-                {
-                    _service._logger?.LogWarning(
-                        ex,
-                        "GetLatestPrice compatibility fallback used for index {IndexName}",
-                        indexName);
+                // A failed price lookup propagates: as null it valued the run ticket at the fixed price or at zero.
+                var price = _service.RunSyncCompatibility(
+                    () => _service._pricingService.GetPriceAsync(indexName, DateTime.UtcNow, ConnectionName),
+                    "PricingService.GetPriceAsync",
+                    indexName);
+                if (price <= 0m)
                     return null;
-                }
+                var resolved = new PriceIndex
+                {
+                    IndexName = indexName,
+                    IndexDate = DateTime.UtcNow,
+                    Price = price,
+                    Currency = AccountingCurrencyCodes.Usd
+                };
+                Indices[indexName] = resolved;
+                return resolved;
             }
 
             public void AddOrUpdatePriceIndex(PriceIndex index)
@@ -839,7 +793,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         return existing;
                     });
 
-                _service.TryInsertEntity(ownershipInterest, "OWNERSHIP_INTEREST", ProductionAccountingAuditActors.System);
+                _service.InsertEntity(ownershipInterest, "OWNERSHIP_INTEREST", ProductionAccountingAuditActors.System);
                 return divisionOrder;
             }
 
@@ -897,7 +851,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         return existing;
                     });
 
-                _service.TryInsertEntity(payment, "ROYALTY_PAYMENT", ProductionAccountingAuditActors.System);
+                _service.InsertEntity(payment, "ROYALTY_PAYMENT", ProductionAccountingAuditActors.System);
                 return payment;
             }
 
@@ -1063,7 +1017,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 };
 
                 Contracts[contract.CONTRACT_ID] = contract;
-                await _service.TryInsertEntityAsync(contract, "EXCHANGE_CONTRACT", userId, connectionName)
+                await _service.InsertEntityAsync(contract, "EXCHANGE_CONTRACT", userId, connectionName)
                     .ConfigureAwait(false);
                 return contract;
             }
@@ -1071,7 +1025,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
         /// <summary>
         /// Compatibility behavior class: <c>fallback-only</c>.
-        /// Legacy full-cost accounting helper with in-memory totals and fallback ceiling-test behavior.
+        /// Legacy full-cost accounting helper with in-memory totals; the ceiling test is the canonical service's.
         /// </summary>
         public sealed class FullCostAccountingCompatibility
         {
@@ -1106,31 +1060,18 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
 
             /// <summary>
-            /// Compatibility behavior class: <c>fallback-only</c>.
-            /// Attempts canonical full-cost ceiling test and falls back to pass-through compatibility result on failure.
+            /// Runs the canonical full-cost ceiling test. A test that fails to run propagates: it used to answer "passes",
+            /// a ceiling test nobody performed reported as passed.
             /// </summary>
             public object PerformCeilingTest(string costCenterId, object? reserves, decimal discountRate, string connectionName = "PPDM39")
             {
-                bool passes;
-                try
-                {
-                    var bridged = _service.RunSyncCompatibility(
-                        () => _service._fcService.PerformCeilingTestAsync(
-                            costCenterId,
-                            ProductionAccountingAuditActors.System,
-                            connectionName ?? _connectionName),
-                        "FullCostService.PerformCeilingTestAsync",
-                        costCenterId);
-                    passes = bridged;
-                }
-                catch (Exception ex)
-                {
-                    _service._logger?.LogWarning(
-                        ex,
-                        "PerformCeilingTest compatibility fallback used for cost center {CostCenterId}",
-                        costCenterId);
-                    passes = true;
-                }
+                bool passes = _service.RunSyncCompatibility(
+                    () => _service._fcService.PerformCeilingTestAsync(
+                        costCenterId,
+                        ProductionAccountingAuditActors.System,
+                        connectionName ?? _connectionName),
+                    "FullCostService.PerformCeilingTestAsync",
+                    costCenterId);
 
                 return new
                 {
@@ -1148,7 +1089,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
         /// <summary>
         /// Compatibility behavior class: <c>fallback-only</c>.
-        /// Legacy successful-efforts helper that forwards to canonical service with warning-logged fallback on failures.
+        /// Legacy successful-efforts helper that forwards to the canonical service; a failure propagates.
         /// </summary>
         public sealed class SuccessfulEffortsAccountingCompatibility
         {
@@ -1196,25 +1137,16 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 if (string.IsNullOrWhiteSpace(wellOrPropertyId) || amount <= 0m)
                     return;
 
-                try
-                {
-                    _service.RunSyncCompatibility(
-                        () => _service._seService.RecordCostAsync(
-                            wellOrPropertyId,
-                            amount,
-                            ProductionAccountingAuditActors.System,
-                            connectionName ?? _connectionName),
-                        "SuccessfulEffortsService.RecordCostAsync",
+                // A failed recording propagates: the cost was reported recorded when it was not.
+                _service.RunSyncCompatibility(
+                    () => _service._seService.RecordCostAsync(
                         wellOrPropertyId,
-                        amount);
-                }
-                catch (Exception ex)
-                {
-                    _service._logger?.LogWarning(
-                        ex,
-                        "SuccessfulEfforts compatibility RecordCost failed for id {WellOrPropertyId}",
-                        wellOrPropertyId);
-                }
+                        amount,
+                        ProductionAccountingAuditActors.System,
+                        connectionName ?? _connectionName),
+                    "SuccessfulEffortsService.RecordCostAsync",
+                    wellOrPropertyId,
+                    amount);
             }
         }
 

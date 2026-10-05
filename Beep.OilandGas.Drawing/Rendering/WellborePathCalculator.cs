@@ -127,7 +127,6 @@ namespace Beep.OilandGas.Drawing.Rendering
                 HorizontalSectionAlignment.LaterallyCompressed => (float)horizontalLength / horizontalStretchFactor,
                 HorizontalSectionAlignment.TrueScale => (float)horizontalLength,
                 HorizontalSectionAlignment.Stretched => (float)horizontalLength * horizontalStretchFactor,
-                _ => (float)horizontalLength / horizontalStretchFactor
             };
 
             path.Add(new SKPoint(horizontalX + stretchedLength, horizontalY));

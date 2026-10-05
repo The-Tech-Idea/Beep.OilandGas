@@ -37,6 +37,8 @@
     <ProjectReference Include="..\Beep.OilandGas.ChokeAnalysis\Beep.OilandGas.ChokeAnalysis.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.SuckerRodPumping\Beep.OilandGas.SuckerRodPumping.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.PermitsAndApplications\Beep.OilandGas.PermitsAndApplications.csproj" />
+    <!-- OILGAS-CATCH-01: the failure service every catch here reports through (IFailureReporter). -->
+    <ProjectReference Include="..\..\Beep.Web\TheTechIdeaWeb.Diagnostics.Abstractions\TheTechIdeaWeb.Diagnostics.Abstractions.csproj" />
   </ItemGroup>
 
   <ItemGroup>

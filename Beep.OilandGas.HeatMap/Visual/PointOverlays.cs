@@ -238,84 +238,62 @@ namespace Beep.OilandGas.HeatMap.Visual
             if (overlay == null || !overlay.IsVisible || string.IsNullOrEmpty(overlay.SvgPathOrContent))
                 return;
 
-            try
+            // OILGAS-CATCH-01. The SVG is read with Svg.Skia. It had been looked up by reflection under a type name the
+            // old SVG package does not use, so every overlay was skipped, and any failure was swallowed "silently". An SVG
+            // that is missing or cannot be read now reaches the caller as its exception.
+            using var svg = new Svg.Skia.SKSvg();
+            if (overlay.IsSvgContent)
             {
-                // Try to load SVG using SkiaSharp.Svg (if available)
-                SKPicture svgPicture = null;
-
-                // Use reflection to avoid direct dependency issues
-                var svgType = Type.GetType("SkiaSharp.Svg.SKSvg, SkiaSharp.Svg");
-                if (svgType != null)
-                {
-                    object svgInstance = Activator.CreateInstance(svgType);
-
-                    if (overlay.IsSvgContent)
-                    {
-                        // Load from SVG content string
-                        using (var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(overlay.SvgPathOrContent)))
-                        {
-                            var loadMethod = svgType.GetMethod("Load", new[] { typeof(Stream) });
-                            loadMethod?.Invoke(svgInstance, new object[] { stream });
-                            var pictureProperty = svgType.GetProperty("Picture");
-                            svgPicture = pictureProperty?.GetValue(svgInstance) as SKPicture;
-                        }
-                    }
-                    else
-                    {
-                        // Load from file path
-                        using (var stream = File.OpenRead(overlay.SvgPathOrContent))
-                        {
-                            var loadMethod = svgType.GetMethod("Load", new[] { typeof(Stream) });
-                            loadMethod?.Invoke(svgInstance, new object[] { stream });
-                            var pictureProperty = svgType.GetProperty("Picture");
-                            svgPicture = pictureProperty?.GetValue(svgInstance) as SKPicture;
-                        }
-                    }
-                }
-
-                if (svgPicture == null)
-                    return;
-
-                float x = (float)(overlay.X * scaleX + offsetX) + overlay.Offset.X;
-                float y = (float)(overlay.Y * scaleY + offsetY) + overlay.Offset.Y;
-
-                canvas.Save();
-
-                // Apply transformations
-                canvas.Translate(x, y);
-                if (overlay.Rotation != 0)
-                {
-                    canvas.RotateDegrees(overlay.Rotation);
-                }
-
-                // Apply opacity
-                if (overlay.Opacity < 1.0f)
-                {
-                    var paint = new SKPaint
-                    {
-                        Color = new SKColor(255, 255, 255, (byte)(255 * overlay.Opacity))
-                    };
-                    canvas.SaveLayer(paint);
-                }
-
-                // Calculate scaling to fit desired size
-                var bounds = svgPicture.CullRect;
-                float scaleX_svg = overlay.Width / bounds.Width;
-                float scaleY_svg = overlay.Height / bounds.Height;
-                canvas.Scale(scaleX_svg, scaleY_svg);
-
-                // Center the SVG
-                canvas.Translate(-bounds.MidX, -bounds.MidY);
-
-                // Draw SVG
-                canvas.DrawPicture(svgPicture);
-
-                canvas.Restore();
+                // Load from SVG content string
+                using var contentStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(overlay.SvgPathOrContent));
+                svg.Load(contentStream);
             }
-            catch (Exception)
+            else
             {
-                // Silently fail if SVG cannot be loaded
+                // Load from file path
+                using var fileStream = File.OpenRead(overlay.SvgPathOrContent);
+                svg.Load(fileStream);
             }
+
+            SKPicture svgPicture = svg.Picture;
+            if (svgPicture == null)
+                return;
+
+            float x = (float)(overlay.X * scaleX + offsetX) + overlay.Offset.X;
+            float y = (float)(overlay.Y * scaleY + offsetY) + overlay.Offset.Y;
+
+            canvas.Save();
+
+            // Apply transformations
+            canvas.Translate(x, y);
+            if (overlay.Rotation != 0)
+            {
+                canvas.RotateDegrees(overlay.Rotation);
+            }
+
+            // Apply opacity
+            if (overlay.Opacity < 1.0f)
+            {
+                var paint = new SKPaint
+                {
+                    Color = new SKColor(255, 255, 255, (byte)(255 * overlay.Opacity))
+                };
+                canvas.SaveLayer(paint);
+            }
+
+            // Calculate scaling to fit desired size
+            var bounds = svgPicture.CullRect;
+            float scaleX_svg = overlay.Width / bounds.Width;
+            float scaleY_svg = overlay.Height / bounds.Height;
+            canvas.Scale(scaleX_svg, scaleY_svg);
+
+            // Center the SVG
+            canvas.Translate(-bounds.MidX, -bounds.MidY);
+
+            // Draw SVG
+            canvas.DrawPicture(svgPicture);
+
+            canvas.Restore();
         }
 
         /// <summary>

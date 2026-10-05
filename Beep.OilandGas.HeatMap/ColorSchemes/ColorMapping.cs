@@ -63,7 +63,6 @@ namespace Beep.OilandGas.HeatMap.ColorSchemes
                 ColorMappingFunction.Power => Math.Pow(value, parameter),
                 ColorMappingFunction.SymmetricLog => ApplySymmetricLog(value, parameter),
                 ColorMappingFunction.Custom => value, // Custom function should be applied externally
-                _ => value
             };
         }
 

@@ -36,23 +36,12 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             if (!CanAccess(targetUserId)) return Forbid();
             if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
-            try
-            {
-                var profile = await _userProfileService.GetUserProfileAsync(targetUserId);
-                
-                if (profile == null)
-                    return NotFound(new { message = "User profile not found" });
-                
-                return Ok(profile);
-            }
-            catch (System.Exception exception) when (exception is System.ArgumentException or System.Text.Json.JsonException or System.NotSupportedException)
-            {
-                return BadRequest(new { error = "Invalid profile request or unsupported organization role scope." });
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var profile = await _userProfileService.GetUserProfileAsync(targetUserId);
+            
+            if (profile == null)
+                return NotFound(new { message = "User profile not found" });
+            
+            return Ok(profile);
         }
 
         /// <summary>
@@ -66,19 +55,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             if (!CanAccess(targetUserId)) return Forbid();
             if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
-            try
-            {
-                var roles = await _userProfileService.GetUserRolesAsync(targetUserId, organizationId);
-                return Ok(roles);
-            }
-            catch (System.Exception exception) when (exception is System.ArgumentException or System.Text.Json.JsonException or System.NotSupportedException)
-            {
-                return BadRequest(new { error = "Invalid profile request or unsupported organization role scope." });
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var roles = await _userProfileService.GetUserRolesAsync(targetUserId, organizationId);
+            return Ok(roles);
         }
 
         /// <summary>
@@ -90,19 +68,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             if (!CanAccess(targetUserId)) return Forbid();
             if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
-            try
-            {
-                var layout = await _userProfileService.GetUserDefaultLayoutAsync(targetUserId);
-                return Ok(layout ?? "DefaultLayout");
-            }
-            catch (System.Exception exception) when (exception is System.ArgumentException or System.Text.Json.JsonException or System.NotSupportedException)
-            {
-                return BadRequest(new { error = "Invalid profile request or unsupported organization role scope." });
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var layout = await _userProfileService.GetUserDefaultLayoutAsync(targetUserId);
+            return Ok(layout ?? "DefaultLayout");
         }
 
         /// <summary>
@@ -116,19 +83,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             if (!CanAccess(targetUserId)) return Forbid();
             if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
-            try
-            {
-                var result = await _userProfileService.UpdateUserPreferencesAsync(targetUserId, request.PreferencesJson);
-                return Ok(result);
-            }
-            catch (System.Exception exception) when (exception is System.ArgumentException or System.Text.Json.JsonException or System.NotSupportedException)
-            {
-                return BadRequest(new { error = "Invalid profile request or unsupported organization role scope." });
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _userProfileService.UpdateUserPreferencesAsync(targetUserId, request.PreferencesJson);
+            return Ok(result);
         }
 
         /// <summary>
@@ -143,19 +99,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             if (!CanAccess(targetUserId) || !User.IsInRole("Administrator")) return Forbid();
             if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
-            try
-            {
-                var result = await _userProfileService.UpdateUserPrimaryRoleAsync(targetUserId, request.PrimaryRole);
-                return Ok(result);
-            }
-            catch (System.Exception exception) when (exception is System.ArgumentException or System.Text.Json.JsonException or System.NotSupportedException)
-            {
-                return BadRequest(new { error = "Invalid profile request or unsupported organization role scope." });
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _userProfileService.UpdateUserPrimaryRoleAsync(targetUserId, request.PrimaryRole);
+            return Ok(result);
         }
 
         /// <summary>
@@ -169,19 +114,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             if (!CanAccess(targetUserId)) return Forbid();
             if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
-            try
-            {
-                var result = await _userProfileService.UpdateUserPreferredLayoutAsync(targetUserId, request.PreferredLayout);
-                return Ok(result);
-            }
-            catch (System.Exception exception) when (exception is System.ArgumentException or System.Text.Json.JsonException or System.NotSupportedException)
-            {
-                return BadRequest(new { error = "Invalid profile request or unsupported organization role scope." });
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _userProfileService.UpdateUserPreferredLayoutAsync(targetUserId, request.PreferredLayout);
+            return Ok(result);
         }
 
         /// <summary>
@@ -192,19 +126,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         public async Task<ActionResult> RecordUserLogin()
         {
             var userId = User.ActingUserId();
-            try
-            {
-                await _userProfileService.RecordUserLoginAsync(userId);
-                return Ok(new { message = "Login recorded" });
-            }
-            catch (System.Exception exception) when (exception is System.ArgumentException or System.Text.Json.JsonException or System.NotSupportedException)
-            {
-                return BadRequest(new { error = "Invalid profile request or unsupported organization role scope." });
-            }
-            catch (System.Exception)
-            {
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            await _userProfileService.RecordUserLoginAsync(userId);
+            return Ok(new { message = "Login recorded" });
         }
     }
 }

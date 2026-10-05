@@ -31,24 +31,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             if (request is null)
                 return BadRequest(new { error = "Request body is required." });
 
-            try
-            {
-                var result = await _service.GenerateForecastAsync(request);
-                return Ok(result);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating production forecast");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.GenerateForecastAsync(request);
+            return Ok(result);
         }
 
         [HttpPost("decline-curve")]
@@ -57,27 +41,11 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             if (request is null)
                 return BadRequest(new { error = "Request body is required." });
 
-            try
-            {
-                var result = await _service.PerformDeclineCurveAnalysisAsync(
-                    request.WellUWI,
-                    request.StartDate,
-                    request.EndDate);
-                return Ok(result);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error performing decline curve analysis for well {WellUWI}", request.WellUWI);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.PerformDeclineCurveAnalysisAsync(
+                request.WellUWI,
+                request.StartDate,
+                request.EndDate);
+            return Ok(result);
         }
 
         [HttpPost("forecast")]
@@ -87,24 +55,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             if (forecast is null)
                 return BadRequest(new { error = "Forecast body is required." });
 
-            try
-            {
-                await _service.SaveForecastAsync(forecast, userId);
-                return Ok(new { message = "Production forecast saved successfully", forecastId = forecast.ForecastId });
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving production forecast");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            await _service.SaveForecastAsync(forecast, userId);
+            return Ok(new { message = "Production forecast saved successfully", forecastId = forecast.ForecastId });
         }
     }
 }

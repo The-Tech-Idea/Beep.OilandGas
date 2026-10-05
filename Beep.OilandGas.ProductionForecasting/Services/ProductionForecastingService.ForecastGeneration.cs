@@ -23,11 +23,11 @@ namespace Beep.OilandGas.ProductionForecasting.Services
         private async Task<ProductionForecastResult> GenerateForecastFromRequestAsync(GenerateForecastRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.WellUWI) && string.IsNullOrWhiteSpace(request.FieldId))
-                throw new ArgumentException("Either WellUWI or FieldId must be provided.");
+                throw RefusalException.Invalid("Either a well UWI or a field ID must be provided.");
             if (request.ForecastMethod == ForecastType.None)
-                throw new ArgumentException("Forecast method cannot be None.", nameof(request));
+                throw RefusalException.Invalid("A forecast method is required.");
             if (request.ForecastPeriod < 1)
-                throw new ArgumentException("Forecast period must be at least 1.", nameof(request));
+                throw RefusalException.Invalid("Forecast period must be at least 1.");
 
             var forecastDurationDays = request.ForecastPeriod * ForecastAlgorithmConstants.DaysPerMonth;
             var timeSteps = Math.Max(request.ForecastPeriod, 12);
@@ -39,7 +39,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             var useModified = request.UseModifiedHyperbolic;
 
             if (qEcon.HasValue && (qEcon.Value <= 0 || qEcon.Value >= qi))
-                throw new ArgumentException("EconomicLimitOilRate must be > 0 and less than qi.");
+                throw RefusalException.Invalid("The economic limit oil rate must be greater than zero and less than qi.");
 
             var pf = BuildDeclineProductionForecast(
                 request.ForecastMethod,
@@ -97,7 +97,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             if (history == null)
             {
                 if (!hasManualQi || !hasManualDi)
-                    throw new ArgumentException(
+                    throw RefusalException.Conflict(
                         $"Insufficient production history for well '{request.WellUWI}' to fit decline parameters. Provide InitialOilRateQi and InitialDeclineDi, or ensure at least {ForecastAlgorithmConstants.MinHistoryPointsForFit} PDEN_VOL_SUMMARY periods with positive oil volumes.");
                 return (qi, di, b, null);
             }

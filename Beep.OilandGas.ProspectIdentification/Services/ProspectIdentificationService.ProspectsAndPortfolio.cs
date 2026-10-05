@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,14 +16,16 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         public async Task<ProspectEvaluation> EvaluateProspectAsync(string prospectId)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
-                throw new ArgumentException("Prospect ID cannot be null or empty", nameof(prospectId));
+                throw RefusalException.Invalid("The prospect ID is required.");
 
             _logger?.LogInformation("Evaluating prospect {ProspectId}", prospectId);
 
             var prospectRepo = await CreateProspectRepositoryAsync();
 
             var entity = await prospectRepo.GetByIdAsync(prospectId);
-            var prospect = entity as ProspectRecord;
+            // A prospect that is not there has nothing to evaluate: the evaluation had been made up from defaults.
+            var prospect = entity as ProspectRecord
+                ?? throw RefusalException.NotFound($"Prospect {prospectId} was not found.");
 
             var estimatedResources = prospect?.ESTIMATED_OIL_VOLUME ?? prospect?.ESTIMATED_RESERVES;
             var riskScore = prospect?.RISK_FACTOR ?? 0.5m;
@@ -133,9 +136,9 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         public async Task<List<ProspectRanking>> RankProspectsAsync(List<string> prospectIds, Dictionary<string, decimal> rankingCriteria)
         {
             if (prospectIds == null || prospectIds.Count == 0)
-                throw new ArgumentException("Prospect IDs cannot be null or empty", nameof(prospectIds));
+                throw RefusalException.Invalid("Choose at least one prospect to rank.");
             if (rankingCriteria == null || rankingCriteria.Count == 0)
-                throw new ArgumentException("Ranking criteria cannot be null or empty", nameof(rankingCriteria));
+                throw RefusalException.Invalid("Give at least one ranking criterion.");
 
             _logger?.LogInformation("Ranking {Count} prospects using {CriteriaCount} criteria",
                 prospectIds.Count, rankingCriteria.Count);
@@ -146,7 +149,9 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             foreach (var id in prospectIds)
             {
                 var entity = await prospectRepo.GetByIdAsync(id);
-                var p = entity as ProspectRecord;
+                // A prospect that is not there is not ranked last with a score of zero; the request names it wrongly.
+                var p = entity as ProspectRecord
+                    ?? throw RefusalException.NotFound($"Prospect {id} was not found.");
 
                 decimal score = 0m;
                 var estimatedReserves = p?.ESTIMATED_OIL_VOLUME ?? p?.ESTIMATED_RESERVES;
@@ -175,7 +180,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             decimal capitalBudget)
         {
             if (rankedProspects == null || rankedProspects.Count == 0)
-                throw new ArgumentException("Ranked prospects cannot be null or empty", nameof(rankedProspects));
+                throw RefusalException.Invalid("Give the ranked prospects to build the portfolio from.");
 
             _logger?.LogInformation("Optimizing portfolio with {Count} prospects, Risk Tolerance={Risk}",
                 rankedProspects.Count, riskTolerance);

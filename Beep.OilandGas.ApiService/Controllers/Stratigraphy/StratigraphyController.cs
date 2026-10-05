@@ -57,21 +57,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Stratigraphy
         [HttpGet("columns")]
         public async Task<ActionResult<List<STRAT_COLUMN>>> GetColumnsAsync([FromQuery] string? filters = null)
         {
-            try
-            {
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(STRAT_COLUMN), ConnectionName, "STRAT_COLUMN");
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(STRAT_COLUMN), ConnectionName, "STRAT_COLUMN");
 
-                var filterList = ParseQueryFilters(filters);
-                var results = await repo.GetAsync(filterList);
-                return Ok(results.OfType<STRAT_COLUMN>().ToList());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching STRAT_COLUMN");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var filterList = ParseQueryFilters(filters);
+            var results = await repo.GetAsync(filterList);
+            return Ok(results.OfType<STRAT_COLUMN>().ToList());
         }
 
         // ── STRAT_UNIT ──────────────────────────────────────────────────────────
@@ -80,21 +72,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Stratigraphy
         [HttpGet("units")]
         public async Task<ActionResult<List<STRAT_UNIT>>> GetUnitsAsync([FromQuery] string? filters = null)
         {
-            try
-            {
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(STRAT_UNIT), ConnectionName, "STRAT_UNIT");
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(STRAT_UNIT), ConnectionName, "STRAT_UNIT");
 
-                var filterList = ParseQueryFilters(filters);
-                var results = await repo.GetAsync(filterList);
-                return Ok(results.OfType<STRAT_UNIT>().ToList());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching STRAT_UNIT");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var filterList = ParseQueryFilters(filters);
+            var results = await repo.GetAsync(filterList);
+            return Ok(results.OfType<STRAT_UNIT>().ToList());
         }
 
         // ── STRAT_HIERARCHY ─────────────────────────────────────────────────────
@@ -103,21 +87,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Stratigraphy
         [HttpGet("hierarchy")]
         public async Task<ActionResult<List<STRAT_HIERARCHY>>> GetHierarchyAsync([FromQuery] string? filters = null)
         {
-            try
-            {
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(STRAT_HIERARCHY), ConnectionName, "STRAT_HIERARCHY");
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(STRAT_HIERARCHY), ConnectionName, "STRAT_HIERARCHY");
 
-                var filterList = ParseQueryFilters(filters);
-                var results = await repo.GetAsync(filterList);
-                return Ok(results.OfType<STRAT_HIERARCHY>().ToList());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching STRAT_HIERARCHY");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var filterList = ParseQueryFilters(filters);
+            var results = await repo.GetAsync(filterList);
+            return Ok(results.OfType<STRAT_HIERARCHY>().ToList());
         }
 
         // ── STRAT_WELL_SECTION ──────────────────────────────────────────────────
@@ -126,21 +102,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Stratigraphy
         [HttpGet("well-sections")]
         public async Task<ActionResult<List<STRAT_WELL_SECTION>>> GetWellSectionsAsync([FromQuery] string? filters = null)
         {
-            try
-            {
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(STRAT_WELL_SECTION), ConnectionName, "STRAT_WELL_SECTION");
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(STRAT_WELL_SECTION), ConnectionName, "STRAT_WELL_SECTION");
 
-                var filterList = ParseQueryFilters(filters);
-                var results = await repo.GetAsync(filterList);
-                return Ok(results.OfType<STRAT_WELL_SECTION>().ToList());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching STRAT_WELL_SECTION");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var filterList = ParseQueryFilters(filters);
+            var results = await repo.GetAsync(filterList);
+            return Ok(results.OfType<STRAT_WELL_SECTION>().ToList());
         }
 
         /// <summary>GET /api/stratigraphy/well-sections/well/{uwi}</summary>
@@ -148,24 +116,16 @@ namespace Beep.OilandGas.ApiService.Controllers.Stratigraphy
         public async Task<ActionResult<List<STRAT_WELL_SECTION>>> GetWellSectionsByUwiAsync(string uwi)
         {
             if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
-            try
-            {
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(STRAT_WELL_SECTION), ConnectionName, "STRAT_WELL_SECTION");
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(STRAT_WELL_SECTION), ConnectionName, "STRAT_WELL_SECTION");
 
-                var filterList = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = uwi }
-                };
-                var results = await repo.GetAsync(filterList);
-                return Ok(results.OfType<STRAT_WELL_SECTION>().ToList());
-            }
-            catch (Exception ex)
+            var filterList = new List<AppFilter>
             {
-                _logger.LogError(ex, "Error fetching STRAT_WELL_SECTION for UWI {Uwi}", uwi);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = uwi }
+            };
+            var results = await repo.GetAsync(filterList);
+            return Ok(results.OfType<STRAT_WELL_SECTION>().ToList());
         }
 
         // ── helpers ─────────────────────────────────────────────────────────────

@@ -37,34 +37,21 @@ namespace Beep.OilandGas.ApiService.Controllers
         public async Task<ActionResult<CreateDemoDatabaseResponse>> CreateDemoDatabase([FromBody] CreateDemoDatabaseRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            if (request == null)
             {
-                if (request == null)
-                {
-                        return BadRequest(new { error = "Request is required." });
-                }
-
-                request.UserId = userId;
-                var response = await _demoDatabaseService.CreateDemoDatabaseAsync(request);
-                
-                if (response.Success)
-                {
-                    return Ok(response);
-                }
-                else
-                {
-                    return BadRequest(response);
-                }
+                    return BadRequest(new { error = "Request is required." });
             }
-            catch (Exception ex)
+
+            request.UserId = userId;
+            var response = await _demoDatabaseService.CreateDemoDatabaseAsync(request);
+            
+            if (response.Success)
             {
-                _logger.LogError(ex, "Error creating demo database for user {UserId}", userId);
-                return StatusCode(500, new CreateDemoDatabaseResponse
-                {
-                    Success = false,
-                    Message = "Failed to create demo database",
-                    ErrorDetails = "An internal error occurred."
-                });
+                return Ok(response);
+            }
+            else
+            {
+                return BadRequest(response);
             }
         }
 
@@ -75,16 +62,8 @@ namespace Beep.OilandGas.ApiService.Controllers
         public ActionResult<List<DemoDatabaseMetadata>> GetMyDemoDatabases()
         {
             var userId = User.ActingUserId();
-            try
-            {
-                var databases = _demoDatabaseService.GetUserDemoDatabases(userId);
-                return Ok(databases);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting demo databases for user {UserId}", userId);
-                    return StatusCode(500, new { error = "Failed to get demo databases." });
-            }
+            var databases = _demoDatabaseService.GetUserDemoDatabases(userId);
+            return Ok(databases);
         }
 
         /// <summary>
@@ -93,23 +72,15 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpGet("list")]
         public ActionResult<ListDemoDatabasesResponse> ListAllDemoDatabases()
         {
-            try
-            {
-                var allDatabases = _demoDatabaseService.GetAllDemoDatabases();
-                var expiredCount = allDatabases.Count(d => d.IsExpired);
+            var allDatabases = _demoDatabaseService.GetAllDemoDatabases();
+            var expiredCount = allDatabases.Count(d => d.IsExpired);
 
-                return Ok(new ListDemoDatabasesResponse
-                {
-                    Databases = allDatabases,
-                    TotalCount = allDatabases.Count,
-                    ExpiredCount = expiredCount
-                });
-            }
-            catch (Exception ex)
+            return Ok(new ListDemoDatabasesResponse
             {
-                _logger.LogError(ex, "Error listing all demo databases");
-                    return StatusCode(500, new { error = "Failed to list demo databases." });
-            }
+                Databases = allDatabases,
+                TotalCount = allDatabases.Count,
+                ExpiredCount = expiredCount
+            });
         }
 
         /// <summary>
@@ -120,30 +91,16 @@ namespace Beep.OilandGas.ApiService.Controllers
         {
                 if (string.IsNullOrWhiteSpace(connectionName))
                     return BadRequest(new { error = "Connection name is required." });
-                try
-                {
-
                 var response = await _demoDatabaseService.DeleteDemoDatabaseAsync(connectionName);
                 
                 if (response.Success)
                 {
-                    return Ok(response);
+                return Ok(response);
                 }
                 else
                 {
-                    return BadRequest(response);
+                return BadRequest(response);
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting demo database {ConnectionName}", connectionName);
-                return StatusCode(500, new DeleteDemoDatabaseResponse
-                {
-                    Success = false,
-                    Message = "Failed to delete demo database",
-                    ErrorDetails = "An internal error occurred."
-                });
-            }
         }
 
         /// <summary>
@@ -152,21 +109,8 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpPost("cleanup")]
         public async Task<ActionResult<CleanupDemoDatabasesResponse>> CleanupExpiredDatabases()
         {
-            try
-            {
-                var response = await _demoDatabaseService.CleanupExpiredDatabasesAsync();
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error cleaning up expired demo databases");
-                return StatusCode(500, new CleanupDemoDatabasesResponse
-                {
-                    Success = false,
-                    Message = "Failed to cleanup expired demo databases",
-                    ErrorDetails = "An internal error occurred."
-                });
-            }
+            var response = await _demoDatabaseService.CleanupExpiredDatabasesAsync();
+            return Ok(response);
         }
     }
 }

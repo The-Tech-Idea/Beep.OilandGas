@@ -224,12 +224,13 @@ namespace Beep.OilandGas.Drawing.Layers
             DepthTransform depthTransform,
             float depthRange)
         {
-            string trackKind = layout.Track?.Kind switch
+            // A layout with no track is a curve track, as the curve-value lookup below reads it.
+            string trackKind = (layout.Track?.Kind ?? LogTrackKind.Curve) switch
             {
+                LogTrackKind.Curve => "Curve",
                 LogTrackKind.Depth => "Depth",
                 LogTrackKind.Lithology => "Lithology",
-                LogTrackKind.Zonation => "Zonation",
-                _ => "Curve"
+                LogTrackKind.Zonation => "Zonation"
             };
 
             string trackName = layout.Track?.Name ?? "Track";

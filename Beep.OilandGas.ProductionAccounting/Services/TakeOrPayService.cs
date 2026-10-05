@@ -188,29 +188,18 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
         private async Task<TAKE_OR_PAY_SCHEDULE?> GetScheduleAsync(string salesContractId, DateTime contractDate, string connectionName)
         {
-            try
+            var repo = await CreateRepoAsync<TAKE_OR_PAY_SCHEDULE>("TAKE_OR_PAY_SCHEDULE", connectionName);
+            var filters = new List<AppFilter>
             {
-                var repo = await CreateRepoAsync<TAKE_OR_PAY_SCHEDULE>("TAKE_OR_PAY_SCHEDULE", connectionName);
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "SALES_CONTRACT_ID", Operator = "=", FilterValue = salesContractId },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                };
+                new AppFilter { FieldName = "SALES_CONTRACT_ID", Operator = "=", FilterValue = salesContractId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+            };
 
-                var results = await repo.GetAsync(filters);
-                var schedules = results?.Cast<TAKE_OR_PAY_SCHEDULE>().ToList() ?? new List<TAKE_OR_PAY_SCHEDULE>();
-                return schedules.FirstOrDefault(s =>
-                    (!s.PERIOD_START.HasValue || s.PERIOD_START.Value.Date <= contractDate.Date) &&
-                    (!s.PERIOD_END.HasValue || s.PERIOD_END.Value.Date >= contractDate.Date));
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(
-                    ex,
-                    "Failed to load TAKE_OR_PAY_SCHEDULE for contract {SalesContractId}",
-                    salesContractId);
-                return null;
-            }
+            var results = await repo.GetAsync(filters);
+            var schedules = results?.Cast<TAKE_OR_PAY_SCHEDULE>().ToList() ?? new List<TAKE_OR_PAY_SCHEDULE>();
+            return schedules.FirstOrDefault(s =>
+                (!s.PERIOD_START.HasValue || s.PERIOD_START.Value.Date <= contractDate.Date) &&
+                (!s.PERIOD_END.HasValue || s.PERIOD_END.Value.Date >= contractDate.Date));
         }
 
         private async Task ApplyMakeupBalanceAsync(
@@ -223,53 +212,43 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(salesContractId))
                 return;
 
-            try
+            var repo = await CreateRepoAsync<TAKE_OR_PAY_BALANCE>("TAKE_OR_PAY_BALANCE", connectionName);
+            var filters = new List<AppFilter>
             {
-                var repo = await CreateRepoAsync<TAKE_OR_PAY_BALANCE>("TAKE_OR_PAY_BALANCE", connectionName);
-                var filters = new List<AppFilter>
+                new AppFilter { FieldName = "SALES_CONTRACT_ID", Operator = "=", FilterValue = salesContractId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+            };
+
+            var results = await repo.GetAsync(filters);
+            var balance = results?.Cast<TAKE_OR_PAY_BALANCE>().FirstOrDefault();
+            if (balance == null)
+            {
+                balance = new TAKE_OR_PAY_BALANCE
                 {
-                    new AppFilter { FieldName = "SALES_CONTRACT_ID", Operator = "=", FilterValue = salesContractId },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+                    TAKE_OR_PAY_BALANCE_ID = Guid.NewGuid().ToString(),
+                    SALES_CONTRACT_ID = salesContractId,
+                    BALANCE_VOLUME = volumeDelta,
+                    LAST_UPDATED_DATE = updateDate,
+                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
+                    PPDM_GUID = Guid.NewGuid().ToString(),
+                    ROW_CREATED_BY = userId,
+                    ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                var results = await repo.GetAsync(filters);
-                var balance = results?.Cast<TAKE_OR_PAY_BALANCE>().FirstOrDefault();
-                if (balance == null)
-                {
-                    balance = new TAKE_OR_PAY_BALANCE
-                    {
-                        TAKE_OR_PAY_BALANCE_ID = Guid.NewGuid().ToString(),
-                        SALES_CONTRACT_ID = salesContractId,
-                        BALANCE_VOLUME = volumeDelta,
-                        LAST_UPDATED_DATE = updateDate,
-                        ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
-                        PPDM_GUID = Guid.NewGuid().ToString(),
-                        ROW_CREATED_BY = userId,
-                        ROW_CREATED_DATE = DateTime.UtcNow
-                    };
-
-                    await repo.InsertAsync(balance, userId);
-                    return;
-                }
-
-                var newBalance = (balance.BALANCE_VOLUME ?? 0m) + volumeDelta;
-                if (newBalance < 0m)
-                    newBalance = 0m;
-
-                balance.BALANCE_VOLUME = newBalance;
-                balance.LAST_UPDATED_DATE = updateDate;
-                balance.ROW_CHANGED_BY = userId;
-                balance.ROW_CHANGED_DATE = DateTime.UtcNow;
-
-                await repo.UpdateAsync(balance, userId);
+                await repo.InsertAsync(balance, userId);
+                return;
             }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(
-                    ex,
-                    "Skipping TAKE_OR_PAY_BALANCE update for contract {SalesContractId}; optional table or metadata unavailable",
-                    salesContractId);
-            }
+
+            var newBalance = (balance.BALANCE_VOLUME ?? 0m) + volumeDelta;
+            if (newBalance < 0m)
+                newBalance = 0m;
+
+            balance.BALANCE_VOLUME = newBalance;
+            balance.LAST_UPDATED_DATE = updateDate;
+            balance.ROW_CHANGED_BY = userId;
+            balance.ROW_CHANGED_DATE = DateTime.UtcNow;
+
+            await repo.UpdateAsync(balance, userId);
         }
 
         private async Task UpdateObligationStatusAsync(CONTRACT_PERFORMANCE_OBLIGATION obligation, string status, string userId, string connectionName)

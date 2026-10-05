@@ -15,6 +15,7 @@ using Beep.OilandGas.Models.Data.WorkOrder;
 using Beep.OilandGas.ApiService.Attributes;
 using Beep.OilandGas.ApiService.Services;
 using Microsoft.Extensions.Logging;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
 {
@@ -29,6 +30,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         private readonly WorkOrderAccountingService _workOrderAccountingService;
         private readonly DecommissioningProcessService _decommissioningProcessService;
         private readonly ILogger<ProductionController> _logger;
+        private readonly IFailureReporter _failures;
 
         public ProductionController(
             IFieldOrchestrator fieldOrchestrator,
@@ -36,8 +38,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             IWorkOrderService workOrderService,
             WorkOrderAccountingService workOrderAccountingService,
             DecommissioningProcessService decommissioningProcessService,
-            ILogger<ProductionController> logger)
+            ILogger<ProductionController> logger,
+            IFailureReporter failures)
         {
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
             _fieldOrchestrator = fieldOrchestrator ?? throw new ArgumentNullException(nameof(fieldOrchestrator));
             _productionService = productionService ?? throw new ArgumentNullException(nameof(productionService));
             _workOrderService = workOrderService ?? throw new ArgumentNullException(nameof(workOrderService));
@@ -53,39 +57,26 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             if (string.IsNullOrWhiteSpace(wellId)) return BadRequest(new { error = "Well ID is required." });
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            try
-            {
-                var tests = await _productionService.GetWellTestsForWellAsync(fieldId, wellId);
-                var orderedTests = (tests ?? new List<WellTestResponse>())
-                    .OrderByDescending(ResolveTestDate)
-                    .ToList();
-                var latest = orderedTests.FirstOrDefault();
-                var maxOilRate = orderedTests.Max(t => ToDouble(t.OilFlowAmount));
+            var tests = await _productionService.GetWellTestsForWellAsync(fieldId, wellId);
+            var orderedTests = (tests ?? new List<WellTestResponse>())
+                .OrderByDescending(ResolveTestDate)
+                .ToList();
+            var latest = orderedTests.FirstOrDefault();
+            var maxOilRate = orderedTests.Max(t => ToDouble(t.OilFlowAmount));
 
-                var summary = new WellPerformanceSummary
-                {
-                    WellId = wellId,
-                    Status = latest != null ? "ACTIVE" : "UNKNOWN",
-                    OilRate = latest != null ? ToDouble(latest.OilFlowAmount) : 0,
-                    GasRate = latest != null ? ToDouble(latest.GasFlowAmount) : 0,
-                    WaterRate = latest != null ? ToDouble(latest.WaterFlowAmount) : 0,
-                    PotentialRate = maxOilRate > 0 ? maxOilRate : (latest != null ? ToDouble(latest.OilFlowAmount) : 0),
-                    CumOil = 0,
-                    LastTestDate = ResolveTestDate(latest),
-                    WellTests = orderedTests,
-                };
-                return Ok(summary);
-            }
-            catch (InvalidOperationException ex)
+            var summary = new WellPerformanceSummary
             {
-                _logger.LogWarning(ex, "Unable to fetch performance for well {WellId}", wellId);
-                return NotFound(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching performance for well {WellId}", wellId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                WellId = wellId,
+                Status = latest != null ? "ACTIVE" : "UNKNOWN",
+                OilRate = latest != null ? ToDouble(latest.OilFlowAmount) : 0,
+                GasRate = latest != null ? ToDouble(latest.GasFlowAmount) : 0,
+                WaterRate = latest != null ? ToDouble(latest.WaterFlowAmount) : 0,
+                PotentialRate = maxOilRate > 0 ? maxOilRate : (latest != null ? ToDouble(latest.OilFlowAmount) : 0),
+                CumOil = 0,
+                LastTestDate = ResolveTestDate(latest),
+                WellTests = orderedTests,
+            };
+            return Ok(summary);
         }
 
         /// <summary>GET /api/field/current/production/wells/{wellId}/analysis</summary>
@@ -96,21 +87,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
-            try
-            {
-                var analysis = await _productionService.GetWellPerformanceAnalysisAsync(fieldId, wellId);
-                return Ok(analysis);
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Unable to analyze performance for well {WellId}", wellId);
-                return NotFound(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error analyzing performance for well {WellId}", wellId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var analysis = await _productionService.GetWellPerformanceAnalysisAsync(fieldId, wellId);
+            return Ok(analysis);
         }
 
         /// <summary>POST /api/field/current/production/wells/{wellId}/analysis/deviation</summary>
@@ -122,21 +100,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
-            try
-            {
-                var result = await _productionService.LogWellPerformanceDeviationAsync(fieldId, wellId, request, userId);
-                return Ok(result);
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Unable to log performance deviation for well {WellId}", wellId);
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error logging performance deviation for well {WellId}", wellId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _productionService.LogWellPerformanceDeviationAsync(fieldId, wellId, request, userId);
+            return Ok(result);
         }
 
         /// <summary>GET /api/field/current/production/wells/{wellId}/tests</summary>
@@ -147,21 +112,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
-            try
-            {
-                var tests = await _productionService.GetWellTestsForWellAsync(fieldId, wellId);
-                return Ok(tests ?? new List<WellTestResponse>());
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Unable to fetch well tests for {WellId}", wellId);
-                return NotFound(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching well tests for well {WellId}", wellId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var tests = await _productionService.GetWellTestsForWellAsync(fieldId, wellId);
+            return Ok(tests ?? new List<WellTestResponse>());
         }
 
         /// <summary>PATCH /api/field/current/production/allocation/{period}/wells/{wellId}</summary>
@@ -182,53 +134,45 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            try
-            {
-                var activities = await _productionService.GetWellActivitiesForFieldAsync(fieldId);
+            var activities = await _productionService.GetWellActivitiesForFieldAsync(fieldId);
 
-                // Group by UWI and take the most recent activity per well as the candidate record
-                var candidates = activities
-                    .GroupBy(a => a.UWI)
-                    .Select(g =>
+            // Group by UWI and take the most recent activity per well as the candidate record
+            var candidates = activities
+                .GroupBy(a => a.UWI)
+                .Select(g =>
+                {
+                    var latest = g.OrderByDescending(a => a.ACTIVITY_OBS_NO).First();
+                    var source = g
+                        .Where(a => !IsDecisionActivity(a.ACTIVITY_TYPE_ID))
+                        .OrderByDescending(a => a.ACTIVITY_OBS_NO)
+                        .FirstOrDefault() ?? latest;
+
+                    var linkedWorkOrderId = ExtractWorkflowMarker(latest.REMARK, "WORK_ORDER_ID");
+                    var linkedAfeId = ExtractWorkflowMarker(latest.REMARK, "AFE_ID");
+                    var linkedAfeNumber = ExtractWorkflowMarker(latest.REMARK, "AFE_NUMBER");
+                    var linkedAbandonmentId = ExtractWorkflowMarker(latest.REMARK, "ABANDONMENT_ID");
+                    var linkedProcessInstanceId = ExtractWorkflowMarker(latest.REMARK, "PROCESS_INSTANCE_ID");
+                    return new InterventionCandidateDto
                     {
-                        var latest = g.OrderByDescending(a => a.ACTIVITY_OBS_NO).First();
-                        var source = g
-                            .Where(a => !IsDecisionActivity(a.ACTIVITY_TYPE_ID))
-                            .OrderByDescending(a => a.ACTIVITY_OBS_NO)
-                            .FirstOrDefault() ?? latest;
+                        WellId           = latest.UWI ?? string.Empty,
+                        WellName         = latest.UWI ?? string.Empty,
+                        InterventionType = source.ACTIVITY_TYPE_ID ?? "WORKOVER",
+                        Problem          = RemoveWorkflowMarkers(source.REMARK ?? string.Empty),
+                        DeferredBopd     = 0,
+                        EstDaysSinceOnset= 0,
+                        Priority         = "MEDIUM",
+                        Status           = MapInterventionStatus(latest.ACTIVITY_TYPE_ID),
+                        EstCostUsd       = 0,
+                        WorkOrderId      = linkedWorkOrderId,
+                        AfeId            = linkedAfeId,
+                        AfeNumber        = linkedAfeNumber,
+                        AbandonmentId    = linkedAbandonmentId,
+                        ProcessInstanceId = linkedProcessInstanceId,
+                    };
+                })
+                .ToList();
 
-                        var linkedWorkOrderId = ExtractWorkflowMarker(latest.REMARK, "WORK_ORDER_ID");
-                        var linkedAfeId = ExtractWorkflowMarker(latest.REMARK, "AFE_ID");
-                        var linkedAfeNumber = ExtractWorkflowMarker(latest.REMARK, "AFE_NUMBER");
-                        var linkedAbandonmentId = ExtractWorkflowMarker(latest.REMARK, "ABANDONMENT_ID");
-                        var linkedProcessInstanceId = ExtractWorkflowMarker(latest.REMARK, "PROCESS_INSTANCE_ID");
-                        return new InterventionCandidateDto
-                        {
-                            WellId           = latest.UWI ?? string.Empty,
-                            WellName         = latest.UWI ?? string.Empty,
-                            InterventionType = source.ACTIVITY_TYPE_ID ?? "WORKOVER",
-                            Problem          = RemoveWorkflowMarkers(source.REMARK ?? string.Empty),
-                            DeferredBopd     = 0,
-                            EstDaysSinceOnset= 0,
-                            Priority         = "MEDIUM",
-                            Status           = MapInterventionStatus(latest.ACTIVITY_TYPE_ID),
-                            EstCostUsd       = 0,
-                            WorkOrderId      = linkedWorkOrderId,
-                            AfeId            = linkedAfeId,
-                            AfeNumber        = linkedAfeNumber,
-                            AbandonmentId    = linkedAbandonmentId,
-                            ProcessInstanceId = linkedProcessInstanceId,
-                        };
-                    })
-                    .ToList();
-
-                return Ok(candidates);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching intervention candidates for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(candidates);
         }
 
         /// <summary>POST /api/field/current/production/intervention-candidates/{uwi}/transition-to-decommissioning</summary>
@@ -240,95 +184,86 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
-            try
+            var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
+            var existingAbandonment = (await decommissioningService.GetAbandonedWellsForFieldAsync(fieldId))
+                .FirstOrDefault(a => string.Equals(a.WellId, uwi, StringComparison.OrdinalIgnoreCase));
+
+            if (existingAbandonment != null)
             {
-                var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
-                var existingAbandonment = (await decommissioningService.GetAbandonedWellsForFieldAsync(fieldId))
-                    .FirstOrDefault(a => string.Equals(a.WellId, uwi, StringComparison.OrdinalIgnoreCase));
-
-                if (existingAbandonment != null)
-                {
-                    return Ok(new DecommissioningTriggerResult
-                    {
-                        Success = true,
-                        AlreadyExists = true,
-                        WorkflowStarted = false,
-                        WellId = uwi,
-                        AbandonmentId = existingAbandonment.AbandonmentId,
-                        Message = $"Decommissioning programme already exists for {uwi}."
-                    });
-                }
-
-                var estimatedCost = request.EstimatedCostUsd.HasValue
-                    ? Convert.ToDecimal(request.EstimatedCostUsd.Value)
-                    : (decimal?)null;
-
-                var abandonment = await decommissioningService.AbandonWellForFieldAsync(
-                    fieldId,
-                    uwi,
-                    new WellAbandonmentRequest
-                    {
-                        WellId = uwi,
-                        FieldId = fieldId,
-                        AbandonmentType = string.IsNullOrWhiteSpace(request.AbandonmentType)
-                            ? "PERMANENTLY_ABANDONED"
-                            : request.AbandonmentType,
-                        AbandonmentMethod = string.IsNullOrWhiteSpace(request.AbandonmentMethod)
-                            ? "CEMENT_PLUG"
-                            : request.AbandonmentMethod,
-                        Status = "IN_PROGRESS",
-                        AbandonmentStartDate = DateTime.UtcNow,
-                        PluggingDate = DateTime.UtcNow,
-                        AbandonmentCost = estimatedCost,
-                        AbandonmentCostCurrency = estimatedCost.HasValue ? "USD" : null,
-                        PluggingCost = estimatedCost,
-                        PluggingCostCurrency = estimatedCost.HasValue ? "USD" : null,
-                        ActiveInd = "Y"
-                    },
-                    userId);
-
-                Beep.OilandGas.Models.Processes.ProcessInstance? processInstance = null;
-                string? message = null;
-
-                if (request.StartWorkflow)
-                {
-                    try
-                    {
-                        processInstance = await _decommissioningProcessService.StartWellAbandonmentProcessAsync(uwi, fieldId, userId);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "Decommissioning record created for well {UWI}, but workflow startup failed", uwi);
-                        message = $"Decommissioning record created for {uwi}, but the lifecycle workflow could not be started.";
-                    }
-                }
-
-                await _productionService.RecordInterventionDecisionAsync(
-                    uwi,
-                    "DECOMMISSIONING_TRIGGERED",
-                    BuildDecommissioningRemark(request.Note, abandonment.AbandonmentId, processInstance?.InstanceId),
-                    userId);
-
                 return Ok(new DecommissioningTriggerResult
                 {
                     Success = true,
-                    WorkflowStarted = processInstance != null,
+                    AlreadyExists = true,
+                    WorkflowStarted = false,
                     WellId = uwi,
-                    AbandonmentId = abandonment.AbandonmentId,
-                    ProcessInstanceId = processInstance?.InstanceId,
-                    Message = message ?? $"Decommissioning handoff created for {uwi}."
+                    AbandonmentId = existingAbandonment.AbandonmentId,
+                    Message = $"Decommissioning programme already exists for {uwi}."
                 });
             }
-            catch (InvalidOperationException ex)
+
+            var estimatedCost = request.EstimatedCostUsd.HasValue
+                ? Convert.ToDecimal(request.EstimatedCostUsd.Value)
+                : (decimal?)null;
+
+            var abandonment = await decommissioningService.AbandonWellForFieldAsync(
+                fieldId,
+                uwi,
+                new WellAbandonmentRequest
+                {
+                    WellId = uwi,
+                    FieldId = fieldId,
+                    AbandonmentType = string.IsNullOrWhiteSpace(request.AbandonmentType)
+                        ? "PERMANENTLY_ABANDONED"
+                        : request.AbandonmentType,
+                    AbandonmentMethod = string.IsNullOrWhiteSpace(request.AbandonmentMethod)
+                        ? "CEMENT_PLUG"
+                        : request.AbandonmentMethod,
+                    Status = "IN_PROGRESS",
+                    AbandonmentStartDate = DateTime.UtcNow,
+                    PluggingDate = DateTime.UtcNow,
+                    AbandonmentCost = estimatedCost,
+                    AbandonmentCostCurrency = estimatedCost.HasValue ? "USD" : null,
+                    PluggingCost = estimatedCost,
+                    PluggingCostCurrency = estimatedCost.HasValue ? "USD" : null,
+                    ActiveInd = "Y"
+                },
+                userId);
+
+            Beep.OilandGas.Models.Processes.ProcessInstance? processInstance = null;
+            string? message = null;
+
+            if (request.StartWorkflow)
             {
-                _logger.LogWarning(ex, "Unable to transition well {UWI} to decommissioning", uwi);
-                return BadRequest(new { error = ex.Message });
+                try
+                {
+                    processInstance = await _decommissioningProcessService.StartWellAbandonmentProcessAsync(uwi, fieldId, userId);
+                }
+                // The abandonment record above is already saved; whatever stops the workflow starting, the answer says the
+                // record exists and the workflow did not start, with the reference its failure is filed under.
+                // Cancellation is the request ending.
+                catch (Exception workflowFailure) when (workflowFailure is not OperationCanceledException)
+                {
+                    var reference = _failures.ReportHandled(workflowFailure, $"starting the well abandonment workflow for {uwi}",
+                        "the decommissioning record is saved without its workflow; the answer says so with this reference");
+                    message = $"Decommissioning record created for {uwi}, but the lifecycle workflow could not be started (reference {reference}).";
+                }
             }
-            catch (Exception ex)
+
+            await _productionService.RecordInterventionDecisionAsync(
+                uwi,
+                "DECOMMISSIONING_TRIGGERED",
+                BuildDecommissioningRemark(request.Note, abandonment.AbandonmentId, processInstance?.InstanceId),
+                userId);
+
+            return Ok(new DecommissioningTriggerResult
             {
-                _logger.LogError(ex, "Error transitioning well {UWI} to decommissioning", uwi);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                Success = true,
+                WorkflowStarted = processInstance != null,
+                WellId = uwi,
+                AbandonmentId = abandonment.AbandonmentId,
+                ProcessInstanceId = processInstance?.InstanceId,
+                Message = message ?? $"Decommissioning handoff created for {uwi}."
+            });
         }
 
         /// <summary>POST /api/field/current/production/intervention-candidates/{uwi}/decision</summary>
@@ -340,89 +275,81 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
-            try
+            var normalizedDecision = request.Decision?.Trim().ToUpperInvariant();
+            var activityTypeId = normalizedDecision switch
             {
-                var normalizedDecision = request.Decision?.Trim().ToUpperInvariant();
-                var activityTypeId = normalizedDecision switch
+                "APPROVED" => "WORKOVER_APPROVED",
+                "DEFERRED" => "WORKOVER_DEFERRED",
+                "REJECTED" => "WORKOVER_REJECTED",
+                _          => "WORKOVER_REVIEWED",
+            };
+
+            WorkOrderSummary? createdWorkOrder = null;
+            AFE? linkedAfe = null;
+
+            if (normalizedDecision == "APPROVED")
+            {
+                if (!string.IsNullOrWhiteSpace(request.WorkOrderId))
                 {
-                    "APPROVED" => "WORKOVER_APPROVED",
-                    "DEFERRED" => "WORKOVER_DEFERRED",
-                    "REJECTED" => "WORKOVER_REJECTED",
-                    _          => "WORKOVER_REVIEWED",
-                };
-
-                WorkOrderSummary? createdWorkOrder = null;
-                AFE? linkedAfe = null;
-
-                if (normalizedDecision == "APPROVED")
-                {
-                    if (!string.IsNullOrWhiteSpace(request.WorkOrderId))
-                    {
-                        createdWorkOrder = await _workOrderService.GetByIdAsync(fieldId, request.WorkOrderId);
-                    }
-
-                    if (createdWorkOrder == null && request.CreateWorkOrder)
-                    {
-                        createdWorkOrder = await _workOrderService.CreateAsync(new CreateWorkOrderRequest
-                        {
-                            FieldId = fieldId,
-                            WoSubType = WorkOrderSubType.Corrective,
-                            InstanceName = BuildWorkOrderTitle(uwi, request.InterventionType),
-                            EquipmentId = uwi,
-                            Description = BuildWorkOrderDescription(request),
-                            Jurisdiction = "USA"
-                        }, userId);
-
-                        createdWorkOrder = await _workOrderService.TransitionStateAsync(
-                            fieldId,
-                            createdWorkOrder.InstanceId,
-                            WorkOrderState.Planned,
-                            userId,
-                            request.Note);
-                    }
-
-                    if (createdWorkOrder != null && request.LinkAfe)
-                    {
-                        var workOrderResponse = new WorkOrderResponse
-                        {
-                            WorkOrderId = createdWorkOrder.InstanceId,
-                            WorkOrderNumber = createdWorkOrder.InstanceId,
-                            WorkOrderType = createdWorkOrder.WoSubType,
-                            EntityType = "WELL",
-                            EntityId = uwi,
-                            FieldId = fieldId,
-                            PropertyId = string.IsNullOrWhiteSpace(createdWorkOrder.EquipmentId) ? uwi : createdWorkOrder.EquipmentId,
-                            Status = createdWorkOrder.State,
-                            EstimatedCost = request.EstimatedCostUsd.HasValue ? (decimal?)request.EstimatedCostUsd.Value : null,
-                            ActualCost = null,
-                            AfeId = request.AfeId
-                        };
-
-                        linkedAfe = await _workOrderAccountingService.CreateOrLinkAFEAsync(workOrderResponse, userId);
-                    }
+                    createdWorkOrder = await _workOrderService.GetByIdAsync(fieldId, request.WorkOrderId);
                 }
 
-                var remark = BuildDecisionRemark(request.Note, createdWorkOrder?.InstanceId, linkedAfe?.AFE_ID, linkedAfe?.AFE_NUMBER);
-                await _productionService.RecordInterventionDecisionAsync(uwi, activityTypeId, remark, userId);
-
-                return Ok(new InterventionDecisionResult
+                if (createdWorkOrder == null && request.CreateWorkOrder)
                 {
-                    Success = true,
-                    WellId = uwi,
-                    Decision = normalizedDecision ?? "REVIEWED",
-                    WorkOrderId = createdWorkOrder?.InstanceId,
-                    AfeId = linkedAfe?.AFE_ID,
-                    AfeNumber = linkedAfe?.AFE_NUMBER,
-                    Message = createdWorkOrder == null
-                        ? $"Intervention {normalizedDecision?.ToLowerInvariant() ?? "reviewed"} for {uwi}."
-                        : $"Intervention approved and linked to work order {createdWorkOrder.InstanceId}."
-                });
+                    createdWorkOrder = await _workOrderService.CreateAsync(new CreateWorkOrderRequest
+                    {
+                        FieldId = fieldId,
+                        WoSubType = WorkOrderSubType.Corrective,
+                        InstanceName = BuildWorkOrderTitle(uwi, request.InterventionType),
+                        EquipmentId = uwi,
+                        Description = BuildWorkOrderDescription(request),
+                        Jurisdiction = "USA"
+                    }, userId);
+
+                    createdWorkOrder = await _workOrderService.TransitionStateAsync(
+                        fieldId,
+                        createdWorkOrder.InstanceId,
+                        WorkOrderState.Planned,
+                        userId,
+                        request.Note);
+                }
+
+                if (createdWorkOrder != null && request.LinkAfe)
+                {
+                    var workOrderResponse = new WorkOrderResponse
+                    {
+                        WorkOrderId = createdWorkOrder.InstanceId,
+                        WorkOrderNumber = createdWorkOrder.InstanceId,
+                        WorkOrderType = createdWorkOrder.WoSubType,
+                        EntityType = "WELL",
+                        EntityId = uwi,
+                        FieldId = fieldId,
+                        PropertyId = string.IsNullOrWhiteSpace(createdWorkOrder.EquipmentId) ? uwi : createdWorkOrder.EquipmentId,
+                        Status = createdWorkOrder.State,
+                        EstimatedCost = request.EstimatedCostUsd.HasValue ? (decimal?)request.EstimatedCostUsd.Value : null,
+                        ActualCost = null,
+                        AfeId = request.AfeId
+                    };
+
+                    linkedAfe = await _workOrderAccountingService.CreateOrLinkAFEAsync(workOrderResponse, userId);
+                }
             }
-            catch (Exception ex)
+
+            var remark = BuildDecisionRemark(request.Note, createdWorkOrder?.InstanceId, linkedAfe?.AFE_ID, linkedAfe?.AFE_NUMBER);
+            await _productionService.RecordInterventionDecisionAsync(uwi, activityTypeId, remark, userId);
+
+            return Ok(new InterventionDecisionResult
             {
-                _logger.LogError(ex, "Error recording intervention decision for well {UWI}", uwi);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                Success = true,
+                WellId = uwi,
+                Decision = normalizedDecision ?? "REVIEWED",
+                WorkOrderId = createdWorkOrder?.InstanceId,
+                AfeId = linkedAfe?.AFE_ID,
+                AfeNumber = linkedAfe?.AFE_NUMBER,
+                Message = createdWorkOrder == null
+                    ? $"Intervention {normalizedDecision?.ToLowerInvariant() ?? "reviewed"} for {uwi}."
+                    : $"Intervention approved and linked to work order {createdWorkOrder.InstanceId}."
+            });
         }
 
         /// <summary>GET /api/field/current/production/dashboard/wells</summary>
@@ -431,16 +358,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         {
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            try
-            {
-                var wells = await _productionService.GetProductionWellStatusAsync(fieldId);
-                return Ok(wells ?? new List<ProductionWellStatusDto>());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching dashboard wells for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var wells = await _productionService.GetProductionWellStatusAsync(fieldId);
+            return Ok(wells ?? new List<ProductionWellStatusDto>());
         }
 
         private static DateTime ResolveTestDate(WellTestResponse? test)

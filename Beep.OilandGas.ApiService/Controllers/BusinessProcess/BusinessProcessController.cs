@@ -50,27 +50,19 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrEmpty(fieldId))
                     return BadRequest(new { error = "No active field selected." });
 
-            try
+            // Return all definitions — type-based lookup covers all categories
+            var allDefinitions = new List<ProcessDefinition>();
+            var categories = new[]
             {
-                // Return all definitions — type-based lookup covers all categories
-                var allDefinitions = new List<ProcessDefinition>();
-                var categories = new[]
-                {
-                    "WORK_ORDER", "GATE_REVIEW", "HSE", "COMPLIANCE",
-                    "WELL_LIFECYCLE", "FACILITY_LIFECYCLE", "RESERVOIR", "PIPELINE"
-                };
-                foreach (var cat in categories)
-                {
-                    var defs = await _processService.GetProcessDefinitionsByTypeAsync(cat);
-                    if (defs != null) allDefinitions.AddRange(defs);
-                }
-                return Ok(allDefinitions);
-            }
-            catch (Exception ex)
+                "WORK_ORDER", "GATE_REVIEW", "HSE", "COMPLIANCE",
+                "WELL_LIFECYCLE", "FACILITY_LIFECYCLE", "RESERVOIR", "PIPELINE"
+            };
+            foreach (var cat in categories)
             {
-                _logger.LogError(ex, "Error retrieving process definitions for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "Error retrieving process definitions." });
+                var defs = await _processService.GetProcessDefinitionsByTypeAsync(cat);
+                if (defs != null) allDefinitions.AddRange(defs);
             }
+            return Ok(allDefinitions);
         }
 
         /// <summary>Get a single process definition by ID.</summary>
@@ -82,18 +74,10 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrWhiteSpace(processId))
                     return BadRequest(new { error = "Process ID is required." });
 
-            try
-            {
-                var def = await _processService.GetProcessDefinitionAsync(processId);
-                if (def == null)
-                    return NotFound(new { error = $"Process definition '{processId}' not found." });
-                return Ok(def);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving process definition {ProcessId}", processId);
-                return StatusCode(500, new { error = "Error retrieving process definition." });
-            }
+            var def = await _processService.GetProcessDefinitionAsync(processId);
+            if (def == null)
+                return NotFound(new { error = $"Process definition '{processId}' not found." });
+            return Ok(def);
         }
 
         /// <summary>List process definitions filtered by category/type.</summary>
@@ -104,16 +88,8 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrWhiteSpace(categoryId))
                     return BadRequest(new { error = "Category ID is required." });
 
-            try
-            {
-                var defs = await _processService.GetProcessDefinitionsByTypeAsync(categoryId.ToUpperInvariant());
-                return Ok(defs ?? new List<ProcessDefinition>());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving definitions for category {Category}", categoryId);
-                return StatusCode(500, new { error = "Error retrieving process definitions." });
-            }
+            var defs = await _processService.GetProcessDefinitionsByTypeAsync(categoryId.ToUpperInvariant());
+            return Ok(defs ?? new List<ProcessDefinition>());
         }
 
         /// <summary>List process definitions filtered by jurisdiction tag (USA, CANADA, INTERNATIONAL).</summary>
@@ -124,31 +100,23 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrWhiteSpace(tag))
                     return BadRequest(new { error = "Jurisdiction tag is required." });
 
-            try
+            // Fetch all then filter by configuration/metadata tag
+            var allDefinitions = new List<ProcessDefinition>();
+            var categories = new[]
             {
-                // Fetch all then filter by configuration/metadata tag
-                var allDefinitions = new List<ProcessDefinition>();
-                var categories = new[]
-                {
-                    "WORK_ORDER", "GATE_REVIEW", "HSE", "COMPLIANCE",
-                    "WELL_LIFECYCLE", "FACILITY_LIFECYCLE", "RESERVOIR", "PIPELINE"
-                };
-                foreach (var cat in categories)
-                {
-                    var defs = await _processService.GetProcessDefinitionsByTypeAsync(cat);
-                    if (defs != null) allDefinitions.AddRange(defs);
-                }
-                var filtered = allDefinitions.FindAll(d =>
-                    d.Configuration != null &&
-                    d.Configuration.TryGetValue("JurisdictionTag", out var jTag) &&
-                    string.Equals(jTag?.ToString(), tag, StringComparison.OrdinalIgnoreCase));
-                return Ok(filtered);
-            }
-            catch (Exception ex)
+                "WORK_ORDER", "GATE_REVIEW", "HSE", "COMPLIANCE",
+                "WELL_LIFECYCLE", "FACILITY_LIFECYCLE", "RESERVOIR", "PIPELINE"
+            };
+            foreach (var cat in categories)
             {
-                _logger.LogError(ex, "Error retrieving definitions for jurisdiction {Tag}", tag);
-                return StatusCode(500, new { error = "Error retrieving process definitions." });
+                var defs = await _processService.GetProcessDefinitionsByTypeAsync(cat);
+                if (defs != null) allDefinitions.AddRange(defs);
             }
+            var filtered = allDefinitions.FindAll(d =>
+                d.Configuration != null &&
+                d.Configuration.TryGetValue("JurisdictionTag", out var jTag) &&
+                string.Equals(jTag?.ToString(), tag, StringComparison.OrdinalIgnoreCase));
+            return Ok(filtered);
         }
 
         // ─── Process Instances ───────────────────────────────────────────────────
@@ -173,21 +141,13 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 
             var userId = User.ActingUserId();
 
-            try
-            {
-                var instance = await _processService.StartProcessAsync(
-                    request.ProcessId,
-                    request.EntityId,
-                    request.EntityType ?? "UNKNOWN",
-                    fieldId,
-                    userId);
-                return CreatedAtAction(nameof(GetInstanceAsync), new { instanceId = instance.InstanceId }, instance);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error starting process {ProcessId} for entity {EntityId}", request.ProcessId, request.EntityId);
-                return StatusCode(500, new { error = "Error starting process instance." });
-            }
+            var instance = await _processService.StartProcessAsync(
+                request.ProcessId,
+                request.EntityId,
+                request.EntityType ?? "UNKNOWN",
+                fieldId,
+                userId);
+            return CreatedAtAction(nameof(GetInstanceAsync), new { instanceId = instance.InstanceId }, instance);
         }
 
         /// <summary>List all active process instances for the current field.</summary>
@@ -199,34 +159,26 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrEmpty(fieldId))
                     return BadRequest(new { error = "No active field selected." });
 
-            try
-            {
-                var summaries = new List<ProcessInstanceSummary>();
-                var processService = await GetOperationServiceAsync();
-                    var instances = await processService.GetProcessInstancesForFieldAsync(fieldId);
-                    if (instances != null)
+            var summaries = new List<ProcessInstanceSummary>();
+            var processService = await GetOperationServiceAsync();
+                var instances = await processService.GetProcessInstancesForFieldAsync(fieldId);
+                if (instances != null)
+                {
+                    foreach (var inst in instances.Where(IsCurrentField))
                     {
-                        foreach (var inst in instances.Where(IsCurrentField))
+                        summaries.Add(new ProcessInstanceSummary
                         {
-                            summaries.Add(new ProcessInstanceSummary
-                            {
-                                InstanceId = inst.InstanceId,
-                                ProcessId = inst.ProcessId,
-                                EntityId = inst.EntityId,
-                                EntityType = inst.EntityType,
-                                CurrentStepId = inst.CurrentStepId,
-                                Status = inst.Status.ToString(),
-                                StartedAt = inst.StartDate
-                            });
-                        }
+                            InstanceId = inst.InstanceId,
+                            ProcessId = inst.ProcessId,
+                            EntityId = inst.EntityId,
+                            EntityType = inst.EntityType,
+                            CurrentStepId = inst.CurrentStepId,
+                            Status = inst.Status.ToString(),
+                            StartedAt = inst.StartDate
+                        });
                     }
-                return Ok(summaries);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error listing instances for field {FieldId}", fieldId);
-                return StatusCode(500, new { error = "Error retrieving process instances." });
-            }
+                }
+            return Ok(summaries);
         }
 
         /// <summary>Get a specific process instance with its current step state.</summary>
@@ -238,19 +190,11 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrWhiteSpace(instanceId))
                     return BadRequest(new { error = "Instance ID is required." });
 
-            try
-            {
-                var instance = await _processService.GetProcessInstanceAsync(instanceId);
-                if (instance == null)
-                    return NotFound(new { error = $"Process instance '{instanceId}' not found." });
-                if (!IsCurrentField(instance)) return Forbid();
-                return Ok(instance);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving process instance {InstanceId}", instanceId);
-                return StatusCode(500, new { error = "Error retrieving process instance." });
-            }
+            var instance = await _processService.GetProcessInstanceAsync(instanceId);
+            if (instance == null)
+                return NotFound(new { error = $"Process instance '{instanceId}' not found." });
+            if (!IsCurrentField(instance)) return Forbid();
+            return Ok(instance);
         }
 
         /// <summary>Execute a state transition on a process instance.</summary>
@@ -271,36 +215,28 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 
             var userId = User.ActingUserId();
 
-            try
-            {
-                var processService = await GetOperationServiceAsync();
-                var instance = await processService.GetProcessInstanceAsync(instanceId);
-                if (instance is null) return NotFound();
-                if (!await CanActOnStepAsync(processService, instance, instance.CurrentStepId, userId)) return Forbid();
-                var actualFromState = instance.CurrentState;
+            var processService = await GetOperationServiceAsync();
+            var instance = await processService.GetProcessInstanceAsync(instanceId);
+            if (instance is null) return NotFound();
+            if (!await CanActOnStepAsync(processService, instance, instance.CurrentStepId, userId)) return Forbid();
+            var actualFromState = instance.CurrentState;
 
-                var canTransition = await processService.CanTransitionAsync(instanceId, request.ToStateId);
-                if (!canTransition)
-                    return UnprocessableEntity(new { error = $"Transition to '{request.ToStateId}' is not allowed from current state." });
+            var canTransition = await processService.CanTransitionAsync(instanceId, request.ToStateId);
+            if (!canTransition)
+                return UnprocessableEntity(new { error = $"Transition to '{request.ToStateId}' is not allowed from current state." });
 
-                var success = await processService.TransitionStateAsync(instanceId, request.ToStateId, userId);
-                var result = new ProcessTransitionResult
-                {
-                    Success = success,
-                    InstanceId = instanceId,
-                    TransitionName = request.Trigger,
-                    FromState = actualFromState,
-                    NewStepId = request.ToStateId,
-                    Message = success ? "Transition completed successfully." : "Transition failed.",
-                    TransitionedAt = DateTime.UtcNow
-                };
-                return Ok(result);
-            }
-            catch (Exception ex)
+            var success = await processService.TransitionStateAsync(instanceId, request.ToStateId, userId);
+            var result = new ProcessTransitionResult
             {
-                _logger.LogError(ex, "Error executing transition on instance {InstanceId}", instanceId);
-                return StatusCode(500, new { error = "Error executing state transition." });
-            }
+                Success = success,
+                InstanceId = instanceId,
+                TransitionName = request.Trigger,
+                FromState = actualFromState,
+                NewStepId = request.ToStateId,
+                Message = success ? "Transition completed successfully." : "Transition failed.",
+                TransitionedAt = DateTime.UtcNow
+            };
+            return Ok(result);
         }
 
         /// <summary>Get the full audit history for a process instance.</summary>
@@ -312,20 +248,12 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrWhiteSpace(instanceId))
                     return BadRequest(new { error = "Instance ID is required." });
 
-            try
-            {
-                var processService = await GetOperationServiceAsync();
-                var instance = await processService.GetProcessInstanceAsync(instanceId);
-                if (instance is null) return NotFound();
-                if (!IsCurrentField(instance)) return Forbid();
-                var history = await processService.GetProcessHistoryAsync(instanceId);
-                return Ok(history ?? new List<ProcessHistoryEntry>());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving history for instance {InstanceId}", instanceId);
-                return StatusCode(500, new { error = "Error retrieving process history." });
-            }
+            var processService = await GetOperationServiceAsync();
+            var instance = await processService.GetProcessInstanceAsync(instanceId);
+            if (instance is null) return NotFound();
+            if (!IsCurrentField(instance)) return Forbid();
+            var history = await processService.GetProcessHistoryAsync(instanceId);
+            return Ok(history ?? new List<ProcessHistoryEntry>());
         }
 
         /// <summary>Update step data or attach documents to a step.</summary>
@@ -344,22 +272,14 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 
             var userId = User.ActingUserId();
 
-            try
-            {
-                var processService = await GetOperationServiceAsync();
-                var instance = await processService.GetProcessInstanceAsync(instanceId);
-                if (instance is null) return NotFound();
-                if (!await CanActOnStepAsync(processService, instance, stepId, userId)) return Forbid();
-                var success = await processService.ExecuteStepAsync(instanceId, stepId, stepData, userId);
-                if (!success)
-                    return BadRequest(new { error = "Step update failed. Verify the instance and step are in a valid state." });
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating step {StepId} on instance {InstanceId}", stepId, instanceId);
-                return StatusCode(500, new { error = "Error updating step." });
-            }
+            var processService = await GetOperationServiceAsync();
+            var instance = await processService.GetProcessInstanceAsync(instanceId);
+            if (instance is null) return NotFound();
+            if (!await CanActOnStepAsync(processService, instance, stepId, userId)) return Forbid();
+            var success = await processService.ExecuteStepAsync(instanceId, stepId, stepData, userId);
+            if (!success)
+                return BadRequest(new { error = "Step update failed. Verify the instance and step are in a valid state." });
+            return NoContent();
         }
 
         /// <summary>Close or cancel a process instance.</summary>
@@ -376,22 +296,14 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             var userId = User.ActingUserId();
             var reason = request?.Reason ?? "Closed by user.";
 
-            try
-            {
-                var processService = await GetOperationServiceAsync();
-                var instance = await processService.GetProcessInstanceAsync(instanceId);
-                if (instance is null) return NotFound();
-                if (!IsCurrentField(instance) || (instance.StartedBy != userId && !User.IsInRole("Administrator"))) return Forbid();
-                var success = await processService.CancelProcessAsync(instanceId, reason, userId);
-                if (!success)
-                    return BadRequest(new { error = "Unable to close instance. It may already be closed or completed." });
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error closing process instance {InstanceId}", instanceId);
-                return StatusCode(500, new { error = "Error closing process instance." });
-            }
+            var processService = await GetOperationServiceAsync();
+            var instance = await processService.GetProcessInstanceAsync(instanceId);
+            if (instance is null) return NotFound();
+            if (!IsCurrentField(instance) || (instance.StartedBy != userId && !User.IsInRole("Administrator"))) return Forbid();
+            var success = await processService.CancelProcessAsync(instanceId, reason, userId);
+            if (!success)
+                return BadRequest(new { error = "Unable to close instance. It may already be closed or completed." });
+            return NoContent();
         }
 
         private Task<IProcessService> GetOperationServiceAsync() => _processService is BoundProcessService bound
@@ -423,16 +335,8 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         [ProducesResponseType(typeof(List<ProcessDefinition>), 200)]
         public async Task<ActionResult<List<ProcessDefinition>>> GetTemplatesAsync()
         {
-            try
-            {
-                var templates = await _processService.GetProcessDefinitionsByTypeAsync("TEMPLATE");
-                return Ok(templates ?? new List<ProcessDefinition>());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving process templates");
-                return StatusCode(500, new { error = "Error retrieving templates." });
-            }
+            var templates = await _processService.GetProcessDefinitionsByTypeAsync("TEMPLATE");
+            return Ok(templates ?? new List<ProcessDefinition>());
         }
     }
 

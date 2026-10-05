@@ -56,36 +56,31 @@ namespace Beep.OilandGas.LifeCycle.Services.Maintenance
                 _logger?.LogInformation("Maintenance scheduled for {EntityType}: {EntityId}, Type: {MaintenanceType}, Date: {ScheduledDate}", 
                     request.EntityType, request.EntityId, request.MaintenanceType, request.ScheduledDate);
 
-                // Create work order if WorkOrderService is available and maintenance requires it
+                // Create work order if WorkOrderService is available and maintenance requires it. The work order is the
+                // record the scheduled maintenance is kept as: a failure to create it reaches the caller (reported with
+                // its reference) — it had been logged, and the maintenance answered as scheduled with no record behind it.
                 string? workOrderId = null;
                 if (_workOrderService != null && request.CreateWorkOrder == true)
                 {
-                    try
+                    var workOrderNumber = $"WO-{request.EntityType}-{request.EntityId}-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 8)}";
+                    var workOrderRequest = new WorkOrderCreationRequest
                     {
-                        var workOrderNumber = $"WO-{request.EntityType}-{request.EntityId}-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 8)}";
-                        var workOrderRequest = new WorkOrderCreationRequest
-                        {
-                            WorkOrderNumber = workOrderNumber,
-                            WorkOrderType = "MAINTENANCE",
-                            EntityType = request.EntityType,
-                            EntityId = request.EntityId,
-                            Instructions = $"Scheduled {request.MaintenanceType} maintenance",
-                            RequestDate = DateTime.UtcNow,
-                            DueDate = request.ScheduledDate,
-                            Description = request.ScheduleData?.ContainsKey("Description") == true 
-                                ? request.ScheduleData["Description"]?.ToString() 
-                                : $"Scheduled maintenance for {request.EntityType} {request.EntityId}",
-                            AdditionalProperties = request.ScheduleData
-                        };
+                        WorkOrderNumber = workOrderNumber,
+                        WorkOrderType = "MAINTENANCE",
+                        EntityType = request.EntityType,
+                        EntityId = request.EntityId,
+                        Instructions = $"Scheduled {request.MaintenanceType} maintenance",
+                        RequestDate = DateTime.UtcNow,
+                        DueDate = request.ScheduledDate,
+                        Description = request.ScheduleData?.ContainsKey("Description") == true 
+                            ? request.ScheduleData["Description"]?.ToString() 
+                            : $"Scheduled maintenance for {request.EntityType} {request.EntityId}",
+                        AdditionalProperties = request.ScheduleData
+                    };
 
-                        var workOrder = await _workOrderService.CreateWorkOrderAsync(workOrderRequest, userId);
-                        workOrderId = workOrder.WorkOrderId;
-                        _logger?.LogInformation("Work order {WorkOrderId} created for scheduled maintenance", workOrderId);
-                    }
-                    catch (Exception woEx)
-                    {
-                        _logger?.LogWarning(woEx, "Failed to create work order for scheduled maintenance, continuing without work order");
-                    }
+                    var workOrder = await _workOrderService.CreateWorkOrderAsync(workOrderRequest, userId);
+                    workOrderId = workOrder.WorkOrderId;
+                    _logger?.LogInformation("Work order {WorkOrderId} created for scheduled maintenance", workOrderId);
                 }
                 
                 return new MaintenanceResponse
@@ -149,33 +144,28 @@ namespace Beep.OilandGas.LifeCycle.Services.Maintenance
                 _logger?.LogInformation("Maintenance requested for {EntityType}: {EntityId}, Type: {MaintenanceType}, Priority: {Priority}", 
                     request.EntityType, request.EntityId, request.MaintenanceType, request.Priority);
 
-                // Create work order if WorkOrderService is available
+                // Create work order if WorkOrderService is available. The work order is the record the request is kept
+                // as: a failure to create it reaches the caller (reported with its reference) — it had been logged, and
+                // the maintenance answered as requested with no record behind it.
                 string? workOrderId = null;
                 if (_workOrderService != null)
                 {
-                    try
+                    var workOrderNumber = $"WO-{request.EntityType}-{request.EntityId}-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 8)}";
+                    var workOrderRequest = new WorkOrderCreationRequest
                     {
-                        var workOrderNumber = $"WO-{request.EntityType}-{request.EntityId}-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 8)}";
-                        var workOrderRequest = new WorkOrderCreationRequest
-                        {
-                            WorkOrderNumber = workOrderNumber,
-                            WorkOrderType = "MAINTENANCE",
-                            EntityType = request.EntityType,
-                            EntityId = request.EntityId,
-                            Instructions = $"{request.MaintenanceType} maintenance requested - Priority: {request.Priority}",
-                            RequestDate = DateTime.UtcNow,
-                            Description = request.Description,
-                            AdditionalProperties = request.RequestData
-                        };
+                        WorkOrderNumber = workOrderNumber,
+                        WorkOrderType = "MAINTENANCE",
+                        EntityType = request.EntityType,
+                        EntityId = request.EntityId,
+                        Instructions = $"{request.MaintenanceType} maintenance requested - Priority: {request.Priority}",
+                        RequestDate = DateTime.UtcNow,
+                        Description = request.Description,
+                        AdditionalProperties = request.RequestData
+                    };
 
-                        var workOrder = await _workOrderService.CreateWorkOrderAsync(workOrderRequest, userId);
-                        workOrderId = workOrder.WorkOrderId;
-                        _logger?.LogInformation("Work order {WorkOrderId} created for maintenance request", workOrderId);
-                    }
-                    catch (Exception woEx)
-                    {
-                        _logger?.LogWarning(woEx, "Failed to create work order for maintenance request, continuing without work order");
-                    }
+                    var workOrder = await _workOrderService.CreateWorkOrderAsync(workOrderRequest, userId);
+                    workOrderId = workOrder.WorkOrderId;
+                    _logger?.LogInformation("Work order {WorkOrderId} created for maintenance request", workOrderId);
                 }
                 
                 return new MaintenanceResponse

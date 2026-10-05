@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+using System.Net;
 using Beep.OilandGas.Models.Data;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.Web.Services
 {
@@ -101,14 +102,14 @@ namespace Beep.OilandGas.Web.Services
     public class LifeCycleService : ILifeCycleService
     {
         private readonly ApiClient _apiClient;
-        private readonly ILogger<LifeCycleService> _logger;
+        private readonly OilGasCallFailures _calls;
+        private readonly IFailureReporter _failures;
 
-        public LifeCycleService(
-            ApiClient apiClient,
-            ILogger<LifeCycleService> logger)
+        public LifeCycleService(ApiClient apiClient, OilGasCallFailures calls, IFailureReporter failures)
         {
             _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _calls = calls ?? throw new ArgumentNullException(nameof(calls));
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
         }
 
         /// <summary>
@@ -116,21 +117,13 @@ namespace Beep.OilandGas.Web.Services
         /// </summary>
         public async Task<List<FieldListItem>> GetAllFieldsAsync(string connectionName = "PPDM39")
         {
-            try
+            var endpoint = "/api/field/fields";
+            if (!string.IsNullOrEmpty(connectionName))
             {
-                var endpoint = "/api/field/fields";
-                if (!string.IsNullOrEmpty(connectionName))
-                {
-                    endpoint += $"?connectionName={Uri.EscapeDataString(connectionName)}";
-                }
-                var fields = await _apiClient.GetAsync<List<FieldListItem>>(endpoint);
-                return fields ?? new List<FieldListItem>();
+                endpoint += $"?connectionName={Uri.EscapeDataString(connectionName)}";
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting all fields");
-                return new List<FieldListItem>();
-            }
+            var fields = await _apiClient.GetAsync<List<FieldListItem>>(endpoint);
+            return fields ?? new List<FieldListItem>();
         }
 
         /// <summary>
@@ -143,9 +136,14 @@ namespace Beep.OilandGas.Web.Services
                 var field = await _apiClient.GetAsync<FieldResponse>("/api/field/current");
                 return field ?? new FieldResponse();
             }
-            catch (Exception ex)
+            // The endpoint defines 404 as no active field, not a failure: answered as no field, and recorded.
+            catch (OilGasApiException noField) when (noField.StatusCode == HttpStatusCode.NotFound)
             {
-                _logger.LogError(ex, "Error getting current field");
+                _failures.ReportHandled(
+                    noField,
+                    "reading the active field",
+                    consequence: "the API holds no active field for this person; the caller was answered with no field",
+                    FailureSeverity.Degraded);
                 return new FieldResponse();
             }
         }
@@ -166,13 +164,13 @@ namespace Beep.OilandGas.Web.Services
                     ErrorMessage = "Failed to set active field"
                 };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error setting active field {FieldId}", fieldId);
                 return new SetActiveFieldResponse
                 {
                     Success = false,
-                    ErrorMessage = ex.Message
+                    ErrorMessage = _calls.Explain(failure, "setting the active field", "The active field was not changed")
                 };
             }
         }
@@ -182,16 +180,8 @@ namespace Beep.OilandGas.Web.Services
         /// </summary>
         public async Task<FieldDashboard> GetFieldDashboardAsync()
         {
-            try
-            {
-                var dashboard = await _apiClient.GetAsync<FieldDashboard>("/api/field/current/dashboard");
-                return dashboard ?? throw new InvalidOperationException("Field dashboard response was empty.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting field dashboard");
-                throw;
-            }
+            var dashboard = await _apiClient.GetAsync<FieldDashboard>("/api/field/current/dashboard");
+            return dashboard ?? throw new InvalidOperationException("Field dashboard response was empty.");
         }
 
         /// <summary>
@@ -199,16 +189,8 @@ namespace Beep.OilandGas.Web.Services
         /// </summary>
         public async Task<FieldLifecycleSummary> GetFieldLifecycleSummaryAsync()
         {
-            try
-            {
-                var summary = await _apiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
-                return summary ?? new FieldLifecycleSummary();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting field lifecycle summary");
-                return new FieldLifecycleSummary();
-            }
+            var summary = await _apiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            return summary ?? new FieldLifecycleSummary();
         }
 
         /// <summary>
@@ -216,16 +198,8 @@ namespace Beep.OilandGas.Web.Services
         /// </summary>
         public async Task<List<object>> GetFieldWellsAsync()
         {
-            try
-            {
-                var wells = await _apiClient.GetAsync<List<object>>("/api/field/current/wells");
-                return wells ?? new List<object>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting field wells");
-                return new List<object>();
-            }
+            var wells = await _apiClient.GetAsync<List<object>>("/api/field/current/wells");
+            return wells ?? new List<object>();
         }
 
         /// <summary>
@@ -233,16 +207,8 @@ namespace Beep.OilandGas.Web.Services
         /// </summary>
         public async Task<object> GetFieldStatisticsAsync()
         {
-            try
-            {
-                var statistics = await _apiClient.GetAsync<object>("/api/field/current/statistics");
-                return statistics ?? new { };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting field statistics");
-                return new { };
-            }
+            var statistics = await _apiClient.GetAsync<object>("/api/field/current/statistics");
+            return statistics ?? new { };
         }
 
         /// <summary>
@@ -250,16 +216,8 @@ namespace Beep.OilandGas.Web.Services
         /// </summary>
         public async Task<object> GetFieldTimelineAsync()
         {
-            try
-            {
-                var timeline = await _apiClient.GetAsync<object>("/api/field/current/timeline");
-                return timeline ?? new { };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting field timeline");
-                return new { };
-            }
+            var timeline = await _apiClient.GetAsync<object>("/api/field/current/timeline");
+            return timeline ?? new { };
         }
 
         /// <summary>
@@ -267,17 +225,9 @@ namespace Beep.OilandGas.Web.Services
         /// </summary>
         public async Task<AFEResponse> CreateOrLinkAFEAsync(string workOrderId)
         {
-            try
-            {
-                var endpoint = $"/api/lifecycle/workorders/{Uri.EscapeDataString(workOrderId)}/afe";
-                var afe = await _apiClient.PostAsync<AFEResponse>(endpoint, (HttpContent?)null);
-                return afe ?? new AFEResponse();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating/linking AFE for work order {WorkOrderId}", workOrderId);
-                return new AFEResponse();
-            }
+            var endpoint = $"/api/lifecycle/workorders/{Uri.EscapeDataString(workOrderId)}/afe";
+            var afe = await _apiClient.PostAsync<AFEResponse>(endpoint, (HttpContent?)null);
+            return afe ?? new AFEResponse();
         }
 
         /// <summary>
@@ -287,27 +237,15 @@ namespace Beep.OilandGas.Web.Services
             string workOrderId, 
             WorkOrderCostRequest request)
         {
-            try
+            request.WorkOrderId = workOrderId;
+            var endpoint = $"/api/lifecycle/workorders/{Uri.EscapeDataString(workOrderId)}/costs";
+            var response = await _apiClient.PostAsync<WorkOrderCostRequest, WorkOrderCostResponse>(
+                endpoint, request);
+            return response ?? new WorkOrderCostResponse
             {
-                request.WorkOrderId = workOrderId;
-                var endpoint = $"/api/lifecycle/workorders/{Uri.EscapeDataString(workOrderId)}/costs";
-                var response = await _apiClient.PostAsync<WorkOrderCostRequest, WorkOrderCostResponse>(
-                    endpoint, request);
-                return response ?? new WorkOrderCostResponse
-                {
-                    WorkOrderId = workOrderId,
-                    Message = "Failed to record work order cost"
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error recording work order cost for {WorkOrderId}", workOrderId);
-                return new WorkOrderCostResponse
-                {
-                    WorkOrderId = workOrderId,
-                    Message = $"Error: {ex.Message}"
-                };
-            }
+                WorkOrderId = workOrderId,
+                Message = "Failed to record work order cost"
+            };
         }
 
         /// <summary>
@@ -315,17 +253,9 @@ namespace Beep.OilandGas.Web.Services
         /// </summary>
         public async Task<AFEResponse> GetAFEForWorkOrderAsync(string workOrderId)
         {
-            try
-            {
-                var afe = await _apiClient.GetAsync<AFEResponse>(
-                    $"/api/lifecycle/workorders/{Uri.EscapeDataString(workOrderId)}/afe");
-                return afe ?? new AFEResponse();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting AFE for work order {WorkOrderId}", workOrderId);
-                return new AFEResponse();
-            }
+            var afe = await _apiClient.GetAsync<AFEResponse>(
+                $"/api/lifecycle/workorders/{Uri.EscapeDataString(workOrderId)}/afe");
+            return afe ?? new AFEResponse();
         }
     }
 }

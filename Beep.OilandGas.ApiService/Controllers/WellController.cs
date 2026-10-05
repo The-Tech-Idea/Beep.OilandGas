@@ -54,16 +54,8 @@ namespace Beep.OilandGas.ApiService.Controllers
         {
             if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
 
-            try
-            {
-                var result = await _wellServices.GetByUwiAsync(uwi);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting well by UWI {UWI}", uwi);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _wellServices.GetByUwiAsync(uwi);
+            return Ok(result);
         }
 
         /// <summary>
@@ -75,16 +67,8 @@ namespace Beep.OilandGas.ApiService.Controllers
         {
             if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
 
-            try
-            {
-                var result = await _wellServices.GetCurrentWellStatusByUwiAsync(uwi);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting current well status for UWI {UWI}", uwi);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _wellServices.GetCurrentWellStatusByUwiAsync(uwi);
+            return Ok(result);
         }
 
         // ============================================
@@ -97,18 +81,10 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpPost("compare")]
         public async Task<ActionResult<WellComparison>> CompareWells([FromBody] CompareWellsRequest request)
         {
-            try
-            {
-                var comparison = await _wellComparisonService.CompareWellsAsync(
-                    request.WellIdentifiers, 
-                    request.FieldNames);
-                return Ok(comparison);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error comparing wells");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var comparison = await _wellComparisonService.CompareWellsAsync(
+                request.WellIdentifiers, 
+                request.FieldNames);
+            return Ok(comparison);
         }
 
         /// <summary>
@@ -117,18 +93,10 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpPost("compare-multi-source")]
         public async Task<ActionResult<WellComparison>> CompareWellsMultiSource([FromBody] CompareWellsMultiSourceRequest request)
         {
-            try
-            {
-                var comparison = await _wellComparisonService.CompareWellsFromMultipleSourcesAsync(
-                    request.WellComparisons, 
-                    request.FieldNames);
-                return Ok(comparison);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error comparing wells from multiple sources");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var comparison = await _wellComparisonService.CompareWellsFromMultipleSourcesAsync(
+                request.WellComparisons, 
+                request.FieldNames);
+            return Ok(comparison);
         }
 
         /// <summary>
@@ -137,16 +105,8 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpGet("comparison-fields")]
         public async Task<ActionResult<List<ComparisonField>>> GetComparisonFields()
         {
-            try
-            {
-                var fields = await _wellComparisonService.GetAvailableComparisonFieldsAsync();
-                return Ok(fields);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting comparison fields");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var fields = await _wellComparisonService.GetAvailableComparisonFieldsAsync();
+            return Ok(fields);
         }
     }
 

@@ -36,53 +36,36 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
             this.filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
         }
 
+        /// <summary>
+        /// Reads the WITSML document: false when the file does not exist; a file that cannot be read or is not
+        /// well-formed XML reaches the caller as its exception (OILGAS-CATCH-01). It had been written to the console and
+        /// answered false, so the caller was told only that it could not "connect".
+        /// </summary>
         public bool Connect()
         {
             if (isConnected) return true;
 
-            try
-            {
-                if (!File.Exists(filePath))
-                {
-                    throw new FileNotFoundException($"WITSML file not found: {filePath}");
-                }
-
-                document = XDocument.Load(filePath);
-                isConnected = true;
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error connecting to WITSML file: {ex.Message}");
-                isConnected = false;
+            if (!File.Exists(filePath))
                 return false;
-            }
+
+            document = XDocument.Load(filePath);
+            isConnected = true;
+            return true;
         }
 
         public async Task<bool> ConnectAsync()
         {
             if (isConnected) return true;
 
-            try
-            {
-                if (!File.Exists(filePath))
-                {
-                    throw new FileNotFoundException($"WITSML file not found: {filePath}");
-                }
-
-                using (var stream = File.OpenRead(filePath))
-                {
-                    document = await XDocument.LoadAsync(stream, LoadOptions.None, default);
-                }
-                isConnected = true;
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error connecting to WITSML file: {ex.Message}");
-                isConnected = false;
+            if (!File.Exists(filePath))
                 return false;
+
+            using (var stream = File.OpenRead(filePath))
+            {
+                document = await XDocument.LoadAsync(stream, LoadOptions.None, default);
             }
+            isConnected = true;
+            return true;
         }
 
         public void Disconnect()
@@ -100,19 +83,13 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         {
             if (!isConnected || document == null) return false;
 
-            try
-            {
-                var root = document.Root;
-                return root != null && (
-                    root.Name.Namespace == witsml14 ||
-                    root.Name.Namespace == witsml20 ||
-                    root.Elements().Any(e => e.Name.Namespace == witsml14 || e.Name.Namespace == witsml20)
-                );
-            }
-            catch
-            {
-                return false;
-            }
+            // Reading an element tree already in memory throws nothing; the catch around it answered nothing.
+            var root = document.Root;
+            return root != null && (
+                root.Name.Namespace == witsml14 ||
+                root.Name.Namespace == witsml20 ||
+                root.Elements().Any(e => e.Name.Namespace == witsml14 || e.Name.Namespace == witsml20)
+            );
         }
 
         public List<string> GetAvailableIdentifiers()
@@ -122,25 +99,20 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
 
             var identifiers = new List<string>();
 
-            try
-            {
-                var ns = DetectWitsmlNamespace();
-                var logElements = document.Descendants(ns + "log");
+            // Reading the document in memory throws nothing it should hide (OILGAS-CATCH-01): the catch here wrote to the
+            // console and answered whatever had been gathered as the whole list.
+            var ns = DetectWitsmlNamespace();
+            var logElements = document.Descendants(ns + "log");
 
-                foreach (var log in logElements)
-                {
-                    var uid = log.Element(ns + "uid")?.Value;
-                    var name = log.Element(ns + "name")?.Value;
-                    
-                    if (!string.IsNullOrEmpty(uid))
-                        identifiers.Add(uid);
-                    else if (!string.IsNullOrEmpty(name))
-                        identifiers.Add(name);
-                }
-            }
-            catch (Exception ex)
+            foreach (var log in logElements)
             {
-                Console.WriteLine($"Error getting available identifiers: {ex.Message}");
+                var uid = log.Element(ns + "uid")?.Value;
+                var name = log.Element(ns + "name")?.Value;
+
+                if (!string.IsNullOrEmpty(uid))
+                    identifiers.Add(uid);
+                else if (!string.IsNullOrEmpty(name))
+                    identifiers.Add(name);
             }
 
             return identifiers;
@@ -212,12 +184,8 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
 
                 result.Success = true;
             }
-            catch (Exception ex)
-            {
-                result.Success = false;
-                result.Errors.Add($"Error loading WITSML log: {ex.Message}");
-                Console.WriteLine($"Exception in LoadLogWithResult: {ex}");
-            }
+            // A file that cannot be read or parsed is a failure, not a result: it reaches the caller as its exception
+            // (OILGAS-CATCH-01). It had been written to the console and its text put in the result.
             finally
             {
                 stats.EndTime = DateTime.UtcNow;

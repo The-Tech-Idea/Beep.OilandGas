@@ -3,6 +3,7 @@
 @inject ISnackbar Snackbar
 @inject IDataManagementService DataManagement
 @inject INotificationService Notifications
+@inject OilGasCallFailures Calls
 @implements IDisposable
 
 @if (_error is not null)
@@ -34,7 +35,8 @@ else if (PersonaContext.Catalog.Count > 0)
     {
         _busy = true; _error = null;
         try { await PersonaContext.ReloadAsync(); }
-        catch { _error = "Persona settings could not be loaded."; }
+        // A component answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex) { _error = Calls.Explain(ex, "loading the persona settings", "Persona settings could not be loaded"); }
         finally { _busy = false; }
     }
     private async Task SwitchPersona(string code)
@@ -44,15 +46,22 @@ else if (PersonaContext.Catalog.Count > 0)
         try
         {
             try { await PersonaContext.SwitchAsync(code); }
-            catch
+            // A component answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
             {
-                if (!_disposed) _error = "The change could not be confirmed. Reload persona settings before retrying.";
+                var sentence = Calls.Explain(ex, "switching the workspace persona", "The persona change could not be confirmed. Reload persona settings before retrying");
+                if (!_disposed) _error = sentence;
                 return;
             }
             if (_disposed || PersonaContext.CurrentPersona is not { } persona) return;
             Snackbar.Add($"Workspace changed to {persona.Name}.", Severity.Success);
             try { await Notifications.SubscribeToPersonaAsync(persona.Code, await DataManagement.GetCurrentFieldIdAsync() ?? string.Empty); }
-            catch { if (!_disposed) Snackbar.Add("Your persona is saved. Notifications could not reconnect; refresh the page to retry.", Severity.Warning); }
+            // The persona is saved either way; a failure here only leaves notifications on the old persona, and says so.
+            catch (Exception ex)
+            {
+                var sentence = Calls.Explain(ex, "reconnecting persona notifications after a persona change", "Your persona is saved, but notifications could not reconnect; refresh the page to retry");
+                if (!_disposed) Snackbar.Add(sentence, Severity.Warning);
+            }
             if (!_disposed && PersonaContext.CurrentPersona?.Code == persona.Code)
                 Nav.NavigateTo(PersonaNavigation.HomeRoute(persona.DefaultRoute));
         }

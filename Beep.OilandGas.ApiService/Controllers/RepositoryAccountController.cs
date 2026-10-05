@@ -4,6 +4,7 @@ using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TheTechIdea.Data.OilGas;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Controllers;
 
@@ -20,7 +21,7 @@ namespace Beep.OilandGas.ApiService.Controllers;
 [ApiController]
 [Route("api/auth/repository")]
 [Authorize(Policy = RepositoryAuthorization.SignedIn)]
-public sealed class RepositoryAccountController(IRepositoryAccessService access) : ControllerBase
+public sealed class RepositoryAccountController(IRepositoryAccessService access, IFailureReporter failures) : ControllerBase
 {
     [HttpGet("me")]
     [ProducesResponseType<RepositoryUserAccess>(StatusCodes.Status200OK)]
@@ -86,20 +87,18 @@ public sealed class RepositoryAccountController(IRepositoryAccessService access)
             return Problem("This account no longer exists in OilGas.",
                 statusCode: StatusCodes.Status403Forbidden, title: RepositoryAccountRefusals.Removed);
 
+        // The user service refuses the last active administrator, and a version changed since the read, as refusals the API's
+        // handler answers (409) in its own words; the save itself losing a race is answered here.
         try
         {
             await users.UpdateAsync(userId, new RepositoryUserUpdate(account.FullName, false, account.ConcurrencyStamp));
             return NoContent();
         }
-        catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+        catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException changed)
         {
-            // Handled: the account changed between the read and the write; the person is asked to try again.
+            failures.ReportHandled(changed, "switching the caller's own account off",
+                "the account stays active; the person is asked to try again", FailureSeverity.Degraded);
             return Problem("The account changed while it was being switched off. Try again.", statusCode: StatusCodes.Status409Conflict);
-        }
-        catch (InvalidOperationException exception)
-        {
-            // Handled: the user service refuses the last active administrator, and says so.
-            return Problem(exception.Message, statusCode: StatusCodes.Status409Conflict);
         }
     }
 }

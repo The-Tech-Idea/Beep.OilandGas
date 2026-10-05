@@ -7,6 +7,7 @@ public sealed class FieldSelectionState : IDisposable
 {
     private readonly ApiClient _api;
     private readonly IDataManagementService _data;
+    private readonly OilGasCallFailures _failures;
     private int _version;
     private bool _disposed;
     public List<FieldListItem> Fields { get; private set; } = [];
@@ -17,9 +18,9 @@ public sealed class FieldSelectionState : IDisposable
     public string? Error { get; private set; }
     public string? Confirmation { get; private set; }
     public event Action? Changed;
-    public FieldSelectionState(ApiClient api, IDataManagementService data)
+    public FieldSelectionState(ApiClient api, IDataManagementService data, OilGasCallFailures failures)
     {
-        _api = api; _data = data; _data.CurrentFieldChanged += FieldChanged;
+        _api = api; _data = data; _failures = failures; _data.CurrentFieldChanged += FieldChanged;
     }
     public async Task LoadAsync()
     {
@@ -38,7 +39,15 @@ public sealed class FieldSelectionState : IDisposable
             if (!string.IsNullOrWhiteSpace(selected) && !fields.Any(x => x.FieldId == selected))
             { SelectedId = null; Error = "The previous field is no longer available. Choose an available field."; }
         }
-        catch (Exception ex) { if (Current(version)) Error = Message(ex, "Field settings could not be loaded. Retry to refresh available fields."); }
+        // The selector renders a sentence for every failure of this load; the store keeps the exception (a superseded
+        // load's too, though nobody is shown it).
+        catch (Exception ex)
+        {
+            var sentence = Refusal(ex) is { } own
+                ? _failures.Told(ex, "loading the available fields", own)
+                : _failures.Explain(ex, "loading the available fields", "Field settings could not be loaded");
+            if (Current(version)) Error = sentence;
+        }
         finally { if (Current(version)) Loading = false; }
     }
     public async Task SelectAsync(string id)
@@ -52,9 +61,13 @@ public sealed class FieldSelectionState : IDisposable
             if (success) { SelectedId = id; Confirmation = "Active field updated."; }
             else Error = "The field was not changed. Choose another field or refresh the available fields.";
         }
+        // The selector renders a sentence for every failure of this change; the store keeps the exception.
         catch (Exception ex)
         {
-            if (!_disposed) { SelectedId = null; Loaded = false; Error = Message(ex, "The field change could not be confirmed. Refresh before continuing."); }
+            var sentence = Refusal(ex) is { } own
+                ? _failures.Told(ex, "changing the active field", own)
+                : _failures.Explain(ex, "changing the active field", "The field change could not be confirmed. Refresh before continuing");
+            if (!_disposed) { SelectedId = null; Loaded = false; Error = sentence; }
         }
         finally { if (!_disposed) Saving = false; }
     }
@@ -71,10 +84,13 @@ public sealed class FieldSelectionState : IDisposable
         Changed?.Invoke();
     }
     private bool Current(int version) => !_disposed && version == _version;
-    private static string Message(Exception ex, string otherwise) => ex is HttpRequestException http ? http.StatusCode switch {
-        HttpStatusCode.Forbidden => "You do not have access to these field settings. Contact your app administrator.",
-        HttpStatusCode.Unauthorized => "Your session has expired. Sign in again to choose a field.",
-        _ => otherwise
-    } : otherwise;
+
+    /// <summary>The selector's own words for a refusal it recognises; null for anything else.</summary>
+    private static string? Refusal(Exception ex) => ex switch
+    {
+        OilGasApiException { StatusCode: HttpStatusCode.Forbidden } => "You do not have access to these field settings. Contact your app administrator.",
+        OilGasApiException { StatusCode: HttpStatusCode.Unauthorized } => "Your session has expired. Sign in again to choose a field.",
+        _ => null,
+    };
     public void Dispose() { _disposed = true; ++_version; _data.CurrentFieldChanged -= FieldChanged; Fields = []; SelectedId = null; }
 }

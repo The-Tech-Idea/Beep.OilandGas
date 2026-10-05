@@ -47,7 +47,7 @@ namespace Beep.OilandGas.Accounting.Services
             string cn = "PPDM39")
         {
             if (relatedPartyBaIds == null || relatedPartyBaIds.Count == 0)
-                throw new ArgumentException("Related party BA IDs are required", nameof(relatedPartyBaIds));
+                throw RefusalException.Invalid("Related party BA IDs are required.");
 
             var arInvoices = await GetArInvoicesAsync(relatedPartyBaIds, periodStart, periodEnd, cn);
             var apInvoices = await GetApInvoicesAsync(relatedPartyBaIds, periodStart, periodEnd, cn);

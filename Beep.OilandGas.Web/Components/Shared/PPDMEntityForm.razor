@@ -4,6 +4,7 @@
 @using MudBlazor
 @using Microsoft.AspNetCore.Components.Rendering
 @using Beep.OilandGas.PPDM39.Core.Metadata
+@inject ISnackbar Snackbar
 
 <EditForm Model="@Entity" OnValidSubmit="@OnValidSubmit" OnInvalidSubmit="@OnInvalidSubmit">
     <DataAnnotationsValidator />
@@ -335,8 +336,14 @@
         return prop?.GetValue(obj);
     }
     
+    /// <summary>Sets the field, or tells the person their entry was not taken — it was dropped in silence.</summary>
     private void SetPropertyValue(object obj, string propertyName, object? value)
-        => Services.ValueConverter.SetPropertyValue(obj, propertyName, value);
+    {
+        if (!Services.ValueConverter.SetPropertyValue(obj, propertyName, value))
+        {
+            Snackbar.Add($"'{value}' is not a valid value for {GetFieldLabel(propertyName)}; the field keeps its previous value.", Severity.Warning);
+        }
+    }
 
     private object? ConvertValue(object value, Type targetType)
         => Services.ValueConverter.ConvertValue(value, targetType);

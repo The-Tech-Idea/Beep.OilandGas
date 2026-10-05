@@ -35,53 +35,36 @@ namespace Beep.OilandGas.Drawing.DataLoaders.WITSML
             this.filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
         }
 
+        /// <summary>
+        /// Reads the DataWorkOrder document: false when the file does not exist; a file that cannot be read or is not
+        /// well-formed XML reaches the caller as its exception (OILGAS-CATCH-01). It had been written to the console and
+        /// answered false, and the load then answered "no work orders".
+        /// </summary>
         public bool Connect()
         {
             if (isConnected) return true;
 
-            try
-            {
-                if (!File.Exists(filePath))
-                {
-                    throw new FileNotFoundException($"DataWorkOrder file not found: {filePath}");
-                }
-
-                document = XDocument.Load(filePath);
-                isConnected = true;
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error connecting to DataWorkOrder file: {ex.Message}");
-                isConnected = false;
+            if (!File.Exists(filePath))
                 return false;
-            }
+
+            document = XDocument.Load(filePath);
+            isConnected = true;
+            return true;
         }
 
         public async Task<bool> ConnectAsync()
         {
             if (isConnected) return true;
 
-            try
-            {
-                if (!File.Exists(filePath))
-                {
-                    throw new FileNotFoundException($"DataWorkOrder file not found: {filePath}");
-                }
-
-                using (var stream = File.OpenRead(filePath))
-                {
-                    document = await XDocument.LoadAsync(stream, LoadOptions.None, default);
-                }
-                isConnected = true;
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error connecting to DataWorkOrder file: {ex.Message}");
-                isConnected = false;
+            if (!File.Exists(filePath))
                 return false;
+
+            using (var stream = File.OpenRead(filePath))
+            {
+                document = await XDocument.LoadAsync(stream, LoadOptions.None, default);
             }
+            isConnected = true;
+            return true;
         }
 
         public void Disconnect()
@@ -106,39 +89,34 @@ namespace Beep.OilandGas.Drawing.DataLoaders.WITSML
 
             var orders = new List<DataWorkOrderInfo>();
 
-            try
-            {
-                // Find all DataWorkOrder elements
-                var orderElements = document.Descendants(dwo + "DataWorkOrder")
-                    .Concat(document.Descendants().Where(e => e.Name.LocalName == "DataWorkOrder"));
+            // Reading the document in memory hides nothing (OILGAS-CATCH-01): the catch here wrote to the console and
+            // answered the orders gathered so far as the whole list.
+            // Find all DataWorkOrder elements
+            var orderElements = document.Descendants(dwo + "DataWorkOrder")
+                .Concat(document.Descendants().Where(e => e.Name.LocalName == "DataWorkOrder"));
 
-                foreach (var orderElement in orderElements)
+            foreach (var orderElement in orderElements)
+            {
+                var order = new DataWorkOrderInfo
                 {
-                    var order = new DataWorkOrderInfo
-                    {
-                        WellboreReference = ExtractWellboreReference(orderElement),
-                        Field = orderElement.Element(dwo + "Field")?.Value,
-                        DataProvider = orderElement.Element(dwo + "DataProvider")?.Value,
-                        DataConsumer = orderElement.Element(dwo + "DataConsumer")?.Value,
-                        Description = orderElement.Element(dwo + "Description")?.Value,
-                        PlannedStartTime = ParseDateTime(orderElement.Element(dwo + "DTimPlannedStart")?.Value),
-                        PlannedStopTime = ParseDateTime(orderElement.Element(dwo + "DTimPlannedStop")?.Value)
-                    };
+                    WellboreReference = ExtractWellboreReference(orderElement),
+                    Field = orderElement.Element(dwo + "Field")?.Value,
+                    DataProvider = orderElement.Element(dwo + "DataProvider")?.Value,
+                    DataConsumer = orderElement.Element(dwo + "DataConsumer")?.Value,
+                    Description = orderElement.Element(dwo + "Description")?.Value,
+                    PlannedStartTime = ParseDateTime(orderElement.Element(dwo + "DTimPlannedStart")?.Value),
+                    PlannedStopTime = ParseDateTime(orderElement.Element(dwo + "DTimPlannedStop")?.Value)
+                };
 
-                    // Load data source configurations
-                    var configSets = orderElement.Elements(dwo + "DataSourceConfigurationSet");
-                    foreach (var configSet in configSets)
-                    {
-                        var configs = LoadDataSourceConfigurations(configSet);
-                        order.DataSourceConfigurations.AddRange(configs);
-                    }
-
-                    orders.Add(order);
+                // Load data source configurations
+                var configSets = orderElement.Elements(dwo + "DataSourceConfigurationSet");
+                foreach (var configSet in configSets)
+                {
+                    var configs = LoadDataSourceConfigurations(configSet);
+                    order.DataSourceConfigurations.AddRange(configs);
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading DataWorkOrders: {ex.Message}");
+
+                orders.Add(order);
             }
 
             return orders;
@@ -151,38 +129,31 @@ namespace Beep.OilandGas.Drawing.DataLoaders.WITSML
         {
             var configs = new List<DataSourceConfigurationInfo>();
 
-            try
+            var configElements = configSet.Elements(dwo + "DataSourceConfiguration");
+
+            foreach (var configElement in configElements)
             {
-                var configElements = configSet.Elements(dwo + "DataSourceConfiguration");
-                
-                foreach (var configElement in configElements)
+                var config = new DataSourceConfigurationInfo
                 {
-                    var config = new DataSourceConfigurationInfo
-                    {
-                        VersionNumber = ParseLong(configElement.Element(dwo + "VersionNumber")?.Value),
-                        Name = configElement.Element(dwo + "Name")?.Value,
-                        Description = configElement.Element(dwo + "Description")?.Value,
-                        Status = configElement.Element(dwo + "Status")?.Value,
-                        PlannedStartTime = ParseDateTime(configElement.Element(dwo + "DTimPlannedStart")?.Value),
-                        PlannedStopTime = ParseDateTime(configElement.Element(dwo + "DTimPlannedStop")?.Value),
-                        PlannedStartDepth = ParseDouble(configElement.Element(dwo + "MdPlannedStart")?.Value),
-                        PlannedStopDepth = ParseDouble(configElement.Element(dwo + "MdPlannedStop")?.Value)
-                    };
+                    VersionNumber = ParseLong(configElement.Element(dwo + "VersionNumber")?.Value),
+                    Name = configElement.Element(dwo + "Name")?.Value,
+                    Description = configElement.Element(dwo + "Description")?.Value,
+                    Status = configElement.Element(dwo + "Status")?.Value,
+                    PlannedStartTime = ParseDateTime(configElement.Element(dwo + "DTimPlannedStart")?.Value),
+                    PlannedStopTime = ParseDateTime(configElement.Element(dwo + "DTimPlannedStop")?.Value),
+                    PlannedStartDepth = ParseDouble(configElement.Element(dwo + "MdPlannedStart")?.Value),
+                    PlannedStopDepth = ParseDouble(configElement.Element(dwo + "MdPlannedStop")?.Value)
+                };
 
-                    // Load channel configurations
-                    var channelElements = configElement.Elements(dwo + "Channel");
-                    foreach (var channelElement in channelElements)
-                    {
-                        var channel = LoadChannelConfiguration(channelElement);
-                        config.Channels.Add(channel);
-                    }
-
-                    configs.Add(config);
+                // Load channel configurations
+                var channelElements = configElement.Elements(dwo + "Channel");
+                foreach (var channelElement in channelElements)
+                {
+                    var channel = LoadChannelConfiguration(channelElement);
+                    config.Channels.Add(channel);
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading DataSourceConfigurations: {ex.Message}");
+
+                configs.Add(config);
             }
 
             return configs;

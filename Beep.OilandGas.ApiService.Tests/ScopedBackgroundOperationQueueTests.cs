@@ -1,4 +1,5 @@
 using Beep.OilandGas.ApiService.Services;
+using Beep.OilandGas.ApiService.Tests.Infrastructure;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -14,8 +15,8 @@ public class ScopedBackgroundOperationQueueTests
         public ValueTask DisposeAsync() { Disposed = true; return ValueTask.CompletedTask; }
     }
 
-    private static ScopedBackgroundOperationQueue Create(ServiceProvider services) => new(
-        services.GetRequiredService<IServiceScopeFactory>(), NullLogger<ScopedBackgroundOperationQueue>.Instance);
+    private static ScopedBackgroundOperationQueue Create(ServiceProvider services, RecordingFailureReporter? failures = null) => new(
+        services.GetRequiredService<IServiceScopeFactory>(), failures ?? new RecordingFailureReporter());
 
     private static TaskCompletionSource<T> Signal<T>() => new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -54,7 +55,8 @@ public class ScopedBackgroundOperationQueueTests
     public async Task RejectsDuplicateActiveJobAndRecordsFailure()
     {
         await using var services = new ServiceCollection().AddScoped<ScopedProbe>().BuildServiceProvider();
-        using var queue = Create(services);
+        var failures = new RecordingFailureReporter();
+        using var queue = Create(services, failures);
         Assert.True(queue.TryEnqueue<ScopedProbe, int>("job", 0,
             static (_, _, _) => throw new InvalidOperationException("private provider detail")));
         Assert.False(queue.TryEnqueue<ScopedProbe, int>("job", 0, static (_, _, _) => Task.CompletedTask));
@@ -63,6 +65,10 @@ public class ScopedBackgroundOperationQueueTests
         {
             await WaitFor(queue, "job", BackgroundOperationState.Failed);
             Assert.DoesNotContain("private provider detail", queue.GetStatus("job")!.Error);
+            // OILGAS-CATCH-01: the failure is reported, and the status carries the reference it is filed under.
+            var reported = Assert.Single(failures.Reports);
+            Assert.Equal("private provider detail", reported.Exception.Message);
+            Assert.Contains("reference", queue.GetStatus("job")!.Error);
             Assert.True(queue.TryEnqueue<ScopedProbe, int>("job", 0, static (_, _, _) => Task.CompletedTask));
             await WaitFor(queue, "job", BackgroundOperationState.Succeeded);
         }

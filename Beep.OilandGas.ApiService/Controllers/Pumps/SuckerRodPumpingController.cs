@@ -27,47 +27,23 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
         [HttpPost("design")]
         public async Task<ActionResult<SuckerRodPumpDesign>> DesignPumpSystem([FromBody] DesignPumpSystemRequest request)
         {
-            try
-            {
-                var result = await _service.DesignPumpSystemAsync(request.WellUWI, request.WellProperties);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error designing sucker rod pump system for well {WellUWI}", request.WellUWI);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.DesignPumpSystemAsync(request.WellUWI, request.WellProperties);
+            return Ok(result);
         }
 
         [HttpPost("analyze-performance")]
         public async Task<ActionResult<SuckerRodPumpPerformance>> AnalyzePerformance([FromBody] AnalyzePerformanceRequest request)
         {
-            try
-            {
-                var result = await _service.AnalyzePerformanceAsync(request.PumpId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error analyzing sucker rod pump performance for pump {PumpId}", request.PumpId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.AnalyzePerformanceAsync(request.PumpId);
+            return Ok(result);
         }
 
         [HttpPost("design/save")]
         public async Task<ActionResult> SavePumpDesign([FromBody] SuckerRodPumpDesign design)
         {
             var userId = User.ActingUserId();
-            try
-            {
-                await _service.SavePumpDesignAsync(design, userId);
-                return Ok(new { message = "Sucker rod pump design saved successfully", designId = design.DesignId });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving sucker rod pump design");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            await _service.SavePumpDesignAsync(design, userId);
+            return Ok(new { message = "Sucker rod pump design saved successfully", designId = design.DesignId });
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.OilProperties.Calculations
 {
@@ -26,7 +27,7 @@ namespace Beep.OilandGas.OilProperties.Calculations
             decimal? solutionGasOilRatio)
         {
             if (pressurePsia <= 0m)
-                throw new ArgumentOutOfRangeException(nameof(pressurePsia), "Pressure must be greater than zero.");
+                throw RefusalException.Invalid("Pressure must be greater than zero.");
 
             decimal rs = 0m;
             decimal pb;

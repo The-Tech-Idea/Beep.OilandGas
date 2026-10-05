@@ -1,24 +1,31 @@
 using System;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.ChokeAnalysis.Exceptions
 {
     /// <summary>
     /// Base exception for choke flow calculations.
     /// </summary>
-    public class ChokeException : Exception
+    /// <remarks>
+    /// OILGAS-CATCH-01. Every throw of this family refuses what the caller sent — choke or gas properties out of the
+    /// range the correlations accept, or inputs the calculation cannot converge on — so it is a <see
+    /// cref="RefusalException"/> (<see cref="RefusalKind.Invalid"/>) and the API answers it as a 400 with its
+    /// sentence. Its message is written for the person, never taken from a caught exception.
+    /// </remarks>
+    public class ChokeException : RefusalException
     {
         public ChokeException()
-            : base()
+            : base(RefusalKind.Invalid, "The choke calculation could not be done with the values given.")
         {
         }
 
         public ChokeException(string message)
-            : base(message)
+            : base(RefusalKind.Invalid, message)
         {
         }
 
         public ChokeException(string message, Exception innerException)
-            : base(message, innerException)
+            : base(RefusalKind.Invalid, message, innerException)
         {
         }
     }

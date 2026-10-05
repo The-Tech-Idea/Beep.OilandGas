@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Decommissioning.Constants;
 using System;
 using System.Collections.Generic;
@@ -66,25 +67,14 @@ namespace Beep.OilandGas.Decommissioning.Services
             string fieldId, List<AppFilter>? additionalFilters = null)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentNullException(nameof(fieldId), "Field ID is required");
+                throw RefusalException.Invalid("The field ID is required.");
 
             _logger?.LogInformation("Getting abandoned wells for field {FieldId}", fieldId);
             try
             {
-                // Step 1: resolve WELL_ABANDONMENT metadata
-                var abanMeta = await _metadata.GetTableMetadataAsync("WELL_ABANDONMENT");
-                if (abanMeta == null)
-                {
-                    _logger?.LogWarning("WELL_ABANDONMENT table metadata not found");
-                    return new List<WellAbandonmentResponse>();
-                }
-
-                var abanType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{abanMeta.EntityTypeName}");
-                if (abanType == null)
-                {
-                    _logger?.LogWarning("Entity type not found for WELL_ABANDONMENT: {Name}", abanMeta.EntityTypeName);
-                    return new List<WellAbandonmentResponse>();
-                }
+                // Step 1: resolve WELL_ABANDONMENT metadata. A table the server cannot resolve is a fault, as it is for
+                // every other operation here; it had been answered as a field with no abandoned wells.
+                var (_, abanType) = await GetTableMetaAndTypeAsync("WELL_ABANDONMENT");
 
                 // Step 2: get WELL IDs for the field
                 var wellIds = await GetWellIdsForFieldAsync(fieldId);
@@ -126,9 +116,9 @@ namespace Beep.OilandGas.Decommissioning.Services
             WellAbandonmentRequest abandonmentData, string userId)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentNullException(nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (string.IsNullOrWhiteSpace(wellId))
-                throw new ArgumentNullException(nameof(wellId));
+                throw RefusalException.Invalid("The well ID is required.");
 
             _logger?.LogInformation("Recording abandonment for well {WellId} in field {FieldId}", wellId, fieldId);
             try
@@ -167,7 +157,7 @@ namespace Beep.OilandGas.Decommissioning.Services
             string fieldId, string abandonmentId)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentNullException(nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
 
             try
             {
@@ -215,7 +205,7 @@ namespace Beep.OilandGas.Decommissioning.Services
             string fieldId, List<AppFilter>? additionalFilters = null)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentNullException(nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
 
             _logger?.LogInformation("Getting decommissioned facilities for field {FieldId}", fieldId);
             try
@@ -260,9 +250,9 @@ namespace Beep.OilandGas.Decommissioning.Services
             FacilityDecommissioningRequest decommissionData, string userId)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentNullException(nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (string.IsNullOrWhiteSpace(facilityId))
-                throw new ArgumentNullException(nameof(facilityId));
+                throw RefusalException.Invalid("The facility ID is required.");
 
             _logger?.LogInformation("Decommissioning facility {FacilityId} in field {FieldId}", facilityId, fieldId);
             try
@@ -276,11 +266,11 @@ namespace Beep.OilandGas.Decommissioning.Services
                 var existing = await repo.GetByIdAsync(
                     _defaults.FormatIdForTable("FACILITY", facilityId));
                 if (existing == null)
-                    throw new OperationCanceledException($"Facility {facilityId} not found");
+                    throw RefusalException.NotFound($"Facility {facilityId} was not found.");
 
                 var facilityFieldId = GetPropertyValue(existing, "PRIMARY_FIELD_ID")?.ToString();
                 if (facilityFieldId != _defaults.FormatIdForTable("FACILITY", fieldId))
-                    throw new OperationCanceledException($"Facility {facilityId} does not belong to field {fieldId}");
+                    throw RefusalException.NotFound($"Facility {facilityId} is not in field {fieldId}.");
 
                 // Set ABANDONED_DATE
                 SetPropertyViaReflection(existing, meta.EntityType, "ABANDONED_DATE",
@@ -304,7 +294,7 @@ namespace Beep.OilandGas.Decommissioning.Services
             string fieldId, string decommissioningId)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentNullException(nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
 
             try
             {
@@ -340,7 +330,7 @@ namespace Beep.OilandGas.Decommissioning.Services
             string fieldId, List<AppFilter>? additionalFilters = null)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentNullException(nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
 
             try
             {
@@ -373,7 +363,7 @@ namespace Beep.OilandGas.Decommissioning.Services
             string fieldId, EnvironmentalRestorationRequest restorationData, string userId)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentNullException(nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
 
             _logger?.LogInformation("Creating environmental restoration project for field {FieldId}", fieldId);
             try
@@ -412,7 +402,7 @@ namespace Beep.OilandGas.Decommissioning.Services
             string fieldId, List<AppFilter>? additionalFilters = null)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentNullException(nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
 
             try
             {
@@ -444,7 +434,7 @@ namespace Beep.OilandGas.Decommissioning.Services
         public async Task<DecommissioningCostEstimateResponse> EstimateCostsForFieldAsync(string fieldId)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentNullException(nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
 
             _logger?.LogInformation("Estimating decommissioning costs for field {FieldId}", fieldId);
             try
@@ -551,7 +541,7 @@ namespace Beep.OilandGas.Decommissioning.Services
         }
 
         /// <summary>
-        /// Validates that wellId belongs to the given fieldId. Throws OperationCanceledException on mismatch.
+        /// Validates that wellId belongs to the given fieldId; refuses (not found) a well that is not there or not in the field.
         /// </summary>
         private async Task ValidateWellBelongsToFieldAsync(string fieldId, string wellId)
         {
@@ -562,11 +552,11 @@ namespace Beep.OilandGas.Decommissioning.Services
 
             var well = await wellRepo.GetByIdAsync(_defaults.FormatIdForTable("WELL", wellId));
             if (well == null)
-                throw new OperationCanceledException($"Well {wellId} not found");
+                throw RefusalException.NotFound($"Well {wellId} was not found.");
 
             var wellFieldId = GetPropertyValue(well, "FIELD_ID")?.ToString();
             if (wellFieldId != _defaults.FormatIdForTable("WELL", fieldId))
-                throw new OperationCanceledException($"Well {wellId} does not belong to field {fieldId}");
+                throw RefusalException.NotFound($"Well {wellId} is not in field {fieldId}.");
         }
 
         /// <summary>Resolves table metadata and entity Type in one call.</summary>

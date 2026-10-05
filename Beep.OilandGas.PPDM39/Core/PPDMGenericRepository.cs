@@ -1253,43 +1253,9 @@ namespace Beep.OilandGas.PPDM39.Core
                     }
                 };
 
-                try
-                {
-                    // Get entity type for referenced table
-                    var referencedEntityType = GetEntityTypeForTable(fk.ReferencedTable);
-                    if (referencedEntityType == null)
-                    {
-                        errors.Add(new ForeignKeyValidationError
-                        {
-                            RowNumber = rowNumber,
-                            ForeignKeyColumn = fk.ForeignKeyColumn,
-                            ReferencedTable = fk.ReferencedTable,
-                            ForeignKeyValue = fkValue,
-                            ErrorMessage = $"Entity type not found for referenced table '{fk.ReferencedTable}'"
-                        });
-                        continue;
-                    }
-
-                    // Query the referenced table to check if the value exists
-                    var existingRecords = await GetEntitiesWithFiltersAsync(
-                        referencedEntityType,
-                        fk.ReferencedTable,
-                        filters);
-
-                    if (existingRecords == null || !existingRecords.Any())
-                    {
-                        errors.Add(new ForeignKeyValidationError
-                        {
-                            RowNumber = rowNumber,
-                            ForeignKeyColumn = fk.ForeignKeyColumn,
-                            ReferencedTable = fk.ReferencedTable,
-                            ReferencedPrimaryKeyColumn = referencedPkColumn,
-                            ForeignKeyValue = fkValue,
-                            ErrorMessage = $"Foreign key value '{fkValue}' does not exist in referenced table '{fk.ReferencedTable}' (Primary Key: {referencedPkColumn})"
-                        });
-                    }
-                }
-                catch (Exception ex)
+                // Get entity type for referenced table
+                var referencedEntityType = GetEntityTypeForTable(fk.ReferencedTable);
+                if (referencedEntityType == null)
                 {
                     errors.Add(new ForeignKeyValidationError
                     {
@@ -1297,7 +1263,29 @@ namespace Beep.OilandGas.PPDM39.Core
                         ForeignKeyColumn = fk.ForeignKeyColumn,
                         ReferencedTable = fk.ReferencedTable,
                         ForeignKeyValue = fkValue,
-                        ErrorMessage = $"Error validating foreign key: {ex.Message}"
+                        ErrorMessage = $"Entity type not found for referenced table '{fk.ReferencedTable}'"
+                    });
+                    continue;
+                }
+
+                // Query the referenced table to check if the value exists. A query that fails is not a row that fails
+                // validation: it reaches the caller (OILGAS-CATCH-01). It was recorded as this row's error, in the
+                // provider's words, and the validation read as having run.
+                var existingRecords = await GetEntitiesWithFiltersAsync(
+                    referencedEntityType,
+                    fk.ReferencedTable,
+                    filters);
+
+                if (existingRecords == null || !existingRecords.Any())
+                {
+                    errors.Add(new ForeignKeyValidationError
+                    {
+                        RowNumber = rowNumber,
+                        ForeignKeyColumn = fk.ForeignKeyColumn,
+                        ReferencedTable = fk.ReferencedTable,
+                        ReferencedPrimaryKeyColumn = referencedPkColumn,
+                        ForeignKeyValue = fkValue,
+                        ErrorMessage = $"Foreign key value '{fkValue}' does not exist in referenced table '{fk.ReferencedTable}' (Primary Key: {referencedPkColumn})"
                     });
                 }
             }
@@ -2018,22 +2006,15 @@ namespace Beep.OilandGas.PPDM39.Core
             var relationships = new Dictionary<string, List<object>>();
             var tableMetadata = await GetTableMetadataAsync(_tableName);
 
-            // Get parent relationships (entities this entity references via foreign keys)
+            // Get parent relationships (entities this entity references via foreign keys). A parent that cannot be read
+            // fails the call (OILGAS-CATCH-01): it was logged and left out, and the answer read as complete.
             foreach (var fk in tableMetadata.ForeignKeys)
             {
-                try
+                var parentEntity = await GetParentEntityAsync(entityId, fk.ReferencedTable, fk.ForeignKeyColumn);
+                if (parentEntity != null)
                 {
-                    var parentEntity = await GetParentEntityAsync(entityId, fk.ReferencedTable, fk.ForeignKeyColumn);
-                    if (parentEntity != null)
-                    {
-                        var relationshipName = $"Parent_{fk.ReferencedTable}";
-                        relationships[relationshipName] = new List<object> { parentEntity };
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogWarning(ex, "Error getting parent relationship {ReferencedTable} for entity {EntityId}",
-                        fk.ReferencedTable, entityId);
+                    var relationshipName = $"Parent_{fk.ReferencedTable}";
+                    relationships[relationshipName] = new List<object> { parentEntity };
                 }
             }
 
@@ -2092,216 +2073,182 @@ namespace Beep.OilandGas.PPDM39.Core
             _logger?.LogInformation("Starting CSV import for table {TableName} from file {FilePath} (OperationId: {OperationId})",
                 _tableName, csvFilePath, operationId ?? "none");
 
-            try
+            // OILGAS-CATCH-01. What a row of the file gets wrong — a value that is not of its column's type, a foreign key
+            // naming nothing — is recorded against that row in this server's own words, and the import goes on. A failure
+            // — the file cannot be read, the metadata or the database cannot be reached, the provider refuses a write — is
+            // not a row's error: it reaches the caller, which records the import as failed. Both used to be caught here and
+            // written into the result in the exception's own words, so an outage read as a file full of bad rows.
+            if (onProgress != null && !string.IsNullOrEmpty(operationId))
             {
-                if (onProgress != null && !string.IsNullOrEmpty(operationId))
-                {
-                    onProgress(operationId, 0, "Reading CSV file...");
-                }
-
-                // Read CSV file
-                var csvLines = File.ReadAllLines(csvFilePath, Encoding.UTF8);
-                if (csvLines.Length == 0)
-                {
-                    result.Errors.Add(new FileImportError
-                    {
-                        RowNumber = 0,
-                        Message = "CSV file is empty"
-                    });
-                    return result;
-                }
-
-                if (onProgress != null && !string.IsNullOrEmpty(operationId))
-                {
-                    onProgress(operationId, 5, "Parsing CSV headers...");
-                }
-
-                // Parse header row
-                var headerRow = ParseCsvLine(csvLines[0]);
-                var csvColumnIndices = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-                for (int i = 0; i < headerRow.Count; i++)
-                {
-                    var colName = headerRow[i].Trim('"').Trim();
-                    if (!string.IsNullOrWhiteSpace(colName))
-                    {
-                        csvColumnIndices[colName] = i;
-                    }
-                }
-
-                _logger?.LogDebug("Parsed {ColumnCount} columns from CSV header", csvColumnIndices.Count);
-
-                // Build column mapping (use provided mapping or auto-map)
-                var mapping = columnMapping ?? BuildAutoColumnMapping(csvColumnIndices.Keys);
-
-                // Get table metadata
-                var tableMetadata = await GetTableMetadataAsync(_tableName);
-
-                // Prepare rows for validation
-                var rowsForValidation = new List<Dictionary<string, string>>();
-                var startRow = skipHeaderRow ? 1 : 0;
-                result.TotalRows = csvLines.Length - startRow;
-
-                if (onProgress != null && !string.IsNullOrEmpty(operationId))
-                {
-                    onProgress(operationId, 10, $"Parsing {result.TotalRows} rows for validation...", 0, result.TotalRows);
-                }
-
-                // First pass: Parse and validate
-                int parsedRows = 0;
-                for (int rowIndex = startRow; rowIndex < csvLines.Length; rowIndex++)
-                {
-                    var row = csvLines[rowIndex];
-                    if (IsEmptyCsvRow(row))
-                        continue;
-
-                    try
-                    {
-                        var csvValues = ParseCsvLine(row);
-                        var rowData = new Dictionary<string, string>();
-
-                        // Map CSV columns to entity properties
-                        foreach (var kvp in mapping)
-                        {
-                            var csvColumnName = kvp.Key;
-                            var entityPropertyName = kvp.Value;
-
-                            if (csvColumnIndices.ContainsKey(csvColumnName))
-                            {
-                                var colIndex = csvColumnIndices[csvColumnName];
-                                if (colIndex < csvValues.Count)
-                                {
-                                    rowData[entityPropertyName] = csvValues[colIndex].Trim();
-                                }
-                            }
-                        }
-
-                        rowsForValidation.Add(rowData);
-                        parsedRows++;
-
-                        // Update progress every 100 rows or at end
-                        if (onProgress != null && !string.IsNullOrEmpty(operationId) &&
-                            (parsedRows % 100 == 0 || rowIndex == csvLines.Length - 1))
-                        {
-                            var progress = 10 + (int)((parsedRows / (double)result.TotalRows) * 30); // 10-40% for parsing
-                            onProgress(operationId, progress,
-                                $"Parsed {parsedRows}/{result.TotalRows} rows", parsedRows, result.TotalRows);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        result.Errors.Add(new FileImportError
-                        {
-                            RowNumber = rowIndex + 1,
-                            Message = $"Error parsing row: {ex.Message}"
-                        });
-                        result.ErrorCount++;
-                        _logger?.LogWarning("Error parsing CSV row {RowNumber}: {Error}", rowIndex + 1, ex.Message);
-                    }
-                }
-
-                _logger?.LogInformation("Parsed {ParsedRows} rows, {ErrorCount} errors during parsing", parsedRows, result.ErrorCount);
-
-                // Validate foreign keys if requested
-                if (validateForeignKeys && rowsForValidation.Any())
-                {
-                    if (onProgress != null && !string.IsNullOrEmpty(operationId))
-                    {
-                        onProgress(operationId, 40, "Validating foreign keys...");
-                    }
-
-                    var fkErrors = await ValidateForeignKeyValuesBatchAsync(rowsForValidation);
-                    foreach (var fkError in fkErrors)
-                    {
-                        result.Errors.Add(new FileImportError
-                        {
-                            RowNumber = fkError.RowNumber,
-                            Message = $"Foreign Key '{fkError.ForeignKeyColumn}' = '{fkError.ForeignKeyValue}': {fkError.ErrorMessage}"
-                        });
-                        result.ErrorCount++;
-                    }
-
-                    _logger?.LogInformation("Validated foreign keys: {ErrorCount} errors found", fkErrors.Count);
-                }
-
-                // Second pass: Import valid rows
-                if (onProgress != null && !string.IsNullOrEmpty(operationId))
-                {
-                    onProgress(operationId, 45, "Starting data import...", 0, result.TotalRows);
-                }
-
-                int importedRows = 0;
-                int validRowsToImport = result.TotalRows - result.ErrorCount;
-
-                for (int rowIndex = startRow; rowIndex < csvLines.Length; rowIndex++)
-                {
-                    var row = csvLines[rowIndex];
-                    if (IsEmptyCsvRow(row))
-                        continue;
-
-                    var rowNumber = rowIndex + 1;
-
-                    // Skip if this row has errors
-                    if (result.Errors.Any(e => e.RowNumber == rowNumber))
-                        continue;
-
-                    try
-                    {
-                        var csvValues = ParseCsvLine(row);
-                        var entity = CreateEntityFromCsvRow(csvValues, csvColumnIndices, mapping, tableMetadata);
-
-                        // Apply defaults
-                        ApplyDefaultsToEntity(entity as IPPDMEntity);
-
-                        // Insert using repository
-                        await InsertAsync(entity, userId);
-                        result.SuccessCount++;
-                        importedRows++;
-
-                        // Update progress every 50 rows or at end
-                        if (onProgress != null && !string.IsNullOrEmpty(operationId) &&
-                            (importedRows % 50 == 0 || rowIndex == csvLines.Length - 1))
-                        {
-                            var progress = 45 + (int)((importedRows / (double)validRowsToImport) * 50); // 45-95% for import
-                            onProgress(operationId, progress,
-                                $"Imported {importedRows}/{validRowsToImport} rows", importedRows, validRowsToImport);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        result.Errors.Add(new FileImportError
-                        {
-                            RowNumber = rowNumber,
-                            Message = $"Error importing row: {ex.Message}"
-                        });
-                        result.ErrorCount++;
-                        _logger?.LogWarning("Error importing row {RowNumber}: {Error}", rowNumber, ex.Message);
-                    }
-                }
-
-                _logger?.LogInformation("Import completed: {SuccessCount} succeeded, {ErrorCount} errors",
-                    result.SuccessCount, result.ErrorCount);
-
-                if (onProgress != null && !string.IsNullOrEmpty(operationId))
-                {
-                    onProgress(operationId, 100,
-                        $"Import completed: {result.SuccessCount} rows imported, {result.ErrorCount} errors",
-                        result.SuccessCount, result.TotalRows);
-                }
+                onProgress(operationId, 0, "Reading CSV file...");
             }
-            catch (Exception ex)
+
+            // Read CSV file
+            var csvLines = File.ReadAllLines(csvFilePath, Encoding.UTF8);
+            if (csvLines.Length == 0)
             {
-                _logger?.LogError(ex, "Fatal error during CSV import for table {TableName}", _tableName);
                 result.Errors.Add(new FileImportError
                 {
                     RowNumber = 0,
-                    Message = $"Fatal error during import: {ex.Message}"
+                    Message = "CSV file is empty"
                 });
                 result.ErrorCount++;
+                return result;
+            }
 
+            if (onProgress != null && !string.IsNullOrEmpty(operationId))
+            {
+                onProgress(operationId, 5, "Parsing CSV headers...");
+            }
+
+            // Parse header row
+            var headerRow = ParseCsvLine(csvLines[0]);
+            var csvColumnIndices = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < headerRow.Count; i++)
+            {
+                var colName = headerRow[i].Trim('"').Trim();
+                if (!string.IsNullOrWhiteSpace(colName))
+                {
+                    csvColumnIndices[colName] = i;
+                }
+            }
+
+            _logger?.LogDebug("Parsed {ColumnCount} columns from CSV header", csvColumnIndices.Count);
+
+            // Build column mapping (use provided mapping or auto-map)
+            var mapping = columnMapping ?? BuildAutoColumnMapping(csvColumnIndices.Keys);
+
+            // Prepare rows for validation
+            var rowsForValidation = new List<Dictionary<string, string>>();
+            var startRow = skipHeaderRow ? 1 : 0;
+            result.TotalRows = csvLines.Length - startRow;
+
+            if (onProgress != null && !string.IsNullOrEmpty(operationId))
+            {
+                onProgress(operationId, 10, $"Parsing {result.TotalRows} rows for validation...", 0, result.TotalRows);
+            }
+
+            // First pass: Parse and validate
+            int parsedRows = 0;
+            for (int rowIndex = startRow; rowIndex < csvLines.Length; rowIndex++)
+            {
+                var row = csvLines[rowIndex];
+                if (IsEmptyCsvRow(row))
+                    continue;
+
+                var csvValues = ParseCsvLine(row);
+                var rowData = new Dictionary<string, string>();
+
+                // Map CSV columns to entity properties
+                foreach (var kvp in mapping)
+                {
+                    var csvColumnName = kvp.Key;
+                    var entityPropertyName = kvp.Value;
+
+                    if (csvColumnIndices.ContainsKey(csvColumnName))
+                    {
+                        var colIndex = csvColumnIndices[csvColumnName];
+                        if (colIndex < csvValues.Count)
+                        {
+                            rowData[entityPropertyName] = csvValues[colIndex].Trim();
+                        }
+                    }
+                }
+
+                rowsForValidation.Add(rowData);
+                parsedRows++;
+
+                // Update progress every 100 rows or at end
+                if (onProgress != null && !string.IsNullOrEmpty(operationId) &&
+                    (parsedRows % 100 == 0 || rowIndex == csvLines.Length - 1))
+                {
+                    var progress = 10 + (int)((parsedRows / (double)result.TotalRows) * 30); // 10-40% for parsing
+                    onProgress(operationId, progress,
+                        $"Parsed {parsedRows}/{result.TotalRows} rows", parsedRows, result.TotalRows);
+                }
+            }
+
+            _logger?.LogInformation("Parsed {ParsedRows} rows, {ErrorCount} errors during parsing", parsedRows, result.ErrorCount);
+
+            // Validate foreign keys if requested
+            if (validateForeignKeys && rowsForValidation.Any())
+            {
                 if (onProgress != null && !string.IsNullOrEmpty(operationId))
                 {
-                    onProgress(operationId, 100, $"Fatal error: {ex.Message}");
+                    onProgress(operationId, 40, "Validating foreign keys...");
                 }
+
+                var fkErrors = await ValidateForeignKeyValuesBatchAsync(rowsForValidation);
+                foreach (var fkError in fkErrors)
+                {
+                    result.Errors.Add(new FileImportError
+                    {
+                        RowNumber = fkError.RowNumber,
+                        Message = $"Foreign Key '{fkError.ForeignKeyColumn}' = '{fkError.ForeignKeyValue}': {fkError.ErrorMessage}"
+                    });
+                    result.ErrorCount++;
+                }
+
+                _logger?.LogInformation("Validated foreign keys: {ErrorCount} errors found", fkErrors.Count);
+            }
+
+            // Second pass: Import valid rows
+            if (onProgress != null && !string.IsNullOrEmpty(operationId))
+            {
+                onProgress(operationId, 45, "Starting data import...", 0, result.TotalRows);
+            }
+
+            int importedRows = 0;
+            int validRowsToImport = result.TotalRows - result.ErrorCount;
+
+            for (int rowIndex = startRow; rowIndex < csvLines.Length; rowIndex++)
+            {
+                var row = csvLines[rowIndex];
+                if (IsEmptyCsvRow(row))
+                    continue;
+
+                var rowNumber = rowIndex + 1;
+
+                // Skip if this row has errors
+                if (result.Errors.Any(e => e.RowNumber == rowNumber))
+                    continue;
+
+                var csvValues = ParseCsvLine(row);
+                var entity = CreateEntityFromCsvRow(csvValues, csvColumnIndices, mapping, out var valueProblem);
+                if (valueProblem != null)
+                {
+                    valueProblem.RowNumber = rowNumber;
+                    result.Errors.Add(valueProblem);
+                    result.ErrorCount++;
+                    continue;
+                }
+
+                // Apply defaults
+                ApplyDefaultsToEntity(entity as IPPDMEntity);
+
+                // Insert using repository
+                await InsertAsync(entity, userId);
+                result.SuccessCount++;
+                importedRows++;
+
+                // Update progress every 50 rows or at end
+                if (onProgress != null && !string.IsNullOrEmpty(operationId) &&
+                    (importedRows % 50 == 0 || rowIndex == csvLines.Length - 1))
+                {
+                    var progress = 45 + (int)((importedRows / (double)validRowsToImport) * 50); // 45-95% for import
+                    onProgress(operationId, progress,
+                        $"Imported {importedRows}/{validRowsToImport} rows", importedRows, validRowsToImport);
+                }
+            }
+
+            _logger?.LogInformation("Import completed: {SuccessCount} succeeded, {ErrorCount} errors",
+                result.SuccessCount, result.ErrorCount);
+
+            if (onProgress != null && !string.IsNullOrEmpty(operationId))
+            {
+                onProgress(operationId, 100,
+                    $"Import completed: {result.SuccessCount} rows imported, {result.ErrorCount} errors",
+                    result.SuccessCount, result.TotalRows);
             }
 
             return result;
@@ -2479,12 +2426,18 @@ namespace Beep.OilandGas.PPDM39.Core
         /// <summary>
         /// Creates an entity instance from CSV row data
         /// </summary>
+        /// <param name="valueProblem">
+        /// The row's first value that is not of its column's type, worded for the person who sent the file (the caller sets
+        /// the row number); null when every mapped value converted. A value that does not convert refuses the row: it used
+        /// to be dropped with a debug line, or read as 0, the minimum date or false, and the row imported without it.
+        /// </param>
         private object CreateEntityFromCsvRow(
             List<string> csvValues,
             Dictionary<string, int> csvColumnIndices,
             Dictionary<string, string> columnMapping,
-            PPDMTableMetadata tableMetadata)
+            out FileImportError? valueProblem)
         {
+            valueProblem = null;
             var entity = Activator.CreateInstance(_entityType);
             if (entity == null)
                 throw new InvalidOperationException($"Failed to create instance of {_entityType.Name}");
@@ -2512,65 +2465,21 @@ namespace Beep.OilandGas.PPDM39.Core
 
                 if (property != null && property.CanWrite)
                 {
-                    try
+                    if (!CsvValueConversion.TryConvert(csvValue, property.PropertyType, out var convertedValue))
                     {
-                        var convertedValue = ConvertCsvValueToPropertyType(csvValue, property.PropertyType);
-                        property.SetValue(entity, convertedValue);
+                        valueProblem = new FileImportError
+                        {
+                            ColumnName = csvColumnName,
+                            Message = CsvValueConversion.Refusal(csvColumnName, csvValue, property.PropertyType)
+                        };
+                        return entity;
                     }
-                    catch (Exception ex)
-                    {
-                        // Log but continue - individual field errors are handled at row level
-                        System.Diagnostics.Debug.WriteLine($"Error setting property {property.Name}: {ex.Message}");
-                    }
+
+                    property.SetValue(entity, convertedValue);
                 }
             }
 
             return entity;
-        }
-
-        /// <summary>
-        /// Converts CSV string value to appropriate property type
-        /// </summary>
-        private object ConvertCsvValueToPropertyType(string value, Type targetType)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                var underlyingType = Nullable.GetUnderlyingType(targetType) ?? targetType;
-                if (underlyingType.IsValueType && Nullable.GetUnderlyingType(targetType) == null)
-                    return Activator.CreateInstance(underlyingType);
-                return null;
-            }
-
-            var underlying = Nullable.GetUnderlyingType(targetType) ?? targetType;
-
-            if (underlying == typeof(string))
-                return value;
-            if (underlying == typeof(int))
-                return int.TryParse(value, out var i) ? i : (object)0;
-            if (underlying == typeof(long))
-                return long.TryParse(value, out var l) ? l : (object)0L;
-            if (underlying == typeof(decimal))
-                return decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var d) ? d : (object)0m;
-            if (underlying == typeof(double))
-                return double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var dbl) ? dbl : (object)0.0;
-            if (underlying == typeof(DateTime))
-            {
-                if (DateTime.TryParse(value, out var dt))
-                    return dt;
-                // Try Excel date serial number
-                if (double.TryParse(value, out var excelDate))
-                    return DateTime.FromOADate(excelDate);
-                return DateTime.MinValue;
-            }
-            if (underlying == typeof(bool))
-            {
-                return value.Equals("Y", StringComparison.OrdinalIgnoreCase) ||
-                       value.Equals("Yes", StringComparison.OrdinalIgnoreCase) ||
-                       value.Equals("1", StringComparison.OrdinalIgnoreCase) ||
-                       value.Equals("True", StringComparison.OrdinalIgnoreCase);
-            }
-
-            return Convert.ChangeType(value, underlying, CultureInfo.InvariantCulture);
         }
 
         /// <summary>
@@ -2617,17 +2526,11 @@ namespace Beep.OilandGas.PPDM39.Core
                 }
                 // Add more default mappings as needed
 
-                if (defaultValue != null)
+                // The defaults are text. A property that cannot hold text keeps its value: the conversion used to be
+                // attempted and its failure ignored in a catch (OILGAS-CATCH-01); the type is asked instead.
+                if (defaultValue != null && prop.PropertyType.IsAssignableFrom(defaultValue.GetType()))
                 {
-                    try
-                    {
-                        var convertedValue = Convert.ChangeType(defaultValue, prop.PropertyType);
-                        prop.SetValue(entity, convertedValue);
-                    }
-                    catch
-                    {
-                        // Ignore conversion errors
-                    }
+                    prop.SetValue(entity, defaultValue);
                 }
             }
         }

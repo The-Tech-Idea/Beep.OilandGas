@@ -8,6 +8,7 @@
 @inject IDevelopmentServiceClient DevelopmentClient
 @inject IPumpServiceClient PumpService
 @inject ILifeCycleService LifeCycleService
+@inject OilGasApiFailures Answers
 
 <PageTitle>Design Hydraulic Pump System</PageTitle>
 
@@ -221,11 +222,12 @@
 
         try
         {
-            var saved = await PumpService.SaveHydraulicPumpDesignAsync(_pumpDesign);
-            if (saved)
-            {
-                Snackbar.Add("Pump design saved successfully", Severity.Success);
-            }
+            await PumpService.SaveHydraulicPumpDesignAsync(_pumpDesign);
+            Snackbar.Add("Pump design saved successfully", Severity.Success);
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "saving the hydraulic pump design", "The pump design was not saved"), Severity.Error);
         }
         catch (Exception)
         {

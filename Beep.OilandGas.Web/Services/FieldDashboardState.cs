@@ -5,8 +5,10 @@ using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Web.Services;
 
-public sealed class FieldDashboardState(Func<Task<FieldDashboard>> load) : IDisposable
+public sealed class FieldDashboardState(Func<Task<FieldDashboard>> load, OilGasCallFailures failures) : IDisposable
 {
+    private const string Operation = "loading the field dashboard";
+
     public FieldDashboard? Dashboard { get; private set; }
     public bool Loading { get; private set; }
     public bool NeedsField { get; private set; }
@@ -30,18 +32,29 @@ public sealed class FieldDashboardState(Func<Task<FieldDashboard>> load) : IDisp
                 throw new InvalidOperationException("Dashboard field does not match the selected field.");
             Dashboard = dashboard;
         }
+        // The page renders a sentence for every failure of this load, in place of the dashboard; the store keeps the
+        // exception (a superseded load's too, though nobody is shown it).
         catch (Exception ex)
         {
-            if (Current(version)) Error = ex is HttpRequestException http ? http.StatusCode switch {
-                HttpStatusCode.Unauthorized => "Your session has expired. Sign in again to load the dashboard.",
-                HttpStatusCode.Forbidden => "You do not have access to this field dashboard. Select another field or contact your app administrator.",
-                HttpStatusCode.NotFound => "The selected field could not be found. Select another field and retry.",
-                _ => "Field data could not be loaded. Retry when the service is available."
-            } : "Field data could not be confirmed for the selected field. Refresh to retry.";
+            var sentence = Refusal(ex) is { } own
+                ? failures.Told(ex, Operation, own)
+                : failures.Explain(ex, Operation, OilGasCallFailures.IsCallFailure(ex)
+                    ? "Field data could not be loaded"
+                    : "Field data could not be confirmed for the selected field");
+            if (Current(version)) Error = sentence;
         }
         finally { if (Current(version)) Loading = false; }
     }
     private bool Current(int version) => !_disposed && version == _version;
+
+    /// <summary>This page's own words for a refusal it recognises; null for anything else.</summary>
+    private static string? Refusal(Exception ex) => ex switch
+    {
+        OilGasApiException { StatusCode: HttpStatusCode.Unauthorized } => "Your session has expired. Sign in again to load the dashboard.",
+        OilGasApiException { StatusCode: HttpStatusCode.Forbidden } => "You do not have access to this field dashboard. Select another field or contact your app administrator.",
+        OilGasApiException { StatusCode: HttpStatusCode.NotFound } => "The selected field could not be found. Select another field and retry.",
+        _ => null,
+    };
     public void Dispose() { _disposed = true; ++_version; Dashboard = null; }
 
     public static string MetricValue(object? value) => value switch {

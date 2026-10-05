@@ -18,6 +18,8 @@
     <ProjectReference Include="..\Beep.OilandGas.ProductionForecasting\Beep.OilandGas.ProductionForecasting.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.NodalAnalysis\Beep.OilandGas.NodalAnalysis.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.WellTestAnalysis\Beep.OilandGas.WellTestAnalysis.csproj" />
+    <!-- The failure reporter (OILGAS-CATCH-01): a degraded outcome is reported, never only logged. -->
+    <ProjectReference Include="..\..\Beep.Web\TheTechIdeaWeb.Diagnostics.Abstractions\TheTechIdeaWeb.Diagnostics.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

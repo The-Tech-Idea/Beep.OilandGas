@@ -10,6 +10,7 @@ using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.PlungerLift.Services
 {
@@ -57,7 +58,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<PlungerLiftDesign> DesignPlungerLiftSystemAsync(string wellUWI, PLUNGER_LIFT_WELL_PROPERTIES wellProperties)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (wellProperties == null)
                 throw new ArgumentNullException(nameof(wellProperties));
 
@@ -97,7 +98,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<PlungerLiftDesign> OptimizeDesignAsync(string wellUWI, PlungerLiftOptimizationRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -126,7 +127,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<PlungerTypeSelection> SelectPlungerTypeAsync(string wellUWI, PlungerSelectionCriteria criteria)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (criteria == null)
                 throw new ArgumentNullException(nameof(criteria));
 
@@ -161,7 +162,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<CycleTimeCalculation> CalculateCycleTimeAsync(string wellUWI, CycleTimeRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -199,7 +200,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<PlungerLiftPerformance> AnalyzePerformanceAsync(string wellUWI)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
 
             _logger?.LogInformation("Analyzing plunger lift performance for well {WellUWI}", wellUWI);
 
@@ -233,7 +234,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<ProductionRate> CalculateProductionRateAsync(string wellUWI, ProductionRateRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -266,7 +267,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<EfficiencyAnalysis> AnalyzeEfficiencyAsync(string wellUWI, EfficiencyAnalysisRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -300,7 +301,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<EnergyRequirements> CalculateEnergyRequirementsAsync(string wellUWI, EnergyRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -337,7 +338,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<ValvePerformance> AnalyzeValvePerformanceAsync(string wellUWI, ValveAnalysisRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -371,7 +372,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<ValveSizing> CalculateValveSizingAsync(string wellUWI, ValveSizingRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -402,7 +403,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<TubingAnalysis> AnalyzeTubingAsync(string wellUWI, TubingAnalysisRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -436,7 +437,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<CasingAnalysis> AnalyzeCasingAsync(string wellUWI, CasingAnalysisRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -474,7 +475,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<List<OptimizationOpportunity>> IdentifyOptimizationOpportunitiesAsync(string wellUWI)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
 
             _logger?.LogInformation("Identifying optimization opportunities for well {WellUWI}", wellUWI);
 
@@ -520,7 +521,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<ParameterAdjustment> RecommendParameterAdjustmentsAsync(string wellUWI, PerformanceData currentPerformance)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (currentPerformance == null)
                 throw new ArgumentNullException(nameof(currentPerformance));
 
@@ -554,7 +555,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<SensitivityAnalysis> PerformSensitivityAnalysisAsync(string wellUWI, SensitivityRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -584,7 +585,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<DesignComparison> CompareDesignsAsync(List<PlungerLiftDesign> designs)
         {
             if (designs == null || designs.Count < 2)
-                throw new ArgumentException("At least 2 designs required for comparison", nameof(designs));
+                throw RefusalException.Invalid("At least two designs are needed for a comparison.");
 
             _logger?.LogInformation("Comparing {Count} plunger lift designs", designs.Count);
 
@@ -616,7 +617,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<AcousticTelemetry> AnalyzeAcousticTelemetryAsync(string wellUWI, AcousticDataRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -650,7 +651,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<ProductionMonitoring> MonitorProductionAsync(string wellUWI, MonitoringRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -684,7 +685,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<IssueDetection> DetectOperationalIssuesAsync(string wellUWI)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
 
             _logger?.LogInformation("Detecting operational issues for well {WellUWI}", wellUWI);
 
@@ -713,7 +714,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<PredictiveMaintenance> PerformPredictiveMaintenanceAsync(string wellUWI, MaintenanceRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -748,7 +749,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<ArtificialLiftComparison> CompareWithOtherMethodsAsync(string wellUWI, ComparisonRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -779,7 +780,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<FeasibilityAssessment> AssessFeasibilityAsync(string wellUWI, FeasibilityRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -811,7 +812,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<CostAnalysis> PerformCostAnalysisAsync(string wellUWI, CostAnalysisRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -883,7 +884,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<PlungerLiftDesign?> GetPlungerLiftDesignAsync(string wellUWI)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
 
             _logger?.LogInformation("Retrieving plunger lift design for well {WellUWI}", wellUWI);
 
@@ -980,7 +981,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<List<PerformanceData>> GetPerformanceDataAsync(string wellUWI, DateTime startDate, DateTime endDate)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
 
             _logger?.LogInformation("Retrieving performance data for well {WellUWI} from {StartDate} to {EndDate}", wellUWI, startDate, endDate);
 
@@ -1014,7 +1015,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<PlungerLiftReport> GenerateDesignReportAsync(string wellUWI, ReportRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
@@ -1049,7 +1050,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<byte[]> ExportPerformanceDataAsync(string wellUWI, DateTime startDate, DateTime endDate, string format = "CSV")
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
 
             _logger?.LogInformation("Exporting performance data for well {WellUWI} in {Format} format", wellUWI, format);
 
@@ -1072,7 +1073,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         public async Task<TechnicalSpecifications> GenerateTechnicalSpecificationsAsync(string wellUWI, PlungerLiftDesign design)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
+                throw RefusalException.Invalid("A well UWI is required.");
             if (design == null)
                 throw new ArgumentNullException(nameof(design));
 

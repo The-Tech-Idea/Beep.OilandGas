@@ -82,7 +82,8 @@ public class FieldSelectionTests
         fixture.Current = "b";
         Assert.Equal("b", await fixture.Data.GetCurrentFieldIdAsync());
         fixture.CurrentStatus = HttpStatusCode.ServiceUnavailable;
-        await Assert.ThrowsAsync<HttpRequestException>(() => fixture.Data.GetCurrentFieldIdAsync());
+        var failure = await Assert.ThrowsAsync<OilGasApiException>(() => fixture.Data.GetCurrentFieldIdAsync());
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, failure.StatusCode);
     }
 
     private static HttpResponseMessage Reply(HttpStatusCode status, string body) => new(status) { Content = new StringContent(body) };
@@ -99,9 +100,11 @@ public class FieldSelectionTests
         public Fixture()
         {
             _http = new HttpClient(this, false) { BaseAddress = new Uri("https://api.example") };
-            var api = new ApiClient(_http, NullLogger<ApiClient>.Instance);
-            Data = new DataManagementService(api, NullLogger<DataManagementService>.Instance);
-            State = new FieldSelectionState(api, Data);
+            var reporter = new RecordingFailureReporter();
+            var api = new ApiClient(_http, reporter);
+            var calls = TestFailures.Calls(reporter);
+            Data = new DataManagementService(api, NullLogger<DataManagementService>.Instance, calls, reporter);
+            State = new FieldSelectionState(api, Data, calls);
         }
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {

@@ -12,4 +12,23 @@
     <DiagnosticsProject Condition="'$(DiagnosticsProject)' == ''">$(MSBuildThisFileDirectory)..\Beep.Web\TheTechIdeaWeb.Diagnostics\TheTechIdeaWeb.Diagnostics.csproj</DiagnosticsProject>
     <IdentityContractsProject Condition="'$(IdentityContractsProject)' == ''">$(MSBuildThisFileDirectory)..\Beep.IdentityServer\Beep.IdentityServer.Contracts\Beep.IdentityServer.Contracts.csproj</IdentityContractsProject>
   </PropertyGroup>
+
+  <!--
+    OILGAS-CATCH-01. The failure rules every TheTechIdea system keeps, held by the identity server's analyzers in the
+    compiler: a catch reports through the failure service (IFailureReporter, a page's FailureNotifier) or rethrows
+    (BEEP0003); a caught exception's text never leaves its catch (BEEP0004); a switch over an enum names every member with
+    no catch-all (BEEP0001/0002). CS8509 is an error so a member added later is a build error wherever it is not handled;
+    CS8524 (a value outside the enum) is the analyzer's to refuse.
+
+    Every project but the tests and benchmarks: a test's catch is the test's assertion.
+  -->
+  <PropertyGroup Condition="!$(MSBuildProjectName.Contains('Tests')) And !$(MSBuildProjectName.Contains('Benchmarks'))">
+    <WarningsAsErrors>$(WarningsAsErrors);CS8509</WarningsAsErrors>
+    <NoWarn>$(NoWarn);CS8524</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup Condition="!$(MSBuildProjectName.Contains('Tests')) And !$(MSBuildProjectName.Contains('Benchmarks'))">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\Beep.IdentityServer\Beep.IdentityServer.Analyzers\Beep.IdentityServer.Analyzers.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+  </ItemGroup>
 </Project>

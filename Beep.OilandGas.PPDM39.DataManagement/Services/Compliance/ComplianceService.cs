@@ -8,6 +8,11 @@ using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Services.Compliance;
 
+/// <remarks>
+/// OILGAS-CATCH-01: a read that fails reaches the caller. The obligation lists answered empty on a failure, and the
+/// compliance score answered a field with no obligations and an on-time rate of 100% — a failed read shown as full
+/// compliance.
+/// </remarks>
 public class ComplianceService : IComplianceService
 {
     private readonly IDMEEditor                  _editor;
@@ -193,89 +198,57 @@ public class ComplianceService : IComplianceService
 
     public async Task<List<ObligationSummary>> GetUpcomingObligationsAsync(string fieldId, int daysAhead = 30)
     {
-        try
+        var repo    = await MakeRepoAsync("OBLIGATION");
+        var cutoff  = DateTime.UtcNow.AddDays(daysAhead);
+        var filters = new List<AppFilter>
         {
-            var repo    = await MakeRepoAsync("OBLIGATION");
-            var cutoff  = DateTime.UtcNow.AddDays(daysAhead);
-            var filters = new List<AppFilter>
-            {
-                new() { FieldName = "FIELD_ID",     Operator = "=",  FilterValue = fieldId },
-                new() { FieldName = "OBLIG_STATUS",  Operator = "=",  FilterValue = ObligationStatus.Pending },
-                new() { FieldName = "DUE_DATE",      Operator = "<=", FilterValue = cutoff.ToString("yyyy-MM-dd") },
-                new() { FieldName = "ACTIVE_IND",    Operator = "=",  FilterValue = "Y" }
-            };
-            return (await repo.GetAsync(filters)).ToList().Select(ToSummary).ToList();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to get upcoming obligations for {FieldId}", fieldId);
-            return new();
-        }
+            new() { FieldName = "FIELD_ID",     Operator = "=",  FilterValue = fieldId },
+            new() { FieldName = "OBLIG_STATUS",  Operator = "=",  FilterValue = ObligationStatus.Pending },
+            new() { FieldName = "DUE_DATE",      Operator = "<=", FilterValue = cutoff.ToString("yyyy-MM-dd") },
+            new() { FieldName = "ACTIVE_IND",    Operator = "=",  FilterValue = "Y" }
+        };
+        return (await repo.GetAsync(filters)).ToList().Select(ToSummary).ToList();
     }
 
     public async Task<List<ObligationSummary>> GetOverdueObligationsAsync(string fieldId)
     {
-        try
+        var repo    = await MakeRepoAsync("OBLIGATION");
+        var filters = new List<AppFilter>
         {
-            var repo    = await MakeRepoAsync("OBLIGATION");
-            var filters = new List<AppFilter>
-            {
-                new() { FieldName = "FIELD_ID",    Operator = "=", FilterValue = fieldId },
-                new() { FieldName = "OBLIG_STATUS", Operator = "=", FilterValue = ObligationStatus.Overdue },
-                new() { FieldName = "ACTIVE_IND",   Operator = "=", FilterValue = "Y" }
-            };
-            return (await repo.GetAsync(filters)).ToList().Select(ToSummary).ToList();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to get overdue obligations for {FieldId}", fieldId);
-            return new();
-        }
+            new() { FieldName = "FIELD_ID",    Operator = "=", FilterValue = fieldId },
+            new() { FieldName = "OBLIG_STATUS", Operator = "=", FilterValue = ObligationStatus.Overdue },
+            new() { FieldName = "ACTIVE_IND",   Operator = "=", FilterValue = "Y" }
+        };
+        return (await repo.GetAsync(filters)).ToList().Select(ToSummary).ToList();
     }
 
     public async Task<List<ObligationSummary>> GetAllObligationsAsync(string fieldId, int year)
     {
-        try
+        var repo    = await MakeRepoAsync("OBLIGATION");
+        var filters = new List<AppFilter>
         {
-            var repo    = await MakeRepoAsync("OBLIGATION");
-            var filters = new List<AppFilter>
-            {
-                new() { FieldName = "FIELD_ID",  Operator = "=", FilterValue = fieldId },
-                new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-            };
-            return (await repo.GetAsync(filters)).ToList()
-                .Select(ToSummary)
-                .Where(s => s.DueDate.Year == year)
-                .ToList();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to get all obligations for {FieldId}", fieldId);
-            return new();
-        }
+            new() { FieldName = "FIELD_ID",  Operator = "=", FilterValue = fieldId },
+            new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+        };
+        return (await repo.GetAsync(filters)).ToList()
+            .Select(ToSummary)
+            .Where(s => s.DueDate.Year == year)
+            .ToList();
     }
 
     public async Task<ComplianceScoreCard> GetComplianceScoreAsync(string fieldId, int year)
     {
-        try
-        {
-            var all = await GetAllObligationsAsync(fieldId, year);
+        var all = await GetAllObligationsAsync(fieldId, year);
 
-            var total         = all.Count;
-            var submitted     = all.Where(s => s.Status == ObligationStatus.Submitted).ToList();
-            var overdue       = all.Count(s => s.Status == ObligationStatus.Overdue);
-            var waived        = all.Count(s => s.Status == ObligationStatus.Waived);
-            var onTime        = submitted.Count(s => !s.IsOverdue);
-            var late          = submitted.Count - onTime;
-            var onTimeRate    = total > 0 ? (double)onTime / total * 100.0 : 100.0;
+        var total         = all.Count;
+        var submitted     = all.Where(s => s.Status == ObligationStatus.Submitted).ToList();
+        var overdue       = all.Count(s => s.Status == ObligationStatus.Overdue);
+        var waived        = all.Count(s => s.Status == ObligationStatus.Waived);
+        var onTime        = submitted.Count(s => !s.IsOverdue);
+        var late          = submitted.Count - onTime;
+        var onTimeRate    = total > 0 ? (double)onTime / total * 100.0 : 100.0;
 
-            return new ComplianceScoreCard(year, total, onTime, late, overdue, waived, onTimeRate);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to compute compliance score for {FieldId}", fieldId);
-            return new ComplianceScoreCard(year, 0, 0, 0, 0, 0, 100.0);
-        }
+        return new ComplianceScoreCard(year, total, onTime, late, overdue, waived, onTimeRate);
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

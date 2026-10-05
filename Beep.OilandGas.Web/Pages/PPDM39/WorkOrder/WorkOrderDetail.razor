@@ -3,6 +3,7 @@
 @using Beep.OilandGas.Web.Services
 @inject IWorkOrderServiceClient WorkOrderService
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
 
 <PageTitle>Work Order @Id</PageTitle>
 
@@ -410,6 +411,11 @@
                 condSeq,
                 new RecordInspectionResultRequest { Result = result });
             _checklist = await WorkOrderService.GetChecklistAsync(Id);
+        }
+        catch (OilGasApiException answer)
+        {
+            _error = Answers.Explain(answer, "recording a work order inspection result", "The inspection result was not recorded");
+            Snackbar.Add(_error, Severity.Error);
         }
         catch (Exception) { _error = "Failed to record result."; Snackbar.Add(_error, Severity.Error); }
     }

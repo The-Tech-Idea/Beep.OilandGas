@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data.NodalAnalysis;
 using Beep.OilandGas.GasProperties.Calculations;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.NodalAnalysis.Calculations
 {
@@ -31,13 +32,13 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             decimal temperature)
         {
             if (wellheadPressure <= 0)
-                throw new ArgumentException("Wellhead pressure must be greater than zero.", nameof(wellheadPressure));
+                throw RefusalException.Invalid("Wellhead pressure must be greater than zero.");
 
             if (depth <= 0)
-                throw new ArgumentException("Depth must be greater than zero.", nameof(depth));
+                throw RefusalException.Invalid("Depth must be greater than zero.");
 
             if (flowRate <= 0)
-                throw new ArgumentException("Flow rate must be greater than zero.", nameof(flowRate));
+                throw RefusalException.Invalid("Flow rate must be greater than zero.");
 
             // Calculate average pressure (simplified)
             decimal averagePressure = wellheadPressure * 1.1m; // Approximation
@@ -82,10 +83,10 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             decimal waterCut = 0m)
         {
             if (wellheadPressure <= 0)
-                throw new ArgumentException("Wellhead pressure must be greater than zero.", nameof(wellheadPressure));
+                throw RefusalException.Invalid("Wellhead pressure must be greater than zero.");
 
             if (depth <= 0)
-                throw new ArgumentException("Depth must be greater than zero.", nameof(depth));
+                throw RefusalException.Invalid("Depth must be greater than zero.");
 
             // Hagedorn-Brown correlation (simplified version)
             decimal averagePressure = wellheadPressure * 1.1m;
@@ -122,10 +123,10 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             decimal wellheadTemperature)
         {
             if (wellheadPressure <= 0)
-                throw new ArgumentException("Wellhead pressure must be greater than zero.", nameof(wellheadPressure));
+                throw RefusalException.Invalid("Wellhead pressure must be greater than zero.");
 
             if (depth <= 0)
-                throw new ArgumentException("Depth must be greater than zero.", nameof(depth));
+                throw RefusalException.Invalid("Depth must be greater than zero.");
 
             // Cullender-Smith method for gas wells
             decimal averageTemperature = (temperature + wellheadTemperature) / 2.0m;
@@ -175,10 +176,10 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             decimal temperature)
         {
             if (wellheadPressure <= 0)
-                throw new ArgumentException("Wellhead pressure must be greater than zero.", nameof(wellheadPressure));
+                throw RefusalException.Invalid("Wellhead pressure must be greater than zero.");
 
             if (depth <= 0)
-                throw new ArgumentException("Depth must be greater than zero.", nameof(depth));
+                throw RefusalException.Invalid("Depth must be greater than zero.");
 
             // Guo-Ghalambor correlation
             decimal averagePressure = wellheadPressure * 1.1m;
@@ -228,13 +229,13 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             decimal tubingDiameter = 2.875m)
         {
             if (wellheadPressure <= 0)
-                throw new ArgumentException("Wellhead pressure must be greater than zero.", nameof(wellheadPressure));
+                throw RefusalException.Invalid("Wellhead pressure must be greater than zero.");
 
             if (depth <= 0)
-                throw new ArgumentException("Depth must be greater than zero.", nameof(depth));
+                throw RefusalException.Invalid("Depth must be greater than zero.");
 
             if (flowRate <= 0)
-                throw new ArgumentException("Flow rate must be greater than zero.", nameof(flowRate));
+                throw RefusalException.Invalid("Flow rate must be greater than zero.");
 
             // Gray-Gray correlation for multiphase flow
             // Iterative solution for pressure drop calculation

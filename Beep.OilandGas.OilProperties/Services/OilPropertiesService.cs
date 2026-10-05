@@ -18,6 +18,7 @@ using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.Common;
 using Beep.OilandGas.PPDM.Models;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.OilProperties.Services
 {
@@ -313,7 +314,7 @@ namespace Beep.OilandGas.OilProperties.Services
         public async Task<List<OilPropertyResult>> GetOilPropertyHistoryAsync(string compositionId)
         {
             if (string.IsNullOrWhiteSpace(compositionId))
-                throw new ArgumentException("Composition ID cannot be null or empty", nameof(compositionId));
+                throw RefusalException.Invalid("A composition ID is required.");
 
             _logger?.LogInformation("Getting oil property history for composition {CompositionId}", compositionId);
 
@@ -690,7 +691,13 @@ namespace Beep.OilandGas.OilProperties.Services
             if (composition == null)
                 throw new ArgumentNullException(nameof(composition));
             if (string.IsNullOrWhiteSpace(propertyName))
-                throw new ArgumentException("Property name cannot be null or empty", nameof(propertyName));
+                throw RefusalException.Invalid("A property name is required: viscosity, density or fvf.");
+
+            // The trend is drawn for the three properties this service calculates. Any other name was answered with a
+            // trend of zeros, as though it had been calculated; it is refused instead (OILGAS-CATCH-01).
+            var trendProperty = propertyName.ToLowerInvariant();
+            if (trendProperty != "viscosity" && trendProperty != "density" && trendProperty != "fvf")
+                throw RefusalException.Invalid($"'{propertyName}' is not a property this trend can be drawn for: use viscosity, density or fvf.");
 
             _logger?.LogInformation("Analyzing {PropertyName} trend for composition {CompositionId}", propertyName, composition.CompositionId);
 
@@ -706,13 +713,11 @@ namespace Beep.OilandGas.OilProperties.Services
             {
                 pressureRange.Add(p);
 
-                decimal value = propertyName.ToLower() switch
-                {
-                    "viscosity" => CompositionSaturatedOilViscosity(p, temperature, composition),
-                    "density" => CalculateOilDensity(p, temperature, composition.OilGravity, composition.GasOilRatio),
-                    "fvf" => CompositionFormationVolumeFactor(p, temperature, composition),
-                    _ => 0m
-                };
+                decimal value = trendProperty == "viscosity"
+                    ? CompositionSaturatedOilViscosity(p, temperature, composition)
+                    : trendProperty == "density"
+                        ? CalculateOilDensity(p, temperature, composition.OilGravity, composition.GasOilRatio)
+                        : CompositionFormationVolumeFactor(p, temperature, composition);
                 propertyValues.Add(Math.Max(value, 0m));
             }
 

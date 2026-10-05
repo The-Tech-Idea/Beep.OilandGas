@@ -52,59 +52,39 @@ namespace Beep.OilandGas.ApiService.Controllers
         public async Task<ActionResult<object>> PerformDCAAnalysis([FromBody] DCARequest request)
         {
             var userId = User.ActingUserId();
-            string? operationId = null;
-            try
+            // Set field context if available
+            if (_fieldOrchestrator != null && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId) && string.IsNullOrEmpty(request.FieldId))
             {
-                // Set field context if available
-                if (_fieldOrchestrator != null && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId) && string.IsNullOrEmpty(request.FieldId))
-                {
-                    request.FieldId = _fieldOrchestrator.CurrentFieldId;
-                }
-
-                request.UserId = userId;
-
-                // Start progress tracking
-                operationId = _progressTracking?.StartOperation("DCA", $"DCA Analysis for Well {request.WellId ?? "N/A"}");
-                _progressTracking?.UpdateProgress(operationId!, 10, "Initializing DCA calculation...");
-
-                // Execute calculation asynchronously with progress updates
-                var result = await Task.Run(async () =>
-                {
-                    try
-                    {
-                        _progressTracking?.UpdateProgress(operationId!, 20, "Fetching production data...");
-                        var dcaResult = await _calculationService.PerformDCAAnalysisAsync(request);
-                        _progressTracking?.UpdateProgress(operationId!, 90, "Saving calculation results...");
-                        return dcaResult;
-                    }
-                    catch (Exception)
-                    {
-                        _progressTracking?.CompleteOperation(operationId!, false, errorMessage: "An internal error occurred.");
-                        throw;
-                    }
-                });
-
-                _progressTracking?.CompleteOperation(operationId!, true, "DCA analysis completed successfully");
-                return Ok(new { OperationId = operationId, Result = result });
+                request.FieldId = _fieldOrchestrator.CurrentFieldId;
             }
-            catch (ArgumentException ex)
+
+            request.UserId = userId;
+
+            // Start progress tracking
+            var operationId = _progressTracking?.StartOperation("DCA", $"DCA Analysis for Well {request.WellId ?? "N/A"}");
+            _progressTracking?.UpdateProgress(operationId!, 10, "Initializing DCA calculation...");
+
+            // Execute calculation asynchronously with progress updates
+            var result = await Task.Run(async () =>
             {
-                _logger.LogWarning(ex, "Invalid DCA request");
-                if (operationId != null)
+                try
                 {
-                    _progressTracking?.CompleteOperation(operationId, false, errorMessage: "An internal error occurred.");
+                    _progressTracking?.UpdateProgress(operationId!, 20, "Fetching production data...");
+                    var dcaResult = await _calculationService.PerformDCAAnalysisAsync(request);
+                    _progressTracking?.UpdateProgress(operationId!, 90, "Saving calculation results...");
+                    return dcaResult;
                 }
-                return BadRequest(new { error = "An internal error occurred.", OperationId = operationId });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error performing DCA analysis");
-                if (operationId != null)
+                // Whatever ends the calculation, the tracked operation is closed as not completed before the exception goes
+                // on to the API's handler, which answers a refusal with its sentence and reports anything else.
+                catch (Exception)
                 {
-                    _progressTracking?.CompleteOperation(operationId, false, errorMessage: "An internal error occurred.");
+                    _progressTracking?.CompleteOperation(operationId!, false, errorMessage: "The DCA analysis did not complete.");
+                    throw;
                 }
-                return StatusCode(500, new { error = "An internal error occurred.", OperationId = operationId });
-            }
+            });
+
+            _progressTracking?.CompleteOperation(operationId!, true, "DCA analysis completed successfully");
+            return Ok(new { OperationId = operationId, Result = result });
         }
 
         /// <summary>
@@ -114,26 +94,18 @@ namespace Beep.OilandGas.ApiService.Controllers
         public async Task<ActionResult<DCAResult>> GetDCAResult(string calculationId)
         {
             if (string.IsNullOrWhiteSpace(calculationId)) return BadRequest(new { error = "Calculation ID is required." });
-            try
+            var result = await _calculationService.GetCalculationResultAsync(calculationId, "DCA");
+            if (result == null)
             {
-                var result = await _calculationService.GetCalculationResultAsync(calculationId, "DCA");
-                if (result == null)
-                {
-                        return NotFound(new { error = $"DCA calculation {calculationId} not found." });
-                }
-
-                if (result is DCAResult dcaResult)
-                {
-                    return Ok(dcaResult);
-                }
-
-                return Ok(result);
+                    return NotFound(new { error = $"DCA calculation {calculationId} not found." });
             }
-            catch (Exception ex)
+
+            if (result is DCAResult dcaResult)
             {
-                _logger.LogError(ex, "Error getting DCA result");
-                return StatusCode(500, new { error = "An internal error occurred." });
+                return Ok(dcaResult);
             }
+
+            return Ok(result);
         }
 
         /// <summary>
@@ -145,22 +117,14 @@ namespace Beep.OilandGas.ApiService.Controllers
             [FromQuery] string? poolId = null,
             [FromQuery] string? fieldId = null)
         {
-            try
+            // Use current field if no field ID specified
+            if (_fieldOrchestrator != null && string.IsNullOrEmpty(fieldId) && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId))
             {
-                // Use current field if no field ID specified
-                if (_fieldOrchestrator != null && string.IsNullOrEmpty(fieldId) && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId))
-                {
-                    fieldId = _fieldOrchestrator.CurrentFieldId;
-                }
+                fieldId = _fieldOrchestrator.CurrentFieldId;
+            }
 
-                var results = await _calculationService.GetCalculationResultsAsync(wellId, poolId, fieldId, "DCA");
-                return Ok(results.DcaResults);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting DCA results");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var results = await _calculationService.GetCalculationResultsAsync(wellId, poolId, fieldId, "DCA");
+            return Ok(results.DcaResults);
         }
 
         #endregion
@@ -176,27 +140,10 @@ namespace Beep.OilandGas.ApiService.Controllers
             var userId = User.ActingUserId();
             if (request == null)
                 return BadRequest(new { error = "Request body is required." });
-            try
-            {
-                request.UserId = userId;
+            request.UserId = userId;
 
-                var result = await _calculationService.PerformChokeAnalysisAsync(request);
-                return Ok(result);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid Choke Analysis request");
-                return BadRequest(new { error = "An internal error occurred." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error performing Choke Analysis");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _calculationService.PerformChokeAnalysisAsync(request);
+            return Ok(result);
         }
 
         #endregion
@@ -215,27 +162,10 @@ namespace Beep.OilandGas.ApiService.Controllers
             if (request == null)
                 return BadRequest(new { error = "Request body is required." });
 
-            try
-            {
-                request.UserId = userId;
+            request.UserId = userId;
 
-                var result = await _calculationService.PerformCompressorAnalysisAsync(request);
-                return Ok(result);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid Compressor Analysis request");
-                return BadRequest(new { error = "An internal error occurred." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error performing Compressor Analysis");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _calculationService.PerformCompressorAnalysisAsync(request);
+            return Ok(result);
         }
 
         #endregion
@@ -249,29 +179,16 @@ namespace Beep.OilandGas.ApiService.Controllers
         public async Task<ActionResult<EconomicAnalysisResult>> PerformEconomicAnalysis([FromBody] EconomicAnalysisRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            // Set field context if available
+            if (_fieldOrchestrator != null && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId) && string.IsNullOrEmpty(request.FieldId))
             {
-                // Set field context if available
-                if (_fieldOrchestrator != null && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId) && string.IsNullOrEmpty(request.FieldId))
-                {
-                    request.FieldId = _fieldOrchestrator.CurrentFieldId;
-                }
+                request.FieldId = _fieldOrchestrator.CurrentFieldId;
+            }
 
-                request.UserId = userId;
+            request.UserId = userId;
 
-                var result = await _calculationService.PerformEconomicAnalysisAsync(request);
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid Economic Analysis request");
-                return BadRequest(new { error = "An internal error occurred." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error performing Economic Analysis");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _calculationService.PerformEconomicAnalysisAsync(request);
+            return Ok(result);
         }
 
         /// <summary>
@@ -281,26 +198,18 @@ namespace Beep.OilandGas.ApiService.Controllers
         public async Task<ActionResult<EconomicAnalysisResult>> GetEconomicAnalysisResult(string calculationId)
         {
             if (string.IsNullOrWhiteSpace(calculationId)) return BadRequest(new { error = "Calculation ID is required." });
-            try
+            var result = await _calculationService.GetCalculationResultAsync(calculationId, "ECONOMIC");
+            if (result == null)
             {
-                var result = await _calculationService.GetCalculationResultAsync(calculationId, "ECONOMIC");
-                if (result == null)
-                {
-                        return NotFound(new { error = $"Economic Analysis calculation {calculationId} not found." });
-                }
-
-                if (result is EconomicAnalysisResult economicResult)
-                {
-                    return Ok(economicResult);
-                }
-
-                return Ok(result);
+                    return NotFound(new { error = $"Economic Analysis calculation {calculationId} not found." });
             }
-            catch (Exception ex)
+
+            if (result is EconomicAnalysisResult economicResult)
             {
-                _logger.LogError(ex, "Error getting Economic Analysis result");
-                return StatusCode(500, new { error = "An internal error occurred." });
+                return Ok(economicResult);
             }
+
+            return Ok(result);
         }
 
         /// <summary>
@@ -312,22 +221,14 @@ namespace Beep.OilandGas.ApiService.Controllers
             [FromQuery] string? poolId = null,
             [FromQuery] string? fieldId = null)
         {
-            try
+            // Use current field if no field ID specified
+            if (_fieldOrchestrator != null && string.IsNullOrEmpty(fieldId) && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId))
             {
-                // Use current field if no field ID specified
-                if (_fieldOrchestrator != null && string.IsNullOrEmpty(fieldId) && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId))
-                {
-                    fieldId = _fieldOrchestrator.CurrentFieldId;
-                }
+                fieldId = _fieldOrchestrator.CurrentFieldId;
+            }
 
-                var results = await _calculationService.GetCalculationResultsAsync(wellId, poolId, fieldId, "ECONOMIC");
-                return Ok(results.EconomicResults);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting Economic Analysis results");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var results = await _calculationService.GetCalculationResultsAsync(wellId, poolId, fieldId, "ECONOMIC");
+            return Ok(results.EconomicResults);
         }
 
         #endregion
@@ -346,33 +247,16 @@ namespace Beep.OilandGas.ApiService.Controllers
             var userId = User.ActingUserId();
             if (request == null)
                 return BadRequest(new { error = "Request body is required." });
-            try
+            // Set field context if available
+            if (_fieldOrchestrator != null && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId) && string.IsNullOrEmpty(request.FieldId))
             {
-                // Set field context if available
-                if (_fieldOrchestrator != null && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId) && string.IsNullOrEmpty(request.FieldId))
-                {
-                    request.FieldId = _fieldOrchestrator.CurrentFieldId;
-                }
+                request.FieldId = _fieldOrchestrator.CurrentFieldId;
+            }
 
-                request.UserId = userId;
+            request.UserId = userId;
 
-                var result = await _calculationService.PerformNodalAnalysisAsync(request);
-                return Ok(result);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid Nodal Analysis request");
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error performing Nodal Analysis");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _calculationService.PerformNodalAnalysisAsync(request);
+            return Ok(result);
         }
 
         /// <summary>
@@ -385,30 +269,18 @@ namespace Beep.OilandGas.ApiService.Controllers
         public async Task<ActionResult<NodalAnalysisResult>> GetNodalAnalysisResult(string calculationId)
         {
             if (string.IsNullOrWhiteSpace(calculationId)) return BadRequest(new { error = "Calculation ID is required." });
-            try
+            var result = await _calculationService.GetCalculationResultAsync(calculationId, "NODAL");
+            if (result == null)
             {
-                var result = await _calculationService.GetCalculationResultAsync(calculationId, "NODAL");
-                if (result == null)
-                {
-                        return NotFound(new { error = $"Nodal Analysis calculation {calculationId} not found." });
-                }
+                    return NotFound(new { error = $"Nodal Analysis calculation {calculationId} not found." });
+            }
 
-                if (result is NodalAnalysisResult nodalResult)
-                {
-                    return Ok(nodalResult);
-                }
+            if (result is NodalAnalysisResult nodalResult)
+            {
+                return Ok(nodalResult);
+            }
 
-                return Ok(result);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting Nodal Analysis result");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(result);
         }
 
         /// <summary>
@@ -423,26 +295,14 @@ namespace Beep.OilandGas.ApiService.Controllers
             [FromQuery] string? wellboreId = null,
             [FromQuery] string? fieldId = null)
         {
-            try
+            // Use current field if no field ID specified
+            if (_fieldOrchestrator != null && string.IsNullOrEmpty(fieldId) && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId))
             {
-                // Use current field if no field ID specified
-                if (_fieldOrchestrator != null && string.IsNullOrEmpty(fieldId) && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId))
-                {
-                    fieldId = _fieldOrchestrator.CurrentFieldId;
-                }
+                fieldId = _fieldOrchestrator.CurrentFieldId;
+            }
 
-                var results = await _calculationService.GetCalculationResultsAsync(wellId, null, fieldId, "NODAL");
-                return Ok(results.NodalResults);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting Nodal Analysis results");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var results = await _calculationService.GetCalculationResultsAsync(wellId, null, fieldId, "NODAL");
+            return Ok(results.NodalResults);
         }
 
         #endregion
@@ -456,38 +316,15 @@ namespace Beep.OilandGas.ApiService.Controllers
         public async Task<ActionResult<WELL_TEST_ANALYSIS_RESULT>> PerformWellTestAnalysis([FromBody] WellTestAnalysisCalculationRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            if (request == null)
             {
-                if (request == null)
-                {
-                    return BadRequest(new { error = "Well test analysis request body is required." });
-                }
+                return BadRequest(new { error = "Well test analysis request body is required." });
+            }
 
-                request.UserId = userId;
+            request.UserId = userId;
 
-                var result = await _calculationService.PerformWellTestAnalysisAsync(request);
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid Well Test Analysis request");
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Well Test Analysis could not load PPDM inputs");
-                return NotFound(new { error = ex.Message });
-            }
-            catch (WellTestException ex)
-            {
-                _logger.LogWarning(ex, "Well Test Analysis validation or convergence failed");
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error performing Well Test Analysis");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _calculationService.PerformWellTestAnalysisAsync(request);
+            return Ok(result);
         }
 
         /// <summary>
@@ -497,26 +334,18 @@ namespace Beep.OilandGas.ApiService.Controllers
         public async Task<ActionResult<WELL_TEST_ANALYSIS_RESULT>> GetWellTestAnalysisResult(string calculationId)
         {
             if (string.IsNullOrWhiteSpace(calculationId)) return BadRequest(new { error = "Calculation ID is required." });
-            try
+            var result = await _calculationService.GetCalculationResultAsync(calculationId, "WELL_TEST");
+            if (result == null)
             {
-                var result = await _calculationService.GetCalculationResultAsync(calculationId, "WELL_TEST");
-                if (result == null)
-                {
-                    return NotFound(new { error = $"Well Test Analysis calculation {calculationId} not found." });
-                }
-
-                if (result is WELL_TEST_ANALYSIS_RESULT wellTestResult)
-                {
-                    return Ok(wellTestResult);
-                }
-
-                return Ok(result);
+                return NotFound(new { error = $"Well Test Analysis calculation {calculationId} not found." });
             }
-            catch (Exception ex)
+
+            if (result is WELL_TEST_ANALYSIS_RESULT wellTestResult)
             {
-                _logger.LogError(ex, "Error getting Well Test Analysis result");
-                return StatusCode(500, new { error = "An internal error occurred." });
+                return Ok(wellTestResult);
             }
+
+            return Ok(result);
         }
 
         /// <summary>
@@ -528,25 +357,17 @@ namespace Beep.OilandGas.ApiService.Controllers
             [FromQuery] string? testId = null,
             [FromQuery] string? fieldId = null)
         {
-            try
-            {
-                var results = await _calculationService.GetCalculationResultsAsync(wellId, null, fieldId, "WELL_TEST");
-                var history = results.WellTestResults;
+            var results = await _calculationService.GetCalculationResultsAsync(wellId, null, fieldId, "WELL_TEST");
+            var history = results.WellTestResults;
 
-                if (!string.IsNullOrWhiteSpace(testId))
-                {
-                    history = history
-                        .Where(result => string.Equals(result.TEST_ID, testId, StringComparison.OrdinalIgnoreCase))
-                        .ToList();
-                }
-
-                return Ok(history);
-            }
-            catch (Exception ex)
+            if (!string.IsNullOrWhiteSpace(testId))
             {
-                _logger.LogError(ex, "Error getting Well Test Analysis results");
-                return StatusCode(500, new { error = "An internal error occurred." });
+                history = history
+                    .Where(result => string.Equals(result.TEST_ID, testId, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
             }
+
+            return Ok(history);
         }
 
         #endregion
@@ -563,22 +384,14 @@ namespace Beep.OilandGas.ApiService.Controllers
             [FromQuery] string? fieldId = null,
             [FromQuery] string? calculationType = null)
         {
-            try
+            // Use current field if no field ID specified
+            if (_fieldOrchestrator != null && string.IsNullOrEmpty(fieldId) && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId))
             {
-                // Use current field if no field ID specified
-                if (_fieldOrchestrator != null && string.IsNullOrEmpty(fieldId) && !string.IsNullOrEmpty(_fieldOrchestrator.CurrentFieldId))
-                {
-                    fieldId = _fieldOrchestrator.CurrentFieldId;
-                }
+                fieldId = _fieldOrchestrator.CurrentFieldId;
+            }
 
-                var results = await _calculationService.GetCalculationResultsAsync(wellId, poolId, fieldId, calculationType);
-                return Ok(results);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting calculation results");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var results = await _calculationService.GetCalculationResultsAsync(wellId, poolId, fieldId, calculationType);
+            return Ok(results);
         }
 
         #endregion

@@ -175,13 +175,13 @@ public sealed class AccountingServiceClient : IAccountingServiceClient
         }
     }
 
-    public async Task<bool> ClosePeriodAsync(CloseAccountingPeriodRequest request, CancellationToken cancellationToken = default)
+    public async Task ClosePeriodAsync(CloseAccountingPeriodRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         try
         {
-            return await _apiClient.PostAsync(
+            await _apiClient.PostAsync(
                 "/api/field/current/accounting/close-period",
                 request,
                 cancellationToken);

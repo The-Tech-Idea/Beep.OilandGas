@@ -2,6 +2,8 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject ApiClient ApiClient
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 @if (Transitions.Count == 0)
 {
@@ -56,13 +58,21 @@ else
                 ToStateId = transitionId
             };
             await ApiClient.PostAsync<ProcessTransitionRequest, object>(
-                $"/api/field/current/process/instances/{InstanceId}/transitions", request);
-            Snackbar.Add($"Transition '{label}' executed.", Severity.Success);
-            await OnTransitioned.InvokeAsync();
+                $"/api/field/current/process/instances/{Uri.EscapeDataString(InstanceId)}/transitions", request);
         }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "executing a process transition", $"Transition '{label}' was not executed"), Severity.Error);
+            return;
+        }
+        // A component answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Transition failed: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "executing a process transition", $"Transition '{label}' was not executed");
+            return;
         }
+
+        Snackbar.Add($"Transition '{label}' executed.", Severity.Success);
+        await OnTransitioned.InvokeAsync();
     }
 }

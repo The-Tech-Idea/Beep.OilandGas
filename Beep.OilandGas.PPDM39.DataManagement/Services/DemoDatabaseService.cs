@@ -13,6 +13,8 @@ using Microsoft.Extensions.Options;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Core.Refusals;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Services
 {
@@ -30,6 +32,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         private readonly IPPDM39SetupService _setupService;
         private readonly Beep.OilandGas.PPDM39.DataManagement.SeedData.PPDMReferenceDataSeeder? _referenceDataSeeder;
         private readonly ILogger<DemoDatabaseService> _logger;
+        private readonly IFailureReporter _failures;
 
         public DemoDatabaseService(
             IOptions<DemoDatabaseConfig> config,
@@ -39,9 +42,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             IPPDM39SetupService setupService,
+            IFailureReporter failures,
             Beep.OilandGas.PPDM39.DataManagement.SeedData.PPDMReferenceDataSeeder? referenceDataSeeder = null,
             ILogger<DemoDatabaseService>? logger = null)
         {
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
             _config = config?.Value ?? throw new ArgumentNullException(nameof(config));
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
@@ -225,11 +230,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     _logger.LogWarning("Schema artifacts were not available for demo database {ConnectionName}: {Message}", connectionName, artifactsResult.Message);
                 }
 
-                // Seed data if requested
-                if (request.SeedDataOption != "none")
-                {
-                    await SeedDemoDatabaseAsync(connectionName, request.SeedDataOption);
-                }
+                // Seed data if requested. A seeding problem does not undo the database, but it is said: the response
+                // used to read "created successfully" whatever the seeding did (OILGAS-CATCH-01).
+                var seedingProblems = request.SeedDataOption != "none"
+                    ? await SeedDemoDatabaseAsync(connectionName, request.SeedDataOption)
+                    : new List<string>();
 
                 // Calculate expiry date
                 var createdDate = DateTime.UtcNow;
@@ -255,30 +260,43 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     Success = true,
                     ConnectionName = connectionName,
                     DatabasePath = databasePath,
-                    Message = "Demo database created successfully",
+                    Message = seedingProblems.Count == 0
+                        ? "Demo database created successfully"
+                        : "Demo database created, but its sample data was not completely seeded",
+                    ErrorDetails = seedingProblems.Count == 0 ? null : string.Join(Environment.NewLine, seedingProblems),
                     CreatedDate = createdDate,
                     ExpiryDate = expiryDate,
                     SchemaPlanId = planResult.PlanId,
                     SchemaExecutionToken = startResult.OperationId
                 };
             }
-            catch (Exception ex)
+            // Broad: creating a demo database answers every failure of its steps — the file system, the configuration
+            // store, the metadata store — in its response, which carried the exception's text.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogError(ex, "Error creating demo database for user {UserId}", request.UserId);
                 return new CreateDemoDatabaseResponse
                 {
                     Success = false,
                     Message = "Failed to create demo database",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = ReportedFailure.Sentence(_failures, ex,
+                        $"creating a demo database for user {request.UserId}", "The demo database was not created.")
                 };
             }
         }
 
         /// <summary>
-        /// Seed demo database with data based on option
+        /// Seeds the demo database with data based on the option, and answers what did not seed — each stage's own
+        /// problems, or a failure's sentence with its reference. Empty when every stage seeded.
         /// </summary>
-        private async Task SeedDemoDatabaseAsync(string connectionName, string seedOption)
+        /// <remarks>
+        /// A seeding failure does not undo the database, which is usable without its sample data. It used to be caught,
+        /// logged and dropped — "seeding failure shouldn't fail database creation" — and each stage's own problems only
+        /// logged as warnings, so the caller was told the demo database was created successfully either way
+        /// (OILGAS-CATCH-01).
+        /// </remarks>
+        private async Task<List<string>> SeedDemoDatabaseAsync(string connectionName, string seedOption)
         {
+            var problems = new List<string>();
             try
             {
                 // ── Required stage 1: well-status facets ─────────────────────────────
@@ -286,8 +304,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     _editor, _commonColumnHandler, _defaults, _metadata, connectionName);
                 var facetResult = await wellStatusSeeder.SeedAllAsync("SYSTEM");
                 if (!facetResult.Success)
-                    _logger.LogWarning("Well-status facet seeding had issues for {ConnectionName}: {Message}",
-                        connectionName, facetResult.Message);
+                    problems.Add($"Well-status facets: {facetResult.Message}");
                 else
                     _logger.LogInformation("Well-status facet seeding complete for {ConnectionName}", connectionName);
 
@@ -301,12 +318,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                         "SYSTEM");
 
                     if (!seedResult.Success)
-                        _logger.LogWarning("Failed to seed reference data for demo database {ConnectionName}: {Message}",
-                            connectionName, seedResult.Message);
+                        problems.Add($"Reference data: {seedResult.Message}");
                 }
                 else
                 {
-                    _logger.LogWarning("Reference data seeder not available for demo database {ConnectionName}", connectionName);
+                    problems.Add("Reference data: the reference data seeder is not available on this host, so no reference data was seeded.");
                 }
 
                 // Seed additional data based on option
@@ -320,22 +336,21 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                         _referenceDataSeeder, csvSeeder, connectionName, null);
                     var sampleResult = await demoSeeder.SeedFullDemoDatasetAsync("SYSTEM");
                     if (!sampleResult.Success)
-                        _logger.LogWarning("Sample entity seeding had issues for {ConnectionName}: {Message}", connectionName, sampleResult.Message);
+                        problems.Add($"Sample data: {sampleResult.Message}");
                     else
                         _logger.LogInformation("Sample entity seeding complete for {ConnectionName}: {Records} records", connectionName, sampleResult.RecordsInserted);
                 }
-
-                if (seedOption == "full-demo" && _referenceDataSeeder != null)
-                {
-                    // Full demo is already covered by SeedFullDemoDatasetAsync above; log completion
-                    _logger.LogInformation("Full demo dataset seeding complete for {ConnectionName}", connectionName);
-                }
             }
-            catch (Exception ex)
+            // Broad: the seeders write many tables through the driver, whatever it throws; the database stays (see the
+            // remarks) and the failure is reported and said in the answer.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogError(ex, "Error seeding demo database {ConnectionName}", connectionName);
-                // Don't throw - seeding failure shouldn't fail database creation
+                problems.Add(ReportedFailure.Sentence(_failures, ex,
+                    $"seeding demo database '{connectionName}' ({seedOption})",
+                    "The demo database's data was not completely seeded."));
             }
+
+            return problems;
         }
 
         /// <summary>
@@ -360,9 +375,14 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 {
                     _editor.ConfigEditor.RemoveConnByName(connectionName);
                 }
-                catch (Exception ex)
+                // Broad: the configuration store throws its own types. The file and the record are still removed —
+                // if the handle stays open, deleting the file fails below and the deletion is answered as failed.
+                catch (Exception ex) when (ex is not RefusalException)
                 {
-                    _logger.LogWarning(ex, "Error removing connection {ConnectionName} from IDMEEditor", connectionName);
+                    _failures.ReportHandled(ex,
+                        $"unregistering the connection of demo database '{connectionName}' before deleting it",
+                        "the database file and its record are still deleted; the connection may stay registered until the next restart",
+                        FailureSeverity.Degraded);
                 }
 
                 // Delete database file
@@ -382,14 +402,16 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     Message = $"Demo database '{connectionName}' deleted successfully"
                 };
             }
-            catch (Exception ex)
+            // Broad: deleting answers every failure of removing the file and the record in its response, which carried
+            // the exception's text.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogError(ex, "Error deleting demo database {ConnectionName}", connectionName);
                 return new DeleteDemoDatabaseResponse
                 {
                     Success = false,
                     Message = "Failed to delete demo database",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = ReportedFailure.Sentence(_failures, ex,
+                        $"deleting demo database '{connectionName}'", "The demo database was not deleted.")
                 };
             }
         }
@@ -404,6 +426,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 var expiredDatabases = _repository.GetExpired();
                 var deletedCount = 0;
                 var deletedNames = new List<string>();
+                var notDeleted = new List<string>();
 
                 foreach (var metadata in expiredDatabases)
                 {
@@ -413,26 +436,37 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                         deletedCount++;
                         deletedNames.Add(metadata.ConnectionName);
                     }
+                    else
+                    {
+                        // Each failure is reported by the deletion itself; the cleanup says which were left.
+                        notDeleted.Add($"{metadata.ConnectionName}: {result.ErrorDetails ?? result.Message}");
+                    }
                 }
 
-                _logger.LogInformation("Cleaned up {Count} expired demo databases", deletedCount);
+                _logger.LogInformation("Cleaned up {Count} expired demo databases; {Left} could not be deleted",
+                    deletedCount, notDeleted.Count);
 
                 return new CleanupDemoDatabasesResponse
                 {
-                    Success = true,
+                    Success = notDeleted.Count == 0,
                     DeletedCount = deletedCount,
                     DeletedDatabases = deletedNames,
-                    Message = $"Cleaned up {deletedCount} expired demo databases"
+                    Message = notDeleted.Count == 0
+                        ? $"Cleaned up {deletedCount} expired demo databases"
+                        : $"Cleaned up {deletedCount} expired demo databases; {notDeleted.Count} could not be deleted",
+                    ErrorDetails = notDeleted.Count == 0 ? null : string.Join(Environment.NewLine, notDeleted)
                 };
             }
-            catch (Exception ex)
+            // Broad: reading the expired list answers every failure of the metadata store in the response, which
+            // carried the exception's text.
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogError(ex, "Error cleaning up expired demo databases");
                 return new CleanupDemoDatabasesResponse
                 {
                     Success = false,
                     Message = "Failed to cleanup expired demo databases",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = ReportedFailure.Sentence(_failures, ex,
+                        "cleaning up expired demo databases", "Expired demo databases were not cleaned up.")
                 };
             }
         }
@@ -491,10 +525,15 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// </summary>
         private void TryCleanupFailedDatabase(string connectionName, string databasePath)
         {
+            // Best effort, on a path that is already answering a failure: what cannot be cleaned up is reported, and the
+            // caller's failure is still the answer. Broad because the configuration store throws its own types.
             try { _editor.ConfigEditor.RemoveConnByName(connectionName); }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not RefusalException)
             {
-                _logger.LogWarning(ex, "Error removing connection {ConnectionName} during failure cleanup", connectionName);
+                _failures.ReportHandled(ex,
+                    $"unregistering the connection of a demo database that failed to create ('{connectionName}')",
+                    "the connection may stay registered until the next restart; the creation is still answered as failed",
+                    FailureSeverity.Degraded);
             }
 
             try
@@ -502,9 +541,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 if (File.Exists(databasePath))
                     File.Delete(databasePath);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                _logger.LogWarning(ex, "Error deleting database file {Path} during failure cleanup", databasePath);
+                _failures.ReportHandled(ex,
+                    $"deleting the file of a demo database that failed to create ('{connectionName}')",
+                    "the partial database file stays on disk; the creation is still answered as failed",
+                    FailureSeverity.Degraded);
             }
         }
     }

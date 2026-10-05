@@ -64,9 +64,9 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(lessorBaId))
                 throw new ArgumentNullException(nameof(lessorBaId));
             if (termMonths <= 0)
-                throw new InvalidOperationException("Term months must be positive");
+                throw RefusalException.Invalid("Term months must be positive.");
             if (discountRate <= 0m)
-                throw new InvalidOperationException("Discount rate must be positive");
+                throw RefusalException.Invalid("Discount rate must be positive.");
             if (string.IsNullOrWhiteSpace(currencyCode))
                 throw new ArgumentNullException(nameof(currencyCode));
             if (string.IsNullOrWhiteSpace(userId))
@@ -115,7 +115,7 @@ namespace Beep.OilandGas.Accounting.Services
             foreach (var payment in payments)
             {
                 if (payment.Amount <= 0m)
-                    throw new InvalidOperationException("Payment amount must be positive");
+                    throw RefusalException.Invalid("Payment amount must be positive.");
 
                 var leasePayment = new LEASE_PAYMENT
                 {
@@ -150,11 +150,11 @@ namespace Beep.OilandGas.Accounting.Services
 
             var lease = await GetLeaseAsync(leaseId, cn);
             if (lease == null)
-                throw new InvalidOperationException($"Lease not found: {leaseId}");
+                throw RefusalException.NotFound($"Lease {leaseId} was not found.");
 
             var payments = await GetLeasePaymentsAsync(leaseId, cn);
             if (payments.Count == 0)
-                throw new InvalidOperationException("Lease payments are required to measure initial lease");
+                throw RefusalException.Conflict($"Lease {leaseId} has no recorded payments; record them before measuring the lease.");
 
             var presentValue = CalculatePresentValue(
                 payments.Where(p => p.PAYMENT_DATE >= measurementDate).ToList(),
@@ -194,13 +194,13 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
             if (paymentAmount <= 0m)
-                throw new InvalidOperationException("Payment amount must be positive");
+                throw RefusalException.Invalid("Payment amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
             var lease = await GetLeaseAsync(leaseId, cn);
             if (lease == null)
-                throw new InvalidOperationException($"Lease not found: {leaseId}");
+                throw RefusalException.NotFound($"Lease {leaseId} was not found.");
 
             await AddLeasePaymentsAsync(
                 leaseId,
@@ -277,13 +277,13 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
             if (amortizationAmount <= 0m)
-                throw new InvalidOperationException("Amortization amount must be positive");
+                throw RefusalException.Invalid("Amortization amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
             var lease = await GetLeaseAsync(leaseId, cn);
             if (lease == null)
-                throw new InvalidOperationException($"Lease not found: {leaseId}");
+                throw RefusalException.NotFound($"Lease {leaseId} was not found.");
 
             var lastEntry = await GetLatestLeaseEntryAsync(leaseId, cn);
             var openingRoi = lastEntry?.ROU_ASSET ?? 0m;
@@ -326,13 +326,13 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
             if (newDiscountRate <= 0m)
-                throw new InvalidOperationException("New discount rate must be positive");
+                throw RefusalException.Invalid("New discount rate must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
             var lease = await GetLeaseAsync(leaseId, cn);
             if (lease == null)
-                throw new InvalidOperationException($"Lease not found: {leaseId}");
+                throw RefusalException.NotFound($"Lease {leaseId} was not found.");
 
             var lastEntry = await GetLatestLeaseEntryAsync(leaseId, cn);
             var currentLiability = lastEntry?.LEASE_LIABILITY ?? 0m;
@@ -390,13 +390,13 @@ namespace Beep.OilandGas.Accounting.Services
              if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
             if (newTermMonths <= 0)
-                throw new InvalidOperationException("New term must be positive");
+                throw RefusalException.Invalid("New term must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
             var lease = await GetLeaseAsync(leaseId, cn);
             if (lease == null)
-                throw new InvalidOperationException($"Lease not found: {leaseId}");
+                throw RefusalException.NotFound($"Lease {leaseId} was not found.");
 
             var lastEntry = await GetLatestLeaseEntryAsync(leaseId, cn);
             var currentLiability = lastEntry?.LEASE_LIABILITY ?? 0m;

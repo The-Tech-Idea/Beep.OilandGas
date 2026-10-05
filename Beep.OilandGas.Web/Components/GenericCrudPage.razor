@@ -130,7 +130,11 @@ else
         </MudCard>
     }
 
-    @if (_data != null && _data.Any())
+    @if (_loadError is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="my-4">@_loadError</MudAlert>
+    }
+    else if (_data != null && _data.Any())
     {
         <PPDMDataGrid Items="@_data"
                      Title="@GetTableDisplayName()"
@@ -223,6 +227,7 @@ else
     private List<object>? _data;
     private object? _editingRecord;
     private bool _isLoading = false;
+    private string? _loadError;
     private bool _showEditForm = false;
     private string _searchString = string.Empty;
     private PPDMTableMetadata? _tableMetadata;
@@ -256,9 +261,10 @@ else
                 StateHasChanged();
             }
         }
+        // Loading reports its own failures; anything reaching here is a fault, told with its reference.
         catch (Exception ex)
         {
-            Snackbar?.Add($"Error loading table: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "opening a table", $"The table {TableNode?.Text} could not be opened");
             _data = null;
             _tableMetadata = null;
             StateHasChanged();
@@ -284,9 +290,15 @@ else
             _tableMetadata = await ApiClient.GetAsync<PPDMTableMetadata>(
                 $"/api/datamanagement/metadata/{Uri.EscapeDataString(tableName)}");
         }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading a table's metadata", $"The metadata for {TableNode?.Text} could not be loaded"), Severity.Warning);
+            _tableMetadata = null;
+        }
+        // A component answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar?.Add($"Could not load metadata for {TableNode?.Text}: {ex.Message}", Severity.Warning);
+            Notifier.Failure(ex, "loading a table's metadata", $"The metadata for {TableNode?.Text} could not be loaded", FailureSeverity.Degraded);
             _tableMetadata = null;
         }
     }
@@ -296,16 +308,19 @@ else
         if (_tableMetadata == null) return;
 
         _isLoading = true;
+        _loadError = null;
         try
         {
             var tableName = _tableMetadata.TableName;
             _data = await ApiClient.GetAsync<List<object>>($"/api/{GetApiEndpoint(tableName)}");
             _data ??= new List<object>();
         }
+        // A component answers every failure it meets with a sentence; the store keeps the exception. The page says the
+        // records did not load, rather than that there are none.
         catch (Exception ex)
         {
-            Snackbar?.Add($"Error loading data for {_tableMetadata.TableName}: {ex.Message}", Severity.Error);
-            _data = new List<object>();
+            _data = null;
+            _loadError = Calls.Explain(ex, "loading a table's records", $"The {_tableMetadata.TableName} records could not be loaded");
         }
         finally
         {
@@ -414,9 +429,14 @@ else
             _editingRecord = null;
             await LoadData();
         }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "saving a table record", "The record was not saved"), Severity.Error);
+        }
+        // A component answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Error saving record: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "saving a table record", "The record was not saved");
         }
     }
 
@@ -455,9 +475,14 @@ else
                 Snackbar.Add("Record deleted successfully", Severity.Success);
                 await LoadData();
             }
+            catch (OilGasApiException answer)
+            {
+                Snackbar.Add(Answers.Explain(answer, "deleting a table record", "The record was not deleted"), Severity.Error);
+            }
+            // A component answers every failure it meets with a sentence; the store keeps the exception.
             catch (Exception ex)
             {
-                Snackbar.Add($"Error deleting record: {ex.Message}", Severity.Error);
+                Notifier.Failure(ex, "deleting a table record", "The record was not deleted");
             }
         }
     }
@@ -537,21 +562,17 @@ else
         return prop?.GetValue(obj);
     }
 
-    private void SetPropertyValue(object obj, string propertyName, object? value)
+    /// <returns>Whether the property took the value.</returns>
+    private bool SetPropertyValue(object obj, string propertyName, object? value)
         => Services.ValueConverter.SetPropertyValue(obj, propertyName, value);
 
-    private void SetPropertyValueFromString(object obj, PropertyInfo prop, string value)
+    /// <returns>Whether the property took the value: false when its type cannot hold it, and the property keeps its value.</returns>
+    private bool SetPropertyValueFromString(object obj, PropertyInfo prop, string value)
     {
-        if (prop == null || !prop.CanWrite) return;
-        try
-        {
-            var converted = Services.ValueConverter.ConvertValue(value, prop.PropertyType);
-            prop.SetValue(obj, converted);
-        }
-        catch
-        {
-            // Ignore conversion errors
-        }
+        if (prop == null || !prop.CanWrite) return false;
+        if (!Services.ValueConverter.TryConvertValue(value, prop.PropertyType, out var converted)) return false;
+        prop.SetValue(obj, converted);
+        return true;
     }
 
     private async Task ExportToCsv()
@@ -569,9 +590,10 @@ else
             await DownloadFile(fileName, csv, "text/csv");
             Snackbar.Add($"Exported {_data.Count} records to {fileName}", Severity.Success);
         }
+        // The browser's download (JS interop) or building the file failed; the person is told with the reference.
         catch (Exception ex)
         {
-            Snackbar.Add($"Error exporting data: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "exporting a table to CSV", "The export was not downloaded");
         }
     }
 
@@ -703,6 +725,7 @@ else
         
         if (!_foreignKeyCache.ContainsKey(cacheKey))
         {
+            // A failed load is not cached: the dropdown is empty this time, the person is told, and the next form asks again.
             try
             {
                 var apiEndpoint = GetApiEndpoint(fkInfo.ReferencedTable);
@@ -727,14 +750,23 @@ else
                     }
                 }
             }
+            catch (OilGasApiException answer)
+            {
+                Snackbar.Add(Answers.Explain(answer, "loading a foreign key's options", $"The choices for {fkInfo.ForeignKeyColumn} from {fkInfo.ReferencedTable} could not be loaded"), Severity.Warning);
+                return new List<KeyValuePair<string, string>>();
+            }
+            // A component answers every failure it meets with a sentence; the store keeps the exception.
             catch (Exception ex)
             {
-                Snackbar.Add($"Error loading options for {fkInfo.ReferencedTable}: {ex.Message}", Severity.Warning);
-                _foreignKeyCache[cacheKey] = new List<Dictionary<string, string>>();
+                Notifier.Failure(ex, "loading a foreign key's options", $"The choices for {fkInfo.ForeignKeyColumn} from {fkInfo.ReferencedTable} could not be loaded", FailureSeverity.Degraded);
+                return new List<KeyValuePair<string, string>>();
             }
         }
 
-        var cachedData = _foreignKeyCache[cacheKey];
+        if (!_foreignKeyCache.TryGetValue(cacheKey, out var cachedData))
+        {
+            return new List<KeyValuePair<string, string>>();
+        }
         var result = new List<KeyValuePair<string, string>>();
 
         foreach (var item in cachedData)
@@ -829,6 +861,9 @@ else
 
     [Inject] IDialogService DialogService { get; set; } = null!;
     [Inject] ApiClient ApiClient { get; set; } = null!;
+    [Inject] OilGasApiFailures Answers { get; set; } = null!;
+    [Inject] OilGasCallFailures Calls { get; set; } = null!;
+    [Inject] FailureNotifier Notifier { get; set; } = null!;
     [Inject] ISnackbar Snackbar { get; set; } = null!;
     [Inject] IJSRuntime JSRuntime { get; set; } = null!;
 }

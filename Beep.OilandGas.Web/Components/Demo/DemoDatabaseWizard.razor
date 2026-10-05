@@ -3,6 +3,7 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
 @inject IConnectionService ConnectionService
+@inject OilGasCallFailures Calls
 
 <MudDialog MaxWidth="MaxWidth.Medium" FullWidth="true">
     <DialogContent>
@@ -167,7 +168,6 @@
                 SeedDataOption.ReferenceOnly => "reference-only",
                 SeedDataOption.ReferenceAndSample => "reference-sample",
                 SeedDataOption.FullDemo => "full-demo",
-                _ => "reference-sample"
             };
 
             _createResult = await DemoDatabaseService.CreateDemoDatabaseAsync(seedOption);
@@ -182,6 +182,10 @@
                 {
                     Snackbar.Add("Demo database set as current connection", Severity.Success);
                 }
+                else
+                {
+                    Snackbar.Add($"The demo database was created but not made the current connection: {setResult.Message}", Severity.Warning);
+                }
 
                 // Wait a moment before completing
                 await Task.Delay(1000);
@@ -192,14 +196,15 @@
                 Snackbar.Add($"Failed to create demo database: {_createResult.Message}", Severity.Error);
             }
         }
+        // A dialog answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Error creating demo database: {ex.Message}", Severity.Error);
+            var sentence = Calls.Explain(ex, "creating a demo database", "The demo database was not created");
+            Snackbar.Add(sentence, Severity.Error);
             _createResult = new CreateDemoDatabaseResponse
             {
                 Success = false,
-                Message = "Error creating demo database",
-                ErrorDetails = ex.Message
+                Message = sentence
             };
         }
         finally

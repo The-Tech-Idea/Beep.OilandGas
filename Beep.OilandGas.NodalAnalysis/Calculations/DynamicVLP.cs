@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data.NodalAnalysis;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.NodalAnalysis.Calculations
 {
@@ -31,9 +32,9 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
         public static double ErosionalVelocity(double mixtureDensity_lbft3, double apiRp14eConstant = 100.0)
         {
             if (mixtureDensity_lbft3 <= 0)
-                throw new ArgumentException("Mixture density must be positive.", nameof(mixtureDensity_lbft3));
+                throw RefusalException.Invalid("Mixture density must be positive.");
             if (apiRp14eConstant <= 0)
-                throw new ArgumentException("API RP 14E constant must be positive.", nameof(apiRp14eConstant));
+                throw RefusalException.Invalid("API RP 14E constant must be positive.");
 
             return apiRp14eConstant / Math.Sqrt(mixtureDensity_lbft3);
         }
@@ -54,7 +55,7 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             double apiRp14eConstant = 100.0)
         {
             if (tubingID_inches <= 0)
-                throw new ArgumentException("Tubing ID must be positive.", nameof(tubingID_inches));
+                throw RefusalException.Invalid("Tubing ID must be positive.");
 
             double ve = ErosionalVelocity(mixtureDensity_lbft3, apiRp14eConstant);  // ft/s
 

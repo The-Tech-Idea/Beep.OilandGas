@@ -5,6 +5,7 @@ using System.Threading;
 using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.GasProperties.Calculations;
 using Beep.OilandGas.Models.Data.Calculations;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.GasLift.Calculations
 {
@@ -31,9 +32,9 @@ namespace Beep.OilandGas.GasLift.Calculations
             if (wellProperties == null)
                 throw new ArgumentNullException(nameof(wellProperties));
             if (numberOfPoints < 2)
-                throw new ArgumentOutOfRangeException(nameof(numberOfPoints), numberOfPoints, "Number of analysis points must be at least 2.");
+                throw RefusalException.Invalid("Number of analysis points must be at least 2.");
             if (minGasInjectionRate > maxGasInjectionRate)
-                throw new ArgumentException("Minimum gas injection rate must not exceed maximum.", nameof(minGasInjectionRate));
+                throw RefusalException.Invalid("Minimum gas injection rate must not exceed maximum.");
 
             var result = new GAS_LIFT_WELL_PROPERTIES();
 

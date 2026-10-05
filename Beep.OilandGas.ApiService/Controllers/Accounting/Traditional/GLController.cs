@@ -37,30 +37,22 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         [HttpGet("accounts")]
         public ActionResult<List<GLAccount>> GetAccounts([FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                var accounts = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
-                    .Select(a => new GLAccount
-                    {
-                        GlAccountId = a.GL_ACCOUNT_ID,
-                        AccountNumber = a.ACCOUNT_NUMBER,
-                        AccountName = a.ACCOUNT_NAME,
-                        AccountType = a.ACCOUNT_TYPE,
-                        ParentAccountId = a.PARENT_ACCOUNT_ID,
-                        NormalBalance = a.NORMAL_BALANCE,
-                        OpeningBalance = a.OPENING_BALANCE,
-                        CurrentBalance = a.CURRENT_BALANCE,
-                        Description = a.DESCRIPTION,
-                        ActiveInd = a.ACTIVE_IND
-                    }).ToList();
+            var accounts = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
+                .Select(a => new GLAccount
+                {
+                    GlAccountId = a.GL_ACCOUNT_ID,
+                    AccountNumber = a.ACCOUNT_NUMBER,
+                    AccountName = a.ACCOUNT_NAME,
+                    AccountType = a.ACCOUNT_TYPE,
+                    ParentAccountId = a.PARENT_ACCOUNT_ID,
+                    NormalBalance = a.NORMAL_BALANCE,
+                    OpeningBalance = a.OPENING_BALANCE,
+                    CurrentBalance = a.CURRENT_BALANCE,
+                    Description = a.DESCRIPTION,
+                    ActiveInd = a.ACTIVE_IND
+                }).ToList();
 
-                return Ok(accounts);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting GL accounts");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(accounts);
         }
 
         /// <summary>
@@ -73,33 +65,25 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Account ID is required." });
-            try
-            {
-                var account = _service.TraditionalAccounting.GeneralLedger.GetAccount(id);
-                if (account == null)
-                        return NotFound(new { error = $"GL account with ID {id} not found." });
+            var account = _service.TraditionalAccounting.GeneralLedger.GetAccount(id);
+            if (account == null)
+                    return NotFound(new { error = $"GL account with ID {id} not found." });
 
-                var dto = new GLAccount
-                {
-                    GlAccountId = account.GL_ACCOUNT_ID,
-                    AccountNumber = account.ACCOUNT_NUMBER,
-                    AccountName = account.ACCOUNT_NAME,
-                    AccountType = account.ACCOUNT_TYPE,
-                    ParentAccountId = account.PARENT_ACCOUNT_ID,
-                    NormalBalance = account.NORMAL_BALANCE,
-                    OpeningBalance = account.OPENING_BALANCE,
-                    CurrentBalance = account.CURRENT_BALANCE,
-                    Description = account.DESCRIPTION,
-                    ActiveInd = account.ACTIVE_IND
-                };
-
-                return Ok(dto);
-            }
-            catch (Exception ex)
+            var dto = new GLAccount
             {
-                _logger.LogError(ex, "Error getting GL account {AccountId}", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                GlAccountId = account.GL_ACCOUNT_ID,
+                AccountNumber = account.ACCOUNT_NUMBER,
+                AccountName = account.ACCOUNT_NAME,
+                AccountType = account.ACCOUNT_TYPE,
+                ParentAccountId = account.PARENT_ACCOUNT_ID,
+                NormalBalance = account.NORMAL_BALANCE,
+                OpeningBalance = account.OPENING_BALANCE,
+                CurrentBalance = account.CURRENT_BALANCE,
+                Description = account.DESCRIPTION,
+                ActiveInd = account.ACTIVE_IND
+            };
+
+            return Ok(dto);
         }
 
         /// <summary>
@@ -111,34 +95,26 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var account = _service.TraditionalAccounting.GeneralLedger.CreateAccount(request, userId);
+
+            var dto = new GLAccount
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+                GlAccountId = account.GL_ACCOUNT_ID,
+                AccountNumber = account.ACCOUNT_NUMBER,
+                AccountName = account.ACCOUNT_NAME,
+                AccountType = account.ACCOUNT_TYPE,
+                ParentAccountId = account.PARENT_ACCOUNT_ID,
+                NormalBalance = account.NORMAL_BALANCE,
+                OpeningBalance = account.OPENING_BALANCE,
+                CurrentBalance = account.CURRENT_BALANCE,
+                Description = account.DESCRIPTION,
+                ActiveInd = account.ACTIVE_IND
+            };
 
-                var account = _service.TraditionalAccounting.GeneralLedger.CreateAccount(request, userId);
-
-                var dto = new GLAccount
-                {
-                    GlAccountId = account.GL_ACCOUNT_ID,
-                    AccountNumber = account.ACCOUNT_NUMBER,
-                    AccountName = account.ACCOUNT_NAME,
-                    AccountType = account.ACCOUNT_TYPE,
-                    ParentAccountId = account.PARENT_ACCOUNT_ID,
-                    NormalBalance = account.NORMAL_BALANCE,
-                    OpeningBalance = account.OPENING_BALANCE,
-                    CurrentBalance = account.CURRENT_BALANCE,
-                    Description = account.DESCRIPTION,
-                    ActiveInd = account.ACTIVE_IND
-                };
-
-                return Ok(dto);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating GL account");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(dto);
         }
 
         /// <summary>
@@ -150,34 +126,26 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var lines = request.Lines.Select(l => new JournalEntryLineData
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+                GlAccountId = l.GlAccountId,
+                DebitAmount = l.DebitAmount,
+                CreditAmount = l.CreditAmount,
+                Description = l.Description
+            }).ToList();
 
-                var lines = request.Lines.Select(l => new JournalEntryLineData
-                {
-                    GlAccountId = l.GlAccountId,
-                    DebitAmount = l.DebitAmount,
-                    CreditAmount = l.CreditAmount,
-                    Description = l.Description
-                }).ToList();
+            var entry = _service.TraditionalAccounting.JournalEntry.CreateJournalEntry(
+                request.EntryNumber ?? GenerateEntryNumber(),
+                request.EntryDate,
+                request.EntryType ?? "Manual",
+                request.Description ?? "",
+                lines,
+                userId);
 
-                var entry = _service.TraditionalAccounting.JournalEntry.CreateJournalEntry(
-                    request.EntryNumber ?? GenerateEntryNumber(),
-                    request.EntryDate,
-                    request.EntryType ?? "Manual",
-                    request.Description ?? "",
-                    lines,
-                    userId);
-
-                return Ok(new { JournalEntryId = entry.JOURNAL_ENTRY_ID, EntryNumber = entry.ENTRY_NUMBER });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating journal entry");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { JournalEntryId = entry.JOURNAL_ENTRY_ID, EntryNumber = entry.ENTRY_NUMBER });
         }
 
         /// <summary>
@@ -191,16 +159,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Journal entry ID is required." });
-            try
-            {
-                _service.TraditionalAccounting.JournalEntry.PostJournalEntry(id, userId);
-                return Ok(new { message = "Journal entry posted successfully" });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error posting journal entry {EntryId}", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            _service.TraditionalAccounting.JournalEntry.PostJournalEntry(id, userId);
+            return Ok(new { message = "Journal entry posted successfully" });
         }
 
         /// <summary>
@@ -213,40 +173,32 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Journal entry ID is required." });
-            try
+            var entry = _service.TraditionalAccounting.JournalEntry.GetJournalEntry(id);
+            if (entry == null)
+                    return NotFound(new { error = $"Journal entry with ID {id} not found." });
+
+            var lines = _service.TraditionalAccounting.JournalEntry.GetJournalEntryLines(id).ToList();
+
+            return Ok(new
             {
-                var entry = _service.TraditionalAccounting.JournalEntry.GetJournalEntry(id);
-                if (entry == null)
-                        return NotFound(new { error = $"Journal entry with ID {id} not found." });
-
-                var lines = _service.TraditionalAccounting.JournalEntry.GetJournalEntryLines(id).ToList();
-
-                return Ok(new
+                JournalEntryId = entry.JOURNAL_ENTRY_ID,
+                EntryNumber = entry.ENTRY_NUMBER,
+                EntryDate = entry.ENTRY_DATE,
+                EntryType = entry.ENTRY_TYPE,
+                Status = entry.STATUS,
+                Description = entry.DESCRIPTION,
+                TotalDebit = entry.TOTAL_DEBIT,
+                TotalCredit = entry.TOTAL_CREDIT,
+                Lines = lines.Select(l => new
                 {
-                    JournalEntryId = entry.JOURNAL_ENTRY_ID,
-                    EntryNumber = entry.ENTRY_NUMBER,
-                    EntryDate = entry.ENTRY_DATE,
-                    EntryType = entry.ENTRY_TYPE,
-                    Status = entry.STATUS,
-                    Description = entry.DESCRIPTION,
-                    TotalDebit = entry.TOTAL_DEBIT,
-                    TotalCredit = entry.TOTAL_CREDIT,
-                    Lines = lines.Select(l => new
-                    {
-                        LineId = l.JOURNAL_ENTRY_LINE_ID,
-                        GlAccountId = l.GL_ACCOUNT_ID,
-                        LineNumber = l.LINE_NUMBER,
-                        DebitAmount = l.DEBIT_AMOUNT,
-                        CreditAmount = l.CREDIT_AMOUNT,
-                        Description = l.DESCRIPTION
-                    })
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting journal entry {EntryId}", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                    LineId = l.JOURNAL_ENTRY_LINE_ID,
+                    GlAccountId = l.GL_ACCOUNT_ID,
+                    LineNumber = l.LINE_NUMBER,
+                    DebitAmount = l.DEBIT_AMOUNT,
+                    CreditAmount = l.CREDIT_AMOUNT,
+                    Description = l.DESCRIPTION
+                })
+            });
         }
 
         private string GenerateEntryNumber()

@@ -1,6 +1,7 @@
 using Blazored.LocalStorage;
 using Microsoft.JSInterop;
 using MudBlazor;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.Web.Theme;
 
@@ -13,7 +14,7 @@ namespace Beep.OilandGas.Web.Theme;
 /// ignored the choice made on the others (S3-06 §8). The remembered choice is a per-browser convenience (local storage),
 /// never state anybody else relies on.
 /// </remarks>
-public sealed class ThemeState(IThemeProvider themes, ILocalStorageService storage, ILogger<ThemeState> logger)
+public sealed class ThemeState(IThemeProvider themes, ILocalStorageService storage, IFailureReporter failures)
 {
     private const string DarkModeKey = "dark-mode";
 
@@ -41,7 +42,11 @@ public sealed class ThemeState(IThemeProvider themes, ILocalStorageService stora
         catch (JSException exception)
         {
             // Handled: a preference the browser would not give back leaves the application's own default in place.
-            logger.LogWarning(exception, "The saved dark-mode preference could not be read; the default applies.");
+            failures.ReportHandled(
+                exception,
+                "reading the saved dark-mode preference from the browser",
+                consequence: "the application's own default applies for this visit",
+                FailureSeverity.Degraded);
         }
     }
 
@@ -57,7 +62,11 @@ public sealed class ThemeState(IThemeProvider themes, ILocalStorageService stora
         catch (JSException exception)
         {
             // Handled: the choice applies to this visit; it is not remembered for the next one.
-            logger.LogWarning(exception, "The dark-mode preference could not be saved in the browser.");
+            failures.ReportHandled(
+                exception,
+                "saving the dark-mode preference in the browser",
+                consequence: "the choice applies to this visit and is not remembered for the next one",
+                FailureSeverity.Degraded);
         }
     }
 

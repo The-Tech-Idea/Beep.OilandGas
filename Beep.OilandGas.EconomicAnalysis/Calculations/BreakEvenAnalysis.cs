@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.EconomicAnalysis.Calculations
 {
@@ -24,7 +25,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Calculations
             Func<CashFlow, bool> targetComponentSelector)
         {
             if (cashFlows == null || cashFlows.Length == 0)
-                throw new ArgumentException("Cash flows cannot be null or empty.");
+                throw RefusalException.Invalid("Cash flows are required.");
 
             // Split into Fixed PV and Variable PV
             double pvFixed = 0;

@@ -58,7 +58,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(borrowingId))
                 throw new ArgumentNullException(nameof(borrowingId));
             if (amount <= 0m)
-                throw new InvalidOperationException("Borrowing cost amount must be positive");
+                throw RefusalException.Invalid("Borrowing cost amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 

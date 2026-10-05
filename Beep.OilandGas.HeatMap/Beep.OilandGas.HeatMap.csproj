@@ -31,7 +31,10 @@
 	<ItemGroup>
     <ProjectReference Include="..\Beep.OilandGas.PPDM.Models\Beep.OilandGas.PPDM.Models.csproj" />
 		<PackageReference Include="SkiaSharp" Version="3.119.4" />
-		<PackageReference Include="SkiaSharp.Svg" Version="1.60.0" />
+		<!-- OILGAS-CATCH-01: SVG overlays are drawn with Svg.Skia, the maintained SVG renderer for SkiaSharp (5.1.1 is
+		     its last release on SkiaSharp 3.119). SkiaSharp.Svg 1.60 calls SkiaSharp 1.x APIs SkiaSharp 3 does not have,
+		     and was reached only through reflection under a type name it does not use, so no overlay was ever drawn. -->
+		<PackageReference Include="Svg.Skia" Version="5.1.1" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />

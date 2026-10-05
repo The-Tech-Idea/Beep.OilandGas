@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Beep.OilandGas.GasProperties.Calculations;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.NodalAnalysis.Calculations
 {
@@ -34,13 +35,13 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             decimal waterCut = 0m)
         {
             if (reservoirPressure <= 0)
-                throw new ArgumentException("Reservoir pressure must be greater than zero.", nameof(reservoirPressure));
+                throw RefusalException.Invalid("Reservoir pressure must be greater than zero.");
 
             if (wellheadPressure <= 0)
-                throw new ArgumentException("Wellhead pressure must be greater than zero.", nameof(wellheadPressure));
+                throw RefusalException.Invalid("Wellhead pressure must be greater than zero.");
 
             if (oilRate <= 0)
-                throw new ArgumentException("Oil rate must be greater than zero.", nameof(oilRate));
+                throw RefusalException.Invalid("Oil rate must be greater than zero.");
 
             // Calculate average pressure
             decimal averagePressure = (reservoirPressure + wellheadPressure) / 2m;

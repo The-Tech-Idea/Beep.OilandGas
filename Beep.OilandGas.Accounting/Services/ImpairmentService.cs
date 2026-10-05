@@ -59,7 +59,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(costCenterId))
                 throw new ArgumentNullException(nameof(costCenterId));
             if (impairmentAmount <= 0m)
-                throw new InvalidOperationException("Impairment amount must be positive");
+                throw RefusalException.Invalid("Impairment amount must be positive.");
             if (string.IsNullOrWhiteSpace(impairmentType))
                 throw new ArgumentNullException(nameof(impairmentType));
             if (string.IsNullOrWhiteSpace(reason))

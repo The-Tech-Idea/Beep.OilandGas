@@ -131,9 +131,12 @@ public sealed class RequireCurrentFieldAccessAttribute : Attribute, IAsyncAuthor
                 ClientIp = clientIp
             });
         }
-        catch (Exception ex)
+        // Whatever stops the access check, the decision is recorded as an error and the request is refused by the exception
+        // itself: it goes on to the API's handler, which reports it and answers 500 with its reference (OILGAS-CATCH-01: a
+        // bare 500, nothing reported, and the exception's text in the authorization record). Cancellation is the request
+        // ending, not a check failing.
+        catch (Exception checkFailure) when (checkFailure is not OperationCanceledException)
         {
-            context.Result = new StatusCodeResult(500);
             await EmitObservationAsync(observability, new AuthorizationObservation
             {
                 PolicyName = nameof(RequireCurrentFieldAccessAttribute),
@@ -142,12 +145,13 @@ public sealed class RequireCurrentFieldAccessAttribute : Attribute, IAsyncAuthor
                 AssetType = "FIELD",
                 RequiredPermission = _requiredPermission,
                 Decision = "Error",
-                Reason = ex.Message,
+                Reason = "The access check failed; the failure is reported under the request's reference.",
                 Endpoint = endpoint,
                 HttpMethod = method,
                 CorrelationId = correlationId,
                 ClientIp = clientIp
             });
+            throw;
         }
     }
 

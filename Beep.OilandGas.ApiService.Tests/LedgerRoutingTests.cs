@@ -269,7 +269,7 @@ public sealed class LedgerRoutingTests
         Task<string> Resolve() { calls++; return Task.FromResult(""); }
         var royalties = new Beep.OilandGas.ProductionAccounting.Services.RoyaltyService(
             editor.Object, Mock.Of<ICommonColumnHandler>(), Mock.Of<IPPDM39DefaultsRepository>(),
-            metadata.Object, Mock.Of<IJournalEntryService>(),
+            metadata.Object, Mock.Of<IJournalEntryService>(), new Infrastructure.RecordingFailureReporter(),
             NullLogger<Beep.OilandGas.ProductionAccounting.Services.RoyaltyService>.Instance, Resolve);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => allocation
@@ -351,7 +351,7 @@ public sealed class LedgerRoutingTests
         var ap = new APInvoiceService(editor.Object, columns, defaults, metadata.Object, posting,
             NullLogger<APInvoiceService>.Instance, resolveConnection: Resolve);
         var ar = new ARService(editor.Object, columns, defaults, metadata.Object, posting,
-            NullLogger<ARService>.Instance, resolveConnection: Resolve);
+            new Infrastructure.RecordingFailureReporter(), NullLogger<ARService>.Instance, resolveConnection: Resolve);
         var closing = new PeriodClosingService(editor.Object, columns, defaults, metadata.Object,
             trial, journal, posting, ap, ar, NullLogger<PeriodClosingService>.Instance,
             resolveConnection: Resolve);
@@ -378,8 +378,8 @@ public sealed class LedgerRoutingTests
         var journal = new JournalEntryService(editor.Object, columns, defaults, metadata.Object, accounts,
             NullLogger<JournalEntryService>.Instance, Resolve);
         var receivables = new ARService(editor.Object, columns, defaults, metadata.Object,
-            new AccountingBasisPostingService(journal), NullLogger<ARService>.Instance,
-            resolveConnection: Resolve);
+            new AccountingBasisPostingService(journal), new Infrastructure.RecordingFailureReporter(),
+            NullLogger<ARService>.Instance, resolveConnection: Resolve);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => payments
             ? (Task)receivables.GetPaymentsByInvoiceAsync("invoice", "other-db")

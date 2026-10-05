@@ -1,5 +1,6 @@
 @inject ISnackbar Snackbar
 @inject IConnectionService ConnectionService
+@inject OilGasCallFailures Calls
 
 <MudCard Elevation="2">
     <MudCardContent>
@@ -9,6 +10,10 @@
         {
             <MudProgressLinear Indeterminate="true" />
             <MudText Class="mt-2">Loading connections...</MudText>
+        }
+        else if (_loadError is not null)
+        {
+            <MudAlert Severity="Severity.Error">@_loadError</MudAlert>
         }
         else if (_connections.Any())
         {
@@ -109,6 +114,7 @@
 
     private List<ConnectionInfo> _connections = new();
     private bool _isLoading = true;
+    private string? _loadError;
     private string? _testingConnection;
     private ConnectionTestResult? _testResult;
 
@@ -120,6 +126,7 @@
     private async Task LoadConnections()
     {
         _isLoading = true;
+        _loadError = null;
         try
         {
             _connections = await ConnectionService.GetAllConnectionsAsync();
@@ -131,9 +138,12 @@
                 SelectedConnection = activeConnection.ConnectionName;
             }
         }
+        // A component answers every failure it meets with a sentence; the store keeps the exception. The list says it
+        // did not load, rather than that there are no connections.
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading connections: {ex.Message}", Severity.Error);
+            _connections = new();
+            _loadError = Calls.Explain(ex, "loading the database connections", "The database connections could not be loaded");
         }
         finally
         {
@@ -159,15 +169,16 @@
                 Snackbar.Add($"Connection test failed: {_testResult.Message}", Severity.Error);
             }
         }
+        // A component answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
+            var sentence = Calls.Explain(ex, "testing a database connection", $"Connection '{connectionName}' could not be tested");
             _testResult = new ConnectionTestResult
             {
                 Success = false,
-                Message = "Connection test failed",
-                ErrorDetails = ex.Message
+                Message = sentence
             };
-            Snackbar.Add($"Error testing connection: {ex.Message}", Severity.Error);
+            Snackbar.Add(sentence, Severity.Error);
         }
         finally
         {

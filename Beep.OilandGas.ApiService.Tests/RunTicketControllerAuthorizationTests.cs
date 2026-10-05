@@ -51,9 +51,9 @@ public sealed class RunTicketControllerAuthorizationTests
         };
 
         if (cycle)
-            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => controller.ProcessProductionCycleAsync(new RUN_TICKET()));
+            await Refusals.ForbiddenAsync(() => controller.ProcessProductionCycleAsync(new RUN_TICKET()));
         else
-            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => controller.CreateRunTicket(new CreateRunTicketRequest()));
+            await Refusals.ForbiddenAsync(() => controller.CreateRunTicket(new CreateRunTicketRequest()));
 
         production.VerifyNoOtherCalls();
         journal.VerifyNoOtherCalls();

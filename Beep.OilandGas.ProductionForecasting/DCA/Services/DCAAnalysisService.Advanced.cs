@@ -30,7 +30,7 @@ namespace Beep.OilandGas.DCA.Services
             double variationPercent = 20.0)
         {
             if (baseParams == null || baseParams.Length < 2)
-                throw new ArgumentException("Base parameters must contain at least qi and di", nameof(baseParams));
+                throw RefusalException.Invalid("Base parameters must contain at least qi and di.");
 
             _logger?.LogInformation("Starting sensitivity analysis: qi={qi:F2}, di={di:F4}, variation={var:F1}%",
                 baseParams[0], baseParams[1], variationPercent);
@@ -83,7 +83,7 @@ namespace Beep.OilandGas.DCA.Services
             List<DateTime> timeData)
         {
             if (productionData == null || productionData.Count == 0)
-                throw new ArgumentException("Production data cannot be null or empty", nameof(productionData));
+                throw RefusalException.Invalid("Production data is required.");
 
             _logger?.LogInformation("Generating multiple decline models for {Count} data points", productionData.Count);
 
@@ -136,11 +136,11 @@ namespace Beep.OilandGas.DCA.Services
             double confidenceLevel = 0.95)
         {
             if (historicalData == null || historicalData.Count == 0)
-                throw new ArgumentException("Historical data cannot be null or empty", nameof(historicalData));
+                throw RefusalException.Invalid("Historical production data is required.");
             if (forecastMonths <= 0)
-                throw new ArgumentException("Forecast months must be positive", nameof(forecastMonths));
+                throw RefusalException.Invalid("Forecast months must be positive.");
             if (simulationCount < 100)
-                throw new ArgumentException("Simulation count should be at least 100", nameof(simulationCount));
+                throw RefusalException.Invalid("Simulation count must be at least 100.");
 
             _logger?.LogInformation("Starting Monte Carlo forecast: {Count} simulations, {Months} month forecast",
                 simulationCount, forecastMonths);
@@ -201,7 +201,7 @@ namespace Beep.OilandGas.DCA.Services
             List<DCAFitResult> models)
         {
             if (models == null || models.Count == 0)
-                throw new ArgumentException("Models collection cannot be null or empty", nameof(models));
+                throw RefusalException.Invalid("At least one fitted decline model is required.");
 
             _logger?.LogInformation("Comparing {Count} decline models", models.Count);
 
@@ -263,7 +263,7 @@ namespace Beep.OilandGas.DCA.Services
             List<DateTime> timeData)
         {
             if (productionData == null || productionData.Count < 3)
-                throw new ArgumentException("Need at least 3 production data points", nameof(productionData));
+                throw RefusalException.Invalid("At least 3 production data points are required.");
 
             _logger?.LogInformation("Analyzing production trend for {Count} data points", productionData.Count);
 
@@ -325,9 +325,9 @@ namespace Beep.OilandGas.DCA.Services
             double economicLimitBblPerDay = 10.0)
         {
             if (historicalData == null || historicalData.Count == 0)
-                throw new ArgumentException("Historical data cannot be null or empty", nameof(historicalData));
+                throw RefusalException.Invalid("Historical production data is required.");
             if (forecastYears <= 0)
-                throw new ArgumentException("Forecast years must be positive", nameof(forecastYears));
+                throw RefusalException.Invalid("Forecast years must be positive.");
 
             _logger?.LogInformation("Generating long-term forecast: {Years} years, economic limit {Limit} bbl/day",
                 forecastYears, economicLimitBblPerDay);
@@ -405,7 +405,7 @@ namespace Beep.OilandGas.DCA.Services
             if (dcaResult == null)
                 throw new ArgumentNullException(nameof(dcaResult));
             if (economicLimitBblPerDay <= 0)
-                throw new ArgumentException("Economic limit must be positive", nameof(economicLimitBblPerDay));
+                throw RefusalException.Invalid("Economic limit must be positive.");
 
             _logger?.LogInformation("Predicting EOL: economic limit {Limit} bbl/day", economicLimitBblPerDay);
 
@@ -458,7 +458,7 @@ namespace Beep.OilandGas.DCA.Services
             List<DateTime> timeData)
         {
             if (productionData == null || productionData.Count < 2)
-                throw new ArgumentException("Need at least 2 production data points", nameof(productionData));
+                throw RefusalException.Invalid("At least 2 production data points are required.");
 
             _logger?.LogInformation("Optimizing decline parameters for {Count} data points", productionData.Count);
 
@@ -590,7 +590,7 @@ namespace Beep.OilandGas.DCA.Services
             List<DateTime> timeData)
         {
             if (wellProductions == null || wellProductions.Count == 0)
-                throw new ArgumentException("Well productions cannot be null or empty", nameof(wellProductions));
+                throw RefusalException.Invalid("Production data for at least one well is required.");
 
             _logger?.LogInformation("Starting portfolio analysis for {Count} wells", wellProductions.Count);
 
@@ -602,32 +602,40 @@ namespace Beep.OilandGas.DCA.Services
                     AnalysisDate = DateTime.UtcNow
                 };
 
-                // Analyze each well
+                // Analyze each well. A well whose production cannot be fitted refuses the portfolio, naming the well:
+                // skipping it left the averages describing fewer wells than WellsAnalyzed claimed.
                 foreach (var kvp in wellProductions)
                 {
+                    var wellId = kvp.Key;
+                    var production = kvp.Value;
+
+                    if (production == null || production.Count == 0)
+                        throw RefusalException.Invalid($"Well {wellId} has no production data.");
+
+                    DCAFitResult wellFit;
                     try
                     {
-                        var wellId = kvp.Key;
-                        var production = kvp.Value;
-
-                        var wellFit = await AsyncDCACalculator.FitCurveAsync(
+                        wellFit = await AsyncDCACalculator.FitCurveAsync(
                             production, timeData, qi: production[0], di: 0.1);
-
-                        result.WellAnalyses.Add(wellId, new DcaPortfolioWellAnalysis
-                        {
-                            WellId = wellId,
-                            DataPoints = production.Count,
-                            InitialProduction = production[0],
-                            FinalProduction = production.Last(),
-                            Qi = wellFit.Parameters[0],
-                            Di = wellFit.Parameters[1],
-                            RSquared = wellFit.RSquared
-                        });
                     }
-                    catch (Exception ex)
+                    catch (Beep.OilandGas.DCA.Exceptions.DCAException unfit)
                     {
-                        _logger?.LogWarning(ex, "Error analyzing well {WellId}", kvp.Key);
+                        throw new RefusalException(
+                            RefusalKind.Invalid,
+                            $"The production data of well {wellId} could not be fitted to a decline curve.",
+                            unfit);
                     }
+
+                    result.WellAnalyses.Add(wellId, new DcaPortfolioWellAnalysis
+                    {
+                        WellId = wellId,
+                        DataPoints = production.Count,
+                        InitialProduction = production[0],
+                        FinalProduction = production.Last(),
+                        Qi = wellFit.Parameters[0],
+                        Di = wellFit.Parameters[1],
+                        RSquared = wellFit.RSquared
+                    });
                 }
 
                 // Calculate portfolio statistics

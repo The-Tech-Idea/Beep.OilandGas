@@ -16,7 +16,7 @@ public class WellComparisonStateTests
     [InlineData("a", " ")]
     public async Task InvalidIdentifiersDoNotCallApi(string first, string second)
     {
-        using var state = new WellComparisonState(_ => throw new Exception("Unexpected request"));
+        using var state = new WellComparisonState(_ => throw new Exception("Unexpected request"), TestFailures.Calls(new RecordingFailureReporter()));
         await state.CompareAsync(first, second);
         Assert.NotNull(state.Error); Assert.Null(state.Result); Assert.False(state.Loading);
     }
@@ -28,7 +28,7 @@ public class WellComparisonStateTests
         {
             Assert.Equal(new[] { "a", "b" }, request.WellIdentifiers);
             return Task.FromResult<WellComparisonData?>(Result("b", "a"));
-        });
+        }, TestFailures.Calls(new RecordingFailureReporter()));
         await state.CompareAsync(" a ", "b", " ");
         Assert.Equal(new[] { "a", "b" }, state.RequestedWells); Assert.NotNull(state.Result); Assert.Null(state.Error);
         state.Reset(); Assert.Empty(state.RequestedWells); Assert.Null(state.Result);
@@ -39,8 +39,8 @@ public class WellComparisonStateTests
     {
         var fail = false;
         using var state = new WellComparisonState(_ => fail
-            ? Task.FromException<WellComparisonData?>(new HttpRequestException("secret", null, System.Net.HttpStatusCode.Forbidden))
-            : Task.FromResult<WellComparisonData?>(Result("a", "b")));
+            ? Task.FromException<WellComparisonData?>(new OilGasApiException(System.Net.HttpStatusCode.Forbidden, "secret", null))
+            : Task.FromResult<WellComparisonData?>(Result("a", "b")), TestFailures.Calls(new RecordingFailureReporter()));
         await state.CompareAsync("a", "b"); fail = true;
         await state.CompareAsync("a", "c");
         Assert.Null(state.Result); Assert.Empty(state.RequestedWells); Assert.Contains("do not have access", state.Error); Assert.DoesNotContain("secret", state.Error);
@@ -49,7 +49,7 @@ public class WellComparisonStateTests
     [Fact]
     public async Task PartialResponseCannotBeExportedAsComplete()
     {
-        using var state = new WellComparisonState(_ => Task.FromResult<WellComparisonData?>(Result("a")));
+        using var state = new WellComparisonState(_ => Task.FromResult<WellComparisonData?>(Result("a")), TestFailures.Calls(new RecordingFailureReporter()));
         await state.CompareAsync("a", "b");
         Assert.Null(state.Result); Assert.Empty(state.RequestedWells); Assert.NotNull(state.Error);
     }
@@ -60,7 +60,7 @@ public class WellComparisonStateTests
     public async Task ContextChangeOrDisposalRejectsLateResponse(bool dispose)
     {
         var pending = new TaskCompletionSource<WellComparisonData?>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var state = new WellComparisonState(_ => pending.Task);
+        using var state = new WellComparisonState(_ => pending.Task, TestFailures.Calls(new RecordingFailureReporter()));
         var load = state.CompareAsync("a", "b");
         if (dispose) state.Dispose(); else state.Reset();
         pending.SetResult(Result("a", "b")); await load;
@@ -72,7 +72,7 @@ public class WellComparisonStateTests
     {
         var pending = new TaskCompletionSource<WellComparisonData?>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var state = new WellComparisonState(request => request.WellIdentifiers.Contains("a")
-            ? pending.Task : Task.FromResult<WellComparisonData?>(Result("c", "d")));
+            ? pending.Task : Task.FromResult<WellComparisonData?>(Result("c", "d")), TestFailures.Calls(new RecordingFailureReporter()));
         var oldLoad = state.CompareAsync("a", "b");
         await state.CompareAsync("c", "d");
         pending.SetResult(Result("a", "b")); await oldLoad;

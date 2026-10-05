@@ -27,88 +27,48 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         [HttpPost("calculate-fvf")]
         public ActionResult<decimal> CalculateFormationVolumeFactor([FromBody] CalculateFVFRequest request)
         {
-            try
-            {
-                decimal gasSg = request.GasSpecificGravity is > 0m and <= 2.5m
-                    ? request.GasSpecificGravity
-                    : 0.65m;
-                var result = _service.CalculateFormationVolumeFactor(
-                    request.Pressure,
-                    request.Temperature,
-                    request.GasOilRatio,
-                    request.OilGravity,
-                    request.Correlation,
-                    gasSg);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating formation volume factor");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            decimal gasSg = request.GasSpecificGravity is > 0m and <= 2.5m
+                ? request.GasSpecificGravity
+                : 0.65m;
+            var result = _service.CalculateFormationVolumeFactor(
+                request.Pressure,
+                request.Temperature,
+                request.GasOilRatio,
+                request.OilGravity,
+                request.Correlation,
+                gasSg);
+            return Ok(result);
         }
 
         [HttpPost("calculate-density")]
         public ActionResult<decimal> CalculateDensity([FromBody] CalculateDensityRequest request)
         {
-            try
-            {
-                var result = _service.CalculateOilDensity(
-                    request.Pressure, request.Temperature, request.OilGravity, request.GasOilRatio);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating oil density");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = _service.CalculateOilDensity(
+                request.Pressure, request.Temperature, request.OilGravity, request.GasOilRatio);
+            return Ok(result);
         }
 
         [HttpPost("calculate-viscosity")]
         public ActionResult<decimal> CalculateViscosity([FromBody] CalculateViscosityRequest request)
         {
-            try
-            {
-                var result = _service.CalculateOilViscosity(
-                    request.Pressure, request.Temperature, request.OilGravity, request.GasOilRatio);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating oil viscosity");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = _service.CalculateOilViscosity(
+                request.Pressure, request.Temperature, request.OilGravity, request.GasOilRatio);
+            return Ok(result);
         }
 
         [HttpPost("calculate-properties")]
         public async Task<ActionResult<OilPropertyResult>> CalculateProperties([FromBody] CalculateOilPropertiesRequest request)
         {
-            try
-            {
-                var result = await _service.CalculateOilPropertiesAsync(request.Composition, request.Pressure, request.Temperature);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating oil properties");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.CalculateOilPropertiesAsync(request.Composition, request.Pressure, request.Temperature);
+            return Ok(result);
         }
 
         [HttpPost("composition")]
         public async Task<ActionResult> SaveComposition([FromBody] OilComposition composition)
         {
             var userId = User.ActingUserId();
-            try
-            {
-                await _service.SaveOilCompositionAsync(composition, userId);
-                return Ok(new { message = "Composition saved successfully", compositionId = composition.CompositionId });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving oil composition");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            await _service.SaveOilCompositionAsync(composition, userId);
+            return Ok(new { message = "Composition saved successfully", compositionId = composition.CompositionId });
         }
 
         [HttpGet("composition/{compositionId}")]
@@ -116,18 +76,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         {
             if (string.IsNullOrWhiteSpace(compositionId))
                 return BadRequest(new { error = "Composition ID is required." });
-            try
-            {
-                var result = await _service.GetOilCompositionAsync(compositionId);
-                if (result == null)
-                        return NotFound(new { error = $"Composition {compositionId} not found." });
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting oil composition");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.GetOilCompositionAsync(compositionId);
+            if (result == null)
+                    return NotFound(new { error = $"Composition {compositionId} not found." });
+            return Ok(result);
         }
 
         [HttpGet("composition/{compositionId}/history")]
@@ -135,32 +87,16 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         {
             if (string.IsNullOrWhiteSpace(compositionId))
                 return BadRequest(new { error = "Composition ID is required." });
-            try
-            {
-                var result = await _service.GetOilPropertyHistoryAsync(compositionId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting oil property history");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.GetOilPropertyHistoryAsync(compositionId);
+            return Ok(result);
         }
 
         [HttpPost("result")]
         public async Task<ActionResult> SaveResult([FromBody] OilPropertyResult result)
         {
             var userId = User.ActingUserId();
-            try
-            {
-                await _service.SaveOilPropertyResultAsync(result, userId);
-                return Ok(new { message = "Result saved successfully", calculationId = result.CalculationId });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving oil property result");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            await _service.SaveOilPropertyResultAsync(result, userId);
+            return Ok(new { message = "Result saved successfully", calculationId = result.CalculationId });
         }
     }
 }

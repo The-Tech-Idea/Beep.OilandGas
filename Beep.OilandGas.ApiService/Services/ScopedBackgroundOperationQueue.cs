@@ -1,5 +1,6 @@
 using System.Threading.Channels;
 using Beep.OilandGas.Models.Core.Interfaces;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Services;
 
@@ -12,11 +13,11 @@ public sealed class ScopedBackgroundOperationQueue : BackgroundService, IBackgro
     private readonly Queue<BackgroundOperationStatus> _completed = new();
     private readonly object _gate = new();
     private readonly IServiceScopeFactory _scopes;
-    private readonly ILogger<ScopedBackgroundOperationQueue> _logger;
+    private readonly IFailureReporter _failures;
     private bool _stopping;
 
-    public ScopedBackgroundOperationQueue(IServiceScopeFactory scopes, ILogger<ScopedBackgroundOperationQueue> logger)
-    { _scopes = scopes; _logger = logger; }
+    public ScopedBackgroundOperationQueue(IServiceScopeFactory scopes, IFailureReporter failures)
+    { _scopes = scopes; _failures = failures ?? throw new ArgumentNullException(nameof(failures)); }
 
     public bool TryEnqueue<TService, TState>(string key, TState state,
         Func<TService, TState, CancellationToken, Task> execute) where TService : notnull
@@ -56,6 +57,9 @@ public sealed class ScopedBackgroundOperationQueue : BackgroundService, IBackgro
         }
     }
 
+    // The host's own cancellation ends the loop as cancelled, which is what BackgroundService expects of a stop it started;
+    // the operation it interrupted is marked cancelled on the way out (OILGAS-CATCH-01: the loop swallowed it, and any
+    // operation's own cancellation — a timeout inside it — was recorded as "cancelled" rather than as the failure it is).
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         try
@@ -71,16 +75,21 @@ public sealed class ScopedBackgroundOperationQueue : BackgroundService, IBackgro
                         await work.Execute(scope.ServiceProvider, stoppingToken);
                     SetStatus(work.Key, BackgroundOperationState.Succeeded);
                 }
-                catch (OperationCanceledException)
-                { SetStatus(work.Key, BackgroundOperationState.Cancelled); }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    SetStatus(work.Key, BackgroundOperationState.Cancelled);
+                    throw;
+                }
+                // Whatever ends one operation, the queue goes on with the next; the operation's status carries the
+                // reference its failure is filed under.
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Background operation {Key} failed", work.Key);
-                    SetStatus(work.Key, BackgroundOperationState.Failed, "Background execution failed. See server logs.");
+                    var reference = _failures.ReportHandled(ex, $"running background operation {work.Key}",
+                        "the operation is marked failed with this reference; the queue goes on with the next");
+                    SetStatus(work.Key, BackgroundOperationState.Failed, $"Background execution failed (reference {reference}).");
                 }
             }
         }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }
         finally
         {
             while (_queue.Reader.TryRead(out var work)) SetStatus(work.Key, BackgroundOperationState.Cancelled);

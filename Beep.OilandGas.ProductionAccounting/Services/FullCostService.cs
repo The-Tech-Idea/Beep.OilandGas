@@ -345,35 +345,27 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// </summary>
         private async Task<decimal> GetPeriodProductionAsync(string costCenterId, string connectionName)
         {
-            try
+            var metadata = await _metadata.GetTableMetadataAsync("MEASUREMENT_RECORD");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(MEASUREMENT_RECORD);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, connectionName, "MEASUREMENT_RECORD");
+
+            var filters = new List<AppFilter>
             {
-                var metadata = await _metadata.GetTableMetadataAsync("MEASUREMENT_RECORD");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(MEASUREMENT_RECORD);
+                new AppFilter { FieldName = "COST_CENTER_ID", Operator = "=", FilterValue = costCenterId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+            };
 
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "MEASUREMENT_RECORD");
+            var measurements = await repo.GetAsync(filters);
+            var measurementList = measurements?.Cast<MEASUREMENT_RECORD>().ToList() ?? new List<MEASUREMENT_RECORD>();
 
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "COST_CENTER_ID", Operator = "=", FilterValue = costCenterId },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                };
+            decimal totalProduction = measurementList.Sum(m => m.GROSS_VOLUME ?? 0);
+            _logger?.LogDebug("Period production for cost center {CostCenterId}: {Volume} BBL", costCenterId, totalProduction);
 
-                var measurements = await repo.GetAsync(filters);
-                var measurementList = measurements?.Cast<MEASUREMENT_RECORD>().ToList() ?? new List<MEASUREMENT_RECORD>();
-
-                decimal totalProduction = measurementList.Sum(m => m.GROSS_VOLUME ?? 0);
-                _logger?.LogDebug("Period production for cost center {CostCenterId}: {Volume} BBL", costCenterId, totalProduction);
-
-                return totalProduction;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Error retrieving period production for cost center {CostCenterId}", costCenterId);
-                return 0;
-            }
+            return totalProduction;
         }
 
         /// <summary>
@@ -381,56 +373,48 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// </summary>
         private async Task<decimal> GetTotalReservesAsync(string costCenterId, string connectionName)
         {
-            try
+            if (_reserveAccountingService != null)
             {
-                if (_reserveAccountingService != null)
+                var latestReserves = await _reserveAccountingService.GetLatestReservesAsync(costCenterId, DateTime.UtcNow, connectionName);
+                if (latestReserves != null)
                 {
-                    var latestReserves = await _reserveAccountingService.GetLatestReservesAsync(costCenterId, DateTime.UtcNow, connectionName);
-                    if (latestReserves != null)
-                    {
-                        return (latestReserves.PROVED_DEVELOPED_OIL_RESERVES ?? 0) +
-                               (latestReserves.PROVED_UNDEVELOPED_OIL_RESERVES ?? 0) +
-                               (latestReserves.PROVED_DEVELOPED_GAS_RESERVES ?? 0) +
-                               (latestReserves.PROVED_UNDEVELOPED_GAS_RESERVES ?? 0);
-                    }
+                    return (latestReserves.PROVED_DEVELOPED_OIL_RESERVES ?? 0) +
+                           (latestReserves.PROVED_UNDEVELOPED_OIL_RESERVES ?? 0) +
+                           (latestReserves.PROVED_DEVELOPED_GAS_RESERVES ?? 0) +
+                           (latestReserves.PROVED_UNDEVELOPED_GAS_RESERVES ?? 0);
                 }
-
-                var metadata = await _metadata.GetTableMetadataAsync("PROVED_RESERVES");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(PROVED_RESERVES);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "PROVED_RESERVES");
-
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "COST_CENTER_ID", Operator = "LIKE", FilterValue = $"%{costCenterId}%" },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                };
-
-                var reserves = await repo.GetAsync(filters);
-                var reserveList = reserves?.Cast<PROVED_RESERVES>().ToList() ?? new List<PROVED_RESERVES>();
-
-                // Sum total proved reserves (developed + undeveloped oil)
-                if (reserveList.Any())
-                {
-                    var latestReserve = reserveList.OrderByDescending(r => r.RESERVE_DATE).FirstOrDefault();
-                    decimal totalReserves = (latestReserve?.PROVED_DEVELOPED_OIL_RESERVES ?? 0) +
-                                           (latestReserve?.PROVED_UNDEVELOPED_OIL_RESERVES ?? 0);
-
-                    _logger?.LogDebug("Total proved reserves for cost center {CostCenterId}: {Volume} BBL", costCenterId, totalReserves);
-                    return totalReserves;
-                }
-
-                _logger?.LogWarning("No proved reserves found for cost center {CostCenterId}", costCenterId);
-                return 0;
             }
-            catch (Exception ex)
+
+            var metadata = await _metadata.GetTableMetadataAsync("PROVED_RESERVES");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(PROVED_RESERVES);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, connectionName, "PROVED_RESERVES");
+
+            var filters = new List<AppFilter>
             {
-                _logger?.LogWarning(ex, "Error retrieving proved reserves for cost center {CostCenterId}", costCenterId);
-                return 0;
+                new AppFilter { FieldName = "COST_CENTER_ID", Operator = "LIKE", FilterValue = $"%{costCenterId}%" },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+            };
+
+            var reserves = await repo.GetAsync(filters);
+            var reserveList = reserves?.Cast<PROVED_RESERVES>().ToList() ?? new List<PROVED_RESERVES>();
+
+            // Sum total proved reserves (developed + undeveloped oil)
+            if (reserveList.Any())
+            {
+                var latestReserve = reserveList.OrderByDescending(r => r.RESERVE_DATE).FirstOrDefault();
+                decimal totalReserves = (latestReserve?.PROVED_DEVELOPED_OIL_RESERVES ?? 0) +
+                                       (latestReserve?.PROVED_UNDEVELOPED_OIL_RESERVES ?? 0);
+
+                _logger?.LogDebug("Total proved reserves for cost center {CostCenterId}: {Volume} BBL", costCenterId, totalReserves);
+                return totalReserves;
             }
+
+            _logger?.LogWarning("No proved reserves found for cost center {CostCenterId}", costCenterId);
+            return 0;
         }
 
         /// <summary>
@@ -439,46 +423,38 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// </summary>
         private async Task<decimal> GetProvedReservesValueAsync(string costCenterId, string connectionName)
         {
-            try
+            if (_reserveAccountingService != null)
             {
-                if (_reserveAccountingService != null)
-                {
-                    var pv = await _reserveAccountingService.CalculatePresentValueAsync(costCenterId, DateTime.UtcNow, connectionName);
-                    if (pv > 0m)
-                        return pv;
-                }
-
-                var metadata = await _metadata.GetTableMetadataAsync("PROVED_RESERVES");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(PROVED_RESERVES);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "PROVED_RESERVES");
-
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "COST_CENTER_ID", Operator = "LIKE", FilterValue = $"%{costCenterId}%" },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                };
-
-                var reserves = await repo.GetAsync(filters);
-                var reserveList = reserves?.Cast<PROVED_RESERVES>().ToList() ?? new List<PROVED_RESERVES>();
-
-                // Calculate PV of proved reserves using current commodity prices
-                if (reserveList.Any())
-                {
-                    var latestReserve = reserveList.OrderByDescending(r => r.RESERVE_DATE).FirstOrDefault();
-                    return CalculateReserveFairValue(latestReserve);
-                }
-
-                return 0;
+                var pv = await _reserveAccountingService.CalculatePresentValueAsync(costCenterId, DateTime.UtcNow, connectionName);
+                if (pv > 0m)
+                    return pv;
             }
-            catch (Exception ex)
+
+            var metadata = await _metadata.GetTableMetadataAsync("PROVED_RESERVES");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(PROVED_RESERVES);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, connectionName, "PROVED_RESERVES");
+
+            var filters = new List<AppFilter>
             {
-                _logger?.LogWarning(ex, "Error retrieving proved reserves fair value for cost center {CostCenterId}", costCenterId);
-                return 0;
+                new AppFilter { FieldName = "COST_CENTER_ID", Operator = "LIKE", FilterValue = $"%{costCenterId}%" },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+            };
+
+            var reserves = await repo.GetAsync(filters);
+            var reserveList = reserves?.Cast<PROVED_RESERVES>().ToList() ?? new List<PROVED_RESERVES>();
+
+            // Calculate PV of proved reserves using current commodity prices
+            if (reserveList.Any())
+            {
+                var latestReserve = reserveList.OrderByDescending(r => r.RESERVE_DATE).FirstOrDefault();
+                return CalculateReserveFairValue(latestReserve);
             }
+
+            return 0;
         }
 
         private decimal CalculateReserveFairValue(PROVED_RESERVES reserves)

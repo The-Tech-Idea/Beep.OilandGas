@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using ConnectionInfo = Beep.OilandGas.Models.Data.DataManagement.ConnectionInfo;
 using ConnectionTestResult = Beep.OilandGas.Models.Data.DataManagement.ConnectionTestResult;
 using SetCurrentConnectionResult = Beep.OilandGas.Models.Data.DataManagement.SetCurrentConnectionResult;
@@ -27,14 +26,12 @@ namespace Beep.OilandGas.Web.Services
     public class ConnectionService : IConnectionService
     {
         private readonly ApiClient _apiClient;
-        private readonly ILogger<ConnectionService> _logger;
+        private readonly OilGasCallFailures _calls;
 
-        public ConnectionService(
-            ApiClient apiClient,
-            ILogger<ConnectionService> logger)
+        public ConnectionService(ApiClient apiClient, OilGasCallFailures calls)
         {
             _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _calls = calls ?? throw new ArgumentNullException(nameof(calls));
         }
 
         /// <summary>
@@ -42,16 +39,8 @@ namespace Beep.OilandGas.Web.Services
         /// </summary>
         public async Task<List<ConnectionInfo>> GetAllConnectionsAsync()
         {
-            try
-            {
-                var connections = await _apiClient.GetAsync<List<ConnectionInfo>>("/api/connections");
-                return connections ?? new List<ConnectionInfo>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting all connections");
-                return new List<ConnectionInfo>();
-            }
+            var connections = await _apiClient.GetAsync<List<ConnectionInfo>>("/api/connections");
+            return connections ?? new List<ConnectionInfo>();
         }
 
         /// <summary>
@@ -59,15 +48,7 @@ namespace Beep.OilandGas.Web.Services
         /// </summary>
         public async Task<ConnectionInfo?> GetConnectionAsync(string connectionName)
         {
-            try
-            {
-                return await _apiClient.GetAsync<ConnectionInfo>($"/api/connections/{Uri.EscapeDataString(connectionName)}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting connection {ConnectionName}", connectionName);
-                return null;
-            }
+            return await _apiClient.GetAsync<ConnectionInfo>($"/api/connections/{Uri.EscapeDataString(connectionName)}");
         }
 
         /// <summary>
@@ -85,14 +66,13 @@ namespace Beep.OilandGas.Web.Services
                     Message = "Connection test failed"
                 };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error testing connection {ConnectionName}", connectionName);
                 return new ConnectionTestResult
                 {
                     Success = false,
-                    Message = "Connection test failed",
-                    ErrorDetails = ex.Message
+                    Message = _calls.Explain(failure, "testing a database connection", "The connection could not be tested")
                 };
             }
         }
@@ -102,16 +82,8 @@ namespace Beep.OilandGas.Web.Services
         /// </summary>
         public async Task<CurrentConnectionResponse> GetCurrentConnectionAsync()
         {
-            try
-            {
-                var response = await _apiClient.GetAsync<CurrentConnectionResponse>("/api/connections/current");
-                return response ?? new CurrentConnectionResponse();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting current connection");
-                return new CurrentConnectionResponse();
-            }
+            var response = await _apiClient.GetAsync<CurrentConnectionResponse>("/api/connections/current");
+            return response ?? new CurrentConnectionResponse();
         }
 
         /// <summary>
@@ -129,14 +101,13 @@ namespace Beep.OilandGas.Web.Services
                     Message = "Failed to set current connection"
                 };
             }
-            catch (Exception ex)
+            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                _logger.LogError(ex, "Error setting current connection {ConnectionName}", connectionName);
                 return new SetCurrentConnectionResult
                 {
                     Success = false,
-                    Message = "Failed to set current connection",
-                    ErrorDetails = ex.Message
+                    Message = _calls.Explain(failure, "setting the current connection", "The current connection was not changed")
                 };
             }
         }

@@ -32,28 +32,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         {
             if (request is null)
                 return BadRequest(new { error = "Request body is required." });
-            try
-            {
-                if (string.IsNullOrWhiteSpace(request.WellUWI))
-                    return BadRequest(new { error = "Well UWI is required." });
-                if (request.AnalysisParameters == null)
-                    return BadRequest(new { error = "Analysis parameters are required." });
-                var result = await _service.PerformNodalAnalysisAsync(request.WellUWI, request.AnalysisParameters);
-                return Ok(result);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error performing nodal analysis for well {WellUWI}", request.WellUWI);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            if (string.IsNullOrWhiteSpace(request.WellUWI))
+                return BadRequest(new { error = "Well UWI is required." });
+            if (request.AnalysisParameters == null)
+                return BadRequest(new { error = "Analysis parameters are required." });
+            var result = await _service.PerformNodalAnalysisAsync(request.WellUWI, request.AnalysisParameters);
+            return Ok(result);
         }
 
         [HttpPost("optimize")]
@@ -61,28 +45,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         {
             if (request is null)
                 return BadRequest(new { error = "Request body is required." });
-            try
-            {
-                if (string.IsNullOrWhiteSpace(request.WellUWI))
-                    return BadRequest(new { error = "Well UWI is required." });
-                if (request.OptimizationGoals is null)
-                    return BadRequest(new { error = "Optimization goals are required." });
-                var result = await _service.OptimizeSystemAsync(request.WellUWI, request.OptimizationGoals);
-                return Ok(result);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error optimizing system for well {WellUWI}", request.WellUWI);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            if (string.IsNullOrWhiteSpace(request.WellUWI))
+                return BadRequest(new { error = "Well UWI is required." });
+            if (request.OptimizationGoals is null)
+                return BadRequest(new { error = "Optimization goals are required." });
+            var result = await _service.OptimizeSystemAsync(request.WellUWI, request.OptimizationGoals);
+            return Ok(result);
         }
 
         [HttpPost("result")]
@@ -93,48 +61,16 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
                 return BadRequest(new { error = "Result body is required." });
             if (string.IsNullOrWhiteSpace(result.WellUWI))
                 return BadRequest(new { error = "Well UWI is required." });
-            try
-            {
-                await _service.SaveAnalysisResultAsync(result, userId);
-                return Ok(new { message = "Nodal analysis result saved successfully", analysisId = result.AnalysisId });
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving nodal analysis result");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            await _service.SaveAnalysisResultAsync(result, userId);
+            return Ok(new { message = "Nodal analysis result saved successfully", analysisId = result.AnalysisId });
         }
 
         [HttpGet("history/{wellUWI}")]
         public async Task<ActionResult<List<NodalAnalysisRunResult>>> GetHistory(string wellUWI)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) return BadRequest(new { error = "Well UWI is required." });
-            try
-            {
-                var result = await _service.GetAnalysisHistoryAsync(wellUWI);
-                return Ok(result);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting nodal analysis history for well {WellUWI}", wellUWI);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.GetAnalysisHistoryAsync(wellUWI);
+            return Ok(result);
         }
 
         [HttpPost("performance-matching")]
@@ -142,28 +78,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         {
             if (request is null)
                 return BadRequest(new { error = "Request body is required." });
-            try
-            {
-                if (string.IsNullOrWhiteSpace(request.WellUWI))
-                    return BadRequest(new { error = "Well UWI is required." });
-                if (request.AnalysisParameters == null)
-                    return BadRequest(new { error = "Analysis parameters are required." });
-                var result = await _service.AnalyzePerformanceMatchingAsync(request.WellUWI, request.AnalysisParameters);
-                return Ok(result);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error performing performance matching for well {WellUWI}", request.WellUWI);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            if (string.IsNullOrWhiteSpace(request.WellUWI))
+                return BadRequest(new { error = "Well UWI is required." });
+            if (request.AnalysisParameters == null)
+                return BadRequest(new { error = "Analysis parameters are required." });
+            var result = await _service.AnalyzePerformanceMatchingAsync(request.WellUWI, request.AnalysisParameters);
+            return Ok(result);
         }
 
         [HttpPost("sensitivity")]
@@ -171,31 +91,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         {
             if (request is null)
                 return BadRequest(new { error = "Request body is required." });
-            try
-            {
-                if (string.IsNullOrWhiteSpace(request.WellUWI))
-                    return BadRequest(new { error = "Well UWI is required." });
-                if (request.BaselineParameters == null)
-                    return BadRequest(new { error = "Baseline analysis parameters are required." });
-                var result = await _service.PerformSensitivityAnalysisAsync(
-                    request.WellUWI,
-                    request.BaselineParameters,
-                    request.ParametersToVary ?? new System.Collections.Generic.List<string>());
-                return Ok(result);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error performing sensitivity analysis for well {WellUWI}", request.WellUWI);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            if (string.IsNullOrWhiteSpace(request.WellUWI))
+                return BadRequest(new { error = "Well UWI is required." });
+            if (request.BaselineParameters == null)
+                return BadRequest(new { error = "Baseline analysis parameters are required." });
+            var result = await _service.PerformSensitivityAnalysisAsync(
+                request.WellUWI,
+                request.BaselineParameters,
+                request.ParametersToVary ?? new System.Collections.Generic.List<string>());
+            return Ok(result);
         }
 
         [HttpPost("artificial-lift")]
@@ -203,31 +107,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         {
             if (request is null)
                 return BadRequest(new { error = "Request body is required." });
-            try
-            {
-                if (string.IsNullOrWhiteSpace(request.WellUWI))
-                    return BadRequest(new { error = "Well UWI is required." });
-                var result = await _service.RecommendArtificialLiftAsync(
-                    request.WellUWI,
-                    request.CurrentProduction,
-                    request.TargetProduction,
-                    request.WellDepth,
-                    request.WaterCut);
-                return Ok(result);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error recommending artificial lift for well {WellUWI}", request.WellUWI);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            if (string.IsNullOrWhiteSpace(request.WellUWI))
+                return BadRequest(new { error = "Well UWI is required." });
+            var result = await _service.RecommendArtificialLiftAsync(
+                request.WellUWI,
+                request.CurrentProduction,
+                request.TargetProduction,
+                request.WellDepth,
+                request.WaterCut);
+            return Ok(result);
         }
 
         [HttpPost("diagnostics")]
@@ -235,31 +123,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         {
             if (request is null)
                 return BadRequest(new { error = "Request body is required." });
-            try
-            {
-                if (string.IsNullOrWhiteSpace(request.WellUWI))
-                    return BadRequest(new { error = "Well UWI is required." });
-                var result = await _service.DiagnoseWellPerformanceAsync(
-                    request.WellUWI,
-                    request.ExpectedProduction,
-                    request.ActualProduction,
-                    request.WellheadPressure,
-                    request.BottomholePressure);
-                return Ok(result);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error diagnosing well performance for {WellUWI}", request.WellUWI);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            if (string.IsNullOrWhiteSpace(request.WellUWI))
+                return BadRequest(new { error = "Well UWI is required." });
+            var result = await _service.DiagnoseWellPerformanceAsync(
+                request.WellUWI,
+                request.ExpectedProduction,
+                request.ActualProduction,
+                request.WellheadPressure,
+                request.BottomholePressure);
+            return Ok(result);
         }
 
         [HttpPost("production-forecast")]
@@ -267,34 +139,18 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         {
             if (request is null)
                 return BadRequest(new { error = "Request body is required." });
-            try
-            {
-                if (string.IsNullOrWhiteSpace(request.WellUWI))
-                    return BadRequest(new { error = "Well UWI is required." });
-                if (request.ForecastMonths <= 0)
-                    return BadRequest(new { error = "Forecast months must be positive." });
-                if (request.DeclineRate < 0m || request.DeclineRate > 1m)
-                    return BadRequest(new { error = "Decline rate must be between 0 and 1 (annual fraction)." });
-                var result = await _service.ForecastProductionAsync(
-                    request.WellUWI,
-                    request.CurrentProduction,
-                    request.DeclineRate,
-                    request.ForecastMonths);
-                return Ok(result);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error forecasting production for well {WellUWI}", request.WellUWI);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            if (string.IsNullOrWhiteSpace(request.WellUWI))
+                return BadRequest(new { error = "Well UWI is required." });
+            if (request.ForecastMonths <= 0)
+                return BadRequest(new { error = "Forecast months must be positive." });
+            if (request.DeclineRate < 0m || request.DeclineRate > 1m)
+                return BadRequest(new { error = "Decline rate must be between 0 and 1 (annual fraction)." });
+            var result = await _service.ForecastProductionAsync(
+                request.WellUWI,
+                request.CurrentProduction,
+                request.DeclineRate,
+                request.ForecastMonths);
+            return Ok(result);
         }
 
         [HttpPost("pressure-maintenance")]
@@ -302,32 +158,16 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         {
             if (request is null)
                 return BadRequest(new { error = "Request body is required." });
-            try
-            {
-                if (string.IsNullOrWhiteSpace(request.WellUWI))
-                    return BadRequest(new { error = "Well UWI is required." });
-                if (request.ProductivityIndex < 0m)
-                    return BadRequest(new { error = "Productivity index cannot be negative." });
-                var result = await _service.AnalyzePressureMaintenanceAsync(
-                    request.WellUWI,
-                    request.CurrentReservoirPressure,
-                    request.BubblePointPressure,
-                    request.ProductivityIndex);
-                return Ok(result);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error analyzing pressure maintenance for well {WellUWI}", request.WellUWI);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            if (string.IsNullOrWhiteSpace(request.WellUWI))
+                return BadRequest(new { error = "Well UWI is required." });
+            if (request.ProductivityIndex < 0m)
+                return BadRequest(new { error = "Productivity index cannot be negative." });
+            var result = await _service.AnalyzePressureMaintenanceAsync(
+                request.WellUWI,
+                request.CurrentReservoirPressure,
+                request.BubblePointPressure,
+                request.ProductivityIndex);
+            return Ok(result);
         }
     }
 }

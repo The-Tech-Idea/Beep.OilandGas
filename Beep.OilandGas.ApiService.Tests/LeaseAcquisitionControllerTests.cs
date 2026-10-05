@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers.Operations;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data.Lease;
 using Beep.OilandGas.Models.Data.Operations;
 using Microsoft.AspNetCore.Http;
@@ -50,31 +51,31 @@ public class LeaseAcquisitionControllerTests
         core.VerifyNoOtherCalls();
     }
 
+    // OILGAS-CATCH-01: the lease service's refusals reach the API's handler as themselves (404 / 400 with their sentence);
+    // the controller no longer answers the framework's KeyNotFoundException and ArgumentException as refusals.
     [Fact]
-    public async Task UpdateLeaseStatus_ReturnsNotFound_WhenLeaseMissing()
+    public async Task UpdateLeaseStatus_PassesTheServicesNotFoundThrough()
     {
         var core = new Mock<ILeaseAcquisitionService>(MockBehavior.Strict);
-        core.Setup(s => s.UpdateLeaseStatusAsync("L-404", "INACTIVE", "user-1"))
-            .ThrowsAsync(new KeyNotFoundException("missing"));
+        var refusal = RefusalException.NotFound("Lease L-404 was not found.");
+        core.Setup(s => s.UpdateLeaseStatusAsync("L-404", "INACTIVE", "user-1")).ThrowsAsync(refusal);
         var controller = SignedIn(new LeaseAcquisitionController(core.Object, NullLogger<LeaseAcquisitionController>.Instance));
 
-        var result = await controller.UpdateLeaseStatus("L-404", new UpdateLeaseStatusRequest { Status = "INACTIVE" });
-
-        Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Same(refusal, await Refusals.RefusedAsync(RefusalKind.NotFound,
+            () => controller.UpdateLeaseStatus("L-404", new UpdateLeaseStatusRequest { Status = "INACTIVE" })));
         core.VerifyAll();
     }
 
     [Fact]
-    public async Task UpdateLeaseStatus_ReturnsBadRequest_WhenArgumentException()
+    public async Task UpdateLeaseStatus_PassesTheServicesInvalidThrough()
     {
         var core = new Mock<ILeaseAcquisitionService>(MockBehavior.Strict);
-        core.Setup(s => s.UpdateLeaseStatusAsync("L-1", "INVALID_STATUS_XYZ", "user-1"))
-            .ThrowsAsync(new ArgumentException("bad status"));
+        var refusal = RefusalException.Invalid("bad status");
+        core.Setup(s => s.UpdateLeaseStatusAsync("L-1", "INVALID_STATUS_XYZ", "user-1")).ThrowsAsync(refusal);
         var controller = SignedIn(new LeaseAcquisitionController(core.Object, NullLogger<LeaseAcquisitionController>.Instance));
 
-        var result = await controller.UpdateLeaseStatus("L-1", new UpdateLeaseStatusRequest { Status = "INVALID_STATUS_XYZ" });
-
-        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Same(refusal, await Refusals.RefusedAsync(RefusalKind.Invalid,
+            () => controller.UpdateLeaseStatus("L-1", new UpdateLeaseStatusRequest { Status = "INVALID_STATUS_XYZ" })));
         core.VerifyAll();
     }
 

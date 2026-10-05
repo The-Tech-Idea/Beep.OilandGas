@@ -47,27 +47,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpGet("wells-abandoned")]
         public async Task<ActionResult<List<WellAbandonmentResponse>>> GetAbandonedWells([FromQuery] List<AppFilter>? filters = null)
         {
-            try
+            var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(currentFieldId))
             {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                        return BadRequest(new { error = "No active field selected." });
-                }
+                    return BadRequest(new { error = "No active field selected." });
+            }
 
-                var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
-                var abandonedWells = await decommissioningService.GetAbandonedWellsForFieldAsync(currentFieldId, filters);
-                return Ok(abandonedWells);
-            }
-            catch (InvalidOperationException)
-            {
-                return BadRequest(new { error = "An internal error occurred." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting abandoned wells for current field");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
+            var abandonedWells = await decommissioningService.GetAbandonedWellsForFieldAsync(currentFieldId, filters);
+            return Ok(abandonedWells);
         }
 
         /// <summary>
@@ -77,33 +65,21 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<WellAbandonmentResponse>> GetWellAbandonment(string id)
         {
             if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "ID is required." });
-            try
+            var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(currentFieldId))
             {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                        return BadRequest(new { error = "No active field selected." });
-                }
+                    return BadRequest(new { error = "No active field selected." });
+            }
 
-                var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
-                var abandonment = await decommissioningService.GetWellAbandonmentForFieldAsync(currentFieldId, id);
-                
-                if (abandonment == null)
-                {
-                    return NotFound(new { error = $"Well abandonment {id} not found or does not belong to current field." });
-                }
+            var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
+            var abandonment = await decommissioningService.GetWellAbandonmentForFieldAsync(currentFieldId, id);
+            
+            if (abandonment == null)
+            {
+                return NotFound(new { error = $"Well abandonment {id} not found or does not belong to current field." });
+            }
 
-                return Ok(abandonment);
-            }
-            catch (InvalidOperationException)
-            {
-                return BadRequest(new { error = "An internal error occurred." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting well abandonment {AbandonmentId} for current field", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(abandonment);
         }
 
         /// <summary>
@@ -115,32 +91,20 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             [FromBody] WellAbandonmentRequest abandonmentData)
         {
             var userId = User.ActingUserId();
-            try
+            var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(currentFieldId))
             {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                        return BadRequest(new { error = "No active field selected." });
-                }
+                    return BadRequest(new { error = "No active field selected." });
+            }
 
-                if (string.IsNullOrWhiteSpace(wellId))
-                {
-                        return BadRequest(new { error = "Well ID is required." });
-                }
+            if (string.IsNullOrWhiteSpace(wellId))
+            {
+                    return BadRequest(new { error = "Well ID is required." });
+            }
 
-                var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
-                var abandonment = await decommissioningService.AbandonWellForFieldAsync(currentFieldId, wellId, abandonmentData, userId);
-                return Ok(abandonment);
-            }
-            catch (InvalidOperationException)
-            {
-                return BadRequest(new { error = "An internal error occurred." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error abandoning well {WellId} for current field", wellId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
+            var abandonment = await decommissioningService.AbandonWellForFieldAsync(currentFieldId, wellId, abandonmentData, userId);
+            return Ok(abandonment);
         }
 
         /// <summary>
@@ -149,27 +113,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpGet("facilities")]
         public async Task<ActionResult<List<FacilityDecommissioningResponse>>> GetDecommissionedFacilities([FromQuery] List<AppFilter>? filters = null)
         {
-            try
+            var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(currentFieldId))
             {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                        return BadRequest(new { error = "No active field selected." });
-                }
+                    return BadRequest(new { error = "No active field selected." });
+            }
 
-                var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
-                var facilities = await decommissioningService.GetDecommissionedFacilitiesForFieldAsync(currentFieldId, filters);
-                return Ok(facilities);
-            }
-            catch (InvalidOperationException)
-            {
-                return BadRequest(new { error = "An internal error occurred." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting decommissioned facilities for current field");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
+            var facilities = await decommissioningService.GetDecommissionedFacilitiesForFieldAsync(currentFieldId, filters);
+            return Ok(facilities);
         }
 
         /// <summary>
@@ -179,33 +131,21 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<FacilityDecommissioningResponse>> GetFacilityDecommissioning(string id)
         {
             if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "ID is required." });
-            try
+            var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(currentFieldId))
             {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                        return BadRequest(new { error = "No active field selected." });
-                }
+                    return BadRequest(new { error = "No active field selected." });
+            }
 
-                var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
-                var decommissioning = await decommissioningService.GetFacilityDecommissioningForFieldAsync(currentFieldId, id);
-                
-                if (decommissioning == null)
-                {
-                    return NotFound(new { error = $"Facility decommissioning {id} not found or does not belong to current field." });
-                }
+            var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
+            var decommissioning = await decommissioningService.GetFacilityDecommissioningForFieldAsync(currentFieldId, id);
+            
+            if (decommissioning == null)
+            {
+                return NotFound(new { error = $"Facility decommissioning {id} not found or does not belong to current field." });
+            }
 
-                return Ok(decommissioning);
-            }
-            catch (InvalidOperationException)
-            {
-                return BadRequest(new { error = "An internal error occurred." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting facility decommissioning {DecommissioningId} for current field", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(decommissioning);
         }
 
         /// <summary>
@@ -218,27 +158,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         {
             var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(facilityId)) return BadRequest(new { error = "Facility ID is required." });
-            try
+            var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(currentFieldId))
             {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                        return BadRequest(new { error = "No active field selected." });
-                }
+                    return BadRequest(new { error = "No active field selected." });
+            }
 
-                var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
-                var decommissioning = await decommissioningService.DecommissionFacilityForFieldAsync(currentFieldId, facilityId, decommissionData, userId);
-                return Ok(decommissioning);
-            }
-            catch (InvalidOperationException)
-            {
-                return BadRequest(new { error = "An internal error occurred." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error decommissioning facility {FacilityId} for current field", facilityId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
+            var decommissioning = await decommissioningService.DecommissionFacilityForFieldAsync(currentFieldId, facilityId, decommissionData, userId);
+            return Ok(decommissioning);
         }
 
         /// <summary>
@@ -247,27 +175,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpGet("environmental-activities")]
         public async Task<ActionResult<List<EnvironmentalRestorationResponse>>> GetEnvironmentalRestorations([FromQuery] List<AppFilter>? filters = null)
         {
-            try
+            var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(currentFieldId))
             {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                        return BadRequest(new { error = "No active field selected." });
-                }
+                    return BadRequest(new { error = "No active field selected." });
+            }
 
-                var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
-                var restorations = await decommissioningService.GetEnvironmentalRestorationsForFieldAsync(currentFieldId, filters);
-                return Ok(restorations);
-            }
-            catch (InvalidOperationException)
-            {
-                return BadRequest(new { error = "An internal error occurred." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting environmental restorations for current field");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
+            var restorations = await decommissioningService.GetEnvironmentalRestorationsForFieldAsync(currentFieldId, filters);
+            return Ok(restorations);
         }
 
         /// <summary>
@@ -278,27 +194,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             [FromBody] EnvironmentalRestorationRequest restorationData)
         {
             var userId = User.ActingUserId();
-            try
+            var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(currentFieldId))
             {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                        return BadRequest(new { error = "No active field selected." });
-                }
+                    return BadRequest(new { error = "No active field selected." });
+            }
 
-                var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
-                var restoration = await decommissioningService.CreateEnvironmentalRestorationForFieldAsync(currentFieldId, restorationData, userId);
-                return Ok(restoration);
-            }
-            catch (InvalidOperationException)
-            {
-                return BadRequest(new { error = "An internal error occurred." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating environmental restoration for current field");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
+            var restoration = await decommissioningService.CreateEnvironmentalRestorationForFieldAsync(currentFieldId, restorationData, userId);
+            return Ok(restoration);
         }
 
         /// <summary>
@@ -307,27 +211,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpGet("costs")]
         public async Task<ActionResult<List<DecommissioningCostResponse>>> GetDecommissioningCosts([FromQuery] List<AppFilter>? filters = null)
         {
-            try
+            var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(currentFieldId))
             {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                        return BadRequest(new { error = "No active field selected." });
-                }
+                    return BadRequest(new { error = "No active field selected." });
+            }
 
-                var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
-                var costs = await decommissioningService.GetDecommissioningCostsForFieldAsync(currentFieldId, filters);
-                return Ok(costs);
-            }
-            catch (InvalidOperationException)
-            {
-                return BadRequest(new { error = "An internal error occurred." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting decommissioning costs for current field");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
+            var costs = await decommissioningService.GetDecommissioningCostsForFieldAsync(currentFieldId, filters);
+            return Ok(costs);
         }
 
         /// <summary>
@@ -336,27 +228,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpPost("cost-estimation")]
         public async Task<ActionResult<DecommissioningCostEstimateResponse>> EstimateCosts()
         {
-            try
+            var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(currentFieldId))
             {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                        return BadRequest(new { error = "No active field selected." });
-                }
+                    return BadRequest(new { error = "No active field selected." });
+            }
 
-                var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
-                var estimate = await decommissioningService.EstimateCostsForFieldAsync(currentFieldId);
-                return Ok(estimate);
-            }
-            catch (InvalidOperationException)
-            {
-                return BadRequest(new { error = "An internal error occurred." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error estimating decommissioning costs for current field");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
+            var estimate = await decommissioningService.EstimateCostsForFieldAsync(currentFieldId);
+            return Ok(estimate);
         }
 
         // ============================================
@@ -373,31 +253,23 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             [FromBody] StartWellAbandonmentRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(currentFieldId))
             {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                        return BadRequest(new { error = "No active field selected." });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.WellId))
-                {
-                        return BadRequest(new { error = "Well ID is required." });
-                }
-
-                var instance = await _decommissioningProcessService.StartWellAbandonmentProcessAsync(
-                    request.WellId, 
-                    currentFieldId, 
-                    userId);
-                
-                return Ok(instance);
+                    return BadRequest(new { error = "No active field selected." });
             }
-            catch (Exception ex)
+
+            if (string.IsNullOrWhiteSpace(request.WellId))
             {
-                _logger.LogError(ex, "Error starting Well Abandonment process");
-                return StatusCode(500, new { error = "An internal error occurred." });
+                    return BadRequest(new { error = "Well ID is required." });
             }
+
+            var instance = await _decommissioningProcessService.StartWellAbandonmentProcessAsync(
+                request.WellId, 
+                currentFieldId, 
+                userId);
+            
+            return Ok(instance);
         }
 
         /// <summary>
@@ -407,25 +279,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<bool>> PlanAbandonment([FromBody] PlanAbandonmentRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
             {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                {
-                        return BadRequest(new { error = "Instance ID is required." });
-                }
+                    return BadRequest(new { error = "Instance ID is required." });
+            }
 
-                var result = await _decommissioningProcessService.PlanAbandonmentAsync(
-                    request.InstanceId, 
-                    new PROCESS_STEP_DATA { Data = request.PlanData ?? new Dictionary<string, object>() }, 
-                    userId);
-                
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error planning abandonment");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _decommissioningProcessService.PlanAbandonmentAsync(
+                request.InstanceId, 
+                new PROCESS_STEP_DATA { Data = request.PlanData ?? new Dictionary<string, object>() }, 
+                userId);
+            
+            return Ok(result);
         }
 
         /// <summary>
@@ -435,21 +299,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<bool>> ObtainRegulatoryApproval([FromBody] ObtainRegulatoryApprovalRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
             {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                {
-                        return BadRequest(new { error = "Instance ID is required." });
-                }
+                    return BadRequest(new { error = "Instance ID is required." });
+            }
 
-                var result = await _decommissioningProcessService.ObtainRegulatoryApprovalAsync(request.InstanceId, userId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error obtaining regulatory approval");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _decommissioningProcessService.ObtainRegulatoryApprovalAsync(request.InstanceId, userId);
+            return Ok(result);
         }
 
         /// <summary>
@@ -459,25 +315,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<bool>> PlugWell([FromBody] PlugWellRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
             {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                {
-                        return BadRequest(new { error = "Instance ID is required." });
-                }
+                    return BadRequest(new { error = "Instance ID is required." });
+            }
 
-                var result = await _decommissioningProcessService.PlugWellAsync(
-                    request.InstanceId, 
-                    new PROCESS_STEP_DATA { Data = request.PluggingData ?? new Dictionary<string, object>() }, 
-                    userId);
-                
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error plugging well");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _decommissioningProcessService.PlugWellAsync(
+                request.InstanceId, 
+                new PROCESS_STEP_DATA { Data = request.PluggingData ?? new Dictionary<string, object>() }, 
+                userId);
+            
+            return Ok(result);
         }
 
         /// <summary>
@@ -487,25 +335,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<bool>> RestoreSite([FromBody] RestoreSiteRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
             {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                {
-                        return BadRequest(new { error = "Instance ID is required." });
-                }
+                    return BadRequest(new { error = "Instance ID is required." });
+            }
 
-                var result = await _decommissioningProcessService.RestoreSiteAsync(
-                    request.InstanceId, 
-                    new PROCESS_STEP_DATA { Data = request.RestorationData ?? new Dictionary<string, object>() }, 
-                    userId);
-                
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error restoring site");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _decommissioningProcessService.RestoreSiteAsync(
+                request.InstanceId, 
+                new PROCESS_STEP_DATA { Data = request.RestorationData ?? new Dictionary<string, object>() }, 
+                userId);
+            
+            return Ok(result);
         }
 
         /// <summary>
@@ -515,21 +355,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<bool>> CompleteAbandonment([FromBody] CompleteAbandonmentRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
             {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                {
-                        return BadRequest(new { error = "Instance ID is required." });
-                }
+                    return BadRequest(new { error = "Instance ID is required." });
+            }
 
-                var result = await _decommissioningProcessService.CompleteAbandonmentAsync(request.InstanceId, userId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error completing abandonment");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _decommissioningProcessService.CompleteAbandonmentAsync(request.InstanceId, userId);
+            return Ok(result);
         }
 
         #endregion
@@ -544,31 +376,23 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             [FromBody] StartFacilityDecommissioningRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+            if (string.IsNullOrEmpty(currentFieldId))
             {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                        return BadRequest(new { error = "No active field selected." });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.FacilityId))
-                {
-                        return BadRequest(new { error = "Facility ID is required." });
-                }
-
-                var instance = await _decommissioningProcessService.StartFacilityDecommissioningProcessAsync(
-                    request.FacilityId, 
-                    currentFieldId, 
-                    userId);
-                
-                return Ok(instance);
+                    return BadRequest(new { error = "No active field selected." });
             }
-            catch (Exception ex)
+
+            if (string.IsNullOrWhiteSpace(request.FacilityId))
             {
-                _logger.LogError(ex, "Error starting Facility Decommissioning process");
-                return StatusCode(500, new { error = "An internal error occurred." });
+                    return BadRequest(new { error = "Facility ID is required." });
             }
+
+            var instance = await _decommissioningProcessService.StartFacilityDecommissioningProcessAsync(
+                request.FacilityId, 
+                currentFieldId, 
+                userId);
+            
+            return Ok(instance);
         }
 
         /// <summary>
@@ -578,25 +402,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<bool>> PlanDecommissioning([FromBody] PlanDecommissioningRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
             {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                {
-                        return BadRequest(new { error = "Instance ID is required." });
-                }
+                    return BadRequest(new { error = "Instance ID is required." });
+            }
 
-                var result = await _decommissioningProcessService.PlanDecommissioningAsync(
-                    request.InstanceId, 
-                    new PROCESS_STEP_DATA { Data = request.PlanData ?? new Dictionary<string, object>() }, 
-                    userId);
-                
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error planning decommissioning");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _decommissioningProcessService.PlanDecommissioningAsync(
+                request.InstanceId, 
+                new PROCESS_STEP_DATA { Data = request.PlanData ?? new Dictionary<string, object>() }, 
+                userId);
+            
+            return Ok(result);
         }
 
         /// <summary>
@@ -606,25 +422,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<bool>> RemoveEquipment([FromBody] RemoveEquipmentRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
             {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                {
-                        return BadRequest(new { error = "Instance ID is required." });
-                }
+                    return BadRequest(new { error = "Instance ID is required." });
+            }
 
-                var result = await _decommissioningProcessService.RemoveEquipmentAsync(
-                    request.InstanceId, 
-                    new PROCESS_STEP_DATA { Data = request.RemovalData ?? new Dictionary<string, object>() }, 
-                    userId);
-                
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error removing equipment");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _decommissioningProcessService.RemoveEquipmentAsync(
+                request.InstanceId, 
+                new PROCESS_STEP_DATA { Data = request.RemovalData ?? new Dictionary<string, object>() }, 
+                userId);
+            
+            return Ok(result);
         }
 
         /// <summary>
@@ -634,25 +442,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<bool>> CleanupSite([FromBody] CleanupSiteRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
             {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                {
-                        return BadRequest(new { error = "Instance ID is required." });
-                }
+                    return BadRequest(new { error = "Instance ID is required." });
+            }
 
-                var result = await _decommissioningProcessService.CleanupSiteAsync(
-                    request.InstanceId, 
-                    new PROCESS_STEP_DATA { Data = request.CleanupData ?? new Dictionary<string, object>() }, 
-                    userId);
-                
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error cleaning up site");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _decommissioningProcessService.CleanupSiteAsync(
+                request.InstanceId, 
+                new PROCESS_STEP_DATA { Data = request.CleanupData ?? new Dictionary<string, object>() }, 
+                userId);
+            
+            return Ok(result);
         }
 
         /// <summary>
@@ -662,21 +462,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<bool>> ObtainRegulatoryClosure([FromBody] ObtainRegulatoryClosureRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
             {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                {
-                        return BadRequest(new { error = "Instance ID is required." });
-                }
+                    return BadRequest(new { error = "Instance ID is required." });
+            }
 
-                var result = await _decommissioningProcessService.ObtainRegulatoryClosureAsync(request.InstanceId, userId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error obtaining regulatory closure");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _decommissioningProcessService.ObtainRegulatoryClosureAsync(request.InstanceId, userId);
+            return Ok(result);
         }
 
         /// <summary>
@@ -686,21 +478,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public async Task<ActionResult<bool>> CompleteDecommissioning([FromBody] CompleteDecommissioningRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            if (string.IsNullOrWhiteSpace(request.InstanceId))
             {
-                if (string.IsNullOrWhiteSpace(request.InstanceId))
-                {
-                        return BadRequest(new { error = "Instance ID is required." });
-                }
+                    return BadRequest(new { error = "Instance ID is required." });
+            }
 
-                var result = await _decommissioningProcessService.CompleteDecommissioningAsync(request.InstanceId, userId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error completing decommissioning");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _decommissioningProcessService.CompleteDecommissioningAsync(request.InstanceId, userId);
+            return Ok(result);
         }
 
         #endregion
@@ -715,20 +499,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "ID is required." });
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            try
-            {
-                var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
-                var abandonment = await decommissioningService.GetWellAbandonmentForFieldAsync(fieldId, id);
-                    if (abandonment == null) return NotFound(new { error = $"P&A record {id} not found." });
+            var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
+            var abandonment = await decommissioningService.GetWellAbandonmentForFieldAsync(fieldId, id);
+                if (abandonment == null) return NotFound(new { error = $"P&A record {id} not found." });
 
-                _logger.LogInformation("P&A programme {Id} approved by {UserId}", id, userId);
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error approving P&A programme {Id}", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            _logger.LogInformation("P&A programme {Id} approved by {UserId}", id, userId);
+            return NoContent();
         }
     }
 }

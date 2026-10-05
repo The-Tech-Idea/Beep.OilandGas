@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Decommissioning.Constants;
 using System;
 using System.Collections.Generic;
@@ -35,9 +36,9 @@ namespace Beep.OilandGas.Decommissioning.Services
             double reservoirPressure)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI is required", nameof(wellUWI));
+                throw RefusalException.Invalid("The well UWI is required.");
             if (wellDepth <= 0)
-                throw new ArgumentException("Well depth must be positive", nameof(wellDepth));
+                throw RefusalException.Invalid("The well depth must be greater than zero.");
 
             _logger?.LogInformation(
                 "Analyzing plugging requirements: well={Well}, depth={Depth:F0} ft, zones={Zones}",
@@ -89,7 +90,7 @@ namespace Beep.OilandGas.Decommissioning.Services
             bool requiresEnvironmentalRemediation = true)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI is required", nameof(wellUWI));
+                throw RefusalException.Invalid("The well UWI is required.");
 
             _logger?.LogInformation(
                 "Analyzing decommissioning costs: well={Well}, depth={Depth:F0} ft, type={Type}, location={Location}",
@@ -153,7 +154,7 @@ namespace Beep.OilandGas.Decommissioning.Services
             double distanceToWaterSource)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI is required", nameof(wellUWI));
+                throw RefusalException.Invalid("The well UWI is required.");
 
             _logger?.LogInformation(
                 "Analyzing environmental remediation: well={Well}, location={Location}, dist. to water={Dist:F0} ft",
@@ -204,9 +205,9 @@ namespace Beep.OilandGas.Decommissioning.Services
             DateTime abandonmentDate)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                throw new ArgumentException("Well UWI is required", nameof(wellUWI));
+                throw RefusalException.Invalid("The well UWI is required.");
             if (string.IsNullOrWhiteSpace(jurisdiction))
-                throw new ArgumentException("Jurisdiction is required", nameof(jurisdiction));
+                throw RefusalException.Invalid("Choose the jurisdiction.");
 
             _logger?.LogInformation(
                 "Analyzing regulatory compliance: well={Well}, jurisdiction={Jurisdiction}, class={Class}",
@@ -257,9 +258,9 @@ namespace Beep.OilandGas.Decommissioning.Services
             Dictionary<string, double> wellDepths)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field ID is required", nameof(fieldId));
+                throw RefusalException.Invalid("The field ID is required.");
             if (wellUWIs == null || wellUWIs.Count == 0)
-                throw new ArgumentException("Well UWI list is required", nameof(wellUWIs));
+                throw RefusalException.Invalid("Choose at least one well to decommission.");
 
             _logger?.LogInformation(
                 "Analyzing portfolio decommissioning: field={Field}, wells={Count}", fieldId, wellUWIs.Count);

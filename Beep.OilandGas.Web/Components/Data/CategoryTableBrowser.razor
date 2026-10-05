@@ -7,6 +7,8 @@
 @using Beep.OilandGas.Web.Services
 @inject NavigationManager NavigationManager
 @inject ApiClient ApiClient
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <MudStack Spacing="0">
     @* Header row with search *@
@@ -33,7 +35,11 @@
         <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" />
     }
 
-    @if (_tables.Count == 0 && !_loading)
+    @if (_loadError is not null && !_loading)
+    {
+        <MudAlert Severity="Severity.Error">@_loadError</MudAlert>
+    }
+    else if (_tables.Count == 0 && !_loading)
     {
         <MudAlert Severity="Severity.Info">No tables found for this category.</MudAlert>
     }
@@ -105,6 +111,7 @@
     private List<TableInfoDto> _tables = new();
     private string _search  = string.Empty;
     private bool   _loading = true;
+    private string? _loadError;
     private string _categoryIcon = Icons.Material.Filled.TableChart;
 
     // ── Lifecycle ───────────────────────────────────────────────────────────────
@@ -122,6 +129,7 @@
     private async Task LoadTablesAsync()
     {
         _loading = true;
+        _loadError = null;
         _tables  = new List<TableInfoDto>();
 
         try
@@ -130,9 +138,15 @@
                 $"/api/ppdm39/metadata/categories/{Uri.EscapeDataString(CategoryId)}/tables")
                 ?? new List<TableInfoDto>();
         }
-        catch
+        catch (OilGasApiException answer)
         {
-            // silently keep empty list; the caller page shows a Snackbar if needed
+            _loadError = Answers.Explain(answer, "loading a category's tables", $"The {CategoryName} tables could not be loaded");
+        }
+        // A component answers every failure it meets with a sentence; the store keeps the exception. The list says it
+        // did not load, rather than that the category has no tables.
+        catch (Exception ex)
+        {
+            _loadError = Notifier.FailureText(ex, "loading a category's tables", $"The {CategoryName} tables could not be loaded");
         }
         finally
         {

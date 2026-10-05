@@ -37,21 +37,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
             [FromQuery] DateTime? asOfDate = null,
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                if (string.IsNullOrEmpty(propertyOrLeaseId))
-                        return BadRequest(new { error = "Property or lease ID is required." });
+            if (string.IsNullOrEmpty(propertyOrLeaseId))
+                    return BadRequest(new { error = "Property or lease ID is required." });
 
-                var date = asOfDate ?? DateTime.Now;
-                var interests = _service.OwnershipManager.GetOwnershipInterests(propertyOrLeaseId, date).ToList();
-                var dtos = interests.Select(MapToOwnershipInterestDto).ToList();
-                return Ok(dtos);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting ownership interests");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var date = asOfDate ?? DateTime.Now;
+            var interests = _service.OwnershipManager.GetOwnershipInterests(propertyOrLeaseId, date).ToList();
+            var dtos = interests.Select(MapToOwnershipInterestDto).ToList();
+            return Ok(dtos);
         }
 
         /// <summary>
@@ -63,39 +55,31 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
             [FromQuery] string connectionName = "PPDM39")
         {
             var userId = User.ActingUserId();
-            try
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var ownerInfo = new OWNER_INFORMATION
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+                OwnerId = Guid.NewGuid().ToString(),
+                OwnerName = request.OWNER.OWNER_NAME,
+                TaxId = request.OWNER.TAX_ID
+            };
 
-                var ownerInfo = new OWNER_INFORMATION
-                {
-                    OwnerId = Guid.NewGuid().ToString(),
-                    OwnerName = request.OWNER.OWNER_NAME,
-                    TaxId = request.OWNER.TAX_ID
-                };
+            var DIVISION_ORDER = _service.OwnershipManager.CreateDivisionOrder(
+                request.PROPERTY_OR_LEASE_ID,
+                ownerInfo,
+                request.WORKING_INTEREST,
+                request.NET_REVENUE_INTEREST,
+                request.EFFECTIVE_DATE);
 
-                var DIVISION_ORDER = _service.OwnershipManager.CreateDivisionOrder(
-                    request.PROPERTY_OR_LEASE_ID,
-                    ownerInfo,
-                    request.WORKING_INTEREST,
-                    request.NET_REVENUE_INTEREST,
-                    request.EFFECTIVE_DATE);
+            _service.OwnershipManager.ApproveDivisionOrder(DIVISION_ORDER.DIVISION_ORDER_ID, userId);
 
-                _service.OwnershipManager.ApproveDivisionOrder(DIVISION_ORDER.DIVISION_ORDER_ID, userId);
+            var interests = _service.OwnershipManager.GetOwnershipInterests(request.PROPERTY_OR_LEASE_ID, request.EFFECTIVE_DATE);
+            var interest = interests.FirstOrDefault(i => i.OWNER_ID == ownerInfo.OWNER_ID);
+            if (interest == null)
+                return StatusCode(500, new { error = "Failed to create ownership interest." });
 
-                var interests = _service.OwnershipManager.GetOwnershipInterests(request.PROPERTY_OR_LEASE_ID, request.EFFECTIVE_DATE);
-                var interest = interests.FirstOrDefault(i => i.OWNER_ID == ownerInfo.OWNER_ID);
-                if (interest == null)
-                    return StatusCode(500, new { error = "Failed to create ownership interest." });
-
-                return Ok(MapToOwnershipInterestDto(interest));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error registering ownership interest");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(MapToOwnershipInterestDto(interest));
         }
 
         private OWNERSHIP_INTEREST MapToOwnershipInterestDto(OWNERSHIP_INTEREST interest)

@@ -157,17 +157,11 @@ namespace Beep.OilandGas.Drawing.Rendering
                 return configuration.LayerColors[layer.LayerName];
             }
 
-            // Check color code
-            if (!string.IsNullOrEmpty(layer.ColorCode) && layer.ColorCode.StartsWith("#"))
+            // Check color code; one that is not a colour falls through to the lithology palette (asked, not caught)
+            if (!string.IsNullOrEmpty(layer.ColorCode) && layer.ColorCode.StartsWith("#") &&
+                SKColor.TryParse(layer.ColorCode, out var parsedColor))
             {
-                try
-                {
-                    return SKColor.Parse(layer.ColorCode);
-                }
-                catch
-                {
-                    // Fall through to lithology palette
-                }
+                return parsedColor;
             }
 
             // Use lithology color palette if enabled

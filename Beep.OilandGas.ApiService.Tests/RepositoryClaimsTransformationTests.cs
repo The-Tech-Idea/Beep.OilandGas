@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Beep.Foundation.IdentityServer.Shared.Identity;
 using Beep.OilandGas.ApiService.Services;
+using Beep.OilandGas.ApiService.Tests.Infrastructure;
 using Beep.OilandGas.Repository;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -59,12 +60,16 @@ public class RepositoryClaimsTransformationTests
         if (state == "outage") lookup.ThrowsAsync(new InvalidOperationException("unavailable"));
         else lookup.ReturnsAsync(state == "gone" ? null : new RepositoryUserAccess("local-id", false, ["Administrator"], ["Read"]));
 
-        var result = await Transformation(access.Object).TransformAsync(Resolved("local-id"));
+        var failures = new RecordingFailureReporter();
+        var result = await Transformation(access.Object, failures).TransformAsync(Resolved("local-id"));
 
         Assert.Empty(result.FindAll(ClaimTypes.Role));
         Assert.Empty(result.FindAll(RepositoryRolesClaimsTransformation.Permission));
         Assert.False(RepositoryAuthorization.IsActiveAccount(result));
         Assert.True(result.Identity!.IsAuthenticated);
+        // OILGAS-CATCH-01: a read that failed is reported, so its refusal can be told from an account that is off or gone.
+        if (state == "outage") Assert.Equal("unavailable", Assert.Single(failures.Reports).Exception.Message);
+        else Assert.Empty(failures.Reports);
     }
 
     [Fact]
@@ -97,8 +102,8 @@ public class RepositoryClaimsTransformationTests
         access.VerifyNoOtherCalls();
     }
 
-    private static RepositoryRolesClaimsTransformation Transformation(IRepositoryAccessService access) =>
-        new(access, NullLogger<RepositoryRolesClaimsTransformation>.Instance);
+    private static RepositoryRolesClaimsTransformation Transformation(IRepositoryAccessService access,
+        RecordingFailureReporter? failures = null) => new(access, failures ?? new RecordingFailureReporter());
 
     private static Mock<IRepositoryAccessService> Access(RepositoryUserAccess answer)
     {

@@ -273,6 +273,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
         public static ALLOCATION_RESULT AllocateToWells(decimal totalVolume, List<WellAllocationData> wells, ProductionAllocationMethod method)
         {
+            // OILGAS-CATCH-01: the cost-allocation methods fell through to working interest, so a request naming one was
+            // answered with an allocation it did not ask for. They allocate costs, not well production, and are refused.
+            if (!AllocatesWellProduction(method))
+                throw RefusalException.Invalid(
+                    $"The {method} method allocates costs, not well production. Choose Equal, ProRataWorkingInterest, ProRataNetRevenueInterest, Measured or Estimated.");
+
             wells ??= new List<WellAllocationData>();
 
             if (wells.Count == 0)
@@ -285,15 +291,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     Details = new List<ALLOCATION_DETAIL>()
                 };
 
-            var basisTotal = method switch
-            {
-                ProductionAllocationMethod.ProRataWorkingInterest => wells.Sum(well => well.WorkingInterest ?? 0m),
-                ProductionAllocationMethod.ProRataNetRevenueInterest => wells.Sum(well => well.NetRevenueInterest ?? 0m),
-                ProductionAllocationMethod.Measured => wells.Sum(well => well.MeasuredProduction ?? 0m),
-                ProductionAllocationMethod.Estimated => wells.Sum(well => well.EstimatedProduction ?? 0m),
-                ProductionAllocationMethod.Equal => wells.Count,
-                _ => wells.Sum(well => well.WorkingInterest ?? 0m)
-            };
+            var basisTotal = wells.Sum(well => WellBasis(well, method));
 
             if (basisTotal <= 0m)
                 basisTotal = wells.Count;
@@ -304,15 +302,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             for (var index = 0; index < wells.Count; index++)
             {
                 var well = wells[index];
-                var basis = method switch
-                {
-                    ProductionAllocationMethod.ProRataWorkingInterest => well.WorkingInterest ?? 0m,
-                    ProductionAllocationMethod.ProRataNetRevenueInterest => well.NetRevenueInterest ?? 0m,
-                    ProductionAllocationMethod.Measured => well.MeasuredProduction ?? 0m,
-                    ProductionAllocationMethod.Estimated => well.EstimatedProduction ?? 0m,
-                    ProductionAllocationMethod.Equal => 1m,
-                    _ => well.WorkingInterest ?? 0m
-                };
+                var basis = WellBasis(well, method);
 
                 if (basisTotal == wells.Count && basis <= 0m)
                     basis = 1m;
@@ -496,5 +486,35 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _editor, _commonColumnHandler, _defaults, _metadata,
                 typeof(T), connection, tableName);
         }
+
+        /// <summary>Whether <paramref name="method"/> allocates well production (the rest allocate costs).</summary>
+        private static bool AllocatesWellProduction(ProductionAllocationMethod method) => method switch
+        {
+            ProductionAllocationMethod.Equal => true,
+            ProductionAllocationMethod.ProRataWorkingInterest => true,
+            ProductionAllocationMethod.ProRataNetRevenueInterest => true,
+            ProductionAllocationMethod.Measured => true,
+            ProductionAllocationMethod.Estimated => true,
+            ProductionAllocationMethod.Reciprocal => false,
+            ProductionAllocationMethod.ActivityBasedCosting => false,
+            ProductionAllocationMethod.StepDown => false,
+            ProductionAllocationMethod.DirectAllocation => false
+        };
+
+        /// <summary>A well's share basis under a production allocation method.</summary>
+        private static decimal WellBasis(WellAllocationData well, ProductionAllocationMethod method) => method switch
+        {
+            ProductionAllocationMethod.ProRataWorkingInterest => well.WorkingInterest ?? 0m,
+            ProductionAllocationMethod.ProRataNetRevenueInterest => well.NetRevenueInterest ?? 0m,
+            ProductionAllocationMethod.Measured => well.MeasuredProduction ?? 0m,
+            ProductionAllocationMethod.Estimated => well.EstimatedProduction ?? 0m,
+            ProductionAllocationMethod.Equal => 1m,
+            // AllocateToWells refuses these before any basis is asked for.
+            ProductionAllocationMethod.Reciprocal
+                or ProductionAllocationMethod.ActivityBasedCosting
+                or ProductionAllocationMethod.StepDown
+                or ProductionAllocationMethod.DirectAllocation
+                => throw new InvalidOperationException($"The cost-allocation method {method} has no well production basis.")
+        };
     }
 }

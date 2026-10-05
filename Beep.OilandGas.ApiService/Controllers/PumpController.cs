@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data.PumpPerformance;
 using Beep.OilandGas.PumpPerformance.Calculations;
 using Microsoft.AspNetCore.Authorization;
@@ -51,32 +52,19 @@ namespace Beep.OilandGas.ApiService.Controllers
                 return BadRequest(new { error = "Pump design request is required." });
             }
 
-            try
-            {
-                var normalized = NormalizeRequest(request);
-                ValidateRequest(normalized);
+            var normalized = NormalizeRequest(request);
+            ValidateRequest(normalized);
 
-                var result = executor(normalized);
-                StampResult(normalized, result, operation);
+            var result = executor(normalized);
+            StampResult(normalized, result, operation);
 
-                _logger.LogInformation(
-                    "Pump performance {Operation} completed for area {AreaId} with desired flow {DesiredFlowRate}",
-                    operation,
-                    normalized.AREA_ID,
-                    normalized.DESIRED_FLOW_RATE);
+            _logger.LogInformation(
+                "Pump performance {Operation} completed for area {AreaId} with desired flow {DesiredFlowRate}",
+                operation,
+                normalized.AREA_ID,
+                normalized.DESIRED_FLOW_RATE);
 
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Invalid pump performance {Operation} request", operation);
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Pump performance {Operation} failed", operation);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(result);
         }
 
         private static ESP_DESIGN_RESULT DesignPump(ESP_DESIGN_PROPERTIES request)
@@ -146,16 +134,16 @@ namespace Beep.OilandGas.ApiService.Controllers
         private static void ValidateRequest(ESP_DESIGN_PROPERTIES request)
         {
             if (request.DESIRED_FLOW_RATE <= 0)
-                throw new ArgumentException("Desired flow rate must be positive.", nameof(request.DESIRED_FLOW_RATE));
+                throw RefusalException.Invalid("Desired flow rate must be positive.");
 
             if (request.WELL_DEPTH <= 0)
-                throw new ArgumentException("Well depth must be positive.", nameof(request.WELL_DEPTH));
+                throw RefusalException.Invalid("Well depth must be positive.");
 
             if (request.PUMP_SETTING_DEPTH <= 0 || request.PUMP_SETTING_DEPTH > request.WELL_DEPTH)
-                throw new ArgumentException("Pump setting depth must be positive and cannot exceed well depth.", nameof(request.PUMP_SETTING_DEPTH));
+                throw RefusalException.Invalid("Pump setting depth must be positive and cannot exceed well depth.");
 
             if (request.CASING_DIAMETER <= 0 || request.TUBING_DIAMETER <= 0)
-                throw new ArgumentException("Tubing and casing diameters must be positive.");
+                throw RefusalException.Invalid("Tubing and casing diameters must be positive.");
         }
 
         private static void StampResult(ESP_DESIGN_PROPERTIES request, ESP_DESIGN_RESULT result, string operation)

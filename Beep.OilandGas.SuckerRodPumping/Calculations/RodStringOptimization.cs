@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.SuckerRodPumping;
 using Beep.OilandGas.SuckerRodPumping.Constants;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.SuckerRodPumping.Calculations
 {
@@ -94,8 +95,8 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
             int numberOfTapers = 3,
             string gradePreference = SuckerRodConstants.RodGradeAuto)
         {
-            if (totalDepth <= 0) throw new ArgumentOutOfRangeException(nameof(totalDepth));
-            if (pumpLoadLbs <= 0) throw new ArgumentOutOfRangeException(nameof(pumpLoadLbs));
+            if (totalDepth <= 0) throw RefusalException.Invalid("Total well depth must be greater than zero.");
+            if (pumpLoadLbs <= 0) throw RefusalException.Invalid("Pump load must be greater than zero.");
             numberOfTapers = Math.Max(1, Math.Min(numberOfTapers, 4));
 
             // Select candidate diameters (smallest required up-to standard sizes)

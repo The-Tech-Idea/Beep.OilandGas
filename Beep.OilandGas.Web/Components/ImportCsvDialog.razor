@@ -1,5 +1,8 @@
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
+@inject IFailureReporter Failures
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <MudDialog>
     <DialogContent>
@@ -152,10 +155,17 @@
 
     private async Task ParseCsvFile(IBrowserFile file)
     {
+        const long maxAllowedSize = 10 * 1024 * 1024; // 10MB max
+        if (file.Size > maxAllowedSize)
+        {
+            Snackbar.Add($"{file.Name} is larger than 10 MB; choose a smaller file.", Severity.Warning);
+            return;
+        }
+
         _isProcessing = true;
         try
         {
-            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB max
+            using var stream = file.OpenReadStream(maxAllowedSize);
             using var reader = new StreamReader(stream, Encoding.UTF8);
             
             var lines = new List<string>();
@@ -210,9 +220,11 @@
                 StateHasChanged();
             }
         }
+        // Reading the browser's file can fail in many ways (the upload interrupted, the circuit lost); the person is told
+        // with the reference, and the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Error parsing CSV file: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "reading an uploaded CSV file", "The CSV file could not be read");
         }
         finally
         {
@@ -314,10 +326,15 @@
                 Snackbar.Add("All foreign key references validated successfully", Severity.Success);
             }
         }
+        // A validation that could not run does not block the import; the person is told it was not checked.
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "validating a CSV file's foreign keys", "The foreign key references were not checked"), Severity.Warning);
+        }
+        // A dialog answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Error validating foreign keys: {ex.Message}", Severity.Warning);
-            // Don't block import if validation fails - just warn
+            Notifier.Failure(ex, "validating a CSV file's foreign keys", "The foreign key references were not checked", FailureSeverity.Degraded);
         }
         finally
         {
@@ -334,6 +351,7 @@
         }
 
         _isProcessing = true;
+        var totalImported = 0;
         try
         {
             var tableName = TableMetadata.TableName;
@@ -345,68 +363,96 @@
                 return;
             }
 
-            // Convert CSV rows to entity objects
-            var entities = new List<object>();
             var entityType = GetEntityType(tableName);
-
-            foreach (var row in _previewData)
+            if (entityType == null)
             {
-                try
+                Snackbar.Add($"No record type is known for table {tableName}; nothing was imported.", Severity.Warning);
+                return;
+            }
+
+            // Convert CSV rows to entity objects. A value its column cannot hold is not skipped — the row would be
+            // imported with the column's default — so the rows are named and nothing is imported until they are fixed.
+            var entities = new List<(int RowNumber, object Entity)>();
+            for (var index = 0; index < _previewData.Count; index++)
+            {
+                var rowNumber = index + 2; // the header is row 1
+                var (entity, unreadable) = CreateEntityFromRow(_previewData[index], entityType);
+                if (unreadable.Count > 0)
                 {
-                    var entity = CreateEntityFromRow(row, entityType);
-                    if (entity != null)
+                    _importErrors.Add(new ImportError
                     {
-                        entities.Add(entity);
-                    }
+                        RowNumber = rowNumber,
+                        Message = $"These values could not be read as their column types: {string.Join(", ", unreadable)}"
+                    });
                 }
-                catch (Exception ex)
+                else if (entity != null)
                 {
-                    Snackbar.Add($"Error converting row: {ex.Message}", Severity.Warning);
+                    entities.Add((rowNumber, entity));
                 }
             }
 
-            if (entities.Any())
+            if (_importErrors.Any())
             {
-                // Import in batches
-                var batchSize = 100;
-                var totalImported = 0;
+                _hasErrors = true;
+                Snackbar.Add($"{_importErrors.Count} row(s) have values that could not be read; nothing was imported. Fix them and import again.", Severity.Warning);
+                return;
+            }
 
-                for (int i = 0; i < entities.Count; i += batchSize)
+            // Import in batches, through the table's batch insert while the API offers one, else row by row.
+            var batchSize = 100;
+            var batchInsert = true;
+            var refused = 0;
+
+            for (int i = 0; i < entities.Count; i += batchSize)
+            {
+                var batch = entities.Skip(i).Take(batchSize).ToList();
+
+                if (batchInsert && await TryInsertBatchAsync(apiEndpoint, batch.Select(row => row.Entity).ToList()))
                 {
-                    var batch = entities.Skip(i).Take(batchSize).ToList();
-                    
-                    // Use batch insert if available, otherwise insert one by one
+                    totalImported += batch.Count;
+                    continue;
+                }
+
+                batchInsert = false;
+                foreach (var (rowNumber, entity) in batch)
+                {
                     try
                     {
-                        // Try batch insert endpoint
-                        await ApiClient.PostAsync<object, object>($"/api/{apiEndpoint}/batch", batch);
-                        totalImported += batch.Count;
+                        await ApiClient.PostAsync<object, object>($"/api/{apiEndpoint}", entity);
+                        totalImported++;
                     }
-                    catch
+                    // A row the API refused is named with its reason, and the other rows are still imported; a failure
+                    // of the API or of the connection stops the import below.
+                    catch (OilGasApiException answer) when (!answer.IsServerFailure)
                     {
-                        // Fallback to individual inserts
-                        foreach (var entity in batch)
+                        refused++;
+                        _importErrors.Add(new ImportError
                         {
-                            try
-                            {
-                                await ApiClient.PostAsync<object, object>($"/api/{apiEndpoint}", entity);
-                                totalImported++;
-                            }
-                            catch (Exception ex)
-                            {
-                                Snackbar.Add($"Error importing record: {ex.Message}", Severity.Warning);
-                            }
-                        }
+                            RowNumber = rowNumber,
+                            Message = Answers.Explain(answer, "importing a CSV row", $"Row {rowNumber} was not imported")
+                        });
                     }
                 }
-
-                Snackbar.Add($"Successfully imported {totalImported} records", Severity.Success);
-                MudDialog.Close(DialogResult.Ok(true));
             }
+
+            if (refused > 0)
+            {
+                _hasErrors = true;
+                Snackbar.Add($"Imported {totalImported} of {entities.Count} records; {refused} were refused. The errors below name them.", Severity.Warning);
+                return;
+            }
+
+            Snackbar.Add($"Successfully imported {totalImported} records", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
         }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "importing a CSV file", $"The import stopped after {totalImported} records"), Severity.Error);
+        }
+        // A dialog answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Error importing data: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "importing a CSV file", $"The import stopped after {totalImported} records");
         }
         finally
         {
@@ -414,40 +460,55 @@
         }
     }
 
-    private object? CreateEntityFromRow(Dictionary<string, string> row, Type? entityType)
+    /// <summary>
+    /// Inserts <paramref name="batch"/> through the table's batch endpoint. False when the API has none (404, 405) — the
+    /// caller then inserts row by row; any other answer is the import's to report.
+    /// </summary>
+    private async Task<bool> TryInsertBatchAsync(string apiEndpoint, List<object> batch)
     {
-        if (entityType == null) return null;
+        try
+        {
+            await ApiClient.PostAsync<object, object>($"/api/{apiEndpoint}/batch", batch);
+            return true;
+        }
+        catch (OilGasApiException missing)
+            when (missing.StatusCode is System.Net.HttpStatusCode.NotFound or System.Net.HttpStatusCode.MethodNotAllowed)
+        {
+            Failures.ReportHandled(
+                missing,
+                "inserting CSV rows through the table's batch endpoint",
+                consequence: "the API offers no batch insert for this table; the rows are inserted one by one",
+                FailureSeverity.Degraded);
+            return false;
+        }
+    }
 
+    /// <returns>The record, and the columns whose values it could not hold (the record is not imported when any).</returns>
+    private (object? Entity, List<string> Unreadable) CreateEntityFromRow(Dictionary<string, string> row, Type entityType)
+    {
+        var unreadable = new List<string>();
         var entity = Activator.CreateInstance(entityType);
-        if (entity == null) return null;
+        if (entity == null) return (null, unreadable);
 
         var properties = entityType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
         foreach (var kvp in row)
         {
-            var prop = properties.FirstOrDefault(p => 
+            var prop = properties.FirstOrDefault(p =>
                 p.Name.Equals(kvp.Key, StringComparison.OrdinalIgnoreCase) ||
                 p.Name.Equals(kvp.Key.Replace(" ", "_"), StringComparison.OrdinalIgnoreCase));
 
             if (prop != null && prop.CanWrite)
             {
-                try
-                {
-                    var value = ConvertValue(kvp.Value, prop.PropertyType);
+                if (Services.ValueConverter.TryConvertValue(kvp.Value, prop.PropertyType, out var value))
                     prop.SetValue(entity, value);
-                }
-                catch
-                {
-                    // Skip invalid values
-                }
+                else
+                    unreadable.Add($"{kvp.Key} '{kvp.Value}'");
             }
         }
 
-        return entity;
+        return (entity, unreadable);
     }
-
-    private object? ConvertValue(string value, Type targetType)
-        => Services.ValueConverter.ConvertValue(value, targetType);
 
     private Type? GetEntityType(string tableName)
     {

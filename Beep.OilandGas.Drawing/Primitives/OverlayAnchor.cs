@@ -37,7 +37,7 @@ namespace Beep.OilandGas.Drawing.Primitives
                     canvasBounds.Bottom - margin - height,
                     canvasBounds.Left + margin + width,
                     canvasBounds.Bottom - margin),
-                _ => new SKRect(
+                OverlayAnchor.BottomRight => new SKRect(
                     canvasBounds.Right - margin - width,
                     canvasBounds.Bottom - margin - height,
                     canvasBounds.Right - margin,

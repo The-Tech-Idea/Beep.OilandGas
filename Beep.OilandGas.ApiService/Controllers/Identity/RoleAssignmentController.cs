@@ -1,7 +1,10 @@
+using Beep.OilandGas.ApiService.Data;
 using Beep.OilandGas.ApiService.Services;
 using TheTechIdea.Data.OilGas;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Controllers.Identity;
 
@@ -12,13 +15,16 @@ public class RoleAssignmentController : ControllerBase
 {
     private readonly RepositoryRoleAssignmentService _roleService;
     private readonly ILogger<RoleAssignmentController> _logger;
+    private readonly IFailureReporter _failures;
 
     public RoleAssignmentController(
         RepositoryRoleAssignmentService roleService,
-        ILogger<RoleAssignmentController> logger)
+        ILogger<RoleAssignmentController> logger,
+        IFailureReporter failures)
     {
         _roleService = roleService;
         _logger = logger;
+        _failures = failures;
     }
 
     // ── Catalog ─────────────────────────────────────────────────────────────
@@ -27,24 +33,14 @@ public class RoleAssignmentController : ControllerBase
     [HttpGet("catalog")]
     public async Task<IActionResult> GetRoleCatalog()
     {
-        try { return Ok(await _roleService.GetRoleCatalogAsync()); }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to get role catalog");
-            return StatusCode(500, new { error = "An internal error occurred." });
-        }
+        return Ok(await _roleService.GetRoleCatalogAsync()); 
     }
 
     /// <summary>Get the full permission catalog.</summary>
     [HttpGet("permissions/catalog")]
     public async Task<IActionResult> GetPermissionCatalog()
     {
-        try { return Ok(await _roleService.GetPermissionCatalogAsync()); }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to get permission catalog");
-            return StatusCode(500, new { error = "An internal error occurred." });
-        }
+        return Ok(await _roleService.GetPermissionCatalogAsync()); 
     }
 
     // ── Role assignments ─────────────────────────────────────────────────────
@@ -55,12 +51,7 @@ public class RoleAssignmentController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(targetUserId))
             return BadRequest(new { error = "User ID is required." });
-        try { return Ok(await _roleService.GetUserRoleAssignmentsAsync(targetUserId)); }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to get role assignments for user {UserId}", targetUserId);
-            return StatusCode(500, new { error = "An internal error occurred." });
-        }
+        return Ok(await _roleService.GetUserRoleAssignmentsAsync(targetUserId)); 
     }
 
     /// <summary>Assign a role to a user (Administrator; the route id names the subject, the actor is the caller).</summary>
@@ -76,14 +67,8 @@ public class RoleAssignmentController : ControllerBase
                 targetUserId, request.RoleId, actor, request.Reason);
             return Ok(assignment);
         }
-        catch (ArgumentException exception) { return BadRequest(new { error = exception.Message }); }
-        catch (Microsoft.EntityFrameworkCore.DbUpdateException) { return Conflict(new { error = "The grant changed. Reload before retrying." }); }
-        catch (InvalidOperationException exception) { return Conflict(new { error = exception.Message }); }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to assign role {RoleId} to user {UserId}", request?.RoleId, targetUserId);
-            return StatusCode(500, new { error = "An internal error occurred." });
-        }
+        catch (DbUpdateConcurrencyException changed) { return GrantChanged(changed, "assigning a role"); }
+        catch (DbUpdateException duplicate) when (UniqueKeyViolation.Is(duplicate)) { return GrantChanged(duplicate, "assigning a role"); }
     }
 
     /// <summary>Revoke a role assignment by its record ID.</summary>
@@ -99,14 +84,8 @@ public class RoleAssignmentController : ControllerBase
             if (!ok) return NotFound(new { message = $"Assignment {userRoleId} not found." });
             return Ok(new { message = "Role assignment revoked." });
         }
-        catch (ArgumentException exception) { return BadRequest(new { error = exception.Message }); }
-        catch (Microsoft.EntityFrameworkCore.DbUpdateException) { return Conflict(new { error = "The grant changed. Reload before retrying." }); }
-        catch (InvalidOperationException exception) { return Conflict(new { error = exception.Message }); }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to revoke role assignment {UserRoleId}", userRoleId);
-            return StatusCode(500, new { error = "An internal error occurred." });
-        }
+        catch (DbUpdateConcurrencyException changed) { return GrantChanged(changed, "revoking a role assignment"); }
+        catch (DbUpdateException duplicate) when (UniqueKeyViolation.Is(duplicate)) { return GrantChanged(duplicate, "revoking a role assignment"); }
     }
 
     // ── Role permissions ─────────────────────────────────────────────────────
@@ -117,12 +96,7 @@ public class RoleAssignmentController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(roleId))
             return BadRequest(new { error = "Role ID is required." });
-        try { return Ok(await _roleService.GetRolePermissionsAsync(roleId)); }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to get permissions for role {RoleId}", roleId);
-            return StatusCode(500, new { error = "An internal error occurred." });
-        }
+        return Ok(await _roleService.GetRolePermissionsAsync(roleId)); 
     }
 
     /// <summary>Grant a permission to a role.</summary>
@@ -138,15 +112,8 @@ public class RoleAssignmentController : ControllerBase
                 roleId, request.PermissionId, actor);
             return Ok(grant);
         }
-        catch (ArgumentException exception) { return BadRequest(new { error = exception.Message }); }
-        catch (Microsoft.EntityFrameworkCore.DbUpdateException) { return Conflict(new { error = "The grant changed. Reload before retrying." }); }
-        catch (InvalidOperationException exception) { return Conflict(new { error = exception.Message }); }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to grant permission {PermId} to role {RoleId}",
-                request?.PermissionId, roleId);
-            return StatusCode(500, new { error = "An internal error occurred." });
-        }
+        catch (DbUpdateConcurrencyException changed) { return GrantChanged(changed, "granting a permission to a role"); }
+        catch (DbUpdateException duplicate) when (UniqueKeyViolation.Is(duplicate)) { return GrantChanged(duplicate, "granting a permission to a role"); }
     }
 
     /// <summary>Revoke a permission from a role by grant record ID.</summary>
@@ -162,13 +129,16 @@ public class RoleAssignmentController : ControllerBase
             if (!ok) return NotFound(new { message = $"Grant {rolePermissionId} not found." });
             return Ok(new { message = "Permission grant revoked." });
         }
-        catch (ArgumentException exception) { return BadRequest(new { error = exception.Message }); }
-        catch (Microsoft.EntityFrameworkCore.DbUpdateException) { return Conflict(new { error = "The grant changed. Reload before retrying." }); }
-        catch (InvalidOperationException exception) { return Conflict(new { error = exception.Message }); }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to revoke permission grant {RolePermissionId}", rolePermissionId);
-            return StatusCode(500, new { error = "An internal error occurred." });
-        }
+        catch (DbUpdateConcurrencyException changed) { return GrantChanged(changed, "revoking a permission from a role"); }
+        catch (DbUpdateException duplicate) when (UniqueKeyViolation.Is(duplicate)) { return GrantChanged(duplicate, "revoking a permission from a role"); }
+    }
+
+    // A grant somebody else changed first — a stale version, or the same row written twice — is the administrator's to
+    // reload. Any other refused save is a failure and goes on to the API's handler (OILGAS-CATCH-01: every refused save was
+    // answered "the grant changed", unreported).
+    private ConflictObjectResult GrantChanged(DbUpdateException refused, string operation)
+    {
+        _failures.ReportHandled(refused, operation, "nothing is changed; the administrator is told to reload", FailureSeverity.Degraded);
+        return Conflict(new { error = "The grant changed. Reload before retrying." });
     }
 }

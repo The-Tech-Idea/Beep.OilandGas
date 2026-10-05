@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
@@ -50,7 +51,7 @@ namespace Beep.OilandGas.LifeCycle.Services
             string connectionName = "PPDM39")
         {
             if (wellIdentifiers == null || wellIdentifiers.Count == 0)
-                throw new ArgumentException("At least one well identifier is required", nameof(wellIdentifiers));
+                throw RefusalException.Invalid("Choose at least one well to compare.");
 
             connectionName = connectionName ?? _defaultConnectionName;
 
@@ -71,7 +72,7 @@ namespace Beep.OilandGas.LifeCycle.Services
             }
 
             if (wells.Count == 0)
-                throw new InvalidOperationException("No wells found for comparison");
+                throw RefusalException.NotFound("None of the chosen wells was found.");
 
             // Build comparison
             return await BuildComparisonAsync(wells, fieldNames!, connectionName);
@@ -85,7 +86,7 @@ namespace Beep.OilandGas.LifeCycle.Services
             List<string>? fieldNames = null)
         {
             if (wellComparisons == null || wellComparisons.Count == 0)
-                throw new ArgumentException("At least one well comparison is required", nameof(wellComparisons));
+                throw RefusalException.Invalid("Choose at least one well to compare.");
 
             var wells = new List<(WELL well, string dataSource)>();
 
@@ -104,7 +105,7 @@ namespace Beep.OilandGas.LifeCycle.Services
             }
 
             if (wells.Count == 0)
-                throw new InvalidOperationException("No wells found for comparison");
+                throw RefusalException.NotFound("None of the chosen wells was found.");
 
             // Build comparison with data source information
             return await BuildComparisonFromMultipleSourcesAsync(wells, fieldNames!);
@@ -447,29 +448,23 @@ namespace Beep.OilandGas.LifeCycle.Services
         private async Task<object?> GetPrimaryKeyValueAsync(WELL well)
         {
             // Known primary key for WELL is UWI (confirmed by PPDM 3.9 schema).
-            // Access via reflection for consistency with the dynamic comparison system.
-            try
-            {
-                var metadata = await _metadata.GetTableMetadataAsync("WELL").ConfigureAwait(false);
-                if (metadata == null)
-                    return typeof(WELL).GetProperty("UWI")?.GetValue(well);
-
-                var pkColumns = metadata.PrimaryKeyColumn.Split(',').Select(c => c.Trim()).ToList();
-                if (pkColumns.Count == 0)
-                    return null;
-
-                var firstPkColumn = pkColumns[0];
-                var property = typeof(WELL).GetProperty(firstPkColumn, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-                if (property != null)
-                    return property.GetValue(well);
-
-                return null;
-            }
-            catch
-            {
-                // Ultimate fallback: try UWI directly
+            // Access via reflection for consistency with the dynamic comparison system. Metadata that names no primary key
+            // is asked about, not caught; a failure to read the metadata reaches the caller (it had been answered with the
+            // UWI as though the metadata had said so).
+            var metadata = await _metadata.GetTableMetadataAsync("WELL").ConfigureAwait(false);
+            if (metadata == null || string.IsNullOrWhiteSpace(metadata.PrimaryKeyColumn))
                 return typeof(WELL).GetProperty("UWI")?.GetValue(well);
-            }
+
+            var pkColumns = metadata.PrimaryKeyColumn.Split(',').Select(c => c.Trim()).ToList();
+            if (pkColumns.Count == 0)
+                return null;
+
+            var firstPkColumn = pkColumns[0];
+            var property = typeof(WELL).GetProperty(firstPkColumn, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            if (property != null)
+                return property.GetValue(well);
+
+            return null;
         }
 
     }

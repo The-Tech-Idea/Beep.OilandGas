@@ -24,7 +24,7 @@ public class MigrationBindingGuardTests
     {
         var editor = new Mock<IDMEEditor>(MockBehavior.Strict);
         var service = new PPDM39SetupService(editor.Object, NullLogger<PPDM39SetupService>.Instance,
-            Mock.Of<ICommonColumnHandler>(), Mock.Of<IPPDM39DefaultsRepository>(), Mock.Of<IPPDMMetadataRepository>());
+            Mock.Of<ICommonColumnHandler>(), Mock.Of<IPPDM39DefaultsRepository>(), Mock.Of<IPPDMMetadataRepository>(), new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         var request = new SchemaMigrationPlanRequest { ConnectionName = "module-db", ModuleIds = ["PRODUCTION"] };
         if (scenario == "missing-modules") request.ModuleIds = null;
         if (scenario == "empty-modules") request.ModuleIds = [];
@@ -49,7 +49,7 @@ public class MigrationBindingGuardTests
             ? null : (_, _) => Task.FromResult("current-version");
         var service = new PPDM39SetupService(editor.Object, NullLogger<PPDM39SetupService>.Instance,
             Mock.Of<ICommonColumnHandler>(), Mock.Of<IPPDM39DefaultsRepository>(), Mock.Of<IPPDMMetadataRepository>(),
-            migrationBindingFingerprint: validator);
+            new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), migrationBindingFingerprint: validator);
         var modules = scenario == "missing-modules" ? null : scenario == "empty-modules" ? Array.Empty<string>() : new[] { "PRODUCTION" };
         var fingerprint = scenario == "missing-fingerprint" ? null : scenario == "blank-fingerprint" ? " " : "current-version";
         var id = AddSession(fingerprint, modules, scenario != "missing-entities");
@@ -72,7 +72,7 @@ public class MigrationBindingGuardTests
         var editor = new Mock<IDMEEditor>(MockBehavior.Strict);
         var service = new PPDM39SetupService(editor.Object, NullLogger<PPDM39SetupService>.Instance,
             Mock.Of<ICommonColumnHandler>(), Mock.Of<IPPDM39DefaultsRepository>(), Mock.Of<IPPDMMetadataRepository>(),
-            migrationBindingFingerprint: (_, _) => unavailable
+            new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), migrationBindingFingerprint: (_, _) => unavailable
                 ? Task.FromException<string>(new InvalidOperationException("Repository unavailable")) : Task.FromResult("new-version"));
         var id = AddSession("old-version");
         var approval = await service.ApproveSchemaMigrationPlanAsync(new() { PlanId = id, ApprovedBy = "actor" });
@@ -93,7 +93,7 @@ public class MigrationBindingGuardTests
     {
         var service = new PPDM39SetupService(Mock.Of<IDMEEditor>(), NullLogger<PPDM39SetupService>.Instance,
             Mock.Of<ICommonColumnHandler>(), Mock.Of<IPPDM39DefaultsRepository>(), Mock.Of<IPPDMMetadataRepository>(),
-            migrationBindingFingerprint: (ids, connection) =>
+            new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), migrationBindingFingerprint: (ids, connection) =>
             {
                 Assert.Equal("PRODUCTION", Assert.Single(ids));
                 Assert.Equal("module-db", connection);

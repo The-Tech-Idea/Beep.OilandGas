@@ -92,9 +92,9 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(salesContractId))
                 throw new ArgumentNullException(nameof(salesContractId));
             if (totalPrice <= 0m)
-                throw new InvalidOperationException("Total price must be positive");
+                throw RefusalException.Invalid("Total price must be positive.");
             if (allocationWeights == null || allocationWeights.Count == 0)
-                throw new ArgumentException("Allocation weights are required", nameof(allocationWeights));
+                throw RefusalException.Invalid("Allocation weights are required.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
@@ -102,7 +102,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             var totalWeight = allocationWeights.Values.Sum();
             if (totalWeight <= 0m)
-                throw new InvalidOperationException("Allocation weights must total more than zero");
+                throw RefusalException.Invalid("Allocation weights must total more than zero.");
 
             var updated = new List<CONTRACT_PERFORMANCE_OBLIGATION>();
 
@@ -110,7 +110,7 @@ namespace Beep.OilandGas.Accounting.Services
             {
                 var obligation = await repo.GetByIdAsync(kvp.Key) as CONTRACT_PERFORMANCE_OBLIGATION;
                 if (obligation == null || !string.Equals(obligation.SALES_CONTRACT_ID, salesContractId, StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidOperationException($"Performance obligation not found for contract: {kvp.Key}");
+                    throw RefusalException.NotFound($"Performance obligation {kvp.Key} was not found on sales contract {salesContractId}.");
 
                 obligation.ALLOCATED_PRICE = Math.Round(totalPrice * (kvp.Value / totalWeight), 2);
                 obligation.ROW_CHANGED_BY = userId;
@@ -138,9 +138,9 @@ namespace Beep.OilandGas.Accounting.Services
             var repo = await GetRepoAsync<CONTRACT_PERFORMANCE_OBLIGATION>("CONTRACT_PERFORMANCE_OBLIGATION", cn);
             var obligation = await repo.GetByIdAsync(obligationId) as CONTRACT_PERFORMANCE_OBLIGATION;
             if (obligation == null)
-                throw new InvalidOperationException($"Performance obligation not found: {obligationId}");
+                throw RefusalException.NotFound($"Performance obligation {obligationId} was not found.");
             if (!obligation.ALLOCATED_PRICE.HasValue || obligation.ALLOCATED_PRICE.Value <= 0m)
-                throw new InvalidOperationException("Allocated price is required to satisfy obligation");
+                throw RefusalException.Conflict("The performance obligation has no allocated price; allocate the transaction price before satisfying it.");
 
             var amount = obligation.ALLOCATED_PRICE.Value;
             var debitAccount = billCustomer
@@ -175,7 +175,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(salesContractId))
                 throw new ArgumentNullException(nameof(salesContractId));
             if (amount <= 0m)
-                throw new InvalidOperationException("Amount must be positive");
+                throw RefusalException.Invalid("Amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
@@ -202,7 +202,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(salesContractId))
                 throw new ArgumentNullException(nameof(salesContractId));
             if (amount <= 0m)
-                throw new InvalidOperationException("Amount must be positive");
+                throw RefusalException.Invalid("Amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
@@ -226,7 +226,7 @@ namespace Beep.OilandGas.Accounting.Services
             string cn = "PPDM39")
         {
             if (salesContractIds == null || salesContractIds.Count < 2)
-                throw new ArgumentException("At least two contracts are required for combination");
+                throw RefusalException.Invalid("At least two contracts are required for a combination.");
             if (string.IsNullOrWhiteSpace(combinedGroupId))
                 throw new ArgumentNullException(nameof(combinedGroupId));
              if (string.IsNullOrWhiteSpace(userId))
@@ -288,7 +288,7 @@ namespace Beep.OilandGas.Accounting.Services
              if (string.IsNullOrWhiteSpace(salesContractId))
                 throw new ArgumentNullException(nameof(salesContractId));
              if (potentialOutcomes == null || probabilities == null || potentialOutcomes.Count != probabilities.Count)
-                throw new ArgumentException("Outcomes and probabilities must match");
+                throw RefusalException.Invalid("Each potential outcome needs a probability: the two lists must be the same length.");
             
             decimal estimatedPrice = 0m;
 
@@ -305,26 +305,9 @@ namespace Beep.OilandGas.Accounting.Services
                 estimatedPrice = potentialOutcomes[maxProbIndex];
             }
 
-            // Record this estimate?
-            // "formatted as a CONTRACT_ESTIMATE record" per plan.
-            // Assuming CONTRACT_ESTIMATE table exists or we create it.
-            // Let's assume it exists for this feature.
-            
-            try 
-            {
-                // Check if we can get a repo for CONTRACT_ESTIMATE. 
-                // Since I don't have the class, I'll define a localized DTO or just skip persistence if class missing.
-                // I'll persist it to CONTRACT_PERFORMANCE_OBLIGATION if applicable, or just return value.
-                // The plan says "EstimateVariableConsiderationAsync: Logic to estimate transaction price... formatted as a CONTRACT_ESTIMATE record".
-                // I will return the value and log it, as creating a new Entity class inside this file is messy.
-                // If I had the model, I would save it.
-                
-                 _logger.LogInformation("Estimated variable consideration for {Contract}: {Amount} using {Method}", salesContractId, estimatedPrice, method);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to persist estimate");
-            }
+            // The estimate is answered, not stored: there is no CONTRACT_ESTIMATE entity. Nothing here persists, so
+            // nothing can fail to persist — the catch that said "Failed to persist estimate" guarded a log line.
+            _logger.LogInformation("Estimated variable consideration for {Contract}: {Amount} using {Method}", salesContractId, estimatedPrice, method);
 
             return Math.Round(estimatedPrice, 2);
         }

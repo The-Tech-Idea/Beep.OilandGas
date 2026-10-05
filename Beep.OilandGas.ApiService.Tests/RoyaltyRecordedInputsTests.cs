@@ -70,7 +70,7 @@ public class RoyaltyRecordedInputsTests
             });
         _journal.Setup(j => j.CreateReferencedBalancedEntryAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), "actor", It.IsAny<string>()))
             .ReturnsAsync(new JOURNAL_ENTRY { JOURNAL_ENTRY_ID = "journal", STATUS = "POSTED" });
-        _service = new RoyaltyService(editor.Object, new Mock<ICommonColumnHandler>().Object, defaults.Object, metadata.Object, _journal.Object, Microsoft.Extensions.Logging.Abstractions.NullLogger<RoyaltyService>.Instance, () => Task.FromResult("test"));
+        _service = new RoyaltyService(editor.Object, new Mock<ICommonColumnHandler>().Object, defaults.Object, metadata.Object, _journal.Object, new Infrastructure.RecordingFailureReporter(), Microsoft.Extensions.Logging.Abstractions.NullLogger<RoyaltyService>.Instance, () => Task.FromResult("test"));
     }
 
     [Fact]

@@ -112,8 +112,11 @@ public sealed class RepositoryAccountTests
     public async Task An_API_that_cannot_be_reached_is_an_outage_not_a_refusal()
     {
         var api = new Api(HttpStatusCode.OK, null) { Unreachable = true };
+        var reporter = new RecordingFailureReporter();
         Assert.Equal(AccountAdmission.Unknown,
-            await new OilGasAccountAdmission(Client(api)).EvaluateAsync(FromToken("subject"), default));
+            await new OilGasAccountAdmission(Client(api, reporter: reporter)).EvaluateAsync(FromToken("subject"), default));
+        // The outage is in the store: it was only logged, so nobody could tell how often admission went unanswered.
+        Assert.IsType<HttpRequestException>(Assert.Single(reporter.Reports).Exception);
     }
 
     [Fact]
@@ -219,9 +222,9 @@ public sealed class RepositoryAccountTests
 
     private static OilGasClaimsTransformation Transformation(Api api, PersonTokens? tokens = null) => new(Client(api, tokens));
 
-    private static RepositoryAccountClient Client(Api api, PersonTokens? tokens = null) =>
+    private static RepositoryAccountClient Client(Api api, PersonTokens? tokens = null, RecordingFailureReporter? reporter = null) =>
         new(new HttpClient(api) { BaseAddress = new Uri("https://api.example/") }, tokens ?? new PersonTokens(),
-            NullLogger<RepositoryAccountClient>.Instance);
+            NullLogger<RepositoryAccountClient>.Instance, reporter ?? new RecordingFailureReporter());
 
     /// <summary>The identity server's client library: each person's own token, or none for <c>except</c>.</summary>
     private sealed class PersonTokens(string? except = null) : IUserTokenManager

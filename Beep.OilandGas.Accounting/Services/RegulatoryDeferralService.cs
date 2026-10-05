@@ -55,7 +55,7 @@ namespace Beep.OilandGas.Accounting.Services
             string cn = "PPDM39")
         {
             if (amount <= 0m)
-                throw new InvalidOperationException("Deferral amount must be positive");
+                throw RefusalException.Invalid("Deferral amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
@@ -115,7 +115,7 @@ namespace Beep.OilandGas.Accounting.Services
             string cn = "PPDM39")
         {
             if (amount <= 0m)
-                throw new InvalidOperationException("Amortization amount must be positive");
+                throw RefusalException.Invalid("Amortization amount must be positive.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 

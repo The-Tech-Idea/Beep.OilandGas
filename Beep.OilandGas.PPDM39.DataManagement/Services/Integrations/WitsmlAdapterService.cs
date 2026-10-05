@@ -1,4 +1,5 @@
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data.Integrations;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -9,6 +10,7 @@ using System.Text;
 using System.Xml.Linq;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Services.Integrations;
 
@@ -17,6 +19,13 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.Integrations;
 /// and upserts records into PPDM WELL, CASING_PROGRAM and LOG tables.
 /// Credentials are read from config; never hard-coded.
 /// </summary>
+/// <remarks>
+/// OILGAS-CATCH-01. A sync answers with its result: a paused connection (the circuit breaker open) is said in this
+/// adapter's words, and any other failure counts against the circuit breaker, is reported, and is answered with the
+/// reference — the result, the sync history and the log carried the exception's own text. Listing the server's wells has
+/// no result to carry a failure, so it lets the failure reach its caller (after counting it), where it used to answer an
+/// empty list that read as "the server has no wells".
+/// </remarks>
 public class WitsmlAdapterService : IWitsmlAdapter
 {
     private const string AdapterName = "WITSML";
@@ -28,6 +37,7 @@ public class WitsmlAdapterService : IWitsmlAdapter
     private readonly IPPDMMetadataRepository    _metadata;
     private readonly string                     _connectionName;
     private readonly ILogger<WitsmlAdapterService> _logger;
+    private readonly IFailureReporter           _failures;
 
     // Config (passed from DI via factory)
     private readonly string  _serverUrl;
@@ -46,7 +56,8 @@ public class WitsmlAdapterService : IWitsmlAdapter
         string                       username,
         string                       password,
         int                          timeoutSeconds,
-        ILogger<WitsmlAdapterService> logger)
+        ILogger<WitsmlAdapterService> logger,
+        IFailureReporter             failures)
     {
         _health         = health;
         _editor         = editor;
@@ -59,6 +70,7 @@ public class WitsmlAdapterService : IWitsmlAdapter
         _password       = password;
         _timeoutSeconds = timeoutSeconds;
         _logger         = logger;
+        _failures       = failures ?? throw new ArgumentNullException(nameof(failures));
     }
 
     // ── IWitsmlAdapter ────────────────────────────────────────────────────────
@@ -66,31 +78,33 @@ public class WitsmlAdapterService : IWitsmlAdapter
     public async Task<List<WitsmlWellSummary>> GetAvailableWellsAsync(string serverUrl)
     {
         var url = string.IsNullOrWhiteSpace(serverUrl) ? _serverUrl : serverUrl;
+        CheckCircuitBreaker();
         try
         {
-            CheckCircuitBreaker();
             var xml     = BuildGetFromStoreRequest("well", "<well/>");
             var rawXml  = await PostSoapAsync(url, "WMLS_GetFromStore", xml);
             var results = ParseWellsSummary(rawXml);
             _health.RecordSuccess(AdapterName);
             return results;
         }
-        catch (IntegrationUnavailableException) { return new(); }
-        catch (Exception ex)
+        // Broad: every failure of the call — the HTTP client, the server's answer, its XML — counts against the circuit
+        // breaker. It is then rethrown, for the caller's handler to report.
+        catch (Exception ex) when (ex is not RefusalException)
         {
             _health.RecordFailure(AdapterName, ex);
-            _logger.LogError(ex, "[WITSML] GetAvailableWells failed");
-            return new();
+            throw;
         }
     }
 
     public async Task<WitsmlSyncResult> SyncWellAsync(
         string witsmlWellUid, string fieldId, string userId)
     {
+        var paused = Paused();
+        if (paused != null)
+            return new WitsmlSyncResult(false, "WELL", witsmlWellUid, 0, paused);
+
         try
         {
-            CheckCircuitBreaker();
-
             var queryXml = $"<wells><well uid=\"{witsmlWellUid}\"/></wells>";
             var rawXml   = await PostSoapAsync(_serverUrl, "WMLS_GetFromStore",
                                BuildGetFromStoreRequest("well", queryXml));
@@ -129,27 +143,23 @@ public class WitsmlAdapterService : IWitsmlAdapter
 
             return new WitsmlSyncResult(true, "WELL", targetId, 1, null);
         }
-        catch (IntegrationUnavailableException ex)
+        // Broad: a sync answers every failure of the call and of the write in its result (see the class remarks).
+        catch (Exception ex) when (ex is not RefusalException)
         {
-            return new WitsmlSyncResult(false, "WELL", witsmlWellUid, 0, ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _health.RecordFailure(AdapterName, ex);
-            _health.AppendHistory(new IntegrationSyncHistoryEntry(
-                AdapterName, DateTime.UtcNow, false, 0, ex.Message));
-            _logger.LogError(ex, "[WITSML] SyncWell {Uid} failed", witsmlWellUid);
-            return new WitsmlSyncResult(false, "WELL", witsmlWellUid, 0, ex.Message);
+            var sentence = Failed(ex, $"syncing WITSML well {witsmlWellUid}", $"WITSML well {witsmlWellUid} was not synced.");
+            return new WitsmlSyncResult(false, "WELL", witsmlWellUid, 0, sentence);
         }
     }
 
     public async Task<WitsmlSyncResult> SyncCasingAsync(
         string witsmlWellUid, string witsmlWellboreUid, string userId)
     {
+        var paused = Paused();
+        if (paused != null)
+            return new WitsmlSyncResult(false, "CASING_PROGRAM", witsmlWellUid, 0, paused);
+
         try
         {
-            CheckCircuitBreaker();
-
             var queryXml = $"<casing><well uid=\"{witsmlWellUid}\"><wellbore uid=\"{witsmlWellboreUid}\"/></well></casing>";
             var rawXml   = await PostSoapAsync(_serverUrl, "WMLS_GetFromStore",
                                BuildGetFromStoreRequest("casingSchematic", queryXml));
@@ -171,25 +181,24 @@ public class WitsmlAdapterService : IWitsmlAdapter
                 AdapterName, DateTime.UtcNow, true, count, null));
             return new WitsmlSyncResult(true, "CASING_PROGRAM", witsmlWellUid, count, null);
         }
-        catch (IntegrationUnavailableException ex)
+        // Broad: as for a well.
+        catch (Exception ex) when (ex is not RefusalException)
         {
-            return new WitsmlSyncResult(false, "CASING_PROGRAM", witsmlWellUid, 0, ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _health.RecordFailure(AdapterName, ex);
-            _logger.LogError(ex, "[WITSML] SyncCasing {WellUid}/{WellboreUid} failed", witsmlWellUid, witsmlWellboreUid);
-            return new WitsmlSyncResult(false, "CASING_PROGRAM", witsmlWellUid, 0, ex.Message);
+            var sentence = Failed(ex, $"syncing WITSML casing for well {witsmlWellUid}, wellbore {witsmlWellboreUid}",
+                $"The casing of WITSML well {witsmlWellUid} was not synced.");
+            return new WitsmlSyncResult(false, "CASING_PROGRAM", witsmlWellUid, 0, sentence);
         }
     }
 
     public async Task<WitsmlSyncResult> SyncLogAsync(
         string witsmlWellUid, string witsmlWellboreUid, string logUid, string userId)
     {
+        var paused = Paused();
+        if (paused != null)
+            return new WitsmlSyncResult(false, "LOG", logUid, 0, paused);
+
         try
         {
-            CheckCircuitBreaker();
-
             var queryXml = $"<logs><well uid=\"{witsmlWellUid}\"><wellbore uid=\"{witsmlWellboreUid}\"><log uid=\"{logUid}\"/></wellbore></well></logs>";
             var rawXml   = await PostSoapAsync(_serverUrl, "WMLS_GetFromStore",
                                BuildGetFromStoreRequest("log", queryXml));
@@ -208,25 +217,40 @@ public class WitsmlAdapterService : IWitsmlAdapter
                 AdapterName, DateTime.UtcNow, true, 1, null));
             return new WitsmlSyncResult(true, "LOG", logUid, 1, null);
         }
-        catch (IntegrationUnavailableException ex)
+        // Broad: as for a well.
+        catch (Exception ex) when (ex is not RefusalException)
         {
-            return new WitsmlSyncResult(false, "LOG", logUid, 0, ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _health.RecordFailure(AdapterName, ex);
-            _logger.LogError(ex, "[WITSML] SyncLog {LogUid} failed", logUid);
-            return new WitsmlSyncResult(false, "LOG", logUid, 0, ex.Message);
+            var sentence = Failed(ex, $"syncing WITSML log {logUid}", $"WITSML log {logUid} was not synced.");
+            return new WitsmlSyncResult(false, "LOG", logUid, 0, sentence);
         }
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Counts a failed call against the circuit breaker, records it in the sync history, reports it, and answers the
+    /// sentence the result carries.
+    /// </summary>
+    [ReportsFailure]
+    private string Failed(Exception exception, string operation, string whatDidNotHappen)
+    {
+        var sentence = ReportedFailure.Sentence(_failures, exception, operation, whatDidNotHappen);
+        _health.RecordFailure(AdapterName, exception);
+        _health.AppendHistory(new IntegrationSyncHistoryEntry(AdapterName, DateTime.UtcNow, false, 0, sentence));
+        return sentence;
+    }
+
+    /// <summary>The sentence for a paused connection (the circuit breaker open); null when calls may go through.</summary>
+    private string? Paused() =>
+        GetStatusSync().State == CircuitBreakerState.Open
+            ? $"The {AdapterName} connection is paused after repeated failures; try again in a few minutes."
+            : null;
+
     private void CheckCircuitBreaker()
     {
-        var status = GetStatusSync();
-        if (status.State == CircuitBreakerState.Open)
-            throw new IntegrationUnavailableException($"{AdapterName} circuit breaker is OPEN");
+        var paused = Paused();
+        if (paused != null)
+            throw new IntegrationUnavailableException(paused);
     }
 
     private AdapterHealthStatus GetStatusSync()
@@ -346,8 +370,12 @@ public class WitsmlAdapterService : IWitsmlAdapter
         => GetProp(obj, name)?.ToString() ?? string.Empty;
 }
 
-/// <summary>Thrown when an adapter circuit breaker is OPEN.</summary>
-public sealed class IntegrationUnavailableException : Exception
+/// <summary>
+/// An integration's connection is paused (its circuit breaker is open): the request is refused as the integration
+/// stands, in this server's words (a refusal, OILGAS-CATCH-01), not reported as a failure — the failures that opened the
+/// circuit were reported when they happened.
+/// </summary>
+public sealed class IntegrationUnavailableException : RefusalException
 {
-    public IntegrationUnavailableException(string message) : base(message) { }
+    public IntegrationUnavailableException(string message) : base(RefusalKind.Conflict, message) { }
 }

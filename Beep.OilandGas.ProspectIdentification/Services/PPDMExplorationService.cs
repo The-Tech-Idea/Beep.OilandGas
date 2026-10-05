@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections;
@@ -139,7 +140,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                 var existingProspect = await GetProspectForFieldAsync(fieldId, prospectId);
                 if (existingProspect == null)
                 {
-                    throw new InvalidOperationException($"Prospect {prospectId} not found or does not belong to field {fieldId}");
+                    throw RefusalException.NotFound($"Prospect {prospectId} was not found in field {fieldId}.");
                 }
 
                 var metadata = await _metadata.GetTableMetadataAsync("PROSPECT");
@@ -194,7 +195,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             {
                 var existing = await GetProspectForFieldAsync(fieldId, prospectId);
                 if (existing == null)
-                    throw new InvalidOperationException($"Prospect {prospectId} not found in field {fieldId}");
+                    throw RefusalException.NotFound($"Prospect {prospectId} was not found in field {fieldId}.");
 
                 existing.PROSPECT_STATUS = newStatus;
 
@@ -294,9 +295,9 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         public async Task<bool> EnsureLeadInFieldForWorkflowStartAsync(string fieldId, string leadId, string userId)
         {
             if (string.IsNullOrWhiteSpace(fieldId))
-                throw new ArgumentException("Field id is required.", nameof(fieldId));
+                throw RefusalException.Invalid("Choose the field the lead belongs to.");
             if (string.IsNullOrWhiteSpace(leadId))
-                throw new ArgumentException("Lead id is required.", nameof(leadId));
+                throw RefusalException.Invalid("The lead ID is required.");
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User id is required.", nameof(userId));
 
@@ -417,19 +418,18 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         public async Task UpdateLeadStatusAsync(string leadId, string leadStatus, string userId)
         {
             if (string.IsNullOrWhiteSpace(leadId))
-                throw new ArgumentException("Lead id is required.", nameof(leadId));
+                throw RefusalException.Invalid("The lead ID is required.");
             if (string.IsNullOrWhiteSpace(leadStatus))
-                throw new ArgumentException("Lead status is required.", nameof(leadStatus));
+                throw RefusalException.Invalid("Choose the lead's new status.");
 
             try
             {
                 var (lead, repo) = await LoadLeadWithRepositoryAsync(leadId, throwIfMetadataMissing: true)
                     .ConfigureAwait(false);
+                // A lead that is not there is refused: the status change had been logged and dropped, and the
+                // caller told nothing.
                 if (lead == null || repo == null)
-                {
-                    _logger?.LogWarning("UpdateLeadStatusAsync: LEAD {LeadId} not found", leadId);
-                    return;
-                }
+                    throw RefusalException.NotFound($"Lead {leadId} was not found.");
 
                 lead.LEAD_STATUS = leadStatus;
                 await repo.UpdateAsync(lead, userId).ConfigureAwait(false);
@@ -679,7 +679,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                 var prospect = await GetProspectForFieldAsync(fieldId, prospectId);
                 if (prospect == null)
                 {
-                    throw new InvalidOperationException($"Prospect {prospectId} not found for field {fieldId}");
+                    throw RefusalException.NotFound($"Prospect {prospectId} was not found in field {fieldId}.");
                 }
 
                 // Derive risk level from stored fields (RISK_LEVEL/RISK_FACTOR not in PPDM39 PROSPECT — default to MEDIUM)
@@ -829,7 +829,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                 var lease = leases.FirstOrDefault() as Lease;
                 if (lease == null)
                 {
-                    throw new InvalidOperationException($"Lease {leaseId} not found for field {fieldId}");
+                    throw RefusalException.NotFound($"Lease {leaseId} was not found in field {fieldId}.");
                 }
 
                 // Update lease properties

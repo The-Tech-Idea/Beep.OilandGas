@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TheTechIdea.Data.OilGas;
+using TheTechIdeaWeb.Diagnostics;
 using Xunit;
 using Xunit.Abstractions;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -102,6 +103,7 @@ public sealed class LocalDbInstallationTests(ITestOutputHelper output)
         }).Build();
         var services = new ServiceCollection();
         services.AddLogging();
+        services.AddSingleton<IFailureReporter, RecordingFailureReporter>();
         services.AddOilGasRepository(configuration);
         await using var provider = services.BuildServiceProvider();
         await using var scope = provider.CreateAsyncScope();
@@ -139,6 +141,7 @@ public sealed class LocalDbInstallationTests(ITestOutputHelper output)
         // A separately built provider cannot satisfy these reads from the bootstrap context's tracking cache.
         var reopenedServices = new ServiceCollection();
         reopenedServices.AddLogging();
+        reopenedServices.AddSingleton<IFailureReporter, RecordingFailureReporter>();
         reopenedServices.AddOilGasRepository(configuration);
         await using var reopened = reopenedServices.BuildServiceProvider();
         await using (var readScope = reopened.CreateAsyncScope())

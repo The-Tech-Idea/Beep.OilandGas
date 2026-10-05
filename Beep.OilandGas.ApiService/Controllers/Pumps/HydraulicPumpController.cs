@@ -28,67 +28,35 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
         [HttpPost("design")]
         public async Task<ActionResult<HydraulicPumpDesign>> DesignPumpSystem([FromBody] DesignPumpSystemRequest request)
         {
-            try
-            {
-                var result = await _service.DesignPumpSystemAsync(
-                    request.WellUWI,
-                    request.PumpType,
-                    request.WellDepth,
-                    request.DesiredFlowRate);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error designing hydraulic pump system for well {WellUWI}", request.WellUWI);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.DesignPumpSystemAsync(
+                request.WellUWI,
+                request.PumpType,
+                request.WellDepth,
+                request.DesiredFlowRate);
+            return Ok(result);
         }
 
         [HttpPost("analyze-performance")]
         public async Task<ActionResult<PumpPerformanceAnalysis>> AnalyzePerformance([FromBody] AnalyzePerformanceRequest request)
         {
-            try
-            {
-                var result = await _service.AnalyzePumpPerformanceAsync(request.PumpId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error analyzing pump performance for pump {PumpId}", request.PumpId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.AnalyzePumpPerformanceAsync(request.PumpId);
+            return Ok(result);
         }
 
         [HttpPost("design/save")]
         public async Task<ActionResult> SavePumpDesign([FromBody] HydraulicPumpDesign design)
         {
             var userId = User.ActingUserId();
-            try
-            {
-                await _service.SavePumpDesignAsync(design, userId);
-                return Ok(new { message = "Hydraulic pump design saved successfully", designId = design.DesignId });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving hydraulic pump design");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            await _service.SavePumpDesignAsync(design, userId);
+            return Ok(new { message = "Hydraulic pump design saved successfully", designId = design.DesignId });
         }
 
         [HttpGet("performance-history/{pumpId}")]
         public async Task<ActionResult<List<PumpPerformanceHistory>>> GetPerformanceHistory(string pumpId)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) return BadRequest(new { error = "Pump ID is required." });
-            try
-            {
-                var result = await _service.GetPumpPerformanceHistoryAsync(pumpId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting performance history for pump {PumpId}", pumpId);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            var result = await _service.GetPumpPerformanceHistoryAsync(pumpId);
+            return Ok(result);
         }
     }
 }

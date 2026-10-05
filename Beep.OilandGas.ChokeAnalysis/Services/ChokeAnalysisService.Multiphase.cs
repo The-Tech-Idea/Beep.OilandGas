@@ -7,6 +7,7 @@ using Beep.OilandGas.ChokeAnalysis.Constants;
 using Beep.OilandGas.Models.Data.ChokeAnalysis;
 using Beep.OilandGas.Models.Data.Calculations;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.ChokeAnalysis.Services
 {
@@ -18,7 +19,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             string correlation = ChokeAnalysisReferenceCodes.CorrelationGilbert)
         {
             if (input == null) throw new ArgumentNullException(nameof(input));
-            if (chokeDiameter <= 0) throw new ArgumentException("Choke diameter must be positive");
+            if (chokeDiameter <= 0) throw RefusalException.Invalid("The choke diameter must be greater than zero.");
 
             _logger?.LogInformation("Calculating multiphase flow using {Correlation}", correlation);
 

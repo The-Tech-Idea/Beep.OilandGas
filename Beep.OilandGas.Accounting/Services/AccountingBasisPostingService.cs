@@ -63,7 +63,7 @@ namespace Beep.OilandGas.Accounting.Services
                         userId,
                         cn,
                         AccountingBooks.Gaap)),
-                _ => await _journalEntryService.CreateDualBalancedEntryFromKeysAsync(
+                AccountingBasis.Both => await _journalEntryService.CreateDualBalancedEntryFromKeysAsync(
                     debitKey,
                     creditKey,
                     amount,
@@ -110,7 +110,7 @@ namespace Beep.OilandGas.Accounting.Services
                         userId,
                         cn,
                         gaapBookId)),
-                _ => (await _journalEntryService.CreateBalancedEntryAsync(
+                AccountingBasis.Both => (await _journalEntryService.CreateBalancedEntryAsync(
                         debitAccount,
                         creditAccount,
                         amount,
@@ -140,69 +140,52 @@ namespace Beep.OilandGas.Accounting.Services
             AccountingBasis basis = AccountingBasis.Ifrs)
         {
             if (lineItems == null || lineItems.Count == 0)
-                throw new ArgumentException("Journal entry must have at least one line item", nameof(lineItems));
+                throw RefusalException.Invalid("A journal entry must have at least one line item.");
 
             var ifrsBookId = string.IsNullOrWhiteSpace(bookId) ? AccountingBooks.Ifrs : bookId;
             var gaapBookId = string.IsNullOrWhiteSpace(bookId) ? AccountingBooks.Gaap : bookId;
 
-            switch (basis)
+            // IFRS first, then GAAP: a tuple's elements are evaluated left to right.
+            return basis switch
             {
-                case AccountingBasis.Ifrs:
-                    {
-                        var entry = await _journalEntryService.CreateEntryAsync(
-                            entryDate,
-                            description,
-                            lineItems,
-                            userId,
-                            referenceNumber,
-                            sourceModule,
-                            ifrsBookId);
-                        await _journalEntryService.PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId);
-                        entry.STATUS = AccountingReferenceCodes.JournalEntryStatusCodes.Posted;
-                        return (entry, null);
-                    }
-                case AccountingBasis.Gaap:
-                    {
-                        var entry = await _journalEntryService.CreateEntryAsync(
-                            entryDate,
-                            description,
-                            lineItems,
-                            userId,
-                            referenceNumber,
-                            sourceModule,
-                            gaapBookId);
-                        await _journalEntryService.PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId);
-                        entry.STATUS = AccountingReferenceCodes.JournalEntryStatusCodes.Posted;
-                        return (null, entry);
-                    }
-                default:
-                    {
-                        var ifrsLines = CloneLines(lineItems, null);
-                        var gaapLines = CloneLines(lineItems, null);
-                        var ifrsEntry = await _journalEntryService.CreateEntryAsync(
-                            entryDate,
-                            description,
-                            ifrsLines,
-                            userId,
-                            referenceNumber,
-                            sourceModule,
-                            ifrsBookId);
-                        await _journalEntryService.PostEntryAsync(ifrsEntry.JOURNAL_ENTRY_ID, userId);
-                        ifrsEntry.STATUS = "POSTED";
+                AccountingBasis.Ifrs => (await CreateAndPostAsync(
+                        entryDate, description, lineItems, userId, referenceNumber, sourceModule, ifrsBookId),
+                    null),
+                AccountingBasis.Gaap => (null,
+                    await CreateAndPostAsync(
+                        entryDate, description, lineItems, userId, referenceNumber, sourceModule, gaapBookId)),
+                AccountingBasis.Both => (
+                    await CreateAndPostAsync(
+                        entryDate, description, CloneLines(lineItems, null), userId, referenceNumber, sourceModule, ifrsBookId),
+                    await CreateAndPostAsync(
+                        entryDate, description, CloneLines(lineItems, null), userId, referenceNumber, sourceModule, gaapBookId)),
+            };
+        }
 
-                        var gaapEntry = await _journalEntryService.CreateEntryAsync(
-                            entryDate,
-                            description,
-                            gaapLines,
-                            userId,
-                            referenceNumber,
-                            sourceModule,
-                            gaapBookId);
-                        await _journalEntryService.PostEntryAsync(gaapEntry.JOURNAL_ENTRY_ID, userId);
-                        gaapEntry.STATUS = "POSTED";
-                        return (ifrsEntry, gaapEntry);
-                    }
-            }
+        /// <summary>
+        /// Creates the entry and posts it; the entry is marked posted only when the journal service says it posted.
+        /// </summary>
+        private async Task<JOURNAL_ENTRY> CreateAndPostAsync(
+            DateTime entryDate,
+            string description,
+            List<JOURNAL_ENTRY_LINE> lineItems,
+            string userId,
+            string? referenceNumber,
+            string? sourceModule,
+            string bookId)
+        {
+            var entry = await _journalEntryService.CreateEntryAsync(
+                entryDate,
+                description,
+                lineItems,
+                userId,
+                referenceNumber,
+                sourceModule,
+                bookId);
+            if (!await _journalEntryService.PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId))
+                throw new InvalidOperationException($"Journal {entry.JOURNAL_ENTRY_ID} was created but not posted.");
+            entry.STATUS = AccountingReferenceCodes.JournalEntryStatusCodes.Posted;
+            return entry;
         }
 
         private static List<JOURNAL_ENTRY_LINE> CloneLines(

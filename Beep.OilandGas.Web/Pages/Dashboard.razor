@@ -7,6 +7,7 @@
 @inject ISnackbar Snackbar
 @inject Beep.OilandGas.Web.Theme.IThemeProvider ThemeProvider
 @inject Beep.OilandGas.Web.Services.IPersonaContextService PersonaContext
+@inject OilGasCallFailures Calls
 @using Beep.OilandGas.Web.Theme
 @using Beep.OilandGas.Models.Data
 
@@ -124,7 +125,7 @@
     protected override void OnInitialized()
     {
         _branding = ThemeProvider.GetBranding();
-        _state = new(LifeCycleService.GetFieldDashboardAsync);
+        _state = new(LifeCycleService.GetFieldDashboardAsync, Calls);
         PersonaContext.Changed += PersonaChanged;
         DataManagementService.CurrentFieldChanged += FieldChanged;
     }

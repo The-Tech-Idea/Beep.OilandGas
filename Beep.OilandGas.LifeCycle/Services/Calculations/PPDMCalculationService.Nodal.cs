@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,8 +25,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// </summary>
         /// <param name="request">Nodal analysis request containing well ID, reservoir/wellbore properties, and analysis parameters</param>
         /// <returns>Nodal analysis result with IPR/VLP curves, operating point, performance metrics, and recommendations</returns>
-        /// <exception cref="ArgumentException">Thrown when request validation fails</exception>
-        /// <exception cref="InvalidOperationException">Thrown when reservoir/wellbore properties are unavailable or calculation fails</exception>
+        /// <exception cref="RefusalException">What was sent cannot be analysed, or the well's recorded data does not allow it.</exception>
         public async Task<Beep.OilandGas.Models.Data.Calculations.NodalAnalysisResult> PerformNodalAnalysisAsync(Beep.OilandGas.Models.Data.Calculations.NodalAnalysisRequest request)
         {
             string? resolvedWellId = null;
@@ -35,13 +35,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 // Validate request
                 if (string.IsNullOrEmpty(request.WellUWI))
                 {
-                    throw new ArgumentException("WellUWI must be provided");
+                    throw RefusalException.Invalid("Choose the well for the nodal analysis.");
                 }
 
                 resolvedWellId = await GetWellIdByUwiAsync(request.WellUWI);
                 if (string.IsNullOrEmpty(resolvedWellId))
                 {
-                    throw new InvalidOperationException($"Well not found for UWI: {request.WellUWI}");
+                    throw RefusalException.NotFound($"Well {request.WellUWI} was not found.");
                 }
 
                 _logger?.LogInformation("Starting Nodal Analysis for WellUWI: {WellUWI}, WellId: {WellId}",
@@ -71,7 +71,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     
                     if (reservoirProperties == null || reservoirProperties.ReservoirPressure <= 0)
                     {
-                        throw new InvalidOperationException("Reservoir properties not found or invalid. Provide ReservoirPressure and ProductivityIndex in request or ensure PPDM data is available.");
+                        throw RefusalException.Conflict("No reservoir pressure and productivity index are recorded for this well; give them with the request.");
                     }
                 }
 
@@ -100,7 +100,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     
                     if (wellboreProperties == null || wellboreProperties.TubingDiameter <= 0)
                     {
-                        throw new InvalidOperationException("Wellbore properties not found or invalid. Provide TubingDiameter and WellheadPressure in request or ensure PPDM data is available.");
+                        throw RefusalException.Conflict("No tubing diameter is recorded for this well; give the tubing diameter and wellhead pressure with the request.");
                     }
                 }
 
@@ -113,58 +113,32 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 // Step 4: Generate IPR curve
                 List<IPRPoint> iprCurve;
-                try
+                switch (iprMethod.ToUpperInvariant())
                 {
-                    switch (iprMethod.ToUpperInvariant())
-                    {
-                        case "VOGEL":
-                            iprCurve = IPRCalculator.GenerateVogelIPR(reservoirProperties, maxFlowRate, numberOfPoints);
-                            break;
-                        case "FETKOVICH":
-                            // Fetkovich requires test points - use simplified approach
-                            var testPoints = new List<(double flowRate, double pressure)>
-                            {
-                                (0, reservoirProperties.ReservoirPressure),
-                                (maxFlowRate * 0.5, reservoirProperties.ReservoirPressure * 0.7),
-                                (maxFlowRate, reservoirProperties.ReservoirPressure * 0.3)
-                            };
-                            iprCurve = IPRCalculator.GenerateFetkovichIPR(reservoirProperties, testPoints, maxFlowRate, numberOfPoints);
-                            break;
-                        default:
-                            iprCurve = IPRCalculator.GenerateVogelIPR(reservoirProperties, maxFlowRate, numberOfPoints);
-                            break;
-                    }
-                }
-                catch (Exception iprEx)
-                {
-                    _logger?.LogError(iprEx, "Error generating IPR curve");
-                    throw new InvalidOperationException($"IPR curve generation failed: {iprEx.Message}", iprEx);
+                    case "VOGEL":
+                        iprCurve = IPRCalculator.GenerateVogelIPR(reservoirProperties, maxFlowRate, numberOfPoints);
+                        break;
+                    case "FETKOVICH":
+                        // Fetkovich requires test points - use simplified approach
+                        var testPoints = new List<(double flowRate, double pressure)>
+                        {
+                            (0, reservoirProperties.ReservoirPressure),
+                            (maxFlowRate * 0.5, reservoirProperties.ReservoirPressure * 0.7),
+                            (maxFlowRate, reservoirProperties.ReservoirPressure * 0.3)
+                        };
+                        iprCurve = IPRCalculator.GenerateFetkovichIPR(reservoirProperties, testPoints, maxFlowRate, numberOfPoints);
+                        break;
+                    default:
+                        iprCurve = IPRCalculator.GenerateVogelIPR(reservoirProperties, maxFlowRate, numberOfPoints);
+                        break;
                 }
 
                 // Step 5: Generate VLP curve
                 double[] flowRates = iprCurve.Select(p => p.FlowRate).ToArray();
-                List<VLPPoint> vlpCurve;
-                try
-                {
-                    vlpCurve = VLPCalculator.GenerateVLP(wellboreProperties, flowRates);
-                }
-                catch (Exception vlpEx)
-                {
-                    _logger?.LogError(vlpEx, "Error generating VLP curve");
-                    throw new InvalidOperationException($"VLP curve generation failed: {vlpEx.Message}", vlpEx);
-                }
+                var vlpCurve = VLPCalculator.GenerateVLP(wellboreProperties, flowRates);
 
                 // Step 6: Find operating point
-                OperatingPoint operatingPoint;
-                try
-                {
-                    operatingPoint = Beep.OilandGas.NodalAnalysis.Calculations.NodalAnalyzer.FindOperatingPoint(iprCurve, vlpCurve);
-                }
-                catch (Exception opEx)
-                {
-                    _logger?.LogError(opEx, "Error finding operating point");
-                    throw new InvalidOperationException($"Operating point calculation failed: {opEx.Message}", opEx);
-                }
+                var operatingPoint = Beep.OilandGas.NodalAnalysis.Calculations.NodalAnalyzer.FindOperatingPoint(iprCurve, vlpCurve);
 
                 // Step 7: Map results to NodalAnalysisResult DTO
                 var result = MapNodalAnalysisResultToDTO(
@@ -180,11 +154,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 return result;
             }
+            // Every way the run ends short of a result is recorded in the calculation history, then goes on to the
+            // caller: the API's handler answers a refusal with its sentence and reports anything else.
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error performing Nodal Analysis");
-
-                // Return error result
                 var errorResult = new Beep.OilandGas.Models.Data.Calculations.NodalAnalysisResult
                 {
                     CalculationId = Guid.NewGuid().ToString(),
@@ -194,7 +167,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     AnalysisType = request.AnalysisType,
                     CalculationDate = DateTime.UtcNow,
                     Status = "FAILED",
-                    ErrorMessage = ex.Message,
+                    ErrorMessage = FailedRunMessage(ex, "nodal analysis"),
                     UserId = request.UserId,
                     IPRCurve = new List<NodalCurvePoint>(),
                     VLPCurve = new List<NodalCurvePoint>(),
@@ -205,17 +178,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     }
                 };
 
-                // Try to store error result
-                try
+                await RecordFailedRunAsync("nodal analysis", async () =>
                 {
                     var repository = await GetNodalResultRepositoryAsync();
-
                     await repository.InsertAsync((object)errorResult, request.UserId ?? "system");
-                }
-                catch (Exception storeEx)
-                {
-                    _logger?.LogError(storeEx, "Error storing Nodal Analysis error result");
-                }
+                });
 
                 throw;
             }
@@ -228,55 +195,47 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// </summary>
         private async Task<ReservoirProperties?> GetReservoirPropertiesForWellAsync(string wellId)
         {
-            try
+            if (string.IsNullOrEmpty(wellId))
+                return null;
+
+            // Get productivity index from well test
+            var pi = await GetWellTestProductivityIndexAsync(wellId);
+            if (!pi.HasValue || pi.Value <= 0)
             {
-                if (string.IsNullOrEmpty(wellId))
-                    return null;
-
-                // Get productivity index from well test
-                var pi = await GetWellTestProductivityIndexAsync(wellId);
-                if (!pi.HasValue || pi.Value <= 0)
-                {
-                    _logger?.LogWarning("Productivity index not found for well {WellId}", wellId);
-                    return null;
-                }
-
-                // Get static/reservoir pressure from well test
-                var reservoirPressure = await GetWellTestStaticPressureAsync(wellId);
-                if (!reservoirPressure.HasValue || reservoirPressure.Value <= 0)
-                {
-                    _logger?.LogWarning("Reservoir pressure not found for well {WellId}", wellId);
-                    return null;
-                }
-
-                // Get bubble point pressure (try from well test or use default)
-                var bubblePointPressure = await GetBubblePointPressureForWellAsync(wellId) 
-                    ?? (double)(reservoirPressure.Value * 0.8m); // Default 80% of reservoir pressure
-
-                // Get water cut from latest production data
-                var waterCut = await GetWaterCutForWellAsync(wellId) ?? 0.0;
-
-                // Get GOR from latest production data
-                var gor = await GetGasOilRatioForWellAsync(wellId) ?? 0.0;
-
-                // Get oil gravity (try from well or use default)
-                var oilGravity = await GetOilGravityForWellAsync(wellId) ?? 35.0;
-
-                return new ReservoirProperties
-                {
-                    ReservoirPressure = (double)reservoirPressure.Value,
-                    BubblePointPressure = bubblePointPressure,
-                    ProductivityIndex = (double)pi.Value,
-                    WaterCut = waterCut,
-                    GasOilRatio = gor,
-                    OilGravity = oilGravity
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error retrieving reservoir properties for well {WellId}", wellId);
+                _logger?.LogWarning("Productivity index not found for well {WellId}", wellId);
                 return null;
             }
+
+            // Get static/reservoir pressure from well test
+            var reservoirPressure = await GetWellTestStaticPressureAsync(wellId);
+            if (!reservoirPressure.HasValue || reservoirPressure.Value <= 0)
+            {
+                _logger?.LogWarning("Reservoir pressure not found for well {WellId}", wellId);
+                return null;
+            }
+
+            // Get bubble point pressure (try from well test or use default)
+            var bubblePointPressure = await GetBubblePointPressureForWellAsync(wellId) 
+                ?? (double)(reservoirPressure.Value * 0.8m); // Default 80% of reservoir pressure
+
+            // Get water cut from latest production data
+            var waterCut = await GetWaterCutForWellAsync(wellId) ?? 0.0;
+
+            // Get GOR from latest production data
+            var gor = await GetGasOilRatioForWellAsync(wellId) ?? 0.0;
+
+            // Get oil gravity (try from well or use default)
+            var oilGravity = await GetOilGravityForWellAsync(wellId) ?? 35.0;
+
+            return new ReservoirProperties
+            {
+                ReservoirPressure = (double)reservoirPressure.Value,
+                BubblePointPressure = bubblePointPressure,
+                ProductivityIndex = (double)pi.Value,
+                WaterCut = waterCut,
+                GasOilRatio = gor,
+                OilGravity = oilGravity
+            };
         }
 
         /// <summary>
@@ -303,32 +262,25 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// </summary>
         private async Task<double?> GetWaterCutForWellAsync(string wellId)
         {
-            try
+            // PDEN_VOL_SUMMARY uses PDEN_ID (well PDEN identifier); date column is EFFECTIVE_DATE
+            var filters = new List<AppFilter>
             {
-                // PDEN_VOL_SUMMARY uses PDEN_ID (well PDEN identifier); date column is EFFECTIVE_DATE
-                var filters = new List<AppFilter>
+                new AppFilter { FieldName = "PDEN_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", wellId) }
+            };
+
+            var entities = await GetEntitiesAsync("PDEN_VOL_SUMMARY", filters, "EFFECTIVE_DATE", DataRetrievalMode.Latest);
+            var latest = entities.FirstOrDefault() as PDEN_VOL_SUMMARY;
+
+            if (latest != null)
+            {
+                var oilVol = latest.OIL_VOLUME;
+                var waterVol = latest.WATER_VOLUME;
+                var totalVol = oilVol + waterVol;
+
+                if (totalVol > 0)
                 {
-                    new AppFilter { FieldName = "PDEN_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", wellId) }
-                };
-
-                var entities = await GetEntitiesAsync("PDEN_VOL_SUMMARY", filters, "EFFECTIVE_DATE", DataRetrievalMode.Latest);
-                var latest = entities.FirstOrDefault() as PDEN_VOL_SUMMARY;
-
-                if (latest != null)
-                {
-                    var oilVol = latest.OIL_VOLUME;
-                    var waterVol = latest.WATER_VOLUME;
-                    var totalVol = oilVol + waterVol;
-
-                    if (totalVol > 0)
-                    {
-                        return (double)(waterVol / totalVol);
-                    }
+                    return (double)(waterVol / totalVol);
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error getting water cut for well {WellId}", wellId);
             }
 
             return null;
@@ -339,31 +291,24 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// </summary>
         private async Task<double?> GetGasOilRatioForWellAsync(string wellId)
         {
-            try
+            // PDEN_VOL_SUMMARY uses PDEN_ID (well PDEN identifier); date column is EFFECTIVE_DATE
+            var filters = new List<AppFilter>
             {
-                // PDEN_VOL_SUMMARY uses PDEN_ID (well PDEN identifier); date column is EFFECTIVE_DATE
-                var filters = new List<AppFilter>
+                new AppFilter { FieldName = "PDEN_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", wellId) }
+            };
+
+            var entities = await GetEntitiesAsync("PDEN_VOL_SUMMARY", filters, "EFFECTIVE_DATE", DataRetrievalMode.Latest);
+            var latest = entities.FirstOrDefault() as PDEN_VOL_SUMMARY;
+
+            if (latest != null)
+            {
+                var oilVol = latest.OIL_VOLUME;
+                var gasVol = latest.GAS_VOLUME;
+
+                if (oilVol > 0)
                 {
-                    new AppFilter { FieldName = "PDEN_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", wellId) }
-                };
-
-                var entities = await GetEntitiesAsync("PDEN_VOL_SUMMARY", filters, "EFFECTIVE_DATE", DataRetrievalMode.Latest);
-                var latest = entities.FirstOrDefault() as PDEN_VOL_SUMMARY;
-
-                if (latest != null)
-                {
-                    var oilVol = latest.OIL_VOLUME;
-                    var gasVol = latest.GAS_VOLUME;
-
-                    if (oilVol > 0)
-                    {
-                        return (double)(gasVol / oilVol * 1000m); // Convert to SCF/STB
-                    }
+                    return (double)(gasVol / oilVol * 1000m); // Convert to SCF/STB
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error getting GOR for well {WellId}", wellId);
             }
 
             return null;
@@ -393,59 +338,51 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// </summary>
         private async Task<WellboreProperties?> GetWellborePropertiesForWellAsync(string wellId)
         {
-            try
+            if (string.IsNullOrEmpty(wellId))
+                return null;
+
+            // Get tubing diameter from WELL_TUBULAR
+            var tubingDiameter = await GetTubularOuterDiameterAsync(wellId, "TUBING");
+            if (!tubingDiameter.HasValue || tubingDiameter.Value <= 0)
             {
-                if (string.IsNullOrEmpty(wellId))
-                    return null;
-
-                // Get tubing diameter from WELL_TUBULAR
-                var tubingDiameter = await GetTubularOuterDiameterAsync(wellId, "TUBING");
-                if (!tubingDiameter.HasValue || tubingDiameter.Value <= 0)
-                {
-                    _logger?.LogWarning("Tubing diameter not found for well {WellId}", wellId);
-                    return null;
-                }
-
-                // Get tubing length/depth
-                var tubingDepth = await GetTubularDepthAsync(wellId, "TUBING");
-                var wellDepth = await GetWellTotalDepthAsync(wellId);
-                var tubingLength = tubingDepth ?? wellDepth ?? 8000m; // Default 8000 ft
-
-                // Get wellhead pressure (try from well test or use default)
-                var wellheadPressure = await GetWellheadPressureForWellAsync(wellId) ?? 500m; // Default 500 psi
-
-                // Get water cut and GOR (same as reservoir properties)
-                var waterCut = await GetWaterCutForWellAsync(wellId) ?? 0.0;
-                var gor = await GetGasOilRatioForWellAsync(wellId) ?? 0.0;
-
-                // Get oil gravity
-                var oilGravity = await GetOilGravityForWellAsync(wellId) ?? 35.0;
-
-                // Get gas specific gravity (try from well test or use default)
-                var gasGravity = await GetGasSpecificGravityForWellAsync(wellId) ?? 0.65;
-
-                // Get temperatures (try from well test or use defaults)
-                var wellheadTemp = await GetWellheadTemperatureForWellAsync(wellId) ?? 100.0;
-                var bottomholeTemp = await GetBottomholeTemperatureForWellAsync(wellId) ?? (wellheadTemp + 100.0);
-
-                return new WellboreProperties
-                {
-                    TubingDiameter = (double)tubingDiameter.Value,
-                    TubingLength = (double)tubingLength,
-                    WellheadPressure = (double)wellheadPressure,
-                    WaterCut = waterCut,
-                    GasOilRatio = gor,
-                    OilGravity = oilGravity,
-                    GasSpecificGravity = gasGravity,
-                    WellheadTemperature = wellheadTemp,
-                    BottomholeTemperature = bottomholeTemp
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error retrieving wellbore properties for well {WellId}", wellId);
+                _logger?.LogWarning("Tubing diameter not found for well {WellId}", wellId);
                 return null;
             }
+
+            // Get tubing length/depth
+            var tubingDepth = await GetTubularDepthAsync(wellId, "TUBING");
+            var wellDepth = await GetWellTotalDepthAsync(wellId);
+            var tubingLength = tubingDepth ?? wellDepth ?? 8000m; // Default 8000 ft
+
+            // Get wellhead pressure (try from well test or use default)
+            var wellheadPressure = await GetWellheadPressureForWellAsync(wellId) ?? 500m; // Default 500 psi
+
+            // Get water cut and GOR (same as reservoir properties)
+            var waterCut = await GetWaterCutForWellAsync(wellId) ?? 0.0;
+            var gor = await GetGasOilRatioForWellAsync(wellId) ?? 0.0;
+
+            // Get oil gravity
+            var oilGravity = await GetOilGravityForWellAsync(wellId) ?? 35.0;
+
+            // Get gas specific gravity (try from well test or use default)
+            var gasGravity = await GetGasSpecificGravityForWellAsync(wellId) ?? 0.65;
+
+            // Get temperatures (try from well test or use defaults)
+            var wellheadTemp = await GetWellheadTemperatureForWellAsync(wellId) ?? 100.0;
+            var bottomholeTemp = await GetBottomholeTemperatureForWellAsync(wellId) ?? (wellheadTemp + 100.0);
+
+            return new WellboreProperties
+            {
+                TubingDiameter = (double)tubingDiameter.Value,
+                TubingLength = (double)tubingLength,
+                WellheadPressure = (double)wellheadPressure,
+                WaterCut = waterCut,
+                GasOilRatio = gor,
+                OilGravity = oilGravity,
+                GasSpecificGravity = gasGravity,
+                WellheadTemperature = wellheadTemp,
+                BottomholeTemperature = bottomholeTemp
+            };
         }
 
         /// <summary>

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.NodalAnalysis;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.NodalAnalysis.Calculations
 {
@@ -24,7 +25,7 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
                 throw new ArgumentNullException(nameof(wellProperties));
 
             if (wellProperties.LateralBranches == null || wellProperties.LateralBranches.Count == 0)
-                throw new ArgumentException("Multilateral well must have at least one lateral branch.", nameof(wellProperties));
+                throw RefusalException.Invalid("Multilateral well must have at least one lateral branch.");
 
             var result = new MultilateralDeliverabilityResult
             {
@@ -67,7 +68,7 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
                 throw new ArgumentNullException(nameof(wellProperties));
 
             if (wellProperties.LateralBranches == null || wellProperties.LateralBranches.Count == 0)
-                throw new ArgumentException("Multilateral well must have at least one lateral branch.", nameof(wellProperties));
+                throw RefusalException.Invalid("Multilateral well must have at least one lateral branch.");
 
             var result = new MultilateralDeliverabilityResult
             {
@@ -121,7 +122,7 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
                 throw new ArgumentNullException(nameof(wellProperties));
 
             if (wellProperties.LateralBranches == null || wellProperties.LateralBranches.Count == 0)
-                throw new ArgumentException("Multilateral well must have at least one lateral branch.", nameof(wellProperties));
+                throw RefusalException.Invalid("Multilateral well must have at least one lateral branch.");
 
             var result = new MultilateralDeliverabilityResult
             {

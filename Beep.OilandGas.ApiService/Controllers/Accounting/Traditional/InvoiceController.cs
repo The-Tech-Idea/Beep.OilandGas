@@ -43,33 +43,25 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         public async Task<ActionResult<List<object>>> GetInvoices(
             [FromQuery] string connectionName = "PPDM39")
         {
-            try
-            {
-                var connName = connectionName ?? _service.DefaultConnectionName;
-                var repository = _service.GetRepository(typeof(INVOICE), connName, "INVOICE");
-                var invoices = await repository.GetAsync(new List<AppFilter>());
+            var connName = connectionName ?? _service.DefaultConnectionName;
+            var repository = _service.GetRepository(typeof(INVOICE), connName, "INVOICE");
+            var invoices = await repository.GetAsync(new List<AppFilter>());
 
-                var result = invoices.Cast<INVOICE>().Select(invoice => new
-                {
-                    InvoiceId = invoice.INVOICE_ID,
-                    InvoiceNumber = invoice.INVOICE_NUMBER,
-                    CustomerBaId = invoice.CUSTOMER_BA_ID,
-                    InvoiceDate = invoice.INVOICE_DATE,
-                    DueDate = invoice.DUE_DATE,
-                    Subtotal = invoice.SUBTOTAL,
-                    TaxAmount = invoice.TAX_AMOUNT,
-                    TotalAmount = invoice.TOTAL_AMOUNT,
-                    BalanceDue = invoice.BALANCE_DUE,
-                    Status = invoice.STATUS
-                }).ToList();
-
-                return Ok(result);
-            }
-            catch (Exception ex)
+            var result = invoices.Cast<INVOICE>().Select(invoice => new
             {
-                _logger.LogError(ex, "Error getting invoices");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                InvoiceId = invoice.INVOICE_ID,
+                InvoiceNumber = invoice.INVOICE_NUMBER,
+                CustomerBaId = invoice.CUSTOMER_BA_ID,
+                InvoiceDate = invoice.INVOICE_DATE,
+                DueDate = invoice.DUE_DATE,
+                Subtotal = invoice.SUBTOTAL,
+                TaxAmount = invoice.TAX_AMOUNT,
+                TotalAmount = invoice.TOTAL_AMOUNT,
+                BalanceDue = invoice.BALANCE_DUE,
+                Status = invoice.STATUS
+            }).ToList();
+
+            return Ok(result);
         }
 
         /// <summary>
@@ -80,31 +72,23 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         {
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { error = "Invoice ID is required." });
-            try
-            {
-                var invoice = _service.TraditionalAccounting.Invoice.GetInvoice(id);
-                if (invoice == null)
-                        return NotFound(new { error = $"Invoice with ID {id} not found." });
+            var invoice = _service.TraditionalAccounting.Invoice.GetInvoice(id);
+            if (invoice == null)
+                    return NotFound(new { error = $"Invoice with ID {id} not found." });
 
-                return Ok(new
-                {
-                    InvoiceId = invoice.INVOICE_ID,
-                    InvoiceNumber = invoice.INVOICE_NUMBER,
-                    CustomerBaId = invoice.CUSTOMER_BA_ID,
-                    InvoiceDate = invoice.INVOICE_DATE,
-                    DueDate = invoice.DUE_DATE,
-                    Subtotal = invoice.SUBTOTAL,
-                    TaxAmount = invoice.TAX_AMOUNT,
-                    TotalAmount = invoice.TOTAL_AMOUNT,
-                    BalanceDue = invoice.BALANCE_DUE,
-                    Status = invoice.STATUS
-                });
-            }
-            catch (Exception ex)
+            return Ok(new
             {
-                _logger.LogError(ex, "Error getting invoice {InvoiceId}", id);
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+                InvoiceId = invoice.INVOICE_ID,
+                InvoiceNumber = invoice.INVOICE_NUMBER,
+                CustomerBaId = invoice.CUSTOMER_BA_ID,
+                InvoiceDate = invoice.INVOICE_DATE,
+                DueDate = invoice.DUE_DATE,
+                Subtotal = invoice.SUBTOTAL,
+                TaxAmount = invoice.TAX_AMOUNT,
+                TotalAmount = invoice.TOTAL_AMOUNT,
+                BalanceDue = invoice.BALANCE_DUE,
+                Status = invoice.STATUS
+            });
         }
 
         /// <summary>
@@ -114,53 +98,42 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         public async Task<ActionResult<object>> CreateInvoice([FromBody] CreateInvoiceRequest request)
         {
             var userId = User.ActingUserId();
-            try
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var invoice = _service.TraditionalAccounting.Invoice.CreateInvoice(request, userId);
+
+            // Post to GL: Debit AR, Credit Revenue
+            var lines = new List<JournalEntryLineData>
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-
-                var invoice = _service.TraditionalAccounting.Invoice.CreateInvoice(request, userId);
-
-                // Post to GL: Debit AR, Credit Revenue
-                var lines = new List<JournalEntryLineData>
+                new JournalEntryLineData
                 {
-                    new JournalEntryLineData
-                    {
-                        GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
-                            .FirstOrDefault(a => a.ACCOUNT_NUMBER == "1200")?.GL_ACCOUNT_ID ?? "",
-                        DebitAmount = invoice.TOTAL_AMOUNT,
-                        CreditAmount = null,
-                        Description = $"Invoice {invoice.INVOICE_NUMBER}"
-                    },
-                    new JournalEntryLineData
-                    {
-                        GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
-                            .FirstOrDefault(a => a.ACCOUNT_NUMBER == "4000")?.GL_ACCOUNT_ID ?? "",
-                        DebitAmount = null,
-                        CreditAmount = invoice.TOTAL_AMOUNT,
-                        Description = $"Invoice {invoice.INVOICE_NUMBER}"
-                    }
-                };
+                    GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
+                        .FirstOrDefault(a => a.ACCOUNT_NUMBER == "1200")?.GL_ACCOUNT_ID ?? "",
+                    DebitAmount = invoice.TOTAL_AMOUNT,
+                    CreditAmount = null,
+                    Description = $"Invoice {invoice.INVOICE_NUMBER}"
+                },
+                new JournalEntryLineData
+                {
+                    GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
+                        .FirstOrDefault(a => a.ACCOUNT_NUMBER == "4000")?.GL_ACCOUNT_ID ?? "",
+                    DebitAmount = null,
+                    CreditAmount = invoice.TOTAL_AMOUNT,
+                    Description = $"Invoice {invoice.INVOICE_NUMBER}"
+                }
+            };
 
-                var journalEntryId = await _glIntegration.PostTraditionalAccountingToGL(
+            var journalEntryId = await LedgerPosting.PostAsync(
+                () => _glIntegration.PostTraditionalAccountingToGL(
                     invoice.INVOICE_ID,
                     "AR_Invoice",
                     lines,
                     invoice.INVOICE_DATE,
-                    userId);
+                    userId),
+                $"Invoice {invoice.INVOICE_NUMBER}", invoice.INVOICE_ID, "AR_Invoice");
 
-                return Ok(new { InvoiceId = invoice.INVOICE_ID, InvoiceNumber = invoice.INVOICE_NUMBER, JournalEntryId = journalEntryId });
-            }
-            catch (GLPostingException ex)
-            {
-                _logger.LogError(ex, "GL posting failed for invoice");
-                    return StatusCode(500, new { error = "Invoice created but GL posting failed." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating invoice");
-                return StatusCode(500, new { error = "An internal error occurred." });
-            }
+            return Ok(new { InvoiceId = invoice.INVOICE_ID, InvoiceNumber = invoice.INVOICE_NUMBER, JournalEntryId = journalEntryId });
         }
     }
 }

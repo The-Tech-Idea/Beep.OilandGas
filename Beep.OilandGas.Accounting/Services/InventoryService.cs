@@ -99,8 +99,8 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error creating inventory item {ItemNumber}: {Message}",
-                    itemNumber, ex.Message);
+                _logger?.LogError(ex, "Error creating inventory item {ItemNumber}",
+                    itemNumber);
                 throw;
             }
         }
@@ -121,9 +121,9 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(inventoryItemId))
                 throw new ArgumentNullException(nameof(inventoryItemId));
             if (quantity <= 0)
-                throw new ArgumentException("Quantity must be greater than zero", nameof(quantity));
+                throw RefusalException.Invalid("Quantity must be greater than zero.");
             if (costPerUnit <= 0m)
-                throw new ArgumentException("Cost per unit must be greater than zero", nameof(costPerUnit));
+                throw RefusalException.Invalid("Cost per unit must be greater than zero.");
 
             _logger?.LogInformation("Recording stock receipt: Item {ItemId}, Qty {Qty}",
                 inventoryItemId, quantity);
@@ -133,7 +133,7 @@ namespace Beep.OilandGas.Accounting.Services
                 // Update inventory item
                 var item = await GetInventoryItemByIdAsync(inventoryItemId);
                 if (item == null)
-                    throw new InvalidOperationException($"Inventory item {inventoryItemId} not found");
+                    throw RefusalException.NotFound($"Inventory item {inventoryItemId} was not found.");
 
                 decimal transactionAmount = quantity * costPerUnit;
 
@@ -208,8 +208,8 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error recording stock receipt for item {ItemId}: {Message}",
-                    inventoryItemId, ex.Message);
+                _logger?.LogError(ex, "Error recording stock receipt for item {ItemId}",
+                    inventoryItemId);
                 throw;
             }
         }
@@ -230,7 +230,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(inventoryItemId))
                 throw new ArgumentNullException(nameof(inventoryItemId));
             if (quantity <= 0)
-                throw new ArgumentException("Quantity must be greater than zero", nameof(quantity));
+                throw RefusalException.Invalid("Quantity must be greater than zero.");
 
             _logger?.LogInformation("Recording stock usage: Item {ItemId}, Qty {Qty}, Method {Method}",
                 inventoryItemId, quantity, valuationMethod);
@@ -239,11 +239,10 @@ namespace Beep.OilandGas.Accounting.Services
             {
                 var item = await GetInventoryItemByIdAsync(inventoryItemId);
                 if (item == null)
-                    throw new InvalidOperationException($"Inventory item {inventoryItemId} not found");
+                    throw RefusalException.NotFound($"Inventory item {inventoryItemId} was not found.");
 
                 if ((item.QUANTITY_ON_HAND ?? 0m) < quantity)
-                    throw new InvalidOperationException(
-                        $"Insufficient stock. On hand: {item.QUANTITY_ON_HAND}, Requested: {quantity}");
+                    throw RefusalException.Conflict($"Insufficient stock: {item.QUANTITY_ON_HAND} on hand, {quantity} requested.");
 
                 // Calculate COGS based on valuation method
                 decimal costOfGoods = CalculateCOGS(item, quantity, valuationMethod);
@@ -313,8 +312,8 @@ namespace Beep.OilandGas.Accounting.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error recording stock usage for item {ItemId}: {Message}",
-                    inventoryItemId, ex.Message);
+                _logger?.LogError(ex, "Error recording stock usage for item {ItemId}",
+                    inventoryItemId);
                 throw;
             }
         }

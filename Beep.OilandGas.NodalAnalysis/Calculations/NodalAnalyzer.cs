@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.NodalAnalysis;
+using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.NodalAnalysis.Calculations
 {
@@ -16,29 +17,29 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
         public static OperatingPoint FindOperatingPoint(List<IPRPoint> iprCurve, List<VLPPoint> vlpCurve)
         {
             if (iprCurve == null || iprCurve.Count == 0)
-                throw new ArgumentException("IPR curve cannot be null or empty.", nameof(iprCurve));
+                throw RefusalException.Invalid("An IPR curve with at least one point is required.");
 
             if (vlpCurve == null || vlpCurve.Count == 0)
-                throw new ArgumentException("VLP curve cannot be null or empty.", nameof(vlpCurve));
+                throw RefusalException.Invalid("A VLP curve with at least one point is required.");
 
             var sortedIPR = SanitizeAndSortIprCurve(iprCurve);
             var sortedVLP = SanitizeAndSortVlpCurve(vlpCurve);
 
             if (sortedIPR.Count < 2 || sortedVLP.Count < 2)
-                throw new ArgumentException("IPR and VLP curves must contain at least two valid points each.");
+                throw RefusalException.Invalid("IPR and VLP curves must contain at least two valid points each.");
 
             // Find overlapping flow rate range
             double minFlow = Math.Max(sortedIPR[0].FlowRate, sortedVLP[0].FlowRate);
             double maxFlow = Math.Min(sortedIPR.Last().FlowRate, sortedVLP.Last().FlowRate);
 
             if (minFlow >= maxFlow)
-                throw new ArgumentException("IPR and VLP curves do not overlap in flow rate range.");
+                throw RefusalException.Invalid("IPR and VLP curves do not overlap in flow rate range.");
 
             var overlap = maxFlow - minFlow;
             var sampleCount = Math.Clamp((sortedIPR.Count + sortedVLP.Count) * 30, 200, 4000);
             var step = overlap / sampleCount;
             if (step <= 0 || double.IsNaN(step) || double.IsInfinity(step))
-                throw new ArgumentException("Invalid overlap range between IPR and VLP curves.");
+                throw RefusalException.Invalid("Invalid overlap range between IPR and VLP curves.");
 
             double bestFlowRate = minFlow;
             double bestPressure = 0;
