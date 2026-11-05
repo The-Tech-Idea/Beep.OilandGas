@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data;
 

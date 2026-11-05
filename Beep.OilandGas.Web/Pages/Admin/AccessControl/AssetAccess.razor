@@ -1,3 +1,7 @@
+@using Beep.OilandGas.Models.Data.AccessControl
+@using Beep.OilandGas.PermitsAndApplications.Models
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.PPDM39.DataManagement.Models
 @page "/admin/access-control/asset-access"
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize(Roles = "Administrator")]
@@ -105,7 +109,7 @@
             }
             else
             {
-                <MudDataGrid T="TheTechIdea.Data.OilGas.AppUserAssetAccess" Items="page.Items" Dense="true" Hover="true" Striped="true">
+                <MudDataGrid T="Beep.OilandGas.Models.Data.AccessControl.AppUserAssetAccess" Items="page.Items" Dense="true" Hover="true" Striped="true">
                     <Columns>
                         <PropertyColumn Property="row => row.AssetType" Title="Asset Type" />
                         <PropertyColumn Property="row => row.AssetId" Title="Asset ID" />
@@ -141,7 +145,7 @@
                 <MudDivider Class="my-4" />
                 <MudText Typo="Typo.h6" Class="mb-3">Retirement History — Grant @history.GrantId</MudText>
                 <MudText Typo="Typo.body2" Class="mb-3">@history.Total retirement records. These records do not represent earlier grant/revoke history.</MudText>
-                <MudDataGrid T="TheTechIdea.Data.OilGas.AssetGrantRetirement" Items="history.Items" Dense="true" Hover="true">
+                <MudDataGrid T="Beep.OilandGas.Models.Data.AccessControl.AssetGrantRetirement" Items="history.Items" Dense="true" Hover="true">
                     <Columns>
                         <PropertyColumn Property="row => row.ChangedUtc" Title="Retired (UTC)" />
                         <PropertyColumn Property="row => row.ActorUserId" Title="Application Actor" />
@@ -239,7 +243,7 @@
     [SupplyParameterFromQuery(Name = "user")] public string? RequestedUser { get; set; }
     private bool _disposed;
     private Beep.OilandGas.Models.Data.AssetAccess? _revokeTarget;
-    private TheTechIdea.Data.OilGas.AppUserAssetAccess? _retireTarget;
+    private Beep.OilandGas.Models.Data.AccessControl.AppUserAssetAccess? _retireTarget;
     private static string InterestNumber(decimal value) => value.ToString("G29", System.Globalization.CultureInfo.CurrentCulture);
     private static string RecordedDate(DateTime? value) => value?.ToString("O", System.Globalization.CultureInfo.InvariantCulture) ?? "Not recorded";
     private static string RecordedIndicator(string? value) => string.IsNullOrEmpty(value) ? "Not recorded" : value;

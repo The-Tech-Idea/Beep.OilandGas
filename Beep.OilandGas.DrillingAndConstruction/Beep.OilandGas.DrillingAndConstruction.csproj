@@ -18,4 +18,7 @@
     <ProjectReference Include="..\Beep.OilandGas.PPDM39\Beep.OilandGas.PPDM39.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../Beep.OilandGas.DevelopmentPlanning/Beep.OilandGas.DevelopmentPlanning.csproj" />
+  </ItemGroup>
 </Project>

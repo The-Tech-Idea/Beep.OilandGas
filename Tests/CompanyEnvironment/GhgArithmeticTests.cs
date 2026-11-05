@@ -1,4 +1,5 @@
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.Models.Data.HSE;
+using Beep.OilandGas.HSE.Models;
 using Xunit;
 
 namespace CompanyEnvironment.Tests;

@@ -1,10 +1,10 @@
+using Beep.OilandGas.Models.Data.Company;
 using System.Net;
 using System.Text;
 using System.Text.Json;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Client.Exceptions;
 using Beep.OilandGas.Models.Data.Lease;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using LeaseApi = Beep.OilandGas.Client.App.Services.Lease.LeaseService;
 

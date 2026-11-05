@@ -1,3 +1,7 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.WorkOrder;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Globalization;
 using System.Text.Json;
@@ -8,7 +12,6 @@ using Moq;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using TheTechIdea.Beep.Tools;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 public sealed class CompanyMaintenanceRecordedWorkTests

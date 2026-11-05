@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using System;
 using System.Collections.Generic;
 using Beep.OilandGas.GasProperties.Calculations;

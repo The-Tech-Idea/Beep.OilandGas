@@ -1,3 +1,5 @@
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Repository.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Reflection;
 using Bunit;
@@ -7,7 +9,6 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using System.Security.Claims;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.Web.Auth.Tests;

@@ -1,3 +1,8 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Common;
+using Beep.OilandGas.Accounting.Models;
+using Beep.OilandGas.Models.Data.Company;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -23,7 +28,6 @@ using TheTechIdea.Beep;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Tools;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 public sealed class AccountingSourceHttpTests

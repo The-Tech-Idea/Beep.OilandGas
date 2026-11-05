@@ -1,4 +1,5 @@
-@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.Models.Data.WorkOrder
 <MudStack Spacing="2">
     <MudText>Actual activation UTC @Facts.ActivatedAtUtc.ToString("O") · recorded UTC @Facts.RecordedAtUtc.ToString("O") · actor @Facts.ActorUserId · role @Facts.Role</MudText>
     @if(Facts.Wells.Count>0)

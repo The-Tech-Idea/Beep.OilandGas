@@ -1,8 +1,12 @@
+@using Beep.OilandGas.Models.Data.Lease
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Models.Core.Interfaces
+@using Beep.OilandGas.Models.Data.Company
 @page "/ppdm39/workorder/{Id}"
 @page "/ppdm39/workorder/detail"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @inject Beep.OilandGas.Client.App.CompanyClientContext Company
-@inject TheTechIdea.Data.OilGas.IFieldSelectionContext Fields
+@inject Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext Fields
 @implements IDisposable
 @using Beep.OilandGas.Models.Data.WorkOrder
 @using Beep.OilandGas.Web.Services
@@ -288,7 +292,7 @@
     {
         if(_disposed || _review is null)return;
         var id=OrderId;var scope=Company.Snapshot;ClearDisplayed();_loading=true;
-        if(!TheTechIdea.Data.OilGas.LeaseSummaryValidator.Identifier(id) ||
+        if(!Beep.OilandGas.Models.Data.Lease.LeaseSummaryValidator.Identifier(id) ||
             RecordedOrderId is not null && !string.IsNullOrEmpty(Id) && RecordedOrderId!=Id)
         {
             _review.Clear();_error="One original recorded work-order identity is required; route and query identities must agree.";_loading=false;return;

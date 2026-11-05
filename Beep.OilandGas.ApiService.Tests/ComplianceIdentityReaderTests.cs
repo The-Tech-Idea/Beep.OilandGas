@@ -1,3 +1,4 @@
+using Beep.OilandGas.Repository.Models;
 using System.Text.Json;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.LifeCycle.Services.Processes;
@@ -6,7 +7,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;

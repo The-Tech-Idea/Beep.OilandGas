@@ -1,7 +1,12 @@
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.HSE;
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.HSE.Models;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Client.App.Services.Field;
 using Beep.OilandGas.Models.Data.Security;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.Web.Services;
 
 public sealed class CorrectivePlanWorkspaceState(CompanyClientContext company,IFieldSelectionContext fields,IFieldService api,ICorrectivePlanIntentStore store,Func<Exception,string,string,string> explain):IDisposable

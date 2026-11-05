@@ -1,3 +1,4 @@
+using Beep.OilandGas.ProductionOperations.Models;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -48,8 +49,8 @@ namespace Beep.OilandGas.Web.Services
                 $"/api/field/current/workorder/{Uri.EscapeDataString(instanceId)}");
         }
 
-        public async Task<TheTechIdea.Data.OilGas.WorkOrderProcessReview> GetProcessesAsync(string instanceId) =>
-            await _apiClient.GetAsync<TheTechIdea.Data.OilGas.WorkOrderProcessReview>($"/api/field/current/workorder/{Uri.EscapeDataString(instanceId)}/processes")
+        public async Task<Beep.OilandGas.ProductionOperations.Models.WorkOrderProcessReview> GetProcessesAsync(string instanceId) =>
+            await _apiClient.GetAsync<Beep.OilandGas.ProductionOperations.Models.WorkOrderProcessReview>($"/api/field/current/workorder/{Uri.EscapeDataString(instanceId)}/processes")
                 ?? throw new InvalidOperationException("Recorded work-order process evidence was not returned.");
 
         public async Task<List<string>> GetTransitionsAsync(string instanceId)

@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using TheTechIdeaWeb.Diagnostics;
 using TheTechIdeaWeb.Diagnostics.Notifications;
 

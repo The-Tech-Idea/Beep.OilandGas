@@ -1,3 +1,4 @@
+@using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.DataManagement
 @inject ApiClient ApiClient
@@ -31,7 +32,7 @@
     private ConnectionSnapshot? _tested;
     private sealed record ConnectionSnapshot(string Type, string Name, string Host, int Port, string Database, string Username, string Password);
     private ConnectionSnapshot Snapshot() => new(_databaseType, _name, _host, _port, _database, _username, _password);
-    private bool CanTest => TheTechIdea.Data.OilGas.BeepConnectionName.IsValid(_name) &&
+    private bool CanTest => Beep.OilandGas.Models.Data.DataManagement.BeepConnectionName.IsValid(_name) &&
         !string.IsNullOrWhiteSpace(_database) && (_databaseType.Equals("SqlLite", StringComparison.OrdinalIgnoreCase) || !string.IsNullOrWhiteSpace(_host));
     private bool TestMatches => _tested is not null && _tested == Snapshot();
     protected override void OnInitialized()

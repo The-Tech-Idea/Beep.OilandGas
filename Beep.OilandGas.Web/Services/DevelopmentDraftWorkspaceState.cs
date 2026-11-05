@@ -1,9 +1,15 @@
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.DevelopmentPlanning.Models;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.Company;
 using System.Text.Json;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.DevelopmentPlanning;
 using Beep.OilandGas.Models.Data.Security;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Web.Services;
 

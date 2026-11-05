@@ -1,9 +1,11 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Accounting.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional;
 
 [ApiController]

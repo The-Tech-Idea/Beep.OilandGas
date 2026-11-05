@@ -1,8 +1,9 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.Repository.Tests;
 public sealed class RoleWorkspaceTests

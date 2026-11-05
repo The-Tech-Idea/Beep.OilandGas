@@ -1,7 +1,12 @@
+@using Beep.OilandGas.Models.Data.Field
+@using Beep.OilandGas.Models.Data.HSE
+@using Beep.OilandGas.Models.Core.Interfaces
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.HSE.Models
 @page "/ppdm39/compliance/ghg"
 @using Beep.OilandGas.Client.App
 @using Beep.OilandGas.Web.Services
-@using TheTechIdea.Data.OilGas
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @implements IDisposable
 @inject CompanyClientContext Company

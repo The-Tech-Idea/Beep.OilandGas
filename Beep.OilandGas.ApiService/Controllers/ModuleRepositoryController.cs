@@ -1,3 +1,7 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.ApiService.Data;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -9,7 +13,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TheTechIdea.Beep.Editor;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 using System.Data;
 

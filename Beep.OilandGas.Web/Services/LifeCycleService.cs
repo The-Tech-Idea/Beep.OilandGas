@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.Company;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -31,9 +33,9 @@ namespace Beep.OilandGas.Web.Services
         private readonly ApiClient _apiClient;
         private readonly OilGasCallFailures _calls;
         private readonly IFailureReporter _failures;
-        private readonly TheTechIdea.Data.OilGas.IFieldSelectionContext _fields;
+        private readonly Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext _fields;
 
-        public LifeCycleService(ApiClient apiClient, OilGasCallFailures calls, IFailureReporter failures, TheTechIdea.Data.OilGas.IFieldSelectionContext fields)
+        public LifeCycleService(ApiClient apiClient, OilGasCallFailures calls, IFailureReporter failures, Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext fields)
         {
             _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
             _calls = calls ?? throw new ArgumentNullException(nameof(calls));

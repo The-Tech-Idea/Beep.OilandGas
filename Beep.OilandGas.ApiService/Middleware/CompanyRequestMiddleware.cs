@@ -1,10 +1,10 @@
+using Beep.OilandGas.Models.Data.Company;
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Middleware;
 

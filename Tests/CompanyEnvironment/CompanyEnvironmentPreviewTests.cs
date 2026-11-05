@@ -1,5 +1,6 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using Beep.OilandGas.ApiService.Services;
-using TheTechIdea.Data.OilGas;
 using TheTechIdea.OilGas.Core;
 using Xunit;
 
@@ -111,7 +112,7 @@ public class CompanyEnvironmentPreviewTests
     [Fact]
     public void CompanyCanSaveNamedBeepModuleAndMappingsWithoutAFilePath()
     {
-        var json = "{\"dataSources\":{\"wells\":{\"kind\":\"beep\",\"path\":\"PPDM_CORE\",\"profile\":\"ppdm39\",\"codes\":{\"well\":{\"status\":{\"A\":\"Active\"}}}}}}";
+        var json = "{\"dataSources\":{\"wells\":{\"kind\":\"beep\",\"path\":\"PPDM_CORE\",\"profile\":\"ppdm39\",\"codes\":{\"string\":{\"kind\":{\"A\":\"Production\"}}}}}}";
         var request = new CompanyEnvironmentSaveRequest("KW", json, "", Guid.NewGuid().ToString("N"));
         var result = CompanyEnvironmentPreviewer.ValidateForSave(new("tenant", "company"), request);
         Assert.Equal("KW", result.CountryCode);

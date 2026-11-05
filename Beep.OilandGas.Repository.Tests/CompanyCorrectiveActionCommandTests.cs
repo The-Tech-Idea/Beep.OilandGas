@@ -1,3 +1,9 @@
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Models.Data.HSE;
 using System.Text.Json;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.ApiService.Services;
@@ -9,7 +15,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Fixture = Beep.OilandGas.Repository.Tests.CompanyPPDMRowAccessTests.Fixture;
 using ReadTests = Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionAuthorityTests;
@@ -91,7 +96,7 @@ public sealed class CompanyCorrectiveActionCommandTests
     {
         using var f = await Ready();
 #if BEEP_SECURE_CONNECTIONS
-        f.IncidentProjectionEnabled = true;
+        f.NativeProjectionEnabled = true;
 #endif
         f.Source.Setup(x => x.GetEntityStructure(It.IsAny<TheTechIdea.Beep.DataBase.EntityStructure>(), true)).Returns(() => new TheTechIdea.Beep.Tools.ClassCreator(f.Editor.Object).ConvertToEntityStructure(typeof(HSE_INCIDENT_RESPONSE)));
         var profile = ReadTests.Profile(f); var context = (await profile.GetCurrentFieldSelectionAsync()).SelectionContext!;
@@ -114,7 +119,7 @@ public sealed class CompanyCorrectiveActionCommandTests
     {
         using var f = await Ready();
 #if BEEP_SECURE_CONNECTIONS
-        f.IncidentProjectionEnabled = true;
+        f.NativeProjectionEnabled = true;
         f.Source.As<TheTechIdea.Beep.DataBase.IOwnedEntityProjectionDataSource>()
             .Setup(x => x.ReadEntityProjectionAsync(It.IsAny<string>(), It.IsAny<List<TheTechIdea.Beep.Report.AppFilter>>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()))
             .Returns(async (string table, List<TheTechIdea.Beep.Report.AppFilter> filters, IReadOnlyList<string> requested, CancellationToken _) =>
@@ -196,7 +201,7 @@ public sealed class CompanyCorrectiveActionCommandTests
     {
         using var f = await Ready();
 #if BEEP_SECURE_CONNECTIONS
-        f.IncidentProjectionEnabled = true;
+        f.NativeProjectionEnabled = true;
 #endif
         var profile = ReadTests.Profile(f); var context = (await profile.GetCurrentFieldSelectionAsync()).SelectionContext!;
         var commands = new PPDMCompanyCorrectiveActionCommands(f.Gate, profile,

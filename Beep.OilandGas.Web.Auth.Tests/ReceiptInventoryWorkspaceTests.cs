@@ -1,8 +1,9 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 #if WORKFLOW_INBOX_FOCUSED
 using Beep.OilandGas.ApiService.Tests;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Web.Services;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.Web.Auth.Tests;
 public sealed class ReceiptInventoryWorkspaceTests

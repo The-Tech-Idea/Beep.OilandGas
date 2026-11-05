@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Reflection;
 using System.Security.Claims;
@@ -12,7 +15,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using Moq;
 using MudBlazor.Services;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 public sealed class CompanyFxRateScreenTests

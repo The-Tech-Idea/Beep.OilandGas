@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using Blazored.LocalStorage;
 using Microsoft.JSInterop;
 using MudBlazor;

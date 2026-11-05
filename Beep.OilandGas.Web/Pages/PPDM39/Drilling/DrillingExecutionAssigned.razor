@@ -1,7 +1,10 @@
+@using Beep.OilandGas.Models.Data.Lease
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.DrillingAndConstruction.Models
+@using Beep.OilandGas.PPDM39.DataManagement.Models
 @page "/drilling/program-execution/assigned"
 @using System.Globalization
 @using Beep.OilandGas.Client.App
-@using TheTechIdea.Data.OilGas
 @using Beep.OilandGas.Web.Components.Workflow
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @implements IDisposable
@@ -13,7 +16,7 @@
 <MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
     <MudText Typo="Typo.h4" HtmlTag="h1">Assigned execution reporting</MudText>
     <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3"><MudButton Href="/tasks/inbox" Variant="Variant.Outlined">Company inbox</MudButton><MudButton Href="/drilling/workspace" Variant="Variant.Outlined">Drilling workspace</MudButton><MudButton OnClick="Reload" Disabled="@(_state?.Busy==true || _state?.ProgressBusy==true)" Variant="Variant.Outlined">Reload assigned responsibility</MudButton></MudStack>
-    @if(ProcessId is {} reporting && LeaseSummaryValidator.Identifier(reporting) && reporting.StartsWith(TheTechIdea.Data.OilGas.DrillingExecutionAssignment.InstancePrefix,StringComparison.Ordinal))
+    @if(ProcessId is {} reporting && LeaseSummaryValidator.Identifier(reporting) && reporting.StartsWith(Beep.OilandGas.DrillingAndConstruction.Models.DrillingExecutionAssignment.InstancePrefix,StringComparison.Ordinal))
     {<MudButton Href="@("/drilling/program-execution/reporting?assignmentId="+Uri.EscapeDataString(reporting))" Variant="Variant.Outlined">Open reporting status and closure history</MudButton>}
     @if(_state?.Busy==true){<MudProgressLinear Indeterminate="true" aria-label="Confirming individual execution reporting assignment" />}
     @if(_state?.Error is {} error){<MudAlert Severity="Severity.Error" role="alert">@error</MudAlert>}

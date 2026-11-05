@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using System;
 using System.Data;
 using System.Data.SQLite;

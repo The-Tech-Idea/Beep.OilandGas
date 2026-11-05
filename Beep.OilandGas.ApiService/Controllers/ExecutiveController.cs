@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Reporting;
+using Beep.OilandGas.Models.Data.Company;
 using System.Threading.Tasks;
 using Beep.OilandGas.ApiService.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -27,7 +29,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         }
 
         [HttpGet("portfolio")]
-        public async Task<ActionResult<TheTechIdea.Data.OilGas.ExecutivePortfolioReview>> GetPortfolio()
+        public async Task<ActionResult<Beep.OilandGas.Models.Data.Reporting.ExecutivePortfolioReview>> GetPortfolio()
         {Response.Headers.CacheControl="no-store";return Ok(await _service.GetPortfolioAsync(User));}
 
         [HttpGet("assets")]

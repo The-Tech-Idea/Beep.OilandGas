@@ -1,5 +1,8 @@
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DrillingAndConstruction.Models;
 using System.Data;
-using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.PPDM39.Core;
 namespace Beep.OilandGas.LifeCycle.Services.Processes;
 public partial class PPDMProcessService

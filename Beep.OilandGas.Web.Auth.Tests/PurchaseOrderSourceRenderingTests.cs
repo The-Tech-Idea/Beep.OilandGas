@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Web.Services;
@@ -9,7 +11,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using MudBlazor.Services;
 using Xunit;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.Web.Auth.Tests;
 public sealed class PurchaseOrderSourceRenderingTests
 {

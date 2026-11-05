@@ -1,3 +1,10 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.WorkOrder;
 using System.Data;
 using System.Text.Json;
 using Beep.OilandGas.Models.Core.Refusals;
@@ -6,8 +13,7 @@ using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
-using static TheTechIdea.Data.OilGas.CompanyInventorySourceReview;
+using static Beep.OilandGas.Models.Data.Accounting.CompanyInventorySourceReview;
 
 namespace Beep.OilandGas.LifeCycle.Services.Production;
 

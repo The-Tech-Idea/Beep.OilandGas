@@ -1,9 +1,10 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Repository;
 

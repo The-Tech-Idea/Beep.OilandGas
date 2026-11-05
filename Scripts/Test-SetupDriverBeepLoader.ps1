@@ -1,36 +1,43 @@
 param([string]$PackageSource = "$env:USERPROFILE/.nuget/packages", [string]$Filter = 'FullyQualifiedName~SetupDriverBeepLoaderTests', [switch]$SourceBuild,
     [string]$IsolatedDriverFeed, [string]$IsolatedDriverVersion, [switch]$BundledSqlServer, [switch]$PublicDriverDownload, [switch]$VerifySqlServerRestore,
     [string]$HseLifecycleTestAssembly)
+. (Join-Path $PSScriptRoot 'RestoredOwnerFixtureReferences.ps1')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 function XmlPath([string]$path) { [System.Security.SecurityElement]::Escape($path) }
 if ($SourceBuild) {
-    $dataProject = Join-Path $root 'TheTechIdea.Data/TheTechIdea.Data.csproj'
+    $dataProject = Join-Path $root 'Beep.OilandGas.Models/Beep.OilandGas.Models.csproj'
+    Update-OilGasRestoredFixtureProjectFile -ProjectPath $dataProject -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
     dotnet restore $dataProject -p:UseBeepDMSource=true --ignore-failed-sources --verbosity quiet
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     dotnet build $dataProject --no-restore -p:UseBeepDMSource=true -p:BuildProjectReferences=false --nologo --verbosity quiet
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     $repositoryProject = Join-Path $root 'Beep.OilandGas.Repository/Beep.OilandGas.Repository.csproj'
+    Update-OilGasRestoredFixtureProjectFile -ProjectPath $repositoryProject -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
     dotnet restore $repositoryProject -p:UseBeepDMSource=true --ignore-failed-sources --verbosity quiet
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     dotnet build $repositoryProject --no-restore -p:UseBeepDMSource=true -p:BuildProjectReferences=false --nologo --verbosity quiet
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     $modelsProject = Join-Path $root 'Beep.OilandGas.Models/Beep.OilandGas.Models.csproj'
+    Update-OilGasRestoredFixtureProjectFile -ProjectPath $modelsProject -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
     dotnet restore $modelsProject -p:UseBeepDMSource=true --ignore-failed-sources --verbosity quiet
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     dotnet build $modelsProject --no-restore -p:UseBeepDMSource=true -p:BuildProjectReferences=false -p:GeneratePackageOnBuild=false --nologo --verbosity quiet
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     $sqlServerProject = Join-Path (Split-Path $root -Parent) 'BeepDataSources/DataSourcesPluginsCore/SQlServerDataSourceCore/SqlServerDataSourceCore.csproj'
+    Update-OilGasRestoredFixtureProjectFile -ProjectPath $sqlServerProject -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
     dotnet restore $sqlServerProject --ignore-failed-sources --verbosity quiet
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     dotnet build $sqlServerProject -f net10.0 --no-restore -p:GeneratePackageOnBuild=false --nologo --verbosity quiet
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     $ppdmProject = Join-Path $root 'Beep.OilandGas.PPDM39/Beep.OilandGas.PPDM39.csproj'
+    Update-OilGasRestoredFixtureProjectFile -ProjectPath $ppdmProject -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
     dotnet restore $ppdmProject -p:UseBeepDMSource=true --ignore-failed-sources --verbosity quiet
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     dotnet build $ppdmProject --no-restore -p:UseBeepDMSource=true -p:BuildProjectReferences=false -p:GeneratePackageOnBuild=false --nologo --verbosity quiet
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     $applicationProject = Join-Path $root 'Beep.OilandGas.PPDM39.DataManagement/Beep.OilandGas.PPDM39.DataManagement.csproj'
+    Update-OilGasRestoredFixtureProjectFile -ProjectPath $applicationProject -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
     dotnet restore $applicationProject -p:UseBeepDMSource=true --ignore-failed-sources --verbosity quiet
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     dotnet build $applicationProject --no-restore -p:UseBeepDMSource=true -p:BuildProjectReferences=false --nologo --verbosity quiet
@@ -41,18 +48,18 @@ New-Item -ItemType Directory -Path $work | Out-Null
 $test = [System.Security.SecurityElement]::Escape((Join-Path $root 'Beep.OilandGas.ApiService.Tests/SetupDriverBeepLoaderTests.cs'))
 $unitTest = [System.Security.SecurityElement]::Escape((Join-Path $root 'Beep.OilandGas.ApiService.Tests/SetupDriverServiceTests.cs'))
 $service = [System.Security.SecurityElement]::Escape((Join-Path $root 'Beep.OilandGas.ApiService/Services/SetupDriverService.cs'))
-$item = [System.Security.SecurityElement]::Escape((Join-Path $root 'TheTechIdea.Data/OilGas/SetupDriverItem.cs'))
+$item = [System.Security.SecurityElement]::Escape((Join-Path $root 'Beep.OilandGas.PPDM39.DataManagement/Models/SetupDriverItem.cs'))
 $refusal = [System.Security.SecurityElement]::Escape((Join-Path $root 'Beep.OilandGas.Models/Core/Refusals/RefusalException.cs'))
 $kind = [System.Security.SecurityElement]::Escape((Join-Path $root 'Beep.OilandGas.Models/Core/Refusals/RefusalKind.cs'))
 $probe = [System.Security.SecurityElement]::Escape((Join-Path $root 'Beep.OilandGas.PPDM39.DataManagement/Services/ConnectionProbe.cs'))
 $target = [System.Security.SecurityElement]::Escape((Join-Path $root 'Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/MigrationConnectionTarget.cs'))
 $selection = [System.Security.SecurityElement]::Escape((Join-Path $root 'Beep.OilandGas.ApiService/Services/SystemSetupConnectionSelectionService.cs'))
-$selectionContract = [System.Security.SecurityElement]::Escape((Join-Path $root 'TheTechIdea.Data/OilGas/SystemSetupConnectionSelection.cs'))
-$modelBase = [System.Security.SecurityElement]::Escape((Join-Path $root 'TheTechIdea.Data/OilGas/ModelEntityBase.cs'))
+$selectionContract = [System.Security.SecurityElement]::Escape((Join-Path $root 'Beep.OilandGas.PPDM39.DataManagement/Models/SystemSetupConnectionSelection.cs'))
+$modelBase = [System.Security.SecurityElement]::Escape((Join-Path $root 'Beep.OilandGas.Models/Data/ModelEntityBase.cs'))
 $modelInterface = [System.Security.SecurityElement]::Escape((Join-Path $root 'Beep.OilandGas.PPDM.Models/IPPDMEntity.cs'))
-$systemRecord = [System.Security.SecurityElement]::Escape((Join-Path $root 'TheTechIdea.Data/OilGas/SYSTEM_SETUP_RECORD.cs'))
-$companyEnvironment = [System.Security.SecurityElement]::Escape((Join-Path $root 'TheTechIdea.Data/OilGas/COMPANY_OILGAS_ENVIRONMENT.cs'))
-$ghgSelection = [System.Security.SecurityElement]::Escape((Join-Path $root 'TheTechIdea.Data/OilGas/COMPANY_GHG_CATALOG_SELECTION.cs'))
+$systemRecord = [System.Security.SecurityElement]::Escape((Join-Path $root 'Beep.OilandGas.PPDM39.DataManagement/Models/SYSTEM_SETUP_RECORD.cs'))
+$companyEnvironment = [System.Security.SecurityElement]::Escape((Join-Path $root 'Beep.OilandGas.PPDM39.DataManagement/Models/COMPANY_OILGAS_ENVIRONMENT.cs'))
+$ghgSelection = [System.Security.SecurityElement]::Escape((Join-Path $root 'Beep.OilandGas.PPDM39.DataManagement/Models/COMPANY_GHG_CATALOG_SELECTION.cs'))
 $beepReferences = if ($SourceBuild) {
     $beepRoot = Join-Path (Split-Path $root -Parent) 'BeepDM'
     $sourcesRoot = Join-Path (Split-Path $root -Parent) 'BeepDataSources'
@@ -115,12 +122,12 @@ $bundledReference
 }
 $modelReferences = if ($SourceBuild) {
     $bin = Join-Path $root 'Beep.OilandGas.PPDM39.DataManagement/bin/Debug/net10.0'
-    @('TheTechIdea.Data', 'Beep.OilandGas.Models', 'Beep.OilandGas.PPDM.Models', 'Beep.OilandGas.PPDM39', 'Beep.OilandGas.PPDM39.DataManagement', 'TheTechIdeaWeb.Diagnostics.Abstractions') | ForEach-Object {
+    @('Beep.OilandGas.Models', 'Beep.OilandGas.Models', 'Beep.OilandGas.PPDM.Models', 'Beep.OilandGas.PPDM39', 'Beep.OilandGas.PPDM39.DataManagement', 'TheTechIdeaWeb.Diagnostics.Abstractions') | ForEach-Object {
         '<Reference Include="' + $_ + '"><HintPath>' + (XmlPath (Join-Path $bin ($_.ToString() + '.dll'))) + '</HintPath></Reference>'
     }
 } else {
-    @('<Compile Include="' + $modelBase + '" />', '<Compile Include="' + $modelInterface + '" />', '<Compile Include="' + $systemRecord + '" />', '<Compile Include="' + $companyEnvironment + '" />', '<Compile Include="' + $ghgSelection + '" />', '<Compile Include="' + (XmlPath (Join-Path $root 'TheTechIdea.Data/OilGas/BeepConnectionName.cs')) + '" />',
-      '<Compile Include="' + (XmlPath (Join-Path $root 'TheTechIdea.Data/OilGas/SystemSetupConfiguration.cs')) + '" />', '<Compile Include="' + (XmlPath (Join-Path $root 'TheTechIdea.Data/OilGas/CompanyEnvironmentIdentity.cs')) + '" />', '<Compile Include="' + (XmlPath (Join-Path $root 'TheTechIdea.Data/OilGas/CompanyEnvironmentPreview.cs')) + '" />', '<Compile Include="' + (XmlPath (Join-Path $root 'TheTechIdea.Data/OilGas/CompanyAccessModels.cs')) + '" />',
+    @('<Compile Include="' + $modelBase + '" />', '<Compile Include="' + $modelInterface + '" />', '<Compile Include="' + $systemRecord + '" />', '<Compile Include="' + $companyEnvironment + '" />', '<Compile Include="' + $ghgSelection + '" />', '<Compile Include="' + (XmlPath (Join-Path $root 'Beep.OilandGas.Models/Data/DataManagement/BeepConnectionName.cs')) + '" />',
+      '<Compile Include="' + (XmlPath (Join-Path $root 'Beep.OilandGas.PPDM39.DataManagement/Models/SystemSetupConfiguration.cs')) + '" />', '<Compile Include="' + (XmlPath (Join-Path $root 'Beep.OilandGas.PPDM39.DataManagement/Models/CompanyEnvironmentIdentity.cs')) + '" />', '<Compile Include="' + (XmlPath (Join-Path $root 'Beep.OilandGas.PPDM39.DataManagement/Models/CompanyEnvironmentPreview.cs')) + '" />', '<Compile Include="' + (XmlPath (Join-Path $root 'Beep.OilandGas.Models/Data/AccessControl/CompanyAccessModels.cs')) + '" />',
       '<Compile Include="' + (XmlPath (Join-Path $root 'Beep.OilandGas.PPDM39/Core/PPDMDataSourceTransaction.cs')) + '" />', '<Compile Include="' + (XmlPath (Join-Path $root 'Beep.OilandGas.PPDM39/Core/BeepOperationResult.cs')) + '" />')
 }
 $constants = if ($SourceBuild) { 'WORKFLOW_INBOX_FOCUSED;BEEP_SOURCE_TEST;BEEP_SECURE_CONNECTIONS' } else { 'WORKFLOW_INBOX_FOCUSED' }
@@ -156,6 +163,7 @@ $env:OILGAS_TEST_NUGET_FEED = (Resolve-Path -LiteralPath $PackageSource).Path
 $env:OILGAS_TEST_APPSETTINGS = (Resolve-Path -LiteralPath (Join-Path $root 'Beep.OilandGas.ApiService/appsettings.json')).Path
 if ($SourceBuild) { $env:OILGAS_TEST_SQL_SOURCE = (Resolve-Path -LiteralPath (Join-Path (Split-Path $root -Parent) 'BeepDataSources/DataSourcesPluginsCore/SQlServerDataSourceCore/bin/Debug/net10.0/SqlServerDataSourceCore.dll')).Path }
 if ($BundledSqlServer) { $env:OILGAS_TEST_BUNDLED_DRIVER = '1' }
+Update-OilGasRestoredFixtureProjectFile -ProjectPath $project -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
 dotnet restore $project --source $PackageSource --ignore-failed-sources
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 dotnet build $project --no-restore --nologo --verbosity quiet

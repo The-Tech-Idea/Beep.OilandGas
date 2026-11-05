@@ -1,10 +1,13 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL;
 using Microsoft.Extensions.Options;
 using TheTechIdea.Beep.Editor;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Services;
 
 /// <summary>Binds the existing native well owner to the already authorized CORE and configured company date zone.</summary>

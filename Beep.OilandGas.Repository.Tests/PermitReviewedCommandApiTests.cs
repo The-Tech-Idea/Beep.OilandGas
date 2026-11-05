@@ -1,5 +1,8 @@
 #if RECORDED_APPROVAL_HTTP_FOCUSED
 extern alias PermitSdk;
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PermitsAndApplications.Models;
 using Beep.OilandGas.Client.App;
 using System.Net;
 using System.Security.Claims;
@@ -14,7 +17,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.Repository.Tests;

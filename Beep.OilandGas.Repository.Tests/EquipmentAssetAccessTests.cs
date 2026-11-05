@@ -1,3 +1,8 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Models.Core.Refusals;
@@ -8,7 +13,6 @@ using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.Web.Services;
 using Microsoft.EntityFrameworkCore;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Fixture=Beep.OilandGas.Repository.Tests.CompanyPPDMRowAccessTests.Fixture;
 namespace Beep.OilandGas.Repository.Tests;

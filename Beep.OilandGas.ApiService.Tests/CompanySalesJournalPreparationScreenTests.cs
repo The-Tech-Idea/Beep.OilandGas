@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Reflection;
 using System.Security.Claims;
@@ -20,7 +22,7 @@ public sealed class CompanySalesJournalPreparationScreenTests
     {public Beep.OilandGas.Web.Components.Workflow.SalesReceivableReviewWorkbench? Workbench;public IComponent CreateInstance(Type type){var value=(IComponent)Activator.CreateInstance(type)!;if(value is Beep.OilandGas.Web.Components.Workflow.SalesReceivableReviewWorkbench workbench)Workbench=workbench;return value;}}
     [Fact] public async Task RenderedFormRequiresExplicitNumberAndReasonRetainsUnknownRequestAndRecoversOriginalDraft()
     {
-        using var validation=TheTechIdea.Data.OilGas.CompanySalesInvoiceValidation.Enter();var fixture=new CompanySalesJournalSourceTests.Fixture();await fixture.Prepare();CompanySalesJournalPreparationHttpTests.Writes(fixture);await using var host=await CompanySalesJournalSourceHttpTests.Start(fixture);host.Context.Permissions=CompanySalesJournalPreparationHttpTests.Grants;
+        using var validation=Beep.OilandGas.Models.Data.Accounting.CompanySalesInvoiceValidation.Enter();var fixture=new CompanySalesJournalSourceTests.Fixture();await fixture.Prepare();CompanySalesJournalPreparationHttpTests.Writes(fixture);await using var host=await CompanySalesJournalSourceHttpTests.Start(fixture);host.Context.Permissions=CompanySalesJournalPreparationHttpTests.Grants;
         using var company=CompanyGLAccountHttpTests.Selected(actor:fixture.Current.ActorUserId,grants:CompanySalesJournalPreparationHttpTests.Grants);var client=CompanyGLAccountHttpTests.Client(host.Client,company);
         var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime,APInvoiceFinancialHttpTests.NoBrowser>();services.AddSingleton<NavigationManager,APInvoiceFinancialHttpTests.Navigation>();
         services.AddSingleton(company);services.AddScoped<CompanySalesReceivableWorkspaceState>();services.AddSingleton<AuthenticationStateProvider,Authentication>();services.AddSingleton<IAccountingServiceClient>(client);services.AddSingleton<IComponentActivator,Components>();await using var provider=services.BuildServiceProvider();var state=provider.GetRequiredService<CompanySalesReceivableWorkspaceState>();state.AttachOwner(new object());await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<ILoggerFactory>());

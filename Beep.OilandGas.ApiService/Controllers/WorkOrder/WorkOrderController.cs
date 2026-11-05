@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.ProductionOperations.Models;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.WorkOrder;
 using Beep.OilandGas.ApiService.Attributes;
@@ -300,7 +302,7 @@ public class WorkOrderController : ControllerBase
         var result=await _inspection.RecordResultAsync(instanceId,condSeq,request,User.ActingUserId());return Ok(result);
     }
     [HttpGet("{instanceId}/processes")]
-    public async Task<ActionResult<TheTechIdea.Data.OilGas.WorkOrderProcessReview>> GetProcessesAsync(string instanceId)
+    public async Task<ActionResult<Beep.OilandGas.ProductionOperations.Models.WorkOrderProcessReview>> GetProcessesAsync(string instanceId)
     {
         var source=await RequireOrderSourceAsync(instanceId,"READ",requireState:false);
         var rows=await _processes.GetProcessInstancesForEntityAsync(instanceId,"WORK_ORDER");

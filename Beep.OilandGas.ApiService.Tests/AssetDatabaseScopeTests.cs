@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Repository;
@@ -6,7 +8,6 @@ using Moq;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Utilities;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Xunit.Abstractions;
 

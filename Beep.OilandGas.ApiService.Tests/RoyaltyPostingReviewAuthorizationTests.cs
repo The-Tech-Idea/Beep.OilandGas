@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers.Accounting.Royalty;
 using Beep.OilandGas.Models.Core.Interfaces;

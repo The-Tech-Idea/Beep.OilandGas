@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using System.Text.Json;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -6,7 +9,6 @@ using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Services;
 

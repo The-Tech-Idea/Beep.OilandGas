@@ -1,8 +1,9 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using System.Text.Json.Nodes;
 using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.Core;
 using Microsoft.EntityFrameworkCore;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.Repository.Tests;
 public sealed partial class CurrentFieldLifecycleGateTests

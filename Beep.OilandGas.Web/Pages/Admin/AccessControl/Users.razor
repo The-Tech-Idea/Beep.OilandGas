@@ -1,5 +1,7 @@
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Repository.Models
 @page "/admin/access-control/users"
-@using TheTechIdea.Data.OilGas
 @attribute [Authorize(Roles = "Administrator")]
 @inject UserAdministrationClient Accounts
 @inject IDialogService Dialogs

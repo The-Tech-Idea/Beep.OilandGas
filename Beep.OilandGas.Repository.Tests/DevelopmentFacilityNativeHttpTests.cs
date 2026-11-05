@@ -1,3 +1,10 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.DevelopmentPlanning;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DevelopmentPlanning.Models;
+using Beep.OilandGas.Repository.Models;
 using System.Net;
 using System.Net.Http.Json;
 using Beep.OilandGas.ApiService.Controllers.Field;
@@ -18,7 +25,6 @@ using TheTechIdea.Beep;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using TheTechIdea.Beep.Tools;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.Repository.Tests;

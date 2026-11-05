@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
 using Moq;
 using System.Security.Claims;
 using System.Text.Json;
@@ -12,7 +14,6 @@ using Beep.OilandGas.UserManagement.Models.Requests.UserManagement;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Fixture = Beep.OilandGas.Repository.Tests.CompanyPPDMRowAccessTests.Fixture;
 
@@ -115,8 +116,11 @@ public sealed class CompanyRowSecurityTests
         f.Rows.Add(new FACILITY { FACILITY_ID = "plant", FACILITY_TYPE = "gas", PRIMARY_FIELD_ID = "A", CURRENT_OPERATOR = "company" });
         Assert.True((await Security(f).CheckRowAccessAsync("actor", new("FACILITY", "{\"FACILITY_ID\":\"plant\",\"FACILITY_TYPE\":\"gas\"}"))).HasAccess);
         Assert.False((await Security(f).CheckRowAccessAsync("actor", new("FACILITY", "{\"FACILITY_ID\":\"plant\",\"FACILITY_TYPE\":\"oil\"}"))).HasAccess);
-        Assert.Equal(4, f.Queries[0].Count);
-        Assert.Contains(f.Queries[0], filter => filter.FieldName == "CURRENT_OPERATOR" && filter.FilterValue == "company"); Assert.Empty(f.Writes);
+        var query=f.Queries[0];Assert.Equal(3,query.Count);
+        Assert.Contains(query,filter=>filter.FieldName=="FACILITY_ID" && filter.FilterValue=="plant");
+        Assert.Contains(query,filter=>filter.FieldName=="FACILITY_TYPE" && filter.FilterValue=="gas");
+        Assert.Contains(query,filter=>filter.FieldName=="PRIMARY_FIELD_ID" && filter.FilterValue=="A");
+        Assert.Empty(f.Writes);
     }
 
     [Theory]

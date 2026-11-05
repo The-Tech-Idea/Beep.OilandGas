@@ -1,7 +1,11 @@
+@using Beep.OilandGas.DrillingAndConstruction.Models
+@using Beep.OilandGas.PermitsAndApplications.Models
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.Models.Data.WorkOrder
+@using Beep.OilandGas.PPDM39.DataManagement.Models
 @page "/drilling/program-execution/assignment"
 @using System.Globalization
 @using Beep.OilandGas.Client.App
-@using TheTechIdea.Data.OilGas
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @implements IDisposable
 @inject CompanyClientContext Company

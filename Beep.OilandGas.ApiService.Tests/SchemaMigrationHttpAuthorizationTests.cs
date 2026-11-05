@@ -1,3 +1,4 @@
+using Beep.OilandGas.Repository.Models;
 using System.Net;
 using System.Net.Http.Json;
 using Beep.Foundation.IdentityServer.Shared.Identity;
@@ -18,7 +19,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using TheTechIdea.Beep.Editor;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;

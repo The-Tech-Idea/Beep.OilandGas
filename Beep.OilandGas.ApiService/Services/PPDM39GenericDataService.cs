@@ -1,3 +1,6 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.Models.Data.Company;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -36,7 +39,7 @@ namespace Beep.OilandGas.ApiService.Services
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly CompanyModuleConnection _company;
-        private readonly TheTechIdea.Data.OilGas.IPPDMRowAccessPolicy _rows;
+        private readonly Beep.OilandGas.PPDM39.Core.Security.IPPDMRowAccessPolicy _rows;
         private readonly ILogger<PPDM39GenericDataService> _logger;
 
         public PPDM39GenericDataService(
@@ -46,7 +49,7 @@ namespace Beep.OilandGas.ApiService.Services
             IPPDMMetadataRepository metadata,
             CompanyModuleConnection company,
             ILogger<PPDM39GenericDataService> logger,
-            TheTechIdea.Data.OilGas.IPPDMRowAccessPolicy rows)
+            Beep.OilandGas.PPDM39.Core.Security.IPPDMRowAccessPolicy rows)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));

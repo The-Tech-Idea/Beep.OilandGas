@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.ProductionOperations.Models;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Models.Data.WorkOrder;
 namespace Beep.OilandGas.Web.Services;
@@ -6,10 +9,10 @@ namespace Beep.OilandGas.Web.Services;
 public sealed class WorkOrderDetailState : IDisposable
 {
     private readonly CompanyClientContext company;
-    private readonly HashSet<(string Actor, TheTechIdea.Data.OilGas.CompanyScope Company, string Field, string Id)> uncertain=[];
+    private readonly HashSet<(string Actor, Beep.OilandGas.Models.Data.AccessControl.CompanyScope Company, string Field, string Id)> uncertain=[];
     private bool disposed;
     public long Version { get; private set; }
-    public TheTechIdea.Data.OilGas.WorkOrderProcessReview? Processes { get; private set; }
+    public Beep.OilandGas.ProductionOperations.Models.WorkOrderProcessReview? Processes { get; private set; }
     public WorkOrderDetailModel? Current { get; private set; }
     public WorkOrderDetailState(CompanyClientContext company){this.company=company;company.Changed+=Clear;}
     public void Clear(){++Version;Current=null;Processes=null;}
@@ -25,7 +28,7 @@ public sealed class WorkOrderDetailState : IDisposable
         RecordedWorkOrderComponentChecks.Require(row);
         Current=row;
     }
-    public async Task LoadProcessesAsync(Func<Task<TheTechIdea.Data.OilGas.WorkOrderProcessReview>> read)
+    public async Task LoadProcessesAsync(Func<Task<Beep.OilandGas.ProductionOperations.Models.WorkOrderProcessReview>> read)
     {
         Processes=null;var source=Current;var generation=Version;var scope=company.Snapshot;
         if(disposed || source is null || scope.Selection is null)return;
@@ -56,7 +59,7 @@ public sealed class WorkOrderDetailState : IDisposable
         if(row is null || row.InstanceId!=a.Id || row.FieldId!=a.Request.ExpectedFieldId || row.WoSubType!=a.Subtype || row.State!=a.Request.ToState)
             throw new InvalidOperationException("The transition response and recorded reload must confirm the original order and requested state. Review its outcome before retrying.");
     }
-    private static (string,TheTechIdea.Data.OilGas.CompanyScope,string,string) Key(Attempt a)=>(a.Company.UserId,a.Company.Scope,a.Request.ExpectedFieldId,a.Id);
+    private static (string,Beep.OilandGas.Models.Data.AccessControl.CompanyScope,string,string) Key(Attempt a)=>(a.Company.UserId,a.Company.Scope,a.Request.ExpectedFieldId,a.Id);
     public void Dispose(){disposed=true;company.Changed-=Clear;Clear();}
     public sealed record Attempt(long Version,long CompanyVersion,CompanyClientSelection Company,string Id,string Subtype,TransitionWorkOrderRequest Request);
 }

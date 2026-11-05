@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using System.Security.Cryptography;
 using System.ComponentModel;
 using System.Runtime.InteropServices;

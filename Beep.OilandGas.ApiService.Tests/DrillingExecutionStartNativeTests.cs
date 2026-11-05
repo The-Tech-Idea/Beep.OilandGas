@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.DrillingAndConstruction.Models;
+using Beep.OilandGas.Models.Data.Company;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -9,7 +12,6 @@ using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using TheTechIdea.Beep.Tools;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 public sealed class DrillingExecutionStartNativeTests

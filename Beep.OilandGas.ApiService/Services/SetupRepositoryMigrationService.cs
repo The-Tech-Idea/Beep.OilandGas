@@ -1,8 +1,10 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using Beep.OilandGas.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
-using TheTechIdea.Data.OilGas;
 using System.Security.Cryptography;
 using System.Text;
 

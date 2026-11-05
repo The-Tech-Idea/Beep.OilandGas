@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.LeaseAcquisition.Models;
 using Beep.OilandGas.ApiService.Controllers.Operations;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Core.Refusals;
@@ -6,7 +8,6 @@ using Beep.OilandGas.Models.Data.Operations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;

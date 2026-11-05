@@ -1,6 +1,8 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DrillingAndConstruction.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using Beep.OilandGas.ApiService.Tests;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Web.Auth.Tests;
 

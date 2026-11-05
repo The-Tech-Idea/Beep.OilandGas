@@ -1,8 +1,15 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.DevelopmentPlanning;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.DevelopmentPlanning.Models;
 using Microsoft.Extensions.Options;
 using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.Models.Constants;
 using Beep.OilandGas.Models.Data.HSE;
 using Beep.OilandGas.Models.Core.Interfaces;

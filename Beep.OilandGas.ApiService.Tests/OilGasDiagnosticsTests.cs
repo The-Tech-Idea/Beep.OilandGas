@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;

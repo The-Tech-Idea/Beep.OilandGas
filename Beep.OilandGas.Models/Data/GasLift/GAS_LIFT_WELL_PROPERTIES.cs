@@ -1,4 +1,4 @@
-﻿using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Calculations;
 using System;
 using System.ComponentModel;

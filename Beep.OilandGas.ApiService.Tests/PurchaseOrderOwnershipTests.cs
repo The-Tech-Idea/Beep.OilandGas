@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.AccessControl;
 using System.Security.Claims;
 using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ApiService.Services;
@@ -11,7 +14,6 @@ using TheTechIdea.Beep;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Tools;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 public sealed class PurchaseOrderOwnershipTests

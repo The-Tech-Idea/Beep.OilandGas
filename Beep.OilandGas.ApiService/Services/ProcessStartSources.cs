@@ -1,8 +1,10 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.LifeCycle.Models;
 using System.Text.Json;
 using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.WorkOrder;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Services;
 
 /// <summary>Projects existing company-bound journal and FIELD-bound maintenance owners. No generic source inference.</summary>

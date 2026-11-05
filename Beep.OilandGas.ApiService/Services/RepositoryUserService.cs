@@ -1,8 +1,9 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Services;
 

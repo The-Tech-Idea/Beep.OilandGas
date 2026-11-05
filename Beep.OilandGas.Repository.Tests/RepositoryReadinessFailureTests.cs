@@ -1,8 +1,8 @@
+using Beep.OilandGas.Repository.Models;
 using System.Data.Common;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 using Xunit;
 

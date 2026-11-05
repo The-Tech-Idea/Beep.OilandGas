@@ -1,10 +1,11 @@
+using Beep.OilandGas.Models.Data.HSE;
+using Beep.OilandGas.Models.Data.Company;
 using System.Net;
 using System.Text;
 using System.Text.Json;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Client.App.Services.Field;
 using Beep.OilandGas.Models.Constants;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.Repository.Tests;

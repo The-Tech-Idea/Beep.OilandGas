@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Company;
 using System.Net;
 using System.Security.Claims;
 using System.Text.Json;
@@ -8,7 +11,6 @@ using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using ReviewClient = Beep.OilandGas.Client.App.Services.AccessControl.IAccessControlService;
 using AccessApi = Beep.OilandGas.Client.App.Services.AccessControl.AccessControlService;

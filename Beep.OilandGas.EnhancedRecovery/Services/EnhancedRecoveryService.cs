@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Models.Core.Refusals;
 using System;
 using System.Collections.Generic;

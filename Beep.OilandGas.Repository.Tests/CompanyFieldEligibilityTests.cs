@@ -1,3 +1,7 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using System.Data;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Refusals;
@@ -8,7 +12,6 @@ using Moq;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Utilities;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Fixture = Beep.OilandGas.Repository.Tests.CompanyPPDMRowAccessTests.Fixture;
 
@@ -258,7 +261,10 @@ public sealed class CompanyFieldEligibilityTests
         await Assert.ThrowsAsync<RefusalException>(() => f.Policy.ValidateMutationAsync(row.GetType(), table, row, row, PPDMRowMutation.Update, "actor"));
         await f.Grant(table, "child", "WRITE", facilityType: table == "FACILITY" ? "gas" : null);
         Assert.Equal("WRITE", Assert.Single(await service.GetUserAccessibleAssetsAsync("actor", table, includeInherited: false)).AccessLevel);
-        await f.Policy.ValidateMutationAsync(row.GetType(), table, row, row, PPDMRowMutation.Update, "actor");
+        if(table=="FACILITY")
+            await Assert.ThrowsAsync<RefusalException>(()=>f.Policy.ValidateMutationAsync(row.GetType(),table,row,row,PPDMRowMutation.Update,"actor"));
+        else
+            await f.Policy.ValidateMutationAsync(row.GetType(),table,row,row,PPDMRowMutation.Update,"actor");
     }
 
     [Theory]

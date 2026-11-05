@@ -1,3 +1,5 @@
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.LifeCycle.Models
 @* StateTransitionPanel — shows available transitions and fires confirm dialog *@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -44,16 +46,16 @@ else
 
 @code {
     [Parameter, EditorRequired] public Beep.OilandGas.Web.Services.ProcessInstanceDetailState? DetailState { get; set; }
-    [Parameter, EditorRequired] public TheTechIdea.Data.OilGas.ProcessTransitionReview? Review { get; set; }
+    [Parameter, EditorRequired] public Beep.OilandGas.LifeCycle.Models.ProcessTransitionReview? Review { get; set; }
     [Parameter] public string ExpectedRevision { get; set; } = string.Empty;
     [Parameter] public string CurrentState { get; set; } = string.Empty;
     [Parameter] public string InstanceId { get; set; } = string.Empty;
-    [Parameter] public IReadOnlyList<TheTechIdea.Data.OilGas.ProcessTransitionChoice> Transitions { get; set; } = [];
+    [Parameter] public IReadOnlyList<Beep.OilandGas.LifeCycle.Models.ProcessTransitionChoice> Transitions { get; set; } = [];
     [Parameter] public EventCallback OnAttemptChanged { get; set; }
     [Parameter] public EventCallback OnTransitioned { get; set; }
 
     private bool _busy;
-    private async Task ConfirmTransitionAsync(TheTechIdea.Data.OilGas.ProcessTransitionChoice choice)
+    private async Task ConfirmTransitionAsync(Beep.OilandGas.LifeCycle.Models.ProcessTransitionChoice choice)
     {
         if(_busy || DetailState is null || Review is null || !DetailState.CanSubmit(Review) || string.IsNullOrWhiteSpace(CurrentState) || choice.FromStateId!=CurrentState)return;
         var reviewed=Review;var detail=DetailState;var instance=InstanceId;var state=CurrentState;var revision=ExpectedRevision;var company=Company.Snapshot;

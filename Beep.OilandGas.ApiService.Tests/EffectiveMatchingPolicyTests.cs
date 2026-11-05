@@ -1,6 +1,7 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Text.Json;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 public sealed class EffectiveMatchingPolicyTests
@@ -34,12 +35,16 @@ public sealed class EffectiveMatchingPolicyTests
         Assert.Equal(APSourceComparisonOutcome.WithinRecordedLimit,review.Checks.Single(row=>row.Code=="policy-price/line").Outcome);
         foreach(var code in new[]{"policy-tax","policy-non-po","acceptance","ledger","decision"})Assert.Equal(APSourceComparisonOutcome.Unavailable,review.Checks.Single(row=>row.Code==code).Outcome);
     }
-    [Theory][InlineData("date")][InlineData("zone")][InlineData("expired")][InlineData("future")][InlineData("currency")][InlineData("unverified")][InlineData("changed")][InlineData("inactive")][InlineData("draft")][InlineData("ambiguous")]
+    [Theory][InlineData("date")][InlineData("zone")][InlineData("expired")][InlineData("future")][InlineData("currency")][InlineData("unverified")][InlineData("inactive")][InlineData("draft")][InlineData("ambiguous")]
     public async Task MissingOrAmbiguousPolicyNeverUsesLatestRowOrUnverifiedStatus(string fault)
     {
         var review=await Review(fault:fault);Assert.Null(review.PolicySelection.PolicyId);Assert.Null(review.PolicySelection.Rules);
         Assert.Equal(APSourceComparisonOutcome.Unavailable,review.Checks.Single(row=>row.Code=="policy").Outcome);
         Assert.Equal(APSourceComparisonOutcome.Unavailable,review.Checks.Single(row=>row.Code=="policy-price/line").Outcome);
+    }
+    [Fact] public async Task ChangedCanonicalApprovalProofIsRefusedBeforeReturningFinancialDiagnostics()
+    {
+        await Assert.ThrowsAsync<InvalidOperationException>(()=>Review(fault:"changed"));
     }
     [Theory][InlineData(5.05,5,1,true)][InlineData(5.051,5,1,false)][InlineData(4.95,5,1,true)][InlineData(4.949,5,1,false)][InlineData(5,5,0,true)][InlineData(5.001,5,0,false)]
     public async Task PriceAndQuantityToleranceAreExactTwoSidedPOBasisComparisons(decimal observed,decimal basis,decimal tolerance,bool within)

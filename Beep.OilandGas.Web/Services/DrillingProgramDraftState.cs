@@ -1,5 +1,9 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.DrillingAndConstruction.Models;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DevelopmentPlanning.Models;
 using Beep.OilandGas.Client.App;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Web.Services;
 public sealed partial class DrillingProgramDraftState:IDisposable

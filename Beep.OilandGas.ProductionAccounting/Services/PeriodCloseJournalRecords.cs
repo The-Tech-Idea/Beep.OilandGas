@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.ProductionAccounting.Constants;
 using TheTechIdea.Beep.Report;

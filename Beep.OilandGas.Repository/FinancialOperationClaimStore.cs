@@ -1,5 +1,6 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using Microsoft.EntityFrameworkCore;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Repository;
 

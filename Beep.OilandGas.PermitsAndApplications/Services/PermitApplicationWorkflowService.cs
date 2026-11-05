@@ -1,4 +1,5 @@
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.PermitsAndApplications.Exceptions;
 using Beep.OilandGas.PPDM39.Core;
 using System;

@@ -1,9 +1,12 @@
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.HSE.Models;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data.HSE;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;

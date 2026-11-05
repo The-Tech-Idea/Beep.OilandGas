@@ -1,3 +1,7 @@
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 using System.Data;
 using System.Text.Json;
 using System.ComponentModel.DataAnnotations;
@@ -10,7 +14,6 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using TheTechIdea.Beep.ConfigUtil;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.PPDM39.DataManagement.Services.WorkOrder;
 
 /// <summary>Native pending work-permit issue owner; never independent approval or execution authorization.</summary>

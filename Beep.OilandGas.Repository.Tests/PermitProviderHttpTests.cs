@@ -1,3 +1,11 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Repository.Models;
 #if RECORDED_APPROVAL_HTTP_FOCUSED
 using System.Net;
 using System.Net.Http.Json;
@@ -22,7 +30,6 @@ using Microsoft.Extensions.Options;
 using Moq;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.Editor;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Fixture = Beep.OilandGas.Repository.Tests.CompanyPPDMRowAccessTests.Fixture;
 

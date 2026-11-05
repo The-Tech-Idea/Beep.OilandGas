@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.DevelopmentPlanning.Models;
+using Beep.OilandGas.Models.Data.Company;
 using System.Data;
 using System.Text.Json;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
@@ -7,7 +10,6 @@ using TheTechIdea.Beep;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ProductionAccounting.Services;
 

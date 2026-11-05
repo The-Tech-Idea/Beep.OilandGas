@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using System.Net;
 using System.Net.Mail;
 using Microsoft.Extensions.Configuration;

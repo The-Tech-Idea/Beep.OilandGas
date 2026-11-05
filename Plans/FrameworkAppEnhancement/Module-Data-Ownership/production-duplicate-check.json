@@ -1,0 +1,14 @@
+{
+  "scope": "Fresh Roslyn production declarations; all migrated/consolidated destination metadata identities including nesting and generic arity; same-owner partial declarations permitted",
+  "files": 7343,
+  "checked_metadata_names": 1200,
+  "missing_metadata_names": [],
+  "duplicates": {},
+  "manifest_sha256": "f2289f53ca111759824b7dad4294a30bd1e7381d503d81a82fd2a528682b5eda",
+  "consolidated_existing_definitions": [
+    {
+      "metadata_name": "Beep.OilandGas.Models.Data.DataManagement.FileImportError",
+      "path": "Beep.OilandGas.Models/Data/DataManagement/FileImportError.cs"
+    }
+  ]
+}

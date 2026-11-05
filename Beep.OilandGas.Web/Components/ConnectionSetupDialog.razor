@@ -1,3 +1,5 @@
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.PPDM39.DataManagement.Models
 @using Beep.OilandGas.Models.Data.DataManagement
 @using Beep.OilandGas.Models.Data
 @using System.Net.Http.Json
@@ -312,7 +314,7 @@
     private bool CanTestConnection()
     {
         return !string.IsNullOrEmpty(_selectedDatabaseType) &&
-               TheTechIdea.Data.OilGas.BeepConnectionName.IsValid(_connectionName) &&
+               Beep.OilandGas.Models.Data.DataManagement.BeepConnectionName.IsValid(_connectionName) &&
                (_selectedDatabaseType == "SQLite" || !string.IsNullOrWhiteSpace(_host)) &&
                !string.IsNullOrEmpty(_database);
     }

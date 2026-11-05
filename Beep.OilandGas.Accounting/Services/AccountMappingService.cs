@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -109,7 +111,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             var results = await repo.GetAsync(filters);
             var rows = results?.ToArray() ?? throw new InvalidOperationException("The complete legacy mapping source is unavailable.");
-            if (rows.Any(row => row is not GLAccountMapping || TheTechIdea.Data.OilGas.CompanyGLMappingReview.HasCompanyMarkers((GLAccountMapping)row)))
+            if (rows.Any(row => row is not GLAccountMapping || Beep.OilandGas.Models.Data.Accounting.CompanyGLMappingReview.HasCompanyMarkers((GLAccountMapping)row)))
                 throw new InvalidOperationException("Company/book/currency mappings cannot be loaded or seeded through a legacy global cache.");
             if (rows.Cast<GLAccountMapping>().GroupBy(row => row.MAPPING_KEY, StringComparer.Ordinal).Any(group => group.Count() > 1))
                 throw new InvalidOperationException("The complete legacy mapping set is ambiguous.");

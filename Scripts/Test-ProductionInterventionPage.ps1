@@ -1,4 +1,5 @@
-param([Parameter(Mandatory)][string]$DataAssemblyPath,[string]$Filter="")
+param([Parameter(Mandatory)][string]$ModelsAssemblyPath,[string]$Filter="")
+. (Join-Path $PSScriptRoot 'RestoredOwnerFixtureReferences.ps1')
 $ErrorActionPreference='Stop'
 $repositoryRoot=Split-Path $PSScriptRoot -Parent
 $checkDirectory=Join-Path ([IO.Path]::GetTempPath()) ('oilgas-intervention-page-'+[guid]::NewGuid().ToString('N'))
@@ -76,43 +77,43 @@ foreach($source in @('IBusinessProcessServiceClient.cs','BusinessProcessServiceC
     [IO.File]::WriteAllText((Join-Path $checkDirectory $source),[IO.File]::ReadAllText($original).Replace('using Beep.OilandGas.Models.Processes;','').Replace('using Beep.OilandGas.Models.Data.Analytics;',''),[Text.UTF8Encoding]::new($false))
 }
 $dependencies=Join-Path $repositoryRoot 'Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0'
-foreach($name in @('TheTechIdea.Data','Beep.OilandGas.Models','Beep.OilandGas.PPDM.Models','DataManagementModels')){
-    $path=if($name -eq 'TheTechIdea.Data'){(Resolve-Path -LiteralPath $DataAssemblyPath).Path}else{Join-Path $dependencies ($name+'.dll')}
+foreach($name in @('Beep.OilandGas.Models','Beep.OilandGas.Models','Beep.OilandGas.PPDM.Models','DataManagementModels')){
+    $path=if($name -eq 'Beep.OilandGas.Models'){(Resolve-Path -LiteralPath $ModelsAssemblyPath).Path}else{Join-Path $dependencies ($name+'.dll')}
     if(-not(Test-Path -LiteralPath $path)){throw "Required actual dependency missing: $name"}
     $node=$project.CreateElement('Reference');$node.SetAttribute('Include',$name);$hint=$project.CreateElement('HintPath');$hint.InnerText=$path;[void]$node.AppendChild($hint)
-    if($name -eq 'TheTechIdea.Data'){$alias=$project.CreateElement('Aliases');$alias.InnerText='global,actualData';[void]$node.AppendChild($alias)}
-    if($name -eq 'Beep.OilandGas.Models'){$alias=$project.CreateElement('Aliases');$alias.InnerText='legacyModels';[void]$node.AppendChild($alias)}
+    if($name -eq 'Beep.OilandGas.Models'){$alias=$project.CreateElement('Aliases');$alias.InnerText='global,actualOwners';[void]$node.AppendChild($alias)}
+    if($name -eq 'Beep.OilandGas.Models'){$alias=$project.CreateElement('Aliases');$alias.InnerText='actualModels';[void]$node.AppendChild($alias)}
     [void]$group.AppendChild($node)
 }
 @'
-extern alias actualData;
-extern alias legacyModels;
-global using ComplianceReportRequest = legacyModels::Beep.OilandGas.Models.Data.Process.ComplianceReportRequest;
-global using CorrectiveActionCloseRequest = legacyModels::Beep.OilandGas.Models.Data.Process.CorrectiveActionCloseRequest;
-global using GateChecklistResponse = legacyModels::Beep.OilandGas.Models.Data.Process.GateChecklistResponse;
-global using GateReviewDecisionRequest = legacyModels::Beep.OilandGas.Models.Data.Process.GateReviewDecisionRequest;
-global using HSEIncidentUpdateRequest = legacyModels::Beep.OilandGas.Models.Data.Process.HSEIncidentUpdateRequest;
-global using IncidentCloseRequest = legacyModels::Beep.OilandGas.Models.Data.Process.IncidentCloseRequest;
-global using ProcessHistoryEntry = legacyModels::Beep.OilandGas.Models.Processes.ProcessHistoryEntry;
-global using ProcessInstanceSummary = legacyModels::Beep.OilandGas.Models.Data.Process.ProcessInstanceSummary;
-global using ProcessInstance = legacyModels::Beep.OilandGas.Models.Processes.ProcessInstance;
-global using ProcessDefinition = legacyModels::Beep.OilandGas.Models.Processes.ProcessDefinition;
-global using AnalyticsDashboardSummary = legacyModels::Beep.OilandGas.Models.Data.Analytics.AnalyticsDashboardSummary;
-global using KPITrendPoint = legacyModels::Beep.OilandGas.Models.Data.Analytics.KPITrendPoint;
-global using ReservesMaturationSummary = legacyModels::Beep.OilandGas.Models.Data.Analytics.ReservesMaturationSummary;
-global using ProcessInstanceRequest = actualData::Beep.OilandGas.Models.Data.Process.ProcessInstanceRequest;
-global using WellTestResponse = actualData::Beep.OilandGas.Models.Data.WellTestResponse;
-global using FieldResponse = actualData::Beep.OilandGas.Models.Data.FieldResponse;
-global using FieldListItem = actualData::Beep.OilandGas.Models.Data.FieldListItem;
-global using SetActiveFieldRequest = actualData::Beep.OilandGas.Models.Data.SetActiveFieldRequest;
-global using WorkOrderSubType = actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderSubType;
-global using WorkOrderDetailModel = actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderDetailModel;
-global using WellPerformanceAnalysisResponse = legacyModels::Beep.OilandGas.Models.Data.Production.WellPerformanceAnalysisResponse;
-global using PerformanceDeviationRequest = legacyModels::Beep.OilandGas.Models.Data.Production.PerformanceDeviationRequest;
-global using PerformanceDeviationResult = legacyModels::Beep.OilandGas.Models.Data.Production.PerformanceDeviationResult;
-global using ProductionForecastResponse = legacyModels::Beep.OilandGas.Models.Data.ProductionForecastResponse;
-global using ReservoirDashboardSummary = legacyModels::Beep.OilandGas.Models.Data.Production.ReservoirDashboardSummary;
-global using ReservoirPoolDto = legacyModels::Beep.OilandGas.Models.Data.Production.ReservoirPoolDto;
+extern alias actualOwners;
+extern alias actualModels;
+global using ComplianceReportRequest = actualModels::Beep.OilandGas.Models.Data.Process.ComplianceReportRequest;
+global using CorrectiveActionCloseRequest = actualModels::Beep.OilandGas.Models.Data.Process.CorrectiveActionCloseRequest;
+global using GateChecklistResponse = actualModels::Beep.OilandGas.Models.Data.Process.GateChecklistResponse;
+global using GateReviewDecisionRequest = actualModels::Beep.OilandGas.Models.Data.Process.GateReviewDecisionRequest;
+global using HSEIncidentUpdateRequest = actualModels::Beep.OilandGas.Models.Data.Process.HSEIncidentUpdateRequest;
+global using IncidentCloseRequest = actualModels::Beep.OilandGas.Models.Data.Process.IncidentCloseRequest;
+global using ProcessHistoryEntry = actualModels::Beep.OilandGas.Models.Processes.ProcessHistoryEntry;
+global using ProcessInstanceSummary = actualModels::Beep.OilandGas.Models.Data.Process.ProcessInstanceSummary;
+global using ProcessInstance = actualModels::Beep.OilandGas.Models.Processes.ProcessInstance;
+global using ProcessDefinition = actualModels::Beep.OilandGas.Models.Processes.ProcessDefinition;
+global using AnalyticsDashboardSummary = actualModels::Beep.OilandGas.Models.Data.Analytics.AnalyticsDashboardSummary;
+global using KPITrendPoint = actualModels::Beep.OilandGas.Models.Data.Analytics.KPITrendPoint;
+global using ReservesMaturationSummary = actualModels::Beep.OilandGas.Models.Data.Analytics.ReservesMaturationSummary;
+global using ProcessInstanceRequest = actualOwners::Beep.OilandGas.Models.Data.Process.ProcessInstanceRequest;
+global using WellTestResponse = actualOwners::Beep.OilandGas.Models.Data.WellTestResponse;
+global using FieldResponse = actualOwners::Beep.OilandGas.Models.Data.FieldResponse;
+global using FieldListItem = actualOwners::Beep.OilandGas.Models.Data.FieldListItem;
+global using SetActiveFieldRequest = actualOwners::Beep.OilandGas.Models.Data.SetActiveFieldRequest;
+global using WorkOrderSubType = actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderSubType;
+global using WorkOrderDetailModel = actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderDetailModel;
+global using WellPerformanceAnalysisResponse = actualModels::Beep.OilandGas.Models.Data.Production.WellPerformanceAnalysisResponse;
+global using PerformanceDeviationRequest = actualModels::Beep.OilandGas.Models.Data.Production.PerformanceDeviationRequest;
+global using PerformanceDeviationResult = actualModels::Beep.OilandGas.Models.Data.Production.PerformanceDeviationResult;
+global using ProductionForecastResponse = actualModels::Beep.OilandGas.Models.Data.ProductionForecastResponse;
+global using ReservoirDashboardSummary = actualModels::Beep.OilandGas.Models.Data.Production.ReservoirDashboardSummary;
+global using ReservoirPoolDto = actualModels::Beep.OilandGas.Models.Data.Production.ReservoirPoolDto;
 '@ | Set-Content (Join-Path $checkDirectory 'ActualContracts.cs') -Encoding utf8
 @'
 @using Microsoft.AspNetCore.Components
@@ -124,6 +125,7 @@ global using ReservoirPoolDto = legacyModels::Beep.OilandGas.Models.Data.Product
 @using Beep.OilandGas.Web.Components.BusinessProcess
 @using Beep.OilandGas.Web.Components.Shared
 '@ | Set-Content (Join-Path $checkDirectory '_Imports.razor') -Encoding utf8
-$path=Join-Path $checkDirectory 'InterventionPage.csproj';$project.Save($path)
+$path=Join-Path $checkDirectory 'InterventionPage.csproj';Add-OilGasRestoredOwnerReferences -Project $project -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
+$project.Save($path)
 $testArgs=@('test',$path,'--logger','console;verbosity=normal');if($Filter){$testArgs+=@('--filter',$Filter)};dotnet @testArgs
 if($LASTEXITCODE -ne 0){throw "Intervention parent page check failed: $checkDirectory"}

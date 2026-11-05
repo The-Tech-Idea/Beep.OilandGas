@@ -1,5 +1,6 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
 using System.Security.Claims;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Services;
 /// <summary>Standard ASP.NET roles must agree with freshly read app-owned selected-company roles.</summary>
 public static class AccountingPeriodRoleChecks

@@ -1,10 +1,11 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using System.Net;
 using System.Security.Claims;
 using System.Text.Json;
 using Beep.OilandGas.Web.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging.Abstractions;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.Web.Auth.Tests;

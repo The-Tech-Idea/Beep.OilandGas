@@ -1,3 +1,6 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PermitsAndApplications.Models;
 #if RECORDED_APPROVAL_HTTP_FOCUSED
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Core.Refusals;
@@ -7,7 +10,6 @@ using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
 using TheTechIdea.Beep;
 using TheTechIdea.Beep.Editor;
-using TheTechIdea.Data.OilGas;
 using Moq;
 using Xunit;
 namespace Beep.OilandGas.Repository.Tests;

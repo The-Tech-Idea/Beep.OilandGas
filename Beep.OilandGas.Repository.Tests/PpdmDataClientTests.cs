@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -9,7 +11,6 @@ using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Moq;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.Repository.Tests;
@@ -173,9 +174,9 @@ public sealed class PpdmDataClientTests
     }
 
     [Fact]
-    public void Active_CRUD_contracts_and_their_notifying_base_are_owned_by_the_canonical_data_assembly()
+    public void Shared_CRUD_contracts_and_their_notifying_base_use_the_existing_model_owner()
     {
-        var owner = typeof(AppTenant).Assembly;
+        var owner = typeof(ModelEntityBase).Assembly;
         Assert.Equal(owner, typeof(GetEntitiesRequest).Assembly); Assert.Equal(owner, typeof(GetEntitiesResponse).Assembly);
         Assert.Equal(owner, typeof(GenericEntityRequest).Assembly); Assert.Equal(owner, typeof(GenericEntityResponse).Assembly); Assert.Equal(owner, typeof(ModelEntityBase).Assembly);
         var value = new GenericEntityResponse(); var notified = false;

@@ -1,5 +1,8 @@
 #if WORKFLOW_INBOX_FOCUSED
-extern alias actualData;
+extern alias actualOwners;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.Company;
 using System.Reflection;
 using System.Security.Claims;
 using Beep.OilandGas.Client.App;
@@ -13,7 +16,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using Moq;
 using MudBlazor.Services;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 using Xunit;
 namespace Beep.OilandGas.Web.Auth.Tests;
@@ -38,7 +40,7 @@ public sealed class WorkOrderPermitDocumentSourcePanelTests
         client.Setup(value=>value.ReviewWorkOrderPermitDocumentSourceAsync(review.Source.Query,It.IsAny<CancellationToken>())).Returns(()=>{comparisons++;if(mode=="late-field"){fields.Setup(value=>value.GetCurrentFieldIdAsync()).ReturnsAsync("other");fields.Raise(value=>value.CurrentFieldChanged+=null!,"other");}if(mode=="late-selection")panel!.GetType().GetMethod("ComponentChanged",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(panel,["another-component"]);return Task.FromResult(review);});
         client.Setup(value=>value.ReadWorkOrderPermitDocumentContentAsync(It.IsAny<CompanyWorkOrderPermitDocumentReview>(),It.IsAny<CancellationToken>())).Returns(()=>{if(mode=="deliver-late"){fields.Setup(value=>value.GetCurrentFieldIdAsync()).ReturnsAsync("other");fields.Raise(value=>value.CurrentFieldChanged+=null!,"other");}return Task.FromResult(new CompanyWorkOrderPermitDocumentContent(review,mode=="deliver-tampered"?[3,2,1]:[1,2,3]));});
         client.Setup(value=>value.ReviewWorkOrderDocumentContributorsAsync(It.IsAny<CompanyWorkOrderPermitDocumentQuery>(),It.IsAny<CancellationToken>())).Returns(()=>{if(mode=="contributors-late"){fields.Setup(value=>value.GetCurrentFieldIdAsync()).ReturnsAsync("other");fields.Raise(value=>value.CurrentFieldChanged+=null!,"other");}return Task.FromResult(mode.StartsWith("accept")?acceptance.Command.ContributorReview!:contributorReview);});
-        CompanyWorkOrderDocumentAcceptanceCommand? original=null;actualData::Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_INSPECTION? receipt=null;var writes=0;var nav=new Nav();
+        CompanyWorkOrderDocumentAcceptanceCommand? original=null;actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_INSPECTION? receipt=null;var writes=0;var nav=new Nav();
         client.Setup(value=>value.RecordWorkOrderDocumentAcceptanceAsync(It.IsAny<CompanyWorkOrderDocumentAcceptanceCommand>(),It.IsAny<CancellationToken>())).Returns((CompanyWorkOrderDocumentAcceptanceCommand command,CancellationToken _)=>{Assert.Contains(command.IntentId.ToString("D"),nav.Uri);Assert.Contains(command.InspectionId,nav.Uri);writes++;original=command;receipt=command.Prepare(acceptance.Pending,DateTime.UtcNow);if(mode=="accept-late"){fields.Setup(value=>value.GetCurrentFieldIdAsync()).ReturnsAsync("other");fields.Raise(value=>value.CurrentFieldChanged+=null!,"other");}if(mode=="accept-lost")throw new HttpRequestException("Lost response");return Task.FromResult(receipt);});
         client.Setup(value=>value.RecoverWorkOrderDocumentAcceptanceReferenceAsync(It.IsAny<CompanyWorkOrderDocumentAcceptanceReference>(),It.IsAny<CancellationToken>())).Returns((CompanyWorkOrderDocumentAcceptanceReference reference,CancellationToken _)=>{Assert.Equal(original!.IntentId,reference.IntentId);return Task.FromResult(new CompanyWorkOrderDocumentAcceptanceRecovery(original,receipt!));});
         var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime,Js>();services.AddSingleton<IComponentActivator,Components>();services.AddSingleton(company);services.AddSingleton(new WorkOrderExecutionPermitDecisionState(company));services.AddSingleton<NavigationManager>(nav);services.AddSingleton(fields.Object);services.AddSingleton(client.Object);services.AddSingleton<AuthenticationStateProvider>(new Auth(mode=="actor"?"other":context.ActorUserId));services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<ILoggerFactory>());

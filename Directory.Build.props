@@ -3,6 +3,8 @@
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Beep.OilandGas.Repository.Tests' And '$(FocusedCompanyTests)' == 'true'">
     <BaseIntermediateOutputPath>obj/company-focused/</BaseIntermediateOutputPath>
     <BaseOutputPath>bin/company-focused/</BaseOutputPath>
+    <!-- Other historical fixture outputs must never override current owner HintPaths. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);**/bin/**;**/obj/**</DefaultItemExcludes>
   </PropertyGroup>
   <PropertyGroup>
     <BeepDMVersion>3.1.1</BeepDMVersion>

@@ -1,3 +1,5 @@
+using Beep.OilandGas.Repository.Models;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 #if BEEP_SOURCE_TEST
 using Beep.OilandGas.ApiService.Services;
 using Microsoft.Extensions.Configuration;
@@ -15,7 +17,6 @@ using TheTechIdea.Beep.Logger;
 using TheTechIdea.Beep.Security;
 using TheTechIdea.Beep.Tools;
 using TheTechIdea.Beep.Utilities;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Beep.OilandGas.Repository;
 using Microsoft.EntityFrameworkCore;

@@ -39,6 +39,9 @@
     <Folder Include="Core\Common\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../Beep.OilandGas.Repository/Beep.OilandGas.Repository.csproj" />
+  </ItemGroup>
 </Project>
 
 

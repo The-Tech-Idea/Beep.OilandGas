@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 
 namespace Beep.OilandGas.Models.Data.EconomicAnalysis
 {

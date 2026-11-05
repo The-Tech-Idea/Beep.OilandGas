@@ -1,5 +1,6 @@
+using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.Models.Core.Interfaces;
-using FileImportResult = Beep.OilandGas.PPDM39.Core.FileImportResult;
+using FileImportResult = Beep.OilandGas.Models.Data.DataManagement.FileImportResult;
 
 namespace Beep.OilandGas.ApiService.Services;
 

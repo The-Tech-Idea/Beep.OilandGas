@@ -1,10 +1,11 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Core.Refusals;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.DependencyInjection;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Attributes;
 

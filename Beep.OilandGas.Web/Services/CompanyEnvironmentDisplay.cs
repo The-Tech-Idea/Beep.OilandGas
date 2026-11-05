@@ -1,6 +1,7 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using Beep.OilandGas.Client.App;
 using System.Globalization;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Web.Services;
 

@@ -1,3 +1,7 @@
+@using Beep.OilandGas.Models.Data.AccessControl
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Repository.Models
 @page "/admin/module-databases"
 @page "/ppdm39/create-database"
 @page "/ppdm39/create-database/target"
@@ -7,7 +11,6 @@
 @page "/ppdm39/create-database/modules"
 @page "/ppdm39/setup"
 @page "/ppdm39/setup/beep-wizard"
-@using TheTechIdea.Data.OilGas
 @using Beep.OilandGas.Web.Services
 @using Beep.OilandGas.Models.Data
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]

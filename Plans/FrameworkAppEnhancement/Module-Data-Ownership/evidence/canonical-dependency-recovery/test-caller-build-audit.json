@@ -1,0 +1,179 @@
+{
+  "scope": "25 existing top-level OilandGas test project builds, default source configuration, BuildProjectReferences=false; baseline plus explicit current caller repairs. Nested standalone fixtures and focused profiles have separate scopes. Not a clean full-solution build.",
+  "baseline_passed": 16,
+  "current_passed": 22,
+  "total": 25,
+  "results": [
+    {
+      "project": "Beep.OilandGas.ApiService.Tests",
+      "baseline_passed": false,
+      "baseline_log": "Beep.OilandGas.ApiService.Tests-migration-caller-build.log",
+      "current_passed": false
+    },
+    {
+      "project": "Beep.OilandGas.ChokeAnalysis.Tests",
+      "baseline_passed": true,
+      "baseline_log": "Beep.OilandGas.ChokeAnalysis.Tests-migration-caller-build.log",
+      "current_passed": true
+    },
+    {
+      "project": "Beep.OilandGas.CompressorAnalysis.Tests",
+      "baseline_passed": true,
+      "baseline_log": "Beep.OilandGas.CompressorAnalysis.Tests-migration-caller-build.log",
+      "current_passed": true
+    },
+    {
+      "project": "Beep.OilandGas.Drawing.Tests",
+      "baseline_passed": true,
+      "baseline_log": "Beep.OilandGas.Drawing.Tests-migration-caller-build.log",
+      "current_passed": true
+    },
+    {
+      "project": "Beep.OilandGas.EconomicAnalysis.Tests",
+      "baseline_passed": false,
+      "baseline_log": "Beep.OilandGas.EconomicAnalysis.Tests-migration-caller-build.log",
+      "current_passed": true,
+      "current_log": "oilgas-economic-caller-tests.log",
+      "tests_passed": 6,
+      "tests_skipped": 0
+    },
+    {
+      "project": "Beep.OilandGas.EnhancedRecovery.Tests",
+      "baseline_passed": true,
+      "baseline_log": "Beep.OilandGas.EnhancedRecovery.Tests-migration-caller-build.log",
+      "current_passed": true
+    },
+    {
+      "project": "Beep.OilandGas.FlashCalculations.Tests",
+      "baseline_passed": true,
+      "baseline_log": "Beep.OilandGas.FlashCalculations.Tests-migration-caller-build.log",
+      "current_passed": true
+    },
+    {
+      "project": "Beep.OilandGas.GasLift.Tests",
+      "baseline_passed": true,
+      "baseline_log": "Beep.OilandGas.GasLift.Tests-migration-caller-build.log",
+      "current_passed": true
+    },
+    {
+      "project": "Beep.OilandGas.GasProperties.Tests",
+      "baseline_passed": true,
+      "baseline_log": "Beep.OilandGas.GasProperties.Tests-migration-caller-build.log",
+      "current_passed": true
+    },
+    {
+      "project": "Beep.OilandGas.HydraulicPumps.Tests",
+      "baseline_passed": true,
+      "baseline_log": "Beep.OilandGas.HydraulicPumps.Tests-migration-caller-build.log",
+      "current_passed": true
+    },
+    {
+      "project": "Beep.OilandGas.LifeCycle.Tests",
+      "baseline_passed": true,
+      "baseline_log": "Beep.OilandGas.LifeCycle.Tests-migration-caller-build.log",
+      "current_passed": true
+    },
+    {
+      "project": "Beep.OilandGas.NodalAnalysis.Tests",
+      "baseline_passed": false,
+      "baseline_log": "Beep.OilandGas.NodalAnalysis.Tests-migration-caller-build.log",
+      "current_passed": true,
+      "current_log": "oilgas-nodal-caller-final.log",
+      "tests_passed": 13,
+      "tests_skipped": 0
+    },
+    {
+      "project": "Beep.OilandGas.OilProperties.Tests",
+      "baseline_passed": true,
+      "baseline_log": "Beep.OilandGas.OilProperties.Tests-migration-caller-build.log",
+      "current_passed": true
+    },
+    {
+      "project": "Beep.OilandGas.PermitsAndApplications.Tests",
+      "baseline_passed": false,
+      "baseline_log": "Beep.OilandGas.PermitsAndApplications.Tests-migration-caller-build.log",
+      "current_passed": true,
+      "current_log": "oilgas-permit-status-caller-tests.log",
+      "tests_passed": 37,
+      "tests_skipped": 0
+    },
+    {
+      "project": "Beep.OilandGas.PipelineAnalysis.Tests",
+      "baseline_passed": false,
+      "baseline_log": "Beep.OilandGas.PipelineAnalysis.Tests-migration-caller-build.log",
+      "current_passed": true,
+      "current_log": "oilgas-pipeline-caller-final.log",
+      "tests_passed": 9,
+      "tests_skipped": 0
+    },
+    {
+      "project": "Beep.OilandGas.PlungerLift.Tests",
+      "baseline_passed": false,
+      "baseline_log": "Beep.OilandGas.PlungerLift.Tests-migration-caller-build.log",
+      "current_passed": true,
+      "current_log": "oilgas-plunger-caller-tests.log",
+      "tests_passed": 2,
+      "tests_skipped": 0
+    },
+    {
+      "project": "Beep.OilandGas.PPDM39.Tests",
+      "baseline_passed": true,
+      "baseline_log": "Beep.OilandGas.PPDM39.Tests-migration-caller-build.log",
+      "current_passed": true
+    },
+    {
+      "project": "Beep.OilandGas.ProspectIdentification.Tests",
+      "baseline_passed": true,
+      "baseline_log": "Beep.OilandGas.ProspectIdentification.Tests-migration-caller-build.log",
+      "current_passed": true
+    },
+    {
+      "project": "Beep.OilandGas.PumpPerformance.Tests",
+      "baseline_passed": true,
+      "baseline_log": "Beep.OilandGas.PumpPerformance.Tests-migration-caller-build.log",
+      "current_passed": true
+    },
+    {
+      "project": "Beep.OilandGas.Repository.Tests",
+      "baseline_passed": false,
+      "baseline_log": "Beep.OilandGas.Repository.Tests-migration-caller-build.log",
+      "current_passed": true,
+      "current_log": "oilgas-default-repository-caller-tests.log",
+      "tests_passed": 69,
+      "tests_skipped": 3
+    },
+    {
+      "project": "Beep.OilandGas.SuckerRodPumping.Tests",
+      "baseline_passed": true,
+      "baseline_log": "Beep.OilandGas.SuckerRodPumping.Tests-migration-caller-build.log",
+      "current_passed": true
+    },
+    {
+      "project": "Beep.OilandGas.UserManagement.Tests",
+      "baseline_passed": true,
+      "baseline_log": "Beep.OilandGas.UserManagement.Tests-migration-caller-build.log",
+      "current_passed": true
+    },
+    {
+      "project": "Beep.OilandGas.Web.Auth.Tests",
+      "baseline_passed": false,
+      "baseline_log": "Beep.OilandGas.Web.Auth.Tests-migration-caller-build.log",
+      "current_passed": false
+    },
+    {
+      "project": "Beep.OilandGas.Web.Tests",
+      "baseline_passed": false,
+      "baseline_log": "Beep.OilandGas.Web.Tests-migration-caller-build.log",
+      "current_passed": false
+    },
+    {
+      "project": "Beep.OilandGas.WellTestAnalysis.Tests",
+      "baseline_passed": true,
+      "baseline_log": "Beep.OilandGas.WellTestAnalysis.Tests-migration-caller-build.log",
+      "current_passed": true
+    }
+  ],
+  "remaining": {
+    "ApiService.Tests / Web.Auth.Tests / Web.Tests": "Canonical Diagnostics source and absent Diagnostics/OilandGas.Diagnostics outputs prevent host compilation. AccountManagement/ThemeBranding outputs have since been built."
+  }
+}

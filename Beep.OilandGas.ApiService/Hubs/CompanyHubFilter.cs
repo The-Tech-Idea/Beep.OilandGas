@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Repository;
@@ -6,7 +8,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;

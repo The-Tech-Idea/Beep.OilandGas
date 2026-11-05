@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 #if WORKFLOW_INBOX_FOCUSED
 using Beep.OilandGas.ApiService.Controllers.Field;
 using Beep.OilandGas.ApiService.Services;

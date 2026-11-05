@@ -1,3 +1,9 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.DevelopmentPlanning.Models;
+using Beep.OilandGas.DrillingAndConstruction.Models;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.LifeCycle.Models;
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Data.WorkOrder;
 using Microsoft.AspNetCore.Authorization;
@@ -14,7 +20,6 @@ using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.ApiService.Attributes;
 using Beep.OilandGas.ApiService.Services;
 using TheTechIdeaWeb.Diagnostics;
-using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.Repository;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 

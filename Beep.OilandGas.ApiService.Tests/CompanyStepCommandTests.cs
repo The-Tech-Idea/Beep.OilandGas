@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Text.Json;
 using Beep.OilandGas.LifeCycle.Data.Tables;
@@ -8,7 +10,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using TheTechIdea.Beep;
 using TheTechIdea.Beep.ConfigUtil;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;

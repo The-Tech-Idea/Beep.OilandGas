@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.WorkOrder;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -5,7 +8,6 @@ using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.ProductionOperations.Services;
 using Microsoft.Extensions.Options;
 using TheTechIdea.Beep.Editor;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 namespace Beep.OilandGas.ApiService.Services;
 

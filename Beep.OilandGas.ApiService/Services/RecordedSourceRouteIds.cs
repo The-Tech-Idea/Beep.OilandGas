@@ -1,8 +1,9 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Patterns;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Services;
 
 /// <summary>Reads a source parameter from its original escaped request path, rather than a partially decoded route value.</summary>

@@ -1,8 +1,9 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Refusals;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Controllers.Field;
 [ApiController][Authorize][Route("api/fields/{fieldId}/accounting/commercial-terms")]
 public sealed class CommercialTermsController(CompanyFieldRevenueReads reads):ControllerBase

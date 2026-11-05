@@ -4,7 +4,7 @@ The active OilGas application authenticates through the shared IdentityServer cl
 
 ## Active account and company paths
 
-- Shared entities and API contracts belong to TheTechIdea.Data.
+- User-management implementations remain in UserManagement; shared access DTOs belong to Beep.OilandGas.Models.
 - RepositoryAccessService and RepositoryRoleScope resolve current repository authority; company access uses RepositoryCompanyContextResolver.
 - ApiService's RepositoryUserService, RepositoryRoleAssignmentService, RepositoryUserProfileService and canonical permission/asset stores independently enforce current authority.
 - The existing `api/identity/security` routes now use CompanyRowLevelSecurityService, which is registered by ApiService. They require a validated selected company and the freshly resolved active caller.
@@ -13,7 +13,7 @@ The active OilGas application authenticates through the shared IdentityServer cl
 
 ## Row-security contract
 
-IRowLevelSecurityService and its five request/result contracts now live in TheTechIdea.Data, retaining their namespaces. Request DTOs have no USER_ID selector; the controller passes the resolved actor separately. Row filter requests accept `Filters` as Beep AppFilter values. Responses return `ReadPredicates`, `Filters` and `DenyAll`; empty predicates deny all rows. Predicates form an OR, and each supplied filter narrows each predicate through AND. The actual CRUD path always regenerates current authority; a diagnostic response is not a permission token. No SQL expression is generated or consumed.
+IRowLevelSecurityService belongs to UserManagement; its shared request/result contracts belong to Beep.OilandGas.Models.Data.AccessControl. Request DTOs have no USER_ID selector; the controller passes the resolved actor separately. Row filter requests accept `Filters` as Beep AppFilter values. Responses return `ReadPredicates`, `Filters` and `DenyAll`; empty predicates deny all rows. Predicates form an OR, and each supplied filter narrows each predicate through AND. The actual CRUD path always regenerates current authority; a diagnostic response is not a permission token. No SQL expression is generated or consumed.
 
 Database checks accept `DatabaseFingerprint`, the exact current reviewed binding digest. Source/datasource checks accept the selected binding's connection name. Generic row checks accept TABLE_NAME and ENTITY_DATA_JSON containing every canonical primary-key column. They report read visibility of an existing row, not write/delete permission or legal asset ownership.
 

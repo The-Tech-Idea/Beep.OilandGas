@@ -1,3 +1,6 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.WorkOrder;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +15,6 @@ using TheTechIdea.Beep.Editor.UOW;
 using TheTechIdea.Beep.Report;
 using WELL = Beep.OilandGas.PPDM39.Models.WELL;
 using Beep.OilandGas.PPDM39.Core;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL
 {

@@ -1,10 +1,10 @@
+using Beep.OilandGas.DevelopmentPlanning.Models;
 using System.Text.Json;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Web.Services;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.JSInterop;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.Web.Auth.Tests;
 

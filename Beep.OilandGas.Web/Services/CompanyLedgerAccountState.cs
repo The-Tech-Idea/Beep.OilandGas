@@ -1,5 +1,6 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Client.App;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.Web.Services;
 
 /// <summary>Private account configuration is invalidated on company, account, authority or presentation changes.</summary>

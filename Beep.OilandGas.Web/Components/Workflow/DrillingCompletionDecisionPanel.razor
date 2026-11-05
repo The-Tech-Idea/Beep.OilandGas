@@ -1,3 +1,5 @@
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.PPDM39.DataManagement.Models
 @using Beep.OilandGas.Web.Services
 @if(State.DecisionConfirmation is {} confirmation){<MudAlert Severity="Severity.Success" role="status">@confirmation</MudAlert>}
 @if(State.PendingDecision is {} pending)

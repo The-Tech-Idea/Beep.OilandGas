@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 namespace Beep.OilandGas.Repository;
 
 /// <summary>One tenant selection for one DI scope. API/worker boundaries validate authority before selecting it.</summary>

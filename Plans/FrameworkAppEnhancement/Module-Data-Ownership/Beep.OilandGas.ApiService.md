@@ -1,0 +1,443 @@
+# Beep.OilandGas.ApiService — data ownership restoration plan
+
+<!-- ownership-current:begin -->
+## Current implementation
+
+0 original files now belong to this project. All 502 original Data sources have been moved/consolidated. Actual paths/namespaces below supersede the initial proposal tables. Current verification: all 39 direct framework projects build with the canonical analyzer and default BeepDM source dependencies; 41 selected caller tests, 88 ownership tests, 6 native financial contract tests and 127 selected financial behavior cases pass (only the 201-write history case excluded). Compiled ownership/serialization/permit metadata checks pass; all 1,200 restored declarations are present with no cross-project duplicates. These are scoped checks using existing dependency outputs. Follow-up relationship tests pass 58/58 and the internal 73-project graph has no literal-reference cycles. Canonical AccountManagement and ThemeBranding outputs now build. The final native fixture boundary gate passes 71/71, including all ten prior expanded-run failures and the explicit missing-projection refusal; a full expanded rerun is not claimed. Default repository tests pass 69 with 3 skips, and 22/25 top-level test projects compile. The isolated 201-write history gate passes 1/1. Nodal and Pipeline callers now pass 13 and 9 focused cases; Diagnostics-dependent host verification remains open. The nested company-environment consumer passes 65/65 against actual owners after removing eight moved-definition source links. Expanded access tests passed 587/594 before final repairs; all seven failures pass in the final 27-case targeted recheck. A fresh full 594-case rerun is not claimed. See evidence/canonical-dependency-recovery/observed-evidence.json.
+
+This project consumes changed contracts; no original Data definitions are assigned here. Caller checks remain in scope.
+
+Shared contract/native partial groups use the existing Models project where lower-level consumers require them. Feature implementations remain in their existing projects. There is no replacement central data project.
+<!-- ownership-current:end -->
+
+Date: 2026-11-04. Status: Implementation applied; final owner/caller verification in progress.
+
+Project: `Beep.OilandGas.ApiService/Beep.OilandGas.ApiService.csproj`. Accountable: repository owner. Responsible: implementing engineer; affected module maintainer reviews ownership and behavior.
+
+## Scope and ownership
+
+0 candidate incoming files; 396 caller files contain affected identifiers. Counts are lexical evidence; resolve same-name types semantically before edits.
+
+Use this existing project for its own domain types. Domain rules/helpers travel with the owning feature. API transport types shared across layers need an existing dependency-safe contract owner; do not move a shared DTO into a concrete service assembly if that creates a cycle. Keep unresolved mappings open in inventory.json.
+
+## Incoming files and proposed names
+
+| Source | Current namespace / types | Historical same-name candidates | Naming and destination action |
+| --- | --- | --- | --- |
+
+## Calling code to update
+
+The following files reference affected identifiers. For each, resolve its exact symbol against inventory.json, then update imports, fully-qualified names, generic arguments, constructor/DI wiring and project references together. A lexical match is not proof of a dependency.
+
+- `Beep.OilandGas.ApiService/Attributes/RequireAssetAccessAttribute.cs`
+- `Beep.OilandGas.ApiService/Attributes/RequireCurrentFieldAccessAttribute.cs`
+- `Beep.OilandGas.ApiService/Attributes/RequireRoleAttribute.cs`
+- `Beep.OilandGas.ApiService/Controllers/AccessControl/AccessControlController.cs`
+- `Beep.OilandGas.ApiService/Controllers/AccessControl/AssetHierarchyController.cs`
+- `Beep.OilandGas.ApiService/Controllers/AccessControl/UserProfileController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Allocation/AllocationController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Cost/AFEController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Cost/AllocateProductionRequest.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Cost/CostAllocationController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Cost/CostTransactionController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Financial/AmortizationController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Financial/FullCostController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Financial/SuccessfulEffortsController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Ownership/OwnershipController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Pricing/PricingController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Production/ProductionController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Production/RunTicketController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Reporting/ReportingController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Reporting/ReportingServiceController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Revenue/RevenueAllocationController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Revenue/RevenueTransactionController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Royalty/ResolveRoyaltyDisputeRequest.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Royalty/RoyaltyAccrualController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Royalty/RoyaltyController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Royalty/RoyaltyDisputeController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Royalty/RoyaltyReportsController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Storage/StorageController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Storage/StorageInventoryValuationRequest.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Storage/StorageReconciliationReportRequest.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Storage/StorageTankInventoryUpdateRequest.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Tax/ProductionTaxController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Trading/TradingController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/APController.Correction.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/APController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/ARController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CalculateInventoryValuationRequest.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyAccountingProcessController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyBillingPolicyController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyGLAccountController.Books.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyGLAccountController.Fx.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyGLAccountController.MappingTransition.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyGLAccountController.PeriodTransitions.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyGLAccountController.Periods.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyGLAccountController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyMaterialReservationsController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanySalesInvoiceController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanySalesReceivableController.JournalPosting.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanySalesReceivableController.JournalPreparation.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanySalesReceivableController.JournalReview.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanySalesReceivableController.Payments.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanySalesReceivableController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/GLController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/GenerateInventoryReconciliationReportRequest.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/InventoryController.CompanySources.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/InventoryController.LegacyTransaction.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/InventoryController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/InvoiceController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/PurchaseOrderController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/UpdateTankInventoryRequest.cs`
+- `Beep.OilandGas.ApiService/Controllers/Accounting/Unitization/UnitizationController.cs`
+- `Beep.OilandGas.ApiService/Controllers/BusinessProcess/BusinessProcessController.cs`
+- `Beep.OilandGas.ApiService/Controllers/BusinessProcess/CompanyMaintenanceAssetReturnStatusController.cs`
+- `Beep.OilandGas.ApiService/Controllers/BusinessProcess/CompanyMaintenanceHandoffController.cs`
+- `Beep.OilandGas.ApiService/Controllers/BusinessProcess/CompanyMaintenanceRecordedWorkController.cs`
+- `Beep.OilandGas.ApiService/Controllers/BusinessProcess/CompanyMaintenanceReturnPoliciesController.cs`
+- `Beep.OilandGas.ApiService/Controllers/BusinessProcess/CompanyPersonnelIdentityController.cs`
+- `Beep.OilandGas.ApiService/Controllers/BusinessProcess/CompanyPersonnelPoliciesController.cs`
+- `Beep.OilandGas.ApiService/Controllers/BusinessProcess/ComplianceController.cs`
+- `Beep.OilandGas.ApiService/Controllers/BusinessProcess/GateReviewController.cs`
+- `Beep.OilandGas.ApiService/Controllers/BusinessProcess/HSEProcessController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Calculations/EconomicAnalysisController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Calculations/FlashCalculationController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Calculations/GasLiftController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Calculations/NodalAnalysisController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Calculations/PipelineAnalysisController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Calculations/ProductionForecastingController.cs`
+- `Beep.OilandGas.ApiService/Controllers/CalculationsController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Common/EconomicAnalysisControllerHelpers.cs`
+- `Beep.OilandGas.ApiService/Controllers/CompanyEnvironmentController.cs`
+- `Beep.OilandGas.ApiService/Controllers/CompanyEnvironmentEffectiveController.cs`
+- `Beep.OilandGas.ApiService/Controllers/CompanyWellQualityController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Compliance/ComplianceController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Compliance/FieldObligationCreationController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Compliance/GhgProductionSourcesController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Compliance/RecordedObligationsController.cs`
+- `Beep.OilandGas.ApiService/Controllers/CompressorController.cs`
+- `Beep.OilandGas.ApiService/Controllers/ConnectionController.cs`
+- `Beep.OilandGas.ApiService/Controllers/DataImportController.cs`
+- `Beep.OilandGas.ApiService/Controllers/DataManagementController.cs`
+- `Beep.OilandGas.ApiService/Controllers/DemoDatabaseController.cs`
+- `Beep.OilandGas.ApiService/Controllers/ExecutiveController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Facility/FacilityController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Facility/FacilityLicenseController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Facility/FacilityMaintenanceController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Facility/FacilityMonitoringController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Facility/FacilityProductionController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Facility/FacilityWorkOrderController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Field/AccountingController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Field/CommercialTermsController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Field/DecommissioningController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Field/DevelopmentController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Field/DevelopmentFacilityEvidenceController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Field/DevelopmentPlanningController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Field/DrillingProgramController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Field/EconomicAnalysisController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Field/ExplorationController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Field/FieldOrchestratorController.Selection.cs`
+- `Beep.OilandGas.ApiService/Controllers/Field/FieldOrchestratorController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Field/FieldRevenueSourceController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Field/ProductionController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Field/ProductionDashboardController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Field/ReservoirController.cs`
+- `Beep.OilandGas.ApiService/Controllers/HSE/HSEController.cs`
+- `Beep.OilandGas.ApiService/Controllers/HSE/HseAssignedActionsController.cs`
+- `Beep.OilandGas.ApiService/Controllers/HSE/IncidentReportController.cs`
+- `Beep.OilandGas.ApiService/Controllers/HSE/IncidentReportOptionsController.cs`
+- `Beep.OilandGas.ApiService/Controllers/HSE/IncidentWorkflowController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Identity/InitialCompanyProvisionController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Identity/PersonasController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Identity/RepositoryRolesController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Identity/RoleAssignmentController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Identity/RowLevelSecurityController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Identity/UserManagementController.cs`
+- `Beep.OilandGas.ApiService/Controllers/ModuleRepositoryController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Operations/EnhancedRecoveryController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Operations/LeaseAcquisitionController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Operations/ProspectIdentificationController.WorkflowAnalysis.cs`
+- `Beep.OilandGas.ApiService/Controllers/Operations/ProspectIdentificationController.cs`
+- `Beep.OilandGas.ApiService/Controllers/PPDM39/PPDM39DataAccessAuditController.cs`
+- `Beep.OilandGas.ApiService/Controllers/PPDM39/PPDM39DataController.cs`
+- `Beep.OilandGas.ApiService/Controllers/PPDM39/PPDM39DefaultsController.cs`
+- `Beep.OilandGas.ApiService/Controllers/PPDM39/PPDM39ImportExportController.cs`
+- `Beep.OilandGas.ApiService/Controllers/PPDM39/PPDM39MetadataController.cs`
+- `Beep.OilandGas.ApiService/Controllers/PPDM39/PPDM39SetupController.cs`
+- `Beep.OilandGas.ApiService/Controllers/PPDM39/PPDM39ValidationController.cs`
+- `Beep.OilandGas.ApiService/Controllers/PPDM39/PPDM39VersioningController.cs`
+- `Beep.OilandGas.ApiService/Controllers/PPDM39/PPDM39WorkflowController.cs`
+- `Beep.OilandGas.ApiService/Controllers/PPDM39/WellStatusController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Permits/PermitsController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Production/ProductionController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Production/ProductionOperationsController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Properties/GasPropertiesController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Properties/HeatMapController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Properties/OilPropertiesController.cs`
+- `Beep.OilandGas.ApiService/Controllers/PumpController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Pumps/HydraulicPumpController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Pumps/PlungerLiftController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Pumps/SuckerRodPumpingController.cs`
+- `Beep.OilandGas.ApiService/Controllers/RepositoryAccountController.cs`
+- `Beep.OilandGas.ApiService/Controllers/SetupBootstrapDriverController.cs`
+- `Beep.OilandGas.ApiService/Controllers/SetupBootstrapRepositoryController.cs`
+- `Beep.OilandGas.ApiService/Controllers/SetupDriverController.cs`
+- `Beep.OilandGas.ApiService/Controllers/Stratigraphy/StratigraphyController.cs`
+- `Beep.OilandGas.ApiService/Controllers/SyncController.cs`
+- `Beep.OilandGas.ApiService/Controllers/SystemSetupConnectionController.cs`
+- `Beep.OilandGas.ApiService/Controllers/SystemSetupRecordController.cs`
+- `Beep.OilandGas.ApiService/Controllers/SystemSetupRepositoryController.cs`
+- `Beep.OilandGas.ApiService/Controllers/WellController.cs`
+- `Beep.OilandGas.ApiService/Controllers/WorkOrder/CompanyWorkOrderBudgetController.cs`
+- `Beep.OilandGas.ApiService/Controllers/WorkOrder/WorkOrderController.cs`
+- `Beep.OilandGas.ApiService/Controllers/WorkflowTasksController.cs`
+- `Beep.OilandGas.ApiService/Data/UniqueKeyViolation.cs`
+- `Beep.OilandGas.ApiService/DependencyInjection/ServiceCollectionExtensions.cs`
+- `Beep.OilandGas.ApiService/Hubs/CompanyHubFilter.cs`
+- `Beep.OilandGas.ApiService/Hubs/CompanyHubGroups.cs`
+- `Beep.OilandGas.ApiService/Hubs/CompanyHubLifetimeManager.cs`
+- `Beep.OilandGas.ApiService/Hubs/CompanyHubScope.cs`
+- `Beep.OilandGas.ApiService/Hubs/ProgressHubLifetimeManager.cs`
+- `Beep.OilandGas.ApiService/Hubs/WorkflowNotificationAuthorization.cs`
+- `Beep.OilandGas.ApiService/Hubs/WorkflowNotificationHub.cs`
+- `Beep.OilandGas.ApiService/Hubs/WorkflowNotificationLifetimeManager.cs`
+- `Beep.OilandGas.ApiService/Middleware/AssetAccessMiddleware.cs`
+- `Beep.OilandGas.ApiService/Middleware/BeepTracingMiddleware.cs`
+- `Beep.OilandGas.ApiService/Middleware/CompanyRequestMiddleware.cs`
+- `Beep.OilandGas.ApiService/Middleware/RefusalAnswersRegistration.cs`
+- `Beep.OilandGas.ApiService/Middleware/RefusalExceptionHandler.cs`
+- `Beep.OilandGas.ApiService/Middleware/SetupGateMiddleware.cs`
+- `Beep.OilandGas.ApiService/Program.cs`
+- `Beep.OilandGas.ApiService/Services/APInvoiceReadChecks.cs`
+- `Beep.OilandGas.ApiService/Services/AccountingAggregationService.cs`
+- `Beep.OilandGas.ApiService/Services/AccountingPeriodCheckReviews.cs`
+- `Beep.OilandGas.ApiService/Services/AccountingPeriodRoleChecks.cs`
+- `Beep.OilandGas.ApiService/Services/ActingUser.cs`
+- `Beep.OilandGas.ApiService/Services/ApiIdentity.cs`
+- `Beep.OilandGas.ApiService/Services/AuthorizationObservabilityService.cs`
+- `Beep.OilandGas.ApiService/Services/BeepAuditAdapter.cs`
+- `Beep.OilandGas.ApiService/Services/BeepCredentialKeyProvider.cs`
+- `Beep.OilandGas.ApiService/Services/BeepRepositoryConnectionSource.cs`
+- `Beep.OilandGas.ApiService/Services/BeepSyncService.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReadContext.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.Catalog.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.Commercial.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.DeliveryCorrection.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.SalesInvoice.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.SalesJournal.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.SalesPayment.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.SalesReceivable.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.Start.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.StepCommand.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.StepEvidence.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.StepReview.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyBackgroundScope.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDevelopmentAfeService.Investment.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDevelopmentAfeService.Queue.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDevelopmentAfeService.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDevelopmentFacilityCreationService.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDevelopmentFacilityEditService.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDevelopmentInvestmentRoutingService.Assigned.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDevelopmentInvestmentRoutingService.Decision.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDevelopmentInvestmentRoutingService.Handoff.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDevelopmentInvestmentRoutingService.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.Assigned.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.CompletionAssigned.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.CompletionDecision.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.CompletionReview.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.CompletionStart.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.CompletionTests.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.DailyReportConflict.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.DailyReports.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.Decision.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.Execution.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.ExecutionAssignment.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.ExecutionAssignmentConflict.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.ExecutionConflict.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.Progress.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.ReportingClosure.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.ReportingReassignment.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.Review.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.ReviewStart.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyEnvironmentBindingReader.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyEnvironmentEffectiveResolver.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyEnvironmentPreviewer.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyEnvironmentRuntime.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyEnvironmentSources.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyEnvironmentStore.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyEnvironmentWellReader.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyEnvironmentWellTestService.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyFieldGhgProductionReader.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyFieldObligationAuthority.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyFieldObligationReader.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyFieldObligationWriter.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyFieldRevenueReads.CommercialTerms.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyFieldRevenueReads.DeliveryCorrection.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyFieldRevenueReads.DeliveryIntent.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyFieldRevenueReads.DeliveryQueue.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyFieldRevenueReads.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyGhgArithmeticService.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyGhgCatalogReader.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyGhgSelectionStatusReader.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyGhgSelectionStore.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyHseAssignedActionReader.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyHseWorkflowReader.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyHseWorkflowService.Closure.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyHseWorkflowService.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyInventoryReads.Sources.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyInventoryReads.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.AssetEvidence.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.AssetReturn.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.AssetReturnStatus.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.Closure.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.Completion.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.CompletionDecision.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.CompletionStatus.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.ExecutionHandoff.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.Labor.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.MaterialUsage.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.RecordedWork.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.ReturnAcceptance.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyMaintenanceQualifiedAssetEvidenceReader.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyMaintenanceReturnPolicyService.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyMaintenanceWellEvidenceReader.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyModuleConnection.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyOrganizationVerifier.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyPPDMEvidenceReader.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.HseCommands.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.Interventions.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyPermitApplicationDataAccess.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyPersonnelIdentityService.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyPersonnelPolicyService.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyProcessReadService.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyProgressState.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyRowLevelSecurityService.cs`
+- `Beep.OilandGas.ApiService/Services/CompanySalesInvoiceReads.Queue.cs`
+- `Beep.OilandGas.ApiService/Services/CompanySalesInvoiceReads.Review.cs`
+- `Beep.OilandGas.ApiService/Services/CompanySalesInvoiceReads.cs`
+- `Beep.OilandGas.ApiService/Services/CompanySalesReceivableReads.JournalPosting.cs`
+- `Beep.OilandGas.ApiService/Services/CompanySalesReceivableReads.JournalPreparation.cs`
+- `Beep.OilandGas.ApiService/Services/CompanySalesReceivableReads.JournalReview.cs`
+- `Beep.OilandGas.ApiService/Services/CompanySalesReceivableReads.JournalSource.cs`
+- `Beep.OilandGas.ApiService/Services/CompanySalesReceivableReads.PaymentReview.cs`
+- `Beep.OilandGas.ApiService/Services/CompanySalesReceivableReads.Payments.cs`
+- `Beep.OilandGas.ApiService/Services/CompanySalesReceivableReads.PostedLedger.cs`
+- `Beep.OilandGas.ApiService/Services/CompanySalesReceivableReads.Review.cs`
+- `Beep.OilandGas.ApiService/Services/CompanySalesReceivableReads.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyWellQualityDiscovery.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyWellQualityReviewer.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyWorkOrderBudgetService.Decision.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyWorkOrderBudgetService.LaborCost.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyWorkOrderBudgetService.MaterialCost.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyWorkOrderBudgetService.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyWorkOrderFieldReview.cs`
+- `Beep.OilandGas.ApiService/Services/CompanyWorkOrderListReview.cs`
+- `Beep.OilandGas.ApiService/Services/CsvImportJob.cs`
+- `Beep.OilandGas.ApiService/Services/CsvImportJobRunner.cs`
+- `Beep.OilandGas.ApiService/Services/CsvImportJobs.cs`
+- `Beep.OilandGas.ApiService/Services/DataImportService.cs`
+- `Beep.OilandGas.ApiService/Services/DevelopmentAssignedReviewService.cs`
+- `Beep.OilandGas.ApiService/Services/DevelopmentFacilityReadAuthority.cs`
+- `Beep.OilandGas.ApiService/Services/DevelopmentPlanRequestAuthority.cs`
+- `Beep.OilandGas.ApiService/Services/DevelopmentReviewCatalogService.cs`
+- `Beep.OilandGas.ApiService/Services/DevelopmentReviewHandoffService.cs`
+- `Beep.OilandGas.ApiService/Services/DevelopmentReviewRecipientAuthority.cs`
+- `Beep.OilandGas.ApiService/Services/DrillingEngineerAggregationService.cs`
+- `Beep.OilandGas.ApiService/Services/ExecutiveAggregationService.cs`
+- `Beep.OilandGas.ApiService/Services/ExecutivePortfolioReviews.cs`
+- `Beep.OilandGas.ApiService/Services/HseAggregationService.cs`
+- `Beep.OilandGas.ApiService/Services/HseEngineerAggregationService.cs`
+- `Beep.OilandGas.ApiService/Services/IAssetGrantTargetVerifier.cs`
+- `Beep.OilandGas.ApiService/Services/ICompanyAccountingProcessReadContext.cs`
+- `Beep.OilandGas.ApiService/Services/ICompanyAccountingReadContext.cs`
+- `Beep.OilandGas.ApiService/Services/ICompanyEnvironmentStore.cs`
+- `Beep.OilandGas.ApiService/Services/ICompanyGhgSelectionStore.cs`
+- `Beep.OilandGas.ApiService/Services/IDevelopmentPlanRequestAuthority.cs`
+- `Beep.OilandGas.ApiService/Services/ISystemSetupRecordReader.cs`
+- `Beep.OilandGas.ApiService/Services/IncidentReportSchema.cs`
+- `Beep.OilandGas.ApiService/Services/LedgerPosting.cs`
+- `Beep.OilandGas.ApiService/Services/MigrationAdministratorAuthority.cs`
+- `Beep.OilandGas.ApiService/Services/ModuleBindingService.cs`
+- `Beep.OilandGas.ApiService/Services/ModuleConnectionResolver.cs`
+- `Beep.OilandGas.ApiService/Services/ModuleDatabaseTarget.cs`
+- `Beep.OilandGas.ApiService/Services/PPDM39GenericDataService.cs`
+- `Beep.OilandGas.ApiService/Services/PPDMAssetGrantTargetVerifier.cs`
+- `Beep.OilandGas.ApiService/Services/PPDMCompanyCorrectiveActionCommands.Closure.cs`
+- `Beep.OilandGas.ApiService/Services/PPDMCompanyCorrectiveActionCommands.Plan.cs`
+- `Beep.OilandGas.ApiService/Services/PPDMCompanyCorrectiveActionCommands.Verification.cs`
+- `Beep.OilandGas.ApiService/Services/PPDMCompanyCorrectiveActionCommands.cs`
+- `Beep.OilandGas.ApiService/Services/PPDMCompanyFieldEligibility.cs`
+- `Beep.OilandGas.ApiService/Services/PPDMCompanyFieldInterestReview.cs`
+- `Beep.OilandGas.ApiService/Services/PPDMCompanyIncidentCommands.Jurisdiction.cs`
+- `Beep.OilandGas.ApiService/Services/PPDMCompanyIncidentCommands.RcaSource.cs`
+- `Beep.OilandGas.ApiService/Services/PPDMCompanyIncidentCommands.RcaWrite.cs`
+- `Beep.OilandGas.ApiService/Services/PPDMCompanyIncidentCommands.Report.cs`
+- `Beep.OilandGas.ApiService/Services/PPDMCompanyIncidentCommands.WorkflowSource.cs`
+- `Beep.OilandGas.ApiService/Services/PPDMCompanyIncidentCommands.cs`
+- `Beep.OilandGas.ApiService/Services/PPDMCompanyLeaseDataAccess.cs`
+- `Beep.OilandGas.ApiService/Services/PPDMIncidentReportWriter.cs`
+- `Beep.OilandGas.ApiService/Services/PpdmModuleSeeder.cs`
+- `Beep.OilandGas.ApiService/Services/ProcessDefinitionCatalog.cs`
+- `Beep.OilandGas.ApiService/Services/ProcessDefinitionStartReview.cs`
+- `Beep.OilandGas.ApiService/Services/ProcessStartSources.cs`
+- `Beep.OilandGas.ApiService/Services/ProcessStepRoleChecks.cs`
+- `Beep.OilandGas.ApiService/Services/ProcessTransitionReviews.cs`
+- `Beep.OilandGas.ApiService/Services/ProductionInterventionSourceReviews.cs`
+- `Beep.OilandGas.ApiService/Services/ProgressTrackingPublisher.cs`
+- `Beep.OilandGas.ApiService/Services/ProgressTrackingService.cs`
+- `Beep.OilandGas.ApiService/Services/PurchaseOrderReadChecks.cs`
+- `Beep.OilandGas.ApiService/Services/RecordedSourceRouteIds.cs`
+- `Beep.OilandGas.ApiService/Services/RepositoryApplicationAuthorizationReader.cs`
+- `Beep.OilandGas.ApiService/Services/RepositoryApplicationRolePermissionStore.cs`
+- `Beep.OilandGas.ApiService/Services/RepositoryAssetAccessStore.Review.cs`
+- `Beep.OilandGas.ApiService/Services/RepositoryAssetAccessStore.cs`
+- `Beep.OilandGas.ApiService/Services/RepositoryAuthorization.cs`
+- `Beep.OilandGas.ApiService/Services/RepositoryCanonicalUserStore.cs`
+- `Beep.OilandGas.ApiService/Services/RepositoryHierarchyConfigurationStore.cs`
+- `Beep.OilandGas.ApiService/Services/RepositoryRequestAccount.cs`
+- `Beep.OilandGas.ApiService/Services/RepositoryRoleAssignmentService.Company.cs`
+- `Beep.OilandGas.ApiService/Services/RepositoryRoleAssignmentService.cs`
+- `Beep.OilandGas.ApiService/Services/RepositoryRolePermissionReader.cs`
+- `Beep.OilandGas.ApiService/Services/RepositoryRolePersonaReader.cs`
+- `Beep.OilandGas.ApiService/Services/RepositoryRolesClaimsTransformation.cs`
+- `Beep.OilandGas.ApiService/Services/RepositoryUserProfileService.Fields.cs`
+- `Beep.OilandGas.ApiService/Services/RepositoryUserProfileService.cs`
+- `Beep.OilandGas.ApiService/Services/RepositoryUserService.cs`
+- `Beep.OilandGas.ApiService/Services/ReservoirEngineerAggregationService.cs`
+- `Beep.OilandGas.ApiService/Services/RunTicketStore.cs`
+- `Beep.OilandGas.ApiService/Services/ScopedBackgroundOperationQueue.cs`
+- `Beep.OilandGas.ApiService/Services/SetupBootstrapAccess.cs`
+- `Beep.OilandGas.ApiService/Services/SetupDriverService.cs`
+- `Beep.OilandGas.ApiService/Services/SetupRepositoryConnectionCreationService.cs`
+- `Beep.OilandGas.ApiService/Services/SetupRepositoryConnectionSelectionService.cs`
+- `Beep.OilandGas.ApiService/Services/SetupRepositoryMigrationService.cs`
+- `Beep.OilandGas.ApiService/Services/SystemSetupConnectionSelectionService.cs`
+- `Beep.OilandGas.ApiService/Services/SystemSetupRecordStore.cs`
+- `Beep.OilandGas.ApiService/Services/SystemSetupTarget.cs`
+- `Beep.OilandGas.ApiService/Services/SystemSetupToolsDefaults.cs`
+- `Beep.OilandGas.ApiService/Services/TankInventoryStore.cs`
+- `Beep.OilandGas.ApiService/Services/WorkOrderPermitInspectionAuthority.cs`
+- `Beep.OilandGas.ApiService/Services/WorkOrderProcessReviews.cs`
+- `Beep.OilandGas.ApiService/Services/WorkOrderSourceChecks.cs`
+- `Beep.OilandGas.ApiService/Services/WorkflowBackgroundConnection.cs`
+- `Beep.OilandGas.ApiService/Services/WorkflowTaskProcessAdmission.cs`
+
+## Migration tasks
+
+- [x] Record the confirmed existing owner, destination, namespace and dependency decisions in inventory.json and restoration-progress.json; current destination hashes are in observed evidence.
+- [x] Keep the internal project graph acyclic and record shared-contract placements without another global data project. The current static superset audit covers 69 existing projects and 284 literal project-reference edges, with zero cycles; external symbolic references are listed separately in evidence/canonical-dependency-recovery/project-reference-audit.json.
+- [ ] Move definitions once, update all listed callers and references, then remove forwarding stubs/obsolete definitions. Preserve source changes from the soft-reset commit.
+- [ ] Fix CLR namespaces and ambiguous/duplicate DTO names; retain native table/key names and public JSON member names unless all consumers migrate together. Update explicit JsonPropertyName, EF/Beep mappings, entity registration, migration discovery, serializers and stored assembly-qualified type names where applicable.
+- [ ] Update typed HTTP client signatures, controller request/response types, service interfaces, DI registration, Razor bindings, setup/module manifests, tests, source-linked fixtures and build scripts that name the moved source/assembly.
+- [ ] Reuse existing log, audit and notification paths; check that changed exception/type names do not hide errors, lose correlation or change UI failure feedback. IdentityServer stays authentication-only and app RBAC remains authoritative.
+- [ ] Update relevant docs and project/solution/package references. Remove stale centralized-ownership instructions as part of the authorized implementation.
+
+## Verification and dependencies
+
+Run only affected checks selected against the active master tracker. Compile the target owner and immediate consumers, then verify wire serialization, native entity/key registration, migration discovery and retained app-role/company/field boundaries. Test projects must replace source links and assembly HintPaths to moved definitions, not create test-only substitute models. Record full-host/provider/build failures separately from focused harness results. Current executed checks and unavailable integration gates are recorded in the Current implementation section and evidence/canonical-dependency-recovery/observed-evidence.json.
+
+Depends on the common ownership/naming decision and inventory review; caller migration follows each owner group. Finish with one-definition and zero-obsolete-reference checks. Keep a move manifest so an individual slice can be reversed without resetting unrelated staged work.

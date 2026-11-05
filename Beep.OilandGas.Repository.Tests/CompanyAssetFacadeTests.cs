@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using Beep.OilandGas.Models.Core.Refusals;
@@ -9,7 +10,6 @@ using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Utilities;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Fixture = Beep.OilandGas.Repository.Tests.CompanyPPDMRowAccessTests.Fixture;
 
@@ -46,13 +46,14 @@ public sealed class CompanyAssetFacadeTests
     public async Task Actual_access_facade_inheritance_uses_current_company_policy_and_active_stored_rows(string table)
     {
         using var f = await Fixture.Create(); await f.Grant("FIELD", "A", "WRITE", true);
-        f.Rows.AddRange([Row(table), Row(table, "foreign", "other"), Row(table, "inactive", active: "N")]);
+        var foreign=Row(table,"foreign","other");if(foreign is FACILITY facility)facility.PRIMARY_FIELD_ID="B";
+        f.Rows.AddRange([Row(table),foreign,Row(table,"inactive",active:"N")]);
         var result = await Service(f).GetUserAccessibleAssetsAsync("actor", table);
         var asset = Assert.Single(result); Assert.Equal("asset", asset.AssetId); Assert.Equal("WRITE", asset.AccessLevel);
         Assert.Equal("company", asset.OrganizationId); Assert.Equal("actor", asset.UserId); Assert.False(asset.Inherit);
         Assert.Equal(table == "FACILITY" ? "gas" : null, asset.FacilityType);
         Assert.Contains(Assert.Single(f.Queries), filter => filter.FieldName == "ACTIVE_IND" && filter.FilterValue == "Y");
-        Assert.Equal(3, f.Queries[0].Count); Assert.Empty(f.Writes);
+        Assert.Equal(table=="FACILITY"?2:3, f.Queries[0].Count); Assert.Empty(f.Writes);
     }
 
     [Theory]
@@ -112,7 +113,8 @@ public sealed class CompanyAssetFacadeTests
     public async Task Provider_filter_bypasses_propagate_a_refusal_through_the_access_facade(string table)
     {
         using var f = await Fixture.Create(); await f.Grant("FIELD", "A", inherit: true);
-        f.Rows.Add(Row(table, company: "other")); f.IgnoreFilters = true;
+        var foreign=Row(table,company:"other");if(foreign is FACILITY facility)facility.PRIMARY_FIELD_ID="B";
+        f.Rows.Add(foreign);f.IgnoreFilters=true;
         await Assert.ThrowsAsync<RefusalException>(() => Service(f).GetUserAccessibleAssetsAsync("actor", table)); Assert.Empty(f.Writes);
     }
 

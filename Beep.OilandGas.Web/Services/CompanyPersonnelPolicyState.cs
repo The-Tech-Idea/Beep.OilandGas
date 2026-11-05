@@ -1,5 +1,7 @@
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Client.App;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.Web.Services;
 public sealed class CompanyPersonnelPolicyState:IDisposable
 {

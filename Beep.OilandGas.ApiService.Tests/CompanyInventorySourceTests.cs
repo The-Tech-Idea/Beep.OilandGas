@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.PPDM39.Core;
 using TheTechIdea.Beep;
@@ -9,7 +12,6 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Tools;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 

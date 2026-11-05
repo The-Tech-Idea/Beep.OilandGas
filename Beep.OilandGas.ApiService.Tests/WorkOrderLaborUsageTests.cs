@@ -1,5 +1,8 @@
 #if WORKFLOW_INBOX_FOCUSED
-extern alias actualData;
+extern alias actualOwners;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.WorkOrder;
 using System.Text.Json;
 using Moq;
 using Xunit;
@@ -12,10 +15,9 @@ using TheTechIdea.Beep.Report;
 using TheTechIdea.Beep.Utilities;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services.WorkOrder;
-using TheTechIdea.Data.OilGas;
-using Permit=actualData::Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_EXECUTION_PERMIT;
-using Detail=actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderDetailModel;
-using Condition=actualData::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition;
+using Permit=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_EXECUTION_PERMIT;
+using Detail=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderDetailModel;
+using Condition=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition;
 namespace Beep.OilandGas.ApiService.Tests;
 
 public sealed class WorkOrderLaborUsageTests

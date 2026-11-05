@@ -1,5 +1,10 @@
+@using Beep.OilandGas.Models.Data.AccessControl
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.Models.Data.WorkOrder
+@using Beep.OilandGas.Models.Data.DataManagement
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.HSE.Models
 @page "/setup/company-environment"
-@using TheTechIdea.Data.OilGas
 @using Beep.OilandGas.Client.App
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]
 @inject ApiClient Api

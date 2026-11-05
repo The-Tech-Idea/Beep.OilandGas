@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.AccessControl;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using TheTechIdea.Beep.Report;

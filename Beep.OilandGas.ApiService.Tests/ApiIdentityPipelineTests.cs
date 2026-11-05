@@ -1,3 +1,4 @@
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using System.Net;
 using System.Net.Http.Json;
@@ -20,7 +21,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;

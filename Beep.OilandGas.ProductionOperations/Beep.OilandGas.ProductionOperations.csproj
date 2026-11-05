@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Beep.OilandGas.PPDM.Models\Beep.OilandGas.PPDM.Models.csproj" />
-    <ProjectReference Include="..\TheTechIdea.Data\TheTechIdea.Data.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -23,4 +22,7 @@
     <ProjectReference Include="..\..\Beep.Web\TheTechIdeaWeb.Diagnostics.Abstractions\TheTechIdeaWeb.Diagnostics.Abstractions.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../Beep.OilandGas.DevelopmentPlanning/Beep.OilandGas.DevelopmentPlanning.csproj" />
+  </ItemGroup>
 </Project>

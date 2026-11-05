@@ -1,6 +1,8 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PermitsAndApplications.Models;
 using System.Threading;
 using System.Threading.Tasks;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.Client.App.Services.Permits;
 
 /// <summary>Reviewed permit workflows through the current company ApiService gateway.</summary>

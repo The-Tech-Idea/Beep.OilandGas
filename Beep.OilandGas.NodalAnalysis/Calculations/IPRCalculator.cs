@@ -19,17 +19,22 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             if (reservoir == null)
                 throw new ArgumentNullException(nameof(reservoir));
 
-            if (reservoir.ReservoirPressure <= 0)
-                throw RefusalException.Invalid("Reservoir pressure must be positive.");
+            if (!double.IsFinite(reservoir.ReservoirPressure) || reservoir.ReservoirPressure <= 0 ||
+                !double.IsFinite(reservoir.ProductivityIndex) || reservoir.ProductivityIndex <= 0)
+                throw RefusalException.Invalid("Finite positive reservoir pressure and productivity index are required.");
+            if (!double.IsFinite(maxFlowRate) || maxFlowRate <= 0 || points < 1)
+                throw RefusalException.Invalid("A finite positive flow limit and at least one curve interval are required.");
 
             var ipr = new List<IPRPoint>();
 
             // Vogel equation: q/q_max = 1 - 0.2 * (Pwf/Pr) - 0.8 * (Pwf/Pr)²
-            // Rearranged: Pwf = Pr * [1 - 0.2 * (q/q_max) - 0.8 * (q/q_max)²] / [1 - 0.2 - 0.8]
-            // Actually: q = q_max * [1 - 0.2 * (Pwf/Pr) - 0.8 * (Pwf/Pr)²]
+            // Solve 0.8*x^2 + 0.2*x + (q/qMax - 1) = 0 for x=Pwf/Pr.
+            // The positive root is the physical pressure ratio; the forward polynomial is not its inverse.
 
             // Calculate maximum flow rate (at Pwf = 0)
             double qMax = reservoir.ProductivityIndex * reservoir.ReservoirPressure / 1.8;
+            if (!double.IsFinite(qMax) || qMax <= 0)
+                throw RefusalException.Invalid("The derived Vogel AOF must be finite and positive.");
 
             for (int i = 0; i <= points; i++)
             {
@@ -40,9 +45,9 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
                     flowRate = qMax;
 
                 // Solve Vogel equation for Pwf
-                double pwfRatio = flowRate / qMax;
-                double pwf = reservoir.ReservoirPressure * 
-                    (1.0 - 0.2 * pwfRatio - 0.8 * pwfRatio * pwfRatio);
+                double rateRatio = flowRate / qMax;
+                double pressureRatio = (Math.Sqrt(0.04 + 3.2 * (1.0 - rateRatio)) - 0.2) / 1.6;
+                double pwf = reservoir.ReservoirPressure * pressureRatio;
 
                 if (pwf < 0)
                     pwf = 0;

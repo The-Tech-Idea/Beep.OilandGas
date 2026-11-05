@@ -1,3 +1,8 @@
+using Beep.OilandGas.DrillingAndConstruction.Models;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.Company;
 #if WORKFLOW_INBOX_FOCUSED
 using Beep.OilandGas.ApiService.Tests;
 using Beep.OilandGas.Web.Services;
@@ -7,7 +12,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using MudBlazor;
 using MudBlazor.Services;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 using Xunit;
 

@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Accounting.Models;
 // =============================================================================
 // COMPATIBILITY LAYER — ProductionAccounting ControllerFacade (1,384 lines)
 // =============================================================================

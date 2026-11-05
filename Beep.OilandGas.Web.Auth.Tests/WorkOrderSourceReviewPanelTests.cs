@@ -1,3 +1,4 @@
+using Beep.OilandGas.LifeCycle.Models;
 using Beep.OilandGas.Web.Components.BusinessProcess;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -5,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using MudBlazor.Services;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.Web.Auth.Tests;
 public sealed class WorkOrderSourceReviewPanelTests

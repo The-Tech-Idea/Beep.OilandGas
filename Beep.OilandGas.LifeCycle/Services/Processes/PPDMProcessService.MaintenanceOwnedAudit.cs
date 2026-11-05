@@ -1,8 +1,12 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.Models.Data.Company;
 using System.Text.Json;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.Core;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.LifeCycle.Services.Processes;
 public partial class PPDMProcessService
 {

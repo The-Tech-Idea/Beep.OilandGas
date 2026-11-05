@@ -1,3 +1,9 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.HSE;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PermitsAndApplications.Models;
 #if BEEP_SOURCE_TEST
 using System.Data;
 using Beep.OilandGas.ApiService.Services;
@@ -23,7 +29,6 @@ using TheTechIdea.Beep.Report;
 using TheTechIdea.Beep.Tools;
 using TheTechIdea.Beep.Utilities;
 using TheTechIdea.Beep.Helpers.DataTypesHelpers;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;

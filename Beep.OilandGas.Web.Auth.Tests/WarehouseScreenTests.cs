@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.Company;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Security.Claims;
 using Beep.OilandGas.Client.App;
@@ -11,7 +14,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using Moq;
 using MudBlazor.Services;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 using Xunit;
 using Beep.OilandGas.ApiService.Tests;
@@ -43,7 +45,7 @@ public sealed class WarehouseScreenTests
         client.Setup(value=>value.GetCompanyInventoryItemsAsync()).ReturnsAsync(()=>{++calls;return mode=="empty"?[]:new List<INVENTORY_ITEM>{item};});
         client.Setup(value=>value.GetCompanyInventorySourceAsync(item.INVENTORY_ITEM_ID)).ReturnsAsync(()=>{++calls;return CompanyInventorySourceReview.Create(new("tenant","company"),"actor",item,[new(){INVENTORY_TRANSACTION_ID="movement",INVENTORY_ITEM_ID=item.INVENTORY_ITEM_ID,ACTIVE_IND="N",NOTES="<script>reason</script>"}]);});
         var authentication=new Authentication(mode=="account"?"other":"actor",mode!="role");var navigation=new Navigation(mode=="detail"?item.INVENTORY_ITEM_ID:null);navigation.InitializePage();
-        var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime,NoBrowser>();services.AddSingleton<TheTechIdea.Data.OilGas.IFieldSelectionContext>(Mock.Of<TheTechIdea.Data.OilGas.IFieldSelectionContext>());services.AddSingleton(company);services.AddSingleton(state);services.AddSingleton(client.Object);services.AddSingleton<AuthenticationStateProvider>(authentication);services.AddSingleton<NavigationManager>(navigation);services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime,NoBrowser>();services.AddSingleton<Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext>(Mock.Of<Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext>());services.AddSingleton(company);services.AddSingleton(state);services.AddSingleton(client.Object);services.AddSingleton<AuthenticationStateProvider>(authentication);services.AddSingleton<NavigationManager>(navigation);services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<ILoggerFactory>());
         await renderer.Dispatcher.InvokeAsync(async()=>{
             var root=await renderer.RenderComponentAsync<WarehouseWorkbench>(ParameterView.FromDictionary(mode=="detail"?new Dictionary<string,object?>{{"Id",item.INVENTORY_ITEM_ID}}:new()));var html=root.ToHtmlString();
@@ -66,7 +68,7 @@ public sealed class WarehouseScreenTests
         using var company=InventoryWorkspaceStateTests.Company();using var state=new InventoryWorkspaceState(company);
         var client=new AccountingServiceClient(new ApiClient(host.Client,Mock.Of<IFailureReporter>(),company),NullLogger<AccountingServiceClient>.Instance);
         var navigation=new Navigation(item.INVENTORY_ITEM_ID);navigation.InitializePage();
-        var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime,NoBrowser>();services.AddSingleton<TheTechIdea.Data.OilGas.IFieldSelectionContext>(Mock.Of<TheTechIdea.Data.OilGas.IFieldSelectionContext>());services.AddSingleton(company);services.AddSingleton(state);services.AddSingleton<IAccountingServiceClient>(client);services.AddSingleton<AuthenticationStateProvider>(new Authentication());services.AddSingleton<NavigationManager>(navigation);services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime,NoBrowser>();services.AddSingleton<Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext>(Mock.Of<Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext>());services.AddSingleton(company);services.AddSingleton(state);services.AddSingleton<IAccountingServiceClient>(client);services.AddSingleton<AuthenticationStateProvider>(new Authentication());services.AddSingleton<NavigationManager>(navigation);services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<ILoggerFactory>());
         await renderer.Dispatcher.InvokeAsync(async()=>{
             var root=await renderer.RenderComponentAsync<WarehouseWorkbench>(ParameterView.FromDictionary(new Dictionary<string,object?>{{"Id",item.INVENTORY_ITEM_ID}}));

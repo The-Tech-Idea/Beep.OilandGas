@@ -1,0 +1,444 @@
+# Beep.OilandGas.ApiService.Tests — data ownership restoration plan
+
+<!-- ownership-current:begin -->
+## Current implementation
+
+0 original files now belong to this project. All 502 original Data sources have been moved/consolidated. Actual paths/namespaces below supersede the initial proposal tables. Current verification: all 39 direct framework projects build with the canonical analyzer and default BeepDM source dependencies; 41 selected caller tests, 88 ownership tests, 6 native financial contract tests and 127 selected financial behavior cases pass (only the 201-write history case excluded). Compiled ownership/serialization/permit metadata checks pass; all 1,200 restored declarations are present with no cross-project duplicates. These are scoped checks using existing dependency outputs. Follow-up relationship tests pass 58/58 and the internal 73-project graph has no literal-reference cycles. Canonical AccountManagement and ThemeBranding outputs now build. The final native fixture boundary gate passes 71/71, including all ten prior expanded-run failures and the explicit missing-projection refusal; a full expanded rerun is not claimed. Default repository tests pass 69 with 3 skips, and 22/25 top-level test projects compile. The isolated 201-write history gate passes 1/1. Nodal and Pipeline callers now pass 13 and 9 focused cases; Diagnostics-dependent host verification remains open. The nested company-environment consumer passes 65/65 against actual owners after removing eight moved-definition source links. Expanded access tests passed 587/594 before final repairs; all seven failures pass in the final 27-case targeted recheck. A fresh full 594-case rerun is not claimed. See evidence/canonical-dependency-recovery/observed-evidence.json.
+
+This project consumes changed contracts; no original Data definitions are assigned here. Caller checks remain in scope.
+
+Shared contract/native partial groups use the existing Models project where lower-level consumers require them. Feature implementations remain in their existing projects. There is no replacement central data project.
+<!-- ownership-current:end -->
+
+Date: 2026-11-04. Status: Implementation applied; final owner/caller verification in progress.
+
+Project: `Beep.OilandGas.ApiService.Tests/Beep.OilandGas.ApiService.Tests.csproj`. Accountable: repository owner. Responsible: implementing engineer; affected module maintainer reviews ownership and behavior.
+
+## Scope and ownership
+
+0 candidate incoming files; 397 caller files contain affected identifiers. Counts are lexical evidence; resolve same-name types semantically before edits.
+
+Use this existing project for its own domain types. Domain rules/helpers travel with the owning feature. API transport types shared across layers need an existing dependency-safe contract owner; do not move a shared DTO into a concrete service assembly if that creates a cycle. Keep unresolved mappings open in inventory.json.
+
+## Incoming files and proposed names
+
+| Source | Current namespace / types | Historical same-name candidates | Naming and destination action |
+| --- | --- | --- | --- |
+
+## Calling code to update
+
+The following files reference affected identifiers. For each, resolve its exact symbol against inventory.json, then update imports, fully-qualified names, generic arguments, constructor/DI wiring and project references together. A lexical match is not proof of a dependency.
+
+- `Beep.OilandGas.ApiService.Tests/APInvoiceFinancialHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/APInvoiceFinancialReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/APInvoiceServiceEvidenceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/APLinePurchaseReadTests.cs`
+- `Beep.OilandGas.ApiService.Tests/APReceiptAllocationCommandHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/APReceiptAllocationCommandTests.cs`
+- `Beep.OilandGas.ApiService.Tests/APReceiptAllocationScreenTests.cs`
+- `Beep.OilandGas.ApiService.Tests/APReceiptAllocationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/AcceptedReceiptCapacityTests.cs`
+- `Beep.OilandGas.ApiService.Tests/AccountingControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/AccountingPeriodRoleChecksTests.cs`
+- `Beep.OilandGas.ApiService.Tests/AccountingSourceHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/AccountingSourceRevisionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/AccountingWorkflowDefinitionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ActingUserFromPrincipalTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ApiIdentityConfigurationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ApiIdentityPipelineTests.cs`
+- `Beep.OilandGas.ApiService.Tests/AssetAccessControllerAuthorizationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/AssetAccessMiddlewareTests.cs`
+- `Beep.OilandGas.ApiService.Tests/AssetApplicationAuthorizationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/AssetDatabaseScopeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/AssetRolePermissionStoreTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ChokeCalculationsControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyAccountingAssignedScopeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyAccountingProcessReadTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyBillingPolicyHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyBillingPolicyScreenTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyBillingPolicyTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyDevelopmentFacilityCreationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyDevelopmentFacilityEditServiceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyEnvironmentBindingTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyEnvironmentPreviewControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyEnvironmentStoreTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyEnvironmentWellReaderTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyFieldObligationProjectionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyFieldObligationSqliteTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyFinancialCanonicalOwnershipTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyForeignSalesJournalTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyFxRateHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyFxRateScreenTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyFxRateTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyFxRateWindowTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyGLAccountConfigurationHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyGLAccountConfigurationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyGLAccountHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyGLAccountReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyGLMappingConfigurationHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyGLMappingConfigurationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyGLMappingHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyGLMappingReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyGLMappingTransitionHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyGLMappingTransitionScreenTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyGLMappingTransitionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyGhgSelectionStoreTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyHseWorkflowSqliteTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyHseWorkflowStartTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyInventoryReadAccessTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyInventorySourceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyJournalWorkflowTransitionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyLedgerAccountScreenTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyLedgerBookHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyLedgerBookScreenTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyLedgerBookTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyLedgerPeriodCreationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyLedgerPeriodHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyLedgerPeriodReadTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyLedgerPeriodTransitionHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyLedgerPeriodTransitionScreenTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyLedgerPeriodTransitionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyMaintenanceAcceptanceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyMaintenanceAssetReturnTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyMaintenanceAssignedStageTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyMaintenanceClosureTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyMaintenanceExecutionHandoffTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyMaintenanceProcessStartTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyMaintenanceRecordedWorkTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyMaintenanceReturnHandoffTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyMaintenanceReturnReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyMaintenanceWellEvidenceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyMatchingPolicyCommandHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyMatchingPolicyCommandTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyMatchingPolicyScreenTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyMatchingPolicyTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyOrganizationVerifierTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyPersonnelCredentialTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyPersonnelIdentityTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyPersonnelPolicyTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyProcessReadTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyProcessStartHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyProcessStartTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyRoleRecipientTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceDecisionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceDraftTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceExecutionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceQueueTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceScreenTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceWorkflowTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesJournalPostingContractTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesJournalPostingHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesJournalPostingScreenTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesJournalPostingSourceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesJournalPostingTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesJournalPreparationHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesJournalPreparationScreenTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesJournalPreparationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesJournalProcessHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesJournalReviewHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesJournalReviewScreenTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesJournalReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesJournalReviewViewpointTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesJournalSourceHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesJournalSourceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesJournalWorkflowSourceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesPaymentAssignedScreenTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesPaymentDraftTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesPaymentHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesPaymentInboxTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesPaymentProcessTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesPaymentReviewHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesPaymentReviewScreenTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesPaymentReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesPaymentScreenTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesPostedLedgerScreenTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesPostedLedgerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesReceivableDecisionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesReceivablePreparationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesReceivableReviewWorkspaceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesReceivableWorkflowTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySalesReceivableWorkspaceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanySourceOverlayTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyStepCommandHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyStepCommandTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyStepReviewHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyWellQualitySampleTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyWorkOrderCompletionDecisionStatusTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyWorkOrderCompletionDecisionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyWorkOrderListReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyWorkOrderReturnAcceptanceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompanyWorkOrderSampleTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ComplianceIdentityReaderTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompressorCalculationsControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CompressorControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CorrectionAcknowledgementWorkflowTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CorrectionReturnWorkflowTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CrossModuleWorkflowTests.cs`
+- `Beep.OilandGas.ApiService.Tests/CsvImportJobTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentAfeApiTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentAfeNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentAssignedReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentDraftAuthorityTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentDraftHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentFacilityEditReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentFacilityEvidenceControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentFacilityEvidenceHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentFacilityReadAuthorityTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentApiTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentAssignedSourceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentHandoffApiTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentHandoffNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentProgressApiTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentProgressTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentRoutingTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentStageApiTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentStageNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentPlanBaselineApiTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentPlanBaselineNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentPlanDraftContractTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentPlanNativeDraftTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentPlanningControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentReviewCatalogTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentReviewDecisionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentReviewHandoffTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DevelopmentReviewProgressTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DoaRoutingTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingAcceptedCompletionReadinessTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingCompletionAcceptanceApiJourney.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingCompletionAcceptanceNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingCompletionDecisionApiJourney.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingCompletionRecipientTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingCompletionReportNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingCompletionReviewDecisionNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingCompletionReviewStartNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingCompletionRoutingApiJourney.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingCompletionRoutingTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingCompletionSubmissionApiJourney.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingCompletionTestInspectionApiJourney.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingCompletionTestInspectionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingDailyReportConflictApiJourney.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingDailyReportConflictNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingDailyReportCorrectionApiJourney.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingDailyReportCorrectionNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingDailyReportEntryNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingDailyReportNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingDailyReportPageApiJourney.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingDailyReportPageNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingExecutionAssignmentApiJourney.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingExecutionAssignmentConflictNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingExecutionAssignmentNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingExecutionConflictNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingExecutionRecipientTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingExecutionStartApiTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingExecutionStartNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingProgramApiTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingProgramAssignedReviewApiTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingProgramAssignedReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingProgramDraftNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingProgramRecipientTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingProgramReviewDecisionApiTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingProgramReviewDecisionNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingProgramReviewProgressTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingProgramReviewStartApiTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingProgramReviewStartNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingProgramReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingReportingClosureApiJourney.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingReportingClosureNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingReportingReassignmentApiJourney.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingReportingReassignmentNativeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/DrillingReportingReassignmentTests.cs`
+- `Beep.OilandGas.ApiService.Tests/EconomicAnalysisControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/EconomicAnalysisFieldControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/EffectiveMatchingPolicyHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/EffectiveMatchingPolicyTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ExceptionAnswerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ExplorationControllerWorkflowConflictTests.cs`
+- `Beep.OilandGas.ApiService.Tests/FacilityMonitoringControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/FieldRevenueSourceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/FieldRoyaltyPreviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/FinancialOperationClaimTests.cs`
+- `Beep.OilandGas.ApiService.Tests/FinancialReceiptConsumptionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/Fixtures/AccountingWorkflowSeedBoundary.cs`
+- `Beep.OilandGas.ApiService.Tests/Fixtures/CompanyEnvironmentPreviewBoundary.cs`
+- `Beep.OilandGas.ApiService.Tests/Fixtures/CompanyOrganizationNativeBoundary.cs`
+- `Beep.OilandGas.ApiService.Tests/Fixtures/FirstRunRepositoryBoundary.cs`
+- `Beep.OilandGas.ApiService.Tests/Fixtures/MaintenanceLandingIdentityBoundary.cs`
+- `Beep.OilandGas.ApiService.Tests/Fixtures/WorkflowInboxExternalBoundaries.cs`
+- `Beep.OilandGas.ApiService.Tests/GasLiftModuleRoutingTests.cs`
+- `Beep.OilandGas.ApiService.Tests/HSEControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/HSEProcessControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/HseAssignedActionReaderTests.cs`
+- `Beep.OilandGas.ApiService.Tests/HseReportJurisdictionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/Infrastructure/RecordingFailureReporter.cs`
+- `Beep.OilandGas.ApiService.Tests/Infrastructure/SignedTokens.cs`
+- `Beep.OilandGas.ApiService.Tests/Infrastructure/TestCompanyModules.cs`
+- `Beep.OilandGas.ApiService.Tests/Infrastructure/TestCompanyProgress.cs`
+- `Beep.OilandGas.ApiService.Tests/InventoryLinkCycleHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InventoryLinkCycleTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InventoryLinkDecisionHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InventoryLinkDecisionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InventoryLinkHandoffTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InventoryLinkHistoryTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InventoryLinkPreparationHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InventoryLinkPreparationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InvoiceCorrectionCommandTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InvoiceCorrectionDecisionReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InvoiceCorrectionDecisionWorkspaceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InvoiceCorrectionEditorTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InvoiceCorrectionHistoryTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InvoiceCorrectionHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InvoiceCorrectionReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InvoiceCorrectionWorkspaceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InvoiceVarianceCommandHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InvoiceVarianceCommandTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InvoiceVarianceDecisionCommandTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InvoiceVarianceDecisionReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InvoiceVarianceDecisionScreenTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InvoiceVarianceDecisionWorkspaceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InvoiceVariancePreparationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InvoiceVarianceScreenTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InvoiceVarianceStepEvidenceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InvoiceVarianceWorkflowSourceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/InvoiceVarianceWorkspaceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/LeaseAcquisitionControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/LeaseAcquisitionInterfaceContractTests.cs`
+- `Beep.OilandGas.ApiService.Tests/LeaseRoutingTests.cs`
+- `Beep.OilandGas.ApiService.Tests/LedgerRoutingTests.cs`
+- `Beep.OilandGas.ApiService.Tests/LegacyFxRefusalTests.cs`
+- `Beep.OilandGas.ApiService.Tests/LegacyLedgerHttpAdmissionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/LifecycleReferenceSeedingTests.cs`
+- `Beep.OilandGas.ApiService.Tests/LocalDbDriverTests.cs`
+- `Beep.OilandGas.ApiService.Tests/MatchingPolicyScreenSubmissionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/MatchingPolicyWorkspaceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/MigrationAdministratorAuthorityTests.cs`
+- `Beep.OilandGas.ApiService.Tests/MigrationBindingGuardTests.cs`
+- `Beep.OilandGas.ApiService.Tests/MigrationConnectionTargetTests.cs`
+- `Beep.OilandGas.ApiService.Tests/MigrationDispatchAuthorityTests.cs`
+- `Beep.OilandGas.ApiService.Tests/MigrationDispatchHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ModuleMigrationScopeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ModuleRepositorySeedingTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ModuleSchemaVerificationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ModuleSetupOrchestratorTests.cs`
+- `Beep.OilandGas.ApiService.Tests/NativeProcessStartTests.cs`
+- `Beep.OilandGas.ApiService.Tests/NoLocalSignInTests.cs`
+- `Beep.OilandGas.ApiService.Tests/NodalAnalysisControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/NodalAnalysisLegacyCalculationsControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/OilGasDiagnosticsTests.cs`
+- `Beep.OilandGas.ApiService.Tests/PPDMCalculationServiceCompressorTests.cs`
+- `Beep.OilandGas.ApiService.Tests/PeriodCloseJournalRecordsTests.cs`
+- `Beep.OilandGas.ApiService.Tests/PermitsControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/PersonaTaskRoutingTests.cs`
+- `Beep.OilandGas.ApiService.Tests/PersonasAuthorizationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/PipelineModuleRoutingTests.cs`
+- `Beep.OilandGas.ApiService.Tests/PlungerLiftRoutingTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ProcessDefinitionStartReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ProcessStartSourcesTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ProcessTransitionReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ProductionAccountingControllerFacadeCompatibilityTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ProductionAccountingServiceHardeningServiceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ProductionAccountingServiceProcessCycleTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ProductionDashboardControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ProductionForecastingControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ProductionForecastingNumericalEdgeCaseRegressionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ProductionGlPostingTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ProductionManagementServiceParityControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ProgressWorkerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ProspectIdentificationControllerCompatibilityTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ProspectIdentificationControllerWorkflowTests.cs`
+- `Beep.OilandGas.ApiService.Tests/PurchaseOrderOwnershipTests.cs`
+- `Beep.OilandGas.ApiService.Tests/PurchaseOrderSourceReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/PurchaseReceiptDecisionHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/PurchaseReceiptDecisionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/PurchaseReceiptInventoryReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/PurchaseReceiptStockCommandTests.cs`
+- `Beep.OilandGas.ApiService.Tests/PurchaseReceiptStockHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/PurchaseReceiptStockRecoveryTests.cs`
+- `Beep.OilandGas.ApiService.Tests/PurchaseReceiptStockReviewTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ReceiverAccountantHandoffTests.cs`
+- `Beep.OilandGas.ApiService.Tests/Refusals.cs`
+- `Beep.OilandGas.ApiService.Tests/RepositoryAssetAccessStoreTests.cs`
+- `Beep.OilandGas.ApiService.Tests/RepositoryAuthorizationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/RepositoryClaimsTransformationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/RepositoryRegistrationHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/RepositoryRoleExtensionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/RepositorySetupGateTests.cs`
+- `Beep.OilandGas.ApiService.Tests/RepositoryUserProfileTests.cs`
+- `Beep.OilandGas.ApiService.Tests/RequireAssetAccessAttributeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/RequireRoleAttributeTests.cs`
+- `Beep.OilandGas.ApiService.Tests/RoleAdministrationAuthorizationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/RolePersonaRoutingTests.cs`
+- `Beep.OilandGas.ApiService.Tests/RoyaltyAccrualAuthorizationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/RoyaltyPaymentAuthorizationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/RoyaltyPostingReviewAuthorizationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/RoyaltyRecordedInputsTests.cs`
+- `Beep.OilandGas.ApiService.Tests/RoyaltyReportingTests.cs`
+- `Beep.OilandGas.ApiService.Tests/RunTicketControllerAuthorizationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/RunTicketVolumeReconcilerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/SchemaMigrationHttpAuthorizationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/ScopedBackgroundOperationQueueTests.cs`
+- `Beep.OilandGas.ApiService.Tests/SetupBootstrapAccessTests.cs`
+- `Beep.OilandGas.ApiService.Tests/SetupDriverBeepLoaderTests.cs`
+- `Beep.OilandGas.ApiService.Tests/SetupFirstRunHttpIntegrationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/SetupProtectedBeepConnectionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/SetupRepositoryConnectionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/SetupRepositoryMigrationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/SetupRepositorySqlServerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/SodIdentityBoundaryTests.cs`
+- `Beep.OilandGas.ApiService.Tests/SystemSetupConnectionSelectionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/SystemSetupRecordStoreTests.cs`
+- `Beep.OilandGas.ApiService.Tests/SystemSetupTargetTests.cs`
+- `Beep.OilandGas.ApiService.Tests/SystemSetupToolsDefaultsTests.cs`
+- `Beep.OilandGas.ApiService.Tests/TankInventoryControllerTests.cs`
+- `Beep.OilandGas.ApiService.Tests/UnavailableExecutionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/UserAdministrationAuthorizationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/UserProfileAuthorizationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderBudgetDecisionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderBudgetTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderCompleteApprovalFixture.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderExecutionPermitTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderExecutionPersonnelTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderExecutionStartFixture.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderExecutionStartTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderExecutorIdentityTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderLaborCostTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderLaborUsageTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderMaterialAcceptanceFixture.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderMaterialAcceptanceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderMaterialAllocationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderMaterialUsageTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderPermitDocumentSourceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderPermitPrerequisiteInspectionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderPersonnelAcceptanceFixture.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderPersonnelAcceptanceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderPersonnelAssignmentTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderPersonnelReleaseTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderPersonnelReviewFixture.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderPersonnelRosterTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderPersonnelSourceTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkOrderSubmissionTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkflowBackgroundStartupTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkflowFieldQueryTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkflowInboxHttpTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkflowReadBoundaryTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkflowStepAuthorizationTests.cs`
+- `Beep.OilandGas.ApiService.Tests/WorkflowTaskProcessAdmissionTests.cs`
+
+## Migration tasks
+
+- [x] Record the confirmed existing owner, destination, namespace and dependency decisions in inventory.json and restoration-progress.json; current destination hashes are in observed evidence.
+- [x] Keep the internal project graph acyclic and record shared-contract placements without another global data project. The current static superset audit covers 69 existing projects and 284 literal project-reference edges, with zero cycles; external symbolic references are listed separately in evidence/canonical-dependency-recovery/project-reference-audit.json.
+- [ ] Move definitions once, update all listed callers and references, then remove forwarding stubs/obsolete definitions. Preserve source changes from the soft-reset commit.
+- [ ] Fix CLR namespaces and ambiguous/duplicate DTO names; retain native table/key names and public JSON member names unless all consumers migrate together. Update explicit JsonPropertyName, EF/Beep mappings, entity registration, migration discovery, serializers and stored assembly-qualified type names where applicable.
+- [ ] Update typed HTTP client signatures, controller request/response types, service interfaces, DI registration, Razor bindings, setup/module manifests, tests, source-linked fixtures and build scripts that name the moved source/assembly.
+- [ ] Reuse existing log, audit and notification paths; check that changed exception/type names do not hide errors, lose correlation or change UI failure feedback. IdentityServer stays authentication-only and app RBAC remains authoritative.
+- [ ] Update relevant docs and project/solution/package references. Remove stale centralized-ownership instructions as part of the authorized implementation.
+
+## Verification and dependencies
+
+Run only affected checks selected against the active master tracker. Compile the target owner and immediate consumers, then verify wire serialization, native entity/key registration, migration discovery and retained app-role/company/field boundaries. Test projects must replace source links and assembly HintPaths to moved definitions, not create test-only substitute models. Record full-host/provider/build failures separately from focused harness results. Current executed checks and unavailable integration gates are recorded in the Current implementation section and evidence/canonical-dependency-recovery/observed-evidence.json.
+
+Depends on the common ownership/naming decision and inventory review; caller migration follows each owner group. Finish with one-definition and zero-obsolete-reference checks. Keep a move manifest so an individual slice can be reversed without resetting unrelated staged work.

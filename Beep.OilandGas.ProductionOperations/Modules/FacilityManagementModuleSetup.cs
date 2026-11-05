@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.DevelopmentPlanning;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DevelopmentPlanning.Models;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
@@ -32,9 +35,9 @@ namespace Beep.OilandGas.ProductionOperations.Modules
         {
             typeof(FACILITY_MEASUREMENT),
             typeof(FACILITY_EQUIPMENT_ACTIVITY),
-            typeof(TheTechIdea.Data.OilGas.FACILITY_EDIT_INTENT),
-            typeof(TheTechIdea.Data.OilGas.FACILITY_CREATE_INTENT),
-            typeof(TheTechIdea.Data.OilGas.FACILITY_EQUIPMENT_INSTALL_INTENT),
+            typeof(Beep.OilandGas.Models.Data.DevelopmentPlanning.FACILITY_EDIT_INTENT),
+            typeof(Beep.OilandGas.DevelopmentPlanning.Models.FACILITY_CREATE_INTENT),
+            typeof(Beep.OilandGas.DevelopmentPlanning.Models.FACILITY_EQUIPMENT_INSTALL_INTENT),
             typeof(R_FACILITY_MONITORING_CODE)
         };
 

@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DevelopmentPlanning.Models;
 using System.Data;
 using System.Data.SQLite;
 using Moq;
@@ -10,7 +13,6 @@ using TheTechIdea.Beep.Utilities;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.Tools;
 using TheTechIdea.Beep.DriversConfigurations;
-using TheTechIdea.Data.OilGas;
 using TheTechIdea.Beep.Report;
 var errors=new ErrorsInfo{Flag=Errors.Ok};var editor=new Mock<IDMEEditor>();editor.SetupGet(x=>x.ErrorObject).Returns(errors);editor.SetupGet(x=>x.classCreator).Returns(new ClassCreator(editor.Object));
 var driver=new ConnectionDriversConfig{AdapterType="probe-adapter",CommandBuilderType="probe-builder"};

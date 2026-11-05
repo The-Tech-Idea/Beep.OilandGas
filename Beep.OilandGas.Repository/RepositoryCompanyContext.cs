@@ -1,5 +1,6 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
 using System.Collections.ObjectModel;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Repository;
 

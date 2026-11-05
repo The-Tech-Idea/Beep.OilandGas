@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Models.Constants;
 using System;
 using System.Collections.Generic;

@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.HSE;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -5,7 +8,6 @@ using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Web.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.Repository.Tests;

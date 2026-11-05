@@ -1,11 +1,15 @@
 #if WORKFLOW_INBOX_FOCUSED
-extern alias actualData;
+extern alias actualOwners;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Web.Services;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
-using Detail=actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderDetailModel;
+using Detail=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderDetailModel;
 namespace Beep.OilandGas.Web.Auth.Tests;
 
 public sealed class WorkOrderExecutionPermitStateTests
@@ -13,8 +17,8 @@ public sealed class WorkOrderExecutionPermitStateTests
     internal static CompanyWorkOrderExecutionPermitApprovalReview PhaseAwareReview()
     {
         var initial=RequirementApprovalReview();var task=initial.Proposal.Task;
-        var future=actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId=task.FieldId,CondSeq=2,CondType="OPERATIONAL",RequiredText="Inspect actual work before submission",Jurisdiction=initial.Proposal.Jurisdiction,ApplicableStage="WORK_SUBMISSION"},task.WorkOrderId,"planner","future",DateTime.UtcNow);
-        var originalRows=initial.OriginalSource.Inspections.Select(row=>row with{ApplicableStage="PRE_START"}).Concat([actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(future)]).ToArray();
+        var future=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId=task.FieldId,CondSeq=2,CondType="OPERATIONAL",RequiredText="Inspect actual work before submission",Jurisdiction=initial.Proposal.Jurisdiction,ApplicableStage="WORK_SUBMISSION"},task.WorkOrderId,"planner","future",DateTime.UtcNow);
+        var originalRows=initial.OriginalSource.Inspections.Select(row=>row with{ApplicableStage="PRE_START"}).Concat([actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(future)]).ToArray();
         var currentRows=initial.CurrentSource.Inspections.Select(row=>row with{ApplicableStage="PRE_START"}).Concat([originalRows.Last()]).ToArray();var original=initial.OriginalSource with{Inspections=originalRows,SnapshotRevision=CompanyMaintenanceInspectionReview.Revision(initial.OriginalSource.Stage,initial.OriginalSource.InspectionDatabase,initial.OriginalSource.Order,originalRows)};var current=initial.CurrentSource with{Inspections=currentRows,SnapshotRevision=CompanyMaintenanceInspectionReview.Revision(initial.CurrentSource.Stage,initial.CurrentSource.InspectionDatabase,initial.CurrentSource.Order,currentRows)};
         var proposal=initial.Proposal with{RequirementEvidenceVersion=2,InspectionRevision=original.SnapshotRevision};return initial with{Proposal=proposal,OriginalSource=original,CurrentSource=current,PrerequisiteEvidenceVersion=7,Blockers=CompanyWorkOrderExecutionPermitApprovalReview.GetBlockers(proposal,original,current,initial.ComparedAtUtc,7)};
     }
@@ -22,12 +26,12 @@ public sealed class WorkOrderExecutionPermitStateTests
     public void PhaseAwareIssueCapturesFutureConditionsWithoutCompletingThemAndPreservesLegacyPolicy(string mode)
     {
         var initial=Review();var task=initial.Source.Stage.Task;var utc=DateTime.UtcNow;
-        var pre=actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId=task.FieldId,CondSeq=1,CondType="PRE_START",RequiredText="Before starting",Jurisdiction="Explicit jurisdiction",ApplicableStage="PRE_START"},task.WorkOrderId,"planner","pre",utc);
-        pre=actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareResult(pre,new(){FieldId=task.FieldId,InspectionId=pre.INSPECTION_ID,ExpectedSourceRevision=actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.Revision(pre),Result="PASS",Notes="Performed before start"},"independent",utc);
-        var future=actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId=task.FieldId,CondSeq=2,CondType="REGULATORY",RequiredText="Verify before return",Jurisdiction="Explicit jurisdiction",ApplicableStage="RETURN_TO_SERVICE"},task.WorkOrderId,"planner","future",utc);
+        var pre=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId=task.FieldId,CondSeq=1,CondType="PRE_START",RequiredText="Before starting",Jurisdiction="Explicit jurisdiction",ApplicableStage="PRE_START"},task.WorkOrderId,"planner","pre",utc);
+        pre=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareResult(pre,new(){FieldId=task.FieldId,InspectionId=pre.INSPECTION_ID,ExpectedSourceRevision=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.Revision(pre),Result="PASS",Notes="Performed before start"},"independent",utc);
+        var future=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId=task.FieldId,CondSeq=2,CondType="REGULATORY",RequiredText="Verify before return",Jurisdiction="Explicit jurisdiction",ApplicableStage="RETURN_TO_SERVICE"},task.WorkOrderId,"planner","future",utc);
         if(mode=="missing-stage")future.APPLICABLE_STAGE=null;if(mode=="wrong-stage"){future.COND_TYPE="OPERATIONAL";future.APPLICABLE_STAGE="PRE_START";}
-        if(mode=="wrong-stage"){Assert.Throws<InvalidOperationException>(()=>actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(future));return;}
-        var rows=new[]{actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(pre),actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(future)};
+        if(mode=="wrong-stage"){Assert.Throws<InvalidOperationException>(()=>actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(future));return;}
+        var rows=new[]{actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(pre),actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(future)};
         var source=initial.Source with{Inspections=rows,SnapshotRevision=CompanyMaintenanceInspectionReview.Revision(initial.Source.Stage,initial.Source.InspectionDatabase,initial.Source.Order,rows)};var proposal=Proposal(initial with{Source=source,RequirementEvidenceVersion=2}) with{IntentId=Guid.NewGuid(),RequirementEvidenceVersion=2};
         if(mode=="missing-stage"){Assert.Throws<InvalidOperationException>(()=>proposal.RequireSource(source));return;}
         proposal.RequireSource(source);proposal.RequireRecorded(proposal.Prepare(utc,source));Assert.Equal("UNRECORDED",source.Inspections[1].Status);
@@ -53,7 +57,7 @@ public sealed class WorkOrderExecutionPermitStateTests
     [Theory][InlineData("current")][InlineData("missing")][InlineData("unsupported")][InlineData("legacy")]
     public void VersionedPermitIssueRequiresImmutableNativeRequirementProofAndPreservesLegacyJson(string mode)
     {
-        var initial=Review();var pending=actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId=initial.Source.Stage.Task.FieldId,CondSeq=1,CondType="PRE_START",RequiredText="Recorded original requirement",Jurisdiction="Explicit jurisdiction",RegulatoryRef="isolation",PermitPrerequisiteKind="ISOLATION"},initial.Source.Stage.Task.WorkOrderId,"requirement-author","requirement",DateTime.UtcNow);var rows=new[]{actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(pending)};if(mode=="missing")rows[0]=rows[0] with{RequirementRevision=null};var source=initial.Source with{Inspections=rows,SnapshotRevision=CompanyMaintenanceInspectionReview.Revision(initial.Source.Stage,initial.Source.InspectionDatabase,initial.Source.Order,rows)};var version=mode=="legacy"?0:mode=="unsupported"?99:1;var review=initial with{Source=source,RequirementEvidenceVersion=version};var proposal=Proposal(review) with{IntentId=Guid.NewGuid(),RequirementEvidenceVersion=version};
+        var initial=Review();var pending=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId=initial.Source.Stage.Task.FieldId,CondSeq=1,CondType="PRE_START",RequiredText="Recorded original requirement",Jurisdiction="Explicit jurisdiction",RegulatoryRef="isolation",PermitPrerequisiteKind="ISOLATION"},initial.Source.Stage.Task.WorkOrderId,"requirement-author","requirement",DateTime.UtcNow);var rows=new[]{actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(pending)};if(mode=="missing")rows[0]=rows[0] with{RequirementRevision=null};var source=initial.Source with{Inspections=rows,SnapshotRevision=CompanyMaintenanceInspectionReview.Revision(initial.Source.Stage,initial.Source.InspectionDatabase,initial.Source.Order,rows)};var version=mode=="legacy"?0:mode=="unsupported"?99:1;var review=initial with{Source=source,RequirementEvidenceVersion=version};var proposal=Proposal(review) with{IntentId=Guid.NewGuid(),RequirementEvidenceVersion=version};
         var error=Record.Exception(()=>{review.Require(review.Context.Company,review.Context.ActorUserId,review.Source.Stage.Task);proposal.RequireSource(source);var row=proposal.Prepare(DateTime.UtcNow,source);proposal.RequireRecorded(row);Assert.Equal(version,System.Text.Json.JsonSerializer.Deserialize<CompanyWorkOrderExecutionPermitIntent>(row.ISSUE_DATA_JSON)!.RequirementEvidenceVersion);if(version==0){Assert.DoesNotContain("RequirementEvidenceVersion",row.ISSUE_DATA_JSON);Assert.DoesNotContain("RequirementEvidenceVersion",System.Text.Json.JsonSerializer.Serialize(review));}});if(mode is "current" or "legacy")Assert.Null(error);else Assert.NotNull(error);
     }
     internal static CompanyWorkOrderExecutionPermitIssueReview Review()
@@ -81,7 +85,7 @@ public sealed class WorkOrderExecutionPermitStateTests
     }
     internal static CompanyWorkOrderExecutionPermitIssueReview RequirementReview()
     {
-        var review=Review();var pending=actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId=review.Context.FieldId!,CondSeq=1,CondType="PRE_START",RequiredText="Original native requirement",Jurisdiction="Explicit jurisdiction",RegulatoryRef="isolation",PermitPrerequisiteKind="ISOLATION"},review.Source.Stage.Task.WorkOrderId,"requirement-author","requirement",DateTime.UtcNow);var rows=new[]{actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(pending)};var source=review.Source with{Inspections=rows,SnapshotRevision=CompanyMaintenanceInspectionReview.Revision(review.Source.Stage,review.Source.InspectionDatabase,review.Source.Order,rows)};return review with{Source=source,RequirementEvidenceVersion=1};
+        var review=Review();var pending=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId=review.Context.FieldId!,CondSeq=1,CondType="PRE_START",RequiredText="Original native requirement",Jurisdiction="Explicit jurisdiction",RegulatoryRef="isolation",PermitPrerequisiteKind="ISOLATION"},review.Source.Stage.Task.WorkOrderId,"requirement-author","requirement",DateTime.UtcNow);var rows=new[]{actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(pending)};var source=review.Source with{Inspections=rows,SnapshotRevision=CompanyMaintenanceInspectionReview.Revision(review.Source.Stage,review.Source.InspectionDatabase,review.Source.Order,rows)};return review with{Source=source,RequirementEvidenceVersion=1};
     }
     internal static CompanyWorkOrderExecutionPermitApprovalReview RequirementApprovalReview(bool changed=false)
     {

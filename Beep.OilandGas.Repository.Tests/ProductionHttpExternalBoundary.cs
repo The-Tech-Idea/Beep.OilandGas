@@ -1,11 +1,6 @@
+using Beep.OilandGas.Models.Data.Company;
 // Focused test-only contract for the unavailable shared diagnostics project.
 // The production controller's unrelated decommissioning failure path is not certified here.
-namespace TheTechIdeaWeb.Diagnostics
-{
-    public enum FailureSeverity{Degraded}
-    public interface IFailureReporter{string ReportHandled(Exception error,string operation,string consequence,FailureSeverity severity=FailureSeverity.Degraded);}
-    public static class FailureReferenceFormat{public static bool IsWellFormed(string? value)=>false;}
-}
 namespace TheTechIdeaWeb.Http
 {
     public static class HttpResponseErrorMessage

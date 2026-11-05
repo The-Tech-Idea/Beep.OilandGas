@@ -1,3 +1,8 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.HSE;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.HSE.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Net;
 using System.Net.Http.Json;
@@ -5,7 +10,6 @@ using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Web.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 using Xunit;
 

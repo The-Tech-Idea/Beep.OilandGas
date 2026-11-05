@@ -1,3 +1,5 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
@@ -15,7 +17,6 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 using TheTechIdeaWeb.Diagnostics;
 using Beep.OilandGas.Models.Core.Refusals;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ProductionOperations.Services;
 

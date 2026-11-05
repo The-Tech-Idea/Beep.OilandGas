@@ -1,3 +1,8 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.HSE.Models;
+using Beep.OilandGas.Models.Data.Company;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Text.Json;
 using System.Net;
@@ -19,7 +24,6 @@ using MudBlazor.Services;
 using MudBlazor;
 using Beep.OilandGas.Client.App;
 using TheTechIdeaWeb.Diagnostics;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.Web.Auth.Tests;

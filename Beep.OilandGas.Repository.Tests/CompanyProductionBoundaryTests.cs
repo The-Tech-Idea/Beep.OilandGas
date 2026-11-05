@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using System.Reflection;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.LifeCycle.Services.Production;
@@ -8,7 +11,6 @@ using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Models;
 using Microsoft.AspNetCore.Identity;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Fixture = Beep.OilandGas.Repository.Tests.CompanyPPDMRowAccessTests.Fixture;
 

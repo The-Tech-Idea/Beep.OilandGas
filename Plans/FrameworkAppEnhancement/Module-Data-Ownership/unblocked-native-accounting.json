@@ -1,0 +1,451 @@
+[
+  {
+    "source": "TheTechIdea.Data/OilGas/AFE_LINE_ITEM.cs",
+    "namespace": "Beep.OilandGas.Models.Data.ProductionAccounting",
+    "types": [
+      "AFE_LINE_ITEM"
+    ],
+    "proposed_owner": "Beep.OilandGas.ProductionAccounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.ProductionAccounting/Data/ProductionAccounting/AFE_LINE_ITEM.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.ProductionAccounting/Core/Interfaces/IAfeService.cs",
+      "Beep.OilandGas.ProductionAccounting/Data/ProductionAccounting/AFE_LINE_ITEM.cs",
+      "Beep.OilandGas.ProductionAccounting/Modules/ProductionAccountingModuleSetup.cs",
+      "Beep.OilandGas.ProductionAccounting/Services/AfeService.cs",
+      "Beep.OilandGas.ProductionAccounting/Services/ProductionAccountingService.AfeQueries.cs",
+      "Beep.OilandGas.Repository.Tests/FocusedFinancialContracts.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderFinancialContractOwnershipTests.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/ARAgingSummary.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "ARAgingSummary"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/ARAgingSummary.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IARService.cs",
+      "Beep.OilandGas.Accounting/Services/ARService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/ARApprovalResult.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "ARApprovalResult"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/ARApprovalResult.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IARService.cs",
+      "Beep.OilandGas.Accounting/Services/ARService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/ARInvoiceResponse.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "ARInvoiceResponse"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/ARInvoiceResponse.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/ClientILeaseService.cs",
+    "namespace": "Beep.OilandGas.Client.App.Services.Lease",
+    "types": [
+      "ILeaseService"
+    ],
+    "proposed_owner": "Beep.OilandGas.Client",
+    "basis": "Proposed from namespace/domain; confirm dependency direction before moving",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.Client/App/BeepOilandGasApp.cs",
+      "Beep.OilandGas.Client/App/IBeepOilandGasApp.cs",
+      "Beep.OilandGas.Client/App/Services/Lease/LeaseService.cs",
+      "Beep.OilandGas.LeaseAcquisition/Core/Interfaces/ILeaseService.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CreateARCreditMemoRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "CreateARCreditMemoRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/CreateARCreditMemoRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IARService.cs",
+      "Beep.OilandGas.Accounting/Services/ARService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CreateARInvoiceRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "CreateARInvoiceRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/CreateARInvoiceRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IARService.cs",
+      "Beep.OilandGas.Accounting/Services/ARService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesReceivablePreparationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/ProductionAccountingControllerFacadeCompatibilityTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/ARController.cs",
+      "Beep.OilandGas.ProductionAccounting/Services/ProductionAccountingService.ControllerFacade.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CreateARPaymentRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "CreateARPaymentRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/CreateARPaymentRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IARService.cs",
+      "Beep.OilandGas.Accounting/Services/ARService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CreateGLAccountRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "CreateGLAccountRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/CreateGLAccountRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/LegacyLedgerHttpAdmissionTests.cs",
+      "Beep.OilandGas.ApiService.Tests/ProductionAccountingControllerFacadeCompatibilityTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/GLController.cs",
+      "Beep.OilandGas.ProductionAccounting/Core/Interfaces/IGLAccountService.cs",
+      "Beep.OilandGas.ProductionAccounting/Services/ProductionAccountingService.LegacyLedgerFacade.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CreateInvoicePaymentRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "CreateInvoicePaymentRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/CreateInvoicePaymentRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IInvoiceService.cs",
+      "Beep.OilandGas.Accounting/Services/InvoiceService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceDraftTests.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CreateInvoiceRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "CreateInvoiceRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/CreateInvoiceRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IInvoiceService.cs",
+      "Beep.OilandGas.Accounting/Services/InvoiceService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceDraftTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceExecutionTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/InvoiceController.cs",
+      "Beep.OilandGas.ProductionAccounting/Services/ProductionAccountingService.ControllerFacade.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CreateJournalEntryRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "CreateJournalEntryRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/CreateJournalEntryRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/GLController.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CustomerSummary.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "CustomerSummary"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/CustomerSummary.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IARService.cs",
+      "Beep.OilandGas.Accounting/Services/ARService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/FileImportModels.cs",
+    "namespace": "Beep.OilandGas.PPDM39.Core",
+    "types": [
+      "FileImportError",
+      "FileImportResult"
+    ],
+    "proposed_owner": "Beep.OilandGas.PPDM39",
+    "basis": "Proposed from namespace/domain; confirm dependency direction before moving",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CsvImportJobTests.cs",
+      "Beep.OilandGas.ApiService/Services/CsvImportJobRunner.cs",
+      "Beep.OilandGas.ApiService/Services/CsvImportJobs.cs",
+      "Beep.OilandGas.Models/Data/DataManagement/FileImportError.cs",
+      "Beep.OilandGas.Models/Data/DataManagement/FileImportResult.cs",
+      "Beep.OilandGas.PPDM39/Core/IPPDMGenericRepository.cs",
+      "Beep.OilandGas.PPDM39/Core/PPDMGenericRepository.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyModuleConnectionTests.cs",
+      "Beep.OilandGas.Web/Components/ImportCsvWizard.razor",
+      "Beep.OilandGas.Web/Components/ImportModels.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/GLAccountResponse.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "GLAccountResponse"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/GLAccountResponse.cs"
+    ],
+    "callers": []
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/InvoiceAgingSummary.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "InvoiceAgingSummary"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/InvoiceAgingSummary.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IInvoiceService.cs",
+      "Beep.OilandGas.Accounting/Services/InvoiceService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceDraftTests.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/InvoiceApprovalResult.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "InvoiceApprovalResult"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/InvoiceApprovalResult.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IInvoiceService.cs",
+      "Beep.OilandGas.Accounting/Services/InvoiceService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceDraftTests.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/InvoicePaymentStatus.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "InvoicePaymentStatus"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/InvoicePaymentStatus.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IInvoiceService.cs",
+      "Beep.OilandGas.Accounting/Services/InvoiceService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceDraftTests.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/JournalEntry.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "JournalEntry"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/JournalEntry.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/ProductionAccountingControllerFacadeCompatibilityTests.cs",
+      "Beep.OilandGas.ProductionAccounting/Services/ProductionAccountingService.ControllerFacade.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/JournalEntryApprovalResult.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "JournalEntryApprovalResult"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/JournalEntryApprovalResult.cs"
+    ],
+    "callers": []
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/PaymentApplicationRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "PaymentApplicationRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/PaymentApplicationRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IARService.cs",
+      "Beep.OilandGas.Accounting/Services/ARService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/PaymentApplicationResult.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "PaymentApplicationResult"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/PaymentApplicationResult.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IARService.cs",
+      "Beep.OilandGas.Accounting/Services/ARService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/UpdateARInvoiceRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "UpdateARInvoiceRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/UpdateARInvoiceRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IARService.cs",
+      "Beep.OilandGas.Accounting/Services/ARService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/UpdateGLAccountRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "UpdateGLAccountRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/UpdateGLAccountRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.ProductionAccounting/Core/Interfaces/IGLAccountService.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/UpdateInvoiceRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "UpdateInvoiceRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/UpdateInvoiceRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IInvoiceService.cs",
+      "Beep.OilandGas.Accounting/Services/InvoiceService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceDraftTests.cs"
+    ]
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/WorkOrderSchema.cs",
+    "namespace": "Beep.OilandGas.Models.Data.WorkOrder",
+    "types": [
+      "WorkOrderSchema"
+    ],
+    "proposed_owner": "Beep.OilandGas.ProductionOperations",
+    "basis": "Proposed from namespace/domain; confirm dependency direction before moving",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.PPDM39.DataManagement/Modules/CorePpdmModule.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceReturnPolicyTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderInspectionSchemaTests.cs"
+    ]
+  }
+]

@@ -1,8 +1,8 @@
+using Beep.OilandGas.Models.Data.Company;
 using System.Text.Json;
 using Beep.OilandGas.Client.Exceptions;
 using Beep.OilandGas.Models.Data.Lease;
 using Beep.OilandGas.Models.Data.Operations;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Client.App.Services.Lease;
 

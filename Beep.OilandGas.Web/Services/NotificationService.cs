@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.AspNetCore.Components.Authorization;
 using Beep.Foundation.IdentityServer.Shared.Identity;
@@ -116,8 +117,8 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
             var connection = new HubConnectionBuilder()
                 .WithUrl(_hubUri, options =>
                 {
-                    options.Headers[TheTechIdea.Data.OilGas.CompanyRequestHeaders.Tenant] = snapshot.Selection.Scope.TenantId;
-                    options.Headers[TheTechIdea.Data.OilGas.CompanyRequestHeaders.Company] = snapshot.Selection.Scope.BusinessAssociateId;
+                    options.Headers[Beep.OilandGas.Models.Data.Company.CompanyRequestHeaders.Tenant] = snapshot.Selection.Scope.TenantId;
+                    options.Headers[Beep.OilandGas.Models.Data.Company.CompanyRequestHeaders.Company] = snapshot.Selection.Scope.BusinessAssociateId;
                     options.AccessTokenProvider = async () =>
                     {
                         var current = await _authentication.GetAuthenticationStateAsync();

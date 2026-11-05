@@ -1,10 +1,15 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.ProductionAccounting.Models;
+using Beep.OilandGas.Accounting.Models;
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Moq;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Tools;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 
@@ -99,29 +104,29 @@ public sealed class CommercialIntentMigrationTests
     [InlineData(typeof(CompanySalesReceivableDecisionProof))]
     [InlineData(typeof(CompanySalesReceivableReviewRecovery))]
     [InlineData(typeof(CompanySalesReceivableProcessSourceReview))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.CreateARInvoiceRequest))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.UpdateARInvoiceRequest))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.CreateARPaymentRequest))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.CreateARCreditMemoRequest))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.ARApprovalResult))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.ARAgingSummary))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.CustomerSummary))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.PaymentApplicationItem))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.PaymentApplicationRequest))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.PaymentApplicationResult))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.ARInvoice))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.ARInvoiceResponse))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.CreateARInvoiceRequest))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.UpdateARInvoiceRequest))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.CreateARPaymentRequest))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.CreateARCreditMemoRequest))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.ARApprovalResult))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.ARAgingSummary))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.CustomerSummary))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.PaymentApplicationItem))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.PaymentApplicationRequest))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.PaymentApplicationResult))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.ARInvoice))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.ARInvoiceResponse))]
     [InlineData(typeof(CompanySalesInvoiceDraftCommand))]
     [InlineData(typeof(CompanySalesInvoiceDraftRecord))]
     [InlineData(typeof(CompanySalesInvoiceDraftProof))]
     [InlineData(typeof(CompanySalesInvoiceDraftOutcome))]
     [InlineData(typeof(CompanySalesInvoiceWorkspaceReview))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.CreateInvoiceRequest))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.UpdateInvoiceRequest))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.CreateInvoicePaymentRequest))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.InvoiceApprovalResult))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.InvoiceAgingSummary))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.InvoicePaymentStatus))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.CreateInvoiceRequest))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.UpdateInvoiceRequest))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.CreateInvoicePaymentRequest))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.InvoiceApprovalResult))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.InvoiceAgingSummary))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.InvoicePaymentStatus))]
     [InlineData(typeof(CompanyDeliveryCorrectionSubmission))]
     public void RepositoryIdentityAndReadContractsCannotEnterBusinessMigrations(Type type)=>Assert.Throws<ArgumentException>(()=>ModuleSchemaBoundary.Validate([type]));
 }

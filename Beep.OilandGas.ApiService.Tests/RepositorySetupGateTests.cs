@@ -1,8 +1,8 @@
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.ApiService.Middleware;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Http;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;

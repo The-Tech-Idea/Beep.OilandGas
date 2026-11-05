@@ -1,10 +1,10 @@
+using Beep.OilandGas.Repository.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Repository;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;

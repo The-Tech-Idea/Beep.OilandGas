@@ -42,4 +42,7 @@
     <Using Include="Beep.OilandGas.PPDM.Models" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../Beep.OilandGas.Client/Beep.OilandGas.Client.csproj" />
+  </ItemGroup>
 </Project>

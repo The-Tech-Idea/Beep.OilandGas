@@ -1,3 +1,8 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Accounting.Models;
+using Beep.OilandGas.LifeCycle.Models;
+using Beep.OilandGas.Repository.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Net;
 using System.Net.Http.Json;
@@ -11,7 +16,6 @@ using Beep.OilandGas.Web.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 

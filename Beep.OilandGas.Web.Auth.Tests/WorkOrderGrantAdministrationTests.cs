@@ -1,3 +1,4 @@
+using Beep.OilandGas.PermitsAndApplications.Models;
 using System.Reflection;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Models.Data;

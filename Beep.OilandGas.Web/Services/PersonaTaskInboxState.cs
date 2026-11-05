@@ -1,5 +1,8 @@
+using Beep.OilandGas.DrillingAndConstruction.Models;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.LifeCycle.Models;
 using Beep.OilandGas.Client.App;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.Web.Services;
 
 /// <summary>Shared view state for the existing task inbox and persona landing; no task or workflow persistence.</summary>

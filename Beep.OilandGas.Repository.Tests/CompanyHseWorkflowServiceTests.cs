@@ -1,3 +1,10 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Core.Interfaces;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.HSE.Models;
+using Beep.OilandGas.Repository.Models;
 using System.Security.Claims;
 using System.Text.Json;
 using Beep.OilandGas.ApiService.Services;
@@ -12,7 +19,6 @@ using Beep.OilandGas.Repository;
 using Moq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.Repository.Tests;

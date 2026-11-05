@@ -1,4 +1,5 @@
-﻿using System;
+using Beep.OilandGas.Models.Data.AccessControl;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable

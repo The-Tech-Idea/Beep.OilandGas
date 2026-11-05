@@ -1,3 +1,8 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.DataManagement;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.HSE.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Net;
 using System.Text;
@@ -12,7 +17,6 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.JSInterop;
 using Moq;
 using MudBlazor.Services;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 using Xunit;
 

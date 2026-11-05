@@ -1,3 +1,4 @@
+using Beep.OilandGas.LeaseAcquisition.Models;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -5,7 +6,6 @@ using Beep.OilandGas.LeaseAcquisition.Services;
 using Moq;
 using TheTechIdea.Beep.Editor;
 using Xunit;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Tests;
 

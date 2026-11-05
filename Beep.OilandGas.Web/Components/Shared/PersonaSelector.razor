@@ -1,8 +1,11 @@
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Models.Core.Interfaces
+@using Beep.OilandGas.Models.Data.Company
 @inject Beep.OilandGas.Client.App.CompanyClientContext Company
 @inject IPersonaContextService PersonaContext
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
-@inject TheTechIdea.Data.OilGas.IFieldSelectionContext DataManagement
+@inject Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext DataManagement
 @inject INotificationService Notifications
 @inject OilGasCallFailures Calls
 @implements IDisposable

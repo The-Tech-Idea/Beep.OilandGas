@@ -1,10 +1,15 @@
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.WorkOrder;
 using System.Data;
 using System.Reflection;
 using System.Text.Json;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 using NativeWell=Beep.OilandGas.PPDM39.Models.WELL;
 namespace Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL;
 

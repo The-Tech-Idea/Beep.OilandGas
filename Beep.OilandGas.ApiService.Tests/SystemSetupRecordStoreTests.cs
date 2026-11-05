@@ -1,3 +1,7 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.HSE.Models;
+using Beep.OilandGas.Repository.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Security.Claims;
 using System.Text.Json;
@@ -18,7 +22,6 @@ using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Tools;
 using TheTechIdea.Beep.Utilities;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;

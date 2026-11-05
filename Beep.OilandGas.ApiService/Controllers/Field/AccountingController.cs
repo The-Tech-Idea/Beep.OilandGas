@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Accounting.Models;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -10,7 +13,6 @@ using Beep.OilandGas.ApiService.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Authorization;
 using Beep.OilandGas.Repository;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field

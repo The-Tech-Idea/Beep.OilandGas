@@ -1,5 +1,8 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.ProductionOperations.Models;
 using System.Security.Claims;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Services;
 public sealed partial class CompanyWorkOrderBudgetService
 {

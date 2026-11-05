@@ -1,3 +1,7 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Accounting.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Data;
 using System.Text.Json;
@@ -12,7 +16,6 @@ using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using TheTechIdea.Beep.Tools;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 
@@ -88,9 +91,9 @@ public sealed class CompanySalesInvoiceDraftTests
         foreach(var (name,size) in new[]{("OWNER_TENANT_ID",64),("OWNER_COMPANY_BA_ID",128),("FIELD_ID",128),("RUN_TICKET_ID",128),("INVOICE_ID",32),("SOURCE_REVISION",64),("SCOPE_KEY",64),("RECORDED_REVISION",64),("COMMAND_JSON",SALES_INVOICE_INTENT.MaximumCommandLength)})
         {var field=Assert.Single(schema.Fields,value=>value.FieldName==name);Assert.False(field.AllowDBNull);Assert.Equal(typeof(string).FullName,field.Fieldtype);Assert.Equal(size,field.Size1);}
     }
-    [Theory][InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.CreateInvoiceRequest))][InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.UpdateInvoiceRequest))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.CreateInvoicePaymentRequest))][InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.InvoiceApprovalResult))]
-    [InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.InvoiceAgingSummary))][InlineData(typeof(Beep.OilandGas.Models.Data.Accounting.InvoicePaymentStatus))]
+    [Theory][InlineData(typeof(Beep.OilandGas.Accounting.Models.CreateInvoiceRequest))][InlineData(typeof(Beep.OilandGas.Accounting.Models.UpdateInvoiceRequest))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.CreateInvoicePaymentRequest))][InlineData(typeof(Beep.OilandGas.Accounting.Models.InvoiceApprovalResult))]
+    [InlineData(typeof(Beep.OilandGas.Accounting.Models.InvoiceAgingSummary))][InlineData(typeof(Beep.OilandGas.Accounting.Models.InvoicePaymentStatus))]
     public void ExistingInvoiceRequestAndReadContractsHaveOneCanonicalDataOwner(Type type)
     {
         Assert.Equal(typeof(CompanySalesInvoiceDraftCommand).Assembly,type.Assembly);

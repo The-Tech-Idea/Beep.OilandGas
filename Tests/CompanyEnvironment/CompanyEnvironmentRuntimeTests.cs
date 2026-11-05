@@ -1,5 +1,6 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using Beep.OilandGas.ApiService.Services;
-using TheTechIdea.Data.OilGas;
 using TheTechIdea.OilGas.Core;
 using Xunit;
 
@@ -22,20 +23,21 @@ public sealed class CompanyEnvironmentRuntimeTests
 
     private sealed class Defaults(string json = "{}") : ISystemSetupRecordReader
     {
-        private readonly SystemSetupConfiguration baseline = SystemSetupIdentity.Prepare(new("TOOLS", "DEFAULT", "1", json, "", Guid.NewGuid().ToString("N")), null);
+        private readonly SystemSetupConfiguration baseline = SystemSetupIdentity.Prepare(new("TOOLS", "DEFAULT", "1", json, "", "8b8e47b307d04ab2b220b7af684ce620"), null);
+        public string Revision=>baseline.Revision;
         public async Task<SystemSetupConfiguration?> ReadAsync(string category, string key, Func<Task> authority)
         { await authority(); return category == "TOOLS" && key == "DEFAULT" ? baseline : null; }
     }
     private static CompanyEnvironmentRuntime Runtime(Store store) => new(new CompanyEnvironmentEffectiveResolver(store, new Defaults()));
 
     private static CompanyEnvironmentConfiguration Saved(CompanyScope company, string country, string json = "{}") =>
-        CompanyEnvironmentIdentity.Prepare(company, new(country, json, "", Guid.NewGuid().ToString("N")), CompanyEnvironmentPreviewer.ToolsVersion, null, new string('A', 64), null);
+        CompanyEnvironmentIdentity.Prepare(company, new(country, json, "", Guid.NewGuid().ToString("N")), CompanyEnvironmentPreviewer.ToolsVersion, null, new Defaults().Revision, null);
 
     [Fact]
     public async Task SavedRevisionRunsActualReferenceCasesWithoutClaimingSourcesAreVerified()
     {
         var company = new CompanyScope("tenant", "kuwait");
-        var json = "{\"verification\":{\"cases\":[{\"name\":\"unit check\",\"kind\":\"unit\",\"value\":1,\"from\":\"ft\",\"to\":\"m\",\"expected\":0.3048,\"tolerance\":1e-9},{\"name\":\"source check\",\"kind\":\"dataSource\"}]}}";
+        var json = "{\"dataSources\":{\"wells\":{\"kind\":\"beep\",\"path\":\"PPDM_CORE\",\"profile\":\"ppdm39\"}},\"verification\":{\"cases\":[{\"name\":\"unit check\",\"kind\":\"unit\",\"value\":1,\"from\":\"ft\",\"to\":\"m\",\"expected\":0.3048,\"tolerance\":1e-9},{\"name\":\"source check\",\"kind\":\"dataSource\",\"source\":\"wells\"}]}}";
         var saved = Saved(company, "KW", json); var runtime = Runtime(new Store(saved));
         var result = await runtime.VerifyAsync(company, () => Task.CompletedTask);
         Assert.Equal(saved.Revision, result.Revision); Assert.False(result.SourcesVerified);
@@ -52,22 +54,18 @@ public sealed class CompanyEnvironmentRuntimeTests
     }
 
     [Fact]
-    public async Task InvalidTimezoneIsAnIssueNotAClaimOfReadiness()
+    public async Task InvalidTimezoneIsRefusedBeforeVerification()
     {
-        var company = new CompanyScope("tenant", "one");
-        var result = await Runtime(new Store(Saved(company, "KW", "{\"locale\":{\"timeZone\":\"not/a-zone\"}}"))).VerifyAsync(company, () => Task.CompletedTask);
-        Assert.Contains(result.ValidationIssues, issue => issue.Contains("timeZone", StringComparison.OrdinalIgnoreCase));
-        Assert.False(result.SourcesVerified);
+        var company=new CompanyScope("tenant","one");
+        await Assert.ThrowsAsync<ArgumentException>(()=>Runtime(new Store(Saved(company,"KW","{\"locale\":{\"timeZone\":\"not/a-zone\"}}"))).VerifyAsync(company,()=>Task.CompletedTask));
     }
 
     [Fact]
-    public async Task VerificationRunsAgainstSharedDefaultsRatherThanOnlyCompanyOverrides()
+    public async Task InvalidSharedDefaultsAreRefusedBeforeRuntimeVerification()
     {
-        var company = new CompanyScope("tenant", "one"); var saved = Saved(company, "KW");
-        var resolver = new CompanyEnvironmentEffectiveResolver(new Store(saved), new Defaults("{\"locale\":{\"timeZone\":\"not/a-zone\"}}"));
-        var result = await new CompanyEnvironmentRuntime(resolver).VerifyAsync(company, () => Task.CompletedTask);
-        Assert.Contains(result.ValidationIssues, issue => issue.Contains("timeZone", StringComparison.OrdinalIgnoreCase));
-        Assert.True(CompanyEnvironmentIdentity.IsRevision(result.EffectiveRevision));
+        var company=new CompanyScope("tenant","one");var saved=Saved(company,"KW");
+        var resolver=new CompanyEnvironmentEffectiveResolver(new Store(saved),new Defaults("{\"locale\":{\"timeZone\":\"not/a-zone\"}}"));
+        await Assert.ThrowsAsync<ArgumentException>(()=>new CompanyEnvironmentRuntime(resolver).VerifyAsync(company,()=>Task.CompletedTask));
     }
 
     [Fact]

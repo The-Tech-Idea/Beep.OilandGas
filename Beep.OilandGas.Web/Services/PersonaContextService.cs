@@ -1,7 +1,8 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.Client.App;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Components.Authorization;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Web.Services;
 

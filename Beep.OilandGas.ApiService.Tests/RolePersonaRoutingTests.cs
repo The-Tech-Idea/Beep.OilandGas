@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.ApiService.Controllers;
 using System.Security.Claims;
@@ -16,7 +19,6 @@ using TheTechIdea.Beep;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Xunit.Abstractions;
 

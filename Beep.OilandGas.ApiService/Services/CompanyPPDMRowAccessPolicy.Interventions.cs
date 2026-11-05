@@ -1,8 +1,13 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.WorkOrder;
 using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data.Security;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.PPDM39.Core;
 namespace Beep.OilandGas.ApiService.Services;
 public sealed partial class CompanyPPDMRowAccessPolicy

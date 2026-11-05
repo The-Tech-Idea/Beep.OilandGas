@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Accounting.Models;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,13 +15,13 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// </summary>
     public interface IARService
     {
-        Task<TheTechIdea.Data.OilGas.CompanySalesReceivableOutcome> GetCompanySalesReceivableForReviewAsync(TheTechIdea.Data.OilGas.CompanyScope company,string receivableId,Func<Task> requireAuthority,Func<string,Task> requireFieldAccess);
-        Task<TheTechIdea.Data.OilGas.SALES_RECEIVABLE_REVIEW_INTENT?> GetCompanySalesReceivableReviewIntentAsync(TheTechIdea.Data.OilGas.CompanyScope company,string actor,string receivableId,Func<Task> requireAuthority,Func<string,Task> requireFieldAccess);
-        Task<TheTechIdea.Data.OilGas.CompanySalesReceivableOutcome> RecordCompanySalesReceivableDecisionAsync(TheTechIdea.Data.OilGas.CompanySalesReceivableDecisionCommand command,Func<Task> requireAuthority,Func<Task<TheTechIdea.Data.OilGas.CompanySalesReceivableReviewSource>> readCurrent);
-        Task<IReadOnlyList<AR_INVOICE>> GetCompanySalesReceivablesAsync(TheTechIdea.Data.OilGas.CompanyScope company,string field,string invoiceId,Func<Task> requireAuthority);
-        Task<TheTechIdea.Data.OilGas.SALES_RECEIVABLE_INTENT?> GetCompanySalesReceivableIntentAsync(TheTechIdea.Data.OilGas.CompanyScope company,string actor,string invoiceId,Func<Task> requireAuthority);
-        Task<TheTechIdea.Data.OilGas.CompanySalesReceivableOutcome?> GetCompanySalesReceivableOutcomeAsync(TheTechIdea.Data.OilGas.CompanyScope company,string actor,string invoiceId,Func<Task> requireAuthority);
-        Task<TheTechIdea.Data.OilGas.CompanySalesReceivableOutcome> PrepareCompanySalesReceivableAsync(TheTechIdea.Data.OilGas.CompanySalesReceivableCommand command,Func<Task> requireAuthority,Func<Task<TheTechIdea.Data.OilGas.CompanySalesReceivableSource>> readCurrent);
+        Task<Beep.OilandGas.Models.Data.Accounting.CompanySalesReceivableOutcome> GetCompanySalesReceivableForReviewAsync(Beep.OilandGas.Models.Data.AccessControl.CompanyScope company,string receivableId,Func<Task> requireAuthority,Func<string,Task> requireFieldAccess);
+        Task<Beep.OilandGas.Models.Data.Accounting.SALES_RECEIVABLE_REVIEW_INTENT?> GetCompanySalesReceivableReviewIntentAsync(Beep.OilandGas.Models.Data.AccessControl.CompanyScope company,string actor,string receivableId,Func<Task> requireAuthority,Func<string,Task> requireFieldAccess);
+        Task<Beep.OilandGas.Models.Data.Accounting.CompanySalesReceivableOutcome> RecordCompanySalesReceivableDecisionAsync(Beep.OilandGas.Models.Data.Accounting.CompanySalesReceivableDecisionCommand command,Func<Task> requireAuthority,Func<Task<Beep.OilandGas.Models.Data.Accounting.CompanySalesReceivableReviewSource>> readCurrent);
+        Task<IReadOnlyList<AR_INVOICE>> GetCompanySalesReceivablesAsync(Beep.OilandGas.Models.Data.AccessControl.CompanyScope company,string field,string invoiceId,Func<Task> requireAuthority);
+        Task<Beep.OilandGas.Models.Data.Accounting.SALES_RECEIVABLE_INTENT?> GetCompanySalesReceivableIntentAsync(Beep.OilandGas.Models.Data.AccessControl.CompanyScope company,string actor,string invoiceId,Func<Task> requireAuthority);
+        Task<Beep.OilandGas.Models.Data.Accounting.CompanySalesReceivableOutcome?> GetCompanySalesReceivableOutcomeAsync(Beep.OilandGas.Models.Data.AccessControl.CompanyScope company,string actor,string invoiceId,Func<Task> requireAuthority);
+        Task<Beep.OilandGas.Models.Data.Accounting.CompanySalesReceivableOutcome> PrepareCompanySalesReceivableAsync(Beep.OilandGas.Models.Data.Accounting.CompanySalesReceivableCommand command,Func<Task> requireAuthority,Func<Task<Beep.OilandGas.Models.Data.Accounting.CompanySalesReceivableSource>> readCurrent);
         /// <summary>
         /// Creates a new AR invoice.
         /// </summary>

@@ -1,4 +1,4 @@
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.PermitsAndApplications.Models;
 using Beep.OilandGas.PermitsAndApplications.Exceptions;
 using Beep.OilandGas.PPDM39.Core;
 using System;
@@ -51,7 +51,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             var environmental = await GetEnvironmentalApplicationAsync(application.PERMIT_APPLICATION_ID);
             var injection = await GetInjectionApplicationAsync(application.PERMIT_APPLICATION_ID);
             var mitResults = await GetMitResultsAsync(injection?.PERMIT_APPLICATION_ID ?? string.Empty);
-            TheTechIdea.Data.OilGas.PermitApplicationSupportingRecords.RequireParent(application, drilling, environmental, injection);
+            Beep.OilandGas.PermitsAndApplications.Models.PermitApplicationSupportingRecords.RequireParent(application, drilling, environmental, injection);
 
             ValidateCoreFields(application, result);
             ValidateTypeSpecific(application, drilling, environmental, injection, mitResults, result);

@@ -1,5 +1,5 @@
+using Beep.OilandGas.Repository.Models;
 using Microsoft.EntityFrameworkCore;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.Repository;

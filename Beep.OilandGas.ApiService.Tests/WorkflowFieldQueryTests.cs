@@ -1,3 +1,5 @@
+using Beep.OilandGas.DevelopmentPlanning.Models;
+using Beep.OilandGas.DrillingAndConstruction.Models;
 using Beep.OilandGas.ApiService.Controllers.BusinessProcess;
 using Beep.OilandGas.LifeCycle.Data.Tables;
 using Beep.OilandGas.LifeCycle.Services.Processes;
@@ -20,9 +22,9 @@ public class WorkflowFieldQueryTests
     [Theory][InlineData("type")][InlineData("retag-prefix")][InlineData("retag-payload")]
     public async Task GenericFieldReaderCannotProjectUnownedCompletionReview(string marker)
     {
-        var id=marker=="retag-prefix"?TheTechIdea.Data.OilGas.DrillingCompletionReviewStart.InstancePrefix+"unqualified":"completion-review";
+        var id=marker=="retag-prefix"?Beep.OilandGas.DrillingAndConstruction.Models.DrillingCompletionReviewStart.InstancePrefix+"unqualified":"completion-review";
         var source=new Beep.OilandGas.Models.Processes.ProcessInstance{InstanceId=id,FieldId="field",EntityId="reported-claim",EntityType=marker=="type"?"DRILLING_DAILY_REPORT":"WELL"};
-        if(marker=="retag-payload")source.ProcessData=new(){Data=new(){[TheTechIdea.Data.OilGas.DrillingCompletionReviewStart.PayloadKey]=new{unqualified=true}}};
+        if(marker=="retag-payload")source.ProcessData=new(){Data=new(){[Beep.OilandGas.DrillingAndConstruction.Models.DrillingCompletionReviewStart.PayloadKey]=new{unqualified=true}}};
         var process=new Mock<IProcessService>(MockBehavior.Strict);
         process.Setup(value=>value.GetProcessInstanceAsync(id)).ReturnsAsync(source);
         var resources=new Mock<IAccessControlService>(MockBehavior.Strict);
@@ -38,10 +40,10 @@ public class WorkflowFieldQueryTests
             new(){InstanceId="well-process",FieldId="field",EntityId="well",EntityType="WELL"},
             new(){InstanceId="owned-investment",FieldId="field",EntityId="private-afe",EntityType="AFE"},
             new(){InstanceId="unowned-completion",FieldId="field",EntityId="private-completion-claim",EntityType="DRILLING_DAILY_REPORT"},
-            new(){InstanceId=TheTechIdea.Data.OilGas.DrillingCompletionReviewStart.InstancePrefix+"retagged",FieldId="field",EntityId="private-completion",EntityType="WELL"},
-            new(){InstanceId="retagged-completion-payload",FieldId="field",EntityId="private-completion",EntityType="WELL",ProcessData=new(){Data=new(){[TheTechIdea.Data.OilGas.DrillingCompletionReviewStart.PayloadKey]=new{privateCompany=true}}}},
-            new(){InstanceId=TheTechIdea.Data.OilGas.DevelopmentInvestmentHandoff.InstancePrefix+"retagged",FieldId="field",EntityId="private-afe",EntityType="WELL"},
-            new(){InstanceId="retagged-payload",FieldId="field",EntityId="private-afe",EntityType="WELL",ProcessData=new(){Data=new(){[TheTechIdea.Data.OilGas.DevelopmentInvestmentHandoff.PayloadKey]=new{privateCompany=true}}}}
+            new(){InstanceId=Beep.OilandGas.DrillingAndConstruction.Models.DrillingCompletionReviewStart.InstancePrefix+"retagged",FieldId="field",EntityId="private-completion",EntityType="WELL"},
+            new(){InstanceId="retagged-completion-payload",FieldId="field",EntityId="private-completion",EntityType="WELL",ProcessData=new(){Data=new(){[Beep.OilandGas.DrillingAndConstruction.Models.DrillingCompletionReviewStart.PayloadKey]=new{privateCompany=true}}}},
+            new(){InstanceId=Beep.OilandGas.DevelopmentPlanning.Models.DevelopmentInvestmentHandoff.InstancePrefix+"retagged",FieldId="field",EntityId="private-afe",EntityType="WELL"},
+            new(){InstanceId="retagged-payload",FieldId="field",EntityId="private-afe",EntityType="WELL",ProcessData=new(){Data=new(){[Beep.OilandGas.DevelopmentPlanning.Models.DevelopmentInvestmentHandoff.PayloadKey]=new{privateCompany=true}}}}
         ]);
         var controller=new BusinessProcessController(field.Object,process.Object,NullLogger<BusinessProcessController>.Instance,Mock.Of<IAccessControlService>(),Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>(),Mock.Of<IJournalEntryService>(),Mock.Of<IWorkOrderService>(),Mock.Of<IInspectionService>());
         var result=await controller.GetInstancesAsync();var rows=Assert.IsType<List<ProcessInstanceSummary>>(Assert.IsType<OkObjectResult>(result.Result).Value);Assert.Equal("well",Assert.Single(rows).EntityId);

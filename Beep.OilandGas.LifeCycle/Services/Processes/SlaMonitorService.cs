@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.LifeCycle.Data.Tables;
 using Beep.OilandGas.PPDM39.Core.Interfaces;

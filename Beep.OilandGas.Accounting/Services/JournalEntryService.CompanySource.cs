@@ -1,7 +1,9 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 using System.Text.Json;
 using TheTechIdea.Beep;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.Accounting.Services;
 public partial class JournalEntryService
 {

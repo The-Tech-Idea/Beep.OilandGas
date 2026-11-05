@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -83,8 +84,8 @@ namespace Beep.OilandGas.Web.Services
                     _hubConnection = new HubConnectionBuilder()
                         .WithUrl(_hubUri, options =>
                         {
-                            options.Headers[TheTechIdea.Data.OilGas.CompanyRequestHeaders.Tenant] = selected.Scope.TenantId;
-                            options.Headers[TheTechIdea.Data.OilGas.CompanyRequestHeaders.Company] = selected.Scope.BusinessAssociateId;
+                            options.Headers[Beep.OilandGas.Models.Data.Company.CompanyRequestHeaders.Tenant] = selected.Scope.TenantId;
+                            options.Headers[Beep.OilandGas.Models.Data.Company.CompanyRequestHeaders.Company] = selected.Scope.BusinessAssociateId;
                             options.AccessTokenProvider = async () =>
                             {
                                 var state = await _authentication.GetAuthenticationStateAsync();

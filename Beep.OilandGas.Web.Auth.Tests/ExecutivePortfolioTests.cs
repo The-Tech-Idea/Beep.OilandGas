@@ -1,8 +1,9 @@
+using Beep.OilandGas.Models.Data.Reporting;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Web.Services;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.PPDM39.Models;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.Web.Auth.Tests;
 public sealed class ExecutivePortfolioTests

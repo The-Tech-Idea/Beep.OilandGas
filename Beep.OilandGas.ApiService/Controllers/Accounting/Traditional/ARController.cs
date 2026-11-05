@@ -1,3 +1,4 @@
+using Beep.OilandGas.Accounting.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Data.Accounting;

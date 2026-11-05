@@ -1,7 +1,8 @@
-param([string]$DataAssemblyPath)
+param([string]$ModelsAssemblyPath)
+. (Join-Path $PSScriptRoot 'RestoredOwnerFixtureReferences.ps1')
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path $PSScriptRoot -Parent
-if (-not $DataAssemblyPath -or -not (Test-Path -LiteralPath $DataAssemblyPath)) { throw 'Provide the actual compiled current Data assembly.' }
+if (-not $ModelsAssemblyPath -or -not (Test-Path -LiteralPath $ModelsAssemblyPath)) { throw 'Provide the actual compiled current Data assembly.' }
 $checkDirectory = Join-Path ([IO.Path]::GetTempPath()) "oilgas-intervention-evidence-$([Guid]::NewGuid().ToString('N'))"
 [void](New-Item -ItemType Directory -Path $checkDirectory)
 # Actual Razor component, actual MudBlazor version, explicit static-render JS fixture. No production dependency replacements.
@@ -16,15 +17,16 @@ foreach($source in @('Beep.OilandGas.Web/Services/ProductionInterventionDecision
     $node=$project.CreateElement('Compile');$node.SetAttribute('Include',(Join-Path $repositoryRoot $source));[void]$group.AppendChild($node)
 }
 $razor = $project.CreateElement('RazorComponent'); $razor.SetAttribute('Include',(Join-Path $repositoryRoot 'Beep.OilandGas.Web/Components/BusinessProcess/ProductionInterventionEvidence.razor')); $razor.SetAttribute('Link','Components/ProductionInterventionEvidence.razor'); [void]$group.AppendChild($razor)
-$reference = $project.CreateElement('Reference'); $reference.SetAttribute('Include','TheTechIdea.Data')
-$hint = $project.CreateElement('HintPath'); $hint.InnerText = (Resolve-Path -LiteralPath $DataAssemblyPath).Path
+$reference = $project.CreateElement('Reference'); $reference.SetAttribute('Include','Beep.OilandGas.Models')
+$hint = $project.CreateElement('HintPath'); $hint.InnerText = (Resolve-Path -LiteralPath $ModelsAssemblyPath).Path
 [void]$reference.AppendChild($hint); [void]$group.AppendChild($reference)
 foreach($dependency in @('DataManagementModels','Beep.OilandGas.PPDM.Models')){
-    $dependencyPath=Join-Path (Split-Path (Resolve-Path -LiteralPath $DataAssemblyPath).Path -Parent) "$dependency.dll"
+    $dependencyPath=Join-Path (Split-Path (Resolve-Path -LiteralPath $ModelsAssemblyPath).Path -Parent) "$dependency.dll"
     if(-not (Test-Path -LiteralPath $dependencyPath)){throw "Actual native contract dependency is unavailable: $dependencyPath"}
     $node=$project.CreateElement('Reference');$node.SetAttribute('Include',$dependency)
     $dependencyHint=$project.CreateElement('HintPath');$dependencyHint.InnerText=$dependencyPath;[void]$node.AppendChild($dependencyHint);[void]$group.AppendChild($node)
 }
-$projectPath = Join-Path $checkDirectory 'InterventionEvidenceRendering.csproj'; $project.Save($projectPath)
+$projectPath = Join-Path $checkDirectory 'InterventionEvidenceRendering.csproj'; Add-OilGasRestoredOwnerReferences -Project $project -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
+$project.Save($projectPath)
 dotnet test $projectPath --logger 'console;verbosity=normal'
 if ($LASTEXITCODE -ne 0) { throw "Intervention evidence rendering check failed with exit $LASTEXITCODE." }

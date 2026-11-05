@@ -1,3 +1,4 @@
+using Beep.OilandGas.Repository.Models;
 #if MIGRATION_CONTROLLER_FOCUSED
 using System.Net;
 using System.Net.Http.Json;
@@ -18,7 +19,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;

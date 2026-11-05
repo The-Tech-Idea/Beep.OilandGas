@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.HSE;
+using Beep.OilandGas.Repository.Models;
 #if RECORDED_APPROVAL_HTTP_FOCUSED
 using System.Data;
 using System.Diagnostics;
@@ -21,7 +24,6 @@ using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.DataBase;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Repository.Tests;
 

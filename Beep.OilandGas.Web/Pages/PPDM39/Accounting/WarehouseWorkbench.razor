@@ -1,3 +1,6 @@
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Models.Data.Common
 @page "/warehouse"
 @namespace Beep.OilandGas.Web.Pages.PPDM39.Accounting
 @page "/warehouse/items/{Id}"
@@ -93,7 +96,7 @@
     protected override void OnInitialized(){Company.Changed+=ContextChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;Workspace.StockChanged+=StockChanged;}
     protected override Task OnParametersSetAsync()
     {
-        try{if(!string.IsNullOrWhiteSpace(Id))Id=TheTechIdea.Data.OilGas.RecordedSourceId.FromDetailLocation(Navigation.Uri,Navigation.BaseUri,"warehouse/items/");}
+        try{if(!string.IsNullOrWhiteSpace(Id))Id=Beep.OilandGas.Models.Data.Common.RecordedSourceId.FromDetailLocation(Navigation.Uri,Navigation.BaseUri,"warehouse/items/");}
         catch(FormatException){Workspace.Clear();_error="The inventory address is invalid. Open the original item from the company queue.";return Task.CompletedTask;}
         return Reload();
     }

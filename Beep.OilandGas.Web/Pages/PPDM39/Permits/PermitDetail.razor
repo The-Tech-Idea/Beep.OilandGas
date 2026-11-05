@@ -1,8 +1,13 @@
+@using Beep.OilandGas.Models.Data.Lease
+@using Beep.OilandGas.Models.Data.Field
+@using Beep.OilandGas.PermitsAndApplications.Models
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Models.Core.Interfaces
+@using Beep.OilandGas.Models.Data.Company
 @page "/ppdm39/permits/detail"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @using Beep.OilandGas.Client.App
 @using Beep.OilandGas.Models.Data.Security
-@using TheTechIdea.Data.OilGas
 @implements IDisposable
 @inject IPermitApplicationIntentStore Originals
 @inject IPermitServiceClient PermitClient

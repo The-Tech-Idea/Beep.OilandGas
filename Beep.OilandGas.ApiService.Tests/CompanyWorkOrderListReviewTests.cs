@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Repository.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Refusals;
@@ -11,7 +13,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Tests;
 

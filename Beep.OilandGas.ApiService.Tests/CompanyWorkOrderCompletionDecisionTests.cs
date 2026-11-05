@@ -1,3 +1,7 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.ProductionOperations.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -7,7 +11,6 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.LifeCycle.Services.Processes;
 using Moq;
 using TheTechIdea.Beep;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 public sealed class CompanyWorkOrderCompletionDecisionTests

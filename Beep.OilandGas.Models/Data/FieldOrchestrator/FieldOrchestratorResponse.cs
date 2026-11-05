@@ -7,9 +7,9 @@ namespace Beep.OilandGas.Models.Data
 {
     public class FieldOrchestratorResponse : ModelEntityBase
     {
-        private Field? FieldValue;
+        private global::Beep.OilandGas.Models.Data.FieldOrchestrator.Field? FieldValue;
 
-        public Field? Field
+        public global::Beep.OilandGas.Models.Data.FieldOrchestrator.Field? Field
 
         {
 

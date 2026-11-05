@@ -1,3 +1,4 @@
+using Beep.OilandGas.PermitsAndApplications.Models;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -37,7 +38,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Forms
         }
 
         private static bool TryResolveField(PermitFormRenderContext context, string key, out string? value) =>
-            TheTechIdea.Data.OilGas.PermitApplicationSupportingRecords.TryResolve(context.Application,
+            Beep.OilandGas.PermitsAndApplications.Models.PermitApplicationSupportingRecords.TryResolve(context.Application,
                 context.DrillingApplication, context.EnvironmentalApplication, context.InjectionApplication, key, out value);
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+using Beep.OilandGas.Models.Data.Company;
+using System;
 
 using Beep.OilandGas.ChokeAnalysis.Constants;
 using Beep.OilandGas.ChokeAnalysis.Exceptions;

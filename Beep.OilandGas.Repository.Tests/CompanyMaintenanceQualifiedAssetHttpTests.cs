@@ -1,3 +1,10 @@
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Repository.Models;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -21,7 +28,6 @@ using Microsoft.Extensions.Options;
 using Moq;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Tools;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.Repository.Tests;
 public sealed partial class CurrentFieldLifecycleGateTests

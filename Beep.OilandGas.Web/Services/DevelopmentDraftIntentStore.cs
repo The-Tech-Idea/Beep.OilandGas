@@ -1,8 +1,12 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.DevelopmentPlanning;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DevelopmentPlanning.Models;
+using Beep.OilandGas.DrillingAndConstruction.Models;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Beep.OilandGas.Models.Data;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Web.Services;
 

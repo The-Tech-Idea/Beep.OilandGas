@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Beep.Foundation.IdentityServer.Shared.Extensions;

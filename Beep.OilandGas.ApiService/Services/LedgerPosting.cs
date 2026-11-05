@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.ApiService.Exceptions;
 
 namespace Beep.OilandGas.ApiService.Services

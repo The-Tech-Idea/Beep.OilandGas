@@ -39,7 +39,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\TheTechIdea.Data\TheTechIdea.Data.csproj" />
 		<ProjectReference Include="..\Beep.OilandGas.CompressorAnalysis\Beep.OilandGas.CompressorAnalysis.csproj" />
 		<ProjectReference Include="..\Beep.OilandGas.Accounting\Beep.OilandGas.Accounting.csproj" />
 		<ProjectReference Include="..\Beep.OilandGas.Decommissioning\Beep.OilandGas.Decommissioning.csproj" />
@@ -52,5 +51,8 @@
 		<ProjectReference Include="..\Beep.OilandGas.ProspectIdentification\Beep.OilandGas.ProspectIdentification.csproj" />
 	</ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../Beep.OilandGas.HSE/Beep.OilandGas.HSE.csproj" />
+  </ItemGroup>
 </Project>
 

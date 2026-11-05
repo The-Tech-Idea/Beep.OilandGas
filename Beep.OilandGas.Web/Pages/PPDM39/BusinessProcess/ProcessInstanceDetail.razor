@@ -1,7 +1,11 @@
+@using Beep.OilandGas.Models.Data.Process
+@using Beep.OilandGas.Models.Data.WorkOrder
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Models.Core.Interfaces
+@using Beep.OilandGas.Models.Data.Company
 @page "/ppdm39/process/instances/{Id}"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @using Beep.OilandGas.Web.Services
-@using TheTechIdea.Data.OilGas
 @inject IRecordedProcessClient BusinessProcessClient
 @inject IFieldSelectionContext Fields
 @inject Beep.OilandGas.Client.App.CompanyClientContext Company

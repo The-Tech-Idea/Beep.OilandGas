@@ -1,3 +1,4 @@
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,7 +8,6 @@ using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Xunit.Abstractions;
 using Beep.OilandGas.ApiService.Tests.Infrastructure;

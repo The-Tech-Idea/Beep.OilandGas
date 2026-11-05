@@ -1,3 +1,7 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Data.Company;
 using System.Text.Json;
 using Beep.OilandGas.PPDM.Models;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -5,7 +9,6 @@ using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.PermitsAndApplications.Services;
 public partial class PermitApplicationLifecycleService
 {

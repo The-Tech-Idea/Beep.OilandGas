@@ -1,6 +1,7 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace CompanyEnvironment.Tests;

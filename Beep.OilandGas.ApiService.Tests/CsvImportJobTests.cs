@@ -1,3 +1,8 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers.PPDM39;
 using Beep.OilandGas.ApiService.Services;
@@ -14,13 +19,12 @@ using Moq;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.Utilities;
-using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.Repository;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
-using FileImportResult = Beep.OilandGas.PPDM39.Core.FileImportResult;
-using FileImportError = Beep.OilandGas.PPDM39.Core.FileImportError;
+using FileImportResult = Beep.OilandGas.Models.Data.DataManagement.FileImportResult;
+using FileImportError = Beep.OilandGas.Models.Data.DataManagement.FileImportError;
 
 namespace Beep.OilandGas.ApiService.Tests;
 

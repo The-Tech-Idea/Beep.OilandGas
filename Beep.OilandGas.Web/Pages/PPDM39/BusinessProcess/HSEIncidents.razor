@@ -1,10 +1,15 @@
+@using Beep.OilandGas.Models.Data.Field
+@using Beep.OilandGas.Models.Data.WorkOrder
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Models.Core.Interfaces
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.HSE.Models
 @page "/ppdm39/hse/incidents"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.HSE
 @using Beep.OilandGas.Models.Data.Process
 @using Beep.OilandGas.Client.App
-@using TheTechIdea.Data.OilGas
 @implements IDisposable
 @inject CompanyClientContext Company
 @inject IFieldSelectionContext Fields

@@ -1,6 +1,7 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Web.Services;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.Web.Auth.Tests;
 public sealed class InventoryWorkspaceStateTests

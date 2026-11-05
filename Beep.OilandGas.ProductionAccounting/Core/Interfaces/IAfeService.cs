@@ -1,3 +1,8 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.ProductionOperations.Models;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -10,17 +15,17 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// </summary>
     public interface IAfeService
     {
-        Task<IReadOnlyList<TheTechIdea.Data.OilGas.CompanyWorkOrderBudgetFacts>> ReadWorkOrderBudgetFactsAsync(TheTechIdea.Data.OilGas.FieldSelectionReview context,TheTechIdea.Data.OilGas.AssetDatabaseScope database,TheTechIdea.Data.OilGas.CompanyWorkOrderFinancialQuery query,Func<Task> authority);
-        Task<TheTechIdea.Data.OilGas.CompanyWorkOrderMaterialCostReview> ReviewWorkOrderMaterialCostAsync(TheTechIdea.Data.OilGas.CompanyWorkOrderBudgetDecisionStatus budget,TheTechIdea.Data.OilGas.CompanyWorkOrderMaterialCostQuery query,TheTechIdea.Data.OilGas.CompanyWorkOrderMaterialCostSource material,Func<Task> authority);
-        Task<TheTechIdea.Data.OilGas.CompanyWorkOrderMaterialCostRecovery> RecordWorkOrderMaterialCostAsync(TheTechIdea.Data.OilGas.CompanyWorkOrderMaterialCostCommand command,Func<Task> authority,Func<Task<TheTechIdea.Data.OilGas.CompanyWorkOrderMaterialCostReview>> readCurrent,Func<Task<TheTechIdea.Data.OilGas.CompanyWorkOrderMaterialCostSource>> readOwnedSource);
-        Task<TheTechIdea.Data.OilGas.CompanyWorkOrderMaterialCostRecovery> RecoverWorkOrderMaterialCostAsync(TheTechIdea.Data.OilGas.FieldSelectionReview context,TheTechIdea.Data.OilGas.AssetDatabaseScope database,TheTechIdea.Data.OilGas.CompanyWorkOrderMaterialCostReference reference,Func<Task> authority);
-        Task<TheTechIdea.Data.OilGas.CompanyWorkOrderActualCostReview> ReadWorkOrderActualCostsAsync(TheTechIdea.Data.OilGas.CompanyWorkOrderBudgetDecisionStatus budget,Func<Task> authority);
-        Task<TheTechIdea.Data.OilGas.CompanyWorkOrderLaborCostReview> ReviewWorkOrderLaborCostAsync(TheTechIdea.Data.OilGas.CompanyWorkOrderBudgetDecisionStatus budget,TheTechIdea.Data.OilGas.CompanyWorkOrderLaborCostQuery query,TheTechIdea.Data.OilGas.CompanyWorkOrderLaborUsageFacts labor,Func<Task> authority);
-        Task<TheTechIdea.Data.OilGas.CompanyWorkOrderLaborCostRecovery> RecordWorkOrderLaborCostAsync(TheTechIdea.Data.OilGas.CompanyWorkOrderLaborCostCommand command,Func<Task> authority,Func<Task<TheTechIdea.Data.OilGas.CompanyWorkOrderLaborCostReview>> readCurrent);
-        Task<TheTechIdea.Data.OilGas.CompanyWorkOrderLaborCostRecovery> RecoverWorkOrderLaborCostAsync(TheTechIdea.Data.OilGas.FieldSelectionReview context,TheTechIdea.Data.OilGas.AssetDatabaseScope database,TheTechIdea.Data.OilGas.CompanyWorkOrderLaborCostReference reference,Func<Task> authority);
-        Task<TheTechIdea.Data.OilGas.CompanyWorkOrderBudgetReview> ReviewWorkOrderBudgetAsync(TheTechIdea.Data.OilGas.CompanyWorkOrderBudgetReview basis,Func<Task> authority);
-        Task<TheTechIdea.Data.OilGas.CompanyWorkOrderBudgetRecovery> CreateWorkOrderBudgetAsync(TheTechIdea.Data.OilGas.CompanyWorkOrderBudgetCommand command,Func<Task> authority,Func<Task<TheTechIdea.Data.OilGas.CompanyWorkOrderBudgetReview>> readCurrent);
-        Task<TheTechIdea.Data.OilGas.CompanyWorkOrderBudgetRecovery> RecoverWorkOrderBudgetAsync(TheTechIdea.Data.OilGas.FieldSelectionReview context,TheTechIdea.Data.OilGas.AssetDatabaseScope database,TheTechIdea.Data.OilGas.CompanyWorkOrderBudgetReference reference,Func<Task> authority);
+        Task<IReadOnlyList<Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderBudgetFacts>> ReadWorkOrderBudgetFactsAsync(Beep.OilandGas.Models.Data.Field.FieldSelectionReview context,Beep.OilandGas.Models.Data.AccessControl.AssetDatabaseScope database,Beep.OilandGas.ProductionOperations.Models.CompanyWorkOrderFinancialQuery query,Func<Task> authority);
+        Task<Beep.OilandGas.ProductionOperations.Models.CompanyWorkOrderMaterialCostReview> ReviewWorkOrderMaterialCostAsync(Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderBudgetDecisionStatus budget,Beep.OilandGas.ProductionOperations.Models.CompanyWorkOrderMaterialCostQuery query,Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderMaterialCostSource material,Func<Task> authority);
+        Task<Beep.OilandGas.ProductionOperations.Models.CompanyWorkOrderMaterialCostRecovery> RecordWorkOrderMaterialCostAsync(Beep.OilandGas.ProductionOperations.Models.CompanyWorkOrderMaterialCostCommand command,Func<Task> authority,Func<Task<Beep.OilandGas.ProductionOperations.Models.CompanyWorkOrderMaterialCostReview>> readCurrent,Func<Task<Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderMaterialCostSource>> readOwnedSource);
+        Task<Beep.OilandGas.ProductionOperations.Models.CompanyWorkOrderMaterialCostRecovery> RecoverWorkOrderMaterialCostAsync(Beep.OilandGas.Models.Data.Field.FieldSelectionReview context,Beep.OilandGas.Models.Data.AccessControl.AssetDatabaseScope database,Beep.OilandGas.ProductionOperations.Models.CompanyWorkOrderMaterialCostReference reference,Func<Task> authority);
+        Task<Beep.OilandGas.ProductionOperations.Models.CompanyWorkOrderActualCostReview> ReadWorkOrderActualCostsAsync(Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderBudgetDecisionStatus budget,Func<Task> authority);
+        Task<Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderLaborCostReview> ReviewWorkOrderLaborCostAsync(Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderBudgetDecisionStatus budget,Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderLaborCostQuery query,Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderLaborUsageFacts labor,Func<Task> authority);
+        Task<Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderLaborCostRecovery> RecordWorkOrderLaborCostAsync(Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderLaborCostCommand command,Func<Task> authority,Func<Task<Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderLaborCostReview>> readCurrent);
+        Task<Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderLaborCostRecovery> RecoverWorkOrderLaborCostAsync(Beep.OilandGas.Models.Data.Field.FieldSelectionReview context,Beep.OilandGas.Models.Data.AccessControl.AssetDatabaseScope database,Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderLaborCostReference reference,Func<Task> authority);
+        Task<Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderBudgetReview> ReviewWorkOrderBudgetAsync(Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderBudgetReview basis,Func<Task> authority);
+        Task<Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderBudgetRecovery> CreateWorkOrderBudgetAsync(Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderBudgetCommand command,Func<Task> authority,Func<Task<Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderBudgetReview>> readCurrent);
+        Task<Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderBudgetRecovery> RecoverWorkOrderBudgetAsync(Beep.OilandGas.Models.Data.Field.FieldSelectionReview context,Beep.OilandGas.Models.Data.AccessControl.AssetDatabaseScope database,Beep.OilandGas.Models.Data.WorkOrder.CompanyWorkOrderBudgetReference reference,Func<Task> authority);
         Task<AFE> CreateAfeAsync(AFE afe, string userId, string connectionName = "PPDM39");
         Task<AFE_LINE_ITEM> AddLineItemAsync(AFE_LINE_ITEM lineItem, string userId, string connectionName = "PPDM39");
         Task<AFE> ApproveAfeAsync(string afeId, DateTime approvalDate, string userId, string connectionName = "PPDM39");

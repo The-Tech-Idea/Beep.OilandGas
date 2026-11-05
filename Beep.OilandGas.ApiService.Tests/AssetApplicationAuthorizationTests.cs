@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -9,7 +11,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using TheTechIdea.Beep.Editor;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Xunit.Abstractions;
 using Beep.OilandGas.ApiService.Tests.Infrastructure;
@@ -85,6 +86,6 @@ public class AssetApplicationAuthorizationTests(ITestOutputHelper output)
     private static UserAssetAccessService Create(IDMEEditor editor, IApplicationAuthorizationReader reader) => new(editor,
         Mock.Of<ICommonColumnHandler>(), Mock.Of<IPPDM39DefaultsRepository>(), Mock.Of<IPPDMMetadataRepository>(),
         reader, Mock.Of<IApplicationRolePermissionStore>(),
-        Mock.Of<TheTechIdea.Data.OilGas.IUserAssetAccessStore>(), () => throw new InvalidOperationException("Application roles must not resolve a module database."),
+        Mock.Of<Beep.OilandGas.Models.Data.AccessControl.IUserAssetAccessStore>(), () => throw new InvalidOperationException("Application roles must not resolve a module database."),
             _ => throw new InvalidOperationException("Application roles must not query asset rows."));
 }

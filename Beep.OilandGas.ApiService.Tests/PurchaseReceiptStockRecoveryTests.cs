@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Accounting.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Text.Json;
 using TheTechIdea.Beep;
@@ -5,7 +8,6 @@ using TheTechIdea.Beep.ConfigUtil;
 using Moq;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Tools;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 public sealed class PurchaseReceiptStockRecoveryTests

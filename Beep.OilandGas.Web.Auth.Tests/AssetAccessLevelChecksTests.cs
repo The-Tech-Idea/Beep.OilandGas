@@ -1,4 +1,4 @@
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.Models.Data.AccessControl;
 using Xunit;
 namespace Beep.OilandGas.Web.Auth.Tests;
 public sealed class AssetAccessLevelChecksTests

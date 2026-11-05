@@ -8,27 +8,27 @@ public class CriticalVelocityTests
     [Fact]
     public void TurnerVelocity_GasWell_ReturnsPositiveValue()
     {
-        double surfaceTension = 20.0;  // dyne/cm (water)
-        double liquidDensity = 62.4;   // lb/ft³
-        double gasDensity = 5.0;       // lb/ft³
+        decimal surfaceTension = 20.0m;  // dyne/cm (water)
+        decimal liquidDensity = 62.4m;   // lb/ft³
+        decimal gasDensity = 5.0m;       // lb/ft³
 
         var vc = PlungerLift.Calculations.PlungerLiftCalculator
-            .CalculateTurnerCriticalVelocity(surfaceTension, liquidDensity, gasDensity);
+            .CalculateCriticalVelocity_Turner(gasDensity, liquidDensity, surfaceTension);
 
         Assert.True(vc > 0, "Critical velocity should be positive");
         Assert.True(vc > 1 && vc < 50, $"Critical velocity {vc:F1} ft/s should be reasonable");
     }
 
     [Fact]
-    public void TurnerVelocity_DenserGas_RequiresHigherVelocity()
+    public void TurnerVelocity_DenserGas_RequiresLowerVelocity()
     {
-        double st = 20.0;
-        double rhoL = 62.4;
+        decimal st = 20.0m;
+        decimal rhoL = 62.4m;
 
         var vcLow = PlungerLift.Calculations.PlungerLiftCalculator
-            .CalculateTurnerCriticalVelocity(st, rhoL, 2.0);  // low-pressure gas
+            .CalculateCriticalVelocity_Turner(2.0m, rhoL, st);  // low-pressure gas
         var vcHigh = PlungerLift.Calculations.PlungerLiftCalculator
-            .CalculateTurnerCriticalVelocity(st, rhoL, 15.0); // high-pressure gas
+            .CalculateCriticalVelocity_Turner(15.0m, rhoL, st); // high-pressure gas
 
         Assert.True(vcHigh < vcLow, "Denser gas should have lower critical velocity");
     }

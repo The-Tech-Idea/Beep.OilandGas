@@ -1,8 +1,8 @@
+using Beep.OilandGas.ProductionOperations.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.ApiService.Attributes;
 using Beep.OilandGas.Models.Core.Refusals;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional;
 [ApiController][Authorize][Route("api/accounting/traditional/inventory/company/work-order-reservations")][RequireCurrentFieldAccess("READ")]
 public sealed class CompanyMaterialReservationsController(ICompanyMaterialReservationQueueReader reader):ControllerBase

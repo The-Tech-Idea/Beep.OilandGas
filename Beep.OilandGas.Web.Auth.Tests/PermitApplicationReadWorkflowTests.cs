@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Data.Company;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Net;
 using System.Security.Claims;
@@ -17,11 +20,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using MudBlazor.Services;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 using Xunit;
-using Detail = TheTechIdea.Data.OilGas.PermitApplicationDetail;
-using Summary = TheTechIdea.Data.OilGas.PermitApplicationSummary;
+using Detail = Beep.OilandGas.PermitsAndApplications.Models.PermitApplicationDetail;
+using Summary = Beep.OilandGas.PermitsAndApplications.Models.PermitApplicationSummary;
 using NativeCheck = Beep.OilandGas.Models.Data.PermitsAndApplications.PermitComplianceResult;
 namespace Beep.OilandGas.Web.Auth.Tests;
 public sealed class PermitApplicationReadWorkflowTests

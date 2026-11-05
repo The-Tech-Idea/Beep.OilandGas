@@ -1,3 +1,5 @@
+using Beep.OilandGas.ProductionOperations.Models;
+using Beep.OilandGas.LifeCycle.Models;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.Web.Services;
@@ -11,7 +13,7 @@ public sealed class ProcessInstanceDetailStateTests
         using var c=Company();var source=Source();source.EntityType="WORK_ORDER";source.EntityId="order";
         using var state=new ProcessInstanceDetailState(c,_=>Task.FromResult<ProcessInstance?>(source),_=>Task.FromResult(History()));
         await state.LoadAsync("source",()=>Task.FromResult<string?>("field"));
-        var order=new TheTechIdea.Data.OilGas.WorkOrderSourceReview("order","field","WO-42","type",null,null,"Recorded instructions",[new("order","component","field","well","")],[],DateTimeOffset.UtcNow);
+        var order=new Beep.OilandGas.ProductionOperations.Models.WorkOrderSourceReview("order","field","WO-42","type",null,null,"Recorded instructions",[new("order","component","field","well","")],[],DateTimeOffset.UtcNow);
         order=fault switch{"order"=>order with{WorkOrderId="other"},"field"=>order with{FieldId="other"},"component"=>order with{Components=[]},"time"=>order with{RetrievedAtUtc=default},"inspection"=>order with{Inspections=null!},_=>order};
         var review=Review() with{WorkOrder=fault=="missing"?null:order};
         await Assert.ThrowsAsync<InvalidOperationException>(()=>state.LoadActionsAsync(_=>Task.FromResult(review)));Assert.Null(state.ActionReview);
@@ -20,14 +22,14 @@ public sealed class ProcessInstanceDetailStateTests
     {
         using var c=Company();var source=Source();source.EntityType="WORK_ORDER";source.EntityId="order";
         using var state=new ProcessInstanceDetailState(c,_=>Task.FromResult<ProcessInstance?>(source),_=>Task.FromResult(History()));await state.LoadAsync("source",()=>Task.FromResult<string?>("field"));
-        var order=new TheTechIdea.Data.OilGas.WorkOrderSourceReview("order","field","WO-42","type",null,null,"Recorded instructions",[new("order","component","field","well","")],[],DateTimeOffset.UtcNow);
+        var order=new Beep.OilandGas.ProductionOperations.Models.WorkOrderSourceReview("order","field","WO-42","type",null,null,"Recorded instructions",[new("order","component","field","well","")],[],DateTimeOffset.UtcNow);
         await state.LoadActionsAsync(_=>Task.FromResult(Review() with{WorkOrder=order}));Assert.Equal("WO-42",state.ActionReview!.WorkOrder!.RecordedNumber);c.Clear();Assert.Null(state.ActionReview);
     }
     [Fact] public async Task EmptyResponseClearsEarlierActionReviewWithoutNullReferenceFailure()
     {
         using var company=Company();using var state=new ProcessInstanceDetailState(company,_=>Task.FromResult<ProcessInstance?>(Source()),_=>Task.FromResult(History()));
         await state.LoadAsync("source",()=>Task.FromResult<string?>("field"));await state.LoadActionsAsync(_=>Task.FromResult(Review()));Assert.NotNull(state.ActionReview);
-        await Assert.ThrowsAsync<InvalidOperationException>(()=>state.LoadActionsAsync(_=>Task.FromResult<TheTechIdea.Data.OilGas.ProcessTransitionReview>(null!)));Assert.Null(state.ActionReview);Assert.NotNull(state.Instance);
+        await Assert.ThrowsAsync<InvalidOperationException>(()=>state.LoadActionsAsync(_=>Task.FromResult<Beep.OilandGas.LifeCycle.Models.ProcessTransitionReview>(null!)));Assert.Null(state.ActionReview);Assert.NotNull(state.Instance);
     }
     private static CompanyClientContext Company(){var c=new CompanyClientContext();Assert.True(c.TrySelect(c.Clear(),"actor",new(new("tenant","A"),[],[])));return c;}
     private static ProcessInstance Source()=>new(){InstanceId="source",FieldId="field",EntityId="invoice",EntityType="INVOICE",ProcessId="P2P",CurrentState="draft",CurrentStepId="review",Status=ProcessStatus.COMPLETED};
@@ -48,7 +50,7 @@ public sealed class ProcessInstanceDetailStateTests
         if(companyChange)c.Clear();else s.Clear();
         pending.SetResult("field");await load;Assert.Equal(0,reads);Assert.Null(s.Instance);Assert.Empty(s.History);
     }
-    private static TheTechIdea.Data.OilGas.ProcessTransitionReview Review()=>new(new("tenant","A"),"actor","field","source","draft","review",new string('A',64),[new("t","draft","approved","approve",true)]);
+    private static Beep.OilandGas.LifeCycle.Models.ProcessTransitionReview Review()=>new(new("tenant","A"),"actor","field","source","draft","review",new string('A',64),[new("t","draft","approved","approve",true)]);
     [Theory][InlineData("company")][InlineData("state")][InlineData("actor")]
     public async Task ActionReviewMustMatchDisplayedSource(string fault)
     {
@@ -59,7 +61,7 @@ public sealed class ProcessInstanceDetailStateTests
     [Fact] public async Task LateActionReviewCannotPublishAfterInvalidation()
     {
         using var c=Company();using var s=new ProcessInstanceDetailState(c,_=>Task.FromResult<ProcessInstance?>(Source()),_=>Task.FromResult(History()));await s.LoadAsync("source",()=>Task.FromResult<string?>("field"));
-        var pending=new TaskCompletionSource<TheTechIdea.Data.OilGas.ProcessTransitionReview>(TaskCreationOptions.RunContinuationsAsynchronously);var load=s.LoadActionsAsync(_=>pending.Task);s.Clear();pending.SetResult(Review());await load;Assert.Null(s.ActionReview);
+        var pending=new TaskCompletionSource<Beep.OilandGas.LifeCycle.Models.ProcessTransitionReview>(TaskCreationOptions.RunContinuationsAsynchronously);var load=s.LoadActionsAsync(_=>pending.Task);s.Clear();pending.SetResult(Review());await load;Assert.Null(s.ActionReview);
     }
     [Fact] public async Task ConfirmedActionReviewPublishesExactRevisionAndChoices()
     {
@@ -102,7 +104,7 @@ public sealed class ProcessInstanceDetailStateTests
         var original=s.ActionReview!;Assert.False(s.TryBeginSubmission(original,original.Choices[0] with {ToStateId="unreviewed"}));
         Assert.False(s.HasUnconfirmedAttempt);s.Clear();Assert.False(s.TryBeginSubmission(original,original.Choices[0]));
     }
-    private static TheTechIdea.Data.OilGas.JournalSourceReview JournalReview()=>new("invoice","JE-1",null,"DRAFT",null,"preparer",null,null,null,null,null,0m,DateTimeOffset.UtcNow,[]);
+    private static Beep.OilandGas.LifeCycle.Models.JournalSourceReview JournalReview()=>new("invoice","JE-1",null,"DRAFT",null,"preparer",null,null,null,null,null,0m,DateTimeOffset.UtcNow,[]);
     [Theory][InlineData("missing")][InlineData("identity")][InlineData("timestamp")][InlineData("offset")]
     public async Task JournalSourceProjectionMustMatchDisplayedEntity(string fault)
     {
@@ -129,7 +131,7 @@ public sealed class ProcessInstanceDetailStateTests
     {
         using var c=Company();var source=Source();source.EntityType="JOURNAL_ENTRY";
         using var s=new ProcessInstanceDetailState(c,_=>Task.FromResult<ProcessInstance?>(source),_=>Task.FromResult(History()));await s.LoadAsync("source",()=>Task.FromResult<string?>("field"));
-        var line=new TheTechIdea.Data.OilGas.JournalSourceLineReview("line","invoice",1,"account",10m,null,"KWD",null,null,null);
+        var line=new Beep.OilandGas.LifeCycle.Models.JournalSourceLineReview("line","invoice",1,"account",10m,null,"KWD",null,null,null);
         var lines=fault switch {"missing"=>null,"foreign"=>new[]{line with {JournalEntryId="other"}},"duplicate"=>new[]{line,line},_=>new[]{line with {AccountId=""}}};
         await Assert.ThrowsAsync<InvalidOperationException>(()=>s.LoadActionsAsync(_=>Task.FromResult(Review() with {Journal=JournalReview() with {Lines=lines}})));Assert.Null(s.ActionReview);
     }
@@ -137,7 +139,7 @@ public sealed class ProcessInstanceDetailStateTests
     {
         using var c=Company();var source=Source();source.EntityType="JOURNAL_ENTRY";
         using var s=new ProcessInstanceDetailState(c,_=>Task.FromResult<ProcessInstance?>(source),_=>Task.FromResult(History()));await s.LoadAsync("source",()=>Task.FromResult<string?>("field"));
-        var line=new TheTechIdea.Data.OilGas.JournalSourceLineReview("line","invoice",1,"account",10m,null,"KWD",null,null,null);
+        var line=new Beep.OilandGas.LifeCycle.Models.JournalSourceLineReview("line","invoice",1,"account",10m,null,"KWD",null,null,null);
         await s.LoadActionsAsync(_=>Task.FromResult(Review() with {Journal=JournalReview() with {Lines=[line]}}));
         var recorded=Assert.Single(s.ActionReview!.Journal!.Lines!);Assert.Equal("KWD",recorded.CurrencyCode);Assert.Null(recorded.Credit);Assert.Null(recorded.ExchangeRate);
         await s.LoadAsync("source",()=>Task.FromResult<string?>("field"));Assert.Null(s.ActionReview);

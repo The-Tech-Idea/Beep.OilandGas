@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using Beep.OilandGas.Models.Data.WorkOrder;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -9,7 +12,7 @@ public sealed class WorkOrderInspectionSchemaTests
     [Fact]
     public void AssetReturnIntentUsesCanonicalCoreManifestAndCannotPartiallyRegisterOnCollision()
     {
-        var type=typeof(TheTechIdea.Data.OilGas.WORK_ORDER_ASSET_RETURN);
+        var type=typeof(Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_ASSET_RETURN);
         Assert.Contains(type,WorkOrderSchema.EntityTypes);
         var metadata=WorkOrderInspectionMetadata.AddTo(new(StringComparer.OrdinalIgnoreCase));
         var row=metadata["WORK_ORDER_ASSET_RETURN"];
@@ -27,7 +30,7 @@ public sealed class WorkOrderInspectionSchemaTests
     }
     [Fact] public void LaborManifestHasNativeIdentityParentKeysAndCollisionCannotPartiallyRegisterCore()
     {
-        var type=typeof(TheTechIdea.Data.OilGas.WORK_ORDER_LABOR_USAGE);Assert.Equal("TheTechIdea.Data",type.Assembly.GetName().Name);
+        var type=typeof(Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_LABOR_USAGE);Assert.Equal("Beep.OilandGas.Models",type.Assembly.GetName().Name);
         Assert.Equal("LABOR_ID",Assert.Single(type.GetProperties().Where(property=>property.IsDefined(typeof(System.ComponentModel.DataAnnotations.KeyAttribute),true))).Name);
         var metadata=WorkOrderInspectionMetadata.AddTo(new(StringComparer.OrdinalIgnoreCase));var row=metadata["WORK_ORDER_LABOR_USAGE"];
         Assert.Equal("PPDM_CORE",row.Module);Assert.Equal(type.FullName,row.EntityTypeName);Assert.Equal("LABOR_ID",row.PrimaryKeyColumn);
@@ -39,7 +42,7 @@ public sealed class WorkOrderInspectionSchemaTests
     }
     [Fact] public void WorkSubmissionUsesOneExplicitBeepOwnerAndRefusesMetadataCollision()
     {
-        var metadata=WorkOrderInspectionMetadata.AddTo(new(StringComparer.OrdinalIgnoreCase));var entry=metadata["WORK_ORDER_EXECUTION_SUBMISSION"];var type=typeof(TheTechIdea.Data.OilGas.WORK_ORDER_EXECUTION_SUBMISSION);
+        var metadata=WorkOrderInspectionMetadata.AddTo(new(StringComparer.OrdinalIgnoreCase));var entry=metadata["WORK_ORDER_EXECUTION_SUBMISSION"];var type=typeof(Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_EXECUTION_SUBMISSION);
         Assert.Equal(type.FullName,entry.EntityTypeName);Assert.Equal("SUBMISSION_ID",entry.PrimaryKeyColumn);Assert.Equal("PPDM_CORE",entry.Module);Assert.Contains(type,WorkOrderSchema.EntityTypes);
         Assert.Contains(entry.ForeignKeys,row=>row.ForeignKeyColumn=="START_ID" && row.ReferencedTable=="WORK_ORDER_EXECUTION_START");Assert.Contains(entry.ForeignKeys,row=>row.ForeignKeyColumn=="PERMIT_ID" && row.ReferencedTable=="WORK_ORDER_EXECUTION_PERMIT");
         foreach(var column in entry.CommonColumns)Assert.NotNull(type.GetProperty(column));
@@ -47,7 +50,7 @@ public sealed class WorkOrderInspectionSchemaTests
     }
     [Fact] public void ExecutionStartHasOneExplicitBeepOwnerAndCollisionCannotPartiallyRegisterOtherTables()
     {
-        var metadata=WorkOrderInspectionMetadata.AddTo(new(StringComparer.OrdinalIgnoreCase));var entry=metadata["WORK_ORDER_EXECUTION_START"];var type=typeof(TheTechIdea.Data.OilGas.WORK_ORDER_EXECUTION_START);
+        var metadata=WorkOrderInspectionMetadata.AddTo(new(StringComparer.OrdinalIgnoreCase));var entry=metadata["WORK_ORDER_EXECUTION_START"];var type=typeof(Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_EXECUTION_START);
         Assert.Equal(type.FullName,entry.EntityTypeName);Assert.Equal("START_ID",entry.PrimaryKeyColumn);Assert.Equal("PPDM_CORE",entry.Module);Assert.Contains(type,WorkOrderSchema.EntityTypes);
         Assert.Contains(entry.ForeignKeys,row=>row.ForeignKeyColumn=="PERMIT_ID" && row.ReferencedTable=="WORK_ORDER_EXECUTION_PERMIT");Assert.Contains(entry.ForeignKeys,row=>row.ForeignKeyColumn=="EMPLOYEE_BA_ID" && row.ReferencedTable=="BUSINESS_ASSOCIATE");
         foreach(var column in entry.CommonColumns)Assert.NotNull(type.GetProperty(column));
@@ -64,18 +67,18 @@ public sealed class WorkOrderInspectionSchemaTests
     }
     [Fact] public void PersonnelPolicyHasOneCanonicalBeepCoreOwnerAndNoPartialMetadataRegistrationOnCollision()
     {
-        var metadata=WorkOrderInspectionMetadata.AddTo(new(StringComparer.OrdinalIgnoreCase));var entry=metadata["WORK_ORDER_PERSONNEL_POLICY"];Assert.Equal(typeof(TheTechIdea.Data.OilGas.WORK_ORDER_PERSONNEL_POLICY).FullName,entry.EntityTypeName);Assert.Equal("POLICY_RECORD_ID",entry.PrimaryKeyColumn);Assert.Equal("PPDM_CORE",entry.Module);Assert.Contains(typeof(TheTechIdea.Data.OilGas.WORK_ORDER_PERSONNEL_POLICY),WorkOrderSchema.EntityTypes);
+        var metadata=WorkOrderInspectionMetadata.AddTo(new(StringComparer.OrdinalIgnoreCase));var entry=metadata["WORK_ORDER_PERSONNEL_POLICY"];Assert.Equal(typeof(Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_PERSONNEL_POLICY).FullName,entry.EntityTypeName);Assert.Equal("POLICY_RECORD_ID",entry.PrimaryKeyColumn);Assert.Equal("PPDM_CORE",entry.Module);Assert.Contains(typeof(Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_PERSONNEL_POLICY),WorkOrderSchema.EntityTypes);
         var collision=new Dictionary<string,PPDMTableMetadata>(StringComparer.OrdinalIgnoreCase){{"work_order_personnel_policy",new(){PrimaryKeyColumn="foreign"}}};Assert.Throws<InvalidOperationException>(()=>WorkOrderInspectionMetadata.AddTo(collision));Assert.Single(collision);Assert.False(collision.ContainsKey("WORK_ORDER_INSPECTION"));Assert.False(collision.ContainsKey("WORK_ORDER_PERSONNEL_RELEASE"));
     }
     [Fact] public void PersonnelReleaseUsesCanonicalCoreManifestAndCollisionCannotPartiallyRegisterOtherEntities()
     {
-        var metadata=WorkOrderInspectionMetadata.AddTo(new(StringComparer.OrdinalIgnoreCase));var entry=metadata["WORK_ORDER_PERSONNEL_RELEASE"];var type=typeof(TheTechIdea.Data.OilGas.WORK_ORDER_PERSONNEL_RELEASE);
+        var metadata=WorkOrderInspectionMetadata.AddTo(new(StringComparer.OrdinalIgnoreCase));var entry=metadata["WORK_ORDER_PERSONNEL_RELEASE"];var type=typeof(Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_PERSONNEL_RELEASE);
         Assert.Equal(type.FullName,entry.EntityTypeName);Assert.Equal("RELEASE_ID",entry.PrimaryKeyColumn);Assert.Equal("PPDM_CORE",entry.Module);Assert.Contains(type,WorkOrderSchema.EntityTypes);Assert.Contains(entry.ForeignKeys,row=>row.ForeignKeyColumn=="ASSIGNMENT_ID" && row.ReferencedTable=="WORK_ORDER_PERSONNEL_ASSIGNMENT");foreach(var column in entry.CommonColumns)Assert.NotNull(type.GetProperty(column));
         var conflict=new Dictionary<string,PPDMTableMetadata>(StringComparer.OrdinalIgnoreCase){{"work_order_personnel_release",new(){PrimaryKeyColumn="foreign"}}};Assert.Throws<InvalidOperationException>(()=>WorkOrderInspectionMetadata.AddTo(conflict));Assert.Single(conflict);Assert.False(conflict.ContainsKey("WORK_ORDER_PERSONNEL_ASSIGNMENT"));Assert.False(conflict.ContainsKey("WORK_ORDER_INSPECTION"));
     }
     [Fact] public void NativePersonnelAssignmentHasOneCoreMetadataOwnerAndCollisionCannotPartiallyRegister()
     {
-        var metadata=WorkOrderInspectionMetadata.AddTo(new(StringComparer.OrdinalIgnoreCase));var row=metadata["WORK_ORDER_PERSONNEL_ASSIGNMENT"];var type=typeof(TheTechIdea.Data.OilGas.WORK_ORDER_PERSONNEL_ASSIGNMENT);
+        var metadata=WorkOrderInspectionMetadata.AddTo(new(StringComparer.OrdinalIgnoreCase));var row=metadata["WORK_ORDER_PERSONNEL_ASSIGNMENT"];var type=typeof(Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_PERSONNEL_ASSIGNMENT);
         Assert.Equal(type.FullName,row.EntityTypeName);Assert.Equal("ASSIGNMENT_ID",row.PrimaryKeyColumn);Assert.Equal("PPDM_CORE",row.Module);Assert.Contains(type,WorkOrderSchema.EntityTypes);
         foreach(var column in row.CommonColumns)Assert.NotNull(type.GetProperty(column));
         Assert.Contains(row.ForeignKeys,key=>key.ForeignKeyColumn=="EMPLOYEE_BA_ID" && key.ReferencedTable=="BUSINESS_ASSOCIATE");
@@ -93,7 +96,7 @@ public sealed class WorkOrderInspectionSchemaTests
     {var request=Request();request.PermitPrerequisiteKind=fault=="unknown"?"OTHER":"ISOLATION";request.RegulatoryRef=fault=="reference"?"":"reference";if(fault=="category")request.CondType=ConditionType.CloseOut;Assert.Throws<InvalidOperationException>(()=>WorkOrderInspectionRules.PrepareRequirement(request,"order","planner","inspection",DateTime.UtcNow));}
     [Fact] public void GeneralInspectionKeepsHistoricalRevisionAndJsonWhenKindIsAbsent()
     {
-        var row=Row();var body=System.Text.Json.JsonSerializer.Serialize(new{row.INSPECTION_ID,row.FIELD_ID,row.WORK_ORDER_ID,row.COND_SEQ,row.COND_TYPE,row.REQUIRED_TEXT,row.JURISDICTION,row.REGULATORY_REF,row.REQUIREMENT_ACTOR,row.RESULT_STATUS,row.RESULT_NOTES,row.INSPECTOR,row.INSPECTED_AT_UTC,row.ACTIVE_IND,row.ROW_CREATED_BY,row.ROW_CREATED_DATE,row.ROW_CHANGED_BY,row.ROW_CHANGED_DATE,row.SOURCE,row.PPDM_GUID});Assert.Equal(TheTechIdea.Data.OilGas.ProcessDefinitionRevision.FromJson(body),WorkOrderInspectionRules.Revision(row));Assert.DoesNotContain("PermitPrerequisiteKind",System.Text.Json.JsonSerializer.Serialize(WorkOrderInspectionRules.Project(row)));Assert.DoesNotContain("PERMIT_PREREQUISITE_KIND",System.Text.Json.JsonSerializer.Serialize(row));
+        var row=Row();var body=System.Text.Json.JsonSerializer.Serialize(new{row.INSPECTION_ID,row.FIELD_ID,row.WORK_ORDER_ID,row.COND_SEQ,row.COND_TYPE,row.REQUIRED_TEXT,row.JURISDICTION,row.REGULATORY_REF,row.REQUIREMENT_ACTOR,row.RESULT_STATUS,row.RESULT_NOTES,row.INSPECTOR,row.INSPECTED_AT_UTC,row.ACTIVE_IND,row.ROW_CREATED_BY,row.ROW_CREATED_DATE,row.ROW_CHANGED_BY,row.ROW_CHANGED_DATE,row.SOURCE,row.PPDM_GUID});Assert.Equal(Beep.OilandGas.Models.Data.Process.ProcessDefinitionRevision.FromJson(body),WorkOrderInspectionRules.Revision(row));Assert.DoesNotContain("PermitPrerequisiteKind",System.Text.Json.JsonSerializer.Serialize(WorkOrderInspectionRules.Project(row)));Assert.DoesNotContain("PERMIT_PREREQUISITE_KIND",System.Text.Json.JsonSerializer.Serialize(row));
     }
     private static AddWorkOrderInspectionRequirementRequest Request()=>new(){FieldId="field",CondSeq=1,CondType=ConditionType.PreStart,RequiredText="Recorded isolation requirement",Jurisdiction="Recorded authority",RegulatoryRef="Reviewed reference"};
     [Fact] public void DocumentAcceptanceProofExtendsExistingBeepInspectionWithNullableBoundedColumnsAndPreservesOldJson()
@@ -102,7 +105,7 @@ public sealed class WorkOrderInspectionSchemaTests
         Assert.DoesNotContain("DOCUMENT_ACCEPTANCE",System.Text.Json.JsonSerializer.Serialize(Row()));Assert.Contains(type,WorkOrderSchema.EntityTypes);
     }
     private static WORK_ORDER_INSPECTION Row()=>WorkOrderInspectionRules.PrepareRequirement(Request(),"order","planner","inspection",DateTime.UtcNow);
-    [Fact] public void ExplicitBusinessManifestIsDataOwnedAndAllowedInBeepModuleScope(){Assert.Equal(new[]{typeof(WORK_ORDER_INSPECTION),typeof(WORK_ORDER_EXECUTION_PERMIT),typeof(TheTechIdea.Data.OilGas.WORK_ORDER_PERSONNEL_ASSIGNMENT),typeof(TheTechIdea.Data.OilGas.WORK_ORDER_PERSONNEL_RELEASE),typeof(TheTechIdea.Data.OilGas.WORK_ORDER_PERSONNEL_POLICY),typeof(TheTechIdea.Data.OilGas.WORK_ORDER_MAINTENANCE_RETURN_POLICY),typeof(TheTechIdea.Data.OilGas.COMPANY_PERSONNEL_IDENTITY),typeof(TheTechIdea.Data.OilGas.WORK_ORDER_EXECUTION_START),typeof(TheTechIdea.Data.OilGas.WORK_ORDER_EXECUTION_SUBMISSION),typeof(TheTechIdea.Data.OilGas.WORK_ORDER_LABOR_USAGE),typeof(TheTechIdea.Data.OilGas.WORK_ORDER_ASSET_RETURN)},WorkOrderSchema.EntityTypes);Assert.All(WorkOrderSchema.EntityTypes,type=>Assert.Equal("TheTechIdea.Data",type.Assembly.GetName().Name));ModuleSchemaBoundary.Validate(WorkOrderSchema.EntityTypes);Assert.Equal("INSPECTION_ID",Assert.Single(typeof(WORK_ORDER_INSPECTION).GetProperties().Where(p=>p.GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.KeyAttribute),true).Length>0)).Name);Assert.Equal("PERMIT_ID",Assert.Single(typeof(WORK_ORDER_EXECUTION_PERMIT).GetProperties().Where(p=>p.GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.KeyAttribute),true).Length>0)).Name);}
+    [Fact] public void SharedWorkOrderManifestPreservesNativeModuleScope(){Assert.Equal(new[]{typeof(WORK_ORDER_INSPECTION),typeof(WORK_ORDER_EXECUTION_PERMIT),typeof(Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_PERSONNEL_ASSIGNMENT),typeof(Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_PERSONNEL_RELEASE),typeof(Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_PERSONNEL_POLICY),typeof(Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_MAINTENANCE_RETURN_POLICY),typeof(Beep.OilandGas.Models.Data.WorkOrder.COMPANY_PERSONNEL_IDENTITY),typeof(Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_EXECUTION_START),typeof(Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_EXECUTION_SUBMISSION),typeof(Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_LABOR_USAGE),typeof(Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_ASSET_RETURN)},WorkOrderSchema.EntityTypes);Assert.All(WorkOrderSchema.EntityTypes,type=>Assert.Equal("Beep.OilandGas.Models",type.Assembly.GetName().Name));ModuleSchemaBoundary.Validate(WorkOrderSchema.EntityTypes);Assert.Equal("INSPECTION_ID",Assert.Single(typeof(WORK_ORDER_INSPECTION).GetProperties().Where(p=>p.GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.KeyAttribute),true).Length>0)).Name);Assert.Equal("PERMIT_ID",Assert.Single(typeof(WORK_ORDER_EXECUTION_PERMIT).GetProperties().Where(p=>p.GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.KeyAttribute),true).Length>0)).Name);}
     [Fact] public void MetadataMatchesRealEntityAndRecordedParentKeys(){var metadata=WorkOrderInspectionMetadata.AddTo(new(StringComparer.OrdinalIgnoreCase));var entry=metadata["WORK_ORDER_INSPECTION"];Assert.Equal(typeof(WORK_ORDER_INSPECTION).FullName,entry.EntityTypeName);Assert.Equal("INSPECTION_ID",entry.PrimaryKeyColumn);Assert.Equal("PPDM_CORE",entry.Module);Assert.Contains(entry.ForeignKeys,x=>x.ForeignKeyColumn=="WORK_ORDER_ID" && x.ReferencedTable=="WORK_ORDER");Assert.Contains(entry.ForeignKeys,x=>x.ForeignKeyColumn=="FIELD_ID" && x.ReferencedTable=="FIELD");foreach(var column in entry.CommonColumns)Assert.NotNull(typeof(WORK_ORDER_INSPECTION).GetProperty(column));}
     [Fact] public void AnotherMetadataOwnerCannotSilentlyOverrideInspection(){var metadata=new Dictionary<string,PPDMTableMetadata>(StringComparer.OrdinalIgnoreCase){{"work_order_inspection",new(){PrimaryKeyColumn="other"}}};Assert.Throws<InvalidOperationException>(()=>WorkOrderInspectionMetadata.AddTo(metadata));Assert.Equal("other",metadata["WORK_ORDER_INSPECTION"].PrimaryKeyColumn);}
     [Fact] public void ExecutionPermitMetadataIsCoreOwnedAndCollisionCannotPartiallyRegisterInspection()

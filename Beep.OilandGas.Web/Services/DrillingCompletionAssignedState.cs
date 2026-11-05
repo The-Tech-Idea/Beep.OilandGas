@@ -1,5 +1,8 @@
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DrillingAndConstruction.Models;
 using Beep.OilandGas.Client.App;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.Web.Services;
 
 public sealed partial class DrillingCompletionAssignedState : IDisposable

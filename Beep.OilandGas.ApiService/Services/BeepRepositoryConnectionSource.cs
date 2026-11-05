@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.Repository;
 using Beep.OilandGas.Models.Core.Refusals;
 using Microsoft.Extensions.Configuration;
@@ -28,7 +30,7 @@ public sealed class BeepRepositoryConnectionSource(IConfiguration configuration,
 
     public static (RepositoryConnectionSettings Settings, string Target) Candidate(IDMEEditor editor, string name)
     {
-        if (!TheTechIdea.Data.OilGas.BeepConnectionName.IsValid(name)) throw new InvalidOperationException("Select a valid Beep connection.");
+        if (!Beep.OilandGas.Models.Data.DataManagement.BeepConnectionName.IsValid(name)) throw new InvalidOperationException("Select a valid Beep connection.");
         var matches = editor.ConfigEditor?.DataConnections?.Where(c => string.Equals(c.ConnectionName, name, StringComparison.OrdinalIgnoreCase)).ToArray() ?? [];
         if (matches.Length != 1) throw new InvalidOperationException("The Beep connection is missing or ambiguous.");
         return Candidate(editor, matches[0]);

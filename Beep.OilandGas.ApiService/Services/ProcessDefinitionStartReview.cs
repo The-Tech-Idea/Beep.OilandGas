@@ -1,7 +1,7 @@
+using Beep.OilandGas.Models.Data.Company;
 using System.Text.Json;
 using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.Models.Processes;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Services;
 

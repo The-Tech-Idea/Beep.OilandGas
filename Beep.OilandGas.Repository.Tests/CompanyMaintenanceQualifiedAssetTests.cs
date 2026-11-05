@@ -1,3 +1,9 @@
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DevelopmentPlanning.Models;
 using System.Text.Json;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Data.WorkOrder;
@@ -7,7 +13,6 @@ using Microsoft.EntityFrameworkCore;
 using Moq;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Tools;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Fixture=Beep.OilandGas.Repository.Tests.CompanyPPDMRowAccessTests.Fixture;
 namespace Beep.OilandGas.Repository.Tests;
@@ -46,7 +51,8 @@ public sealed class CompanyMaintenanceQualifiedAssetTests
         }
         internal static async Task<ReviewFixture> Create()
         {
-            var native=await Fixture.Create();_=CompanyAssetFacadeTests.Service(native);await native.Grant("FIELD","A");await native.Grant("EQUIPMENT","pump");await native.Grant("FACILITY","plant",facilityType:"gas");
+            var native=await Fixture.Create();
+            _=CompanyAssetFacadeTests.Service(native);await native.Grant("FIELD","A");await native.Grant("EQUIPMENT","pump");await native.Grant("FACILITY","plant",facilityType:"gas");
             return new(native,new(native.Gate.Company.Scope,await native.Gate.ResolveAsync(),"actor","current-qualified-review","A"));
         }
         internal Task Guard(){Guards++;if(Revoked)throw new UnauthorizedAccessException("Original return-read authority revoked.");return Task.CompletedTask;}

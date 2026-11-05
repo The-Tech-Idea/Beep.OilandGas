@@ -1,6 +1,7 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DevelopmentPlanning.Models;
 using System.Text.Json;
 using Beep.OilandGas.Client.App;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.Web.Services;
 public sealed class DevelopmentInvestmentQueueState:IDisposable
 {

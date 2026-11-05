@@ -1,6 +1,10 @@
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.HSE;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.HSE.Models;
 using Beep.OilandGas.Client.Exceptions;
 using Beep.OilandGas.Models.Constants;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Client.App.Services.Field;
 

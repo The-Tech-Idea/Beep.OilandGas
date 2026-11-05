@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Models.Data;
 
@@ -109,7 +111,7 @@ public sealed class AssetHierarchyState : IDisposable
             ValidateKey(node.AssetId, node.AssetType, node.FacilityType);
             if(node.AssetType=="WORK_ORDER")
             {
-                TheTechIdea.Data.OilGas.WorkOrderParentAccess.Fields(node.AssetId,node.WorkOrderComponents);
+                Beep.OilandGas.Models.Data.AccessControl.WorkOrderParentAccess.Fields(node.AssetId,node.WorkOrderComponents);
                 if(node.ParentAssetId is not null || node.ParentAssetType is not null)
                     throw new InvalidOperationException("A work order cannot be presented with an inferred single parent.");
             }

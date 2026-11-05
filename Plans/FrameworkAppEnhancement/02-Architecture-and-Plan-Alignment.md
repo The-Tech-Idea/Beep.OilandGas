@@ -1,3 +1,5 @@
+> Ownership correction - 2026-11-04: The user requires module-owned data classes. Centralized TheTechIdea.Data ownership statements below are historical and superseded by AGENTS.md and Module-Data-Ownership/README.md. Restore existing owners with callers; remove duplicates and avoid cycles. Current restoration is partial; see restoration-progress.json and the root master tracker.
+
 # Architecture decisions and plan alignment
 
 ## Governing boundary

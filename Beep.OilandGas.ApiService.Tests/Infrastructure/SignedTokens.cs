@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using Beep.OilandGas.ApiService.Services;

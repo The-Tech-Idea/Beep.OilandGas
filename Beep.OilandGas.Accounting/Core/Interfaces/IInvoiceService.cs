@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Accounting.Models;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,16 +15,16 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// </summary>
     public interface IInvoiceService
     {
-        Task<TheTechIdea.Data.OilGas.SALES_INVOICE_INTENT?> GetCompanyInvoiceDraftIntentAsync(TheTechIdea.Data.OilGas.CompanyScope company,string actor,string intentId,Func<Task> requireAuthority);
-        Task<TheTechIdea.Data.OilGas.SALES_INVOICE_INTENT?> GetCompanyInvoiceDraftIntentForDeliveryAsync(TheTechIdea.Data.OilGas.CompanyScope company,string actor,string field,string ticket,Func<Task> requireAuthority);
-        Task<TheTechIdea.Data.OilGas.SALES_INVOICE_INTENT> SaveCompanyInvoiceDraftIntentAsync(TheTechIdea.Data.OilGas.CompanySalesInvoiceDraftCommand command,Func<Task> requireAuthority,Func<Task<TheTechIdea.Data.OilGas.CompanySalesInvoiceDraftReview>> readCurrent);
-        Task<IReadOnlyList<INVOICE>> GetCompanySalesInvoicesForDeliveryAsync(TheTechIdea.Data.OilGas.CompanyScope company,string field,string ticket,Func<Task> requireAuthority);
-        Task<IReadOnlyList<TheTechIdea.Data.OilGas.CompanySalesInvoiceDraftOutcome>> GetCompanySalesInvoiceQueueAsync(TheTechIdea.Data.OilGas.CompanyScope company,string field,Func<Task> requireAuthority);
-        Task<TheTechIdea.Data.OilGas.CompanySalesInvoiceDraftOutcome?> GetCompanyInvoiceDraftOutcomeAsync(TheTechIdea.Data.OilGas.CompanyScope company,string actor,string intentId,Func<Task> requireAuthority);
-        Task<TheTechIdea.Data.OilGas.CompanySalesInvoiceDraftOutcome> GetCompanyInvoiceDraftForReviewAsync(TheTechIdea.Data.OilGas.CompanyScope company,string invoiceId,Func<Task> requireAuthority,Func<string,Task> requireFieldAccess);
-        Task<TheTechIdea.Data.OilGas.SALES_INVOICE_REVIEW_INTENT?> GetCompanyInvoiceReviewIntentAsync(TheTechIdea.Data.OilGas.CompanyScope company,string actor,string invoiceId,Func<Task> requireAuthority,Func<string,Task> requireFieldAccess);
-        Task<TheTechIdea.Data.OilGas.CompanySalesInvoiceDraftOutcome> RecordCompanyInvoiceDecisionAsync(TheTechIdea.Data.OilGas.CompanySalesInvoiceDecisionCommand command,Func<Task> requireAuthority,Func<Task<TheTechIdea.Data.OilGas.CompanySalesInvoiceReviewSource>> readCurrent);
-        Task<TheTechIdea.Data.OilGas.CompanySalesInvoiceDraftOutcome> ExecuteCompanyInvoiceDraftAsync(TheTechIdea.Data.OilGas.CompanySalesInvoiceDraftCommand command,Func<Task> requireAuthority,Func<Task<TheTechIdea.Data.OilGas.CompanySalesInvoiceDraftReview>> readCurrent);
+        Task<Beep.OilandGas.Models.Data.Accounting.SALES_INVOICE_INTENT?> GetCompanyInvoiceDraftIntentAsync(Beep.OilandGas.Models.Data.AccessControl.CompanyScope company,string actor,string intentId,Func<Task> requireAuthority);
+        Task<Beep.OilandGas.Models.Data.Accounting.SALES_INVOICE_INTENT?> GetCompanyInvoiceDraftIntentForDeliveryAsync(Beep.OilandGas.Models.Data.AccessControl.CompanyScope company,string actor,string field,string ticket,Func<Task> requireAuthority);
+        Task<Beep.OilandGas.Models.Data.Accounting.SALES_INVOICE_INTENT> SaveCompanyInvoiceDraftIntentAsync(Beep.OilandGas.Models.Data.Accounting.CompanySalesInvoiceDraftCommand command,Func<Task> requireAuthority,Func<Task<Beep.OilandGas.Models.Data.Accounting.CompanySalesInvoiceDraftReview>> readCurrent);
+        Task<IReadOnlyList<INVOICE>> GetCompanySalesInvoicesForDeliveryAsync(Beep.OilandGas.Models.Data.AccessControl.CompanyScope company,string field,string ticket,Func<Task> requireAuthority);
+        Task<IReadOnlyList<Beep.OilandGas.Models.Data.Accounting.CompanySalesInvoiceDraftOutcome>> GetCompanySalesInvoiceQueueAsync(Beep.OilandGas.Models.Data.AccessControl.CompanyScope company,string field,Func<Task> requireAuthority);
+        Task<Beep.OilandGas.Models.Data.Accounting.CompanySalesInvoiceDraftOutcome?> GetCompanyInvoiceDraftOutcomeAsync(Beep.OilandGas.Models.Data.AccessControl.CompanyScope company,string actor,string intentId,Func<Task> requireAuthority);
+        Task<Beep.OilandGas.Models.Data.Accounting.CompanySalesInvoiceDraftOutcome> GetCompanyInvoiceDraftForReviewAsync(Beep.OilandGas.Models.Data.AccessControl.CompanyScope company,string invoiceId,Func<Task> requireAuthority,Func<string,Task> requireFieldAccess);
+        Task<Beep.OilandGas.Models.Data.Accounting.SALES_INVOICE_REVIEW_INTENT?> GetCompanyInvoiceReviewIntentAsync(Beep.OilandGas.Models.Data.AccessControl.CompanyScope company,string actor,string invoiceId,Func<Task> requireAuthority,Func<string,Task> requireFieldAccess);
+        Task<Beep.OilandGas.Models.Data.Accounting.CompanySalesInvoiceDraftOutcome> RecordCompanyInvoiceDecisionAsync(Beep.OilandGas.Models.Data.Accounting.CompanySalesInvoiceDecisionCommand command,Func<Task> requireAuthority,Func<Task<Beep.OilandGas.Models.Data.Accounting.CompanySalesInvoiceReviewSource>> readCurrent);
+        Task<Beep.OilandGas.Models.Data.Accounting.CompanySalesInvoiceDraftOutcome> ExecuteCompanyInvoiceDraftAsync(Beep.OilandGas.Models.Data.Accounting.CompanySalesInvoiceDraftCommand command,Func<Task> requireAuthority,Func<Task<Beep.OilandGas.Models.Data.Accounting.CompanySalesInvoiceDraftReview>> readCurrent);
         /// <summary>
         /// Creates a new invoice.
         /// </summary>

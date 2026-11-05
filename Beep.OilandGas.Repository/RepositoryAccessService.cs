@@ -1,7 +1,9 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.AspNetCore.Identity;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Repository;
 

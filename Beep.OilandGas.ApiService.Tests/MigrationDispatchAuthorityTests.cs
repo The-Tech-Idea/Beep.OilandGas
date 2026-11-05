@@ -1,3 +1,4 @@
+using Beep.OilandGas.Repository.Models;
 #if MIGRATION_CONTROLLER_FOCUSED
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers.PPDM39;
@@ -8,7 +9,6 @@ using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;

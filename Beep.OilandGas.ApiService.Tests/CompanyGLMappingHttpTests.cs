@@ -1,9 +1,9 @@
+using Beep.OilandGas.Models.Data.Company;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Net;
 using System.Globalization;
 using Beep.OilandGas.Web.Services;
 using Microsoft.Extensions.DependencyInjection;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 public sealed class CompanyGLMappingHttpTests

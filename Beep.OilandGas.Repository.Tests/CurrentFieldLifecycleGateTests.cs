@@ -1,3 +1,9 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.HSE;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Core.Interfaces;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using System.Net.Http.Json;
 using Beep.OilandGas.ApiService.Controllers.HSE;
 using Beep.OilandGas.ApiService.Middleware;
@@ -30,7 +36,6 @@ using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.Options;
 using System.Text.Encodings.Web;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Fixture = Beep.OilandGas.Repository.Tests.CompanyPPDMRowAccessTests.Fixture;
 

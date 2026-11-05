@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.LifeCycle.Services.Processes;

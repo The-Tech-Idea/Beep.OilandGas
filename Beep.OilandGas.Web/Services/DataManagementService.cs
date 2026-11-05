@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -15,7 +18,7 @@ namespace Beep.OilandGas.Web.Services
     /// Service for managing data sources and connections in the web application.
     /// Provides centralized access to current data source, available connections, and related settings.
     /// </summary>
-    public interface IDataManagementService : TheTechIdea.Data.OilGas.IFieldSelectionContext
+    public interface IDataManagementService : Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext
     {
         /// <summary>
         /// Get the current active data source connection name
@@ -1304,8 +1307,8 @@ namespace Beep.OilandGas.Web.Services
             RequireFieldScope(captured);
             var rows = await _apiClient.GetAsync<List<FieldListItem>>("/api/field/fields", token);
             RequireFieldScope(captured);
-            TheTechIdea.Data.OilGas.FieldSelectionReviewValidator.RequireCatalog(rows);
-            return rows!.Select(TheTechIdea.Data.OilGas.FieldSelectionReviewValidator.Snapshot).ToList();
+            Beep.OilandGas.Models.Data.Field.FieldSelectionReviewValidator.RequireCatalog(rows);
+            return rows!.Select(Beep.OilandGas.Models.Data.Field.FieldSelectionReviewValidator.Snapshot).ToList();
         }
 
         public async Task<FieldResponse> GetCurrentFieldSelectionAsync(CancellationToken token = default)
@@ -1319,7 +1322,7 @@ namespace Beep.OilandGas.Web.Services
                 var response = await _apiClient.GetAsync<FieldResponse>("/api/field/current", token)
                     ?? throw new InvalidOperationException("Current field response was empty.");
                 RequireFieldScope(captured);
-                TheTechIdea.Data.OilGas.FieldSelectionReviewValidator.RequireCurrent(response, captured.Selection!.Scope, captured.Selection.UserId);
+                Beep.OilandGas.Models.Data.Field.FieldSelectionReviewValidator.RequireCurrent(response, captured.Selection!.Scope, captured.Selection.UserId);
                 return response;
             }
             finally { _fieldLock.Release(); }
@@ -1331,8 +1334,8 @@ namespace Beep.OilandGas.Web.Services
             var intent = new SetActiveFieldRequest { FieldId = request.FieldId, ConnectionName = request.ConnectionName, Context = request.Context is { } review ? review with { } : null };
             var captured = _apiClient.CompanySnapshot;
             RequireFieldScope(captured);
-            TheTechIdea.Data.OilGas.FieldSelectionReviewValidator.RequireReview(intent.Context, captured.Selection!.Scope, captured.Selection.UserId);
-            if (!TheTechIdea.Data.OilGas.LeaseSummaryValidator.Identifier(intent.FieldId)) throw new ArgumentException("An exact FIELD identity is required.");
+            Beep.OilandGas.Models.Data.Field.FieldSelectionReviewValidator.RequireReview(intent.Context, captured.Selection!.Scope, captured.Selection.UserId);
+            if (!Beep.OilandGas.Models.Data.Lease.LeaseSummaryValidator.Identifier(intent.FieldId)) throw new ArgumentException("An exact FIELD identity is required.");
             bool confirmed = false;
             bool uncertain = false;
             await _fieldLock.WaitAsync(token);
@@ -1343,7 +1346,7 @@ namespace Beep.OilandGas.Web.Services
                     "/api/field/set-active", intent, token)
                     ?? throw new InvalidOperationException("Field selection was not confirmed.");
                 RequireFieldScope(captured);
-                TheTechIdea.Data.OilGas.FieldSelectionReviewValidator.RequireAcknowledgement(response, intent);
+                Beep.OilandGas.Models.Data.Field.FieldSelectionReviewValidator.RequireAcknowledgement(response, intent);
                 confirmed = true;
                 return true;
             }

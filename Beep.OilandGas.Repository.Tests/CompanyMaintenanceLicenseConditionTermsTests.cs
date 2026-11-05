@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Models.Data.Company;
 using System.Reflection;
 using System.Text.Json;
 using Beep.OilandGas.PPDM39.Models;
@@ -28,7 +31,7 @@ public sealed partial class CompanyMaintenanceQualifiedLicensingTests
         using var f=await ReadyTerms();var identity=await f.Read();var result=await f.Owner.ReadMaintenanceQualifiedLicensingAsync(f.Context,f.Order,identity,f.Guard);result.Require(identity);var terms=Assert.Single(result.Conditions).Terms!;
         Assert.Equal(0m,terms.Value);Assert.Equal(2.5m,terms.DueTerm);Assert.Equal("value-unit",terms.ValueUnit!.UnitId);Assert.Equal("RecordedTime",terms.DueTermUnit!.QuantityType);Assert.Equal(2m,terms.Restriction!.Version);Assert.Equal("Recorded restriction two",terms.Restriction.Name);Assert.True(terms.Restriction.Covers(result.ComparedAtUtc));Assert.Equal("restriction-document",terms.Restriction.SourceDocumentId);Assert.Equal("Recorded frequency text",terms.DueFrequency);Assert.Equal("recorded-product",terms.ProductId);
         Assert.DoesNotContain(result.Blockers,value=>value.Contains("provenance is unconfirmed",StringComparison.Ordinal));Assert.Contains(result.Blockers,value=>value.Contains("numeric terms/units",StringComparison.Ordinal));Assert.Contains(result.References,row=>row.Kind=="PPDM_QUANTITY" && row.Key=="RecordedTime");Assert.Contains(result.References,row=>row.Kind=="SUBSTANCE" && row.Key=="recorded-product");
-        var json=JsonSerializer.Serialize(result);Assert.DoesNotContain("Private contact",json);Assert.DoesNotContain("Private unit remark",json);Assert.DoesNotContain("Private restriction remark",json);Assert.DoesNotContain("Wrong later restriction",json);Assert.Equal(result.SourceRevision(),JsonSerializer.Deserialize<TheTechIdea.Data.OilGas.CompanyMaintenanceQualifiedLicensing>(json)!.SourceRevision());Assert.Empty(f.Native.Writes);
+        var json=JsonSerializer.Serialize(result);Assert.DoesNotContain("Private contact",json);Assert.DoesNotContain("Private unit remark",json);Assert.DoesNotContain("Private restriction remark",json);Assert.DoesNotContain("Wrong later restriction",json);Assert.Equal(result.SourceRevision(),JsonSerializer.Deserialize<Beep.OilandGas.Models.Data.WorkOrder.CompanyMaintenanceQualifiedLicensing>(json)!.SourceRevision());Assert.Empty(f.Native.Writes);
     }
     [Theory][InlineData("null-value")][InlineData("zero-value")][InlineData("null-term")][InlineData("zero-term")][InlineData("null-version")][InlineData("zero-version")]
     public async Task OptionalNativeDecimalsDistinguishUnconfirmedNullFromRecordedZero(string mode)
@@ -58,9 +61,9 @@ public sealed partial class CompanyMaintenanceQualifiedLicensingTests
     public async Task TermsRequireExactNativeUnitsAndCompoundRestrictionVersionKeys(string mode)
     {
         using var f=await ReadyTerms();var identity=await f.Read();
-        if(mode=="duplicate-unit")f.Native.Rows.Add(TheTechIdea.Data.OilGas.CompanyInventorySourceReview.Copy(f.Native.Rows.OfType<PPDM_UNIT_OF_MEASURE>().First()));
-        if(mode=="foreign-unit"){var wrong=TheTechIdea.Data.OilGas.CompanyInventorySourceReview.Copy(f.Native.Rows.OfType<PPDM_UNIT_OF_MEASURE>().First());wrong.UOM_ID="foreign-unit";f.Native.Source.Setup(source=>source.GetEntityAsync("PPDM_UNIT_OF_MEASURE",It.IsAny<List<AppFilter>>())).ReturnsAsync(new object[]{wrong});}
-        if(mode=="duplicate-restriction")f.Native.Rows.Add(TheTechIdea.Data.OilGas.CompanyInventorySourceReview.Copy(f.Native.Rows.OfType<RESTRICTION>().First()));
+        if(mode=="duplicate-unit")f.Native.Rows.Add(Beep.OilandGas.Models.Data.Accounting.CompanyInventorySourceReview.Copy(f.Native.Rows.OfType<PPDM_UNIT_OF_MEASURE>().First()));
+        if(mode=="foreign-unit"){var wrong=Beep.OilandGas.Models.Data.Accounting.CompanyInventorySourceReview.Copy(f.Native.Rows.OfType<PPDM_UNIT_OF_MEASURE>().First());wrong.UOM_ID="foreign-unit";f.Native.Source.Setup(source=>source.GetEntityAsync("PPDM_UNIT_OF_MEASURE",It.IsAny<List<AppFilter>>())).ReturnsAsync(new object[]{wrong});}
+        if(mode=="duplicate-restriction")f.Native.Rows.Add(Beep.OilandGas.Models.Data.Accounting.CompanyInventorySourceReview.Copy(f.Native.Rows.OfType<RESTRICTION>().First()));
         if(mode=="wrong-version")f.Native.Source.Setup(source=>source.GetEntityAsync("RESTRICTION",It.IsAny<List<AppFilter>>())).ReturnsAsync(new object[]{f.Native.Rows.OfType<RESTRICTION>().Last()});
         if(mode=="null-version-key")f.Native.Source.Setup(source=>source.GetEntityAsync("RESTRICTION",It.IsAny<List<AppFilter>>())).ReturnsAsync(new object[]{new Dictionary<string,object>{{"RESTRICTION_ID","recorded-restriction"},{"RESTRICTION_VERSION",DBNull.Value},{"ACTIVE_IND","Y"}}});
         if(mode is "unit-schema" or "restriction-schema")f.Native.Source.Setup(source=>source.CheckEntityExist(It.IsAny<string>())).Returns((string table)=>table!=(mode=="unit-schema"?"PPDM_UNIT_OF_MEASURE":"RESTRICTION"));

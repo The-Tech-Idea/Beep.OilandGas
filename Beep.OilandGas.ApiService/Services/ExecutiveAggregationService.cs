@@ -1,3 +1,8 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.Models.Data.Reporting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -7,7 +12,6 @@ using Beep.OilandGas.Repository;
 using Beep.OilandGas.Models.Core.Refusals;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 using System.Security.Claims;
 using PpdmEntities=Beep.OilandGas.PPDM39.Models;
 namespace Beep.OilandGas.ApiService.Services;

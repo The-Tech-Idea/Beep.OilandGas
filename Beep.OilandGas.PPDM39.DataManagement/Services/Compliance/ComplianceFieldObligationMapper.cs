@@ -1,5 +1,8 @@
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.Compliance;
 using Beep.OilandGas.PPDM39.Models;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Services.Compliance;
 

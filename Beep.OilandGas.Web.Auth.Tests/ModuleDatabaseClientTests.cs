@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using System.Net;
 using System.Text.Json;
 using Beep.OilandGas.Web.Services;

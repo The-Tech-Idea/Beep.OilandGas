@@ -1,3 +1,4 @@
+using Beep.OilandGas.Repository.Models;
 using System.Security.Claims;
 using Beep.Foundation.IdentityServer.Shared.Identity;
 using Beep.OilandGas.ApiService.Services;
@@ -5,7 +6,6 @@ using Beep.OilandGas.ApiService.Tests.Infrastructure;
 using Beep.OilandGas.Repository;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;

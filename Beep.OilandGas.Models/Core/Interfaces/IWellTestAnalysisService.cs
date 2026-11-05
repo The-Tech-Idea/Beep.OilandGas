@@ -1,4 +1,5 @@
-﻿using System;
+using Beep.OilandGas.Models.Data.Company;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;

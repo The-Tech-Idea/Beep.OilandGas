@@ -1,3 +1,6 @@
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Models.Core.Interfaces
+@using Beep.OilandGas.Models.Data.Company
 @page "/development/well-design"
 @page "/development/well-design/new"
 @using MudBlazor
@@ -5,7 +8,6 @@
 @using Beep.OilandGas.Client.App
 @using Beep.OilandGas.PPDM39.Models
 @using Beep.OilandGas.Web.Services
-@using TheTechIdea.Data.OilGas
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @implements IDisposable
 @inject CompanyClientContext Company

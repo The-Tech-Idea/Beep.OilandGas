@@ -1,5 +1,9 @@
 #if WORKFLOW_INBOX_FOCUSED
-extern alias actualData;
+extern alias actualOwners;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Models.Data.Company;
 using System.Text.Json;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -10,10 +14,9 @@ using Moq;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Tools;
-using TheTechIdea.Data.OilGas;
 using Xunit;
-using Row=actualData::Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_INSPECTION;
-using Rules=actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules;
+using Row=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_INSPECTION;
+using Rules=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules;
 namespace Beep.OilandGas.ApiService.Tests;
 public sealed class WorkOrderMaterialAcceptanceTests
 {
@@ -21,7 +24,7 @@ public sealed class WorkOrderMaterialAcceptanceTests
     public async Task NativeMaterialAcceptanceRetainsOriginalProofUsesOneOwnedUpdateAndRollsBackDrift(string mode)
     {
         var proof=new WorkOrderMaterialAcceptanceFixture(requirementProof:mode=="versioned");var f=new PersonaTaskRoutingTests.Fixture();f.Rows.Clear();f.Rows.Add(CompanyInventorySourceReview.Copy(proof.Pending));f.Rows.Add(CompanyInventorySourceReview.Copy(proof.StoredPermit));var metadata=new Mock<IPPDMMetadataRepository>();metadata.Setup(m=>m.GetTableMetadataAsync("WORK_ORDER_INSPECTION")).ReturnsAsync(new PPDMTableMetadata{TableName="WORK_ORDER_INSPECTION",PrimaryKeyColumn="INSPECTION_ID",EntityTypeName=typeof(Row).FullName!});metadata.Setup(m=>m.GetPrimaryKeyColumnsAsync("WORK_ORDER_INSPECTION")).ReturnsAsync(["INSPECTION_ID"]);var creator=new ClassCreator(f.Editor.Object);f.Source.Setup(s=>s.CheckEntityExist("WORK_ORDER_INSPECTION")).Returns(true);f.Source.Setup(s=>s.CheckEntityExist("WORK_ORDER_EXECUTION_PERMIT")).Returns(true);metadata.Setup(m=>m.GetTableMetadataAsync("WORK_ORDER_EXECUTION_PERMIT")).ReturnsAsync(new PPDMTableMetadata{TableName="WORK_ORDER_EXECUTION_PERMIT",PrimaryKeyColumn="PERMIT_ID",EntityTypeName=proof.StoredPermit.GetType().FullName!});metadata.Setup(m=>m.GetPrimaryKeyColumnsAsync("WORK_ORDER_EXECUTION_PERMIT")).ReturnsAsync(["PERMIT_ID"]);f.Source.Setup(s=>s.GetEntityStructure(It.IsAny<EntityStructure>(),true)).Returns(()=>{var shape=creator.ConvertToEntityStructure(typeof(Row));if(mode=="schema")shape.Fields.RemoveAll(field=>field.FieldName=="MATERIAL_ACCEPTANCE_DATA_JSON");return shape;});
-        f.Source.Setup(s=>s.UpdateEntity("WORK_ORDER_INSPECTION",It.IsAny<object>())).Returns((string _,object value)=>{f.Writes++;if(mode=="write")return new ErrorsInfo{Flag=Errors.Failed};var row=CompanyInventorySourceReview.Copy((Row)value);if(mode=="readback")row.RESULT_NOTES="damaged";f.Rows.RemoveAll(value=>value is Row);f.Rows.Add(row);if(mode=="stock-after")proof.Inventory.QUANTITY_ON_HAND=4m;if(mode=="permit-after")((actualData::Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_EXECUTION_PERMIT)f.Rows.Single(value=>value is actualData::Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_EXECUTION_PERMIT)).STATUS="REJECTED";return new ErrorsInfo{Flag=Errors.Ok};});
+        f.Source.Setup(s=>s.UpdateEntity("WORK_ORDER_INSPECTION",It.IsAny<object>())).Returns((string _,object value)=>{f.Writes++;if(mode=="write")return new ErrorsInfo{Flag=Errors.Failed};var row=CompanyInventorySourceReview.Copy((Row)value);if(mode=="readback")row.RESULT_NOTES="damaged";f.Rows.RemoveAll(value=>value is Row);f.Rows.Add(row);if(mode=="stock-after")proof.Inventory.QUANTITY_ON_HAND=4m;if(mode=="permit-after")((actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_EXECUTION_PERMIT)f.Rows.Single(value=>value is actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_EXECUTION_PERMIT)).STATUS="REJECTED";return new ErrorsInfo{Flag=Errors.Ok};});
         Task Authority()=>mode=="authority"?Task.FromException(new UnauthorizedAccessException()):Task.CompletedTask;var owner=new InspectionService(f.Editor.Object,Mock.Of<ICommonColumnHandler>(),Mock.Of<IPPDM39DefaultsRepository>(),metadata.Object,()=>Task.FromResult((proof.Permit.Context.Company,"independent",proof.IssuedSource.InspectionDatabase)),NullLogger<InspectionService>.Instance,(_,_,_,_)=>Task.CompletedTask,_=>Authority());
         if(mode=="stock-before")proof.Inventory.QUANTITY_ON_HAND=4m;if(mode=="unknown-commit")f.FailCommit=true;
         Task Current(Row? own){proof.Command.RequireCurrent(proof.Current(own),own);return Task.CompletedTask;}

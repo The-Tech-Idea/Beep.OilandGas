@@ -1,5 +1,7 @@
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.DrillingAndConstruction.Models;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Models.Processes;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.LifeCycle.Services.Processes;
 

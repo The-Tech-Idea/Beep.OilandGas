@@ -1,8 +1,8 @@
+using Beep.OilandGas.Repository.Models;
 using System.Net;
 using System.Reflection;
 using Beep.OilandGas.Web.Services;
 using Microsoft.Extensions.Logging.Abstractions;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using UsersPage = Beep.OilandGas.Web.Pages.Admin.AccessControl.Users;
 

@@ -27,23 +27,18 @@ public class PermitApplicationStatusCodesTests
         Assert.Equal(PermitApplicationStatusCodes.Draft, PermitApplicationStatusCodes.ToStorageKey(null));
     }
 
-    [Theory]
-    [InlineData("DRAFT", PermitApplicationStatus.Draft)]
-    [InlineData("draft", PermitApplicationStatus.Draft)]
-    [InlineData("SUBMITTED", PermitApplicationStatus.Submitted)]
-    [InlineData("Submitted", PermitApplicationStatus.Submitted)]
-    public void FromStorageKey_parses_variants(string persisted, PermitApplicationStatus expected)
+    [Fact]
+    public void Every_status_has_a_distinct_canonical_history_token()
     {
-        Assert.Equal(expected, PermitApplicationStatusCodes.FromStorageKey(persisted));
+        var statuses=Enum.GetValues<PermitApplicationStatus>();
+        var keys=statuses.Select(status=>PermitApplicationStatusCodes.ToStorageKey(status)).ToArray();
+        Assert.Equal(statuses.Length,keys.Distinct(StringComparer.Ordinal).Count());
+        Assert.All(keys,key=>Assert.Matches("^[A-Z]+(?:_[A-Z]+)*$",key));
     }
 
-    [Fact]
-    public void FromStorageKey_round_trips_ToStorageKey_for_all_statuses()
+    [Theory][InlineData(-1)][InlineData(int.MaxValue)]
+    public void Undefined_status_is_refused_instead_of_becoming_a_draft(int value)
     {
-        foreach (PermitApplicationStatus status in Enum.GetValues<PermitApplicationStatus>())
-        {
-            var key = PermitApplicationStatusCodes.ToStorageKey(status);
-            Assert.Equal(status, PermitApplicationStatusCodes.FromStorageKey(key));
-        }
+        Assert.Throws<System.Runtime.CompilerServices.SwitchExpressionException>(()=>PermitApplicationStatusCodes.ToStorageKey((PermitApplicationStatus)value));
     }
 }

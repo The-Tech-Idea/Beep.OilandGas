@@ -1,5 +1,6 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DrillingAndConstruction.Models;
 using System.Collections.Generic;
-using TheTechIdea.Data.OilGas;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Drilling;

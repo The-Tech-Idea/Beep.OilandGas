@@ -1,3 +1,7 @@
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Repository.Models;
 #if RECORDED_APPROVAL_HTTP_FOCUSED
 using System.Data;
 using System.Net;
@@ -22,7 +26,6 @@ using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Editor.Migration;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Fixture=Beep.OilandGas.Repository.Tests.CompanyPPDMRowAccessTests.Fixture;
 namespace Beep.OilandGas.Repository.Tests;
@@ -63,7 +66,7 @@ public sealed partial class CurrentFieldLifecycleGateTests
             var permitConnection=Assert.IsType<ConnectionProperties>(permits.Dataconnection.ConnectionProp);
             f.Db.Add(new AppModuleConnection {TenantId="tenant",ConnectionKey=permits.DatasourceName.ToUpperInvariant(),AssignedByUserId="actor",PhysicalTargetKey=ModuleDatabaseTarget.Key(f.Editor.Object,permitConnection)});
             f.Db.ModuleDatabases.Add(new ModuleDatabaseBinding {TenantId="tenant",ModuleId="PERMITS",ConnectionName=permits.DatasourceName,ConnectionKey=permits.DatasourceName.ToUpperInvariant(),ConcurrencyStamp="document-http-v1"});await f.Db.SaveChangesAsync();
-            var runtimeMetadata=new Beep.OilandGas.PPDM39.DataManagement.Core.Metadata.PPDMMetadataService(Microsoft.Extensions.Logging.Abstractions.NullLogger<Beep.OilandGas.PPDM39.DataManagement.Core.Metadata.PPDMMetadataService>.Instance,Path.Combine(AppContext.BaseDirectory,"PPDM39Metadata.json"));
+            var runtimeMetadata=new Beep.OilandGas.PPDM39.DataManagement.Core.Metadata.PPDMMetadataService(Microsoft.Extensions.Logging.Abstractions.NullLogger<Beep.OilandGas.PPDM39.DataManagement.Core.Metadata.PPDMMetadataService>.Instance,Path.Combine(AppContext.BaseDirectory,"PPDM39Metadata.json"), [new Beep.OilandGas.PermitsAndApplications.Metadata.PermitApplicationNativeMetadata()]);
             const string applicationId="document/شركة?A";
             foreach(var tuple in new[]{(Id:applicationId,Company:"company",Applicant:"Selected document applicant"),(Id:"other-app",Company:"other-company",Applicant:"PRIVATE OTHER COMPANY")})
             {

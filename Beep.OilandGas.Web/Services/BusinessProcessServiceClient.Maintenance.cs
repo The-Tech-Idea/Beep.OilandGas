@@ -1,4 +1,9 @@
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.ProductionOperations.Models;
 
 namespace Beep.OilandGas.Web.Services;
 

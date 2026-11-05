@@ -1,10 +1,11 @@
-param([string]$DataAssemblyPath)
+param([string]$ModelsAssemblyPath)
+. (Join-Path $PSScriptRoot 'RestoredOwnerFixtureReferences.ps1')
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path $PSScriptRoot -Parent
-if (-not $DataAssemblyPath) {
-    $DataAssemblyPath = Join-Path $repositoryRoot 'Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/TheTechIdea.Data.dll'
+if (-not $ModelsAssemblyPath) {
+    $ModelsAssemblyPath = Join-Path $repositoryRoot 'Beep.OilandGas.Models/bin/Debug/net10.0/Beep.OilandGas.Models.dll'
 }
-if (-not (Test-Path -LiteralPath $DataAssemblyPath)) { throw 'Provide an actual compiled TheTechIdea.Data assembly; this check does not replace missing projects.' }
+if (-not (Test-Path -LiteralPath $ModelsAssemblyPath)) { throw 'Provide an actual compiled restored Models assembly; this check does not replace missing projects.' }
 # Compile the actual API source-review helper against the actual Data and PPDM model dependencies.
 # This focused helper check does not execute the controller, transport, provider or browser.
 $checkDirectory = Join-Path ([IO.Path]::GetTempPath()) "oilgas-intervention-source-review-$([Guid]::NewGuid().ToString('N'))"
@@ -14,8 +15,8 @@ $group = $project.SelectNodes("/Project/ItemGroup")[1]
 foreach ($source in @('Beep.OilandGas.ApiService/Services/ProductionInterventionSourceReviews.cs', 'Beep.OilandGas.Web.Auth.Tests/ProductionInterventionSourceReviewTests.cs')) {
     $node = $project.CreateElement('Compile'); $node.SetAttribute('Include', (Join-Path $repositoryRoot $source)); [void]$group.AppendChild($node)
 }
-$reference = $project.CreateElement('Reference'); $reference.SetAttribute('Include', 'TheTechIdea.Data')
-$hint = $project.CreateElement('HintPath'); $hint.InnerText = (Resolve-Path -LiteralPath $DataAssemblyPath).Path
+$reference = $project.CreateElement('Reference'); $reference.SetAttribute('Include', 'Beep.OilandGas.Models')
+$hint = $project.CreateElement('HintPath'); $hint.InnerText = (Resolve-Path -LiteralPath $ModelsAssemblyPath).Path
 [void]$reference.AppendChild($hint); [void]$group.AppendChild($reference)
 foreach ($modelName in @('Beep.OilandGas.Models', 'Beep.OilandGas.PPDM.Models', 'DataManagementModels')) {
     $actualModelPath = Join-Path $repositoryRoot "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/$modelName.dll"
@@ -24,6 +25,7 @@ foreach ($modelName in @('Beep.OilandGas.Models', 'Beep.OilandGas.PPDM.Models', 
     $modelHint = $project.CreateElement('HintPath'); $modelHint.InnerText = $actualModelPath
     [void]$modelReference.AppendChild($modelHint); [void]$group.AppendChild($modelReference)
 }
-$projectPath = Join-Path $checkDirectory 'InterventionSourceReviewTests.csproj'; $project.Save($projectPath)
+$projectPath = Join-Path $checkDirectory 'InterventionSourceReviewTests.csproj'; Add-OilGasRestoredOwnerReferences -Project $project -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
+$project.Save($projectPath)
 dotnet test $projectPath --logger 'console;verbosity=normal'
 if ($LASTEXITCODE -ne 0) { throw "Intervention source review check failed with exit $LASTEXITCODE." }

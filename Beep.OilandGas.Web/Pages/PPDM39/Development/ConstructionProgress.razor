@@ -1,3 +1,7 @@
+@using Beep.OilandGas.Models.Data.WorkOrder
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Models.Core.Interfaces
+@using Beep.OilandGas.Models.Data.Company
 @page "/development/construction"
 @page "/development"
 @page "/facilities/dashboard"
@@ -10,7 +14,6 @@
 @using Beep.OilandGas.PPDM39.Models
 @using Beep.OilandGas.Web.Services
 @using Beep.OilandGas.Web.Components.Workflow
-@using TheTechIdea.Data.OilGas
 @implements IDisposable
 @inject CompanyClientContext Company
 @inject IFieldSelectionContext Fields

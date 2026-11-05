@@ -1,4 +1,6 @@
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DrillingAndConstruction.Models;
 namespace Beep.OilandGas.Web.Services;
 
 public partial class DrillingServiceClient

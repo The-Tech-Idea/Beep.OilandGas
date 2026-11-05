@@ -1,8 +1,8 @@
+using Beep.OilandGas.Models.Data.AccessControl;
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 public sealed class CompanyAccountingAssignedScopeTests

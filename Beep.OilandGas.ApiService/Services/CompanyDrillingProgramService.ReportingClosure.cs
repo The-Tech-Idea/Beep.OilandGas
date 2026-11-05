@@ -1,9 +1,12 @@
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DrillingAndConstruction.Models;
 using System.Security.Claims;
 using System.Text.Json;
 using Beep.OilandGas.LifeCycle.Data.Tables;
 using Beep.OilandGas.LifeCycle.Services.Processes;
 using Beep.OilandGas.Models.Processes;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Services;
 
 public sealed partial class CompanyDrillingProgramService

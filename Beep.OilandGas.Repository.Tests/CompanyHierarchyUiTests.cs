@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
@@ -8,7 +11,6 @@ using Beep.OilandGas.Web.Services;
 using Moq;
 using System.Net;
 using System.Text.Json;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Fixture = Beep.OilandGas.Repository.Tests.CompanyPPDMRowAccessTests.Fixture;
 
@@ -262,7 +264,7 @@ public sealed class CompanyHierarchyUiTests
         using var f = await Fixture.Create(); await f.Grant("FIELD", "A", inherit: true);
         _ = CompanyAssetFacadeTests.Service(f); f.Rows.AddRange([new FIELD { FIELD_ID = "A", ACTIVE_IND = "Y" },
             new FACILITY { FACILITY_ID = "facility", FACILITY_TYPE = "gas", PRIMARY_FIELD_ID = "A", CURRENT_OPERATOR = "company", ACTIVE_IND = "Y" },
-            new FACILITY { FACILITY_ID = "foreign", FACILITY_TYPE = "gas", PRIMARY_FIELD_ID = "A", CURRENT_OPERATOR = "other", ACTIVE_IND = "Y" }]);
+            new FACILITY { FACILITY_ID = "foreign", FACILITY_TYPE = "gas", PRIMARY_FIELD_ID = "B", CURRENT_OPERATOR = "other", ACTIVE_IND = "Y" }]);
         var store = new RepositoryAssetAccessStore(f.Db, f.Gate, Mock.Of<IAssetGrantTargetVerifier>());
         var server = new AssetHierarchyService(f.Editor.Object, f.Columns.Object, f.Defaults.Object, f.Metadata.Object, () => f.Gate.ResolveAsync(),
             subject => new CompanyPPDMRowAccessPolicy(f.Gate, store, f.Metadata.Object, f.Eligibility, f.Editor.Object, f.Columns.Object, f.Defaults.Object, Microsoft.Extensions.Options.Options.Create(f.EligibilityConfiguration), subject), subject => f.Gate.ResolveHierarchyCompanyAsync(subject), new RepositoryHierarchyConfigurationStore(f.Db, f.Gate), order => CompanyWorkOrderFieldReview.ComponentsAsync(f.Gate, f.Editor.Object, f.Columns.Object, f.Defaults.Object, f.Metadata.Object, f.Eligibility, order));

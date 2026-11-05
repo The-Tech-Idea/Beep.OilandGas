@@ -1,3 +1,7 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.DevelopmentPlanning.Models;
 using System.Text.Json;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Web.Services;
@@ -6,7 +10,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using MudBlazor;
 using MudBlazor.Services;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 using Xunit;
 using Page=Beep.OilandGas.Web.Pages.PPDM39.Economics.AFEManagement;

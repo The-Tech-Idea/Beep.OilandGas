@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.Models.Data;
 

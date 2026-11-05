@@ -1,5 +1,6 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Models.Core.Refusals;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.PPDM39.DataManagement.Services.WorkOrder;
 
 /// <summary>Uses the API's existing company/binding resolver; retains one operation's original target.</summary>

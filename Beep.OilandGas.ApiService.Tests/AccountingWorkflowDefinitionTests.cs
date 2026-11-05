@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 using System.Security.Claims;
 using System.Text.Json;
 using Beep.OilandGas.ApiService.Services;
@@ -13,7 +15,7 @@ public sealed class AccountingWorkflowDefinitionTests
         var definition=ProcessDefinitionInitializer.BuildCompanySalesJournalDefinition();var second=ProcessDefinitionInitializer.BuildCompanySalesJournalDefinition();
         Assert.Equal("ACCT_SALES_JOURNAL_REVIEW_POST",definition.ProcessId);Assert.Equal("JOURNAL_ENTRY",definition.EntityType);Assert.Equal("FINANCIAL",definition.ProcessType);
         Assert.Equal(new[]{1,2,3},definition.Steps.Select(step=>step.SequenceNumber));Assert.Equal(new[]{"APPROVAL","ACTION","ACTION"},definition.Steps.Select(step=>step.StepType));
-        Assert.Equal(new[]{TheTechIdea.Data.OilGas.CompanyAccountingSourceTypes.Approval("JOURNAL_ENTRY"),TheTechIdea.Data.OilGas.CompanyAccountingSourceTypes.JournalPosting,TheTechIdea.Data.OilGas.CompanyAccountingSourceTypes.RejectionReview("JOURNAL_ENTRY")},definition.Steps.Select(step=>Assert.Single(step.StepConfiguration).Value));
+        Assert.Equal(new[]{Beep.OilandGas.Models.Data.Accounting.CompanyAccountingSourceTypes.Approval("JOURNAL_ENTRY"),Beep.OilandGas.Models.Data.Accounting.CompanyAccountingSourceTypes.JournalPosting,Beep.OilandGas.Models.Data.Accounting.CompanyAccountingSourceTypes.RejectionReview("JOURNAL_ENTRY")},definition.Steps.Select(step=>Assert.Single(step.StepConfiguration).Value));
         Assert.True(definition.Steps[0].RequiresApproval);Assert.All(definition.Steps.Skip(1),step=>Assert.False(step.RequiresApproval));Assert.All(definition.Steps,step=>Assert.Equal("Accountant",Assert.Single(step.RequiredRoles)));
         definition.Steps[0].RequiredRoles.Clear();Assert.Single(second.Steps[0].RequiredRoles);
     }

@@ -1,3 +1,4 @@
+using Beep.OilandGas.Repository.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using Bunit;
 using Beep.OilandGas.Web.Components.Setup;
@@ -7,7 +8,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MudBlazor.Services;
 using System.Security.Claims;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.Web.Auth.Tests;

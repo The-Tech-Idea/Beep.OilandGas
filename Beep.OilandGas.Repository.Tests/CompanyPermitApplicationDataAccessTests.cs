@@ -1,3 +1,10 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Repository.Models;
 #if RECORDED_APPROVAL_HTTP_FOCUSED
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -14,7 +21,6 @@ using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using TheTechIdea.Beep.Utilities;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Fixture = Beep.OilandGas.Repository.Tests.CompanyPPDMRowAccessTests.Fixture;
 namespace Beep.OilandGas.Repository.Tests;
@@ -68,7 +74,7 @@ public sealed class CompanyPermitApplicationDataAccessTests
                 Writes.Add(Copy(row));
                 if(FailWriteNumber==Writes.Count)return new ErrorsInfo{Flag=Errors.Failed};
                 Assert.NotNull(ActiveTransaction);
-                var key=table=="PERMIT_APPLICATION"?"PERMIT_APPLICATION_ID":table+"_ID";
+                var key=PermitApplicationSchema.Keys(row.GetType()).Single();
                 var value=row.GetType().GetProperty(key)!.GetValue(row);
                 var matches=Rows.Where(x=>x.GetType()==row.GetType() && Equals(x.GetType().GetProperty(key)!.GetValue(x),value)).ToArray();
                 if(matches.Length!=(update?1:0))return new ErrorsInfo{Flag=Errors.Failed};
@@ -77,16 +83,14 @@ public sealed class CompanyPermitApplicationDataAccessTests
             }
             Source.Setup(x=>x.InsertEntity(It.IsAny<string>(),It.IsAny<object>())).Returns((string table,object row)=>Write(table,row,false));
             Source.Setup(x=>x.UpdateEntity(It.IsAny<string>(),It.IsAny<object>())).Returns((string table,object row)=>Write(table,row,true));
-            foreach(var type in new[]{typeof(PERMIT_APPLICATION),typeof(PERMIT_STATUS_HISTORY),typeof(PERMIT_APPLICATION_COMMAND)})
-            {
-                var key=type.Name+"_ID";var definition=new PPDMTableMetadata{EntityTypeName=type.FullName!,PrimaryKeyColumn=key};
-                Core.Metadata.Setup(x=>x.GetTableMetadataAsync(type.Name)).ReturnsAsync(definition);Core.Metadata.Setup(x=>x.GetPrimaryKeyColumnsAsync(type.Name)).ReturnsAsync(new[]{key});
-            }
+        }
+        public void InstallSchema()
+        {
             Source.Setup(x=>x.GetEntityStructure(It.IsAny<EntityStructure>(),true)).Returns((EntityStructure request,bool _) =>
             {
-                var type=new[]{typeof(PERMIT_APPLICATION),typeof(PERMIT_STATUS_HISTORY),typeof(PERMIT_APPLICATION_COMMAND)}.Single(x=>x.Name==request.EntityName);
+                var type=PermitApplicationSchema.Entities.Single(x=>x.Name==request.EntityName);
                 var shape=new TheTechIdea.Beep.Tools.ClassCreator(Core.Editor.Object).ConvertToEntityStructure(type);
-                foreach(var field in shape.Fields){field.IsKey=field.FieldName==type.Name+"_ID";if(field.Fieldtype==typeof(string).FullName)field.Size=field.Size1=8388608;}
+                foreach(var field in shape.Fields){field.IsKey=PermitApplicationSchema.Keys(type).Contains(field.FieldName);if(field.Fieldtype==typeof(string).FullName)field.Size=field.Size1=8388608;}
                 return shape;
             });
         }
@@ -103,20 +107,27 @@ public sealed class CompanyPermitApplicationDataAccessTests
         var access = new CompanyPermitApplicationDataAccess(core.Gate,new ModuleConnectionResolver(core.Db,core.Editor.Object,core.CompanySelection),CompanyCorrectiveActionAuthorityTests.Profile(core),core.Editor.Object,core.Columns.Object,core.Defaults.Object,core.Metadata.Object,new RepositoryAssetAccessStore(core.Db,core.Gate,Mock.Of<IAssetGrantTargetVerifier>()),core.Policy);
         var sourceConnection=new ConnectionProperties{ConnectionName="permits-current",DatabaseType=DataSourceType.SqlServer,Host="permit-server",Database="permits-tenant"};
         var fixture=new Native{Core=core,Access=access,Binding=binding,SourceConnection=sourceConnection};
+        fixture.InstallSchema();
         var target=new Mock<IDataConnection>();target.As<IBeepConnectionEvidence>().SetupGet(x=>x.DbConn).Returns(fixture.Physical.Object);target.SetupGet(x=>x.ConnectionProp).Returns(sourceConnection);fixture.Source.SetupGet(x=>x.Dataconnection).Returns(target.Object);
         fixture.Source.SetupGet(x=>x.DatasourceName).Returns("permits-current");fixture.Source.SetupGet(x=>x.ErrorObject).Returns(new ErrorsInfo{Flag=Errors.Ok});
         core.Editor.Setup(x=>x.GetDataSource("permits-current")).Returns(()=>{core.Connections.Add("permits-current");return fixture.Source.Object;});
         core.Editor.Setup(x=>x.OpenDataSource("permits-current")).Returns(System.Data.ConnectionState.Open);
-        foreach(var type in new[]{typeof(PERMIT_APPLICATION),typeof(PERMIT_STATUS_HISTORY),typeof(INJECTION_PERMIT_APPLICATION),typeof(MIT_RESULT)})
-        {
-            var key=type==typeof(PERMIT_APPLICATION)||type==typeof(INJECTION_PERMIT_APPLICATION)?"PERMIT_APPLICATION_ID":type.Name+"_ID";
-            var definition=new PPDMTableMetadata{EntityTypeName=type.Name,PrimaryKeyColumn=key};core.Metadata.Setup(x=>x.GetTableMetadataAsync(type.Name)).ReturnsAsync(definition);core.Metadata.Setup(x=>x.GetPrimaryKeyColumnsAsync(type.Name)).ReturnsAsync(new[]{key});
-        }
         fixture.Source.Setup(x=>x.GetEntityAsync(It.IsAny<string>(),It.IsAny<List<AppFilter>>())).Returns(async(string table,List<AppFilter> filters)=>
         {
             fixture.Reads.Add(table);var rows=fixture.Rows.Where(row=>row.GetType().Name==table && (fixture.IgnoreFilters && (fixture.IgnoreFilterTable is null || fixture.IgnoreFilterTable==table) || filters.All(filter=>Convert.ToString(row.GetType().GetProperty(filter.FieldName)!.GetValue(row),System.Globalization.CultureInfo.InvariantCulture)==filter.FilterValue))).ToArray();
             if(fixture.CloneReads)rows=rows.Select(CopyForRead).ToArray();if(fixture.AfterRead is not null)await fixture.AfterRead();return (IEnumerable<object>)rows;
         });
+        // Consume the restored module's own manifest/contributor, including supporting tables and exact CLR identities.
+        var canonicalMetadata=new Dictionary<string,PPDMTableMetadata>(StringComparer.OrdinalIgnoreCase);
+        Beep.OilandGas.PermitsAndApplications.Metadata.PermitApplicationNativeMetadata.AddTo(canonicalMetadata);
+        foreach(var entry in canonicalMetadata)
+        {
+            var type=PermitApplicationSchema.Entities.Single(type=>type.Name==entry.Key);
+            core.Metadata.Setup(x=>x.GetTableMetadataAsync(entry.Key)).ReturnsAsync(entry.Value);
+            core.Metadata.Setup(x=>x.GetPrimaryKeyColumnsAsync(entry.Key)).ReturnsAsync(PermitApplicationSchema.Keys(type));
+        }
+        fixture.Source.Setup(x=>x.GetEntityStructure(It.IsAny<string>(),true)).Returns((string table,bool _) =>
+            fixture.Source.Object.GetEntityStructure(new EntityStructure{EntityName=table},true));
         fixture.Rows.AddRange([new PERMIT_APPLICATION{PERMIT_APPLICATION_ID="local",FIELD_ID="A",OWNER_TENANT_ID="tenant",OWNER_COMPANY_ID="company",ACTIVE_IND="Y"},new PERMIT_APPLICATION{PERMIT_APPLICATION_ID="other",FIELD_ID="B",OWNER_TENANT_ID="tenant",OWNER_COMPANY_ID="company",ACTIVE_IND="Y"},new PERMIT_STATUS_HISTORY{PERMIT_STATUS_HISTORY_ID="history",PERMIT_APPLICATION_ID="local",ACTIVE_IND="Y"},new INJECTION_PERMIT_APPLICATION{PERMIT_APPLICATION_ID="local",ACTIVE_IND="Y"},new MIT_RESULT{MIT_RESULT_ID="mit",INJECTION_PERMIT_APPLICATION_ID="local",ACTIVE_IND="Y"}]);
         return fixture;
     }
@@ -197,7 +208,7 @@ public sealed class CompanyPermitApplicationDataAccessTests
         f.Core.Db.RoleClaims.Add(new IdentityRoleClaim<string>{RoleId="admin",ClaimType="permission",ClaimValue=PermissionConstants.HSE.IssuePermit});
         var grant=await f.Core.Db.Set<AppUserAssetAccess>().SingleAsync(x=>x.AssetType=="FIELD" && x.AssetId=="A");grant.AccessLevel="WRITE";await f.Core.Db.SaveChangesAsync();
         var application=f.Rows.OfType<PERMIT_APPLICATION>().Single(x=>x.PERMIT_APPLICATION_ID=="local");application.APPLICANT_ID="recorded applicant";
-        var original=new PermitApplicationCommand(Guid.NewGuid(),PermitApplicationSourceReview.Capture(await f.Access.RequireReadScopeAsync(),application,f.Rows.OfType<PERMIT_STATUS_HISTORY>().ToArray()),"SUBMIT","Reviewed recorded source");
+        var original=new PermitApplicationCommand(Guid.NewGuid(),await f.Lifecycle.ReviewSourceAsync(application.PERMIT_APPLICATION_ID),"SUBMIT","Reviewed recorded source");
         var columns=new Beep.OilandGas.PPDM39.DataManagement.Core.Common.CommonColumnHandler();
         if(mode=="update-date")f.Core.Columns.Setup(x=>x.PrepareForUpdate(It.IsAny<IPPDMEntity>(),It.IsAny<string>())).Callback((IPPDMEntity row,string actor)=>{columns.PrepareForUpdate(row,actor);row.ROW_CHANGED_DATE=DateTime.SpecifyKind(DateTime.MinValue,DateTimeKind.Utc);});
         if(mode=="history-date")f.Core.Columns.Setup(x=>x.PrepareForInsert(It.IsAny<IPPDMEntity>(),It.IsAny<string>())).Callback((IPPDMEntity row,string actor)=>{columns.PrepareForInsert(row,actor);if(row is PERMIT_STATUS_HISTORY)row.ROW_CREATED_DATE=DateTime.SpecifyKind(DateTime.MinValue,DateTimeKind.Utc);});
@@ -257,7 +268,7 @@ public sealed class CompanyPermitApplicationDataAccessTests
         var grant=await f.Core.Db.Set<AppUserAssetAccess>().SingleAsync(x=>x.AssetType=="FIELD" && x.AssetId=="A");grant.AccessLevel="WRITE";await f.Core.Db.SaveChangesAsync();
         var application=f.Rows.OfType<PERMIT_APPLICATION>().Single(x=>x.PERMIT_APPLICATION_ID=="local");application.APPLICANT_ID="recorded applicant";application.ROW_CREATED_BY="issuer";
         if(mode is "approve" or "reject"){application.STATUS=Beep.OilandGas.Models.Data.PermitsAndApplications.PermitApplicationStatus.Submitted;application.SUBMITTED_BY_USER_ID="issuer";application.SUBMITTED_DATE=DateTime.UtcNow.AddDays(-1);}
-        var review=PermitApplicationSourceReview.Capture(await f.Access.RequireReadScopeAsync(),application,f.Rows.OfType<PERMIT_STATUS_HISTORY>().ToArray());
+        var review=await f.Lifecycle.ReviewSourceAsync(application.PERMIT_APPLICATION_ID);
         var original=new PermitApplicationCommand(Guid.NewGuid(),review,mode=="approve"?"APPROVE":mode=="reject"?"REJECT":"SUBMIT","Reviewed original source evidence");original.Require();
         f.FailWriteNumber=mode=="fail-update"?1:mode=="fail-history"?2:mode=="fail-record"?3:0;f.LoseCommitAck=mode=="lost-ack";
         if(mode=="late-permission")f.AfterWrite=row=>{if(row is PERMIT_APPLICATION){f.Core.Db.RoleClaims.Remove(f.Core.Db.RoleClaims.Single(x=>x.ClaimValue==PermissionConstants.HSE.IssuePermit));f.Core.Db.SaveChanges();}};
@@ -275,7 +286,8 @@ public sealed class CompanyPermitApplicationDataAccessTests
             await Assert.ThrowsAnyAsync<Exception>(()=>f.Lifecycle.RecordCommandAsync(original));
             Assert.Empty(f.Rows.OfType<PERMIT_APPLICATION_COMMAND>());Assert.Single(f.Rows.OfType<PERMIT_STATUS_HISTORY>());
             Assert.Equal(original.Review.ReadApplication().STATUS,f.Rows.OfType<PERMIT_APPLICATION>().Single(x=>x.PERMIT_APPLICATION_ID=="local").STATUS);
-            Assert.Contains("rollback",f.Transactions);return;
+            if(mode=="stale-source"){Assert.Empty(f.Writes);Assert.Empty(f.Transactions);}
+            else Assert.Contains("rollback",f.Transactions);return;
         }
         PermitApplicationCommandOutcome? outcome=null;
         if(mode=="lost-ack")await Assert.ThrowsAnyAsync<Exception>(()=>f.Lifecycle.RecordCommandAsync(original));else outcome=await f.Lifecycle.RecordCommandAsync(original);
@@ -334,7 +346,8 @@ public sealed class CompanyPermitApplicationDataAccessTests
             await Assert.ThrowsAnyAsync<Exception>(()=>f.Lifecycle.RecordCommandAsync(original));
             Assert.Empty(f.Rows.OfType<PERMIT_APPLICATION_COMMAND>());Assert.Single(f.Rows.OfType<PERMIT_STATUS_HISTORY>());
             Assert.Equal(source.APPLICANT_ID,f.Rows.OfType<PERMIT_APPLICATION>().Single(x=>x.PERMIT_APPLICATION_ID=="local").APPLICANT_ID);
-            if(mode!="rollback")Assert.Empty(f.Writes);Assert.Contains("rollback",f.Transactions);return;
+            if(mode!="rollback")Assert.Empty(f.Writes);
+            if(mode=="stale")Assert.Empty(f.Transactions);else Assert.Contains("rollback",f.Transactions);return;
         }
         if(mode=="lost-ack")await Assert.ThrowsAnyAsync<Exception>(()=>f.Lifecycle.RecordCommandAsync(original));
         else await f.Lifecycle.RecordCommandAsync(original);

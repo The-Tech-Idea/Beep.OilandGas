@@ -1,4 +1,4 @@
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.Models.Data.AccessControl;
 namespace Beep.OilandGas.ApiService.Services;
 
 /// <summary>Fresh app-owned company/account access and the current PRODUCTION binding for accounting source reads.</summary>

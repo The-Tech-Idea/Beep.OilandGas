@@ -1,0 +1,474 @@
+{
+  "scope": "Static superset of literal internal project-reference edges, including conditional edges and nested consumer projects; symbolic external/root-selected references listed separately; no claim about external dependency graphs; generated output/playwright fixtures excluded",
+  "projects": 73,
+  "edges": 290,
+  "cycles": [],
+  "symbolic_references": [
+    {
+      "project": "Beep.OilandGas.ApiService",
+      "reference": "$(IdentitySharedProject)"
+    },
+    {
+      "project": "Beep.OilandGas.Diagnostics",
+      "reference": "$(DiagnosticsProject)"
+    },
+    {
+      "project": "Beep.OilandGas.Diagnostics",
+      "reference": "$(IdentityContractsProject)"
+    },
+    {
+      "project": "Beep.OilandGas.Diagnostics",
+      "reference": "$(IdentitySharedProject)"
+    },
+    {
+      "project": "Beep.OilandGas.Repository.Tests",
+      "reference": "$(IdentitySharedProject)"
+    },
+    {
+      "project": "Beep.OilandGas.Web",
+      "reference": "$(IdentitySharedProject)"
+    },
+    {
+      "project": "Beep.OilandGas.Web",
+      "reference": "$(AccountManagementProject)"
+    },
+    {
+      "project": "Beep.OilandGas.Web",
+      "reference": "$(ThemeBrandingProject)"
+    }
+  ],
+  "graph": {
+    "Beep.OilandGas.Accounting": [
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement",
+      "Beep.OilandGas.ProductionOperations"
+    ],
+    "Beep.OilandGas.ApiService": [
+      "Beep.OilandGas.Accounting",
+      "Beep.OilandGas.ChokeAnalysis",
+      "Beep.OilandGas.CompressorAnalysis",
+      "Beep.OilandGas.DataManager",
+      "Beep.OilandGas.Decommissioning",
+      "Beep.OilandGas.DevelopmentPlanning",
+      "Beep.OilandGas.Diagnostics",
+      "Beep.OilandGas.Drawing",
+      "Beep.OilandGas.DrillingAndConstruction",
+      "Beep.OilandGas.EconomicAnalysis",
+      "Beep.OilandGas.EnhancedRecovery",
+      "Beep.OilandGas.FlashCalculations",
+      "Beep.OilandGas.GasLift",
+      "Beep.OilandGas.GasProperties",
+      "Beep.OilandGas.HSE",
+      "Beep.OilandGas.HeatMap",
+      "Beep.OilandGas.HydraulicPumps",
+      "Beep.OilandGas.LeaseAcquisition",
+      "Beep.OilandGas.LifeCycle",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.NodalAnalysis",
+      "Beep.OilandGas.OilProperties",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement",
+      "Beep.OilandGas.PermitsAndApplications",
+      "Beep.OilandGas.PipelineAnalysis",
+      "Beep.OilandGas.ProductionAccounting",
+      "Beep.OilandGas.ProductionForecasting",
+      "Beep.OilandGas.ProductionOperations",
+      "Beep.OilandGas.ProspectIdentification",
+      "Beep.OilandGas.PumpPerformance",
+      "Beep.OilandGas.Repository",
+      "Beep.OilandGas.SuckerRodPumping",
+      "Beep.OilandGas.UserManagement",
+      "Beep.OilandGas.WellTestAnalysis"
+    ],
+    "Beep.OilandGas.ApiService.Tests": [
+      "Beep.OilandGas.ApiService",
+      "Beep.OilandGas.Client",
+      "Beep.OilandGas.CompressorAnalysis",
+      "Beep.OilandGas.ProspectIdentification"
+    ],
+    "Beep.OilandGas.Branchs": [],
+    "Beep.OilandGas.ChokeAnalysis": [
+      "Beep.OilandGas.GasProperties",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.ChokeAnalysis.Tests": [
+      "Beep.OilandGas.ChokeAnalysis"
+    ],
+    "Beep.OilandGas.Client": [
+      "Beep.OilandGas.Accounting",
+      "Beep.OilandGas.CompressorAnalysis",
+      "Beep.OilandGas.Decommissioning",
+      "Beep.OilandGas.DevelopmentPlanning",
+      "Beep.OilandGas.HSE",
+      "Beep.OilandGas.LeaseAcquisition",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PermitsAndApplications",
+      "Beep.OilandGas.ProductionAccounting",
+      "Beep.OilandGas.ProspectIdentification"
+    ],
+    "Beep.OilandGas.CompressorAnalysis": [
+      "Beep.OilandGas.GasProperties",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.CompressorAnalysis.Tests": [
+      "Beep.OilandGas.CompressorAnalysis",
+      "Beep.OilandGas.Models"
+    ],
+    "Beep.OilandGas.DataManager": [
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.Decommissioning": [
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.DevelopmentPlanning": [
+      "Beep.OilandGas.EconomicAnalysis",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement",
+      "Beep.OilandGas.PermitsAndApplications",
+      "Beep.OilandGas.ProductionForecasting"
+    ],
+    "Beep.OilandGas.Diagnostics": [
+      "Beep.OilandGas.Models"
+    ],
+    "Beep.OilandGas.Drawing": [
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models"
+    ],
+    "Beep.OilandGas.Drawing.Benchmarks": [
+      "Beep.OilandGas.Drawing"
+    ],
+    "Beep.OilandGas.Drawing.Tests": [
+      "Beep.OilandGas.Drawing"
+    ],
+    "Beep.OilandGas.DrillingAndConstruction": [
+      "Beep.OilandGas.DevelopmentPlanning",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.EconomicAnalysis": [
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.EconomicAnalysis.Tests": [
+      "Beep.OilandGas.EconomicAnalysis"
+    ],
+    "Beep.OilandGas.EnhancedRecovery": [
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.EnhancedRecovery.Tests": [
+      "Beep.OilandGas.EnhancedRecovery",
+      "Beep.OilandGas.Models"
+    ],
+    "Beep.OilandGas.FlashCalculations": [
+      "Beep.OilandGas.GasProperties",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.FlashCalculations.Benchmarks": [
+      "Beep.OilandGas.FlashCalculations",
+      "Beep.OilandGas.GasProperties",
+      "Beep.OilandGas.Models"
+    ],
+    "Beep.OilandGas.FlashCalculations.Tests": [
+      "Beep.OilandGas.FlashCalculations",
+      "Beep.OilandGas.Models"
+    ],
+    "Beep.OilandGas.GasLift": [
+      "Beep.OilandGas.GasProperties",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.GasLift.Tests": [
+      "Beep.OilandGas.GasLift",
+      "Beep.OilandGas.Models"
+    ],
+    "Beep.OilandGas.GasProperties": [
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.GasProperties.Tests": [
+      "Beep.OilandGas.GasProperties",
+      "Beep.OilandGas.Models"
+    ],
+    "Beep.OilandGas.HSE": [
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.HeatMap": [
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.HydraulicPumps": [
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.HydraulicPumps.Tests": [
+      "Beep.OilandGas.HydraulicPumps",
+      "Beep.OilandGas.Models"
+    ],
+    "Beep.OilandGas.LeaseAcquisition": [
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.LifeCycle": [
+      "Beep.OilandGas.ChokeAnalysis",
+      "Beep.OilandGas.CompressorAnalysis",
+      "Beep.OilandGas.Decommissioning",
+      "Beep.OilandGas.DevelopmentPlanning",
+      "Beep.OilandGas.Drawing",
+      "Beep.OilandGas.DrillingAndConstruction",
+      "Beep.OilandGas.EconomicAnalysis",
+      "Beep.OilandGas.EnhancedRecovery",
+      "Beep.OilandGas.FlashCalculations",
+      "Beep.OilandGas.GasLift",
+      "Beep.OilandGas.GasProperties",
+      "Beep.OilandGas.HSE",
+      "Beep.OilandGas.HydraulicPumps",
+      "Beep.OilandGas.LeaseAcquisition",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.NodalAnalysis",
+      "Beep.OilandGas.OilProperties",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement",
+      "Beep.OilandGas.PermitsAndApplications",
+      "Beep.OilandGas.PipelineAnalysis",
+      "Beep.OilandGas.PlungerLift",
+      "Beep.OilandGas.ProductionAccounting",
+      "Beep.OilandGas.ProductionForecasting",
+      "Beep.OilandGas.ProductionOperations",
+      "Beep.OilandGas.ProspectIdentification",
+      "Beep.OilandGas.PumpPerformance",
+      "Beep.OilandGas.SuckerRodPumping",
+      "Beep.OilandGas.WellTestAnalysis"
+    ],
+    "Beep.OilandGas.LifeCycle.Tests": [
+      "Beep.OilandGas.LifeCycle"
+    ],
+    "Beep.OilandGas.Models": [
+      "Beep.OilandGas.PPDM.Models"
+    ],
+    "Beep.OilandGas.NodalAnalysis": [
+      "Beep.OilandGas.GasProperties",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.NodalAnalysis.Tests": [
+      "Beep.OilandGas.NodalAnalysis"
+    ],
+    "Beep.OilandGas.OilProperties": [
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.OilProperties.Tests": [
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.OilProperties"
+    ],
+    "Beep.OilandGas.PPDM.Models": [],
+    "Beep.OilandGas.PPDM39": [
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models"
+    ],
+    "Beep.OilandGas.PPDM39.DataManagement": [
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.Repository"
+    ],
+    "Beep.OilandGas.PPDM39.Tests": [
+      "Beep.OilandGas.Client",
+      "Beep.OilandGas.PPDM39"
+    ],
+    "Beep.OilandGas.PermitsAndApplications": [
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.PermitsAndApplications.Pdf.Wkhtmltopdf": [
+      "Beep.OilandGas.PermitsAndApplications"
+    ],
+    "Beep.OilandGas.PermitsAndApplications.Tests": [
+      "Beep.OilandGas.PermitsAndApplications"
+    ],
+    "Beep.OilandGas.PipelineAnalysis": [
+      "Beep.OilandGas.GasProperties",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.PipelineAnalysis.Tests": [
+      "Beep.OilandGas.PipelineAnalysis"
+    ],
+    "Beep.OilandGas.PlungerLift": [
+      "Beep.OilandGas.GasProperties",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.PlungerLift.Tests": [
+      "Beep.OilandGas.PlungerLift"
+    ],
+    "Beep.OilandGas.ProductionAccounting": [
+      "Beep.OilandGas.Accounting",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement",
+      "Beep.OilandGas.ProductionOperations"
+    ],
+    "Beep.OilandGas.ProductionForecasting": [
+      "Beep.OilandGas.GasProperties",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.ProductionOperations": [
+      "Beep.OilandGas.DevelopmentPlanning",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.NodalAnalysis",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement",
+      "Beep.OilandGas.ProductionForecasting",
+      "Beep.OilandGas.WellTestAnalysis"
+    ],
+    "Beep.OilandGas.ProspectIdentification": [
+      "Beep.OilandGas.LeaseAcquisition",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.ProspectIdentification.Tests": [
+      "Beep.OilandGas.ProspectIdentification"
+    ],
+    "Beep.OilandGas.PumpPerformance": [
+      "Beep.OilandGas.GasProperties",
+      "Beep.OilandGas.PPDM.Models"
+    ],
+    "Beep.OilandGas.PumpPerformance.Tests": [
+      "Beep.OilandGas.PumpPerformance"
+    ],
+    "Beep.OilandGas.Repository": [
+      "Beep.OilandGas.Models"
+    ],
+    "Beep.OilandGas.Repository.Tests": [
+      "Beep.OilandGas.Accounting",
+      "Beep.OilandGas.Client",
+      "Beep.OilandGas.DevelopmentPlanning",
+      "Beep.OilandGas.DrillingAndConstruction",
+      "Beep.OilandGas.HSE",
+      "Beep.OilandGas.LeaseAcquisition",
+      "Beep.OilandGas.LifeCycle",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement",
+      "Beep.OilandGas.PermitsAndApplications",
+      "Beep.OilandGas.ProductionAccounting",
+      "Beep.OilandGas.ProductionOperations",
+      "Beep.OilandGas.Repository",
+      "Beep.OilandGas.UserManagement"
+    ],
+    "Beep.OilandGas.SuckerRodPumping": [
+      "Beep.OilandGas.GasProperties",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models"
+    ],
+    "Beep.OilandGas.SuckerRodPumping.Tests": [
+      "Beep.OilandGas.SuckerRodPumping"
+    ],
+    "Beep.OilandGas.UserManagement": [
+      "Beep.OilandGas.LifeCycle",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "Beep.OilandGas.UserManagement.Tests": [
+      "Beep.OilandGas.UserManagement"
+    ],
+    "Beep.OilandGas.Web": [
+      "Beep.OilandGas.Branchs",
+      "Beep.OilandGas.ChokeAnalysis",
+      "Beep.OilandGas.Client",
+      "Beep.OilandGas.Diagnostics",
+      "Beep.OilandGas.Drawing",
+      "Beep.OilandGas.HSE",
+      "Beep.OilandGas.HeatMap",
+      "Beep.OilandGas.LifeCycle",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement",
+      "Beep.OilandGas.Repository",
+      "Beep.OilandGas.UserManagement"
+    ],
+    "Beep.OilandGas.Web.Auth.Tests": [
+      "Beep.OilandGas.HSE",
+      "Beep.OilandGas.Web"
+    ],
+    "Beep.OilandGas.Web.Tests": [
+      "Beep.OilandGas.ApiService",
+      "Beep.OilandGas.Web"
+    ],
+    "Beep.OilandGas.WellTestAnalysis": [
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM.Models"
+    ],
+    "Beep.OilandGas.WellTestAnalysis.Tests": [
+      "Beep.OilandGas.WellTestAnalysis"
+    ],
+    "Beep.OilandGas.Winform.DataManagement": [
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM39",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "CompanyEnvironment.Tests": [
+      "Beep.OilandGas.HSE",
+      "Beep.OilandGas.Models",
+      "Beep.OilandGas.PPDM39.DataManagement"
+    ],
+    "HseClosureProviderWorker": [],
+    "PermitProviderWorker": []
+  }
+}

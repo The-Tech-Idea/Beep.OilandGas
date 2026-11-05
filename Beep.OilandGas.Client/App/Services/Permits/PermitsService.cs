@@ -1,8 +1,10 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PermitsAndApplications.Models;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.Client.App.Services.Permits;
 
 internal sealed class PermitsService(BeepOilandGasApp app, ILogger<PermitsService>? logger = null) : ServiceBase(app, logger), IPermitsService

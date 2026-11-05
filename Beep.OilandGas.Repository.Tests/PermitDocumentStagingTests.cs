@@ -1,3 +1,7 @@
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 #if RECORDED_APPROVAL_HTTP_FOCUSED
 using System.Data;
 using System.Security.Cryptography;
@@ -12,8 +16,8 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Editor.Migration;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.ConfigUtil;
-using TheTechIdea.Data.OilGas;
 using Xunit;
+using Moq;
 namespace Beep.OilandGas.Repository.Tests;
 public sealed partial class PermitProviderQualificationTests
 {
@@ -134,6 +138,7 @@ public sealed partial class PermitProviderQualificationTests
                 var file=(RM_FILE_CONTENT)proof.Seed.BuildRows(bytes)[2];file.FILE_CONTENT=bytes.Select((b,i)=>i==0?(byte)(b+1):b).ToArray();Assert.Equal(Errors.Ok,core.UpdateEntity(nameof(RM_FILE_CONTENT),file).Flag);
                 var changed=await service.ReviewSourceAsync(parent.PERMIT_APPLICATION_ID);Assert.False(changed.Supporting.AllDocumentsVerified);Assert.Equal("CHANGED",Assert.Single(changed.Supporting.Documents).State);
                 Assert.DoesNotContain("SUBMIT",PermitApplicationCommand.AllowedActions(changed));
+                fixture.Failures.Verify(reporter=>reporter.ReportHandled(It.IsAny<PermitDocumentEvidenceChangedException>(),"reviewing linked permit document evidence","the document is marked CHANGED and cannot be used as current evidence",TheTechIdeaWeb.Diagnostics.FailureSeverity.Error),Times.AtLeastOnce);
                 await Assert.ThrowsAnyAsync<Exception>(()=>service.ReadAttachmentContentAsync(query));
                 var pending=new PermitApplicationCommand(Guid.NewGuid(),linked,"SUBMIT","Previously verified file changed before transport");
                 await Assert.ThrowsAnyAsync<Exception>(()=>service.RecordCommandAsync(pending));Assert.Null(await service.RecoverCommandAsync(pending));
@@ -218,11 +223,11 @@ public sealed partial class PermitProviderQualificationTests
     });
 
     [Theory][InlineData("explicit-json")][InlineData("runtime-default")]
-    public async Task PermitSetupAndRuntimeMetadataShareDataOwnedManifest(string mode)
+    public async Task PermitSetupAndRuntimeMetadataShareModuleOwnedManifest(string mode)
     {
         Assert.Same(PermitApplicationSchema.Entities,Beep.OilandGas.PermitsAndApplications.Modules.PermitsModule.OwnedEntities);Assert.Equal(12,PermitApplicationSchema.Entities.Count);
         Assert.Throws<NotSupportedException>(()=>((IList<Type>)PermitApplicationSchema.Entities).Add(typeof(string)));Assert.Throws<InvalidOperationException>(()=>PermitApplicationSchema.Keys(typeof(string)));
-        var metadata=new Beep.OilandGas.PPDM39.DataManagement.Core.Metadata.PPDMMetadataService(Microsoft.Extensions.Logging.Abstractions.NullLogger<Beep.OilandGas.PPDM39.DataManagement.Core.Metadata.PPDMMetadataService>.Instance,mode=="explicit-json"?Path.Combine(AppContext.BaseDirectory,"PPDM39Metadata.json"):null);
+        var metadata=new Beep.OilandGas.PPDM39.DataManagement.Core.Metadata.PPDMMetadataService(Microsoft.Extensions.Logging.Abstractions.NullLogger<Beep.OilandGas.PPDM39.DataManagement.Core.Metadata.PPDMMetadataService>.Instance,mode=="explicit-json"?Path.Combine(AppContext.BaseDirectory,"PPDM39Metadata.json"):null, [new Beep.OilandGas.PermitsAndApplications.Metadata.PermitApplicationNativeMetadata()]);
         foreach(var type in PermitApplicationSchema.Entities)
         {
             Assert.Equal(typeof(PermitApplicationSchema).Assembly,type.Assembly);var definition=await metadata.GetTableMetadataAsync(type.Name);
@@ -236,7 +241,7 @@ public sealed partial class PermitProviderQualificationTests
         }
         var source=await metadata.GetTableMetadataAsync(nameof(SOURCE_DOCUMENT));Assert.Contains(source.ForeignKeys,x=>x.ForeignKeyColumn=="LANGUAGE" && x.ReferencedTable=="R_LANGUAGE" && x.ReferencedPrimaryKey=="LANGUAGE_ID");
         var duplicate=new Dictionary<string,Beep.OilandGas.PPDM39.Core.Metadata.PPDMTableMetadata>{{"PERMIT_APPLICATION",new(){EntityTypeName="other-owner"}}};
-        Assert.Throws<InvalidOperationException>(()=>Beep.OilandGas.PPDM39.DataManagement.Core.Metadata.PermitApplicationNativeMetadata.AddTo(duplicate));
+        Assert.Throws<InvalidOperationException>(()=>Beep.OilandGas.PermitsAndApplications.Metadata.PermitApplicationNativeMetadata.AddTo(duplicate));
     }
 
 }

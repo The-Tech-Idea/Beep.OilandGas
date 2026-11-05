@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 #if WORKFLOW_INBOX_FOCUSED
 // Explicit test-only external seams. No OIDC, production PartyIdClaims or failure store certification.
 namespace Beep.OilandGas.ApiService.Services
@@ -7,19 +8,6 @@ namespace Beep.OilandGas.ApiService.Services
         public static string? FindActingUserId(this System.Security.Claims.ClaimsPrincipal user) => user.FindFirst("party_id")?.Value;
         public static string ActingUserId(this System.Security.Claims.ClaimsPrincipal user) =>
             user.FindFirst("party_id")?.Value ?? throw new UnauthorizedAccessException("No resolved test account.");
-    }
-}
-namespace TheTechIdeaWeb.Diagnostics
-{
-    public enum FailureSeverity { Degraded }
-    public interface IFailureReporter
-    {
-        void ReportHandled(Exception failure, string operation, string consequence, FailureSeverity severity = FailureSeverity.Degraded);
-    }
-    public static class FailureReferenceFormat
-    {
-        // Failure reference formatting is outside this focused fixture's contract.
-        public static bool IsWellFormed(string? value) => false;
     }
 }
 namespace TheTechIdeaWeb.Http

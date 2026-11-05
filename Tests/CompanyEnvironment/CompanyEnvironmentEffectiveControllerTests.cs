@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers;
 using Beep.OilandGas.ApiService.Services;
@@ -5,7 +7,6 @@ using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace CompanyEnvironment.Tests;

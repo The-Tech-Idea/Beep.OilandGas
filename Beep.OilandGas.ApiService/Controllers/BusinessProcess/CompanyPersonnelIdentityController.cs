@@ -1,7 +1,8 @@
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Models.Data.Company;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.ApiService.Services;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess;
 [ApiController][Authorize(Roles="Administrator")][Route("api/company/current/personnel-identities")]
 public sealed class CompanyPersonnelIdentityController(CompanyPersonnelIdentityService service):ControllerBase

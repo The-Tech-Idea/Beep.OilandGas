@@ -1,10 +1,14 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using System.Text.Json;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Models;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using TheTechIdea.Beep.DataBase;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.Repository.Tests;
 

@@ -1,4 +1,5 @@
 param([string]$PackageSource = "$env:USERPROFILE/.nuget/packages")
+. (Join-Path $PSScriptRoot 'RestoredOwnerFixtureReferences.ps1')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $work = Join-Path $env:TEMP ('oilgas-connection-edit-' + [Guid]::NewGuid().ToString('N'))
@@ -27,11 +28,12 @@ namespace Beep.OilandGas.Web.Services {
 '@ | Set-Content -LiteralPath (Join-Path $work 'stubs.cs') -Encoding utf8
 $models = Join-Path $root 'Beep.OilandGas.Models/bin/Debug/net10.0/Beep.OilandGas.Models.dll'
 $beep = Join-Path (Split-Path $root -Parent) 'BeepDM/DataManagementModelsStandard/bin/Debug/net10.0/DataManagementModels.dll'
-$data = Join-Path $root 'TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll'
+$data = Join-Path $root 'Beep.OilandGas.Models/bin/Debug/net10.0/Beep.OilandGas.Models.dll'
 foreach ($path in @($models,$beep,$data)) { if (!(Test-Path -LiteralPath $path)) { throw "Build focused dependency: $path" } }
 @"
-<Project Sdk="Microsoft.NET.Sdk.Razor"><PropertyGroup><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><RootNamespace>Beep.OilandGas.Web.Components</RootNamespace><DefineConstants>WORKFLOW_INBOX_FOCUSED</DefineConstants></PropertyGroup><ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App"/><PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.4.0"/><PackageReference Include="xunit" Version="2.9.3"/><PackageReference Include="xunit.runner.visualstudio" Version="3.1.5"/><PackageReference Include="Moq" Version="4.20.72"/><PackageReference Include="bunit" Version="1.40.0"/><PackageReference Include="MudBlazor" Version="9.7.0"/><Reference Include="Beep.OilandGas.Models"><HintPath>$(XmlPath $models)</HintPath></Reference><Reference Include="DataManagementModels"><HintPath>$(XmlPath $beep)</HintPath></Reference><Reference Include="TheTechIdea.Data"><HintPath>$(XmlPath $data)</HintPath></Reference><Compile Include="$(XmlPath (Join-Path $root 'Beep.OilandGas.Web.Auth.Tests/ConnectionEditTests.cs'))"/></ItemGroup></Project>
+<Project Sdk="Microsoft.NET.Sdk.Razor"><PropertyGroup><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><RootNamespace>Beep.OilandGas.Web.Components</RootNamespace><DefineConstants>WORKFLOW_INBOX_FOCUSED</DefineConstants></PropertyGroup><ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App"/><PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.4.0"/><PackageReference Include="xunit" Version="2.9.3"/><PackageReference Include="xunit.runner.visualstudio" Version="3.1.5"/><PackageReference Include="Moq" Version="4.20.72"/><PackageReference Include="bunit" Version="1.40.0"/><PackageReference Include="MudBlazor" Version="9.7.0"/><Reference Include="Beep.OilandGas.Models"><HintPath>$(XmlPath $models)</HintPath></Reference><Reference Include="DataManagementModels"><HintPath>$(XmlPath $beep)</HintPath></Reference><Reference Include="Beep.OilandGas.Models"><HintPath>$(XmlPath $data)</HintPath></Reference><Compile Include="$(XmlPath (Join-Path $root 'Beep.OilandGas.Web.Auth.Tests/ConnectionEditTests.cs'))"/></ItemGroup></Project>
 "@ | Set-Content -LiteralPath (Join-Path $work 'Focused.csproj') -Encoding utf8
+Update-OilGasRestoredFixtureProjectFile -ProjectPath (Join-Path $work 'Focused.csproj') -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
 dotnet restore (Join-Path $work 'Focused.csproj') --source $PackageSource --ignore-failed-sources --verbosity quiet
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 dotnet test (Join-Path $work 'Focused.csproj') --no-restore --filter 'FullyQualifiedName~ConnectionEditTests' --nologo -clp:ErrorsOnly --logger 'console;verbosity=normal'

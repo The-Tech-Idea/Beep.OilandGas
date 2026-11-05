@@ -1,10 +1,11 @@
-param([string]$DataAssemblyPath)
+param([string]$ModelsAssemblyPath)
+. (Join-Path $PSScriptRoot 'RestoredOwnerFixtureReferences.ps1')
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path $PSScriptRoot -Parent
-if (-not $DataAssemblyPath) {
-    $DataAssemblyPath = Join-Path $repositoryRoot 'Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/TheTechIdea.Data.dll'
+if (-not $ModelsAssemblyPath) {
+    $ModelsAssemblyPath = Join-Path $repositoryRoot 'Beep.OilandGas.Models/bin/Debug/net10.0/Beep.OilandGas.Models.dll'
 }
-if (-not (Test-Path -LiteralPath $DataAssemblyPath)) { throw 'Provide an actual compiled TheTechIdea.Data assembly; this check does not replace missing projects.' }
+if (-not (Test-Path -LiteralPath $ModelsAssemblyPath)) { throw 'Provide an actual compiled restored Models assembly; this check does not replace missing projects.' }
 # Compile actual state/context and the shared assigned-work panel, with explicit typed-client/auth/static-JS fixtures.
 $checkDirectory = Join-Path ([IO.Path]::GetTempPath()) "oilgas-task-inbox-state-$([Guid]::NewGuid().ToString('N'))"
 [void](New-Item -ItemType Directory -Path $checkDirectory)
@@ -20,9 +21,10 @@ foreach($component in @('Beep.OilandGas.Web/Components/Workflow/PersonaAssignedW
 foreach ($source in @('Beep.OilandGas.Web/Services/PersonaContextService.cs', 'Beep.OilandGas.Client/App/CompanyClientContext.cs', 'Beep.OilandGas.Web/Services/IUnifiedTaskInboxService.cs', 'Beep.OilandGas.Web/Services/PersonaTaskInboxState.cs', 'Beep.OilandGas.Web.Auth.Tests/PersonaTaskInboxStateTests.cs')) {
     $node = $project.CreateElement('Compile'); $node.SetAttribute('Include', (Join-Path $repositoryRoot $source)); [void]$group.AppendChild($node)
 }
-$reference = $project.CreateElement('Reference'); $reference.SetAttribute('Include', 'TheTechIdea.Data')
-$hint = $project.CreateElement('HintPath'); $hint.InnerText = (Resolve-Path -LiteralPath $DataAssemblyPath).Path
+$reference = $project.CreateElement('Reference'); $reference.SetAttribute('Include', 'Beep.OilandGas.Models')
+$hint = $project.CreateElement('HintPath'); $hint.InnerText = (Resolve-Path -LiteralPath $ModelsAssemblyPath).Path
 [void]$reference.AppendChild($hint); [void]$group.AppendChild($reference)
-$projectPath = Join-Path $checkDirectory 'PersonaTaskInboxTests.csproj'; $project.Save($projectPath)
+$projectPath = Join-Path $checkDirectory 'PersonaTaskInboxTests.csproj'; Add-OilGasRestoredOwnerReferences -Project $project -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
+$project.Save($projectPath)
 dotnet test $projectPath --logger 'console;verbosity=normal'
 if ($LASTEXITCODE -ne 0) { throw "Persona task-inbox check failed with exit $LASTEXITCODE." }

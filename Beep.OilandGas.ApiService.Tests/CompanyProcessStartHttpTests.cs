@@ -1,8 +1,10 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Company;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Net;
 using System.Net.Http.Json;
 using Beep.OilandGas.LifeCycle.Data.Tables;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Web.Services;

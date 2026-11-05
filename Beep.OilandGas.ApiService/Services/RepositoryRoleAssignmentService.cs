@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using System.Reflection;
 using System.Security.Claims;
 using System.Buffers.Text;
@@ -6,7 +8,6 @@ using Beep.OilandGas.Models.Data.Security;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using TheTechIdea.Data.OilGas;
 using System.Text.Json;
 using Microsoft.AspNetCore.WebUtilities;
 

@@ -1,3 +1,6 @@
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Models.Core.Interfaces
+@using Beep.OilandGas.Models.Data.Company
 @page "/accounting/dashboard"
 @page "/ppdm39/accounting"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
@@ -5,7 +8,7 @@
 @inject IAccountingServiceClient Accounting
 @inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
 @inject IBusinessProcessServiceClient BusinessProcessClient
-@inject TheTechIdea.Data.OilGas.IFieldSelectionContext DataManagement
+@inject Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext DataManagement
 @inject Beep.OilandGas.Client.App.CompanyClientContext Company
 @inject OilGasCallFailures Calls
 @implements IDisposable

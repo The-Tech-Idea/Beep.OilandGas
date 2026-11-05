@@ -1,7 +1,12 @@
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.HSE;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.HSE.Models;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.Web.Services;
 
 public sealed record CorrectivePlanOriginal(CAPlanCreationReview Review,CreateCAPlanSubmission Submission)

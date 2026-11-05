@@ -1,10 +1,10 @@
-using Beep.Foundation.IdentityServer.Shared.Authentication;
 using Beep.OilandGas.ApiService.Data;
+using Beep.OilandGas.Models.Data.DataManagement;
+using Beep.Foundation.IdentityServer.Shared.Authentication;
 using Beep.OilandGas.ApiService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Controllers.Identity;
 

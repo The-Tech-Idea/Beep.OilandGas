@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Client.App;
 namespace Beep.OilandGas.Web.Services;
 public sealed partial class InventoryWorkspaceState

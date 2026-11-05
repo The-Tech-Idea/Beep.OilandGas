@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.LeaseAcquisition.Models;
 using System.Net;
 using System.Net.Http.Json;
 using System.Reflection;
@@ -17,7 +19,6 @@ using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using LeaseApi = Beep.OilandGas.Client.App.Services.Lease.LeaseService;
 

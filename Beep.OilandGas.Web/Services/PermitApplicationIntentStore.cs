@@ -1,7 +1,9 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Data.Company;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.Web.Services;
 
 public interface IPermitApplicationIntentStore

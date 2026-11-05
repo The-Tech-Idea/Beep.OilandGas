@@ -1,3 +1,6 @@
+@using Beep.OilandGas.Models.Data.Accounting
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.PPDM39.DataManagement.Models
 @namespace Beep.OilandGas.Web.Components.BusinessProcess
 @using MudBlazor
 @using Beep.OilandGas.Web.Services
@@ -38,7 +41,7 @@ else if(Review?.HasRecordedVarianceSource==true){<MudAlert Severity="Severity.Wa
             {
                 @foreach(var policy in policies.Records)
                 {
-                    var rules=TheTechIdea.Data.OilGas.CompanyMatchingPolicyReview.Rules(policy);
+                    var rules=Beep.OilandGas.Models.Data.Accounting.CompanyMatchingPolicyReview.Rules(policy);
                     var proof=Review.VerifiedPolicyProof(policy.ACCOUNTING_METHOD_ID);
                     <MudPaper Outlined="true" Class="pa-3 mt-2">
                         <MudText>Policy: @policy.ACCOUNTING_METHOD_ID · Version: @rules.PolicyVersion · Recorded status: @policy.MATCHING_POLICY_STATUS · Activity: @policy.ACTIVE_IND</MudText>
@@ -98,14 +101,14 @@ else if(Review?.HasRecordedVarianceSource==true){<MudAlert Severity="Severity.Wa
             <MudText Typo="Typo.h6" Class="mt-4">Whole invoice financial evidence</MudText>
             <MudText Typo="Typo.caption">Invoice revision: @financial.Invoice.Revision · Financial review revision: @financial.Revision · Loaded at UTC: @financial.RetrievedAtUtc.ToString("O")</MudText>
             <MudAlert Severity="Severity.Info">These recorded comparisons do not approve matching, reserve receipts or authorize posting/payment. Review unavailable evidence and recorded differences before requesting a financial decision.</MudAlert>
-            <MudTable T="TheTechIdea.Data.OilGas.APSourceComparison" Items='@financial.Checks.Where(row=>!row.Code.StartsWith("policy",StringComparison.Ordinal) && !row.Code.StartsWith("global-consumption",StringComparison.Ordinal))' Dense="true">
+            <MudTable T="Beep.OilandGas.Models.Data.Accounting.APSourceComparison" Items='@financial.Checks.Where(row=>!row.Code.StartsWith("policy",StringComparison.Ordinal) && !row.Code.StartsWith("global-consumption",StringComparison.Ordinal))' Dense="true">
                 <HeaderContent><MudTh>Check</MudTh><MudTh>Recorded result</MudTh><MudTh>Evidence</MudTh></HeaderContent>
                 <RowTemplate><MudTd DataLabel="Check">@context.Label</MudTd><MudTd DataLabel="Recorded result">@context.OutcomeText</MudTd><MudTd DataLabel="Evidence">@context.Evidence</MudTd></RowTemplate>
                 <PagerContent><MudTablePager /></PagerContent>
             </MudTable>
             <MudText Typo="Typo.h6" Class="mt-4">Verified effective company matching policy</MudText>
             <MudText>@financial.PolicySelection.Evidence</MudText>
-            <MudTable T="TheTechIdea.Data.OilGas.APSourceComparison" Items='@financial.Checks.Where(row=>row.Code.StartsWith("policy",StringComparison.Ordinal))' Dense="true">
+            <MudTable T="Beep.OilandGas.Models.Data.Accounting.APSourceComparison" Items='@financial.Checks.Where(row=>row.Code.StartsWith("policy",StringComparison.Ordinal))' Dense="true">
                 <HeaderContent><MudTh>Policy / variance check</MudTh><MudTh>Diagnostic result</MudTh><MudTh>Evidence / required separate review</MudTh></HeaderContent>
                 <RowTemplate><MudTd DataLabel="Policy / variance check">@context.Label</MudTd><MudTd DataLabel="Diagnostic result">@context.OutcomeText</MudTd><MudTd DataLabel="Evidence / required separate review">@context.Evidence</MudTd></RowTemplate>
                 <PagerContent><MudTablePager /></PagerContent>
@@ -113,7 +116,7 @@ else if(Review?.HasRecordedVarianceSource==true){<MudAlert Severity="Severity.Wa
             @foreach(var purchase in financial.PurchaseLines)
             {<MudButton Href="@("/procurement/orders/"+Uri.EscapeDataString(purchase.Source.Order.Header.PURCHASE_ORDER_ID))" Variant="Variant.Outlined">Open owned PO for invoice line @purchase.Source.InvoiceLineId</MudButton>}
             <MudText Typo="Typo.h6" Class="mt-4">Complete receipt consumption across invoices</MudText>
-            <MudTable T="TheTechIdea.Data.OilGas.APSourceComparison" Items="financial.ReceiptConsumptionChecks" Dense="true">
+            <MudTable T="Beep.OilandGas.Models.Data.Accounting.APSourceComparison" Items="financial.ReceiptConsumptionChecks" Dense="true">
                 <HeaderContent><MudTh>Receipt check</MudTh><MudTh>Diagnostic result</MudTh><MudTh>Complete consumption evidence</MudTh></HeaderContent>
                 <RowTemplate><MudTd DataLabel="Receipt check">@context.Label</MudTd><MudTd DataLabel="Diagnostic result">@context.OutcomeText</MudTd><MudTd DataLabel="Complete consumption evidence">@context.Evidence</MudTd></RowTemplate>
                 <PagerContent><MudTablePager /></PagerContent>

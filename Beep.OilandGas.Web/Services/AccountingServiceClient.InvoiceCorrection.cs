@@ -1,4 +1,6 @@
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 namespace Beep.OilandGas.Web.Services;
 public sealed partial class AccountingServiceClient
 {

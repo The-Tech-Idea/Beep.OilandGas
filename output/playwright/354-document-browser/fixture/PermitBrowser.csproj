@@ -13,41 +13,14 @@
     <Reference Include="Azure.Identity">
       <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\bin\company-focused\Debug\net10.0\Azure.Identity.dll</HintPath>
     </Reference>
-    <Reference Include="Beep.OilandGas.Accounting">
-      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\bin\company-focused\Debug\net10.0\Beep.OilandGas.Accounting.dll</HintPath>
-    </Reference>
     <Reference Include="Beep.OilandGas.CompressorAnalysis">
       <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\bin\company-focused\Debug\net10.0\Beep.OilandGas.CompressorAnalysis.dll</HintPath>
     </Reference>
     <Reference Include="Beep.OilandGas.Decommissioning">
       <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\bin\company-focused\Debug\net10.0\Beep.OilandGas.Decommissioning.dll</HintPath>
     </Reference>
-    <Reference Include="Beep.OilandGas.DevelopmentPlanning">
-      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\bin\company-focused\Debug\net10.0\Beep.OilandGas.DevelopmentPlanning.dll</HintPath>
-    </Reference>
     <Reference Include="Beep.OilandGas.GasProperties">
       <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\bin\company-focused\Debug\net10.0\Beep.OilandGas.GasProperties.dll</HintPath>
-    </Reference>
-    <Reference Include="Beep.OilandGas.LeaseAcquisition">
-      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\bin\company-focused\Debug\net10.0\Beep.OilandGas.LeaseAcquisition.dll</HintPath>
-    </Reference>
-    <Reference Include="Beep.OilandGas.Models">
-      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\bin\company-focused\Debug\net10.0\Beep.OilandGas.Models.dll</HintPath>
-    </Reference>
-    <Reference Include="Beep.OilandGas.PermitsAndApplications">
-      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\bin\company-focused\Debug\net10.0\Beep.OilandGas.PermitsAndApplications.dll</HintPath>
-    </Reference>
-    <Reference Include="Beep.OilandGas.PPDM.Models">
-      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\bin\company-focused\Debug\net10.0\Beep.OilandGas.PPDM.Models.dll</HintPath>
-    </Reference>
-    <Reference Include="Beep.OilandGas.PPDM39.DataManagement">
-      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\bin\company-focused\Debug\net10.0\Beep.OilandGas.PPDM39.DataManagement.dll</HintPath>
-    </Reference>
-    <Reference Include="Beep.OilandGas.PPDM39">
-      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\bin\company-focused\Debug\net10.0\Beep.OilandGas.PPDM39.dll</HintPath>
-    </Reference>
-    <Reference Include="Beep.OilandGas.ProductionAccounting">
-      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\bin\company-focused\Debug\net10.0\Beep.OilandGas.ProductionAccounting.dll</HintPath>
     </Reference>
     <Reference Include="Beep.OilandGas.ProspectIdentification">
       <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\bin\company-focused\Debug\net10.0\Beep.OilandGas.ProspectIdentification.dll</HintPath>
@@ -310,9 +283,6 @@
     <Reference Include="testhost">
       <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\bin\company-focused\Debug\net10.0\testhost.dll</HintPath>
     </Reference>
-    <Reference Include="TheTechIdea.Data">
-      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\bin\company-focused\Debug\net10.0\TheTechIdea.Data.dll</HintPath>
-    </Reference>
     <Reference Include="TheTechIdea.OilGas.Core">
       <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\bin\company-focused\Debug\net10.0\TheTechIdea.OilGas.Core.dll</HintPath>
     </Reference>
@@ -347,5 +317,74 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\Services\CompanyEnvironmentDisplay.cs" Link="CompanyEnvironmentDisplay.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Beep.OilandGas.Accounting">
+      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Accounting\bin\Debug\net10.0\Beep.OilandGas.Accounting.dll</HintPath>
+      <Aliases>global,actualOwners</Aliases>
+    </Reference>
+    <Reference Include="Beep.OilandGas.Client">
+      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Client\bin\Debug\net10.0\Beep.OilandGas.Client.dll</HintPath>
+      <Aliases>global,actualOwners</Aliases>
+    </Reference>
+    <Reference Include="Beep.OilandGas.DevelopmentPlanning">
+      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.DevelopmentPlanning\bin\Debug\net10.0\Beep.OilandGas.DevelopmentPlanning.dll</HintPath>
+      <Aliases>global,actualOwners</Aliases>
+    </Reference>
+    <Reference Include="Beep.OilandGas.DrillingAndConstruction">
+      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.DrillingAndConstruction\bin\Debug\net10.0\Beep.OilandGas.DrillingAndConstruction.dll</HintPath>
+      <Aliases>global,actualOwners</Aliases>
+    </Reference>
+    <Reference Include="Beep.OilandGas.HSE">
+      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.HSE\bin\Debug\net10.0\Beep.OilandGas.HSE.dll</HintPath>
+      <Aliases>global,actualOwners</Aliases>
+    </Reference>
+    <Reference Include="Beep.OilandGas.LeaseAcquisition">
+      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.LeaseAcquisition\bin\Debug\net10.0\Beep.OilandGas.LeaseAcquisition.dll</HintPath>
+      <Aliases>global,actualOwners</Aliases>
+    </Reference>
+    <Reference Include="Beep.OilandGas.LifeCycle">
+      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.LifeCycle\bin\Debug\net10.0\Beep.OilandGas.LifeCycle.dll</HintPath>
+      <Aliases>global,actualOwners</Aliases>
+    </Reference>
+    <Reference Include="Beep.OilandGas.Models">
+      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Models\bin\Debug\net10.0\Beep.OilandGas.Models.dll</HintPath>
+      <Aliases>global,actualOwners</Aliases>
+    </Reference>
+    <Reference Include="Beep.OilandGas.PermitsAndApplications">
+      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.PermitsAndApplications\bin\Debug\net10.0\Beep.OilandGas.PermitsAndApplications.dll</HintPath>
+      <Aliases>global,actualOwners</Aliases>
+    </Reference>
+    <Reference Include="Beep.OilandGas.PPDM39">
+      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.PPDM39\bin\Debug\net10.0\Beep.OilandGas.PPDM39.dll</HintPath>
+      <Aliases>global,actualOwners</Aliases>
+    </Reference>
+    <Reference Include="Beep.OilandGas.PPDM39.DataManagement">
+      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.PPDM39.DataManagement\bin\Debug\net10.0\Beep.OilandGas.PPDM39.DataManagement.dll</HintPath>
+      <Aliases>global,actualOwners</Aliases>
+    </Reference>
+    <Reference Include="Beep.OilandGas.ProductionAccounting">
+      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ProductionAccounting\bin\Debug\net10.0\Beep.OilandGas.ProductionAccounting.dll</HintPath>
+      <Aliases>global,actualOwners</Aliases>
+    </Reference>
+    <Reference Include="Beep.OilandGas.ProductionOperations">
+      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ProductionOperations\bin\Debug\net10.0\Beep.OilandGas.ProductionOperations.dll</HintPath>
+      <Aliases>global,actualOwners</Aliases>
+    </Reference>
+    <Reference Include="Beep.OilandGas.Repository">
+      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository\bin\Debug\net10.0\Beep.OilandGas.Repository.dll</HintPath>
+      <Aliases>global,actualOwners</Aliases>
+    </Reference>
+    <Reference Include="Beep.OilandGas.UserManagement">
+      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.UserManagement\bin\Debug\net10.0\Beep.OilandGas.UserManagement.dll</HintPath>
+      <Aliases>global,actualOwners</Aliases>
+    </Reference>
+    <Reference Include="Beep.OilandGas.PPDM.Models">
+      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.PPDM.Models\bin\Debug\net10.0\Beep.OilandGas.PPDM.Models.dll</HintPath>
+      <Aliases>global,actualOwners</Aliases>
+    </Reference>
+    <Reference Include="TheTechIdeaWeb.Diagnostics.Abstractions">
+      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\..\Beep.Web\TheTechIdeaWeb.Diagnostics.Abstractions\bin\Debug\net10.0\TheTechIdeaWeb.Diagnostics.Abstractions.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>

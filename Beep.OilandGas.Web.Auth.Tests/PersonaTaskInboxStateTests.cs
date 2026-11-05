@@ -1,6 +1,12 @@
+using Beep.OilandGas.DevelopmentPlanning.Models;
+using Beep.OilandGas.DrillingAndConstruction.Models;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.LifeCycle.Models;
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Web.Services;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;

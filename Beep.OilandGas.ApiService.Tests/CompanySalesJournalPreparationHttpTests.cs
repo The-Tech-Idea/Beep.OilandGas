@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Net;
 using System.Security.Claims;
@@ -7,7 +9,6 @@ using Beep.OilandGas.Web.Services;
 using Beep.OilandGas.Models.Data;
 using Moq;
 using TheTechIdea.Beep.ConfigUtil;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 [Collection("CompanySalesJournalSource")]

@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
 using System.Security.Claims;
 using System.Text.Json;
 using Beep.OilandGas.Client.App;
@@ -13,7 +16,6 @@ using Moq;
 using MudBlazor.Services;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Tools;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.Web.Auth.Tests;
 public sealed class APInvoiceSourceTests

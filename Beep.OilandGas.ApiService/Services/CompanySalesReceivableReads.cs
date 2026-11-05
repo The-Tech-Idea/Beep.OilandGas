@@ -1,8 +1,11 @@
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 using System.Security.Claims;
 using System.Text.Json;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Security;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Services;
 
 /// <summary>Purpose-authorized reads and draft commands through the existing native PRODUCTION owners.</summary>

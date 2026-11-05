@@ -1,5 +1,6 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 using System.Security.Claims;
-using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.Models.Data.WorkOrder;
 namespace Beep.OilandGas.ApiService.Services;
 public sealed partial class CompanyMaintenanceHandoffService

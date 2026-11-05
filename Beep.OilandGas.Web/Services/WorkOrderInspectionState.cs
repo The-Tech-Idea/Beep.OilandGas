@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Models.Data.WorkOrder;
 namespace Beep.OilandGas.Web.Services;
@@ -5,7 +7,7 @@ namespace Beep.OilandGas.Web.Services;
 public sealed class WorkOrderInspectionState : IDisposable
 {
     private readonly CompanyClientContext company;
-    private readonly HashSet<(string Actor,TheTechIdea.Data.OilGas.CompanyScope Company,string Field,string Order)> pending=[];
+    private readonly HashSet<(string Actor,Beep.OilandGas.Models.Data.AccessControl.CompanyScope Company,string Field,string Order)> pending=[];
     private bool disposed;
     private long accessGeneration;
     public long Version {get;private set;}

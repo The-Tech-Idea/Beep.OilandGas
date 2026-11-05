@@ -1,4 +1,6 @@
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Core;
 using TheTechIdea.Beep.DataBase;

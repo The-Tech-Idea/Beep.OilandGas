@@ -1,3 +1,8 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.HSE;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.HSE.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers.Compliance;
@@ -14,7 +19,6 @@ using Xunit;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Web.Services;
 using TheTechIdeaWeb.Diagnostics;
-using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.Models.Data;
 using System.Text.Json;

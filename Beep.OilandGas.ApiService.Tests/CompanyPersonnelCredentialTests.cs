@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 #if WORKFLOW_INBOX_FOCUSED
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -8,7 +10,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Tools;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 public sealed class CompanyPersonnelCredentialTests

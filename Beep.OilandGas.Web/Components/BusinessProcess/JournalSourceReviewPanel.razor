@@ -1,7 +1,8 @@
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.LifeCycle.Models
 @namespace Beep.OilandGas.Web.Components.BusinessProcess
 @using Microsoft.AspNetCore.Components
 @using MudBlazor
-@using TheTechIdea.Data.OilGas
 @if (Review?.Journal is { Lines: not null } journal)
 {
     <MudPaper Outlined="true" Class="pa-4 my-3">
@@ -23,7 +24,7 @@
         }
         else
         {
-            <MudTable T="TheTechIdea.Data.OilGas.JournalSourceLineReview" Items="@journal.Lines" Dense="true" Hover="true">
+            <MudTable T="Beep.OilandGas.LifeCycle.Models.JournalSourceLineReview" Items="@journal.Lines" Dense="true" Hover="true">
                 <HeaderContent>
                     <MudTh>Line</MudTh><MudTh>Account</MudTh><MudTh>Cost center</MudTh><MudTh>Currency</MudTh><MudTh>Exchange rate</MudTh><MudTh>Debit</MudTh><MudTh>Credit</MudTh><MudTh>Description</MudTh>
                 </HeaderContent>

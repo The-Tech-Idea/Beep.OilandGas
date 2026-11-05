@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.ProductionOperations.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Security.Claims;
 using Beep.OilandGas.Client.App;
@@ -12,7 +15,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using Moq;
 using MudBlazor.Services;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 using Xunit;
 namespace Beep.OilandGas.Web.Auth.Tests;

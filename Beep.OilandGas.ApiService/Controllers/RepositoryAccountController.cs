@@ -1,9 +1,12 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Repository.Models;
 using Beep.Foundation.IdentityServer.Shared.Authentication;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Controllers;

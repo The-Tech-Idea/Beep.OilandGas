@@ -1,3 +1,8 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep;
@@ -8,7 +13,6 @@ using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
 using Beep.OilandGas.PPDM39.Core;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.PermitsAndApplications.Services;
 

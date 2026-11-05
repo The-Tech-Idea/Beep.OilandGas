@@ -1,3 +1,8 @@
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PermitsAndApplications.Models;
 #if RECORDED_APPROVAL_HTTP_FOCUSED
 using System.Security.Claims;
 using System.Text.Json;
@@ -16,7 +21,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.JSInterop;
 using Moq;
 using MudBlazor.Services;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.Repository.Tests;
 public sealed class PermitApplicationWorkflowStateTests

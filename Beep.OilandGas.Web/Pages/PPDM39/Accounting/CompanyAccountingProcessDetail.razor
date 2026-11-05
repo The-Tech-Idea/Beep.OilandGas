@@ -1,7 +1,14 @@
+@using Beep.OilandGas.Models.Data.Process
+@using Beep.OilandGas.Models.Data.Accounting
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.Models.Data.WorkOrder
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.ProductionAccounting.Models
+@using Beep.OilandGas.Models.Data.Common
+@using Beep.OilandGas.Accounting.Models
 @page "/accounting/processes/{Id}"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @using Beep.OilandGas.Web.Services
-@using TheTechIdea.Data.OilGas
 @inject IBusinessProcessServiceClient Processes
 @inject IAccountingServiceClient Accounting
 @inject Beep.OilandGas.Client.App.CompanyClientContext Company

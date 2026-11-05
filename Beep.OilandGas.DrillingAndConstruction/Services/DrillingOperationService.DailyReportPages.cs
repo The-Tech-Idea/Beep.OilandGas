@@ -1,5 +1,8 @@
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.DrillingAndConstruction.Models;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.PPDM39.Core;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.DrillingAndConstruction.Services;
 

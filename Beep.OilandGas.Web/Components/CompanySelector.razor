@@ -1,42 +1,42 @@
-@using Beep.OilandGas.Client.App
-@using TheTechIdea.Data.OilGas
-@inject CompanyClientContext Company
-@inject CompanySelectionService Selection
-@inject OilGasCallFailures Failures
-@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
-@implements IDisposable
-
-@if (_identityConfirming) { <MudText Typo="Typo.caption">Checking account…</MudText> }
-else
-{
-<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-    <MudSelect T="CompanyScope" Label="Company" Value="@Company.Selection?.Scope" ValueChanged="Select"
-               Disabled="_busy" Variant="Variant.Outlined" Margin="Margin.Dense">
-        @foreach (var scope in _companies)
-        {
-            <MudSelectItem T="CompanyScope" Value="@scope">@scope.TenantId / @scope.BusinessAssociateId</MudSelectItem>
-        }
-    </MudSelect>
-    <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="Reload" Disabled="_busy" aria-label="Reload available companies" />
-</MudStack>
-@if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
-@if (!_busy && _companies.Length == 0 && _error is null)
-{
-    <MudText Typo="Typo.caption">No active company memberships are available.</MudText>
-}
-}
-
-@code {
-    private CompanyScope[] _companies = [];
-    private bool _busy, _disposed, _reloadRequested, _identityConfirming = true;
-    private string? _error, _actor;
-    private long _identityGeneration, _operationGeneration;
-    protected override async Task OnInitializedAsync()
-    {
-        Company.Changed += Changed;
-        Authentication.AuthenticationStateChanged += AuthenticationChanged;
-        await SynchronizeAuthentication(Authentication.GetAuthenticationStateAsync(), Interlocked.Increment(ref _identityGeneration));
-    }
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Models.Data.AccessControl
+@inject CompanyClientContext Company
+@inject CompanySelectionService Selection
+@inject OilGasCallFailures Failures
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
+@implements IDisposable
+
+@if (_identityConfirming) { <MudText Typo="Typo.caption">Checking accountâ€¦</MudText> }
+else
+{
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+    <MudSelect T="CompanyScope" Label="Company" Value="@Company.Selection?.Scope" ValueChanged="Select"
+               Disabled="_busy" Variant="Variant.Outlined" Margin="Margin.Dense">
+        @foreach (var scope in _companies)
+        {
+            <MudSelectItem T="CompanyScope" Value="@scope">@scope.TenantId / @scope.BusinessAssociateId</MudSelectItem>
+        }
+    </MudSelect>
+    <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="Reload" Disabled="_busy" aria-label="Reload available companies" />
+</MudStack>
+@if (_error is not null) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+@if (!_busy && _companies.Length == 0 && _error is null)
+{
+    <MudText Typo="Typo.caption">No active company memberships are available.</MudText>
+}
+}
+
+@code {
+    private CompanyScope[] _companies = [];
+    private bool _busy, _disposed, _reloadRequested, _identityConfirming = true;
+    private string? _error, _actor;
+    private long _identityGeneration, _operationGeneration;
+    protected override async Task OnInitializedAsync()
+    {
+        Company.Changed += Changed;
+        Authentication.AuthenticationStateChanged += AuthenticationChanged;
+        await SynchronizeAuthentication(Authentication.GetAuthenticationStateAsync(), Interlocked.Increment(ref _identityGeneration));
+    }
     private void Changed()
     {
         if (_disposed) return;
@@ -50,52 +50,52 @@ else
             }
             if (!_disposed) StateHasChanged();
         });
-    }
-    private void AuthenticationChanged(Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState> state)
-    {
-        var generation = Interlocked.Increment(ref _identityGeneration);
-        _ = InvokeAsync(async () =>
-        {
-            if (_disposed || generation != Interlocked.Read(ref _identityGeneration)) return;
-            _identityConfirming = true; StateHasChanged();
-            await SynchronizeAuthentication(state, generation);
-            if (!_disposed) StateHasChanged();
-        });
-    }
-    private async Task SynchronizeAuthentication(Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState> state, long generation)
-    {
-        try
-        {
-            var principal = (await state).User;
-            var actor = principal.Identity?.IsAuthenticated == true ? Beep.Foundation.IdentityServer.Shared.Identity.PartyIdClaims.Find(principal) : null;
-            if (_disposed || generation != Interlocked.Read(ref _identityGeneration)) return;
-            var changed = actor != _actor || _identityConfirming && _actor is null;
-            if (changed)
-            {
-                ++_operationGeneration; _actor = actor; _companies = []; _error = null; _busy = false; _reloadRequested = false;
-            }
-            _identityConfirming = false;
-            if (changed && actor is not null) await Reload();
-        }
-        catch (Exception ex)
-        {
-            if (_disposed || generation != Interlocked.Read(ref _identityGeneration)) return;
-            ++_operationGeneration; _actor = null; _companies = []; _busy = false; _reloadRequested = false; _identityConfirming = false;
-            _error = Failures.Explain(ex, "confirming the signed-in account", "Company memberships could not be loaded");
-        }
-    }
-    private async Task Reload()
-    {
-        if (_busy || _identityConfirming || _actor is null || _disposed) return;
-        var generation = ++_operationGeneration; var actor = _actor;
-        _busy = true; _error = null; _companies = [];
-        try
-        {
-            var companies = await Selection.ListAsync();
-            if (!_disposed && generation == _operationGeneration && actor == _actor) _companies = companies;
-        }
-        catch (OperationCanceledException) { if (!_disposed && generation == _operationGeneration) _error = "The account or company selection changed. Reload the available companies."; }
-        catch (Exception ex) { if (!_disposed && generation == _operationGeneration) _error = Failures.Explain(ex, "loading company memberships", "Company memberships could not be loaded"); }
+    }
+    private void AuthenticationChanged(Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState> state)
+    {
+        var generation = Interlocked.Increment(ref _identityGeneration);
+        _ = InvokeAsync(async () =>
+        {
+            if (_disposed || generation != Interlocked.Read(ref _identityGeneration)) return;
+            _identityConfirming = true; StateHasChanged();
+            await SynchronizeAuthentication(state, generation);
+            if (!_disposed) StateHasChanged();
+        });
+    }
+    private async Task SynchronizeAuthentication(Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState> state, long generation)
+    {
+        try
+        {
+            var principal = (await state).User;
+            var actor = principal.Identity?.IsAuthenticated == true ? Beep.Foundation.IdentityServer.Shared.Identity.PartyIdClaims.Find(principal) : null;
+            if (_disposed || generation != Interlocked.Read(ref _identityGeneration)) return;
+            var changed = actor != _actor || _identityConfirming && _actor is null;
+            if (changed)
+            {
+                ++_operationGeneration; _actor = actor; _companies = []; _error = null; _busy = false; _reloadRequested = false;
+            }
+            _identityConfirming = false;
+            if (changed && actor is not null) await Reload();
+        }
+        catch (Exception ex)
+        {
+            if (_disposed || generation != Interlocked.Read(ref _identityGeneration)) return;
+            ++_operationGeneration; _actor = null; _companies = []; _busy = false; _reloadRequested = false; _identityConfirming = false;
+            _error = Failures.Explain(ex, "confirming the signed-in account", "Company memberships could not be loaded");
+        }
+    }
+    private async Task Reload()
+    {
+        if (_busy || _identityConfirming || _actor is null || _disposed) return;
+        var generation = ++_operationGeneration; var actor = _actor;
+        _busy = true; _error = null; _companies = [];
+        try
+        {
+            var companies = await Selection.ListAsync();
+            if (!_disposed && generation == _operationGeneration && actor == _actor) _companies = companies;
+        }
+        catch (OperationCanceledException) { if (!_disposed && generation == _operationGeneration) _error = "The account or company selection changed. Reload the available companies."; }
+        catch (Exception ex) { if (!_disposed && generation == _operationGeneration) _error = Failures.Explain(ex, "loading company memberships", "Company memberships could not be loaded"); }
         finally
         {
             if (!_disposed && generation == _operationGeneration)
@@ -103,16 +103,16 @@ else
                 _busy = false;
                 if (_reloadRequested) { _reloadRequested = false; await Reload(); }
             }
-        }
-    }
-    private async Task Select(CompanyScope scope)
-    {
-        if (_busy || _identityConfirming || !_companies.Contains(scope) || _disposed) return;
-        var generation = ++_operationGeneration; var actor = _actor;
-        _busy = true; _error = null;
-        try { await Selection.SelectAsync(scope); }
-        catch (OperationCanceledException) { if (!_disposed && generation == _operationGeneration && actor == _actor) _error = "Company selection changed before access was confirmed. Choose a company again."; }
-        catch (Exception ex) { if (!_disposed && generation == _operationGeneration && actor == _actor) _error = Failures.Explain(ex, "selecting the active company", "Company access could not be confirmed"); }
+        }
+    }
+    private async Task Select(CompanyScope scope)
+    {
+        if (_busy || _identityConfirming || !_companies.Contains(scope) || _disposed) return;
+        var generation = ++_operationGeneration; var actor = _actor;
+        _busy = true; _error = null;
+        try { await Selection.SelectAsync(scope); }
+        catch (OperationCanceledException) { if (!_disposed && generation == _operationGeneration && actor == _actor) _error = "Company selection changed before access was confirmed. Choose a company again."; }
+        catch (Exception ex) { if (!_disposed && generation == _operationGeneration && actor == _actor) _error = Failures.Explain(ex, "selecting the active company", "Company access could not be confirmed"); }
         finally
         {
             if (!_disposed && generation == _operationGeneration)
@@ -120,11 +120,11 @@ else
                 _busy = false;
                 if (_reloadRequested) { _reloadRequested = false; await Reload(); }
             }
-        }
-    }
-    public void Dispose()
-    {
-        _disposed = true; Interlocked.Increment(ref _identityGeneration); ++_operationGeneration;
-        Company.Changed -= Changed; Authentication.AuthenticationStateChanged -= AuthenticationChanged;
-    }
-}
+        }
+    }
+    public void Dispose()
+    {
+        _disposed = true; Interlocked.Increment(ref _identityGeneration); ++_operationGeneration;
+        Company.Changed -= Changed; Authentication.AuthenticationStateChanged -= AuthenticationChanged;
+    }
+}

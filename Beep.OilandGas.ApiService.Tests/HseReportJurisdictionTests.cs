@@ -1,3 +1,4 @@
+using Beep.OilandGas.HSE.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers.BusinessProcess;
@@ -11,7 +12,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Tests;
 public sealed class HseReportJurisdictionTests

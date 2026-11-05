@@ -15,4 +15,7 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" PrivateAssets="all" />
     <ProjectReference Include="../Beep.OilandGas.Web/Beep.OilandGas.Web.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Beep.OilandGas.HSE/Beep.OilandGas.HSE.csproj" />
+  </ItemGroup>
 </Project>

@@ -1,9 +1,12 @@
+@using Beep.OilandGas.Models.Data.Accounting
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Models.Data.Common
 @page "/warehouse/receipt-stock/{OrderId}/{ReceiptId}"
 @page "/warehouse/stock-intents/{IntentId}"
 @namespace Beep.OilandGas.Web.Pages.PPDM39.Accounting
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @using System.Security.Claims
-@using TheTechIdea.Data.OilGas
 @using Beep.OilandGas.Web.Services
 @inject IAccountingServiceClient Accounting
 @inject InventoryWorkspaceState Workspace

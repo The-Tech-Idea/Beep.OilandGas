@@ -1,3 +1,11 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.Models.Data.HSE;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Repository.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using Moq;
 using System.Data;
@@ -17,7 +25,6 @@ using TheTechIdea.Beep.Logger;
 using TheTechIdea.Beep.Tools;
 using TheTechIdea.Beep.Report;
 using TheTechIdea.Beep.Utilities;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 #if BEEP_SOURCE_TEST
 using Beep.OilandGas.Repository;

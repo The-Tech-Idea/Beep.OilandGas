@@ -1,10 +1,10 @@
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Models.Constants;
 using Beep.OilandGas.Models.Data.HSE;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep;
 using TheTechIdea.Beep.DataBase;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Services;
 

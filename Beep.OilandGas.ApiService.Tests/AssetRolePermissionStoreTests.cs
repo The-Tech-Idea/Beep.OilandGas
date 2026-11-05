@@ -1,3 +1,7 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
@@ -13,7 +17,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using TheTechIdea.Beep.Editor;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Xunit.Abstractions;
 using Beep.OilandGas.ApiService.Tests.Infrastructure;

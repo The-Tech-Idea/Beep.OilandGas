@@ -1,8 +1,8 @@
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Xunit.Abstractions;
 

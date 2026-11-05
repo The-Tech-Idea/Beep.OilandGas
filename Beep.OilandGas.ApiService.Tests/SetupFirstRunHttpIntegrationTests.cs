@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Repository.Models;
 #if BEEP_SOURCE_TEST
 using System.Net;
 using System.Net.Http.Json;
@@ -29,7 +32,6 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Helpers;
 using TheTechIdea.Beep.Security;
 using TheTechIdea.Beep.Utilities;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 using Xunit;
 

@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PermitsAndApplications.Models;
 using Beep.OilandGas.PermitsAndApplications.Exceptions;
 using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -9,9 +12,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.ApiService.Attributes;
-using TheTechIdea.Data.OilGas;
-using PermitApplicationSummary = TheTechIdea.Data.OilGas.PermitApplicationSummary;
-using PermitApplicationDetail = TheTechIdea.Data.OilGas.PermitApplicationDetail;
+using PermitApplicationSummary = Beep.OilandGas.PermitsAndApplications.Models.PermitApplicationSummary;
+using PermitApplicationDetail = Beep.OilandGas.PermitsAndApplications.Models.PermitApplicationDetail;
 using Beep.OilandGas.Models.Data.Security;
 
 namespace Beep.OilandGas.ApiService.Controllers.Permits;

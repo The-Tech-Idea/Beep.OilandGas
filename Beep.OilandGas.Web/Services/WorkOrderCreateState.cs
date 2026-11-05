@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Models.Data.WorkOrder;
 namespace Beep.OilandGas.Web.Services;

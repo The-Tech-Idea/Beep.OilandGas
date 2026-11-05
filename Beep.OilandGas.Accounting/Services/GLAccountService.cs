@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
@@ -15,7 +17,7 @@ namespace Beep.OilandGas.Accounting.Services
     /// <summary>
     /// Manages GL Account master data and account balance calculations
     /// </summary>
-    public partial class GLAccountService : TheTechIdea.Data.OilGas.ICompanyLedgerBookReader
+    public partial class GLAccountService : Beep.OilandGas.Accounting.Models.ICompanyLedgerBookReader
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -429,7 +431,7 @@ namespace Beep.OilandGas.Accounting.Services
         {
             if (accounts is null) throw new InvalidOperationException("The legacy account source is unavailable.");
             var rows = accounts.ToArray();
-            if (rows.Any(row => row is not GL_ACCOUNT || TheTechIdea.Data.OilGas.CompanyGLAccountReview.HasCompanyMarkers((GL_ACCOUNT)row)))
+            if (rows.Any(row => row is not GL_ACCOUNT || Beep.OilandGas.Models.Data.Accounting.CompanyGLAccountReview.HasCompanyMarkers((GL_ACCOUNT)row)))
                 throw new InvalidOperationException("Company/book/currency accounts cannot be borrowed through a companyless legacy path.");
             return rows.Cast<GL_ACCOUNT>().ToList();
         }

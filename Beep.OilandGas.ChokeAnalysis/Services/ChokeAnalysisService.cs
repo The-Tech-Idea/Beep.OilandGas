@@ -1,4 +1,5 @@
-﻿#nullable enable
+using Beep.OilandGas.Models.Data.Company;
+#nullable enable
 using System;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ChokeAnalysis;

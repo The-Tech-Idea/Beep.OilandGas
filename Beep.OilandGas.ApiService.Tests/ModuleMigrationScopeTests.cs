@@ -1,3 +1,4 @@
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using Xunit;
 
@@ -28,7 +29,7 @@ public class ModuleMigrationScopeTests
         {
             typeof(Beep.OilandGas.Models.Data.Security.USER),
             typeof(Beep.OilandGas.UserManagement.Models.Identity.AppRole),
-            typeof(TheTechIdea.Data.OilGas.AppRoleExtension),
+            typeof(Beep.OilandGas.Repository.Models.AppRoleExtension),
             typeof(Microsoft.AspNetCore.Identity.IdentityRole)
         })
             Assert.Throws<ArgumentException>(() => ModuleSchemaBoundary.Validate([entity]));

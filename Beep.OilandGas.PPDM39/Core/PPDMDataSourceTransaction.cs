@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using System.Data;
 using System.Reflection;
 using System.Runtime.CompilerServices;

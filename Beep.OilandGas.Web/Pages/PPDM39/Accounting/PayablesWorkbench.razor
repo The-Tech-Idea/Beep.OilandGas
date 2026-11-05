@@ -1,8 +1,12 @@
+@using Beep.OilandGas.Models.Data.Accounting
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.Models.Data.WorkOrder
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Models.Data.Common
 @page "/accounting/payables"
 @page "/accounting/payables/invoices/{Id}"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @using Beep.OilandGas.Web.Services
-@using TheTechIdea.Data.OilGas
 @inject IAccountingServiceClient Accounting
 @inject Beep.OilandGas.Client.App.CompanyClientContext Company
 @inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
@@ -448,7 +452,7 @@
     protected override void OnInitialized(){_state=Workspace;_state.AllocationChanged+=AllocationStateChanged;_state.PolicyCommandChanged+=PolicyStateChanged;_state.VarianceCommandChanged+=VarianceStateChanged;Company.Changed+=ContextChanged;}
     protected override Task OnParametersSetAsync()
     {
-        try{if(!string.IsNullOrWhiteSpace(Id))Id=TheTechIdea.Data.OilGas.RecordedSourceId.FromDetailLocation(Navigation.Uri,Navigation.BaseUri,"accounting/payables/invoices/");}
+        try{if(!string.IsNullOrWhiteSpace(Id))Id=Beep.OilandGas.Models.Data.Common.RecordedSourceId.FromDetailLocation(Navigation.Uri,Navigation.BaseUri,"accounting/payables/invoices/");}
         catch(FormatException){_state?.Clear();_error="The recorded source address is invalid. Open it again from the company queue.";return Task.CompletedTask;}
         return Reload();
     }

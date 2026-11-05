@@ -1,6 +1,7 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.LifeCycle.Models;
 using System.Globalization;
 using Microsoft.AspNetCore.WebUtilities;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Web.Services;
 

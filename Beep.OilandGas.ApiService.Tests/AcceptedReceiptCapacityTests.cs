@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Accounting.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Net;
 using System.Net.Http.Json;
@@ -11,7 +14,6 @@ using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Web.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
@@ -40,6 +42,14 @@ public sealed class AcceptedReceiptCapacityTests
         if(fault=="inactive")f.Existing.OrderLine.ACTIVE_IND="N";
         if(fault is "consumption-unit" or "activity"){
             f.Existing.AddCompeting(1);var row=f.Existing.Native.Rows.OfType<AP_RECEIPT_ALLOCATION>().Single();if(fault=="consumption-unit")row.QUANTITY_UOM="m³";else row.ACTIVE_IND="?";}
+        if(fault is "proof" or "quantity" or "actor")
+        {
+            // Corrupt authoritative proof is refused before a diagnostic snapshot can be returned.
+            var before=f.Existing.Native.Writes;
+            await Assert.ThrowsAsync<InvalidOperationException>(()=>f.Existing.Prepare());
+            Assert.Equal(before,f.Existing.Native.Writes);
+            return;
+        }
         await f.Existing.Prepare();Assert.Equal(APSourceComparisonOutcome.Unavailable,f.Existing.Displayed.Comparisons.Single(row=>row.Code=="acceptance").Outcome);
         var writes=f.Existing.Native.Writes;await Assert.ThrowsAsync<InvalidOperationException>(()=>f.Existing.Record());Assert.Equal(writes,f.Existing.Native.Writes);
     }

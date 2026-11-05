@@ -1,3 +1,5 @@
+using Beep.OilandGas.Repository.Models;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Repository;
@@ -6,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Beep.OilandGas.ApiService.Controllers;
 using Beep.OilandGas.ApiService.Middleware;

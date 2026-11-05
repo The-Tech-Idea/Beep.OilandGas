@@ -1,3 +1,8 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using System.Text.Json;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.ApiService.Tests;
@@ -11,7 +16,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using ReviewFixture=Beep.OilandGas.Repository.Tests.CompanyMaintenanceQualifiedAssetTests.ReviewFixture;
 namespace Beep.OilandGas.Repository.Tests;

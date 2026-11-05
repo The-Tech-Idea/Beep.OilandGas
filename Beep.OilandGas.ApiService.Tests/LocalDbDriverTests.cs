@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using System.Data;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -15,7 +18,6 @@ using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
-using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using Microsoft.Data.SqlClient;
 using Moq;

@@ -1,9 +1,10 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Repository;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Hubs;
 

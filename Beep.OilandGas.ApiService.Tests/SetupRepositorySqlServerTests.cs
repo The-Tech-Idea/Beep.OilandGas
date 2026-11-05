@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Repository.Models;
 #if SETUP_SQLSERVER_FOCUSED
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Repository;
@@ -6,7 +8,6 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 using Xunit;
 using Xunit.Abstractions;

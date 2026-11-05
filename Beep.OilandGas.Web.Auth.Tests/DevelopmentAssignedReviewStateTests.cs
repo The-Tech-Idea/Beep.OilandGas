@@ -1,3 +1,7 @@
+using Beep.OilandGas.DevelopmentPlanning.Models;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.LifeCycle.Models;
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Web.Services;
@@ -5,7 +9,6 @@ using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using MudBlazor.Services;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 using Xunit;
 using AssignedPage=Beep.OilandGas.Web.Pages.PPDM39.Development.DevelopmentAssignedReview;

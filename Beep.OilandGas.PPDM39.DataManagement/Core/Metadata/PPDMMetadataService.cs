@@ -18,6 +18,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.Metadata
     {
         private readonly ILogger<PPDMMetadataService> _logger;
         private readonly string? _jsonMetadataPath;
+        private readonly IPPDMMetadataContributor[] _contributors;
         private readonly Lazy<Dictionary<string, PPDMTableMetadata>> _metadataCache;
         private readonly object _loadLock = new object();
 
@@ -26,10 +27,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.Metadata
         /// </summary>
         /// <param name="logger">Logger instance</param>
         /// <param name="jsonMetadataPath">Optional path to PPDM39Metadata.json file. If not provided, will try to locate automatically or use generated class.</param>
-        public PPDMMetadataService(ILogger<PPDMMetadataService> logger, string? jsonMetadataPath = null)
+        public PPDMMetadataService(ILogger<PPDMMetadataService> logger, string? jsonMetadataPath = null, IEnumerable<IPPDMMetadataContributor>? contributors = null)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _jsonMetadataPath = jsonMetadataPath;
+            _contributors = contributors?.ToArray() ?? [];
             _metadataCache = new Lazy<Dictionary<string, PPDMTableMetadata>>(LoadMetadata, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
         }
 
@@ -37,6 +39,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.Metadata
         /// Gets the cached metadata dictionary
         /// </summary>
         private Dictionary<string, PPDMTableMetadata> Metadata => _metadataCache.Value;
+
+        private Dictionary<string, PPDMTableMetadata> AddModuleMetadata(Dictionary<string, PPDMTableMetadata> metadata)
+        {
+            foreach (var contributor in _contributors) contributor.AddTo(metadata);
+            return metadata;
+        }
 
         #region IPPDMMetadataRepository Implementation
 
@@ -269,7 +277,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.Metadata
                     if (metadata != null && metadata.Count > 0)
                     {
                         _logger.LogInformation("Loaded {Count} tables from JSON file: {Path}", metadata.Count, _jsonMetadataPath);
-                        return PermitApplicationNativeMetadata.AddTo(HseIncidentNativeMetadata.AddTo(WorkOrderFinancialMetadata.AddTo(WorkOrderMaterialMetadata.AddTo(ProductionInterventionNativeMetadata.AddTo(WorkOrderInspectionMetadata.AddTo(metadata))))));
+                        return AddModuleMetadata(HseIncidentNativeMetadata.AddTo(WorkOrderFinancialMetadata.AddTo(WorkOrderMaterialMetadata.AddTo(ProductionInterventionNativeMetadata.AddTo(WorkOrderInspectionMetadata.AddTo(metadata))))));
                     }
                 }
 
@@ -278,14 +286,14 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.Metadata
                 if (jsonMetadata != null && jsonMetadata.Count > 0)
                 {
                     _logger.LogInformation("Loaded {Count} tables from JSON (auto-detected)", jsonMetadata.Count);
-                    return PermitApplicationNativeMetadata.AddTo(HseIncidentNativeMetadata.AddTo(WorkOrderFinancialMetadata.AddTo(WorkOrderMaterialMetadata.AddTo(ProductionInterventionNativeMetadata.AddTo(WorkOrderInspectionMetadata.AddTo(jsonMetadata))))));
+                    return AddModuleMetadata(HseIncidentNativeMetadata.AddTo(WorkOrderFinancialMetadata.AddTo(WorkOrderMaterialMetadata.AddTo(ProductionInterventionNativeMetadata.AddTo(WorkOrderInspectionMetadata.AddTo(jsonMetadata))))));
                 }
 
                 // Fallback to generated class
                 _logger.LogInformation("JSON metadata not found, falling back to generated class");
                 var generatedMetadata = LoadFromGeneratedClass();
                 _logger.LogInformation("Loaded {Count} tables from generated class", generatedMetadata.Count);
-                return PermitApplicationNativeMetadata.AddTo(HseIncidentNativeMetadata.AddTo(WorkOrderFinancialMetadata.AddTo(WorkOrderMaterialMetadata.AddTo(ProductionInterventionNativeMetadata.AddTo(WorkOrderInspectionMetadata.AddTo(generatedMetadata))))));
+                return AddModuleMetadata(HseIncidentNativeMetadata.AddTo(WorkOrderFinancialMetadata.AddTo(WorkOrderMaterialMetadata.AddTo(ProductionInterventionNativeMetadata.AddTo(WorkOrderInspectionMetadata.AddTo(generatedMetadata))))));
             }
         }
 

@@ -1,4 +1,6 @@
-﻿using System.Net;
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.Company;
+using System.Net;
 using System.Net.Http.Json;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Models.Data;
@@ -13,7 +15,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.JSInterop;
 using Moq;
 using MudBlazor.Services;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 using Xunit;
 

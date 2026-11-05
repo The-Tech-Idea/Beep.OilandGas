@@ -1,4 +1,5 @@
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.Models.Data.Production;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Web.Services;

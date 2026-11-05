@@ -1,3 +1,7 @@
+@using Beep.OilandGas.PermitsAndApplications.Models
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Models.Core.Interfaces
+@using Beep.OilandGas.Models.Data.Company
 @page "/ppdm39/operations/leaseacquisition"
 @using Beep.OilandGas.Models.Data.Lease
 @using Beep.OilandGas.Client.App
@@ -6,7 +10,7 @@
 @implements IDisposable
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
-@inject TheTechIdea.Data.OilGas.IFieldSelectionContext FieldSelection
+@inject Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext FieldSelection
 @inject LeasePortfolioState Portfolio
 @inject LeaseCreationState Creation
 

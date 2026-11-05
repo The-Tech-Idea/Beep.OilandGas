@@ -4,7 +4,6 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Moq;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;

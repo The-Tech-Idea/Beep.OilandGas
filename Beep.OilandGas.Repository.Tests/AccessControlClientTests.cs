@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -6,7 +8,6 @@ using Beep.OilandGas.Client.Authentication;
 using Beep.OilandGas.Client.Exceptions;
 using Beep.OilandGas.Models.Data;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using AccessApi = Beep.OilandGas.Client.App.Services.AccessControl.AccessControlService;
 
@@ -204,10 +205,12 @@ public sealed class AccessControlClientTests
     }
 
     [Fact]
-    public void SDK_and_API_access_contracts_are_owned_by_the_canonical_data_assembly()
+    public void SDK_services_and_shared_access_contracts_use_their_existing_owners()
     {
-        var owner = typeof(AppTenant).Assembly;
-        Assert.Equal(owner, typeof(Beep.OilandGas.Client.App.Services.AccessControl.IAccessControlService).Assembly);
+        var owner = typeof(ModelEntityBase).Assembly;
+        var sdkOwner=typeof(Beep.OilandGas.Client.App.Services.AccessControl.IAccessControlService).Assembly;
+        Assert.Equal("Beep.OilandGas.Client",sdkOwner.GetName().Name);
+        Assert.NotEqual(owner,sdkOwner);
         Assert.Equal(owner, typeof(Beep.OilandGas.Models.Core.Interfaces.IAccessControlService).Assembly);
         Assert.Equal(owner, typeof(AssetAccess).Assembly); Assert.Equal(owner, typeof(AccessCheckRequest).Assembly);
         Assert.Equal(owner, typeof(AccessCheckResponse).Assembly); Assert.Equal(owner, typeof(UserProfile).Assembly);

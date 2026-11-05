@@ -1,8 +1,10 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Accounting.Models;
 using System.Security.Claims;
 using System.Text.Json;
 using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Services;
 
 /// <summary>Current app roles and complete repeat captures for the existing inventory source owner.</summary>

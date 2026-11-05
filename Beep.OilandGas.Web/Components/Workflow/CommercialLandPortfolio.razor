@@ -1,10 +1,12 @@
+@using Beep.OilandGas.Models.Core.Interfaces
+@using Beep.OilandGas.Models.Data.Company
 @namespace Beep.OilandGas.Web.Components.Workflow
 @using System.Security.Claims
 @using Beep.OilandGas.Models.Data.Lease
 @using Beep.OilandGas.Web.Services
 @using Microsoft.AspNetCore.Components.Authorization
 @inject Beep.OilandGas.Client.App.CompanyClientContext Company
-@inject TheTechIdea.Data.OilGas.IFieldSelectionContext Fields
+@inject Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext Fields
 @inject ILeaseServiceClient Leases
 @inject AuthenticationStateProvider Authentication
 @implements IDisposable

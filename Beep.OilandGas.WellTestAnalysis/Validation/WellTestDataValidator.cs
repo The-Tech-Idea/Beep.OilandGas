@@ -1,4 +1,5 @@
-﻿using System;
+using Beep.OilandGas.Models.Data.Company;
+using System;
 using System.Linq;
 using Beep.OilandGas.WellTestAnalysis.Constants;
 using Beep.OilandGas.WellTestAnalysis.Exceptions;

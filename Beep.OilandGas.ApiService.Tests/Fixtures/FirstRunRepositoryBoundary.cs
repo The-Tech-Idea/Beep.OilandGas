@@ -1,5 +1,5 @@
+using Beep.OilandGas.Repository.Models;
 #if WORKFLOW_INBOX_FOCUSED
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Web.Services;
 

@@ -1,4 +1,5 @@
-﻿using System;
+using Beep.OilandGas.Models.Data.Company;
+using System;
 
 using Beep.OilandGas.OilProperties.Constants;
 using Beep.OilandGas.OilProperties.Exceptions;

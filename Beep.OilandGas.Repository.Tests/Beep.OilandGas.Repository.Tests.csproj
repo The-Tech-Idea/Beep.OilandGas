@@ -9,15 +9,32 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.4.0" />
+    <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.9" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" PrivateAssets="all" />
-    <ProjectReference Include="../Beep.OilandGas.Repository/Beep.OilandGas.Repository.csproj" Condition="'$(FocusedCompanyTests)' != 'true'" />
+    <ProjectReference Include="../Beep.OilandGas.Repository/Beep.OilandGas.Repository.csproj" Aliases="global,actualOwners" />
   </ItemGroup>
   <!-- Focused tests compile the active persistence/access sources, without unrelated host/diagnostics dependencies. -->
   <!-- API/Web source-linked cases run in the dedicated focused CI job; the normal target remains repository-only. -->
   <ItemGroup Condition="'$(FocusedCompanyTests)' != 'true'">
+    <!-- HTTP/client cases are compiled and exercised by the existing focused profile. -->
+    <Compile Remove="StoredFieldSelectionAuthorityTests.cs" />
+    <Compile Remove="CompanyMaintenanceAcceptanceHttpTests.cs" />
+    <Compile Remove="CompanyMaintenanceAssetEvidenceHttpTests.cs" />
+    <Compile Remove="CompanyMaintenanceClosureHttpTests.cs" />
+    <Compile Remove="CompanyMaintenanceExecutionHandoffHttpTests.cs" />
+    <Compile Remove="CompanyMaintenanceHandoffHttpTests.cs" />
+    <Compile Remove="CompanyPersonnelIdentityHttpTests.cs" />
+    <Compile Remove="CompanyWorkOrderBudgetHttpTests.cs" />
+    <Compile Remove="CompanyWorkOrderCompletionDecisionHttpTests.cs" />
+    <Compile Remove="CompanyWorkOrderCompletionHttpTests.cs" />
+    <Compile Remove="CompanyWorkOrderReturnAcceptanceHttpTests.cs" />
+    <Compile Remove="HseClosurePhaseClientTests.cs" />
+    <Compile Remove="WorkOrderMaterialSourceHttpTests.cs" />
+    <Compile Remove="WorkOrderPrerequisiteHttpTests.cs" />
+
     <Content Remove="_Imports.razor" />
     <Compile Remove="CompanyAssetGrantUiTests.cs" />
     <Compile Remove="CompositeFacilityGrantTests.cs" />
@@ -86,6 +103,7 @@
     <Compile Remove="RepositoryCompanyAccessTests.cs;RepositoryTenantBindingTests.cs;CompanyClientScopeTests.cs;CompanyHubScopeTests.cs;CompanyProgressTests.cs;ModuleDatabaseTargetTests.cs;CompanyModuleConnectionTests.cs;PpdmDataClientTests.cs;CompanyAssetAccessTests.cs;CompanyPPDMRowAccessTests.cs;RepositoryAdministrationTests.cs;RepositoryAccountProfileTests.cs;CompanyRowSecurityTests.cs;CompanyAssetGrantTargetTests.cs;CompanyAssetRelationshipTests.cs;CompanyAssetFacadeTests.cs;AccessControlClientTests.cs;CompanyAssetHierarchyTests.cs;CompanyHierarchyUiTests.cs;CompanyHierarchyConfigurationTests.cs" />
   </ItemGroup>
   <ItemGroup Condition="'$(FocusedCompanyTests)' == 'true'">
+    <ProjectReference Include="../../Beep.Web/TheTechIdeaWeb.Diagnostics.Abstractions/TheTechIdeaWeb.Diagnostics.Abstractions.csproj" />
     <Compile Remove="**/*.cs" />
     <Compile Include="RepositoryCompanyAccessTests.cs" />
     <Compile Include="RepositoryTenantBindingTests.cs" />
@@ -273,7 +291,7 @@
     <Compile Include="../Beep.OilandGas.Accounting/Services/InventoryService.WorkOrderMaterials.cs" />
     <Compile Include="../Beep.OilandGas.Accounting/Services/InventoryService.WorkOrderMaterialRelease.cs" />
     <Compile Include="../Beep.OilandGas.Accounting/Services/InventoryService.WorkOrderMaterialUsage.cs" />
-    <ProjectReference Include="../Beep.OilandGas.Accounting/Beep.OilandGas.Accounting.csproj" />
+    <ProjectReference Include="../Beep.OilandGas.Accounting/Beep.OilandGas.Accounting.csproj" Aliases="global,actualOwners" />
     <Compile Include="../Beep.OilandGas.ApiService/Services/WorkOrderPermitInspectionAuthority.cs" />
     <Compile Include="../Beep.OilandGas.ApiService/Controllers/BusinessProcess/CompanyMaintenanceHandoffController.cs" Link="Maintenance/CompanyMaintenanceHandoffController.cs" />
     <Compile Include="../Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyMaterialReservationsController.cs" Link="Maintenance/CompanyMaterialReservationsController.cs" />
@@ -336,7 +354,6 @@
     <Compile Include="../Beep.OilandGas.Web/Services/ProductionServiceClient.cs" Link="Production/ProductionServiceClient.cs" />
     <Compile Include="../Beep.OilandGas.ApiService/Controllers/Field/ProductionController.cs" Link="Production/ProductionController.cs" />
     <Compile Include="../Beep.OilandGas.ApiService/Services/ProductionInterventionSourceReviews.cs" Link="Production/ProductionInterventionSourceReviews.cs" />
-    <Compile Include="../Beep.OilandGas.ProductionAccounting/Data/ProductionAccounting/AFE.cs" Link="Production/AFE.cs" />
     <Compile Include="../Beep.OilandGas.Models/Core/Interfaces/IProcessService.cs" Link="Production/IProcessService.cs" />
     <Compile Include="../Beep.OilandGas.LifeCycle/Services/Decommissioning/Processes/DecommissioningProcessService.cs" Link="Production/DecommissioningProcessService.cs" />
     <Compile Include="CompanyFieldEligibilityTests.cs" />
@@ -542,7 +559,7 @@
     <Compile Include="../Beep.OilandGas.ApiService/Services/PPDMCompanyFieldInterestReview.cs" Link="Production/PPDMCompanyFieldInterestReview.cs" />
     <Compile Include="../Beep.OilandGas.ApiService/Services/PPDM39GenericDataService.cs" Link="Production/PPDM39GenericDataService.cs" />
     <Compile Include="../Beep.OilandGas.ApiService/Services/CsvImportJobs.cs" Link="Production/CsvImportJobs.cs" />
-    <ProjectReference Include="../Beep.OilandGas.PPDM39/Beep.OilandGas.PPDM39.csproj" />
+    <ProjectReference Include="../Beep.OilandGas.PPDM39/Beep.OilandGas.PPDM39.csproj" Aliases="global,actualOwners" />
     <None Include="../Beep.OilandGas.PPDM39.DataManagement/Core/Metadata/PPDM39Metadata.json" Link="PPDM39Metadata.json" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="../Beep.OilandGas.ApiService.Tests/Infrastructure/TestCompanyModules.cs" Link="TestFixtures/TestCompanyModules.cs" />
     <Compile Include="../Beep.OilandGas.ApiService/Services/RepositoryAssetAccessStore.cs" Link="Production/RepositoryAssetAccessStore.cs" />
@@ -596,12 +613,6 @@
     <Compile Include="../Beep.OilandGas.Repository/*Mapping.cs" Link="Production/%(Filename)%(Extension)" />
     <Compile Include="../Beep.OilandGas.Repository/RepositoryDesignTimeFactories.cs" Link="Production/RepositoryDesignTimeFactories.cs" />
     <Compile Include="../Beep.OilandGas.Repository/Migrations/**/*.cs" Link="Production/Migrations/%(RecursiveDir)%(Filename)%(Extension)" />
-    <ProjectReference Include="../TheTechIdea.Data/TheTechIdea.Data.csproj" Condition="'$(FocusedCompanyTests)' != 'true' Or '$(FocusedDataAssemblyPath)' == ''" />
-    <!-- Explicit actual Data build for focused checks that skip unrelated project builds. -->
-    <Reference Include="$(FocusedDataAssemblyPath)" Condition="'$(FocusedCompanyTests)' == 'true' And '$(FocusedDataAssemblyPath)' != ''">
-      <HintPath>$(FocusedDataAssemblyPath)</HintPath>
-      <Aliases>global,actualData</Aliases>
-    </Reference>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.9" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.9" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
@@ -609,27 +620,13 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9" PrivateAssets="all" />
     <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="$(BeepDMVersion)" />
     <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="$(BeepDMVersion)" />
-    <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.6.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="5.6.0" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <Using Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
-  <Target Name="UseReviewedFocusedDataAssembly" BeforeTargets="ResolveAssemblyReferences"
-          Condition="'$(FocusedCompanyTests)' == 'true' And '$(FocusedDataAssemblyPath)' != ''">
-    <Error Condition="!Exists('$(FocusedDataAssemblyPath)')" Text="The actual focused Data assembly is missing." />
-    <ItemGroup>
-      <!-- Skipped project builds must not reintroduce an older transitive Data output. -->
-      <_ResolvedProjectReferencePaths Remove="@(_ResolvedProjectReferencePaths)"
-          Condition="'%(_ResolvedProjectReferencePaths.Filename)' == 'TheTechIdea.Data'" />
-    </ItemGroup>
-  </Target>
   <ItemGroup Condition="'$(FocusedCompanyTests)' == 'true' And '$(FocusedObligationPolicyTests)' == 'true'">
     <Compile Remove="RepositoryCompanyAccessTests.cs" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(FocusedCompanyTests)' == 'true' And '$(FocusedDataAssemblyPath)' != ''">
-    <!-- Use the reviewed canonical Data contract rather than compiling a second WellTestResponse type. -->
-    <Compile Include="../Beep.OilandGas.Models/Core/Interfaces/IFieldProductionService.cs" Link="Production/IFieldProductionService.cs" />
   </ItemGroup>
   <ItemGroup Condition="'$(FocusedCompanyTests)' == 'true'">
     <Compile Include="CompanyPermitApplicationDataAccessTests.cs" />
@@ -653,14 +650,51 @@
     <RazorComponent Include="../Beep.OilandGas.Web/Components/Workflow/PermitApplicationWorkflow.razor" Link="Components/Workflow/PermitApplicationWorkflow.razor" />
     <RazorComponent Include="../Beep.OilandGas.Web/Pages/PPDM39/Permits/PermitDetail.razor" Link="Pages/PPDM39/Permits/PermitDetail.razor" />
     <RazorComponent Include="../Beep.OilandGas.Web/Pages/PPDM39/Permits/NewPermitApplication.razor" Link="Pages/PPDM39/Permits/NewPermitApplication.razor" />
-
-    <Reference Include="Beep.OilandGas.Client" Aliases="PermitSdk"><HintPath>../Beep.OilandGas.Client/bin/Debug/net10.0/Beep.OilandGas.Client.dll</HintPath></Reference>
     <Compile Include="../Beep.OilandGas.ApiService.Tests/PermitsControllerTests.cs" Link="ProductionTests/PermitsControllerTests.cs" />
     <Compile Include="../Beep.OilandGas.ApiService/Controllers/Permits/PermitsController.cs" Link="Production/PermitsController.cs" />
     <Compile Include="../Beep.OilandGas.Web/Services/IPermitServiceClient.cs" Link="Production/IPermitServiceClient.cs" />
     <Compile Include="../Beep.OilandGas.Web/Services/PermitServiceClient.cs" Link="Production/PermitServiceClient.cs" />
 
     <Compile Include="../Beep.OilandGas.ApiService/Services/CompanyPermitApplicationDataAccess.cs" Link="Production/CompanyPermitApplicationDataAccess.cs" />
-    <Reference Include="Beep.OilandGas.PermitsAndApplications"><HintPath>../Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll</HintPath></Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Beep.OilandGas.HSE/Beep.OilandGas.HSE.csproj" Aliases="global,actualOwners" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Beep.OilandGas.LeaseAcquisition/Beep.OilandGas.LeaseAcquisition.csproj" Aliases="global,actualOwners" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Beep.OilandGas.ProductionOperations/Beep.OilandGas.ProductionOperations.csproj" Aliases="global,actualOwners" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Beep.OilandGas.DevelopmentPlanning/Beep.OilandGas.DevelopmentPlanning.csproj" Aliases="global,actualOwners" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Beep.OilandGas.ProductionAccounting/Beep.OilandGas.ProductionAccounting.csproj" Aliases="global,actualOwners,actualProductionAccounting" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Beep.OilandGas.Client/Beep.OilandGas.Client.csproj" Aliases="global,actualOwners,PermitSdk" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(FocusedCompanyTests)' == 'true'">
+    <Compile Include="../Beep.OilandGas.ApiService/Controllers/Identity/InitialCompanyProvisionController.cs" Link="Production/InitialCompanyProvisionController.cs" />
+    <Compile Include="../Beep.OilandGas.ApiService/Controllers/Identity/RoleAssignmentController.cs" Link="Production/RoleAssignmentController.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(FocusedCompanyTests)' == 'true'">
+    <ProjectReference Include="$(IdentitySharedProject)" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(FocusedCompanyTests)' == 'true'">
+    <Compile Include="../Beep.OilandGas.ApiService/Data/UniqueKeyViolation.cs" Link="Production/UniqueKeyViolation.cs" />
+  </ItemGroup>
+  <!-- Restored owners are real build dependencies, not prebuilt fixture DLLs. -->
+  <ItemGroup Condition="'$(FocusedCompanyTests)' == 'true'">
+    <ProjectReference Include="../Beep.OilandGas.DrillingAndConstruction/Beep.OilandGas.DrillingAndConstruction.csproj" Aliases="global,actualOwners" />
+    <ProjectReference Include="../Beep.OilandGas.LifeCycle/Beep.OilandGas.LifeCycle.csproj" Aliases="global,actualOwners" />
+    <ProjectReference Include="../Beep.OilandGas.Models/Beep.OilandGas.Models.csproj" Aliases="global,actualOwners" />
+    <ProjectReference Include="../Beep.OilandGas.PPDM39.DataManagement/Beep.OilandGas.PPDM39.DataManagement.csproj" Aliases="global,actualOwners" />
+    <ProjectReference Include="../Beep.OilandGas.PermitsAndApplications/Beep.OilandGas.PermitsAndApplications.csproj" Aliases="global,actualOwners" />
+    <ProjectReference Include="../Beep.OilandGas.UserManagement/Beep.OilandGas.UserManagement.csproj" Aliases="global,actualOwners" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(FocusedCompanyTests)' == 'true'">
+    <Compile Include="ExactDecimalArithmeticTests.cs" />
   </ItemGroup>
 </Project>

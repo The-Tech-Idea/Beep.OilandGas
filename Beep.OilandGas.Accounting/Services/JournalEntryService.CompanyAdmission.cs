@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 namespace Beep.OilandGas.Accounting.Services;
 public partial class JournalEntryService

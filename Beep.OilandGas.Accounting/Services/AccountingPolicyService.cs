@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Core;
-using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 

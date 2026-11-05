@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
@@ -88,7 +90,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var results = await repo.GetAsync(filters);
             var rows=results?.ToArray() ??throw new InvalidOperationException("The complete recorded FX query is unavailable.");
-            if(rows.Any(row=>row is not FX_RATE || TheTechIdea.Data.OilGas.CompanyFxRateProof.IsCompanyMarked((FX_RATE)row)))throw new InvalidOperationException("Company FX requires the recorded functional book, precision and original company source.");
+            if(rows.Any(row=>row is not FX_RATE || Beep.OilandGas.Models.Data.Accounting.CompanyFxRateProof.IsCompanyMarked((FX_RATE)row)))throw new InvalidOperationException("Company FX requires the recorded functional book, precision and original company source.");
             var rates=rows.Cast<FX_RATE>().OrderByDescending(row=>row.RATE_DATE).ToArray();
             var rateValue=rates.FirstOrDefault()?.RATE;
             if(rateValue is null || rateValue<=0)throw new InvalidOperationException("No positive recorded directed FX rate is available; no rate is substituted.");

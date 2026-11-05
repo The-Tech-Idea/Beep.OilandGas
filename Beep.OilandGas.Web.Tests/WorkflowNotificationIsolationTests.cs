@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
 using System.Net;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
@@ -26,7 +28,6 @@ using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.UserManagement.Contracts.Services;
 using Beep.OilandGas.Repository;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Web.Tests;
 

@@ -1,8 +1,9 @@
-param([Parameter(Mandatory)][string]$StateAssemblyPath, [Parameter(Mandatory)][string]$DataAssemblyPath)
+param([Parameter(Mandatory)][string]$StateAssemblyPath, [Parameter(Mandatory)][string]$ModelsAssemblyPath)
+. (Join-Path $PSScriptRoot 'RestoredOwnerFixtureReferences.ps1')
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path $PSScriptRoot -Parent
 # The state assembly must come from the current Test-WorkOrderListState gate, not a substituted host.
-foreach ($path in @($StateAssemblyPath, $DataAssemblyPath)) {
+foreach ($path in @($StateAssemblyPath, $ModelsAssemblyPath)) {
     if (-not (Test-Path -LiteralPath $path)) { throw 'Provide the actual current focused-state and Data assemblies.' }
 }
 $checkDirectory = Join-Path ([IO.Path]::GetTempPath()) "oilgas-order-grant-page-$([Guid]::NewGuid().ToString('N'))"
@@ -22,8 +23,7 @@ $hash = (Get-FileHash -LiteralPath $source).Hash
 $razor = $project.CreateElement('RazorComponent'); $razor.SetAttribute('Include', $source); $razor.SetAttribute('Link', 'Pages/Admin/AccessControl/AssetAccess.razor'); [void]$group.AppendChild($razor)
 $references = @{
     'WorkOrderListTests' = (Resolve-Path -LiteralPath $StateAssemblyPath).Path
-    'TheTechIdea.Data' = (Resolve-Path -LiteralPath $DataAssemblyPath).Path
-    'Beep.OilandGas.Models' = Join-Path $repositoryRoot 'Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Models.dll'
+    'Beep.OilandGas.Models' = (Resolve-Path -LiteralPath $ModelsAssemblyPath).Path
     'Beep.OilandGas.PPDM.Models' = Join-Path $repositoryRoot 'Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.PPDM.Models.dll'
     'DataManagementModels' = Join-Path $repositoryRoot 'Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/DataManagementModels.dll'
 }
@@ -31,7 +31,8 @@ foreach ($name in $references.Keys) {
     $node = $project.CreateElement('Reference'); $node.SetAttribute('Include', $name)
     $hint = $project.CreateElement('HintPath'); $hint.InnerText = $references[$name]; [void]$node.AppendChild($hint); [void]$group.AppendChild($node)
 }
-$projectPath = Join-Path $checkDirectory 'WorkOrderGrantPage.csproj'; $project.Save($projectPath)
+$projectPath = Join-Path $checkDirectory 'WorkOrderGrantPage.csproj'; Add-OilGasRestoredOwnerReferences -Project $project -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
+$project.Save($projectPath)
 dotnet build $projectPath --verbosity quiet
 if ($LASTEXITCODE -ne 0) { throw "Actual grant page compilation failed: $checkDirectory" }
 if ($hash -ne (Get-FileHash -LiteralPath $source).Hash) { throw 'The grant page changed during verification.' }

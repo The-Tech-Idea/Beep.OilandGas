@@ -1,6 +1,8 @@
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Models.Data.Production
+@using Beep.OilandGas.Models.Data.Company
 @page "/ppdm39/data-quality"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
-@using TheTechIdea.Data.OilGas
 @inject CompanyWellQualityClient Quality
 @inject Beep.OilandGas.Client.App.CompanyClientContext Company
 @inject ILogger<DataQuality> Logger

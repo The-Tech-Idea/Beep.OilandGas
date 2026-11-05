@@ -1,5 +1,5 @@
+using Beep.OilandGas.LifeCycle.Models;
 using Beep.OilandGas.Models.Processes;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.Web.Services;
 /// <summary>Read projection of the existing workflow client for the recorded process page.</summary>
 public interface IRecordedProcessClient

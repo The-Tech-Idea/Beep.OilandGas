@@ -1,4 +1,4 @@
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.Models.Data.AccessControl;
 
 namespace Beep.OilandGas.Web.Services;
 

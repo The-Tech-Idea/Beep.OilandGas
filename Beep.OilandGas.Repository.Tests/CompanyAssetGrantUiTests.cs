@@ -1,3 +1,5 @@
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Data.Company;
 using System.Data;
 using System.Net;
 using System.Text.Json;
@@ -10,7 +12,6 @@ using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.Web.Services;
 using Microsoft.EntityFrameworkCore;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Fixture = Beep.OilandGas.Repository.Tests.CompanyPPDMRowAccessTests.Fixture;
 

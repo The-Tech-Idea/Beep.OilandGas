@@ -1,3 +1,9 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.Models.Data.DevelopmentPlanning;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Models.Data.DataManagement;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -8,7 +14,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Globalization;
-using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -34,6 +39,8 @@ namespace Beep.OilandGas.PPDM39.Core
         protected readonly IPPDM39DefaultsRepository _defaults;
         protected readonly IPPDMMetadataRepository _metadata;
         protected readonly IDMEEditor _editor;
+        private static readonly HashSet<string> ControlledPermitTables = new(StringComparer.OrdinalIgnoreCase)
+        { "PERMIT_APPLICATION", "PERMIT_APPLICATION_COMMAND", "PERMIT_DOCUMENT_STAGE", "PERMIT_STATUS_HISTORY", "DRILLING_PERMIT_APPLICATION", "ENVIRONMENTAL_PERMIT_APPLICATION", "INJECTION_PERMIT_APPLICATION", "JURISDICTION_REQUIREMENTS", "MIT_RESULT", "REQUIRED_FORM", "APPLICATION_ATTACHMENT", "R_PERMITS_REFERENCE_CODE" };
         protected readonly string _connectionName;
         protected readonly string _tableName;
         protected readonly Type _entityType;
@@ -41,7 +48,7 @@ namespace Beep.OilandGas.PPDM39.Core
         private readonly IPPDMRowAccessPolicy? _rowAccess;
         private bool RequiresControlledNativeMutation => RequiresControlledMutation(_entityType,_tableName);
         private static bool RequiresControlledMutation(Type? entityType,string? tableName) =>
-            PermitApplicationSchema.Entities.Any(type=>string.Equals(tableName,type.Name,StringComparison.OrdinalIgnoreCase) || string.Equals(entityType?.Name,type.Name,StringComparison.OrdinalIgnoreCase)) ||
+            (ControlledPermitTables.Contains(tableName) || entityType is not null && ControlledPermitTables.Contains(entityType.Name)) ||
             new[]{"SYSTEM_SETUP_RECORD","COMPANY_OILGAS_ENVIRONMENT","WELL_STATUS","FACILITY","FACILITY_FIELD","FACILITY_EQUIPMENT","FACILITY_STATUS","EQUIPMENT_STATUS","WORK_ORDER_ASSET_RETURN","WORK_ORDER_MAINTENANCE_RETURN_POLICY","FIELD_DEVELOPMENT_PLAN","DRILLING_PROGRAM","DRILLING_OPERATION","DRILLING_DAILY_REPORT","FACILITY_EDIT_INTENT","FACILITY_CREATE_INTENT","FACILITY_EQUIPMENT_INSTALL_INTENT","OBLIGATION","OBLIGATION_COMPONENT"}.Any(name=>
                 string.Equals(tableName,name,StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(entityType?.Name,name,StringComparison.OrdinalIgnoreCase));
@@ -207,7 +214,7 @@ namespace Beep.OilandGas.PPDM39.Core
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
 
-            // Check static cache first — avoids async call after first lookup per table
+            // Check static cache first â€” avoids async call after first lookup per table
             if (_pkNameCache.TryGetValue(tableName, out var cachedPk))
                 return cachedPk;
 
@@ -2326,9 +2333,9 @@ namespace Beep.OilandGas.PPDM39.Core
             _logger?.LogInformation("Starting CSV import for table {TableName} from file {FilePath} (OperationId: {OperationId})",
                 _tableName, csvFilePath, operationId ?? "none");
 
-            // OILGAS-CATCH-01. What a row of the file gets wrong — a value that is not of its column's type, a foreign key
-            // naming nothing — is recorded against that row in this server's own words, and the import goes on. A failure
-            // — the file cannot be read, the metadata or the database cannot be reached, the provider refuses a write — is
+            // OILGAS-CATCH-01. What a row of the file gets wrong â€” a value that is not of its column's type, a foreign key
+            // naming nothing â€” is recorded against that row in this server's own words, and the import goes on. A failure
+            // â€” the file cannot be read, the metadata or the database cannot be reached, the provider refuses a write â€” is
             // not a row's error: it reaches the caller, which records the import as failed. Both used to be caught here and
             // written into the result in the exception's own words, so an outage read as a file full of bad rows.
             if (onProgress != null && !string.IsNullOrEmpty(operationId))

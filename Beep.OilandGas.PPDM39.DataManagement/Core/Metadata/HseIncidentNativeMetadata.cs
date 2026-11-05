@@ -1,5 +1,6 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.HSE;
 using Beep.OilandGas.PPDM39.Core.Metadata;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
 

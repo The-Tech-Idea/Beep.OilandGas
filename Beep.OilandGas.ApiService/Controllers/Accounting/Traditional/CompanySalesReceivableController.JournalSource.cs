@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Accounting.Services;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional;
 public sealed partial class CompanySalesReceivableController
 {

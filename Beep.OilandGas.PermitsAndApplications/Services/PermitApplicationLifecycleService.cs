@@ -1,4 +1,6 @@
-using TheTechIdea.Data.OilGas;
+using TheTechIdeaWeb.Diagnostics;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.PermitsAndApplications.Exceptions;
 using Beep.OilandGas.PPDM39.Core;
 using System;
@@ -24,6 +26,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
     public partial class PermitApplicationLifecycleService : PermitsServiceBase, IPermitApplicationLifecycleService
     {
         private readonly ILogger<PermitApplicationLifecycleService>? _logger;
+        private readonly IFailureReporter? _failures;
 
         public PermitApplicationLifecycleService(
             IDMEEditor editor,
@@ -31,10 +34,12 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             ICompanyPermitApplicationDataAccess dataAccess,
-            ILogger<PermitApplicationLifecycleService>? logger = null)
+            ILogger<PermitApplicationLifecycleService>? logger = null,
+            IFailureReporter? failures = null)
             : base(editor, commonColumnHandler, defaults, metadata, dataAccess, logger)
         {
             _logger = logger;
+            _failures = failures;
         }
 
         public async Task<PERMIT_APPLICATION?> GetByIdAsync(string applicationId)

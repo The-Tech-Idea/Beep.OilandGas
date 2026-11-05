@@ -1,8 +1,16 @@
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.DevelopmentPlanning.Models;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DrillingAndConstruction.Models;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.LifeCycle.Models;
+using Beep.OilandGas.HSE.Models;
+using Beep.OilandGas.Accounting.Models;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.Models.Core.Interfaces;
 using System.Text.Json;
 using System.Data;
-using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.LifeCycle.Data.Tables;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;

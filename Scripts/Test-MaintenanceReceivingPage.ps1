@@ -1,4 +1,5 @@
-param([Parameter(Mandatory)][string]$DataAssemblyPath,[string]$Filter='')
+param([Parameter(Mandatory)][string]$ModelsAssemblyPath,[string]$Filter='')
+. (Join-Path $PSScriptRoot 'RestoredOwnerFixtureReferences.ps1')
 $ErrorActionPreference='Stop'
 $returnReviewTest='Beep.OilandGas.Web.Auth.Tests/WorkOrderMaintenanceReturnReviewTests.cs'
 $returnStatusTest='Beep.OilandGas.Web.Auth.Tests/WorkOrderReturnAcceptanceStatusTests.cs'
@@ -59,8 +60,8 @@ foreach($source in @('Beep.OilandGas.Web/Services/IWorkOrderServiceClient.cs','B
 # Import-only focused copy selects canonical contracts despite the cached legacy Models namespace.
 $inspectionCopy=Join-Path $checkDirectory 'Components/BusinessProcess/WorkOrderInspectionPanel.razor';[void](New-Item -ItemType Directory -Force -Path (Split-Path $inspectionCopy -Parent))
 [IO.File]::WriteAllText($inspectionCopy,[IO.File]::ReadAllText((Join-Path $repositoryRoot 'Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderInspectionPanel.razor')).Replace('@using Beep.OilandGas.Models.Data.WorkOrder',''),[Text.UTF8Encoding]::new($false))
-$inspectionAliases=@('extern alias actualData;','global using PermitToWorkType = actualData::Beep.OilandGas.Models.Enums.Shared.PermitToWorkType;','global using ProcessInstanceRequest = actualData::Beep.OilandGas.Models.Data.Process.ProcessInstanceRequest;')
-foreach($name in @('WorkOrderSummary','CreateWorkOrderRequest','WorkOrderDetailModel','RecordInspectionResultRequest','InspectionCondition','ContractorAssignment','CalendarSlot','WorkOrderState','WorkOrderSubType','ConditionType','WorkOrderInspectionApplicability','WorkOrderInspectionRules','TransitionWorkOrderRequest','AddWorkOrderInspectionRequirementRequest')){$inspectionAliases+="global using $name = actualData::Beep.OilandGas.Models.Data.WorkOrder.$name;"}
+$inspectionAliases=@('extern alias actualOwners;','global using PermitToWorkType = actualOwners::Beep.OilandGas.Models.Enums.Shared.PermitToWorkType;','global using ProcessInstanceRequest = actualOwners::Beep.OilandGas.Models.Data.Process.ProcessInstanceRequest;')
+foreach($name in @('WorkOrderSummary','CreateWorkOrderRequest','WorkOrderDetailModel','RecordInspectionResultRequest','InspectionCondition','ContractorAssignment','CalendarSlot','WorkOrderState','WorkOrderSubType','ConditionType','WorkOrderInspectionApplicability','WorkOrderInspectionRules','TransitionWorkOrderRequest','AddWorkOrderInspectionRequirementRequest')){$inspectionAliases+="global using $name = actualOwners::Beep.OilandGas.Models.Data.WorkOrder.$name;"}
 Set-Content -LiteralPath (Join-Path $checkDirectory 'ActualInspectionContracts.cs') -Value $inspectionAliases -Encoding utf8
 $stage=$project.CreateElement('RazorComponent');$stage.SetAttribute('Include',(Join-Path $repositoryRoot 'Beep.OilandGas.Web/Components/BusinessProcess/CompanyMaintenanceAssignedStage.razor'));$stage.SetAttribute('Link','Components/BusinessProcess/CompanyMaintenanceAssignedStage.razor');[void]$group.AppendChild($stage)
 $navigation=$project.CreateElement('Compile');$navigation.SetAttribute('Include',(Join-Path $repositoryRoot 'Beep.OilandGas.Web/Services/WorkOrderNavigation.cs'));[void]$group.AppendChild($navigation)
@@ -73,16 +74,16 @@ foreach($component in @('Pages/PPDM39/BusinessProcess/ProcessInstanceDetail.razo
 }
 $route=$project.CreateElement('RazorComponent');$route.SetAttribute('Include',(Join-Path $repositoryRoot 'Beep.OilandGas.Web.Auth.Tests/Fixtures/MaintenanceProcessRouteHost.razor'));$route.SetAttribute('Link','Fixtures/MaintenanceProcessRouteHost.razor');[void]$group.AppendChild($route)
 $dependencies=Join-Path $repositoryRoot 'Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0'
-foreach($name in @('TheTechIdea.Data','Beep.OilandGas.Models','DataManagementModels')){
-    $path=if($name -eq 'TheTechIdea.Data'){(Resolve-Path -LiteralPath $DataAssemblyPath).Path}else{Join-Path $dependencies ($name+'.dll')};if(-not(Test-Path -LiteralPath $path)){throw "Required actual dependency missing: $name"}
+foreach($name in @('Beep.OilandGas.Models','Beep.OilandGas.Models','DataManagementModels')){
+    $path=if($name -eq 'Beep.OilandGas.Models'){(Resolve-Path -LiteralPath $ModelsAssemblyPath).Path}else{Join-Path $dependencies ($name+'.dll')};if(-not(Test-Path -LiteralPath $path)){throw "Required actual dependency missing: $name"}
     $node=$project.CreateElement('Reference');$node.SetAttribute('Include',$name);$hint=$project.CreateElement('HintPath');$hint.InnerText=$path;[void]$node.AppendChild($hint)
-    if($name -eq 'TheTechIdea.Data'){$alias=$project.CreateElement('Aliases');$alias.InnerText='global,actualData';[void]$node.AppendChild($alias)};[void]$group.AppendChild($node)
+    if($name -eq 'Beep.OilandGas.Models'){$alias=$project.CreateElement('Aliases');$alias.InnerText='global,actualOwners';[void]$node.AppendChild($alias)};[void]$group.AppendChild($node)
 }
 @'
-extern alias actualData;
-global using FieldResponse = actualData::Beep.OilandGas.Models.Data.FieldResponse;
-global using FieldListItem = actualData::Beep.OilandGas.Models.Data.FieldListItem;
-global using SetActiveFieldRequest = actualData::Beep.OilandGas.Models.Data.SetActiveFieldRequest;
+extern alias actualOwners;
+global using FieldResponse = actualOwners::Beep.OilandGas.Models.Data.FieldResponse;
+global using FieldListItem = actualOwners::Beep.OilandGas.Models.Data.FieldListItem;
+global using SetActiveFieldRequest = actualOwners::Beep.OilandGas.Models.Data.SetActiveFieldRequest;
 '@ | Set-Content (Join-Path $checkDirectory 'ActualContracts.cs') -Encoding utf8
 # Explicit inactive legacy-presentation boundary. Native receiving must never render this branch.
 @'
@@ -90,11 +91,11 @@ global using SetActiveFieldRequest = actualData::Beep.OilandGas.Models.Data.SetA
 <p>Legacy transitions are outside the native receiving gate.</p>
 @code {
     [Parameter] public ProcessInstanceDetailState? DetailState {get;set;}
-    [Parameter] public TheTechIdea.Data.OilGas.ProcessTransitionReview? Review {get;set;}
+    [Parameter] public Beep.OilandGas.LifeCycle.Models.ProcessTransitionReview? Review {get;set;}
     [Parameter] public string? ExpectedRevision {get;set;}
     [Parameter] public string? CurrentState {get;set;}
     [Parameter] public string? InstanceId {get;set;}
-    [Parameter] public IReadOnlyList<TheTechIdea.Data.OilGas.ProcessTransitionChoice> Transitions {get;set;}=[];
+    [Parameter] public IReadOnlyList<Beep.OilandGas.LifeCycle.Models.ProcessTransitionChoice> Transitions {get;set;}=[];
     [Parameter] public EventCallback OnAttemptChanged {get;set;}
     [Parameter] public EventCallback OnTransitioned {get;set;}
 }
@@ -108,7 +109,8 @@ global using SetActiveFieldRequest = actualData::Beep.OilandGas.Models.Data.SetA
 @using Beep.OilandGas.Web.Components
 @using Beep.OilandGas.Web.Components.BusinessProcess
 '@ | Set-Content (Join-Path $checkDirectory '_Imports.razor') -Encoding utf8
-$path=Join-Path $checkDirectory 'ReceivingPage.csproj';$project.Save($path)
+$path=Join-Path $checkDirectory 'ReceivingPage.csproj';Add-OilGasRestoredOwnerReferences -Project $project -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
+$project.Save($path)
 $testArguments=@('test',$path,'--logger','console;verbosity=normal')
 if(-not [string]::IsNullOrWhiteSpace($Filter)){$testArguments+=@('--filter',$Filter)}
 dotnet @testArguments

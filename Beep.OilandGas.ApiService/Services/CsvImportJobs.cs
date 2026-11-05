@@ -1,16 +1,18 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using TheTechIdea.Beep.Editor;
-using FileImportResult = Beep.OilandGas.PPDM39.Core.FileImportResult;
+using FileImportResult = Beep.OilandGas.Models.Data.DataManagement.FileImportResult;
 
 namespace Beep.OilandGas.ApiService.Services;
 
 
 public sealed class CsvImportExecutor(IDMEEditor editor, ICommonColumnHandler columns,
     IPPDM39DefaultsRepository defaults, IPPDMMetadataRepository metadata,
-    ILoggerFactory loggers, IProgressTrackingService progress, CompanyModuleConnection company, TheTechIdea.Data.OilGas.IPPDMRowAccessPolicy rows) : ICsvImportExecutor
+    ILoggerFactory loggers, IProgressTrackingService progress, CompanyModuleConnection company, Beep.OilandGas.PPDM39.Core.Security.IPPDMRowAccessPolicy rows) : ICsvImportExecutor
 {
     public async Task<FileImportResult> ExecuteAsync(CsvImportJob job, string path)
     {

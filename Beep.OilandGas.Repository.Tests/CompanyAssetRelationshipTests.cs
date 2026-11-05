@@ -1,3 +1,5 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.AccessControl;
 using System.Data;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -8,7 +10,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Fixture = Beep.OilandGas.Repository.Tests.CompanyPPDMRowAccessTests.Fixture;
 
@@ -78,7 +79,7 @@ public sealed class CompanyAssetRelationshipTests
     }
 
     [Theory]
-    [InlineData("WELL")] [InlineData("POOL")] [InlineData("FACILITY")]
+    [InlineData("WELL")] [InlineData("POOL")]
     public async Task Company_constraints_are_ANDed_with_every_direct_and_inherited_grant_query(string table)
     {
         using var f = await Fixture.Create(); await f.Grant("FIELD", "A", inherit: true);
@@ -86,13 +87,13 @@ public sealed class CompanyAssetRelationshipTests
         f.Rows.Add(Row(table, "company")); f.Rows.Add(Row(table, "other"));
         var filters = new List<AppFilter> { new() { FieldName = Column(table), Operator = "=", FilterValue = "company" } };
         Assert.Single((await f.Service.GetEntitiesAsync(table, filters)).Entities);
-        Assert.Equal(table == "FACILITY" ? 1 : 2, f.Queries.Count);
+        Assert.Equal(2, f.Queries.Count);
         Assert.All(f.Queries, query => Assert.Equal(2, query.Count(filter => filter.FieldName == Column(table) && filter.FilterValue == "company")));
         Assert.Single(filters); Assert.Empty(f.Writes);
     }
 
     [Theory]
-    [InlineData("WELL")] [InlineData("POOL")] [InlineData("FACILITY")]
+    [InlineData("WELL")] [InlineData("POOL")]
     public async Task A_company_switch_with_identical_asset_and_field_ids_reads_only_its_company_relationship(string table)
     {
         using var f = await Fixture.Create(); await f.Grant("FIELD", "A", inherit: true);
@@ -104,7 +105,7 @@ public sealed class CompanyAssetRelationshipTests
     }
 
     [Theory]
-    [InlineData("WELL")] [InlineData("POOL")] [InlineData("FACILITY")]
+    [InlineData("WELL")] [InlineData("POOL")]
     public async Task Caller_company_filters_cannot_replace_the_selected_company_constraint(string table)
     {
         using var f = await Fixture.Create(); await f.Grant("FIELD", "A", inherit: true); f.Rows.Add(Row(table, "other"));
@@ -119,7 +120,6 @@ public sealed class CompanyAssetRelationshipTests
     [Theory]
     [InlineData("WELL", null)] [InlineData("WELL", "other")] [InlineData("WELL", "COMPANY")]
     [InlineData("POOL", null)] [InlineData("POOL", "other")] [InlineData("POOL", "COMPANY")]
-    [InlineData("FACILITY", null)] [InlineData("FACILITY", "other")] [InlineData("FACILITY", "COMPANY")]
     public async Task Historical_and_inherited_grants_cannot_read_another_company_relationship(string table, string? company)
     {
         using var f = await Fixture.Create(); await f.Grant("FIELD", "A", inherit: true);
@@ -130,7 +130,7 @@ public sealed class CompanyAssetRelationshipTests
     }
 
     [Theory]
-    [InlineData("WELL")] [InlineData("POOL")] [InlineData("FACILITY")]
+    [InlineData("WELL")] [InlineData("POOL")]
     public async Task Provider_results_cannot_bypass_company_constraints_even_with_valid_asset_grants(string table)
     {
         using var f = await Fixture.Create(); await f.Grant("FIELD", "A", inherit: true);
@@ -140,7 +140,7 @@ public sealed class CompanyAssetRelationshipTests
     }
 
     [Theory]
-    [InlineData("WELL")] [InlineData("POOL")] [InlineData("FACILITY")]
+    [InlineData("WELL")] [InlineData("POOL")]
     public async Task An_operator_or_company_change_observed_during_a_read_refuses_the_result(string table)
     {
         using var f = await Fixture.Create(); await f.Grant("FIELD", "A", inherit: true);
@@ -164,7 +164,7 @@ public sealed class CompanyAssetRelationshipTests
     }
 
     [Theory]
-    [InlineData("WELL")] [InlineData("POOL")] [InlineData("FACILITY")]
+    [InlineData("WELL")] [InlineData("POOL")]
     public async Task Mutation_policy_requires_the_company_on_both_existing_and_proposed_rows(string table)
     {
         using var f = await Fixture.Create(); await f.Grant("FIELD", "A", "DELETE", true);
@@ -193,6 +193,78 @@ public sealed class CompanyAssetRelationshipTests
         Assert.True(await store.RevokeAsync("actor", scope.Fingerprint, table, "asset"));
     }
 
+    // Plan 352 permits partner-operated facility reads through inherited FIELD access.
+    // Direct facility reads retain the selected operator; all generic facility writes are refused.
+    [Theory][InlineData(null)][InlineData("other")][InlineData("COMPANY")]
+    public async Task Facility_inherited_reads_use_the_authorized_field_without_inferring_operator_ownership(string? currentOperator)
+    {
+        using var f=await Fixture.Create();await f.Grant("FIELD","A",inherit:true);f.Rows.Add(Row("FACILITY",currentOperator));
+        var entity=Assert.Single((await f.Service.GetEntitiesAsync("FACILITY",[])).Entities);
+        Assert.Equal((object?)currentOperator ?? DBNull.Value,entity["CURRENT_OPERATOR"]);
+        var query=Assert.Single(f.Queries);
+        Assert.Contains(query,filter=>filter.FieldName=="PRIMARY_FIELD_ID" && filter.FilterValue=="A");
+        Assert.DoesNotContain(query,filter=>filter.FieldName=="CURRENT_OPERATOR");Assert.Empty(f.Writes);
+    }
+
+    [Fact]
+    public async Task Facility_caller_operator_filter_remains_ANDed_with_current_field_authority_and_revocation()
+    {
+        using var f=await Fixture.Create();await f.Grant("FIELD","A",inherit:true);
+        f.Rows.Add(Row("FACILITY","company"));f.Rows.Add(Row("FACILITY","partner"));
+        var requested=new List<AppFilter>{new(){FieldName="CURRENT_OPERATOR",Operator="=",FilterValue="partner"}};
+        Assert.Equal("partner",Assert.Single((await f.Service.GetEntitiesAsync("FACILITY",requested)).Entities)["CURRENT_OPERATOR"]);
+        var query=Assert.Single(f.Queries);
+        Assert.Contains(query,filter=>filter.FieldName=="PRIMARY_FIELD_ID" && filter.FilterValue=="A");
+        Assert.Equal("partner",Assert.Single(query.Where(filter=>filter.FieldName=="CURRENT_OPERATOR")).FilterValue);
+        Assert.Equal("partner",Assert.Single(requested).FilterValue);
+        var grant=await f.Db.Set<AppUserAssetAccess>().SingleAsync();grant.IsActive=false;await f.Db.SaveChangesAsync();
+        Assert.Empty((await f.Service.GetEntitiesAsync("FACILITY",requested)).Entities);
+        Assert.Single(f.Queries);Assert.Empty(f.Writes);
+    }
+
+    [Fact]
+    public async Task Facility_direct_grant_reads_retain_selected_company_and_composite_identity()
+    {
+        using var f=await Fixture.Create();await f.Grant("FACILITY","asset",facilityType:"gas");
+        f.Rows.Add(Row("FACILITY","partner"));Assert.Empty((await f.Service.GetEntitiesAsync("FACILITY",[])).Entities);
+        f.Rows.Add(Row("FACILITY","company"));
+        Assert.Equal("company",Assert.Single((await f.Service.GetEntitiesAsync("FACILITY",[])).Entities)["CURRENT_OPERATOR"]);
+        Assert.All(f.Queries,query=>{
+            Assert.Contains(query,filter=>filter.FieldName=="FACILITY_ID" && filter.FilterValue=="asset");
+            Assert.Contains(query,filter=>filter.FieldName=="FACILITY_TYPE" && filter.FilterValue=="gas");
+            Assert.Contains(query,filter=>filter.FieldName=="CURRENT_OPERATOR" && filter.FilterValue=="company");
+        });Assert.Empty(f.Writes);
+    }
+
+    [Theory][InlineData(false)][InlineData(true)]
+    public async Task Facility_inherited_reads_refuse_wrong_field_results_and_mid_read_field_changes(bool midRead)
+    {
+        using var f=await Fixture.Create();await f.Grant("FIELD","A",inherit:true);
+        var row=(FACILITY)Row("FACILITY","partner");f.Rows.Add(row);
+        if(midRead)f.AfterRead=()=>{row.PRIMARY_FIELD_ID="B";return Task.CompletedTask;};
+        else {row.PRIMARY_FIELD_ID="B";f.IgnoreFilters=true;}
+        Assert.Equal(RefusalKind.Forbidden,(await Assert.ThrowsAsync<RefusalException>(()=>f.Service.GetEntitiesAsync("FACILITY",[]))).Kind);
+        Assert.Empty(f.Writes);
+    }
+
+    [Fact]
+    public async Task Facility_company_switch_requires_a_grant_in_the_new_selected_company()
+    {
+        using var f=await Fixture.Create();await f.Grant("FIELD","A",inherit:true);f.Rows.Add(Row("FACILITY","partner"));
+        Assert.Single((await f.Service.GetEntitiesAsync("FACILITY",[])).Entities);
+        await f.Select("other-company");Assert.Empty((await f.Service.GetEntitiesAsync("FACILITY",[])).Entities);
+        await f.Grant("FIELD","A",inherit:true);Assert.Single((await f.Service.GetEntitiesAsync("FACILITY",[])).Entities);
+        Assert.Empty(f.Writes);
+    }
+
+    [Theory][InlineData(PPDMRowMutation.Insert)][InlineData(PPDMRowMutation.Update)][InlineData(PPDMRowMutation.Delete)]
+    public async Task Generic_facility_mutations_require_the_dedicated_command_owner_even_with_company_and_field_authority(PPDMRowMutation mutation)
+    {
+        using var f=await Fixture.Create();await f.Grant("FIELD","A","DELETE",true);var row=Row("FACILITY","company");
+        Assert.Equal(RefusalKind.Forbidden,(await Assert.ThrowsAsync<RefusalException>(()=>f.Policy.ValidateMutationAsync(typeof(FACILITY),"FACILITY",row,mutation==PPDMRowMutation.Insert?null:row,mutation,"actor"))).Kind);
+        Assert.Empty(f.Writes);
+    }
+
     [Fact]
     public async Task Actual_CSV_execution_refuses_a_foreign_operator_after_writing_only_the_authorized_row()
     {
@@ -211,7 +283,7 @@ public sealed class CompanyAssetRelationshipTests
     }
 
     [Theory]
-    [InlineData("WELL")] [InlineData("POOL")] [InlineData("FACILITY")]
+    [InlineData("WELL")] [InlineData("POOL")]
     public async Task Diagnostics_preserve_company_conjunctions_and_do_not_grant_access_without_asset_predicates(string table)
     {
         using var f = await Fixture.Create(); f.Http.HttpContext = f.Request;

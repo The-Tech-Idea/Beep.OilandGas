@@ -1,3 +1,7 @@
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.HSE.Models;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
@@ -22,7 +26,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
     /// <summary>
     /// Concrete implementation of process service that stores process data in database
     /// </summary>
-    public partial class PPDMProcessService : ProcessServiceBase, TheTechIdea.Data.OilGas.ICompanyAccountingProcessCommands, TheTechIdea.Data.OilGas.ICompanyMaintenanceProcessCommands, TheTechIdea.Data.OilGas.ICompanyMaintenanceAcceptanceCommands, TheTechIdea.Data.OilGas.ICompanyHseWorkflowCommands
+    public partial class PPDMProcessService : ProcessServiceBase, Beep.OilandGas.Models.Data.Accounting.ICompanyAccountingProcessCommands, Beep.OilandGas.Models.Data.WorkOrder.ICompanyMaintenanceProcessCommands, Beep.OilandGas.Models.Data.WorkOrder.ICompanyMaintenanceAcceptanceCommands, Beep.OilandGas.HSE.Models.ICompanyHseWorkflowCommands
     {
         private readonly ILoggerFactory? _loggerFactory;
         private readonly IRolePersonaReader? _personaReader;

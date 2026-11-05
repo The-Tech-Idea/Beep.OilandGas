@@ -1,3 +1,11 @@
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Core.Interfaces;
+using Beep.OilandGas.Models.Data.HSE;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.HSE.Models;
+using Beep.OilandGas.Repository.Models;
 #if RECORDED_APPROVAL_HTTP_FOCUSED
 using System.Data;
 using System.Net.Http.Json;
@@ -30,7 +38,6 @@ using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Editor.Migration;
 using TheTechIdea.Beep.Report;
 using TheTechIdea.Beep.Tools;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.Repository.Tests;

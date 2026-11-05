@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Core.Interfaces;

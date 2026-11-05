@@ -1,3 +1,9 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using System.Data;
 using System.Text.Json;
 using Beep.OilandGas.PPDM39.Core;
@@ -11,7 +17,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using ReviewFixture=Beep.OilandGas.Repository.Tests.CompanyMaintenanceQualifiedAssetTests.ReviewFixture;
 namespace Beep.OilandGas.Repository.Tests;

@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -7,7 +9,6 @@ using Duende.AccessTokenManagement;
 using Duende.AccessTokenManagement.OpenIdConnect;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.Web.Auth.Tests;

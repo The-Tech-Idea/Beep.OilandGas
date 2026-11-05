@@ -1,3 +1,6 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.Models.Data.Company;
 using System;
 using Beep.OilandGas.ApiService.Services;
 using System.IO;
@@ -41,7 +44,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         private readonly IProgressTrackingService? _progressTracking;
         private readonly IFailureReporter _failures;
         private readonly CompanyModuleConnection _company;
-        private readonly TheTechIdea.Data.OilGas.IPPDMRowAccessPolicy _rows;
+        private readonly Beep.OilandGas.PPDM39.Core.Security.IPPDMRowAccessPolicy _rows;
 
         public PPDM39ImportExportController(
             IDMEEditor editor,
@@ -53,7 +56,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             IProgressTrackingService progressTracking,
             IBackgroundOperationQueue queue,
             IFailureReporter failures,
-            CompanyModuleConnection company, TheTechIdea.Data.OilGas.IPPDMRowAccessPolicy rows)
+            CompanyModuleConnection company, Beep.OilandGas.PPDM39.Core.Security.IPPDMRowAccessPolicy rows)
         {
             _failures = failures ?? throw new ArgumentNullException(nameof(failures));
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));

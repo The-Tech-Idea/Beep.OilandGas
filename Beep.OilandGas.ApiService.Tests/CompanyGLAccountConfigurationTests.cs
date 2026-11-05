@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Accounting.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Data;
 using System.Text.Json;
@@ -9,7 +11,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.DataBase;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 public sealed class CompanyGLAccountConfigurationTests

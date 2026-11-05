@@ -1,11 +1,12 @@
 param([ValidateSet('Debug', 'Release')][string]$Configuration = 'Debug', [switch]$RenderPortfolio, [string]$FocusedOutputDirectory)
+. (Join-Path $PSScriptRoot 'RestoredOwnerFixtureReferences.ps1')
 $ErrorActionPreference = 'Stop'
 
 # Compile exact page/component sources and their actual focused state assembly.
 # This check does not replace missing host projects or exercise live HTTP/auth/browser/provider behavior.
 $repositoryRoot = Split-Path $PSScriptRoot -Parent
 $focusedOutput = if ([string]::IsNullOrEmpty($FocusedOutputDirectory)) { Join-Path $repositoryRoot "Beep.OilandGas.Repository.Tests/bin/company-focused/$Configuration/net10.0" } else { [IO.Path]::GetFullPath($FocusedOutputDirectory) }
-$assemblies = @('TheTechIdea.Data', 'DataManagementModels', 'Beep.OilandGas.PPDM.Models', 'Beep.OilandGas.Repository.Tests')
+$assemblies = @('Beep.OilandGas.Models', 'DataManagementModels', 'Beep.OilandGas.PPDM.Models', 'Beep.OilandGas.Repository.Tests')
 foreach ($name in $assemblies) {
     if (-not (Test-Path -LiteralPath (Join-Path $focusedOutput "$name.dll"))) { throw 'Run focused company tests before this page check.' }
 }
@@ -44,7 +45,8 @@ foreach ($name in $assemblies) {
     $hint = $project.CreateElement('HintPath'); $hint.InnerText = Join-Path $focusedOutput "$name.dll"
     [void]$reference.AppendChild($hint); [void]$items.AppendChild($reference)
 }
-$projectPath = Join-Path $checkDirectory 'LeasePageCheck.csproj'; $project.Save($projectPath)
+$projectPath = Join-Path $checkDirectory 'LeasePageCheck.csproj'; Add-OilGasRestoredOwnerReferences -Project $project -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
+$project.Save($projectPath)
 & dotnet build $projectPath --configuration $Configuration --verbosity quiet --nologo
 if ($LASTEXITCODE -ne 0) { throw "Lease page compilation failed; inspect $checkDirectory." }
 foreach ($name in $sources.Keys) {
@@ -64,7 +66,8 @@ if ($RenderPortfolio) {
         $hint = $renderProject.CreateElement('HintPath'); $hint.InnerText = Join-Path $focusedOutput "$name.dll"
         [void]$reference.AppendChild($hint); [void]$renderItems.AppendChild($reference)
     }
-    $renderProjectPath = Join-Path $renderDirectory 'PortfolioRenderCheck.csproj'; $renderProject.Save($renderProjectPath)
+    $renderProjectPath = Join-Path $renderDirectory 'PortfolioRenderCheck.csproj'; Add-OilGasRestoredOwnerReferences -Project $renderProject -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
+$renderProject.Save($renderProjectPath)
     @'
 using System.Globalization;
 using System.Net;
@@ -81,7 +84,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using Moq;
 using MudBlazor.Services;
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.Models.Data.Company;
 
 foreach (var mode in new[] { "full-en", "full-fr", "empty", "error", "missing-field", "missing-company", "loading", "uncertain-status" })
 {

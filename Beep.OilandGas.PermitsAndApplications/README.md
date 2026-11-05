@@ -101,7 +101,7 @@ This library provides support for the complete field lifecycle from prospect ide
 
 The current delivery status and remaining gates are owned by [Plan 354](../Plans/FrameworkAppEnhancement/Implementation-354-Permit-Application-Workflow.md) and the [company tracker](../Plans/FrameworkAppEnhancement/Company-Plan-Index.md).
 
-`TheTechIdea.Data` owns the canonical `PERMIT_APPLICATION`, supporting rows, history, immutable command receipt and transport contracts. The PERMITS module manifest uses Beep Migration for schema changes; new application schema does not use handwritten SQL or EF migrations. Clients use the typed API clients.
+`Beep.OilandGas.PermitsAndApplications` owns the canonical `PERMIT_APPLICATION`, supporting rows, history, immutable command receipt and transport contracts. The PERMITS module manifest uses Beep Migration for schema changes; new application schema does not use handwritten SQL or EF migrations. Clients use the typed API clients.
 
 `PermitApplicationLifecycleService.ReviewSourceAsync` captures the exact current company/FIELD header, history, three supporting rows and exact active attachment metadata population. Supporting schema/read failures refuse review rather than confirming absence. `RecordCommandAsync` records a reviewed original through the existing owned Serializable transaction, history and receipt. `RecoverCommandAsync` reconciles that same original without a new effect.
 

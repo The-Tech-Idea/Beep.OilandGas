@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.AccessControl;
 using System.ComponentModel.DataAnnotations;
 using Beep.OilandGas.Models.Data;
 

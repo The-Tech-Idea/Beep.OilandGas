@@ -1,4 +1,4 @@
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Models.Data.HSE;
 
 namespace Beep.OilandGas.Models.Core.Interfaces;

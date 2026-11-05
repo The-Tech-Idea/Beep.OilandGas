@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Text.Json;
 using Moq;
@@ -5,7 +7,6 @@ using TheTechIdea.Beep;
 using System.Net;
 using Beep.OilandGas.Web.Services;
 using Microsoft.Extensions.DependencyInjection;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 public sealed class CompanyFxRateWindowTests

@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;

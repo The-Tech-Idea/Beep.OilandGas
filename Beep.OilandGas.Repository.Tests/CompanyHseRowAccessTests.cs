@@ -1,3 +1,10 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Models.Data.HSE;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Constants;
 using Beep.OilandGas.Models.Core.Refusals;
@@ -8,7 +15,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Fixture = Beep.OilandGas.Repository.Tests.CompanyPPDMRowAccessTests.Fixture;
 
@@ -215,7 +221,7 @@ public sealed class CompanyHseRowAccessTests
     {
         using var f = await Ready();
         f.Db.RoleClaims.Add(new IdentityRoleClaim<string> { RoleId = "admin", ClaimType = "permission", ClaimValue = "HSE.ReportIncident" });
-        var grant = await f.Db.Set<TheTechIdea.Data.OilGas.AppUserAssetAccess>().SingleAsync(row => row.AssetType == "FIELD" && row.AssetId == "A");
+        var grant = await f.Db.Set<Beep.OilandGas.Models.Data.AccessControl.AppUserAssetAccess>().SingleAsync(row => row.AssetType == "FIELD" && row.AssetId == "A");
         grant.AccessLevel = "WRITE"; await f.Db.SaveChangesAsync();
         var profile = Profile(f); var review = (await profile.GetCurrentFieldSelectionAsync()).SelectionContext!;
         var evidence = await f.Policy.CaptureHseReportAuthorityAsync(profile, review, "actor");
@@ -230,7 +236,7 @@ public sealed class CompanyHseRowAccessTests
     public async Task ReportAuthorityRequiresReportPermissionEvenWithFieldWrite()
     {
         using var f = await Ready();
-        var grant = await f.Db.Set<TheTechIdea.Data.OilGas.AppUserAssetAccess>().SingleAsync(row => row.AssetType == "FIELD" && row.AssetId == "A");
+        var grant = await f.Db.Set<Beep.OilandGas.Models.Data.AccessControl.AppUserAssetAccess>().SingleAsync(row => row.AssetType == "FIELD" && row.AssetId == "A");
         grant.AccessLevel = "WRITE"; await f.Db.SaveChangesAsync();
         var profile = Profile(f); var review = (await profile.GetCurrentFieldSelectionAsync()).SelectionContext!;
         await Assert.ThrowsAnyAsync<Exception>(() => f.Policy.CaptureHseReportAuthorityAsync(profile, review, "actor"));
@@ -247,7 +253,7 @@ public sealed class CompanyHseRowAccessTests
         using var f = await Ready();
         var claim = new IdentityRoleClaim<string> { RoleId = "admin", ClaimType = "permission", ClaimValue = "HSE.ReportIncident" };
         f.Db.RoleClaims.Add(claim);
-        var grant = await f.Db.Set<TheTechIdea.Data.OilGas.AppUserAssetAccess>().SingleAsync(row => row.AssetType == "FIELD" && row.AssetId == "A");
+        var grant = await f.Db.Set<Beep.OilandGas.Models.Data.AccessControl.AppUserAssetAccess>().SingleAsync(row => row.AssetType == "FIELD" && row.AssetId == "A");
         grant.AccessLevel = "WRITE"; await f.Db.SaveChangesAsync();
         var profile = Profile(f); var review = (await profile.GetCurrentFieldSelectionAsync()).SelectionContext!;
         Assert.False(string.IsNullOrEmpty(await f.Policy.CaptureHseReportAuthorityAsync(profile, review, "actor")));

@@ -1,16 +1,18 @@
 #if WORKFLOW_INBOX_FOCUSED
-extern alias actualData;
+extern alias actualOwners;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Models.Data.Company;
 using System.Net;
 using System.Net.Http.Json;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Web.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 using Xunit;
-using Detail=actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderDetailModel;
-using Inspection=actualData::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition;
+using Detail=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderDetailModel;
+using Inspection=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition;
 namespace Beep.OilandGas.Web.Auth.Tests;
 
 public sealed class MaintenanceInspectionClientTests

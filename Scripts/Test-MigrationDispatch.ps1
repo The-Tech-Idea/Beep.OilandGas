@@ -1,4 +1,5 @@
 param([string]$PackageSource = "$env:USERPROFILE/.nuget/packages")
+. (Join-Path $PSScriptRoot 'RestoredOwnerFixtureReferences.ps1')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $work = Join-Path $env:TEMP ('oilgas-migration-dispatch-' + [Guid]::NewGuid().ToString('N'))
@@ -9,7 +10,7 @@ function XmlPath([string]$path) { [System.Security.SecurityElement]::Escape($pat
 foreach ($dependency in @(
     (Join-Path $root 'Beep.OilandGas.Models/bin/Debug/net10.0/Beep.OilandGas.Models.dll'),
     (Join-Path $root 'Beep.OilandGas.Repository/bin/Debug/net10.0/Beep.OilandGas.Repository.dll'),
-    (Join-Path $root 'TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll'),
+    (Join-Path $root 'Beep.OilandGas.Models/bin/Debug/net10.0/Beep.OilandGas.Models.dll'),
     (Join-Path (Split-Path $root -Parent) 'BeepDM/DataManagementModelsStandard/bin/Debug/net10.0/DataManagementModels.dll')
 )) { if (-not (Test-Path -LiteralPath $dependency -PathType Leaf)) { throw "Build the focused dependency first: $dependency" } }
 $stub = Join-Path $work 'TestBoundaries.cs'
@@ -49,7 +50,7 @@ $project = Join-Path $work 'MigrationDispatch.csproj'
 <PackageReference Include="Moq" Version="4.20.72" />
 <Reference Include="Beep.OilandGas.Models"><HintPath>$(XmlPath (Join-Path $root 'Beep.OilandGas.Models/bin/Debug/net10.0/Beep.OilandGas.Models.dll'))</HintPath></Reference>
 <Reference Include="Beep.OilandGas.Repository"><HintPath>$(XmlPath (Join-Path $root 'Beep.OilandGas.Repository/bin/Debug/net10.0/Beep.OilandGas.Repository.dll'))</HintPath></Reference>
-<Reference Include="TheTechIdea.Data"><HintPath>$(XmlPath (Join-Path $root 'TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll'))</HintPath></Reference>
+<Reference Include="Beep.OilandGas.Models"><HintPath>$(XmlPath (Join-Path $root 'Beep.OilandGas.Models/bin/Debug/net10.0/Beep.OilandGas.Models.dll'))</HintPath></Reference>
 <Reference Include="DataManagementModels"><HintPath>$(XmlPath (Join-Path (Split-Path $root -Parent) 'BeepDM/DataManagementModelsStandard/bin/Debug/net10.0/DataManagementModels.dll'))</HintPath></Reference>
 <Compile Include="$(XmlPath $stub)" />
 <Compile Include="$(XmlPath (Join-Path $root 'Beep.OilandGas.ApiService/Services/MigrationAdministratorAuthority.cs'))" />
@@ -59,6 +60,7 @@ $project = Join-Path $work 'MigrationDispatch.csproj'
 <Compile Include="$(XmlPath (Join-Path $root 'Beep.OilandGas.ApiService.Tests/MigrationDispatchHttpTests.cs'))" />
 </ItemGroup></Project>
 "@ | Set-Content -LiteralPath $project -Encoding utf8
+Update-OilGasRestoredFixtureProjectFile -ProjectPath $project -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
 dotnet restore $project --source $PackageSource --ignore-failed-sources --verbosity quiet
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 dotnet test $project --no-restore --nologo --verbosity minimal

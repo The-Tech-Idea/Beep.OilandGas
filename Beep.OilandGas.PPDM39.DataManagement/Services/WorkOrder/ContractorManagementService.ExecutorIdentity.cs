@@ -1,5 +1,7 @@
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.WorkOrder;
 using System.Text.Json;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.PPDM39.DataManagement.Services.WorkOrder;
 
 public partial class ContractorManagementService:ICompanyWorkOrderExecutorIdentityOwner

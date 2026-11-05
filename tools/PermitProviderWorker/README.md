@@ -23,11 +23,11 @@ connector 1.0.59 and provider 1.0.119 packages. The recorded qualification uses 
 local package artifact, not a verified public release.
 
 ```powershell
-$dataPath = (Resolve-Path TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll).Path
+$dataPath = (Resolve-Path Beep.OilandGas.Models/bin/Debug/net10.0/Beep.OilandGas.Models.dll).Path
 $focusedArgs = @(
     '-p:FocusedCompanyTests=true',
     '-p:FocusedObligationPolicyTests=true',
-    "-p:FocusedDataAssemblyPath=$dataPath",
+    "-p:FocusedModelsAssemblyPath=$dataPath",
     '-p:BuildProjectReferences=false'
 )
 dotnet build Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-restore @focusedArgs

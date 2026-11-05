@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using System.Threading.Channels;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Microsoft.Extensions.Hosting;

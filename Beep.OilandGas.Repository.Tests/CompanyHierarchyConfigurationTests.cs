@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.ApiService.Tests.Infrastructure;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
@@ -8,7 +9,6 @@ using Beep.OilandGas.PPDM39.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Fixture = Beep.OilandGas.Repository.Tests.CompanyPPDMRowAccessTests.Fixture;
 

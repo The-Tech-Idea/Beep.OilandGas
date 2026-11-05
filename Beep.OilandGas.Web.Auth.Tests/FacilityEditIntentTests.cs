@@ -1,9 +1,11 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.DevelopmentPlanning;
+using Beep.OilandGas.Models.Data.Company;
 using System.Text.Json;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep;
 using TheTechIdea.Beep.Tools;
-using TheTechIdea.Data.OilGas;
 using Moq;
 using Xunit;
 namespace Beep.OilandGas.Web.Auth.Tests;

@@ -1,3 +1,9 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Repository.Models;
 using System.Text.Json;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
@@ -7,7 +13,6 @@ using Beep.OilandGas.Repository;
 using Moq;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Tools;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.Repository.Tests;
@@ -18,7 +23,7 @@ public sealed partial class CompanyProductionBoundaryTests
     public async Task OriginalInterventionRecoveryReadsOnlyItsWellActivityAndRefusesMismatchingRows()
     {
         using var fixture=await Ready();var profile=Profile(fixture);await Save(profile);
-        const string well="well/الكويت%2F",other="other-authorized-well";
+        const string well="well/Ø§Ù„ÙƒÙˆÙŠØª%2F",other="other-authorized-well";
         await fixture.Grant("WELL",well,"WRITE");await fixture.Grant("WELL",other,"WRITE");NativeDecisionSource(fixture);NativeDecisionProvider(fixture);
         fixture.Rows.Add(new WELL{UWI=other,ASSIGNED_FIELD="A",OPERATOR="company",ACTIVE_IND="Y"});
         var otherActivity=new WELL_ACTIVITY{UWI=other,SOURCE="other-source",ACTIVITY_OBS_NO=900,ACTIVE_IND="Y",ACTIVITY_TYPE_ID="WORKOVER_CANDIDATE",ROW_CREATED_BY="other-engineer",REMARK="Unrelated authorized preparation"};fixture.Rows.Add(otherActivity);
@@ -37,7 +42,7 @@ public sealed partial class CompanyProductionBoundaryTests
     public async Task NativeApprovedInterventionRetainsExactRecordedMaintenanceHeaderAndComponent(string fault)
     {
         using var fixture=await Ready();var profile=Profile(fixture);await Save(profile);
-        const string well="well/الكويت%2F",order="order/العالم%2F";
+        const string well="well/Ø§Ù„ÙƒÙˆÙŠØª%2F",order="order/Ø§Ù„Ø¹Ø§Ù„Ù…%2F";
         await fixture.Grant("WELL",well,"WRITE");if(fault!="no-order-right")await fixture.Grant("WORK_ORDER",order);
         NativeDecisionSource(fixture);NativeDecisionProvider(fixture);
         fixture.Rows.Add(new WORK_ORDER{WORK_ORDER_ID=order,WORK_ORDER_NUMBER="Recorded corrective order",WORK_ORDER_TYPE=Beep.OilandGas.Models.Data.WorkOrder.WorkOrderSubType.Corrective,INSTRUCTIONS="Recorded original scope",ACTIVE_IND="Y"});
@@ -66,7 +71,7 @@ public sealed partial class CompanyProductionBoundaryTests
         Assert.Equal(3,writes);Assert.Single(fixture.Rows.OfType<WORK_ORDER>());Assert.Single(fixture.Rows.OfType<WORK_ORDER_COMPONENT>());Assert.Null(fixture.LeaseActiveTransaction);
         if(fault=="receiver")
         {
-            fixture.Db.Users.Add(new TheTechIdea.Data.OilGas.OilGasUser{Id="receiver",UserName="receiver",IsActive=true});
+            fixture.Db.Users.Add(new Beep.OilandGas.Repository.Models.OilGasUser{Id="receiver",UserName="receiver",IsActive=true});
             fixture.Db.UserRoles.Add(new Microsoft.AspNetCore.Identity.IdentityUserRole<string>{UserId="receiver",RoleId="admin"});await fixture.Db.SaveChangesAsync();
             fixture.Request.User=new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity([new("party_id","receiver")],"fixture"));fixture.Request.Items.Clear();
             await fixture.Select("company","receiver");await fixture.Grant("FIELD","A");await fixture.Grant("WELL",well);await fixture.Grant("WORK_ORDER",order);
@@ -83,7 +88,7 @@ public sealed partial class CompanyProductionBoundaryTests
         Assert.Equal(2, metadata.Count);
         Assert.All(ProductionInterventionNativeSchema.EntityTypes, type =>
         {
-            Assert.Equal("TheTechIdea.Data", type.Assembly.GetName().Name);
+            Assert.Equal("Beep.OilandGas.Models", type.Assembly.GetName().Name);
             Assert.Equal("PPDM_CORE", metadata[type.Name].Module); Assert.Equal("INTENT_ID", metadata[type.Name].PrimaryKeyColumn);
             Assert.Equal(type.FullName, metadata[type.Name].EntityTypeName);
         });
@@ -122,14 +127,14 @@ public sealed partial class CompanyProductionBoundaryTests
         var context = (await profile.GetCurrentFieldSelectionAsync()).SelectionContext!;
         var history = fixture.Rows.OfType<WELL_ACTIVITY>().ToArray();
         return new() { IntentId = Guid.NewGuid(), Context = context, FieldId = "A", Decision = decision,
-            ExpectedSourceRevision = ProductionInterventionActivityChecks.Revision(history, context.Company, "actor", "A", "well/الكويت%2F"),
+            ExpectedSourceRevision = ProductionInterventionActivityChecks.Revision(history, context.Company, "actor", "A", "well/Ø§Ù„ÙƒÙˆÙŠØª%2F"),
             InterventionType = "WORKOVER_CANDIDATE", Problem = "Original recorded diagnosis", Note = "Independent original decision rationale" };
     }
 
     internal static void NativeDecisionSource(CompanyPPDMRowAccessTests.Fixture fixture)
     {
-        fixture.Rows.Add(new WELL { UWI = "well/الكويت%2F", ASSIGNED_FIELD = "A", OPERATOR = "company", ACTIVE_IND = "Y" });
-        fixture.Rows.Add(new WELL_ACTIVITY { UWI = "well/الكويت%2F", SOURCE = "engineer-source", ACTIVITY_OBS_NO = 7, ACTIVE_IND = "Y",
+        fixture.Rows.Add(new WELL { UWI = "well/Ø§Ù„ÙƒÙˆÙŠØª%2F", ASSIGNED_FIELD = "A", OPERATOR = "company", ACTIVE_IND = "Y" });
+        fixture.Rows.Add(new WELL_ACTIVITY { UWI = "well/Ø§Ù„ÙƒÙˆÙŠØª%2F", SOURCE = "engineer-source", ACTIVITY_OBS_NO = 7, ACTIVE_IND = "Y",
             ACTIVITY_TYPE_ID = "WORKOVER_CANDIDATE", ROW_CREATED_BY = "engineer", REMARK = "Original recorded diagnosis" });
     }
 
@@ -140,12 +145,12 @@ public sealed partial class CompanyProductionBoundaryTests
     public async Task NativeInterventionDecisionRetainsOriginalCommandAndExactOutcomeWithoutChangingPreparation(string decision)
     {
         using var fixture = await Ready(); var profile = Profile(fixture); await Save(profile);
-        await fixture.Grant("WELL", "well/الكويت%2F", "WRITE"); NativeDecisionSource(fixture); NativeDecisionProvider(fixture);
+        await fixture.Grant("WELL", "well/Ø§Ù„ÙƒÙˆÙŠØª%2F", "WRITE"); NativeDecisionSource(fixture); NativeDecisionProvider(fixture);
         var original = JsonSerializer.Serialize(fixture.Rows.OfType<WELL_ACTIVITY>().Single());
         var request = await NativeDecisionRequest(fixture, profile, decision); var service = Phase(fixture, profile);
-        var result = await service.RecordNativeInterventionDecisionAsync("well/الكويت%2F", request, "actor");
+        var result = await service.RecordNativeInterventionDecisionAsync("well/Ø§Ù„ÙƒÙˆÙŠØª%2F", request, "actor");
         Assert.Equal(request.IntentId, result.IntentId); Assert.Equal(decision, result.Decision); Assert.True(result.Success);
-        ProductionInterventionDecisionChecks.RequireAcknowledgement(request, result, "well/الكويت%2F");
+        ProductionInterventionDecisionChecks.RequireAcknowledgement(request, result, "well/Ø§Ù„ÙƒÙˆÙŠØª%2F");
         Assert.Equal(8, result.DecisionObservationNumber); Assert.Equal("engineer-source", result.DecisionSource); Assert.Equal(64, result.NativeReceiptRevision.Length);
         var intent = Assert.Single(fixture.Rows.OfType<WELL_INTERVENTION_INTENT>()); var outcome = Assert.Single(fixture.Rows.OfType<WELL_INTERVENTION_RESULT>());
         Assert.Equal(JsonSerializer.Serialize(request), JsonSerializer.Serialize(intent.Restore().Decision));
@@ -154,12 +159,12 @@ public sealed partial class CompanyProductionBoundaryTests
         Assert.Equal("actor", fixture.Rows.OfType<WELL_ACTIVITY>().Single(row => row.ACTIVITY_OBS_NO == 8).ROW_CREATED_BY);
         Assert.Equal(new[] { "begin", "commit", "begin", "commit" }, fixture.LeaseTransactions);
         var writes = fixture.Writes.Count; var transactions = fixture.LeaseTransactions.Count;
-        var recovered = await Phase(fixture, profile).RecoverNativeInterventionDecisionAsync("well/الكويت%2F", request.IntentId, "actor");
+        var recovered = await Phase(fixture, profile).RecoverNativeInterventionDecisionAsync("well/Ø§Ù„ÙƒÙˆÙŠØª%2F", request.IntentId, "actor");
         Assert.NotNull(recovered.Outcome); Assert.Equal(JsonSerializer.Serialize(result), JsonSerializer.Serialize(recovered.Outcome.Restore(recovered.Intent!)));
-        var repeated = await Phase(fixture, profile).RecordNativeInterventionDecisionAsync("well/الكويت%2F", request, "actor");
+        var repeated = await Phase(fixture, profile).RecordNativeInterventionDecisionAsync("well/Ø§Ù„ÙƒÙˆÙŠØª%2F", request, "actor");
         Assert.Equal(JsonSerializer.Serialize(result), JsonSerializer.Serialize(repeated)); Assert.Equal(writes, fixture.Writes.Count); Assert.Equal(transactions, fixture.LeaseTransactions.Count);
         var changed = CompanyInventorySourceReview.Copy(request); changed.Note = "A different decision cannot reuse this identity";
-        await Assert.ThrowsAnyAsync<Exception>(() => Phase(fixture, profile).RecordNativeInterventionDecisionAsync("well/الكويت%2F", changed, "actor"));
+        await Assert.ThrowsAnyAsync<Exception>(() => Phase(fixture, profile).RecordNativeInterventionDecisionAsync("well/Ø§Ù„ÙƒÙˆÙŠØª%2F", changed, "actor"));
         Assert.Equal(writes, fixture.Writes.Count); Assert.Null(fixture.LeaseActiveTransaction);
     }
 
@@ -167,16 +172,16 @@ public sealed partial class CompanyProductionBoundaryTests
     public async Task LostNativeCommitResponseIsRecoveredFromItsOriginalJournalWithoutInventingAnOutcome(string point)
     {
         using var fixture = await Ready(); var profile = Profile(fixture); await Save(profile);
-        await fixture.Grant("WELL", "well/الكويت%2F", "WRITE"); NativeDecisionSource(fixture); NativeDecisionProvider(fixture);
+        await fixture.Grant("WELL", "well/Ø§Ù„ÙƒÙˆÙŠØª%2F", "WRITE"); NativeDecisionSource(fixture); NativeDecisionProvider(fixture);
         var request = await NativeDecisionRequest(fixture, profile);
         fixture.AfterLeaseWrite = row => { if (point == "retention" && row is WELL_INTERVENTION_INTENT || point == "disposition" && row is WELL_INTERVENTION_RESULT) { fixture.LeaseCommitFailed = true; fixture.LeaseCommitAfterFailure = true; } };
-        await Assert.ThrowsAsync<InvalidOperationException>(() => Phase(fixture, profile).RecordNativeInterventionDecisionAsync("well/الكويت%2F", request, "actor"));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => Phase(fixture, profile).RecordNativeInterventionDecisionAsync("well/Ø§Ù„ÙƒÙˆÙŠØª%2F", request, "actor"));
         fixture.LeaseCommitFailed = false; fixture.AfterLeaseWrite = null;
         var writes = fixture.Writes.Count;
-        var recovery = await Phase(fixture, profile).RecoverNativeInterventionDecisionAsync("well/الكويت%2F", request.IntentId, "actor");
+        var recovery = await Phase(fixture, profile).RecoverNativeInterventionDecisionAsync("well/Ø§Ù„ÙƒÙˆÙŠØª%2F", request.IntentId, "actor");
         Assert.NotNull(recovery.Intent); Assert.Equal(point == "disposition", recovery.Outcome is not null); Assert.Equal(writes, fixture.Writes.Count);
-        if (point == "disposition") { var result = await Phase(fixture, profile).RecordNativeInterventionDecisionAsync("well/الكويت%2F", request, "actor"); Assert.True(result.Success); Assert.Equal(writes, fixture.Writes.Count); }
-        else { var result = await Phase(fixture, profile).RecordNativeInterventionDecisionAsync("well/الكويت%2F", request, "actor"); Assert.True(result.Success); Assert.Equal(writes + 2, fixture.Writes.Count); }
+        if (point == "disposition") { var result = await Phase(fixture, profile).RecordNativeInterventionDecisionAsync("well/Ø§Ù„ÙƒÙˆÙŠØª%2F", request, "actor"); Assert.True(result.Success); Assert.Equal(writes, fixture.Writes.Count); }
+        else { var result = await Phase(fixture, profile).RecordNativeInterventionDecisionAsync("well/Ø§Ù„ÙƒÙˆÙŠØª%2F", request, "actor"); Assert.True(result.Success); Assert.Equal(writes + 2, fixture.Writes.Count); }
         Assert.Single(fixture.Rows.OfType<WELL_INTERVENTION_INTENT>()); Assert.Single(fixture.Rows.OfType<WELL_INTERVENTION_RESULT>()); Assert.Null(fixture.LeaseActiveTransaction);
     }
 
@@ -184,12 +189,12 @@ public sealed partial class CompanyProductionBoundaryTests
     public async Task FailedNativeResultInsertionRollsBackOnlyDispositionAndLeavesItsOriginalReservationRecoverable()
     {
         using var fixture = await Ready(); var profile = Profile(fixture); await Save(profile);
-        await fixture.Grant("WELL", "well/الكويت%2F", "WRITE"); NativeDecisionSource(fixture); NativeDecisionProvider(fixture);
+        await fixture.Grant("WELL", "well/Ø§Ù„ÙƒÙˆÙŠØª%2F", "WRITE"); NativeDecisionSource(fixture); NativeDecisionProvider(fixture);
         var request = await NativeDecisionRequest(fixture, profile); fixture.LeaseFailWriteNumber = 3;
-        await Assert.ThrowsAnyAsync<Exception>(() => Phase(fixture, profile).RecordNativeInterventionDecisionAsync("well/الكويت%2F", request, "actor"));
+        await Assert.ThrowsAnyAsync<Exception>(() => Phase(fixture, profile).RecordNativeInterventionDecisionAsync("well/Ø§Ù„ÙƒÙˆÙŠØª%2F", request, "actor"));
         Assert.Single(fixture.Rows.OfType<WELL_INTERVENTION_INTENT>()); Assert.Empty(fixture.Rows.OfType<WELL_INTERVENTION_RESULT>());
         Assert.Equal(7, Assert.Single(fixture.Rows.OfType<WELL_ACTIVITY>()).ACTIVITY_OBS_NO); Assert.Equal(new[] { "begin", "commit", "begin", "rollback" }, fixture.LeaseTransactions);
-        var writes = fixture.Writes.Count; var recovery = await Phase(fixture, profile).RecoverNativeInterventionDecisionAsync("well/الكويت%2F", request.IntentId, "actor");
+        var writes = fixture.Writes.Count; var recovery = await Phase(fixture, profile).RecoverNativeInterventionDecisionAsync("well/Ø§Ù„ÙƒÙˆÙŠØª%2F", request.IntentId, "actor");
         Assert.NotNull(recovery.Intent); Assert.Null(recovery.Outcome); Assert.Equal(writes, fixture.Writes.Count);
     }
 
@@ -197,11 +202,11 @@ public sealed partial class CompanyProductionBoundaryTests
     public async Task NativeDecisionRequiresIndependentMakerWriteRightsAndRealSerializableOwnership(string fault)
     {
         using var fixture = await Ready(); var profile = Profile(fixture); await Save(profile);
-        await fixture.Grant("WELL", "well/الكويت%2F", fault == "read-only" ? "READ" : "WRITE"); NativeDecisionSource(fixture); NativeDecisionProvider(fixture);
+        await fixture.Grant("WELL", "well/Ø§Ù„ÙƒÙˆÙŠØª%2F", fault == "read-only" ? "READ" : "WRITE"); NativeDecisionSource(fixture); NativeDecisionProvider(fixture);
         if (fault == "maker") fixture.Rows.OfType<WELL_ACTIVITY>().Single().ROW_CREATED_BY = "actor";
         if (fault == "isolation") fixture.TransactionIsolation = System.Data.IsolationLevel.ReadCommitted;
         var request = await NativeDecisionRequest(fixture, profile);
-        await Assert.ThrowsAnyAsync<Exception>(() => Phase(fixture, profile).RecordNativeInterventionDecisionAsync("well/الكويت%2F", request, "actor"));
+        await Assert.ThrowsAnyAsync<Exception>(() => Phase(fixture, profile).RecordNativeInterventionDecisionAsync("well/Ø§Ù„ÙƒÙˆÙŠØª%2F", request, "actor"));
         Assert.Empty(fixture.Writes); Assert.Empty(fixture.Rows.OfType<WELL_INTERVENTION_INTENT>()); Assert.Empty(fixture.Rows.OfType<WELL_INTERVENTION_RESULT>()); Assert.Null(fixture.LeaseActiveTransaction);
         if (fault == "isolation") Assert.Equal(new[] { "begin", "rollback" }, fixture.LeaseTransactions);
         else Assert.Empty(fixture.LeaseTransactions);
@@ -211,7 +216,7 @@ public sealed partial class CompanyProductionBoundaryTests
     public async Task NativeDecisionRefusesChangedMetadataSchemaOrParentBeforePublishingAReservation(string fault)
     {
         using var fixture = await Ready(); var profile = Profile(fixture); await Save(profile);
-        await fixture.Grant("WELL", "well/الكويت%2F", "WRITE"); NativeDecisionSource(fixture); NativeDecisionProvider(fixture);
+        await fixture.Grant("WELL", "well/Ø§Ù„ÙƒÙˆÙŠØª%2F", "WRITE"); NativeDecisionSource(fixture); NativeDecisionProvider(fixture);
         var request = await NativeDecisionRequest(fixture, profile); var callback = false;
         if (fault == "metadata") fixture.Metadata.Setup(value => value.GetTableMetadataAsync("WELL_INTERVENTION_INTENT")).ReturnsAsync(new Beep.OilandGas.PPDM39.Core.Metadata.PPDMTableMetadata { PrimaryKeyColumn = "UWI" });
         if (fault == "schema") fixture.Source.Setup(value => value.GetEntityStructure(It.IsAny<EntityStructure>(), true)).Returns((EntityStructure requested, bool _) =>
@@ -220,7 +225,7 @@ public sealed partial class CompanyProductionBoundaryTests
             var value = new ClassCreator(fixture.Editor.Object).ConvertToEntityStructure(type); value.Fields.Single(field => field.FieldName == "INTENT_ID").IsKey = false; return value;
         });
         if (fault == "parent") fixture.AfterLeaseWrite = row => { if (row is WELL_INTERVENTION_INTENT) { callback = true; fixture.Rows.OfType<WELL>().Single().REMARK = "Changed original parent during retention"; } };
-        await Assert.ThrowsAnyAsync<Exception>(() => Phase(fixture, profile).RecordNativeInterventionDecisionAsync("well/الكويت%2F", request, "actor"));
+        await Assert.ThrowsAnyAsync<Exception>(() => Phase(fixture, profile).RecordNativeInterventionDecisionAsync("well/Ø§Ù„ÙƒÙˆÙŠØª%2F", request, "actor"));
         Assert.Empty(fixture.Rows.OfType<WELL_INTERVENTION_INTENT>()); Assert.Empty(fixture.Rows.OfType<WELL_INTERVENTION_RESULT>()); Assert.Single(fixture.Rows.OfType<WELL_ACTIVITY>());
         if (fault is "schema" or "parent") Assert.True(callback);
         if (fault == "parent") Assert.Equal(new[] { "begin", "rollback" }, fixture.LeaseTransactions);

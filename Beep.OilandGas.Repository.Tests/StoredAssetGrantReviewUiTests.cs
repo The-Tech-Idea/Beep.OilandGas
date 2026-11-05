@@ -1,8 +1,10 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Data.Company;
 using System.Text.Json;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Web.Services;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using ReviewClient = Beep.OilandGas.Client.App.Services.AccessControl.IAccessControlService;
 

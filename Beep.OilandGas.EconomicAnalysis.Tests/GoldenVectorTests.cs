@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.EconomicAnalysis;
 using Xunit;
 
 namespace Beep.OilandGas.EconomicAnalysis.Tests;
@@ -14,7 +15,7 @@ public class GoldenVectorTests
     [Fact]
     public void NPV_StandardExample_MatchesKnownValue()
     {
-        double[] cashFlows = { -1000, 300, 300, 300, 300, 300 };
+        CashFlow[] cashFlows = [new(0, -1000), new(1, 300), new(2, 300), new(3, 300), new(4, 300), new(5, 300)];
         double rate = 0.10;
 
         var npv = EconomicAnalysis.Calculations.EconomicCalculator.CalculateNPV(cashFlows, rate);
@@ -26,7 +27,7 @@ public class GoldenVectorTests
     [Fact]
     public void Payback_StandardExample_MatchesKnownValue()
     {
-        double[] cashFlows = { -1000, 300, 300, 300, 300, 300 };
+        CashFlow[] cashFlows = [new(0, -1000), new(1, 300), new(2, 300), new(3, 300), new(4, 300), new(5, 300)];
 
         var payback = EconomicAnalysis.Calculations.EconomicCalculator.CalculatePaybackPeriod(cashFlows);
 
@@ -37,7 +38,7 @@ public class GoldenVectorTests
     [Fact]
     public void ProfitabilityIndex_StandardExample_GreaterThanOne()
     {
-        double[] cashFlows = { -1000, 300, 300, 300, 300, 300 };
+        CashFlow[] cashFlows = [new(0, -1000), new(1, 300), new(2, 300), new(3, 300), new(4, 300), new(5, 300)];
         double rate = 0.10;
 
         var pi = EconomicAnalysis.Calculations.EconomicCalculator.CalculateProfitabilityIndex(cashFlows, rate);

@@ -1,4 +1,4 @@
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.Models.Data.WorkOrder;
 using Xunit;
 namespace Beep.OilandGas.Web.Auth.Tests;

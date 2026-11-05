@@ -1,3 +1,6 @@
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Models.Data;
 
@@ -109,7 +112,7 @@ public sealed class HierarchyConfigurationState : IDisposable
         // Preserve the confirmed revision and company, rather than accepting mutable DTO audit/identity fields as authority.
         var snapshot = Configuration.Select(row => new HierarchyConfig { OrganizationId = id, AssetType = row.AssetType, HierarchyLevel = row.HierarchyLevel,
             ParentLevel = row.ParentLevel, LevelName = row.LevelName, Active = row.Active, Revision = revision }).ToList();
-        if (TheTechIdea.Data.OilGas.HierarchyConfigurationRules.Validate(id,snapshot) is not null)
+        if (Beep.OilandGas.Models.Data.AccessControl.HierarchyConfigurationRules.Validate(id,snapshot) is not null)
         { Error = "Enter a display name of at most 128 characters for every category."; Changed?.Invoke(); return; }
         using var cancellation = new CancellationTokenSource(); pending = cancellation; Saving = true; Error = null; Confirmation = null; Changed?.Invoke();
         bool Current() => !disposed && generation == version && company.Snapshot == scope;
@@ -147,7 +150,7 @@ public sealed class HierarchyConfigurationState : IDisposable
         (row.OrganizationId,row.AssetType,row.HierarchyLevel,row.ParentLevel,row.LevelName,row.Active);
 
     private static bool ValidResponse(string id,List<HierarchyConfig>? rows) => rows is not null &&
-        (rows.Count==0 || TheTechIdea.Data.OilGas.HierarchyConfigurationRules.Validate(id,rows) is null &&
+        (rows.Count==0 || Beep.OilandGas.Models.Data.AccessControl.HierarchyConfigurationRules.Validate(id,rows) is null &&
          rows.Select(row=>row.Revision).Distinct(StringComparer.Ordinal).Count()==1 &&
          Guid.TryParseExact(rows[0].Revision,"D",out _));
 

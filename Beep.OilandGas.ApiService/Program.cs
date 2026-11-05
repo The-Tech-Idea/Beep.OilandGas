@@ -1,3 +1,18 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Repository.Models;
+using Beep.OilandGas.PPDM39.DataManagement.Core.Interfaces;
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Accounting.Models;
+using Beep.OilandGas.ProductionOperations.Models;
+using Beep.OilandGas.DevelopmentPlanning.Models;
+using Beep.OilandGas.LeaseAcquisition.Models;
 using Beep.OilandGas.ApiService.DependencyInjection;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.RateLimiting;
@@ -127,11 +142,12 @@ var connectionName = builder.Configuration["ConnectionStrings:PPDM39"] ?? Beep.O
 builder.Services.AddSingleton<ICommonColumnHandler, CommonColumnHandler>();
 
 // Metadata Repository
+builder.Services.AddSingleton<Beep.OilandGas.PPDM39.Core.Metadata.IPPDMMetadataContributor, Beep.OilandGas.PermitsAndApplications.Metadata.PermitApplicationNativeMetadata>();
 builder.Services.AddSingleton<IPPDMMetadataRepository>(sp =>
 {
     var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<Beep.OilandGas.PPDM39.DataManagement.Core.Metadata.PPDMMetadataService>();
     logger.LogInformation("Initializing PPDM Metadata Repository");
-    return new Beep.OilandGas.PPDM39.DataManagement.Core.Metadata.PPDMMetadataService(logger);
+    return new Beep.OilandGas.PPDM39.DataManagement.Core.Metadata.PPDMMetadataService(logger, contributors: sp.GetServices<Beep.OilandGas.PPDM39.Core.Metadata.IPPDMMetadataContributor>());
 });
 
 // Defaults Repository — Phase 2A: integrated with BeepDM DefaultsManager for expression rules
@@ -216,8 +232,8 @@ builder.Services.AddScoped<IPPDMProductionService>(sp =>
     var logger = loggerFactory.CreateLogger<Beep.OilandGas.LifeCycle.Services.Production.PPDMProductionService>();
     return new Beep.OilandGas.LifeCycle.Services.Production.PPDMProductionService(
         editor, commonColumnHandler, defaults, metadata, mappingService,
-        sp.GetRequiredService<TheTechIdea.Data.OilGas.ICompanyFieldSelectionService>(),
-        sp.GetRequiredService<TheTechIdea.Data.OilGas.IPPDMRowAccessPolicy>(), logger);
+        sp.GetRequiredService<Beep.OilandGas.Models.Data.Field.ICompanyFieldSelectionService>(),
+        sp.GetRequiredService<Beep.OilandGas.PPDM39.Core.Security.IPPDMRowAccessPolicy>(), logger);
 });
 // Also register concrete type so ProductionController can use extended methods
 builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.Production.PPDMProductionService>(sp =>
@@ -329,25 +345,25 @@ builder.Services.AddScoped<IDevelopmentPlanService>(sp =>
 });
 builder.Services.AddScoped<IDevelopmentPlanRequestAuthority, DevelopmentPlanRequestAuthority>();
 builder.Services.AddScoped<DevelopmentFacilityReadAuthority>();
-builder.Services.AddScoped<Func<TheTechIdea.Data.OilGas.FieldSelectionReview,TheTechIdea.Data.OilGas.ICompanyFacilityEditOwner>>(sp => context =>
+builder.Services.AddScoped<Func<Beep.OilandGas.Models.Data.Field.FieldSelectionReview,Beep.OilandGas.DevelopmentPlanning.Models.ICompanyFacilityEditOwner>>(sp => context =>
     new FacilityManagementService(sp.GetRequiredService<IDMEEditor>(),sp.GetRequiredService<ICommonColumnHandler>(),sp.GetRequiredService<IPPDM39DefaultsRepository>(),
         sp.GetRequiredService<IPPDMMetadataRepository>(),sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>(),context.Database.ConnectionName,
-        resolveModuleConnection:module=>sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync(module),maintenanceAssetAccess:sp.GetRequiredService<TheTechIdea.Data.OilGas.IPPDMRowAccessPolicy>()));
+        resolveModuleConnection:module=>sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync(module),maintenanceAssetAccess:sp.GetRequiredService<Beep.OilandGas.PPDM39.Core.Security.IPPDMRowAccessPolicy>()));
 builder.Services.AddScoped<CompanyDevelopmentFacilityEditService>();
-builder.Services.AddScoped<Func<TheTechIdea.Data.OilGas.FieldSelectionReview,TheTechIdea.Data.OilGas.ICompanyFacilityEquipmentReader>>(sp => context =>
-    (TheTechIdea.Data.OilGas.ICompanyFacilityEquipmentReader)sp.GetRequiredService<Func<TheTechIdea.Data.OilGas.FieldSelectionReview,TheTechIdea.Data.OilGas.ICompanyFacilityEditOwner>>()(context));
+builder.Services.AddScoped<Func<Beep.OilandGas.Models.Data.Field.FieldSelectionReview,Beep.OilandGas.DevelopmentPlanning.Models.ICompanyFacilityEquipmentReader>>(sp => context =>
+    (Beep.OilandGas.DevelopmentPlanning.Models.ICompanyFacilityEquipmentReader)sp.GetRequiredService<Func<Beep.OilandGas.Models.Data.Field.FieldSelectionReview,Beep.OilandGas.DevelopmentPlanning.Models.ICompanyFacilityEditOwner>>()(context));
 builder.Services.AddScoped<CompanyDevelopmentFacilityEquipmentService>();
-builder.Services.AddScoped<Func<TheTechIdea.Data.OilGas.FieldSelectionReview,TheTechIdea.Data.OilGas.ICompanyEquipmentInstallationReader>>(sp => context =>
-    (TheTechIdea.Data.OilGas.ICompanyEquipmentInstallationReader)sp.GetRequiredService<Func<TheTechIdea.Data.OilGas.FieldSelectionReview,TheTechIdea.Data.OilGas.ICompanyFacilityEditOwner>>()(context));
+builder.Services.AddScoped<Func<Beep.OilandGas.Models.Data.Field.FieldSelectionReview,Beep.OilandGas.DevelopmentPlanning.Models.ICompanyEquipmentInstallationReader>>(sp => context =>
+    (Beep.OilandGas.DevelopmentPlanning.Models.ICompanyEquipmentInstallationReader)sp.GetRequiredService<Func<Beep.OilandGas.Models.Data.Field.FieldSelectionReview,Beep.OilandGas.DevelopmentPlanning.Models.ICompanyFacilityEditOwner>>()(context));
 builder.Services.AddScoped<CompanyEquipmentInstallationReviewService>();
-builder.Services.AddScoped<Func<TheTechIdea.Data.OilGas.FieldSelectionReview,TheTechIdea.Data.OilGas.ICompanyEquipmentInstallationOwner>>(sp => context =>
-    (TheTechIdea.Data.OilGas.ICompanyEquipmentInstallationOwner)sp.GetRequiredService<Func<TheTechIdea.Data.OilGas.FieldSelectionReview,TheTechIdea.Data.OilGas.ICompanyFacilityEditOwner>>()(context));
+builder.Services.AddScoped<Func<Beep.OilandGas.Models.Data.Field.FieldSelectionReview,Beep.OilandGas.DevelopmentPlanning.Models.ICompanyEquipmentInstallationOwner>>(sp => context =>
+    (Beep.OilandGas.DevelopmentPlanning.Models.ICompanyEquipmentInstallationOwner)sp.GetRequiredService<Func<Beep.OilandGas.Models.Data.Field.FieldSelectionReview,Beep.OilandGas.DevelopmentPlanning.Models.ICompanyFacilityEditOwner>>()(context));
 builder.Services.AddScoped<CompanyEquipmentInstallationCommandService>();
 
-builder.Services.AddScoped<Func<TheTechIdea.Data.OilGas.FieldSelectionReview,TheTechIdea.Data.OilGas.ICompanyFacilityCreationReader>>(sp => context =>
-    (TheTechIdea.Data.OilGas.ICompanyFacilityCreationReader)sp.GetRequiredService<Func<TheTechIdea.Data.OilGas.FieldSelectionReview,TheTechIdea.Data.OilGas.ICompanyFacilityEditOwner>>()(context));
-builder.Services.AddScoped<Func<TheTechIdea.Data.OilGas.FieldSelectionReview,TheTechIdea.Data.OilGas.ICompanyFacilityCreationOwner>>(sp => context =>
-    (TheTechIdea.Data.OilGas.ICompanyFacilityCreationOwner)sp.GetRequiredService<Func<TheTechIdea.Data.OilGas.FieldSelectionReview,TheTechIdea.Data.OilGas.ICompanyFacilityEditOwner>>()(context));
+builder.Services.AddScoped<Func<Beep.OilandGas.Models.Data.Field.FieldSelectionReview,Beep.OilandGas.DevelopmentPlanning.Models.ICompanyFacilityCreationReader>>(sp => context =>
+    (Beep.OilandGas.DevelopmentPlanning.Models.ICompanyFacilityCreationReader)sp.GetRequiredService<Func<Beep.OilandGas.Models.Data.Field.FieldSelectionReview,Beep.OilandGas.DevelopmentPlanning.Models.ICompanyFacilityEditOwner>>()(context));
+builder.Services.AddScoped<Func<Beep.OilandGas.Models.Data.Field.FieldSelectionReview,Beep.OilandGas.DevelopmentPlanning.Models.ICompanyFacilityCreationOwner>>(sp => context =>
+    (Beep.OilandGas.DevelopmentPlanning.Models.ICompanyFacilityCreationOwner)sp.GetRequiredService<Func<Beep.OilandGas.Models.Data.Field.FieldSelectionReview,Beep.OilandGas.DevelopmentPlanning.Models.ICompanyFacilityEditOwner>>()(context));
 builder.Services.AddScoped<CompanyDevelopmentFacilityCreationService>();
 builder.Services.AddScoped<DevelopmentReviewCatalogService>();
 builder.Services.AddScoped<DevelopmentReviewRecipientAuthority>();
@@ -388,8 +404,8 @@ builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.Decommissioning.Pro
     var processLogger = loggerFactory.CreateLogger<Beep.OilandGas.LifeCycle.Services.Decommissioning.Processes.DecommissioningProcessService>();
     var decommissioningService = new Beep.OilandGas.LifeCycle.Services.Decommissioning.PPDMDecommissioningService(
         editor, commonColumnHandler, defaults, metadata, mappingService,
-        sp.GetRequiredService<TheTechIdea.Data.OilGas.ICompanyFieldSelectionService>(),
-        sp.GetRequiredService<TheTechIdea.Data.OilGas.IPPDMRowAccessPolicy>(), decommissioningLogger);
+        sp.GetRequiredService<Beep.OilandGas.Models.Data.Field.ICompanyFieldSelectionService>(),
+        sp.GetRequiredService<Beep.OilandGas.PPDM39.Core.Security.IPPDMRowAccessPolicy>(), decommissioningLogger);
     return new Beep.OilandGas.LifeCycle.Services.Decommissioning.Processes.DecommissioningProcessService(
         processService, decommissioningService, processLogger);
 });
@@ -409,8 +425,8 @@ builder.Services.AddScoped<IFieldOrchestrator>(sp =>
     return new Beep.OilandGas.LifeCycle.Services.FieldOrchestrator(
         editor, commonColumnHandler, defaults, metadata, mappingService, fieldExploration,
         sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>(),
-        sp.GetRequiredService<TheTechIdea.Data.OilGas.ICompanyFieldSelectionService>(),
-        sp.GetRequiredService<TheTechIdea.Data.OilGas.IPPDMRowAccessPolicy>(), sp.GetRequiredService<ICompanyCorrectiveActionCommands>(), sp.GetRequiredService<ICompanyIncidentCommands>(), accessControlService, logger);
+        sp.GetRequiredService<Beep.OilandGas.Models.Data.Field.ICompanyFieldSelectionService>(),
+        sp.GetRequiredService<Beep.OilandGas.PPDM39.Core.Security.IPPDMRowAccessPolicy>(), sp.GetRequiredService<ICompanyCorrectiveActionCommands>(), sp.GetRequiredService<ICompanyIncidentCommands>(), accessControlService, logger);
 });
 
 // Calculation Service
@@ -1085,15 +1101,15 @@ builder.Services.AddScoped<RepositoryRequestAccount>();
 builder.Services.AddScoped<Beep.OilandGas.UserManagement.Contracts.Services.IRowLevelSecurityService, CompanyRowLevelSecurityService>();
 builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.AccessControl.IApplicationRolePermissionStore, RepositoryApplicationRolePermissionStore>();
 builder.Services.AddScoped<RepositoryAssetAccessStore>();
-builder.Services.AddScoped<TheTechIdea.Data.OilGas.IUserAssetAccessStore>(sp => sp.GetRequiredService<RepositoryAssetAccessStore>());
-builder.Services.AddScoped<TheTechIdea.Data.OilGas.IWorkflowRecipientAssetReader>(sp => sp.GetRequiredService<RepositoryAssetAccessStore>());
+builder.Services.AddScoped<Beep.OilandGas.Models.Data.AccessControl.IUserAssetAccessStore>(sp => sp.GetRequiredService<RepositoryAssetAccessStore>());
+builder.Services.AddScoped<Beep.OilandGas.DevelopmentPlanning.Models.IWorkflowRecipientAssetReader>(sp => sp.GetRequiredService<RepositoryAssetAccessStore>());
 builder.Services.AddScoped<IAssetGrantTargetVerifier, PPDMAssetGrantTargetVerifier>();
-builder.Services.AddOptions<TheTechIdea.Data.OilGas.PPDMFieldEligibilityConfiguration>()
+builder.Services.AddOptions<Beep.OilandGas.PPDM39.DataManagement.Models.PPDMFieldEligibilityConfiguration>()
     .Bind(builder.Configuration.GetSection("PPDM:FieldDataAccess"));
-builder.Services.AddScoped<TheTechIdea.Data.OilGas.ICompanyFieldEligibility, PPDMCompanyFieldEligibility>();
-builder.Services.AddScoped<TheTechIdea.Data.OilGas.ICompanyFieldInterestReview, PPDMCompanyFieldInterestReview>();
-builder.Services.AddScoped<TheTechIdea.Data.OilGas.ICompanyLeaseDataAccess, PPDMCompanyLeaseDataAccess>();
-builder.Services.AddScoped<TheTechIdea.Data.OilGas.IPPDMRowAccessPolicy, CompanyPPDMRowAccessPolicy>();
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.DataManagement.Models.ICompanyFieldEligibility, PPDMCompanyFieldEligibility>();
+builder.Services.AddScoped<Beep.OilandGas.Models.Data.Lease.ICompanyFieldInterestReview, PPDMCompanyFieldInterestReview>();
+builder.Services.AddScoped<Beep.OilandGas.LeaseAcquisition.Models.ICompanyLeaseDataAccess, PPDMCompanyLeaseDataAccess>();
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Security.IPPDMRowAccessPolicy, CompanyPPDMRowAccessPolicy>();
 builder.Services.AddScoped<IAccessControlService>(sp =>
 {
     var editor = sp.GetRequiredService<IDMEEditor>();
@@ -1104,15 +1120,15 @@ builder.Services.AddScoped<IAccessControlService>(sp =>
         editor, commonColumnHandler, defaults, metadata,
         sp.GetRequiredService<Beep.OilandGas.LifeCycle.Services.AccessControl.IApplicationAuthorizationReader>(),
         sp.GetRequiredService<Beep.OilandGas.LifeCycle.Services.AccessControl.IApplicationRolePermissionStore>(),
-        sp.GetRequiredService<TheTechIdea.Data.OilGas.IUserAssetAccessStore>(),
+        sp.GetRequiredService<Beep.OilandGas.Models.Data.AccessControl.IUserAssetAccessStore>(),
         () => sp.GetRequiredService<CompanyModuleConnection>().ResolveAsync(),
         subject => new CompanyPPDMRowAccessPolicy(sp.GetRequiredService<CompanyModuleConnection>(),
-            sp.GetRequiredService<TheTechIdea.Data.OilGas.IUserAssetAccessStore>(), metadata,
-            sp.GetRequiredService<TheTechIdea.Data.OilGas.ICompanyFieldEligibility>(), editor, commonColumnHandler, defaults, sp.GetRequiredService<IOptions<TheTechIdea.Data.OilGas.PPDMFieldEligibilityConfiguration>>(), subject),
-        sp.GetRequiredService<TheTechIdea.Data.OilGas.ICompanyFieldInterestReview>());
+            sp.GetRequiredService<Beep.OilandGas.Models.Data.AccessControl.IUserAssetAccessStore>(), metadata,
+            sp.GetRequiredService<Beep.OilandGas.PPDM39.DataManagement.Models.ICompanyFieldEligibility>(), editor, commonColumnHandler, defaults, sp.GetRequiredService<IOptions<Beep.OilandGas.PPDM39.DataManagement.Models.PPDMFieldEligibilityConfiguration>>(), subject),
+        sp.GetRequiredService<Beep.OilandGas.Models.Data.Lease.ICompanyFieldInterestReview>());
 });
 
-builder.Services.AddScoped<TheTechIdea.Data.OilGas.IHierarchyConfigurationStore, RepositoryHierarchyConfigurationStore>();
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IHierarchyConfigurationStore, RepositoryHierarchyConfigurationStore>();
 builder.Services.AddScoped<IAssetHierarchyService>(sp =>
 {
     var editor = sp.GetRequiredService<IDMEEditor>();
@@ -1120,33 +1136,33 @@ builder.Services.AddScoped<IAssetHierarchyService>(sp =>
     var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
     var company = sp.GetRequiredService<CompanyModuleConnection>();
-    var assets = sp.GetRequiredService<TheTechIdea.Data.OilGas.IUserAssetAccessStore>();
+    var assets = sp.GetRequiredService<Beep.OilandGas.Models.Data.AccessControl.IUserAssetAccessStore>();
     return new Beep.OilandGas.LifeCycle.Services.AccessControl.AssetHierarchyService(
             editor, columns, defaults, metadata, () => company.ResolveAsync(),
             subject => new CompanyPPDMRowAccessPolicy(company, assets, metadata,
-                sp.GetRequiredService<TheTechIdea.Data.OilGas.ICompanyFieldEligibility>(), editor, columns, defaults, sp.GetRequiredService<IOptions<TheTechIdea.Data.OilGas.PPDMFieldEligibilityConfiguration>>(), subject),
+                sp.GetRequiredService<Beep.OilandGas.PPDM39.DataManagement.Models.ICompanyFieldEligibility>(), editor, columns, defaults, sp.GetRequiredService<IOptions<Beep.OilandGas.PPDM39.DataManagement.Models.PPDMFieldEligibilityConfiguration>>(), subject),
             subject => company.ResolveHierarchyCompanyAsync(subject),
-            sp.GetRequiredService<TheTechIdea.Data.OilGas.IHierarchyConfigurationStore>(),
+            sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IHierarchyConfigurationStore>(),
             order=>CompanyWorkOrderFieldReview.ComponentsAsync(company,editor,columns,defaults,metadata,
-                sp.GetRequiredService<TheTechIdea.Data.OilGas.ICompanyFieldEligibility>(),order));
+                sp.GetRequiredService<Beep.OilandGas.PPDM39.DataManagement.Models.ICompanyFieldEligibility>(),order));
 });
 
 builder.Services.AddScoped<RepositoryUserProfileService>();
 builder.Services.AddScoped<IUserProfileService>(sp => sp.GetRequiredService<RepositoryUserProfileService>());
-builder.Services.AddScoped<TheTechIdea.Data.OilGas.ICompanyFieldSelectionService>(sp => sp.GetRequiredService<RepositoryUserProfileService>());
-builder.Services.AddScoped<TheTechIdea.Data.OilGas.ICompanyFieldSelectionAuthority>(sp => sp.GetRequiredService<RepositoryUserProfileService>());
+builder.Services.AddScoped<Beep.OilandGas.Models.Data.Field.ICompanyFieldSelectionService>(sp => sp.GetRequiredService<RepositoryUserProfileService>());
+builder.Services.AddScoped<Beep.OilandGas.Models.Data.Field.ICompanyFieldSelectionAuthority>(sp => sp.GetRequiredService<RepositoryUserProfileService>());
 builder.Services.AddScoped<CompanyMaintenanceHandoffService>();
 builder.Services.AddScoped<CompanyHseWorkflowService>();
 builder.Services.AddScoped<CompanyHseAssignedActionReader>();
 builder.Services.AddScoped<ICompanyHseWorkflowReader, CompanyHseWorkflowReader>();
-builder.Services.AddScoped<TheTechIdea.Data.OilGas.ICompanyMaintenanceWellEvidenceOwner,CompanyMaintenanceWellEvidenceReader>();
-builder.Services.AddScoped<TheTechIdea.Data.OilGas.ICompanyMaintenanceQualifiedAssetEvidenceOwner,CompanyMaintenanceQualifiedAssetEvidenceReader>();
+builder.Services.AddScoped<Beep.OilandGas.Models.Data.WorkOrder.ICompanyMaintenanceWellEvidenceOwner,CompanyMaintenanceWellEvidenceReader>();
+builder.Services.AddScoped<Beep.OilandGas.Models.Data.WorkOrder.ICompanyMaintenanceQualifiedAssetEvidenceOwner,CompanyMaintenanceQualifiedAssetEvidenceReader>();
 builder.Services.AddScoped<CompanyWorkOrderBudgetService>();
-builder.Services.AddScoped<TheTechIdea.Data.OilGas.ICompanyLedgerBookReader>(sp=>sp.GetRequiredService<Beep.OilandGas.Accounting.Services.GLAccountService>());
+builder.Services.AddScoped<Beep.OilandGas.Accounting.Models.ICompanyLedgerBookReader>(sp=>sp.GetRequiredService<Beep.OilandGas.Accounting.Services.GLAccountService>());
 builder.Services.AddScoped<CompanyPersonnelPolicyService>();
 builder.Services.AddScoped<CompanyMaintenanceReturnPolicyService>();
 builder.Services.AddScoped<CompanyPersonnelIdentityService>();
-builder.Services.AddScoped<TheTechIdea.Data.OilGas.ICompanyMaterialReservationQueueReader>(sp=>sp.GetRequiredService<CompanyMaintenanceHandoffService>());
+builder.Services.AddScoped<Beep.OilandGas.ProductionOperations.Models.ICompanyMaterialReservationQueueReader>(sp=>sp.GetRequiredService<CompanyMaintenanceHandoffService>());
 
 // ============================================
 // REGISTER IDENTITY/PERSONA SERVICES (W11-05)
@@ -1375,7 +1391,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPPDM39DataServ
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var logger = loggerFactory.CreateLogger<Beep.OilandGas.ApiService.Services.PPDM39GenericDataService>();
     return new Beep.OilandGas.ApiService.Services.PPDM39GenericDataService(
-        editor, commonColumnHandler, defaults, metadata, sp.GetRequiredService<CompanyModuleConnection>(), logger, sp.GetRequiredService<TheTechIdea.Data.OilGas.IPPDMRowAccessPolicy>());
+        editor, commonColumnHandler, defaults, metadata, sp.GetRequiredService<CompanyModuleConnection>(), logger, sp.GetRequiredService<Beep.OilandGas.PPDM39.Core.Security.IPPDMRowAccessPolicy>());
 });
 
 // PPDM39 Workflow Service
@@ -1749,7 +1765,7 @@ builder.Services.AddScoped<Beep.OilandGas.LeaseAcquisition.Services.LeaseAcquisi
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var logger = loggerFactory.CreateLogger<Beep.OilandGas.LeaseAcquisition.Services.LeaseAcquisitionService>();
     return new LeaseAcquisitionService(
-        editor, commonColumnHandler, defaults, metadata, sp.GetRequiredService<TheTechIdea.Data.OilGas.ICompanyLeaseDataAccess>(), logger);
+        editor, commonColumnHandler, defaults, metadata, sp.GetRequiredService<Beep.OilandGas.LeaseAcquisition.Models.ICompanyLeaseDataAccess>(), logger);
 });
 builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.ILeaseAcquisitionService>(sp =>
     sp.GetRequiredService<Beep.OilandGas.LeaseAcquisition.Services.LeaseAcquisitionService>());
@@ -2123,7 +2139,7 @@ builder.Services.AddSingleton<HubLifetimeManager<ProgressHub>>(sp => new Progres
     (exception, operation, outcome) => sp.GetRequiredService<IFailureReporter>().ReportHandled(exception, operation, outcome)));
 
 // Resolves through the existing company gateway rather than the startup/default connection.
-static async Task<(TheTechIdea.Data.OilGas.CompanyScope Company,string Actor,TheTechIdea.Data.OilGas.AssetDatabaseScope Database)> ResolveWorkOrderDatabaseAsync(IServiceProvider services)
+static async Task<(Beep.OilandGas.Models.Data.AccessControl.CompanyScope Company,string Actor,Beep.OilandGas.Models.Data.AccessControl.AssetDatabaseScope Database)> ResolveWorkOrderDatabaseAsync(IServiceProvider services)
 {
     var company=services.GetRequiredService<CompanyModuleConnection>();
     var database=await company.ResolveAsync();
@@ -2334,7 +2350,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPermitApplicat
     var logger     = sp.GetRequiredService<ILoggerFactory>()
                        .CreateLogger<Beep.OilandGas.PermitsAndApplications.Services.PermitApplicationLifecycleService>();
     return new Beep.OilandGas.PermitsAndApplications.Services.PermitApplicationLifecycleService(
-        editor, cch, defaults, metadata, sp.GetRequiredService<ICompanyPermitApplicationDataAccess>(), logger);
+        editor, cch, defaults, metadata, sp.GetRequiredService<ICompanyPermitApplicationDataAccess>(), logger, sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>());
 });
 
 builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPermitApplicationWorkflowService>(sp =>
@@ -2346,7 +2362,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPermitApplicat
     var logger     = sp.GetRequiredService<ILoggerFactory>()
                        .CreateLogger<Beep.OilandGas.PermitsAndApplications.Services.PermitApplicationWorkflowService>();
     return new Beep.OilandGas.PermitsAndApplications.Services.PermitApplicationWorkflowService(
-        editor, cch, defaults, metadata, sp.GetRequiredService<ICompanyPermitApplicationDataAccess>(), logger);
+        editor, cch, defaults, metadata, sp.GetRequiredService<ICompanyPermitApplicationDataAccess>(), logger, sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>());
 });
 
 builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPermitComplianceCheckService>(sp =>
@@ -2358,7 +2374,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPermitComplian
     var logger     = sp.GetRequiredService<ILoggerFactory>()
                        .CreateLogger<Beep.OilandGas.PermitsAndApplications.Services.PermitComplianceCheckService>();
     return new Beep.OilandGas.PermitsAndApplications.Services.PermitComplianceCheckService(
-        editor, cch, defaults, metadata, sp.GetRequiredService<ICompanyPermitApplicationDataAccess>(), logger);
+        editor, cch, defaults, metadata, sp.GetRequiredService<ICompanyPermitApplicationDataAccess>(), logger, sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>());
 });
 
 builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPermitStatusHistoryService>(sp =>
@@ -2370,7 +2386,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPermitStatusHi
     var logger     = sp.GetRequiredService<ILoggerFactory>()
                        .CreateLogger<Beep.OilandGas.PermitsAndApplications.Services.PermitStatusHistoryService>();
     return new Beep.OilandGas.PermitsAndApplications.Services.PermitStatusHistoryService(
-        editor, cch, defaults, metadata, sp.GetRequiredService<ICompanyPermitApplicationDataAccess>(), logger);
+        editor, cch, defaults, metadata, sp.GetRequiredService<ICompanyPermitApplicationDataAccess>(), logger, sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>());
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2863,7 +2879,7 @@ app.MapGet("/health", async (IDMEEditor editor, IRepositoryReadinessService read
         Timestamp = DateTime.UtcNow,
         Service = "Beep.OilandGas.ApiService",
         DatasourcesConfigured = editor?.ConfigEditor?.DataConnections?.Count ?? 0
-    }, statusCode: status == TheTechIdea.Data.OilGas.RepositoryReadiness.Ready ? 200 : 503);
+    }, statusCode: status == Beep.OilandGas.Repository.Models.RepositoryReadiness.Ready ? 200 : 503);
 })
 .AllowAnonymous()
 .WithName("HealthCheck");
@@ -2873,8 +2889,8 @@ startupLog.LogInformation("Beep Oil and Gas PPDM39 API started successfully");
 app.MapGet("/health/repository", async (IRepositoryReadinessService readiness, CancellationToken cancellationToken) =>
 {
     var status = await readiness.CheckAsync(cancellationToken);
-    return Results.Json(new TheTechIdea.Data.OilGas.RepositoryStatusResponse(status.ToString()), statusCode:
-        status == TheTechIdea.Data.OilGas.RepositoryReadiness.Ready ? 200 : 503);
+    return Results.Json(new Beep.OilandGas.Repository.Models.RepositoryStatusResponse(status.ToString()), statusCode:
+        status == Beep.OilandGas.Repository.Models.RepositoryReadiness.Ready ? 200 : 503);
 }).AllowAnonymous();
 
 app.Run();

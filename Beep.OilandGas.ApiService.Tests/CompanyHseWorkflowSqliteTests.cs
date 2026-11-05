@@ -1,5 +1,10 @@
 #if HSE_SQLITE_FOCUSED
 extern alias purchase;
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.HSE;
+using Beep.OilandGas.HSE.Models;
 using System.Data;
 using System.Reflection;
 using System.Text.Json;
@@ -31,7 +36,6 @@ using TheTechIdea.Beep.Logger;
 using TheTechIdea.Beep.Report;
 using TheTechIdea.Beep.Tools;
 using TheTechIdea.Beep.Utilities;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;

@@ -1,7 +1,7 @@
+using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.Repository;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Tests.Infrastructure;
 

@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using System.Net;
 using System.Net.Http.Json;
@@ -19,7 +21,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Xunit.Abstractions;
 

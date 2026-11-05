@@ -1,3 +1,10 @@
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.WorkOrder;
 using System.Security.Claims;
 using System.Text.Json;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -7,7 +14,6 @@ using Beep.OilandGas.ProductionOperations.Services;
 using Beep.OilandGas.Repository;
 using Microsoft.EntityFrameworkCore;
 using TheTechIdea.Beep.Editor;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 namespace Beep.OilandGas.ApiService.Services;
 

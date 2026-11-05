@@ -1,0 +1,116 @@
+{
+  "date": "2026-11-04",
+  "result": "Passed scoped checks",
+  "semantic_scan": "336 pre-move Data files bound with zero compiler errors; 41 moved in ready groups",
+  "owner_builds": {
+    "TheTechIdea.Data": {
+      "passed": true,
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\TheTechIdea.Data-semantic-batch.log",
+      "scope": "Direct owner build with existing dependencies, single-node, Git metadata queries disabled"
+    },
+    "Beep.OilandGas.Models": {
+      "passed": true,
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\Beep.OilandGas.Models-semantic-batch.log",
+      "scope": "Direct owner build with existing dependencies, single-node, Git metadata queries disabled"
+    },
+    "Beep.OilandGas.PPDM39": {
+      "passed": true,
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\Beep.OilandGas.PPDM39-semantic-batch.log",
+      "scope": "Direct owner build with existing dependencies, single-node, Git metadata queries disabled"
+    },
+    "Beep.OilandGas.PPDM39.DataManagement": {
+      "passed": true,
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\Beep.OilandGas.PPDM39.DataManagement-semantic-batch.log",
+      "scope": "Direct owner build with existing dependencies, single-node, Git metadata queries disabled"
+    },
+    "Beep.OilandGas.Repository": {
+      "passed": true,
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\Beep.OilandGas.Repository-semantic-batch.log",
+      "scope": "Direct owner build with existing dependencies, single-node, Git metadata queries disabled"
+    },
+    "Beep.OilandGas.HSE": {
+      "passed": true,
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\Beep.OilandGas.HSE-semantic-batch.log",
+      "scope": "Direct owner build with existing dependencies, single-node, Git metadata queries disabled"
+    },
+    "Beep.OilandGas.PermitsAndApplications": {
+      "passed": true,
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\Beep.OilandGas.PermitsAndApplications-semantic-batch.log",
+      "scope": "Direct owner build with existing dependencies, single-node, Git metadata queries disabled"
+    },
+    "Beep.OilandGas.DevelopmentPlanning": {
+      "passed": true,
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\Beep.OilandGas.DevelopmentPlanning-semantic-batch.log",
+      "scope": "Direct owner build with existing dependencies, single-node, Git metadata queries disabled"
+    },
+    "Beep.OilandGas.DrillingAndConstruction": {
+      "passed": true,
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\Beep.OilandGas.DrillingAndConstruction-semantic-batch.log",
+      "scope": "Direct owner build with existing dependencies, single-node, Git metadata queries disabled"
+    },
+    "Beep.OilandGas.ProductionOperations": {
+      "passed": true,
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\Beep.OilandGas.ProductionOperations-semantic-batch.log",
+      "scope": "Direct owner build with existing dependencies, single-node, Git metadata queries disabled"
+    },
+    "Beep.OilandGas.Accounting": {
+      "passed": true,
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\Beep.OilandGas.Accounting-semantic-batch.log",
+      "scope": "Direct owner build with existing dependencies, single-node, Git metadata queries disabled"
+    },
+    "Beep.OilandGas.LeaseAcquisition": {
+      "passed": true,
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\Beep.OilandGas.LeaseAcquisition-semantic-batch.log",
+      "scope": "Direct owner build with existing dependencies, single-node, Git metadata queries disabled"
+    },
+    "Beep.OilandGas.ProductionAccounting": {
+      "passed": true,
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\Beep.OilandGas.ProductionAccounting-semantic-batch.log",
+      "scope": "Direct owner build with existing dependencies, single-node, Git metadata queries disabled"
+    },
+    "Beep.OilandGas.LifeCycle": {
+      "passed": true,
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\Beep.OilandGas.LifeCycle-semantic-batch.log",
+      "scope": "Direct owner build with existing dependencies, single-node, Git metadata queries disabled"
+    },
+    "Beep.OilandGas.Client": {
+      "passed": true,
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\Beep.OilandGas.Client-semantic-batch.log",
+      "scope": "Direct owner build with existing dependencies, single-node, Git metadata queries disabled"
+    },
+    "Beep.OilandGas.UserManagement": {
+      "passed": true,
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\Beep.OilandGas.UserManagement-semantic-batch.log",
+      "scope": "Direct owner build with existing dependencies, single-node, Git metadata queries disabled"
+    }
+  },
+  "runtime": {
+    "passed": true,
+    "evidence": "Plans\\FrameworkAppEnhancement\\Module-Data-Ownership\\evidence\\semantic-owner-batch\\run.log",
+    "checks": "Seven contract/identity refusals, native AFE line/HSE closure ownership and keys, metadata preservation and refusal before mutation, invoice/import wire behavior and exact 12-table permit protection"
+  },
+  "assemblies": {
+    "TheTechIdea.Data\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll": "c651967d7b016d568f2169af4a441c01bb44263367e62da57e55d4ccdfd4aba0",
+    "Beep.OilandGas.Models\\bin\\Debug\\net10.0\\Beep.OilandGas.Models.dll": "0e2b1a3605a4c139db569d0d437b575dfb5f7bedf6d158df110e017270dadbbd",
+    "Beep.OilandGas.PPDM39\\bin\\Debug\\net10.0\\Beep.OilandGas.PPDM39.dll": "73ad4261a3022a9dcc5c23d58146c60eaa97f0634e5571896a2dc07af2d1b327",
+    "Beep.OilandGas.PPDM39.DataManagement\\bin\\Debug\\net10.0\\Beep.OilandGas.PPDM39.DataManagement.dll": "7e3a44c2cb5b806d187d526c1e72517e219ccfb08b6aba229587d5535bf8c106",
+    "Beep.OilandGas.Repository\\bin\\Debug\\net10.0\\Beep.OilandGas.Repository.dll": "3c56850711cbd34c046033433c8a2e15b788966435acc83334e83986785b3662",
+    "Beep.OilandGas.HSE\\bin\\Debug\\net10.0\\Beep.OilandGas.HSE.dll": "81b4ce90d374f2e2776f3ff309b762aa38e6bd7a7dc40de6a1eacc2fac0f23a5",
+    "Beep.OilandGas.PermitsAndApplications\\bin\\Debug\\net10.0\\Beep.OilandGas.PermitsAndApplications.dll": "53c716d7dab5c4b589079d99e06026ac619d22a73158392c7f7671978acbbd0d",
+    "Beep.OilandGas.DevelopmentPlanning\\bin\\Debug\\net10.0\\Beep.OilandGas.DevelopmentPlanning.dll": "c3d94328d01e889ff6ed923dd74bffeec4686ae7e8ddc12dcd9605bffa69cdfa",
+    "Beep.OilandGas.DrillingAndConstruction\\bin\\Debug\\net10.0\\Beep.OilandGas.DrillingAndConstruction.dll": "6afdaf32d15c18673fb291a7f065ded033e1564cf47d8cb9b5d7166f84abc41d",
+    "Beep.OilandGas.ProductionOperations\\bin\\Debug\\net10.0\\Beep.OilandGas.ProductionOperations.dll": "3e79a2640b44daa73158010e590d81d100bd88f66acac9ae363da45dbf894cbb",
+    "Beep.OilandGas.Accounting\\bin\\Debug\\net10.0\\Beep.OilandGas.Accounting.dll": "38def76e55e93a735e8b8276a272747a8c41642dc5b8ae8c5a8f21ee90641ea6",
+    "Beep.OilandGas.LeaseAcquisition\\bin\\Debug\\net10.0\\Beep.OilandGas.LeaseAcquisition.dll": "4c774ecf9e07924ce284ed6a2827baac29c14852c36eee9a2f3aebedc0d8d08b",
+    "Beep.OilandGas.ProductionAccounting\\bin\\Debug\\net10.0\\Beep.OilandGas.ProductionAccounting.dll": "63749f2732f0d178d8084b6874e17f9d02bc6b9ca15b0565bd0706aaec845540",
+    "Beep.OilandGas.LifeCycle\\bin\\Debug\\net10.0\\Beep.OilandGas.LifeCycle.dll": "9a8bdb5e923d156b597f25392cfe9d835e7b3f79d181e2577f1e6828f1eca6ee",
+    "Beep.OilandGas.Client\\bin\\Debug\\net10.0\\Beep.OilandGas.Client.dll": "28a20b8549d032dc66181714cb1510389bc4b01b674f0258844d23df0b453f4a",
+    "Beep.OilandGas.UserManagement\\bin\\Debug\\net10.0\\Beep.OilandGas.UserManagement.dll": "7dac3e98853f629ad9521f31110e3b053bfed6beea50cbadd14005c682cd1475"
+  },
+  "open": [
+    "295 original source files remain",
+    "Restricted Accounting internals bridge must retire with Data",
+    "Permit manifest remains blocked on lower metadata type coupling",
+    "API/Web full build, provider and focused fixture execution remain open"
+  ]
+}

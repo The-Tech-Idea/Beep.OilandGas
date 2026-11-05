@@ -1,3 +1,7 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 using System.Data;
 using System.Text.Json;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
@@ -5,7 +9,6 @@ using Beep.OilandGas.PPDM39.Core;
 using TheTechIdea.Beep;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.Accounting.Services;
 public partial class JournalEntryService
 {

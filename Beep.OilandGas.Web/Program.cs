@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.PPDM39.Core;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
@@ -228,7 +229,7 @@ builder.Services.AddBeepOilandGasAppRemote(builder.Configuration);
             sp.GetRequiredService<CompanyClientContext>(), PartyIdClaims.Find));
         builder.Services.AddScoped<IAfeServiceClient, AfeServiceClient>();
         builder.Services.AddScoped<IDataManagementService, DataManagementService>();
-        builder.Services.AddScoped<TheTechIdea.Data.OilGas.IFieldSelectionContext>(sp => sp.GetRequiredService<IDataManagementService>());
+        builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext>(sp => sp.GetRequiredService<IDataManagementService>());
         builder.Services.AddScoped<Beep.OilandGas.Web.Services.IConnectionService, Beep.OilandGas.Web.Services.ConnectionService>();
         builder.Services.AddScoped<IBusinessProcessServiceClient, BusinessProcessServiceClient>();
         builder.Services.AddScoped<ICompanyMaintenanceHandoffClient>(sp=>sp.GetRequiredService<IBusinessProcessServiceClient>());
@@ -261,14 +262,14 @@ builder.Services.AddBeepOilandGasAppRemote(builder.Configuration);
         builder.Services.AddScoped<IInitialCompanyIntentStore>(sp => sp.GetRequiredService<CompanySetupIntentStore>());
         builder.Services.AddScoped<ICompanyMembershipIntentStore>(sp => sp.GetRequiredService<CompanySetupIntentStore>());
         builder.Services.AddScoped<ICompanyRoleIntentStore>(sp => sp.GetRequiredService<CompanySetupIntentStore>());
-        builder.Services.AddTransient(sp => new CorrectivePlanWorkspaceState(sp.GetRequiredService<CompanyClientContext>(),sp.GetRequiredService<TheTechIdea.Data.OilGas.IFieldSelectionContext>(),sp.GetRequiredService<Beep.OilandGas.Client.App.Services.Field.IFieldService>(),sp.GetRequiredService<ICorrectivePlanIntentStore>(),sp.GetRequiredService<OilGasCallFailures>().Explain));
+        builder.Services.AddTransient(sp => new CorrectivePlanWorkspaceState(sp.GetRequiredService<CompanyClientContext>(),sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext>(),sp.GetRequiredService<Beep.OilandGas.Client.App.Services.Field.IFieldService>(),sp.GetRequiredService<ICorrectivePlanIntentStore>(),sp.GetRequiredService<OilGasCallFailures>().Explain));
         builder.Services.AddTransient(sp => new InvestigatorAssignmentState(sp.GetRequiredService<CompanyClientContext>(),
-            sp.GetRequiredService<TheTechIdea.Data.OilGas.IFieldSelectionContext>(), sp.GetRequiredService<IHSEServiceClient>(),
+            sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext>(), sp.GetRequiredService<IHSEServiceClient>(),
             sp.GetRequiredService<OilGasCallFailures>().Explain,sp.GetRequiredService<IInvestigatorAssignmentIntentStore>()));
         builder.Services.AddScoped<ILeaseServiceClient, LeaseServiceClient>();
         builder.Services.AddTransient<LeaseCreationState>();
         builder.Services.AddTransient(sp => new FieldSelectionState(sp.GetRequiredService<CompanyClientContext>(),
-            sp.GetRequiredService<TheTechIdea.Data.OilGas.IFieldSelectionContext>(), sp.GetRequiredService<OilGasCallFailures>().Explain));
+            sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext>(), sp.GetRequiredService<OilGasCallFailures>().Explain));
         builder.Services.AddTransient(sp => new LeasePortfolioState(sp.GetRequiredService<CompanyClientContext>(),
             sp.GetRequiredService<ILeaseServiceClient>(), sp.GetRequiredService<OilGasCallFailures>().Explain));
         builder.Services.AddScoped<IOperationsServiceClient, OperationsServiceClient>();
@@ -316,10 +317,11 @@ builder.Services.AddScoped<IProductionServiceClient, ProductionServiceClient>();
 builder.Services.AddSingleton<ICommonColumnHandler, CommonColumnHandler>();
 
 // Metadata Repository
+builder.Services.AddSingleton<Beep.OilandGas.PPDM39.Core.Metadata.IPPDMMetadataContributor, Beep.OilandGas.PermitsAndApplications.Metadata.PermitApplicationNativeMetadata>();
 builder.Services.AddSingleton<IPPDMMetadataRepository>(sp =>
 {
     var logger = sp.GetRequiredService<ILogger<PPDMMetadataService>>();
-    return new PPDMMetadataService(logger);
+    return new PPDMMetadataService(logger, contributors: sp.GetServices<Beep.OilandGas.PPDM39.Core.Metadata.IPPDMMetadataContributor>());
 });
 
 // Tree Builder (depends on metadata repository)

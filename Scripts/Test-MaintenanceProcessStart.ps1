@@ -1,4 +1,5 @@
-param([Parameter(Mandatory)][string]$DataAssemblyPath,[string]$Filter='',[switch]$IncludeMaterialUsage,[switch]$IncludeWorkOrderBudget,[switch]$IncludeMaintenanceWellEvidence)
+param([Parameter(Mandatory)][string]$ModelsAssemblyPath,[string]$Filter='',[switch]$IncludeMaterialUsage,[switch]$IncludeWorkOrderBudget,[switch]$IncludeMaintenanceWellEvidence)
+. (Join-Path $PSScriptRoot 'RestoredOwnerFixtureReferences.ps1')
 $ErrorActionPreference='Stop'
 $repositoryRoot=Split-Path $PSScriptRoot -Parent
 $checkDirectory=Join-Path ([IO.Path]::GetTempPath()) ('oilgas-maintenance-start-'+[guid]::NewGuid().ToString('N'))
@@ -95,54 +96,55 @@ if($IncludeMaintenanceWellEvidence){
 $sources+=@('Beep.OilandGas.PPDM39.DataManagement/Services/WorkOrder/WorkOrderExecutionPermitService.RecordedWork.cs','Beep.OilandGas.ApiService.Tests/CompanyMaintenanceRecordedWorkTests.cs')
 foreach($source in $sources){$node=$project.CreateElement('Compile');$node.SetAttribute('Include',(Join-Path $repositoryRoot $source));[void]$group.AppendChild($node)}
 $dependencies=Join-Path $repositoryRoot 'Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0'
-$dependencyNames=@('TheTechIdea.Data','Beep.OilandGas.Models','Beep.OilandGas.PPDM.Models','Beep.OilandGas.PPDM39','DataManagementModels','DataManagementEngine')
+$dependencyNames=@('Beep.OilandGas.Models','Beep.OilandGas.Models','Beep.OilandGas.PPDM.Models','Beep.OilandGas.PPDM39','DataManagementModels','DataManagementEngine')
 if($IncludeMaterialUsage){$dependencyNames+=@('Beep.OilandGas.Accounting','Beep.OilandGas.PPDM39.DataManagement')}
 if($IncludeMaintenanceWellEvidence -and -not $IncludeMaterialUsage){$dependencyNames+='Beep.OilandGas.PPDM39.DataManagement'}
 if($IncludeWorkOrderBudget -and -not $IncludeMaterialUsage){$dependencyNames+='Beep.OilandGas.Accounting'}
 foreach($name in $dependencyNames){
-    $path=if($name -eq 'TheTechIdea.Data'){(Resolve-Path -LiteralPath $DataAssemblyPath).Path}else{Join-Path $dependencies ($name+'.dll')}
+    $path=if($name -eq 'Beep.OilandGas.Models'){(Resolve-Path -LiteralPath $ModelsAssemblyPath).Path}else{Join-Path $dependencies ($name+'.dll')}
     if(-not(Test-Path -LiteralPath $path)){throw "Actual dependency missing: $name"}
     $node=$project.CreateElement('Reference');$node.SetAttribute('Include',$name);$hint=$project.CreateElement('HintPath');$hint.InnerText=$path;[void]$node.AppendChild($hint)
-    if($name -in @('TheTechIdea.Data','Beep.OilandGas.Models','Beep.OilandGas.Accounting')){$alias=$project.CreateElement('Aliases');$alias.InnerText=if($name -eq 'TheTechIdea.Data'){'global,actualData'}elseif($name -eq 'Beep.OilandGas.Accounting'){'global,cachedAccounting'}else{'global,legacyModels'};[void]$node.AppendChild($alias)}
+    if($name -in @('Beep.OilandGas.Models','Beep.OilandGas.Models','Beep.OilandGas.Accounting')){$alias=$project.CreateElement('Aliases');$alias.InnerText=if($name -eq 'Beep.OilandGas.Models'){'global,actualOwners'}elseif($name -eq 'Beep.OilandGas.Accounting'){'global,cachedAccounting'}else{'global,actualModels'};[void]$node.AppendChild($alias)}
     [void]$group.AppendChild($node)
 }
 @'
-extern alias actualData;
-extern alias legacyModels;
-global using InspectionCondition = actualData::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition;
-global using WorkOrderDetailModel = actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderDetailModel;
-global using WorkOrderSummary = actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderSummary;
-global using WorkOrderComponentReference = actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderComponentReference;
-global using AddWorkOrderInspectionRequirementRequest = actualData::Beep.OilandGas.Models.Data.WorkOrder.AddWorkOrderInspectionRequirementRequest;
-global using RecordInspectionResultRequest = actualData::Beep.OilandGas.Models.Data.WorkOrder.RecordInspectionResultRequest;
-global using WorkOrderSubType = actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderSubType;
-global using ContractorAssignment = actualData::Beep.OilandGas.Models.Data.WorkOrder.ContractorAssignment;
-global using ContractorQualificationResult = actualData::Beep.OilandGas.Models.Data.WorkOrder.ContractorQualificationResult;
-global using WORK_ORDER_INSPECTION = actualData::Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_INSPECTION;
-global using WORK_ORDER_EXECUTION_PERMIT = actualData::Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_EXECUTION_PERMIT;
-global using WorkOrderWorkflow = actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderWorkflow;
-global using WorkOrderInspectionRules = actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules;
-global using ModelEntityBase = actualData::Beep.OilandGas.Models.Data.ModelEntityBase;
-global using AFE = actualData::Beep.OilandGas.Models.Data.ProductionAccounting.AFE;
-global using APPROVAL_WORKFLOW = actualData::Beep.OilandGas.Models.Data.ProductionAccounting.APPROVAL_WORKFLOW;
-global using ACCOUNTING_COST = actualData::Beep.OilandGas.Models.Data.ProductionAccounting.ACCOUNTING_COST;
-global using GL_ACCOUNT = actualData::Beep.OilandGas.Models.Data.ProductionAccounting.GL_ACCOUNT;
-global using GL_ENTRY = actualData::Beep.OilandGas.Models.Data.ProductionAccounting.GL_ENTRY;
-global using JOURNAL_ENTRY = actualData::Beep.OilandGas.Models.Data.ProductionAccounting.JOURNAL_ENTRY;
-global using JOURNAL_ENTRY_LINE = actualData::Beep.OilandGas.Models.Data.ProductionAccounting.JOURNAL_ENTRY_LINE;
-global using INVENTORY_ITEM = actualData::Beep.OilandGas.Models.Data.ProductionAccounting.INVENTORY_ITEM;
-global using INVENTORY_TRANSACTION = actualData::Beep.OilandGas.Models.Data.ProductionAccounting.INVENTORY_TRANSACTION;
-global using ICommonColumnHandler = legacyModels::Beep.OilandGas.Models.Core.Interfaces.ICommonColumnHandler;
+extern alias actualOwners;
+extern alias actualModels;
+global using InspectionCondition = actualOwners::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition;
+global using WorkOrderDetailModel = actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderDetailModel;
+global using WorkOrderSummary = actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderSummary;
+global using WorkOrderComponentReference = actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderComponentReference;
+global using AddWorkOrderInspectionRequirementRequest = actualOwners::Beep.OilandGas.Models.Data.WorkOrder.AddWorkOrderInspectionRequirementRequest;
+global using RecordInspectionResultRequest = actualOwners::Beep.OilandGas.Models.Data.WorkOrder.RecordInspectionResultRequest;
+global using WorkOrderSubType = actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderSubType;
+global using ContractorAssignment = actualOwners::Beep.OilandGas.Models.Data.WorkOrder.ContractorAssignment;
+global using ContractorQualificationResult = actualOwners::Beep.OilandGas.Models.Data.WorkOrder.ContractorQualificationResult;
+global using WORK_ORDER_INSPECTION = actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_INSPECTION;
+global using WORK_ORDER_EXECUTION_PERMIT = actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_EXECUTION_PERMIT;
+global using WorkOrderWorkflow = actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderWorkflow;
+global using WorkOrderInspectionRules = actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules;
+global using ModelEntityBase = actualOwners::Beep.OilandGas.Models.Data.ModelEntityBase;
+global using AFE = actualOwners::Beep.OilandGas.Models.Data.ProductionAccounting.AFE;
+global using APPROVAL_WORKFLOW = actualOwners::Beep.OilandGas.Models.Data.ProductionAccounting.APPROVAL_WORKFLOW;
+global using ACCOUNTING_COST = actualOwners::Beep.OilandGas.Models.Data.ProductionAccounting.ACCOUNTING_COST;
+global using GL_ACCOUNT = actualOwners::Beep.OilandGas.Models.Data.ProductionAccounting.GL_ACCOUNT;
+global using GL_ENTRY = actualOwners::Beep.OilandGas.Models.Data.ProductionAccounting.GL_ENTRY;
+global using JOURNAL_ENTRY = actualOwners::Beep.OilandGas.Models.Data.ProductionAccounting.JOURNAL_ENTRY;
+global using JOURNAL_ENTRY_LINE = actualOwners::Beep.OilandGas.Models.Data.ProductionAccounting.JOURNAL_ENTRY_LINE;
+global using INVENTORY_ITEM = actualOwners::Beep.OilandGas.Models.Data.ProductionAccounting.INVENTORY_ITEM;
+global using INVENTORY_TRANSACTION = actualOwners::Beep.OilandGas.Models.Data.ProductionAccounting.INVENTORY_TRANSACTION;
+global using ICommonColumnHandler = actualModels::Beep.OilandGas.Models.Core.Interfaces.ICommonColumnHandler;
 global using Beep.OilandGas.Models.Core.Interfaces;
 global using Beep.OilandGas.PPDM.Models;
 global using TheTechIdea.Beep.Report;
 '@ | Set-Content (Join-Path $checkDirectory 'ActualContracts.cs') -Encoding utf8
 if(-not $IncludeWorkOrderBudget){
     $actualPath=Join-Path $checkDirectory 'ActualContracts.cs';$actualText=[IO.File]::ReadAllText($actualPath)
-    $actualText=[Text.RegularExpressions.Regex]::Replace($actualText,'(?m)^global using (AFE|APPROVAL_WORKFLOW|ACCOUNTING_COST|GL_ACCOUNT|GL_ENTRY|JOURNAL_ENTRY|JOURNAL_ENTRY_LINE) = actualData::[^\r\n]+;\r?\n?','')
+    $actualText=[Text.RegularExpressions.Regex]::Replace($actualText,'(?m)^global using (AFE|APPROVAL_WORKFLOW|ACCOUNTING_COST|GL_ACCOUNT|GL_ENTRY|JOURNAL_ENTRY|JOURNAL_ENTRY_LINE) = actualOwners::[^\r\n]+;\r?\n?','')
     [IO.File]::WriteAllText($actualPath,$actualText,[Text.UTF8Encoding]::new($false))
 }
-$path=Join-Path $checkDirectory 'MaintenanceStart.csproj';$project.Save($path)
+$path=Join-Path $checkDirectory 'MaintenanceStart.csproj';Add-OilGasRestoredOwnerReferences -Project $project -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
+$project.Save($path)
 $testArguments=@('test',$path,'--logger','console;verbosity=normal')
 if(-not [string]::IsNullOrWhiteSpace($Filter)){$testArguments+=@('--filter',$Filter)}
 dotnet @testArguments

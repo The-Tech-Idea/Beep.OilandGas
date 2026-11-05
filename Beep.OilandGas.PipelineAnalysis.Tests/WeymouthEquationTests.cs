@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.PipelineAnalysis;
 using Xunit;
 
 namespace Beep.OilandGas.PipelineAnalysis.Tests;
@@ -19,18 +20,16 @@ public class WeymouthEquationTests
         double pInlet = 800.0;     // psia
         double pOutlet = 600.0;    // psia
         double temperature = 520.0; // °R
-        double zFactor = 0.90;
         double specificGravity = 0.65;
 
         // Act
         var capacity = PipelineAnalysis.Calculations.PipelineCapacityCalculator
-            .CalculateGasPipelineCapacity(diameter, length, pInlet, pOutlet,
-                temperature, zFactor, specificGravity);
+            .CalculateGasPipelineCapacity(Properties(diameter, length, pInlet, pOutlet,temperature,specificGravity));
 
         // Assert — flow should be positive and in reasonable range for a 12" pipe
-        Assert.True(capacity > 0, "Flow capacity should be positive");
-        Assert.True(capacity > 1_000_000, "12-inch pipe should flow > 1 MMscfd");
-        Assert.True(capacity < 1_000_000_000, "Flow should be < 1 Bscfd for this configuration");
+        Assert.True(capacity.MAXIMUM_FLOW_RATE * 1000m > 0, "Flow capacity should be positive");
+        Assert.True(capacity.MAXIMUM_FLOW_RATE * 1000m > 1_000_000, "12-inch pipe should flow > 1 MMscfd");
+        Assert.True(capacity.MAXIMUM_FLOW_RATE * 1000m < 1_000_000_000, "Flow should be < 1 Bscfd for this configuration");
     }
 
     [Fact]
@@ -41,14 +40,12 @@ public class WeymouthEquationTests
         double pInlet = 1000.0;
         double pOutlet = 1000.0;
         double temperature = 520.0;
-        double zFactor = 0.90;
         double specificGravity = 0.65;
 
         var capacity = PipelineAnalysis.Calculations.PipelineCapacityCalculator
-            .CalculateGasPipelineCapacity(diameter, length, pInlet, pOutlet,
-                temperature, zFactor, specificGravity);
+            .CalculateGasPipelineCapacity(Properties(diameter, length, pInlet, pOutlet,temperature,specificGravity));
 
-        Assert.True(capacity == 0, "Zero pressure drop should give zero flow");
+        Assert.True(capacity.MAXIMUM_FLOW_RATE == 0, "Zero pressure drop should give zero flow");
     }
 
     [Fact]
@@ -58,11 +55,11 @@ public class WeymouthEquationTests
         double reynoldsNumber = 1_000_000;          // fully turbulent
 
         var f = PipelineAnalysis.Calculations.PipelineCalculator
-            .SwameeJainFrictionFactor(relativeRoughness, reynoldsNumber);
+            .CalculateFrictionFactor((decimal)reynoldsNumber, (decimal)relativeRoughness, 1m);
 
         Assert.True(f > 0, "Friction factor should be positive");
-        Assert.True(f < 0.1, "Friction factor should be reasonable for turbulent flow");
-        Assert.True(f > 0.01, "Friction factor should be > 0.01 for commercial steel at Re=1e6");
+        Assert.True(f < 0.1m, "Friction factor should be reasonable for turbulent flow");
+        Assert.True(f > 0.01m, "Friction factor should be > 0.01 for commercial steel at Re=1e6");
     }
 
     [Fact]
@@ -72,8 +69,12 @@ public class WeymouthEquationTests
         double cFactor = 100.0;         // API RP 14E solid service
 
         // The static method is on the ErosionPrediction class
-        var ve = PipelineAnalysis.Calculations.ErosionPrediction
-            .CalculateErosionalVelocity(cFactor, mixtureDensity);
+        var result = PipelineAnalysis.Calculations.ErosionPrediction.CalculateErosionalVelocity(
+            mixtureGasGravity:0.65, liquidFraction:1, liquidDensityLbFt3:mixtureDensity,
+            operatingPressurePsia:100, operatingTempF:60, cFactor:cFactor, actualVelocityFtS:20);
+        var ve=result.ErosionalVelocityFtS;
+        Assert.Equal(mixtureDensity,result.MixtureDensityLbFt3,8);
+        Assert.Equal(31.6227766017,ve,8);
 
         Assert.True(ve > 0, "Erosional velocity should be positive");
         Assert.True(ve > 10 && ve < 200, $"Erosional velocity {ve:F1} ft/s should be in reasonable range");
@@ -87,9 +88,37 @@ public class WeymouthEquationTests
         double diameter, double length, double pInlet, double pOutlet, double sg)
     {
         var capacity = PipelineAnalysis.Calculations.PipelineCapacityCalculator
-            .CalculateGasPipelineCapacity(diameter, length, pInlet, pOutlet,
-                520.0, 0.90, sg);
+            .CalculateGasPipelineCapacity(Properties(diameter, length, pInlet, pOutlet,520.0,sg));
 
-        Assert.True(capacity > 0, $"Flow should be positive for D={diameter}\", L={length}mi");
+        Assert.True(capacity.MAXIMUM_FLOW_RATE * 1000m > 0, $"Flow should be positive for D={diameter}\", L={length}mi");
     }
+    [Fact]
+    public void StandardConditionChangesPreserveTheSamePhysicalFlowingVelocity()
+    {
+        var baseline=PipelineAnalysis.Calculations.PipelineCapacityCalculator.CalculateGasPipelineCapacity(Properties(12,10,800,600,520,0.65));
+        var pressure=Properties(12,10,800,600,520,0.65);pressure.BASE_PRESSURE*=2;
+        var atPressure=PipelineAnalysis.Calculations.PipelineCapacityCalculator.CalculateGasPipelineCapacity(pressure);
+        var temperature=Properties(12,10,800,600,520,0.65);temperature.BASE_TEMPERATURE*=2;
+        var atTemperature=PipelineAnalysis.Calculations.PipelineCapacityCalculator.CalculateGasPipelineCapacity(temperature);
+        Assert.Equal(baseline.MAXIMUM_FLOW_RATE/2,atPressure.MAXIMUM_FLOW_RATE,8);
+        Assert.Equal(baseline.MAXIMUM_FLOW_RATE*2,atTemperature.MAXIMUM_FLOW_RATE,8);
+        Assert.Equal(baseline.FLOW_VELOCITY,atPressure.FLOW_VELOCITY,8);
+        Assert.Equal(baseline.FLOW_VELOCITY,atTemperature.FLOW_VELOCITY,8);
+        Assert.Equal(0.0037878788m,baseline.PRESSURE_GRADIENT,10); // 200 psi / (10 miles * 5280 ft/mile).
+    }
+
+    [Fact]
+    public void WeymouthCapacityUsesEmpiricalDiameterAndLengthScalingWithoutAnExtraFrictionMultiplier()
+    {
+        var baseline=PipelineAnalysis.Calculations.PipelineCapacityCalculator.CalculateGasPipelineCapacity(Properties(6,10,800,600,520,0.65));
+        var doubled=PipelineAnalysis.Calculations.PipelineCapacityCalculator.CalculateGasPipelineCapacity(Properties(12,10,800,600,520,0.65));
+        var longer=PipelineAnalysis.Calculations.PipelineCapacityCalculator.CalculateGasPipelineCapacity(Properties(6,40,800,600,520,0.65));
+        Assert.Equal(Math.Pow(2,2.667),(double)(doubled.MAXIMUM_FLOW_RATE/baseline.MAXIMUM_FLOW_RATE),8);
+        Assert.Equal(baseline.MAXIMUM_FLOW_RATE/2,longer.MAXIMUM_FLOW_RATE,8);
+    }
+
+    private static GAS_PIPELINE_FLOW_PROPERTIES Properties(double diameter,double miles,double inlet,double outlet,double temperature,double gravity)
+        =>new(){PIPELINE=new(){DIAMETER=(decimal)diameter,LENGTH=(decimal)miles,INLET_PRESSURE=(decimal)inlet,
+            OUTLET_PRESSURE=(decimal)outlet,AVERAGE_TEMPERATURE=(decimal)temperature,ROUGHNESS=0.00015m},
+            GAS_SPECIFIC_GRAVITY=(decimal)gravity,GAS_FLOW_RATE=1000m,BASE_PRESSURE=14.7m,BASE_TEMPERATURE=520m};
 }

@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using System.Security.Cryptography;
 using System.Text.Json;
 using TheTechIdea.Beep;

@@ -1,10 +1,14 @@
+@using Beep.OilandGas.Models.Data.Lease
+@using Beep.OilandGas.Models.Data.Field
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Models.Core.Interfaces
+@using Beep.OilandGas.Models.Data.Company
 @page "/hse/dashboard"
 @page "/ppdm39/hse"
 @page "/lifecycle/hse/dashboard"
 @using Beep.OilandGas.Web.Components.Workflow
 @using Beep.OilandGas.Models.Data.HSE
 @using Beep.OilandGas.Client.App
-@using TheTechIdea.Data.OilGas
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @implements IDisposable
 @inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication

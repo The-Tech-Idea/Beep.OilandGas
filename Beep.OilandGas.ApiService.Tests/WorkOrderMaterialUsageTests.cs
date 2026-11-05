@@ -1,3 +1,9 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.ProductionOperations.Models;
 #if WORKFLOW_INBOX_FOCUSED
 #if WORK_ORDER_BUDGET_FOCUSED
 extern alias cachedAccounting;
@@ -16,7 +22,6 @@ using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Tools;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 

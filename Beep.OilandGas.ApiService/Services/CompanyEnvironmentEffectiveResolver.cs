@@ -1,7 +1,9 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using TheTechIdea.Data.OilGas;
 using TheTechIdea.OilGas.Core;
 
 namespace Beep.OilandGas.ApiService.Services;

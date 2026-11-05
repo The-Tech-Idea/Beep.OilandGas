@@ -1,10 +1,14 @@
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.DrillingAndConstruction.Models;
+using Beep.OilandGas.Models.Data.Company;
 using System.Security.Claims;
 using System.Text.Json;
 using Beep.OilandGas.DrillingAndConstruction.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using TheTechIdea.Beep.Editor;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Services;
 

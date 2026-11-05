@@ -1,4 +1,5 @@
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Data.Company;
 namespace Beep.OilandGas.Web.Services;
 
 public sealed partial class PermitApplicationCommandState

@@ -1,10 +1,15 @@
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.DrillingAndConstruction.Models;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.LifeCycle.Models;
 using System.Data;
 using System.Text.Json;
 using Beep.OilandGas.LifeCycle.Data.Tables;
 using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.PPDM39.Core;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.LifeCycle.Services.Processes;
 public partial class PPDMProcessService
 {

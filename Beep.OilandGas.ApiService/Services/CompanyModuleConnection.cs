@@ -1,6 +1,7 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Repository;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Services;
 

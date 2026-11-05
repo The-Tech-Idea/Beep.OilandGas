@@ -1,4 +1,4 @@
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.DevelopmentPlanning.Models;
 namespace Beep.OilandGas.Web.Services;
 public interface IAfeServiceClient
 {

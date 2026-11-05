@@ -1,0 +1,24 @@
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.WorkOrder;
+namespace Beep.OilandGas.Models.Data.WorkOrder;
+/// <summary>Live validity of a public recorded material acceptance; no nested approval review or private command.</summary>
+public sealed record CompanyWorkOrderAcceptedMaterialReview(CompanyWorkOrderMaterialAcceptanceFacts Acceptance,CompanyWorkOrderMaterialReservationFacts Reservation,CompanyWorkOrderMaterialAllocationReview Material,DateTime ComparedAtUtc,IReadOnlyList<string> Blockers)
+{
+    public static string[] GetBlockers(CompanyWorkOrderExecutionPermitIntent proposal,CompanyWorkOrderMaterialAcceptanceFacts acceptance,CompanyWorkOrderMaterialReservationFacts reservation,CompanyWorkOrderMaterialAllocationReview material,DateTime utc)
+    {
+        var result=new List<string>();if(acceptance.PermitIntentId!=proposal.IntentId || acceptance.AllocationId!=proposal.MaterialReference || acceptance.AllocationId!=reservation.AllocationId || acceptance.AllocationIntentId!=reservation.IntentId || acceptance.ReservationRevision!=reservation.Revision)result.Add("Recorded material acceptance does not match this exact permit and reservation.");
+        if(acceptance.Reviewer==proposal.Context.ActorUserId || acceptance.AcceptedAtUtc>utc || acceptance.AcceptedAtUtc<proposal.ValidFromUtc || acceptance.AcceptedAtUtc>=proposal.ValidToUtc)result.Add("Recorded material acceptance reviewer or validity time is unconfirmed.");
+        if(acceptance.InventoryRevision!=material.Source.Inventory.Revision)result.Add("Recorded inventory evidence changed since independent material acceptance; current re-review is required.");
+        if(reservation.ValidFromUtc>proposal.ValidFromUtc || reservation.ValidToUtc<proposal.ValidToUtc)result.Add("The accepted reservation does not cover the complete permit window.");if(utc<reservation.ValidFromUtc)result.Add("The accepted material reservation validity has not started.");if(utc>=reservation.ValidToUtc)result.Add("The accepted material reservation has expired.");
+        if(material.Releases?.Any(row=>row.AllocationId==reservation.AllocationId && row.ReleasedAtUtc<=utc)==true)result.Add("The accepted material reservation has been released.");if(material.Source.Inventory.Item.QUANTITY_ON_HAND<material.ReservedQuantity)result.Add("Recorded on-hand stock does not cover all current outstanding reservations.");return result.ToArray();
+    }
+    public void Require(CompanyWorkOrderExecutionPermitIntent proposal,CompanyMaintenanceInspectionReview current)
+    {
+        if(Acceptance is null || Reservation is null || Material is null || Blockers is null || ComparedAtUtc==default || ComparedAtUtc.Kind!=DateTimeKind.Utc || Acceptance.IntentId==Guid.Empty || Acceptance.AllocationIntentId==Guid.Empty || !ProcessDefinitionRevision.IsValid(Acceptance.Revision) || !ProcessDefinitionRevision.IsValid(Acceptance.InventoryRevision) || !ProcessDefinitionRevision.IsValid(Acceptance.ReservationRevision))throw new InvalidOperationException("Complete current public material acceptance proof is unavailable.");
+        proposal.Require();current.Require(proposal.Context.Company,current.Stage.Context.ActorUserId,proposal.Task);var candidates=current.Inspections.Where(row=>row.PermitPrerequisiteKind=="MATERIAL" && row.RegulatoryRef==proposal.MaterialReference && row.Jurisdiction==proposal.Jurisdiction).ToArray();
+        if(candidates.Length!=1 || candidates[0].Status!="PASS" || candidates[0].MaterialAcceptance!=Acceptance || candidates[0].Inspector!=Acceptance.Reviewer || candidates[0].InspectDate!=Acceptance.AcceptedAtUtc)throw new InvalidOperationException("Current recorded material inspection membership or public proof changed.");
+        Reservation.Require(proposal.Context.Company,proposal.Task,Acceptance.AllocationIntentId);Material.Require();var source=Material.Source;source.Require(proposal.Context.Company,current.Stage.Context.ActorUserId,new(proposal.Task,Reservation.ItemId,Reservation.Quantity,Reservation.Unit));var allocation=Material.Allocations.SingleOrDefault(row=>row.Id==Reservation.AllocationId);
+        if(source.WorkOrder.SnapshotRevision!=current.SnapshotRevision || allocation is null || allocation.Revision!=Reservation.Revision || allocation.Quantity!=Reservation.Quantity || allocation.Unit!=Reservation.Unit || allocation.Warehouse!=Reservation.Warehouse || allocation.Location!=Reservation.Location || allocation.ValidFromUtc!=Reservation.ValidFromUtc || allocation.ValidToUtc!=Reservation.ValidToUtc || ComparedAtUtc<Material.ComparedAtUtc || !Blockers.SequenceEqual(GetBlockers(proposal,Acceptance,Reservation,Material,ComparedAtUtc),StringComparer.Ordinal))throw new InvalidOperationException("Complete original permit/order/reservation/current material source or blockers changed.");
+    }
+}

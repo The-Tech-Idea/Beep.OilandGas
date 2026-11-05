@@ -8,17 +8,17 @@ namespace Beep.OilandGas.Web.Auth.Tests;
 
 public sealed class WorkOrderFinancialContractOwnershipTests
 {
-    [Theory][InlineData("AFE","AFE_ID","Beep.OilandGas.ProductionAccounting")]
+    [Theory][InlineData("AFE","AFE_ID","Beep.OilandGas.Models")]
     [InlineData("AFE_LINE_ITEM","AFE_LINE_ITEM_ID","Beep.OilandGas.ProductionAccounting")]
     [InlineData("ACCOUNTING_COST","ACCOUNTING_COST_ID","Beep.OilandGas.Models")]
-    [InlineData("APPROVAL_WORKFLOW","APPROVAL_WORKFLOW_ID","Beep.OilandGas.ProductionAccounting")]
-    public void ExistingFinancialAssemblyForwardsTheUniqueNativeContractToData(string name,string key,string originalAssembly)
+    [InlineData("APPROVAL_WORKFLOW","APPROVAL_WORKFLOW_ID","Beep.OilandGas.Models")]
+    public void FinancialEntityHasOneNativeOwnerWithoutForwarders(string name,string key,string originalAssembly)
     {
-        var type=typeof(AFE).Assembly.GetType("Beep.OilandGas.Models.Data.ProductionAccounting."+name)!;
-        Assert.NotNull(type);Assert.Equal("TheTechIdea.Data",type.Assembly.GetName().Name);
+        var original=Assembly.Load(originalAssembly);
+        var type=original.GetType("Beep.OilandGas.Models.Data.ProductionAccounting."+name)!;
+        Assert.NotNull(type);Assert.Equal(originalAssembly,type.Assembly.GetName().Name);
         Assert.Equal(key,Assert.Single(type.GetProperties().Where(property=>property.IsDefined(typeof(KeyAttribute),true))).Name);
-        var original=Assembly.Load(originalAssembly);Assert.Contains(type,original.GetForwardedTypes());
-        Assert.Empty(original.GetTypes().Where(row=>row.FullName==type.FullName));
+        Assert.DoesNotContain(type,original.GetForwardedTypes());
         Assert.Equal(type,Type.GetType(type.FullName+", "+originalAssembly,true));
     }
     [Fact] public void ExistingAfeAndLineAmountsRemainExplicitNullableAndRoundTripWithoutInventedBudgetOrActual()

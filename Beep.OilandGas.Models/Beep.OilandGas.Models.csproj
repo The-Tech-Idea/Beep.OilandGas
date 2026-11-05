@@ -25,7 +25,6 @@
 		</None>
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\TheTechIdea.Data\TheTechIdea.Data.csproj" />
 	  <ProjectReference Include="..\Beep.OilandGas.PPDM.Models\Beep.OilandGas.PPDM.Models.csproj" />
 	  <PackageReference Include="SkiaSharp" Version="4.150.1" />
 	  <PackageReference Include="SkiaSharp.Svg" Version="1.60.0" />

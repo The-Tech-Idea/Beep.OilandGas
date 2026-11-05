@@ -1,8 +1,9 @@
+using Beep.OilandGas.Repository.Models;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Repository;
 using Microsoft.Extensions.Configuration;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;

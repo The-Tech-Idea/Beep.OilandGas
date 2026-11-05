@@ -1,5 +1,7 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.DataManagement;
 using System.Security.Claims;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Repository
 {
@@ -21,18 +23,4 @@ namespace Beep.OilandGas.ApiService.Services
     {
         public static string? FindActingUserId(this ClaimsPrincipal user) => user.FindFirst("party_id")?.Value;
     }
-}
-
-namespace Beep.OilandGas.Models.Data
-{
-    // Schema tests inspect the real environment entity without pulling the full PPDM object graph.
-    public abstract class ModelEntityBase { }
-    public sealed class FieldListItem { }
-    public sealed class FieldResponse { }
-    public sealed class SetActiveFieldResponse { }
-    public sealed class SetActiveFieldRequest { }
-}
-namespace TheTechIdea.Data.OilGas
-{
-    public sealed record AssetDatabaseScope(string ConnectionName, string Fingerprint);
 }

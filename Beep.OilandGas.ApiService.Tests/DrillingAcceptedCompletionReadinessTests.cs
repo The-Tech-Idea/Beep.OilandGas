@@ -1,6 +1,6 @@
+using Beep.OilandGas.DrillingAndConstruction.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using Beep.OilandGas.Web.Auth.Tests;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 public sealed class DrillingAcceptedCompletionReadinessTests

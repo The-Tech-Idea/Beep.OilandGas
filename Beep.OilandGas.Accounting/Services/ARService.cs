@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Accounting.Models;
 using Beep.OilandGas.Models.Constants;
 using System;
 using System.Collections.Generic;
@@ -550,7 +552,7 @@ namespace Beep.OilandGas.Accounting.Services
 
         private static void RequireUnownedPayment(AR_PAYMENT row)
         {
-            if(row.OWNER_TENANT_ID is not null || row.OWNER_COMPANY_BA_ID is not null || row.BOOK_ID is not null || row.FIELD_ID is not null || row.CURRENCY_CODE is not null || row.PAYER_BA_ID is not null || row.EXTERNAL_REFERENCE is not null || row.EVIDENCE_REFERENCE is not null || row.STATUS is not null || row.SOURCE_REVISION is not null || row.PREPARATION_WORKFLOW_JSON is not null || row.REVIEW_WORKFLOW_JSON is not null || row.SOURCE==TheTechIdea.Data.OilGas.CompanySalesPaymentProof.NativeSource)
+            if(row.OWNER_TENANT_ID is not null || row.OWNER_COMPANY_BA_ID is not null || row.BOOK_ID is not null || row.FIELD_ID is not null || row.CURRENCY_CODE is not null || row.PAYER_BA_ID is not null || row.EXTERNAL_REFERENCE is not null || row.EVIDENCE_REFERENCE is not null || row.STATUS is not null || row.SOURCE_REVISION is not null || row.PREPARATION_WORKFLOW_JSON is not null || row.REVIEW_WORKFLOW_JSON is not null || row.SOURCE==Beep.OilandGas.Accounting.Models.CompanySalesPaymentProof.NativeSource)
                 throw new InvalidOperationException("Company-owned payment evidence cannot be read or allocated through a companyless legacy path.");
         }
 

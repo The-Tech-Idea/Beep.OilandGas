@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.LeaseAcquisition.Models;
 using System.Globalization;
 using System.Reflection;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -7,7 +9,6 @@ using Beep.OilandGas.LeaseAcquisition.Constants;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.LeaseAcquisition.Services;
 

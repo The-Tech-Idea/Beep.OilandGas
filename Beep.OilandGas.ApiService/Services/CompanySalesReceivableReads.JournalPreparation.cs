@@ -1,7 +1,8 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 using System.Security.Claims;
 using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.Models.Data.Security;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Services;
 public sealed partial class CompanySalesReceivableReads
 {

@@ -1,5 +1,9 @@
+@using Beep.OilandGas.Models.Data.AccessControl
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.Models.Data.WorkOrder
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Models.Data.DataManagement
 @page "/setup/initial-company"
-@using TheTechIdea.Data.OilGas
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]
 @inject ApiClient Api
 @inject IInitialCompanyIntentStore Intents

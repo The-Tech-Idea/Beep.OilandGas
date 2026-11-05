@@ -1,6 +1,6 @@
+using Beep.OilandGas.Models.Data.AccessControl;
 using System.Security.Claims;
 using Beep.OilandGas.Models.Core.Interfaces;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Services;
 
 public interface ICompanyAccountingProcessReadContext

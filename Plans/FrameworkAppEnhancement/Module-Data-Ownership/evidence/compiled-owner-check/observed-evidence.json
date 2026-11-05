@@ -1,0 +1,46 @@
+{
+  "date": "2026-11-04",
+  "result": "Passed",
+  "scope": "Temporary console invoking actual compiled owner assemblies: four contract/identity refusals, native AFE_LINE_ITEM owner/key, retained native metadata/foreign key, refusal before partial mutation and invoice wire field names",
+  "not_proven": [
+    "Integrated API/Web startup",
+    "All module migrations",
+    "Provider/schema execution",
+    "Full solution build",
+    "Focused test profile execution"
+  ],
+  "assemblies": {
+    "TheTechIdea.Data\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll": {
+      "sha256": "1ae1a2202e25edfec1178e0f5691781b659b9effd1dd94007ab0b24d2bf6e4eb",
+      "size": 4137472
+    },
+    "Beep.OilandGas.Models\\bin\\Debug\\net10.0\\Beep.OilandGas.Models.dll": {
+      "sha256": "0b01bb3188f3409e57e4fe4e024c07ab8d6b5542ea663ca36fd8335122957ec2",
+      "size": 1819648
+    },
+    "Beep.OilandGas.PPDM39\\bin\\Debug\\net10.0\\Beep.OilandGas.PPDM39.dll": {
+      "sha256": "74d01d433387e19fcd0c9dd438b74a7a4c268627fe3e73e2a5ba4f4f747c7b43",
+      "size": 404992
+    },
+    "Beep.OilandGas.PPDM39.DataManagement\\bin\\Debug\\net10.0\\Beep.OilandGas.PPDM39.DataManagement.dll": {
+      "sha256": "9408bf10761c7dac65fea5850cf7d158a27869d03c4f868e61ff49cb77a643ec",
+      "size": 8621056
+    },
+    "Beep.OilandGas.Accounting\\bin\\Debug\\net10.0\\Beep.OilandGas.Accounting.dll": {
+      "sha256": "25c3012abe6ce4cbf7d8a375c901f332f0766fdcd99b124cfbf16cb8477beb03",
+      "size": 2291200
+    },
+    "Beep.OilandGas.ProductionAccounting\\bin\\Debug\\net10.0\\Beep.OilandGas.ProductionAccounting.dll": {
+      "sha256": "d8e2c769d84f6a4b0da0f67d4cd185346e793b5001c15441596b81c59620eeba",
+      "size": 1333760
+    },
+    "Beep.OilandGas.Repository\\bin\\Debug\\net10.0\\Beep.OilandGas.Repository.dll": {
+      "sha256": "8ecee532d95a8051ed5daa2e761b76af0452c2c1f31b80a9da3e36fc2e476452",
+      "size": 1068544
+    },
+    "Beep.OilandGas.HSE\\bin\\Debug\\net10.0\\Beep.OilandGas.HSE.dll": {
+      "sha256": "356e8e7a44685608c3dbeb703cf567e763d91bb60536aee4870df2770ab50953",
+      "size": 29696
+    }
+  }
+}

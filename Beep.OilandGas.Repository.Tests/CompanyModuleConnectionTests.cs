@@ -1,3 +1,7 @@
+using DataSourceType = TheTechIdea.Beep.Utilities.DataSourceType;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.DataManagement;
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Core.Refusals;
@@ -8,9 +12,8 @@ using Moq;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Utilities;
-using TheTechIdea.Data.OilGas;
 using Xunit;
-using FileImportResult = Beep.OilandGas.PPDM39.Core.FileImportResult;
+using FileImportResult = Beep.OilandGas.Models.Data.DataManagement.FileImportResult;
 
 namespace Beep.OilandGas.Repository.Tests;
 

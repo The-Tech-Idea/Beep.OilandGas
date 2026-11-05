@@ -1,10 +1,11 @@
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Data.Company;
 using System.Data;
 using System.Text.Json;
 using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
-using TheTechIdea.Data.OilGas;
 using TheTechIdea.Beep;
 namespace Beep.OilandGas.PermitsAndApplications.Services;
 
@@ -65,7 +66,12 @@ public partial class PermitApplicationLifecycleService
             else
             {
                 try { await CurrentDocumentRowsAsync(scope,parent.PERMIT_APPLICATION_ID,membership.Value); }
-                catch(PermitDocumentEvidenceChangedException){state="CHANGED";}
+                catch(PermitDocumentEvidenceChangedException changed)
+                {
+                    if(_failures is null)throw;
+                    _failures.ReportHandled(changed,"reviewing linked permit document evidence","the document is marked CHANGED and cannot be used as current evidence");
+                    state="CHANGED";
+                }
             }
             result.Add(new(attachment.APPLICATION_ATTACHMENT_ID,state,receipt));
         }

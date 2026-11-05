@@ -1,3 +1,4 @@
+using Beep.OilandGas.DevelopmentPlanning.Models;
 using Beep.OilandGas.ApiService.Controllers.BusinessProcess;
 using Beep.OilandGas.LifeCycle.Services.Processes;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -17,9 +18,9 @@ public class WorkflowReadBoundaryTests
     [InlineData("payload")]
     public async Task GenericInstanceAndHistoryCannotExposeInvestmentEvidenceThroughFieldRead(string marker)
     {
-        var id=marker=="prefix"?TheTechIdea.Data.OilGas.DevelopmentInvestmentHandoff.InstancePrefix+"owned":"instance";
+        var id=marker=="prefix"?Beep.OilandGas.DevelopmentPlanning.Models.DevelopmentInvestmentHandoff.InstancePrefix+"owned":"instance";
         var instance=new ProcessInstance { InstanceId=id,FieldId="selected",EntityId="private-afe",EntityType=marker=="type"?"AFE":"WELL" };
-        if(marker=="payload")instance.ProcessData=new(){Data=new(){[TheTechIdea.Data.OilGas.DevelopmentInvestmentHandoff.PayloadKey]=new { privateCompany=true }}};
+        if(marker=="payload")instance.ProcessData=new(){Data=new(){[Beep.OilandGas.DevelopmentPlanning.Models.DevelopmentInvestmentHandoff.PayloadKey]=new { privateCompany=true }}};
         var process=new Mock<IProcessService>(MockBehavior.Strict);process.Setup(value=>value.GetProcessInstanceAsync(id)).ReturnsAsync(instance);
         var field=new Mock<IFieldOrchestrator>();field.SetupGet(value=>value.CurrentFieldId).Returns("selected");
         var resources=new Mock<IAccessControlService>(MockBehavior.Strict);

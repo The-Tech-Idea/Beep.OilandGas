@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Data.Compliance;

@@ -1,5 +1,8 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.ProductionOperations.Models;
 using Beep.OilandGas.Client.App;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.Web.Services;
 /// <summary>Circuit-owned original reservation; unknown outcomes block replacement.</summary>
 public sealed class WorkOrderMaterialAllocationState : IDisposable

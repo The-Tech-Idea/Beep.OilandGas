@@ -39,4 +39,7 @@
 		<Copy SourceFiles="$(TargetDir)$(PackageId).dll" DestinationFolder="$(ProjectDir)..\..\outputDLL\$(PackageId)\$(TargetFramework)" SkipUnchangedFiles="false" />
 	</Target>
 
+  <ItemGroup>
+    <ProjectReference Include="../Beep.OilandGas.ProductionOperations/Beep.OilandGas.ProductionOperations.csproj" />
+  </ItemGroup>
 </Project>

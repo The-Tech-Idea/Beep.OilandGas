@@ -1,3 +1,7 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PermitsAndApplications.Models;
 using System.Data;
 using System.Security.Cryptography;
 using System.Text;
@@ -12,7 +16,6 @@ using TheTechIdea.Beep;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 using static Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader;
 
 namespace Beep.OilandGas.ApiService.Services;

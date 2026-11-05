@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.HSE;
 using Beep.OilandGas.Models.Data.WorkOrder;
 using System;
 using System.Collections.Generic;
@@ -30,11 +32,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Modules
         public override string ModuleName => "PPDM Core References";
         public override int Order => 0;
         private static readonly IReadOnlyList<Type> CoreExtensions = Array.AsReadOnly(WorkOrderSchema.EntityTypes
-            .Concat(TheTechIdea.Data.OilGas.ProductionInterventionNativeSchema.EntityTypes)
-            .Append(typeof(TheTechIdea.Data.OilGas.HSE_INCIDENT_REPORT_INTENT))
-            .Append(typeof(TheTechIdea.Data.OilGas.HSE_INCIDENT_RCA_INTENT))
-            .Append(typeof(TheTechIdea.Data.OilGas.HSE_CA_VERIFICATION))
-            .Append(typeof(TheTechIdea.Data.OilGas.HSE_INCIDENT_CLOSURE)).ToArray());
+            .Concat(Beep.OilandGas.Models.Data.WorkOrder.ProductionInterventionNativeSchema.EntityTypes)
+            .Append(typeof(Beep.OilandGas.Models.Data.HSE.HSE_INCIDENT_REPORT_INTENT))
+            .Append(typeof(Beep.OilandGas.Models.Data.HSE.HSE_INCIDENT_RCA_INTENT))
+            .Append(typeof(Beep.OilandGas.Models.Data.HSE.HSE_CA_VERIFICATION))
+            .Append(typeof(Beep.OilandGas.Models.Data.HSE.HSE_INCIDENT_CLOSURE)).ToArray());
         public override IReadOnlyList<Type> EntityTypes => CoreExtensions;
 
         public override async Task<ModuleSetupResult> SeedAsync(

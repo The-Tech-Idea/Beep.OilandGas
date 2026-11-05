@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.HSE.Models;
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers;
 using Beep.OilandGas.Repository;
@@ -6,7 +9,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Beep.OilandGas.ApiService.Services;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace CompanyEnvironment.Tests;
@@ -35,7 +37,7 @@ public sealed class CompanyEnvironmentControllerTests
     }
     private sealed class Defaults : ISystemSetupRecordReader
     {
-        private readonly SystemSetupConfiguration baseline = SystemSetupIdentity.Prepare(new("TOOLS", "DEFAULT", "1", "{}", "", Guid.NewGuid().ToString("N")), null);
+        private readonly SystemSetupConfiguration baseline = SystemSetupIdentity.Prepare(new("TOOLS", "DEFAULT", "1", "{}", "", "8b8e47b307d04ab2b220b7af684ce620"), null);
         public string Revision => baseline.Revision;
         public async Task<SystemSetupConfiguration?> ReadAsync(string category, string key, Func<Task> authority)
         { await authority(); return category == "TOOLS" && key == "DEFAULT" ? baseline : null; }
@@ -128,7 +130,7 @@ public sealed class CompanyEnvironmentControllerTests
         var resolver = new RepositoryCompanyContextResolver(access);
         var tenant = new RepositoryTenantContext(); tenant.SelectCompany((await resolver.ResolveAsync("actor", company))!);
         var user = new ClaimsPrincipal(new ClaimsIdentity([new("party_id", "actor"), new(ClaimTypes.Role, "Administrator")], "test"));
-        var saved = CompanyEnvironmentIdentity.Prepare(company, new("KW", "{}", "", Guid.NewGuid().ToString("N")), CompanyEnvironmentPreviewer.ToolsVersion, null, new string('A', 64), null);
+        var saved = CompanyEnvironmentIdentity.Prepare(company, new("KW", "{}", "", Guid.NewGuid().ToString("N")), CompanyEnvironmentPreviewer.ToolsVersion, null, new Defaults().Revision, null);
         var store = new Store { Value = saved }; var runtime = new CompanyEnvironmentRuntime(new CompanyEnvironmentEffectiveResolver(store, new Defaults()));
         var controller = new CompanyEnvironmentController(tenant, resolver, store, NullLogger<CompanyEnvironmentController>.Instance)
         { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } } };
@@ -165,7 +167,7 @@ public sealed class CompanyEnvironmentControllerTests
         var access = new Access { Value = new(company, ["Administrator"], []) }; var resolver = new RepositoryCompanyContextResolver(access);
         var tenant = new RepositoryTenantContext(); tenant.SelectCompany((await resolver.ResolveAsync("actor", company))!);
         var user = new ClaimsPrincipal(new ClaimsIdentity([new("party_id", "actor"), new(ClaimTypes.Role, "Administrator")], "test"));
-        var saved = CompanyEnvironmentIdentity.Prepare(company, new("KW", "{}", "", Guid.NewGuid().ToString("N")), CompanyEnvironmentPreviewer.ToolsVersion, null, new string('A', 64), null);
+        var saved = CompanyEnvironmentIdentity.Prepare(company, new("KW", "{}", "", Guid.NewGuid().ToString("N")), CompanyEnvironmentPreviewer.ToolsVersion, null, new Defaults().Revision, null);
         var store = new Store { Value = saved }; var records = new FactorRecords();
         var reader = new CompanyGhgCatalogReader(new(store, records), records);
         var controller = new CompanyEnvironmentController(tenant, resolver, store, NullLogger<CompanyEnvironmentController>.Instance)

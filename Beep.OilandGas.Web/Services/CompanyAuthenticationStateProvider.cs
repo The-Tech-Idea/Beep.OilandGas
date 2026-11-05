@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using System.Security.Claims;
 using Beep.OilandGas.Client.App;
 using Microsoft.AspNetCore.Components;

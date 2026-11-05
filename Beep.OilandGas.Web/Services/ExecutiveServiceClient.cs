@@ -1,4 +1,5 @@
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.Models.Data.Reporting;
+using Beep.OilandGas.Models.Data.Company;
 namespace Beep.OilandGas.Web.Services;
 public interface IExecutiveServiceClient { Task<ExecutivePortfolioReview> GetPortfolioAsync(); }
 public sealed class ExecutiveServiceClient(ApiClient api):IExecutiveServiceClient

@@ -1,4 +1,7 @@
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
 using SdkFieldService = Beep.OilandGas.Client.App.Services.Field.IFieldService;
 using System;
 using System.Collections.Generic;

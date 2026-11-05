@@ -1,3 +1,6 @@
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Repository.Models
 @inherits LayoutComponentBase
 @inject NavigationManager NavigationManager
 @inject Beep.OilandGas.Web.Theme.IThemeProvider ThemeProvider
@@ -249,7 +252,7 @@
         if (_disposed || generation != _setupGateGeneration ||
             !string.Equals(currentPath, new Uri(NavigationManager.Uri).AbsolutePath, StringComparison.OrdinalIgnoreCase))
             return false;
-        if (status == TheTechIdea.Data.OilGas.RepositoryReadiness.Ready)
+        if (status == Beep.OilandGas.Repository.Models.RepositoryReadiness.Ready)
         {
             _setupGateAllowed = true;
             return true;

@@ -1,3 +1,8 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.DevelopmentPlanning.Models;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Net;
 using System.Net.Http.Json;
@@ -11,7 +16,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.Utilities;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 using Xunit;
 using Approval=Beep.OilandGas.Models.Data.ProductionAccounting.APPROVAL_WORKFLOW;

@@ -1,5 +1,5 @@
+using Beep.OilandGas.Models.Data.WorkOrder;
 using Beep.OilandGas.PPDM39.Core.Metadata;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
 
 public static class WorkOrderMaterialMetadata

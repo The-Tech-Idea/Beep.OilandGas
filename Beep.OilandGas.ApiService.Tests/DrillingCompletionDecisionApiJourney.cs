@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DrillingAndConstruction.Models;
+using Beep.OilandGas.Repository.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Net;
 using System.Net.Http.Json;
@@ -6,7 +9,6 @@ using Beep.OilandGas.LifeCycle.Data.Tables;
 using Beep.OilandGas.Repository;
 using Beep.OilandGas.Web.Services;
 using Microsoft.EntityFrameworkCore;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.ApiService.Tests;
 public sealed partial class DrillingExecutionStartApiTests

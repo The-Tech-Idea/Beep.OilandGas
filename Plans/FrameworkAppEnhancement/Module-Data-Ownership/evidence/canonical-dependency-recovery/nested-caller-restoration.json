@@ -1,0 +1,21 @@
+{
+  "project": "Tests\\CompanyEnvironment\\CompanyEnvironment.Tests.csproj",
+  "removed_moved_definition_links": [
+    "../../Beep.OilandGas.PPDM39.DataManagement/Models/CompanyEnvironmentPreview.cs",
+    "../../Beep.OilandGas.PPDM39.DataManagement/Models/CompanyEnvironmentIdentity.cs",
+    "../../Beep.OilandGas.PPDM39.DataManagement/Models/SystemSetupConfiguration.cs",
+    "../../Beep.OilandGas.HSE/Models/GhgFactorCatalog.cs",
+    "../../Beep.OilandGas.HSE/Models/GhgArithmeticCheck.cs",
+    "../../Beep.OilandGas.PPDM39.DataManagement/Models/CompanyGhgCatalogSelection.cs",
+    "../../Beep.OilandGas.PPDM39.DataManagement/Models/COMPANY_GHG_CATALOG_SELECTION.cs",
+    "../../Beep.OilandGas.PPDM39.DataManagement/Models/COMPANY_OILGAS_ENVIRONMENT.cs"
+  ],
+  "existing_owner_references": [
+    "Beep.OilandGas.HSE",
+    "Beep.OilandGas.PPDM39.DataManagement"
+  ],
+  "status": "Applied and verified: 65/65 tests pass with actual owner references",
+  "tests_passed": 65,
+  "tests_failed": 0,
+  "log": "oilgas-nested-environment-verified.log"
+}

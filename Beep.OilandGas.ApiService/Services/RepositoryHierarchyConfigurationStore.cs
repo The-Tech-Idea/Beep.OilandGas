@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.AccessControl;
 using System.Data;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -6,7 +9,6 @@ using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Security;
 using Beep.OilandGas.Repository;
 using Microsoft.EntityFrameworkCore;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Services;
 

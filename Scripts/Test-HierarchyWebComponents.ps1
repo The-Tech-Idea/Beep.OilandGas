@@ -1,11 +1,12 @@
 param([ValidateSet('Debug', 'Release')][string]$Configuration = 'Debug', [switch]$RenderFieldInterests, [switch]$RenderWorkOrders, [switch]$RenderEquipment)
+. (Join-Path $PSScriptRoot 'RestoredOwnerFixtureReferences.ps1')
 $ErrorActionPreference = 'Stop'
 
 # Compile the exact edited components against real focused production-state binaries and the app's MudBlazor version.
 # This does not start the Web host, replace missing shared projects or claim browser/DI validation.
 $repositoryRoot = Split-Path $PSScriptRoot -Parent
 $focusedOutput = Join-Path $repositoryRoot "Beep.OilandGas.Repository.Tests/bin/company-focused/$Configuration/net10.0"
-$assemblies = @('Beep.OilandGas.Repository.Tests', 'TheTechIdea.Data', 'DataManagementModels', 'Beep.OilandGas.PPDM.Models')
+$assemblies = @('Beep.OilandGas.Repository.Tests', 'Beep.OilandGas.Models', 'DataManagementModels', 'Beep.OilandGas.PPDM.Models')
 foreach ($name in $assemblies) {
     if (-not (Test-Path -LiteralPath (Join-Path $focusedOutput "$name.dll"))) {
         throw "Run the focused company tests in $Configuration first; the component check requires their actual compiled production-state assemblies."
@@ -53,7 +54,8 @@ foreach ($name in $assemblies) {
     $hint = $checkProject.CreateElement('HintPath'); $hint.InnerText = Join-Path $focusedOutput "$name.dll"
     [void]$reference.AppendChild($hint); [void]$itemGroup.AppendChild($reference)
 }
-$projectPath = Join-Path $checkDirectory 'HierarchyRazorCheck.csproj'; $checkProject.Save($projectPath)
+$projectPath = Join-Path $checkDirectory 'HierarchyRazorCheck.csproj'; Add-OilGasRestoredOwnerReferences -Project $checkProject -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
+$checkProject.Save($projectPath)
 & dotnet build $projectPath --configuration $Configuration --verbosity quiet --nologo
 if ($LASTEXITCODE -ne 0) { throw "The focused Razor compilation failed; inspect $checkDirectory." }
 foreach ($name in $sources.Keys) {
@@ -79,7 +81,8 @@ if ($RenderFieldInterests -or $RenderWorkOrders -or $RenderEquipment) {
     }
     $framework = $renderProject.CreateElement('FrameworkReference'); $framework.SetAttribute('Include', 'Microsoft.AspNetCore.App')
     [void]$renderItems.AppendChild($framework)
-    $renderProjectPath = Join-Path $renderDirectory 'InterestRenderCheck.csproj'; $renderProject.Save($renderProjectPath)
+    $renderProjectPath = Join-Path $renderDirectory 'InterestRenderCheck.csproj'; Add-OilGasRestoredOwnerReferences -Project $renderProject -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
+$renderProject.Save($renderProjectPath)
     @'
 using System.Globalization;
 using System.Net;
@@ -92,7 +95,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using Moq;
 using MudBlazor.Services;
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.PPDM39.Models;
 using ReviewClient = Beep.OilandGas.Client.App.Services.AccessControl.IAccessControlService;
 

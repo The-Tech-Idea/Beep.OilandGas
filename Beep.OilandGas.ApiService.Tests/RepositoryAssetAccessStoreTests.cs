@@ -1,10 +1,11 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Repository.Models;
 using Moq;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.ApiService.Tests.Infrastructure;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Xunit.Abstractions;
 

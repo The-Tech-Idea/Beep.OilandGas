@@ -1,3 +1,7 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.DevelopmentPlanning.Models;
+using Beep.OilandGas.DrillingAndConstruction.Models;
+using Beep.OilandGas.Models.Data.Company;
 using System.Data;
 using Beep.OilandGas.PPDM39.Core;
 using TheTechIdea.Beep;
@@ -7,7 +11,6 @@ using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.DrillingAndConstruction.Services;
 public partial class DrillingOperationService

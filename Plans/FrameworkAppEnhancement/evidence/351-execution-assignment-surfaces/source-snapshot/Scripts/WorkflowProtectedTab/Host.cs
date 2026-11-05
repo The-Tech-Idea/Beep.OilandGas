@@ -1,3 +1,4 @@
+using Beep.OilandGas.DrillingAndConstruction.Models;
 using System.Text.Json;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Web.Auth.Tests;

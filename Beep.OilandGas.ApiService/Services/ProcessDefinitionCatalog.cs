@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Models.Processes;
 namespace Beep.OilandGas.ApiService.Services;
 /// <summary>Existing definition-list orchestration, including the configured financial category.</summary>

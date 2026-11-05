@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.HSE.Models;
 using System.Text.Json;
 using Bunit;
 using Beep.OilandGas.Client.App;
@@ -5,7 +8,6 @@ using Beep.OilandGas.Models.Data.HSE;
 using Beep.OilandGas.Web.Components.Workflow;
 using Beep.OilandGas.Web.Services;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.Web.Auth.Tests;

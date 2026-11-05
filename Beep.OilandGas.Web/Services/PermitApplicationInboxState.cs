@@ -1,7 +1,10 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Models.Data.Security;
 using Microsoft.AspNetCore.Components.Authorization;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.Web.Services;
 
 /// <summary>Returned-record queues under the current app roles and company/FIELD. Commands always review their own fresh source.</summary>

@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Company;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -34,7 +36,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
 
         [Authorize(Roles = "Administrator")]
         [HttpGet("user/{targetUserId}/stored-grants")]
-        public async Task<ActionResult<TheTechIdea.Data.OilGas.AssetGrantReviewPage>> ReviewStoredGrants(string targetUserId,
+        public async Task<ActionResult<Beep.OilandGas.Models.Data.AccessControl.AssetGrantReviewPage>> ReviewStoredGrants(string targetUserId,
             [FromQuery] int offset = 0, [FromQuery] int limit = 50, CancellationToken token = default)
         {
             if (!IsAdministrator) return Forbid();
@@ -43,7 +45,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
 
         [Authorize(Roles = "Administrator")]
         [HttpGet("fields/{fieldId}/interest-review")]
-        public async Task<ActionResult<TheTechIdea.Data.OilGas.FieldInterestReview>> GetFieldInterestReview(string fieldId)
+        public async Task<ActionResult<Beep.OilandGas.Models.Data.Lease.FieldInterestReview>> GetFieldInterestReview(string fieldId)
         {
             if (!IsAdministrator) return Forbid();
             return Ok(await _accessControlService.GetFieldInterestReviewAsync(fieldId));
@@ -51,8 +53,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
 
         [Authorize(Roles = "Administrator")]
         [HttpPost("stored-grants/{grantId}/retire")]
-        public async Task<ActionResult<TheTechIdea.Data.OilGas.AssetGrantRetirement>> RetireStoredGrant(string grantId,
-            [FromBody] TheTechIdea.Data.OilGas.RetireAssetGrantRequest request, CancellationToken token = default)
+        public async Task<ActionResult<Beep.OilandGas.Models.Data.AccessControl.AssetGrantRetirement>> RetireStoredGrant(string grantId,
+            [FromBody] Beep.OilandGas.Models.Data.AccessControl.RetireAssetGrantRequest request, CancellationToken token = default)
         {
             if (!IsAdministrator) return Forbid();
             return Ok(await _accessControlService.RetireStoredGrantAsync(grantId, request, token));
@@ -60,7 +62,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
 
         [Authorize(Roles = "Administrator")]
         [HttpGet("stored-grants/{grantId}/retirements")]
-        public async Task<ActionResult<TheTechIdea.Data.OilGas.AssetGrantRetirementPage>> GetGrantRetirements(string grantId,
+        public async Task<ActionResult<Beep.OilandGas.Models.Data.AccessControl.AssetGrantRetirementPage>> GetGrantRetirements(string grantId,
             [FromQuery] int offset = 0, [FromQuery] int limit = 50, CancellationToken token = default)
         {
             if (!IsAdministrator) return Forbid();

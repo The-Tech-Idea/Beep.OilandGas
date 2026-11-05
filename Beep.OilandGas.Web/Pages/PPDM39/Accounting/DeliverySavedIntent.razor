@@ -1,9 +1,11 @@
+@using Beep.OilandGas.Models.Data.Accounting
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.ProductionAccounting.Models
 @page "/accounting/delivery-intents/{IntentId}"
 @namespace Beep.OilandGas.Web.Pages.PPDM39.Accounting
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
-@using TheTechIdea.Data.OilGas
 @using Beep.OilandGas.Web.Services
 @using Beep.OilandGas.Web.Components.Workflow
 @inject IAccountingServiceClient Accounting

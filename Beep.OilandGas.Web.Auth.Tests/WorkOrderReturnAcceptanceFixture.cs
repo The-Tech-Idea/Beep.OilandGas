@@ -1,5 +1,7 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Models.Data.Company;
 #if WORKFLOW_INBOX_FOCUSED
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.Web.Auth.Tests;
 internal static class WorkOrderReturnAcceptanceFixture
 {

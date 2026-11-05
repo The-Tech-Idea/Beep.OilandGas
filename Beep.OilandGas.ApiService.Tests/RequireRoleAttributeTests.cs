@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Company;
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Attributes;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -116,10 +118,10 @@ public class RequireRoleAttributeTests
         public Task<bool> RevokeAssetAccessAsync(string userId, string assetId, string assetType, string? facilityType = null)
             => Task.FromResult(true);
 
-        public Task<TheTechIdea.Data.OilGas.FieldInterestReview> GetFieldInterestReviewAsync(string fieldId) => throw new NotSupportedException("Unexpected field interest review in authorization-filter tests.");
-        public Task<TheTechIdea.Data.OilGas.AssetGrantReviewPage> ReviewStoredGrantsAsync(string userId, int offset = 0, int limit = 50, CancellationToken token = default) => throw new NotSupportedException("Unexpected stored-grant review in authorization-filter tests.");
-        public Task<TheTechIdea.Data.OilGas.AssetGrantRetirement> RetireStoredGrantAsync(string grantId, TheTechIdea.Data.OilGas.RetireAssetGrantRequest request, CancellationToken token = default) => throw new NotSupportedException("Unexpected grant retirement in authorization-filter tests.");
-        public Task<TheTechIdea.Data.OilGas.AssetGrantRetirementPage> GetGrantRetirementsAsync(string grantId, int offset = 0, int limit = 50, CancellationToken token = default) => throw new NotSupportedException("Unexpected retirement history in authorization-filter tests.");
+        public Task<Beep.OilandGas.Models.Data.Lease.FieldInterestReview> GetFieldInterestReviewAsync(string fieldId) => throw new NotSupportedException("Unexpected field interest review in authorization-filter tests.");
+        public Task<Beep.OilandGas.Models.Data.AccessControl.AssetGrantReviewPage> ReviewStoredGrantsAsync(string userId, int offset = 0, int limit = 50, CancellationToken token = default) => throw new NotSupportedException("Unexpected stored-grant review in authorization-filter tests.");
+        public Task<Beep.OilandGas.Models.Data.AccessControl.AssetGrantRetirement> RetireStoredGrantAsync(string grantId, Beep.OilandGas.Models.Data.AccessControl.RetireAssetGrantRequest request, CancellationToken token = default) => throw new NotSupportedException("Unexpected grant retirement in authorization-filter tests.");
+        public Task<Beep.OilandGas.Models.Data.AccessControl.AssetGrantRetirementPage> GetGrantRetirementsAsync(string grantId, int offset = 0, int limit = 50, CancellationToken token = default) => throw new NotSupportedException("Unexpected retirement history in authorization-filter tests.");
         public Task<List<string>> GetRolePermissionsAsync(string roleId, string? organizationId = null)
             => Task.FromResult(new List<string>());
 

@@ -1,0 +1,76 @@
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Accounting;
+#nullable disable
+
+namespace Beep.OilandGas.Accounting.Models
+{
+    public class InvoiceApprovalResult : ModelEntityBase
+    {
+        private string InvoiceIdValue;
+
+        public string InvoiceId
+
+        {
+
+            get { return this.InvoiceIdValue; }
+
+            set { SetProperty(ref InvoiceIdValue, value); }
+
+        }
+        private bool IsApprovedValue;
+
+        public bool IsApproved
+
+        {
+
+            get { return this.IsApprovedValue; }
+
+            set { SetProperty(ref IsApprovedValue, value); }
+
+        }
+        private string ApproverIdValue;
+
+        public string ApproverId
+
+        {
+
+            get { return this.ApproverIdValue; }
+
+            set { SetProperty(ref ApproverIdValue, value); }
+
+        }
+        private DateTime ApprovalDateValue = DateTime.UtcNow;
+
+        public DateTime ApprovalDate
+
+        {
+
+            get { return this.ApprovalDateValue; }
+
+            set { SetProperty(ref ApprovalDateValue, value); }
+
+        }
+        private string StatusValue;
+
+        public string Status
+
+        {
+
+            get { return this.StatusValue; }
+
+            set { SetProperty(ref StatusValue, value); }
+
+        }
+        private string CommentsValue;
+
+        public string Comments
+
+        {
+
+            get { return this.CommentsValue; }
+
+            set { SetProperty(ref CommentsValue, value); }
+
+        }
+    }
+}

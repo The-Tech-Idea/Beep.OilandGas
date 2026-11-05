@@ -1,0 +1,3401 @@
+[
+  {
+    "source": "TheTechIdea.Data/OilGas/AccountingPeriodCheckReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "AccountingPeriodCheck",
+      "AccountingPeriodCheckReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Field/AccountingController.cs",
+      "Beep.OilandGas.ApiService/Services/AccountingPeriodCheckReviews.cs",
+      "Beep.OilandGas.Web.Auth.Tests/AccountingPeriodCheckTests.cs",
+      "Beep.OilandGas.Web/Services/AccountingPeriodCheckState.cs",
+      "Beep.OilandGas.Web/Services/AccountingServiceClient.cs",
+      "Beep.OilandGas.Web/Services/IAccountingServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/AFE_LINE_ITEM.cs",
+    "namespace": "Beep.OilandGas.Models.Data.ProductionAccounting",
+    "types": [
+      "AFE_LINE_ITEM"
+    ],
+    "proposed_owner": "Beep.OilandGas.ProductionAccounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.ProductionAccounting/Data/ProductionAccounting/AFE_LINE_ITEM.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.LifeCycle/Definitions/CrossRoleWorkflowSeed.Finance.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/Metadata/WorkOrderFinancialMetadata.cs",
+      "Beep.OilandGas.ProductionAccounting/Core/Interfaces/IAfeService.cs",
+      "Beep.OilandGas.ProductionAccounting/Data/ProductionAccounting/AFE_LINE_ITEM.cs",
+      "Beep.OilandGas.ProductionAccounting/Modules/ProductionAccountingModuleSetup.cs",
+      "Beep.OilandGas.ProductionAccounting/Services/AfeService.cs",
+      "Beep.OilandGas.ProductionAccounting/Services/ProductionAccountingService.AfeQueries.cs",
+      "Beep.OilandGas.Repository.Tests/FocusedFinancialContracts.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderFinancialContractOwnershipTests.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/ApplyRowFiltersRequest.cs",
+    "namespace": "Beep.OilandGas.UserManagement.Models.Requests.UserManagement",
+    "types": [
+      "ApplyRowFiltersRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.UserManagement",
+    "basis": "Proposed from namespace/domain; confirm dependency direction before moving",
+    "historical_candidates": [
+      "Beep.OilandGas.Models/Data/UserManagement/ApplyRowFiltersRequest.cs",
+      "Beep.OilandGas.UserManagement/Models/Requests/UserManagement/ApplyRowFiltersRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Identity/RowLevelSecurityController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyRowLevelSecurityService.cs",
+      "Beep.OilandGas.Models/Data/UserManagement/ApplyRowFiltersRequest.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyAssetRelationshipTests.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/APReceiptAllocationCommand.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "APReceiptAllocationCommand",
+      "APReceiptAllocationReceipt",
+      "APReceiptAllocationRecordedProof",
+      "APReceiptAllocationSubmission"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.Accounting/Services/APInvoiceService.ReceiptAllocation.cs",
+      "Beep.OilandGas.ApiService.Tests/APReceiptAllocationCommandHttpTests.cs",
+      "Beep.OilandGas.ApiService.Tests/APReceiptAllocationCommandTests.cs",
+      "Beep.OilandGas.ApiService.Tests/APReceiptAllocationScreenTests.cs",
+      "Beep.OilandGas.ApiService.Tests/AcceptedReceiptCapacityTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/APController.cs",
+      "Beep.OilandGas.Web/Services/APInvoiceWorkspaceState.ReceiptAllocation.cs",
+      "Beep.OilandGas.Web/Services/AccountingServiceClient.cs",
+      "Beep.OilandGas.Web/Services/IAccountingServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/ARAgingSummary.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "ARAgingSummary"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/ARAgingSummary.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IARService.cs",
+      "Beep.OilandGas.Accounting/Services/ARService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/ARApprovalResult.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "ARApprovalResult"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/ARApprovalResult.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IARService.cs",
+      "Beep.OilandGas.Accounting/Services/ARService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/ARInvoiceResponse.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "ARInvoiceResponse"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/ARInvoiceResponse.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/AssetAccessLevelChecks.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "AssetAccessLevelChecks"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.RecordedWork.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyWorkOrderBudgetService.cs",
+      "Beep.OilandGas.ApiService/Services/ExecutiveAggregationService.cs",
+      "Beep.OilandGas.Client/App/Services/AccessControl/AccessControlService.cs",
+      "Beep.OilandGas.LifeCycle/Services/AccessControl/UserAssetAccessService.cs",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.DevelopmentEdit.cs",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.DevelopmentEditWrite.cs",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceIdentity.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAcceptanceHttpTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/AssetAccessLevelChecksTests.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/AssetHierarchyNode.cs",
+    "namespace": "Beep.OilandGas.Models.Data",
+    "types": [
+      "AssetHierarchyNode"
+    ],
+    "proposed_owner": "Beep.OilandGas.Models",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Models/Data/AccessControl/AssetHierarchyNode.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/AccessControl/AssetHierarchyController.cs",
+      "Beep.OilandGas.LifeCycle/Services/AccessControl/AssetHierarchyService.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyAssetHierarchyTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyHierarchyUiTests.cs",
+      "Beep.OilandGas.Repository.Tests/EquipmentAssetAccessTests.cs",
+      "Beep.OilandGas.Web/Components/AccessControl/AssetAccessTree.razor",
+      "Beep.OilandGas.Web/Pages/Admin/AccessControl/HierarchyConfig.razor",
+      "Beep.OilandGas.Web/Program.cs",
+      "Beep.OilandGas.Web/Services/AssetHierarchyState.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/AssignCorrectiveActionResponsibleRequest.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "AssignCorrectiveActionResponsibleRequest"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/HSE/HSEController.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/BeepConnectionName.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "BeepConnectionName"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/SetupDriverBeepLoaderTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SetupProtectedBeepConnectionTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SystemSetupConnectionSelectionTests.cs",
+      "Beep.OilandGas.ApiService/Services/BeepRepositoryConnectionSource.cs",
+      "Beep.OilandGas.ApiService/Services/SetupRepositoryConnectionCreationService.cs",
+      "Beep.OilandGas.ApiService/Services/SetupRepositoryConnectionSelectionService.cs",
+      "Beep.OilandGas.ApiService/Services/SystemSetupConnectionSelectionService.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Services/PPDM39SetupService.cs",
+      "Beep.OilandGas.Web/Components/ConnectionSetupDialog.razor",
+      "Beep.OilandGas.Web/Components/PPDM39DatabaseWizard.razor",
+      "Beep.OilandGas.Web/Pages/SetupBootstrapDrivers.razor"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/BootstrapOutcome.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "BootstrapOutcome"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/RepositoryRoleExtensionTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SetupFirstRunHttpIntegrationTests.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryCanonicalUserStore.cs",
+      "Beep.OilandGas.Repository.Tests/LocalDbInstallationTests.cs",
+      "Beep.OilandGas.Repository.Tests/RegistrationProfileTests.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryBootstrapTests.cs",
+      "Beep.OilandGas.Repository/RepositoryBootstrapService.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CheckDatabaseAccessRequest.cs",
+    "namespace": "Beep.OilandGas.UserManagement.Models.Requests.UserManagement",
+    "types": [
+      "CheckDatabaseAccessRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.UserManagement",
+    "basis": "Proposed from namespace/domain; confirm dependency direction before moving",
+    "historical_candidates": [
+      "Beep.OilandGas.Models/Data/UserManagement/CheckDatabaseAccessRequest.cs",
+      "Beep.OilandGas.UserManagement/Models/Requests/UserManagement/CheckDatabaseAccessRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Identity/RowLevelSecurityController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyRowLevelSecurityService.cs",
+      "Beep.OilandGas.Models/Data/UserManagement/CheckDatabaseAccessRequest.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CheckDataSourceAccessRequest.cs",
+    "namespace": "Beep.OilandGas.UserManagement.Models.Requests.UserManagement",
+    "types": [
+      "CheckDataSourceAccessRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.UserManagement",
+    "basis": "Proposed from namespace/domain; confirm dependency direction before moving",
+    "historical_candidates": [
+      "Beep.OilandGas.Models/Data/UserManagement/CheckDataSourceAccessRequest.cs",
+      "Beep.OilandGas.UserManagement/Models/Requests/UserManagement/CheckDataSourceAccessRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Identity/RowLevelSecurityController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyRowLevelSecurityService.cs",
+      "Beep.OilandGas.Models/Data/UserManagement/CheckDataSourceAccessRequest.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CheckRowAccessRequest.cs",
+    "namespace": "Beep.OilandGas.UserManagement.Models.Requests.UserManagement",
+    "types": [
+      "CheckRowAccessRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.UserManagement",
+    "basis": "Proposed from namespace/domain; confirm dependency direction before moving",
+    "historical_candidates": [
+      "Beep.OilandGas.Models/Data/UserManagement/CheckRowAccessRequest.cs",
+      "Beep.OilandGas.UserManagement/Models/Requests/UserManagement/CheckRowAccessRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Identity/RowLevelSecurityController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyRowLevelSecurityService.cs",
+      "Beep.OilandGas.Models/Data/UserManagement/CheckRowAccessRequest.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CheckSourceAccessRequest.cs",
+    "namespace": "Beep.OilandGas.UserManagement.Models.Requests.UserManagement",
+    "types": [
+      "CheckSourceAccessRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.UserManagement",
+    "basis": "Proposed from namespace/domain; confirm dependency direction before moving",
+    "historical_candidates": [
+      "Beep.OilandGas.Models/Data/UserManagement/CheckSourceAccessRequest.cs",
+      "Beep.OilandGas.UserManagement/Models/Requests/UserManagement/CheckSourceAccessRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Identity/RowLevelSecurityController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyRowLevelSecurityService.cs",
+      "Beep.OilandGas.Models/Data/UserManagement/CheckSourceAccessRequest.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/ClientILeaseService.cs",
+    "namespace": "Beep.OilandGas.Client.App.Services.Lease",
+    "types": [
+      "ILeaseService"
+    ],
+    "proposed_owner": "Beep.OilandGas.Client",
+    "basis": "Proposed from namespace/domain; confirm dependency direction before moving",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.Client/App/BeepOilandGasApp.cs",
+      "Beep.OilandGas.Client/App/IBeepOilandGasApp.cs",
+      "Beep.OilandGas.Client/App/Services/Lease/LeaseService.cs",
+      "Beep.OilandGas.LeaseAcquisition/Core/Interfaces/ILeaseService.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/COMPANY_GHG_CATALOG_SELECTION.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "COMPANY_GHG_CATALOG_SELECTION"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CompanyGhgSelectionStoreTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SetupDriverBeepLoaderTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SystemSetupTargetTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/DataManagementController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyGhgSelectionStore.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Modules/SystemSetupModule.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/COMPANY_OILGAS_ENVIRONMENT.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "COMPANY_OILGAS_ENVIRONMENT"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CompanyEnvironmentStoreTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SetupDriverBeepLoaderTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SystemSetupTargetTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/DataManagementController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyEnvironmentStore.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Modules/SystemSetupModule.cs",
+      "Beep.OilandGas.PPDM39/Core/PPDMGenericRepository.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyAccountingCorrectionCycle.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyAccountingCorrectionCycle"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CorrectionReturnWorkflowTests.cs",
+      "Beep.OilandGas.LifeCycle/Services/Processes/CrossPersonaTaskRouter.cs",
+      "Beep.OilandGas.LifeCycle/Services/Processes/PPDMProcessService.CompanyStep.cs",
+      "Beep.OilandGas.LifeCycle/Services/Processes/PPDMProcessService.HseClosure.cs",
+      "Beep.OilandGas.LifeCycle/Services/Processes/PPDMProcessService.HseCorrection.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyCommercialAmendmentPage.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyCommercialAmendmentPage"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/FieldRevenueSourceTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyAccountingProcessController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.Commercial.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyFieldRevenueReads.CommercialTerms.cs",
+      "Beep.OilandGas.ProductionAccounting/Services/ProductionAccountingService.CommercialIntent.cs",
+      "Beep.OilandGas.Web/Components/Workflow/CommercialSavedProposalQueue.razor",
+      "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.cs",
+      "Beep.OilandGas.Web/Services/IBusinessProcessServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyCommercialHandoffReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyCommercialHandoffReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/FieldRevenueSourceTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyAccountingProcessController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.Commercial.cs",
+      "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.cs",
+      "Beep.OilandGas.Web/Services/CommercialAmendmentWorkspaceState.cs",
+      "Beep.OilandGas.Web/Services/IBusinessProcessServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyDeliveryProcessSourceReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyDeliveryProcessSourceReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/FieldRevenueSourceTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyAccountingProcessController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.Commercial.cs",
+      "Beep.OilandGas.Web/Components/Workflow/DeliveryAcceptanceWorkbench.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Accounting/CompanyAccountingProcessDetail.razor",
+      "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.cs",
+      "Beep.OilandGas.Web/Services/IBusinessProcessServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyDeliverySavedWork.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyDeliverySavedWorkPage",
+      "CompanyDeliverySavedWorkReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/FieldRevenueSourceTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Field/FieldRevenueSourceController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyFieldRevenueReads.DeliveryQueue.cs",
+      "Beep.OilandGas.ProductionAccounting/Services/ProductionAccountingService.DeliveryIntent.cs",
+      "Beep.OilandGas.Web/Components/Workflow/DeliverySavedWorkQueue.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Accounting/DeliverySavedIntent.razor",
+      "Beep.OilandGas.Web/Services/AccountingServiceClient.RevenueSources.cs",
+      "Beep.OilandGas.Web/Services/IAccountingServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyGLAccountConfiguration.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyGLAccountConfigurationCommand",
+      "CompanyGLAccountConfigurationProof",
+      "CompanyGLAccountConfigurationReceipt",
+      "CompanyGLAccountConfigurationReview",
+      "CompanyGLAccountConfigurationSubmission"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.Accounting/Services/GLAccountService.Company.cs",
+      "Beep.OilandGas.Accounting/Services/GLAccountService.CompanyConfiguration.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanyFinancialCanonicalOwnershipTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanyGLAccountConfigurationHttpTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanyGLAccountConfigurationTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyGLAccountController.cs",
+      "Beep.OilandGas.Web/Services/AccountingServiceClient.CompanyAccounts.cs",
+      "Beep.OilandGas.Web/Services/CompanyLedgerAccountState.Configuration.cs",
+      "Beep.OilandGas.Web/Services/IAccountingServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyHseAssignedActions.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyHseAssignedAction",
+      "CompanyHseAssignedActions"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/HseAssignedActionReaderTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/HSE/HseAssignedActionsController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyHseAssignedActionReader.cs",
+      "Beep.OilandGas.Repository.Tests/HseAssignedActionsHttpTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/HseAssignedActionsTests.cs",
+      "Beep.OilandGas.Web/Components/Workflow/HseAssignedActions.razor",
+      "Beep.OilandGas.Web/Services/HSEServiceClient.AssignedActions.cs",
+      "Beep.OilandGas.Web/Services/IHSEServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyLeaseDataAccess.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "ICompanyLeaseDataAccess",
+      "LeaseDataScope"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/LeaseAcquisitionControllerTests.cs",
+      "Beep.OilandGas.ApiService.Tests/LeaseRoutingTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Operations/LeaseAcquisitionController.cs",
+      "Beep.OilandGas.ApiService/Program.cs",
+      "Beep.OilandGas.ApiService/Services/PPDMCompanyLeaseDataAccess.cs",
+      "Beep.OilandGas.LeaseAcquisition/Services/LeaseAcquisitionService.Context.cs",
+      "Beep.OilandGas.LeaseAcquisition/Services/LeaseAcquisitionService.ModelsCoreImpl.cs",
+      "Beep.OilandGas.Repository.Tests/LeaseEndpointBindingTests.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyMaintenanceExecutionHandoff.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyMaintenanceExecutionHandoffCommand",
+      "CompanyMaintenanceExecutionHandoffReceipt",
+      "CompanyMaintenanceExecutionHandoffRecovery",
+      "CompanyMaintenanceExecutionHandoffReference",
+      "CompanyMaintenanceExecutionHandoffReview",
+      "ICompanyMaintenanceExecutionHandoffOwner"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CompanyMaintenanceExecutionHandoffTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanyWorkOrderCompletionDecisionTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/BusinessProcess/CompanyMaintenanceHandoffController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.ExecutionHandoff.cs",
+      "Beep.OilandGas.LifeCycle/Services/Processes/PPDMProcessService.MaintenanceExecutionHandoff.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceExecutionHandoffHttpTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderExecutionHandoffStateTests.cs",
+      "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.Maintenance.cs",
+      "Beep.OilandGas.Web/Services/ICompanyMaintenanceHandoffClient.cs",
+      "Beep.OilandGas.Web/Services/WorkOrderExecutionHandoffState.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyMaintenanceQualifiedReturnParticipant.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyMaintenanceQualifiedReturnProof",
+      "ICompanyMaintenanceQualifiedReturnParticipant"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Services/CompanyMaintenanceQualifiedAssetEvidenceReader.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyMaintenanceWellEvidenceReader.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Services/Well/WellServices.MaintenanceAssetReturn.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Services/Well/WellServices.cs",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceReturnParticipant.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyMaintenanceRecordedWork.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyMaintenanceRecordedWorkEntry",
+      "CompanyMaintenanceRecordedWorkPage",
+      "CompanyMaintenanceRecordedWorkWindow"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CompanyMaintenanceRecordedWorkTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/BusinessProcess/CompanyMaintenanceRecordedWorkController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.RecordedWork.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Services/WorkOrder/WorkOrderExecutionPermitService.RecordedWork.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceRecordedWorkHttpTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/MaintenanceRecordedWorkLandingTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/MaintenanceRecordedWorkTests.cs",
+      "Beep.OilandGas.Web/Components/Workflow/MaintenanceRecordedWorkQueue.razor",
+      "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.AssetEvidence.cs",
+      "Beep.OilandGas.Web/Services/ICompanyMaintenanceHandoffClient.cs",
+      "Beep.OilandGas.Web/Services/MaintenanceRecordedWorkState.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyMaintenanceReturnHandoff.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyMaintenanceReturnHandoffCommand",
+      "CompanyMaintenanceReturnHandoffReceipt",
+      "CompanyMaintenanceReturnHandoffRecovery",
+      "CompanyMaintenanceReturnHandoffReference",
+      "CompanyMaintenanceReturnHandoffReview",
+      "ICompanyMaintenanceReturnHandoffOwner"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CompanyMaintenanceReturnHandoffTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanyWorkOrderReturnAcceptanceTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/BusinessProcess/CompanyMaintenanceHandoffController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.CompletionDecision.cs",
+      "Beep.OilandGas.LifeCycle/Services/Processes/PPDMProcessService.MaintenanceReturnHandoff.cs",
+      "Beep.OilandGas.LifeCycle/Services/Processes/PPDMProcessService.MaintenanceReturnReview.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyWorkOrderCompletionDecisionHttpTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderMaintenanceReturnReviewTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderReturnHandoffStateTests.cs",
+      "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.CompletionDecision.cs",
+      "Beep.OilandGas.Web/Services/ICompanyMaintenanceHandoffClient.cs",
+      "Beep.OilandGas.Web/Services/WorkOrderCompletionReviewState.cs",
+      "Beep.OilandGas.Web/Services/WorkOrderReturnHandoffState.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyMaterialReservationQueue.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyMaterialReservationQueue",
+      "CompanyMaterialReservationQueueEntry",
+      "CompanyMaterialReservationStatus",
+      "ICompanyMaterialReservationQueueReader"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.Accounting/Services/InventoryService.WorkOrderMaterials.cs",
+      "Beep.OilandGas.ApiService.Tests/WorkOrderMaterialAllocationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/WorkOrderMaterialUsageTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyMaterialReservationsController.cs",
+      "Beep.OilandGas.ApiService/Program.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAcceptanceHttpTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/MaterialReservationLocalTimeTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/MaterialReservationQueueTests.cs",
+      "Beep.OilandGas.Web/Components/Workflow/CompanyMaterialReservationQueuePanel.razor",
+      "Beep.OilandGas.Web/Services/AccountingServiceClient.Inventory.cs",
+      "Beep.OilandGas.Web/Services/IAccountingServiceClient.cs",
+      "Beep.OilandGas.Web/Services/InventoryWorkspaceState.MaterialReservations.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyMemberAccessReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyMemberAccessReview",
+      "CompanyMembershipObservation"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Services/RepositoryRoleAssignmentService.Company.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryCompanyAccessTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/CompanyMembershipSetupTests.cs",
+      "Beep.OilandGas.Web/Pages/CompanyMembershipSetup.razor"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyMembershipRequest.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyMembershipRequest"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Identity/RoleAssignmentController.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryRoleAssignmentService.Company.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryCompanyAccessTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/CompanyMembershipSetupTests.cs",
+      "Beep.OilandGas.Web/Pages/CompanyMembershipSetup.razor",
+      "Beep.OilandGas.Web/Services/CompanySetupIntentStore.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyMembershipRetirement.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyMembershipRetirement",
+      "CompanyMembershipRetirementPage",
+      "CompanyMembershipRetirementRequest"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Identity/RoleAssignmentController.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryRoleAssignmentService.Company.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryCompanyAccessTests.cs",
+      "Beep.OilandGas.Repository/CompanyAccessMapping.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261028124523_CompanyMembershipRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261028124523_CompanyMembershipRetirement.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261028223214_CompanyPersonaScope.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/OracleRepositoryDbContextModelSnapshot.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261028124514_CompanyMembershipRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261028124514_CompanyMembershipRetirement.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261028223210_CompanyPersonaScope.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/PostgreSqlRepositoryDbContextModelSnapshot.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261028124456_CompanyMembershipRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261028124456_CompanyMembershipRetirement.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261028223152_CompanyPersonaScope.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/SqlServerRepositoryDbContextModelSnapshot.cs",
+      "Beep.OilandGas.Repository/RepositoryDbContext.cs",
+      "Beep.OilandGas.Web.Auth.Tests/CompanyMembershipSetupTests.cs",
+      "Beep.OilandGas.Web/Pages/CompanyMembershipSetup.razor",
+      "Beep.OilandGas.Web/Services/CompanySetupIntentStore.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyNativeDecisionHandoffReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyNativeDecisionHandoffReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyAccountingProcessController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.Commercial.cs",
+      "Beep.OilandGas.Web.Auth.Tests/CompanyAccountingHandoffTests.cs",
+      "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.cs",
+      "Beep.OilandGas.Web/Services/CompanyAccountingHandoffState.cs",
+      "Beep.OilandGas.Web/Services/IBusinessProcessServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyOrganizationReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyOrganizationReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Services/CompanyOrganizationVerifier.cs",
+      "Beep.OilandGas.Web.Auth.Tests/CompanyEnvironmentSetupTests.cs",
+      "Beep.OilandGas.Web/Pages/CompanyEnvironmentSetup.razor"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyRequestHeaders.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyRequestHeaders"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/AccountingSourceHttpTests.cs",
+      "Beep.OilandGas.ApiService.Tests/HSEProcessControllerTests.cs",
+      "Beep.OilandGas.ApiService.Tests/WorkflowInboxHttpTests.cs",
+      "Beep.OilandGas.ApiService/Middleware/CompanyRequestMiddleware.cs",
+      "Beep.OilandGas.Client/App/CompanyClientContext.cs",
+      "Beep.OilandGas.Repository.Tests/AccessControlClientTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyAssetGrantUiTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyClientScopeTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyFieldInterestAdministrationTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyFieldInterestReviewTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyHierarchyUiTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyHubScopeTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyProgressTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyRowSecurityTests.cs",
+      "Beep.OilandGas.Repository.Tests/HseAssignedActionsHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/InvestigatorClientTests.cs",
+      "Beep.OilandGas.Repository.Tests/LeaseClientTests.cs",
+      "Beep.OilandGas.Repository.Tests/PermitDocumentProviderHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/PermitProviderHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/PpdmDataClientTests.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryTenantBindingTests.cs",
+      "Beep.OilandGas.Repository.Tests/StoredAssetGrantReviewTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/CompanyEnvironmentIndicatorTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/CompanyEnvironmentSetupTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/LandingWorkspaceRefreshTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/PersonaInboxClientTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/PersonaWorkspaceTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/RepositorySetupPageTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/SystemSetupRepositoryTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderAccessClientTests.cs",
+      "Beep.OilandGas.Web.Tests/WorkflowNotificationIsolationTests.cs",
+      "Beep.OilandGas.Web/Services/NotificationService.cs",
+      "Beep.OilandGas.Web/Services/ProgressTrackingClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyRequestPolicy.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyRequestPolicy"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Middleware/CompanyRequestMiddleware.cs",
+      "Beep.OilandGas.Client/App/CompanyClientContext.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyRowSecurityTests.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanySalesInvoiceProcessSourceReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanySalesInvoiceProcessSourceReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyAccountingProcessController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.SalesInvoice.cs",
+      "Beep.OilandGas.Web/Components/Workflow/SalesInvoiceReviewWorkbench.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Accounting/CompanyAccountingProcessDetail.razor",
+      "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.cs",
+      "Beep.OilandGas.Web/Services/IBusinessProcessServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanySalesJournalProcessSourceReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanySalesJournalProcessSourceReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CompanySalesJournalPostingScreenTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesJournalReviewScreenTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyAccountingProcessController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.SalesJournal.cs",
+      "Beep.OilandGas.Web/Components/Workflow/AssignedSalesJournalWorkbench.razor",
+      "Beep.OilandGas.Web/Components/Workflow/SalesJournalPostingWorkbench.razor",
+      "Beep.OilandGas.Web/Components/Workflow/SalesJournalReviewWorkbench.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Accounting/CompanyAccountingProcessDetail.razor",
+      "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.cs",
+      "Beep.OilandGas.Web/Services/IBusinessProcessServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanySalesPaymentWorkflowSource.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanySalesPaymentProcessSourceReview",
+      "CompanySalesPaymentWorkflowSource"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.Accounting/Services/ARService.CompanyPaymentWorkflow.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanyFinancialCanonicalOwnershipTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesPaymentAssignedScreenTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesPaymentInboxTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyAccountingProcessController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.SalesPayment.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.cs",
+      "Beep.OilandGas.ApiService/Services/CompanySalesReceivableReads.Payments.cs",
+      "Beep.OilandGas.Web/Components/Workflow/AssignedSalesPaymentWorkbench.razor",
+      "Beep.OilandGas.Web/Components/Workflow/SalesPaymentReviewWorkbench.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Accounting/CompanyAccountingProcessDetail.razor",
+      "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.cs",
+      "Beep.OilandGas.Web/Services/IBusinessProcessServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanySalesReceivableProcessSourceReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanySalesReceivableProcessSourceReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/CompanyAccountingProcessController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyAccountingProcessReads.SalesReceivable.cs",
+      "Beep.OilandGas.Web/Components/Workflow/SalesReceivableReviewWorkbench.razor",
+      "Beep.OilandGas.Web/Components/Workflow/SalesReceivableWorkbench.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Accounting/CompanyAccountingProcessDetail.razor",
+      "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.cs",
+      "Beep.OilandGas.Web/Services/IBusinessProcessServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanySalesReceivableReviewRecovery.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanySalesReceivableReviewRecovery"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService/Services/CompanySalesReceivableReads.Review.cs",
+      "Beep.OilandGas.Web/Services/AccountingServiceClient.SalesReceivable.cs",
+      "Beep.OilandGas.Web/Services/CompanySalesReceivableWorkspaceState.Review.cs",
+      "Beep.OilandGas.Web/Services/IAccountingServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyWellQualityReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyWellQualityBatchRequest",
+      "CompanyWellQualityBatchReview",
+      "CompanyWellQualityField",
+      "CompanyWellQualityReview",
+      "CompanyWellQualitySample"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/CompanyWellQualityController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyWellQualityDiscovery.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyWellQualityReviewer.cs",
+      "Beep.OilandGas.Web.Auth.Tests/CompanyWellQualityTests.cs",
+      "Beep.OilandGas.Web/Pages/PPDM39/DataQuality.razor",
+      "Beep.OilandGas.Web/Services/CompanyWellQualityClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyWorkOrderExecutionPermitDecision.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyWorkOrderExecutionPermitDecision",
+      "CompanyWorkOrderExecutionPermitDecisionReceipt",
+      "CompanyWorkOrderExecutionPermitDecisionRecovery",
+      "CompanyWorkOrderExecutionPermitDecisionReference",
+      "StoredEvidence"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/WorkOrderExecutionPermitTests.cs",
+      "Beep.OilandGas.ApiService.Tests/WorkOrderExecutionStartFixture.cs",
+      "Beep.OilandGas.ApiService.Tests/WorkOrderExecutionStartTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/BusinessProcess/CompanyMaintenanceHandoffController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Services/WorkOrder/WorkOrderExecutionPermitService.Decision.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Services/WorkOrder/WorkOrderExecutionPermitService.ExecutionPrerequisites.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Services/WorkOrder/WorkOrderExecutionPermitService.RecordedApproval.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Services/WorkOrder/WorkOrderExecutionPermitService.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAcceptanceHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceCompleteApprovalHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyRecordedApprovalHttpTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/MaintenanceReceivingPanelTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderAcceptedMaterialReviewTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderExecutionPermitApprovalPanelTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderExecutionPermitDecisionClientTests.cs",
+      "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.Maintenance.cs",
+      "Beep.OilandGas.Web/Services/ICompanyMaintenanceHandoffClient.cs",
+      "Beep.OilandGas.Web/Services/WorkOrderExecutionPermitDecisionState.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyWorkOrderFinancialSources.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyWorkOrderFinancialQuery",
+      "CompanyWorkOrderFinancialSources"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/WorkOrderBudgetTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/WorkOrder/CompanyWorkOrderBudgetController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyWorkOrderBudgetService.Decision.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyWorkOrderBudgetService.cs",
+      "Beep.OilandGas.ProductionAccounting/Core/Interfaces/IAfeService.cs",
+      "Beep.OilandGas.ProductionAccounting/Services/AfeService.WorkOrderBudget.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyWorkOrderBudgetHttpTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderFinancialWorkspaceTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderInspectionRenderingTests.cs",
+      "Beep.OilandGas.Web/Services/IWorkOrderServiceClient.cs",
+      "Beep.OilandGas.Web/Services/WorkOrderFinancialWorkspaceState.cs",
+      "Beep.OilandGas.Web/Services/WorkOrderServiceClient.BudgetDecision.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyWorkOrderMaterialCatalog.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyWorkOrderMaterialCatalog"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/BusinessProcess/CompanyMaintenanceHandoffController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.cs",
+      "Beep.OilandGas.Repository.Tests/WorkOrderMaterialSourceHttpTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderMaterialAllocationPanelTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderMaterialCatalogTests.cs",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderMaterialAllocationPanel.razor",
+      "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.Maintenance.cs",
+      "Beep.OilandGas.Web/Services/ICompanyMaintenanceHandoffClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CompanyWorkOrderMaterialReleaseRecovery.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyWorkOrderMaterialReleaseRecovery",
+      "CompanyWorkOrderMaterialReleaseReferenceQuery"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.Accounting/Services/InventoryService.WorkOrderMaterialRelease.cs",
+      "Beep.OilandGas.ApiService/Controllers/BusinessProcess/CompanyMaintenanceHandoffController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.cs",
+      "Beep.OilandGas.Repository.Tests/WorkOrderMaterialSourceHttpTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderMaterialAllocationClientTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderMaterialAllocationPanelTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderMaterialAllocationStateTests.cs",
+      "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.Maintenance.cs",
+      "Beep.OilandGas.Web/Services/ICompanyMaintenanceHandoffClient.cs",
+      "Beep.OilandGas.Web/Services/WorkOrderMaterialAllocationState.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CreateARCreditMemoRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "CreateARCreditMemoRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/CreateARCreditMemoRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IARService.cs",
+      "Beep.OilandGas.Accounting/Services/ARService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CreateARInvoiceRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "CreateARInvoiceRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/CreateARInvoiceRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IARService.cs",
+      "Beep.OilandGas.Accounting/Services/ARService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesReceivablePreparationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/ProductionAccountingControllerFacadeCompatibilityTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/ARController.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs",
+      "Beep.OilandGas.ProductionAccounting/Services/ProductionAccountingService.ControllerFacade.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CreateARPaymentRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "CreateARPaymentRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/CreateARPaymentRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IARService.cs",
+      "Beep.OilandGas.Accounting/Services/ARService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CreateGLAccountRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "CreateGLAccountRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/CreateGLAccountRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CompanyFinancialCanonicalOwnershipTests.cs",
+      "Beep.OilandGas.ApiService.Tests/LegacyLedgerHttpAdmissionTests.cs",
+      "Beep.OilandGas.ApiService.Tests/ProductionAccountingControllerFacadeCompatibilityTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/GLController.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs",
+      "Beep.OilandGas.ProductionAccounting/Core/Interfaces/IGLAccountService.cs",
+      "Beep.OilandGas.ProductionAccounting/Services/ProductionAccountingService.LegacyLedgerFacade.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CreateInvoicePaymentRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "CreateInvoicePaymentRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/CreateInvoicePaymentRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IInvoiceService.cs",
+      "Beep.OilandGas.Accounting/Services/InvoiceService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceDraftTests.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CreateInvoiceRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "CreateInvoiceRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/CreateInvoiceRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IInvoiceService.cs",
+      "Beep.OilandGas.Accounting/Services/InvoiceService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceDraftTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceExecutionTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/InvoiceController.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs",
+      "Beep.OilandGas.ProductionAccounting/Services/ProductionAccountingService.ControllerFacade.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CreateJournalEntryRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "CreateJournalEntryRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/CreateJournalEntryRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CompanyFinancialCanonicalOwnershipTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/GLController.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/CustomerSummary.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "CustomerSummary"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/CustomerSummary.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IARService.cs",
+      "Beep.OilandGas.Accounting/Services/ARService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/DevelopmentPlanning/DevelopmentFacilityCreationReceipt.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "DevelopmentFacilityCreationReceipt",
+      "ICompanyFacilityCreationOwner"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CompanyDevelopmentFacilityCreationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentFacilityEvidenceHttpTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentFacilityEvidenceController.cs",
+      "Beep.OilandGas.ApiService/Program.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyDevelopmentFacilityCreationService.cs",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.DevelopmentCreationWrite.cs",
+      "Beep.OilandGas.Repository.Tests/DevelopmentFacilityNativeHttpTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs",
+      "Beep.OilandGas.Web/Services/DevelopmentServiceClient.cs",
+      "Beep.OilandGas.Web/Services/IDevelopmentServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/DevelopmentPlanning/DevelopmentFacilityEditReceipt.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "DevelopmentFacilityEditReceipt"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentFacilityEvidenceController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyDevelopmentFacilityEditService.cs",
+      "Beep.OilandGas.Repository.Tests/DevelopmentFacilityNativeHttpTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs",
+      "Beep.OilandGas.Web/Services/DevelopmentServiceClient.cs",
+      "Beep.OilandGas.Web/Services/IDevelopmentServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/DevelopmentPlanning/DevelopmentInvestmentQueue.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "DevelopmentAfeIndexItem",
+      "DevelopmentInvestmentQueue",
+      "DevelopmentInvestmentQueueItem"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentNativeTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Cost/AFEController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyDevelopmentAfeService.Queue.cs",
+      "Beep.OilandGas.ProductionAccounting/Services/AfeService.DevelopmentIndex.cs",
+      "Beep.OilandGas.ProductionAccounting/Services/AuthorizationWorkflowService.DevelopmentInvestment.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentAfeStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentInvestmentStateTests.cs",
+      "Beep.OilandGas.Web/Services/AfeServiceClient.cs",
+      "Beep.OilandGas.Web/Services/DevelopmentInvestmentQueueState.cs",
+      "Beep.OilandGas.Web/Services/DrillingProgramDraftState.cs",
+      "Beep.OilandGas.Web/Services/IAfeServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/DevelopmentPlanning/DevelopmentPlanDraftResponses.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "DevelopmentPlanDraftList",
+      "DevelopmentPlanDraftOptions",
+      "DevelopmentPlanDraftRecovery"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/DevelopmentPlanNativeDraftTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentPlanningController.cs",
+      "Beep.OilandGas.DevelopmentPlanning/Services/DevelopmentPlanService.cs",
+      "Beep.OilandGas.DevelopmentPlanning/Services/IDevelopmentPlanService.cs",
+      "Beep.OilandGas.Web/Services/DevelopmentServiceClient.cs",
+      "Beep.OilandGas.Web/Services/IDevelopmentServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/DevelopmentPlanning/EquipmentInstallationIntent.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "DevelopmentEquipmentInstallation",
+      "DevelopmentEquipmentInstallationReceipt",
+      "FACILITY_EQUIPMENT_INSTALL_INTENT",
+      "ICompanyEquipmentInstallationOwner"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentFacilityEvidenceController.cs",
+      "Beep.OilandGas.ApiService/Program.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyDevelopmentFacilityEditService.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.cs",
+      "Beep.OilandGas.PPDM39/Core/PPDMGenericRepository.cs",
+      "Beep.OilandGas.ProductionOperations/Modules/FacilityManagementModuleSetup.cs",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.DevelopmentCreationWrite.cs",
+      "Beep.OilandGas.Repository.Tests/DevelopmentFacilityNativeHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/FacilityCreationSourceTests.cs",
+      "Beep.OilandGas.Repository.Tests/FacilityEditPreflightTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentDraftWorkspaceTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/FacilityCreationIntentTests.cs",
+      "Beep.OilandGas.Web/Services/DevelopmentDraftIntentStore.FacilityCreation.cs",
+      "Beep.OilandGas.Web/Services/DevelopmentDraftIntentStore.cs",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs",
+      "Beep.OilandGas.Web/Services/DevelopmentServiceClient.cs",
+      "Beep.OilandGas.Web/Services/IDevelopmentServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/DrillingAndConstruction/DrillingDailyReportConflict.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "DrillingDailyReportConflictAcknowledgement",
+      "DrillingDailyReportConflictReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/DrillingDailyReportConflictApiJourney.cs",
+      "Beep.OilandGas.ApiService/Controllers/Field/DrillingProgramController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.DailyReportConflict.cs",
+      "Beep.OilandGas.DrillingAndConstruction/Services/DrillingOperationService.DailyReportConflict.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingDailyReportConflictStateTests.cs",
+      "Beep.OilandGas.Web/Services/DrillingDailyReportState.Conflict.cs",
+      "Beep.OilandGas.Web/Services/DrillingServiceClient.DailyReportConflict.cs",
+      "Beep.OilandGas.Web/Services/IDrillingServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/DrillingAndConstruction/DrillingExecutionAssignmentConflict.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "DrillingExecutionAssignmentConflictAcknowledgement",
+      "DrillingExecutionAssignmentConflictReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/DrillingExecutionAssignmentApiJourney.cs",
+      "Beep.OilandGas.ApiService/Controllers/Field/DrillingProgramController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.ExecutionAssignmentConflict.cs",
+      "Beep.OilandGas.LifeCycle/Services/Processes/PPDMProcessService.ExecutionAssignmentConflict.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingExecutionAssignmentConflictStateTests.cs",
+      "Beep.OilandGas.Web/Services/DrillingExecutionAssignmentState.Conflict.cs",
+      "Beep.OilandGas.Web/Services/DrillingServiceClient.ExecutionAssignmentConflict.cs",
+      "Beep.OilandGas.Web/Services/IDrillingServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/DrillingAndConstruction/DrillingExecutionAssignmentReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "DrillingExecutionAssignedWork",
+      "DrillingExecutionAssignmentReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Field/DrillingProgramController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.Assigned.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.ExecutionAssignment.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingAssignedCompletionStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingExecutionAssignedStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingExecutionAssignmentStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingWorkflowBrowserFixture.cs",
+      "Beep.OilandGas.Web/Services/DrillingExecutionAssignedState.cs",
+      "Beep.OilandGas.Web/Services/DrillingExecutionAssignmentState.cs",
+      "Beep.OilandGas.Web/Services/DrillingServiceClient.ExecutionAssignment.cs",
+      "Beep.OilandGas.Web/Services/IDrillingServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/DrillingAndConstruction/DrillingExecutionConflictReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "DrillingExecutionConflictAcknowledgement",
+      "DrillingExecutionConflictReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/DrillingExecutionStartApiTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Field/DrillingProgramController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.ExecutionConflict.cs",
+      "Beep.OilandGas.DrillingAndConstruction/Core/Interfaces/IDrillingOperationService.cs",
+      "Beep.OilandGas.DrillingAndConstruction/Services/DrillingOperationService.ExecutionConflict.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingExecutionConflictStateTests.cs",
+      "Beep.OilandGas.Web/Services/DrillingExecutionState.Conflict.cs",
+      "Beep.OilandGas.Web/Services/DrillingServiceClient.ExecutionConflict.cs",
+      "Beep.OilandGas.Web/Services/IDrillingServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/DrillingAndConstruction/DrillingProgramReviewDecision.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "DrillingProgramReviewDecision",
+      "DrillingProgramReviewDecisionReceipt"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/DrillingProgramReviewDecisionApiTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingProgramReviewDecisionNativeTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Field/DrillingProgramController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.Decision.cs",
+      "Beep.OilandGas.LifeCycle/Services/Processes/PPDMProcessService.ProgramDecision.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentDraftWorkspaceTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingProgramReviewDecisionStateTests.cs",
+      "Beep.OilandGas.Web/Services/DevelopmentDraftIntentStore.ProgramDecision.cs",
+      "Beep.OilandGas.Web/Services/DevelopmentDraftIntentStore.cs",
+      "Beep.OilandGas.Web/Services/DrillingProgramAssignedReviewState.Decision.cs",
+      "Beep.OilandGas.Web/Services/DrillingServiceClient.ProgramReview.cs",
+      "Beep.OilandGas.Web/Services/IDrillingServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/DrillingAndConstruction/DrillingReportingClosureStatus.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "DrillingReportingClosureStatus"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Field/DrillingProgramController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.ReportingClosure.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingReportingClosureStateTests.cs",
+      "Beep.OilandGas.Web/Services/DrillingReportingClosureState.cs",
+      "Beep.OilandGas.Web/Services/DrillingServiceClient.ReportingClosure.cs",
+      "Beep.OilandGas.Web/Services/IDrillingServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/DrillingAndConstruction/DrillingReportingReassignmentCatalog.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "DrillingReportingReassignmentCatalog",
+      "DrillingReportingReassignmentSelection"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/DrillingReportingReassignmentApiJourney.cs",
+      "Beep.OilandGas.ApiService/Controllers/Field/DrillingProgramController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.ReportingReassignment.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingReportingReassignmentStateTests.cs",
+      "Beep.OilandGas.Web/Services/DrillingReportingReassignmentState.cs",
+      "Beep.OilandGas.Web/Services/DrillingServiceClient.ReportingReassignment.cs",
+      "Beep.OilandGas.Web/Services/IDrillingServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/ExecutivePortfolioReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "ExecutiveAsset",
+      "ExecutivePortfolioChecks",
+      "ExecutivePortfolioReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/ExecutiveController.cs",
+      "Beep.OilandGas.ApiService/Services/ExecutiveAggregationService.cs",
+      "Beep.OilandGas.ApiService/Services/ExecutivePortfolioReviews.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyExecutivePortfolioHttpTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/ExecutivePortfolioLandingTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/ExecutivePortfolioTests.cs",
+      "Beep.OilandGas.Web/Services/ExecutivePortfolioState.cs",
+      "Beep.OilandGas.Web/Services/ExecutiveServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/ExplicitUtcInput.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "ExplicitUtcInput"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceAssetReturnPanel.razor",
+      "Beep.OilandGas.Web/Components/Workflow/DrillingCompletionReportEditor.razor",
+      "Beep.OilandGas.Web/Components/Workflow/MaintenanceRecordedWorkQueue.razor",
+      "Beep.OilandGas.Web/Services/DrillingCompletionAssignedState.Acceptance.cs",
+      "Beep.OilandGas.Web/Services/DrillingDailyReportState.cs",
+      "Beep.OilandGas.Web/Services/DrillingExecutionState.cs",
+      "Beep.OilandGas.Web/Services/DrillingReportingClosureState.cs",
+      "Beep.OilandGas.Web/Services/DrillingReportingReassignmentState.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/ExternalRegistrationProfile.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "ExternalRegistrationProfile"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Services/RepositoryCanonicalUserStore.cs",
+      "Beep.OilandGas.Repository.Tests/RegistrationProfileTests.cs",
+      "Beep.OilandGas.Repository/RepositoryBootstrapService.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/FieldObligationSourceReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "FieldObligationSourceReview",
+      "RecordedFieldObligation",
+      "RecordedObligationComponent"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Compliance/RecordedObligationsController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyFieldObligationReader.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Services/Compliance/ComplianceFieldObligationMapper.cs",
+      "Beep.OilandGas.Repository.Tests/CurrentFieldLifecycleGateTests.ComplianceEvidence.cs",
+      "Beep.OilandGas.Web.Auth.Tests/ComplianceCalendarTimeTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/HsePersonaLandingTests.cs",
+      "Beep.OilandGas.Web/Pages/PPDM39/BusinessProcess/ComplianceObligations.razor",
+      "Beep.OilandGas.Web/Services/ComplianceServiceClient.cs",
+      "Beep.OilandGas.Web/Services/IComplianceServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/FileImportModels.cs",
+    "namespace": "Beep.OilandGas.PPDM39.Core",
+    "types": [
+      "FileImportError",
+      "FileImportResult"
+    ],
+    "proposed_owner": "Beep.OilandGas.PPDM39",
+    "basis": "Proposed from namespace/domain; confirm dependency direction before moving",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CsvImportJobTests.cs",
+      "Beep.OilandGas.ApiService/Services/CsvImportJobRunner.cs",
+      "Beep.OilandGas.ApiService/Services/CsvImportJobs.cs",
+      "Beep.OilandGas.Models/Data/DataManagement/FileImportError.cs",
+      "Beep.OilandGas.Models/Data/DataManagement/FileImportResult.cs",
+      "Beep.OilandGas.PPDM39/Core/IPPDMGenericRepository.cs",
+      "Beep.OilandGas.PPDM39/Core/PPDMGenericRepository.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyModuleConnectionTests.cs",
+      "Beep.OilandGas.Web/Components/ImportCsvWizard.razor",
+      "Beep.OilandGas.Web/Components/ImportModels.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/FinancialOperationClaim.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "FinancialClaimHandle",
+      "FinancialOperationClaim"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/FinancialOperationClaimTests.cs",
+      "Beep.OilandGas.Repository/FinancialOperationClaimMapping.cs",
+      "Beep.OilandGas.Repository/FinancialOperationClaimStore.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20260921080819_FinancialOperationClaims.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005045234_CompanyAccess.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005051826_CompanyRoleRevocation.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005054856_TenantModuleBindings.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005072638_PhysicalModuleTargetOwnership.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005122647_CompanyHierarchyConfiguration.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005132125_CompositeFacilityGrants.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005135359_AssetGrantRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261028124523_CompanyMembershipRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261028223214_CompanyPersonaScope.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/OracleRepositoryDbContextModelSnapshot.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20260921080755_FinancialOperationClaims.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005045231_CompanyAccess.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005051822_CompanyRoleRevocation.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005054852_TenantModuleBindings.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005072634_PhysicalModuleTargetOwnership.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005122643_CompanyHierarchyConfiguration.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005132121_CompositeFacilityGrants.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005135357_AssetGrantRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261028124514_CompanyMembershipRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261028223210_CompanyPersonaScope.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/PostgreSqlRepositoryDbContextModelSnapshot.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20260921080731_FinancialOperationClaims.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005045154_CompanyAccess.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005051805_CompanyRoleRevocation.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005054834_TenantModuleBindings.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005072608_PhysicalModuleTargetOwnership.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005122617_CompanyHierarchyConfiguration.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005132117_CompositeFacilityGrants.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005135355_AssetGrantRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261028124456_CompanyMembershipRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261028223152_CompanyPersonaScope.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/SqlServerRepositoryDbContextModelSnapshot.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/GhgArithmeticCheck.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "FieldGhgArithmeticCheck",
+      "GhgArithmetic",
+      "GhgArithmeticCheck",
+      "GhgArithmeticRequest",
+      "GhgCalculationBasis"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Compliance/GhgProductionSourcesController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyGhgArithmeticService.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyGhgArithmeticServiceTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/GHGReportingAvailabilityTests.cs",
+      "Beep.OilandGas.Web/Pages/PPDM39/Compliance/GHGReport.razor"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/GLAccountResponse.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "GLAccountResponse"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/GLAccountResponse.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CompanyFinancialCanonicalOwnershipTests.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/HierarchyConfigurationRules.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "HierarchyConfigurationRules"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Services/RepositoryHierarchyConfigurationStore.cs",
+      "Beep.OilandGas.Web/Services/HierarchyConfigurationState.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/HSE_INCIDENT_CLOSURE.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "HSE_INCIDENT_CLOSURE",
+      "IncidentClosureStoredProof"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CompanyHseWorkflowSqliteTests.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.cs",
+      "Beep.OilandGas.ApiService/Services/PPDMCompanyCorrectiveActionCommands.Closure.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/Metadata/HseIncidentNativeMetadata.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Modules/CorePpdmModule.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyCorrectiveActionCommandTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyHseWorkflowHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/HseClosureConcurrencyQualification.cs",
+      "Beep.OilandGas.Repository.Tests/HseClosureProviderQualificationTests.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/HseIncidentPage.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "HseIncidentPage"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.LifeCycle/Services/HSE/PPDMHSEService.cs",
+      "Beep.OilandGas.Models/Core/Interfaces/IFieldHSEService.cs",
+      "Beep.OilandGas.Models/Core/Interfaces/IHSEService.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Services/HSE/HSEIncidentService.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyHseRowAccessTests.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/ICompanyCorrectiveActionCommands.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "ICompanyCorrectiveActionCommands"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/HSEControllerTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/HSE/HSEController.cs",
+      "Beep.OilandGas.ApiService/Program.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyHseWorkflowService.cs",
+      "Beep.OilandGas.ApiService/Services/PPDMCompanyCorrectiveActionCommands.cs",
+      "Beep.OilandGas.LifeCycle/Services/FieldOrchestrator.cs",
+      "Beep.OilandGas.LifeCycle/Services/HSE/PPDMHSEService.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Services/HSE/CorrectiveActionService.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyHseWorkflowHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyHseWorkflowServiceTests.cs",
+      "Beep.OilandGas.Repository.Tests/CurrentFieldLifecycleGateTests.cs",
+      "Beep.OilandGas.Repository.Tests/HseClosureProviderQualificationTests.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/ICompanyIncidentCommands.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "ICompanyIncidentCommands"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/HSEProcessControllerTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/HSE/IncidentReportController.cs",
+      "Beep.OilandGas.ApiService/Controllers/HSE/IncidentReportOptionsController.cs",
+      "Beep.OilandGas.ApiService/Program.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyHseWorkflowService.cs",
+      "Beep.OilandGas.ApiService/Services/PPDMCompanyIncidentCommands.cs",
+      "Beep.OilandGas.LifeCycle/Services/FieldOrchestrator.cs",
+      "Beep.OilandGas.LifeCycle/Services/HSE/PPDMHSEService.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Services/HSE/HSEIncidentService.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyHseWorkflowServiceTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyIncidentCommandTests.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/ICompanyLedgerBookReader.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "ICompanyLedgerBookReader"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.Accounting/Services/GLAccountService.cs",
+      "Beep.OilandGas.ApiService.Tests/WorkOrderBudgetTests.cs",
+      "Beep.OilandGas.ApiService/Program.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyDevelopmentAfeService.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyWorkOrderBudgetService.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyWorkOrderBudgetHttpTests.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/IdentityExtensions.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "AppPermissionExtension",
+      "AppRoleExtension",
+      "AppRolePermissionExtension",
+      "AppUserExtension",
+      "AppUserRoleExtension"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/ApiIdentityPipelineTests.cs",
+      "Beep.OilandGas.ApiService.Tests/AssetRolePermissionStoreTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanyRoleRecipientTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanyWorkOrderListReviewTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentAfeApiTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentAssignedReviewTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentApiTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentAssignedSourceTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentHandoffApiTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentProgressApiTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentRoutingTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentPlanBaselineApiTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentReviewCatalogTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentReviewDecisionTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentReviewHandoffTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentReviewProgressTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingCompletionRecipientTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingCompletionRoutingApiJourney.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingDailyReportCorrectionApiJourney.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingExecutionAssignmentApiJourney.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingExecutionRecipientTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingExecutionStartApiTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingProgramRecipientTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingReportingReassignmentApiJourney.cs",
+      "Beep.OilandGas.ApiService.Tests/FieldRevenueSourceTests.cs",
+      "Beep.OilandGas.ApiService.Tests/Infrastructure/TestCompanyModules.cs",
+      "Beep.OilandGas.ApiService.Tests/InvoiceVarianceStepEvidenceTests.cs",
+      "Beep.OilandGas.ApiService.Tests/ModuleMigrationScopeTests.cs",
+      "Beep.OilandGas.ApiService.Tests/ModuleRepositorySeedingTests.cs",
+      "Beep.OilandGas.ApiService.Tests/ModuleSetupOrchestratorTests.cs",
+      "Beep.OilandGas.ApiService.Tests/RepositoryRoleExtensionTests.cs",
+      "Beep.OilandGas.ApiService.Tests/RepositoryUserProfileTests.cs",
+      "Beep.OilandGas.ApiService.Tests/RolePersonaRoutingTests.cs",
+      "Beep.OilandGas.ApiService.Tests/WorkflowInboxHttpTests.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryApplicationRolePermissionStore.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryCanonicalUserStore.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryRoleAssignmentService.Company.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryRoleAssignmentService.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryUserProfileService.Fields.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryUserProfileService.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryUserService.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyAssetAccessTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyExecutivePortfolioHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyFieldSelectionTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyHazopAuthorityTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyHseRowAccessTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceCompleteApprovalHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyWorkOrderCompletionDecisionHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyWorkOrderReturnAcceptanceHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/HseClosureProviderQualificationTests.cs",
+      "Beep.OilandGas.Repository.Tests/LocalDbInstallationTests.cs",
+      "Beep.OilandGas.Repository.Tests/RegistrationProfileTests.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryAccountProfileTests.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryAdministrationTests.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryCompanyAccessTests.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryTenantBindingTests.cs",
+      "Beep.OilandGas.Repository.Tests/RoleWorkspaceTests.cs",
+      "Beep.OilandGas.Repository.Tests/StoredFieldSelectionAuthorityTests.cs",
+      "Beep.OilandGas.Repository/CompanyAccessMapping.cs",
+      "Beep.OilandGas.Repository/IdentityExtensionMapping.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20260905150500_IdentityExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20260905155046_UserExtension.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20260905175050_PersonaExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20260912184711_UserProfileMetadata.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20260912192333_AssetAccessExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20260921080819_FinancialOperationClaims.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005045234_CompanyAccess.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005051826_CompanyRoleRevocation.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005054856_TenantModuleBindings.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005072638_PhysicalModuleTargetOwnership.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005122647_CompanyHierarchyConfiguration.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005132125_CompositeFacilityGrants.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005135359_AssetGrantRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261028124523_CompanyMembershipRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261028223214_CompanyPersonaScope.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/OracleRepositoryDbContextModelSnapshot.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20260905150455_IdentityExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20260905155042_UserExtension.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20260905175045_PersonaExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20260912184652_UserProfileMetadata.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20260912192316_AssetAccessExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20260921080755_FinancialOperationClaims.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005045231_CompanyAccess.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005051822_CompanyRoleRevocation.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005054852_TenantModuleBindings.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005072634_PhysicalModuleTargetOwnership.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005122643_CompanyHierarchyConfiguration.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005132121_CompositeFacilityGrants.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005135357_AssetGrantRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261028124514_CompanyMembershipRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261028223210_CompanyPersonaScope.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/PostgreSqlRepositoryDbContextModelSnapshot.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20260905150451_IdentityExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20260905155038_UserExtension.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20260905175015_PersonaExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20260912184634_UserProfileMetadata.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20260912192147_AssetAccessExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20260921080731_FinancialOperationClaims.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005045154_CompanyAccess.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005051805_CompanyRoleRevocation.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005054834_TenantModuleBindings.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005072608_PhysicalModuleTargetOwnership.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005122617_CompanyHierarchyConfiguration.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005132117_CompositeFacilityGrants.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005135355_AssetGrantRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261028124456_CompanyMembershipRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261028223152_CompanyPersonaScope.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/SqlServerRepositoryDbContextModelSnapshot.cs",
+      "Beep.OilandGas.Repository/RepositoryAccessService.cs",
+      "Beep.OilandGas.Repository/RepositoryBootstrapService.cs",
+      "Beep.OilandGas.Repository/RepositoryRoleCatalogService.cs",
+      "Beep.OilandGas.Repository/RepositoryRoleScope.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/IFieldSelectionContext.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "IFieldSelectionContext"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceQueueTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceScreenTests.cs",
+      "Beep.OilandGas.ApiService.Tests/FieldRevenueSourceTests.cs",
+      "Beep.OilandGas.ApiService.Tests/WorkflowInboxHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/InvestigatorAssignmentStateTests.cs",
+      "Beep.OilandGas.Repository.Tests/PermitApplicationWorkflowStateTests.cs",
+      "Beep.OilandGas.Repository.Tests/ProductionInterventionHttpTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/CommercialLandPortfolioTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/ComplianceCalendarTimeTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/ConstructionEvidenceScreenTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/CorrectivePlanWorkspaceTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/CreateFieldObligationPageTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentDraftWorkspaceTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentInvestmentStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentWellEvidenceTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingProgramDraftStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/FieldEngineerWorkspaceTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/FieldSelectionTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/GHGReportingAvailabilityTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/HseAssignedActionsTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/HseClosureProgressTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/HseClosureReasonValidationTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/HseIncidentScreenTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/HseLandingAuthorityTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/HsePersonaLandingTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/HseWorkflowStartTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/InvestigatorAssignmentScreenTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/MaintenanceAssetEvidenceTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/MaintenanceAssetReturnStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/MaintenanceAssetReturnStatusTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/MaintenanceClosureStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/MaintenanceClosureStatusTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/MaintenanceReceivingPanelTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/MaintenanceRecordedWorkLandingTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/MaintenanceRecordedWorkTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/MaterialReservationLocalTimeTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/MaterialReservationQueueTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/PermitApplicationReadWorkflowTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/ProductionInterventionPageTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/ProductionPersonaRouteTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/RecordedWorkOrderOverviewTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WarehouseScreenTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderBudgetDecisionPanelTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderBudgetDecisionStatusPanelTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderBudgetPanelTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderCompletionDecisionStatusTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderCompletionDecisionTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderCompletionReviewTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderExecutionHandoffStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderExecutionPermitApprovalPanelTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderExecutionPermitIssuerTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderExecutionStartStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderFinancialWorkspaceTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderInterventionDetailTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderLaborCostPanelTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderMaintenanceReturnReviewTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderMaterialAcceptancePanelTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderMaterialAllocationPanelTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderMaterialCostPanelTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderMaterialSourcePanelTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderPermitDocumentSourcePanelTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderPermitMaterialReadinessPanelTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderPersonnelSourcePanelTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderReturnAcceptanceStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderReturnAcceptanceStatusTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderReturnHandoffStateTests.cs",
+      "Beep.OilandGas.Web/Components/BusinessProcess/CompanyMaintenanceAssignedStage.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceAssetEvidencePanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceAssetReturnPanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceClosurePanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderBudgetDecisionPanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderBudgetDecisionStatusPanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderBudgetPanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderCompletionDecisionPanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderCompletionReviewPanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderExecutionHandoffPanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderExecutionPermitApprovalReviewPanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderExecutionPermitIssuer.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderExecutionStartPanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderLaborCostPanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderLaborUsagePanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderMaterialAllocationPanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderMaterialCostPanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderMaterialSourcePanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderMaterialUsagePanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderPermitDocumentSourcePanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderPermitMaterialReadinessPanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderPermitPersonnelSourcePanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderRecordedApprovalPanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderReturnAcceptancePanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderReturnHandoffPanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderSubmissionPanel.razor",
+      "Beep.OilandGas.Web/Components/Shared/PersonaSelector.razor",
+      "Beep.OilandGas.Web/Components/Workflow/CommercialLandPortfolio.razor",
+      "Beep.OilandGas.Web/Components/Workflow/CommercialTermsWorkbench.razor",
+      "Beep.OilandGas.Web/Components/Workflow/CompanyFacilityEvidencePanel.razor",
+      "Beep.OilandGas.Web/Components/Workflow/CompanyMaterialReservationQueuePanel.razor",
+      "Beep.OilandGas.Web/Components/Workflow/DeliveryAcceptanceWorkbench.razor",
+      "Beep.OilandGas.Web/Components/Workflow/HseAssignedActions.razor",
+      "Beep.OilandGas.Web/Components/Workflow/HseCauseReview.razor",
+      "Beep.OilandGas.Web/Components/Workflow/HseClosureWorkflow.razor",
+      "Beep.OilandGas.Web/Components/Workflow/HseCorrectiveAction.razor",
+      "Beep.OilandGas.Web/Components/Workflow/HseWorkflowStart.razor",
+      "Beep.OilandGas.Web/Components/Workflow/MaintenanceRecordedWorkQueue.razor",
+      "Beep.OilandGas.Web/Components/Workflow/PermitApplicationInbox.razor",
+      "Beep.OilandGas.Web/Components/Workflow/RecordedWorkOrderOverview.razor",
+      "Beep.OilandGas.Web/Components/Workflow/SalesInvoiceQueue.razor",
+      "Beep.OilandGas.Web/Components/Workflow/WorkOrderFinancialWorkbench.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Accounting/AccountingDashboard.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Accounting/RevenueRecognition.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/BusinessProcess/ComplianceObligations.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/BusinessProcess/ComplianceReport.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/BusinessProcess/CreateFieldObligationPage.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/BusinessProcess/HSEIncidentDetail.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/BusinessProcess/HSEIncidents.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/BusinessProcess/ProcessInstanceDetail.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Compliance/GHGReport.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Compliance/ObligationDetail.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/ConstructionProgress.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/DevelopmentPlanReview.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/FDPWizard.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/Facilities.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/WellDesign.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/HSE/HAZOPStudy.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/HSE/HSEDashboard.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Operations/LeaseAcquisition.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Permits/NewPermitApplication.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Permits/PermitDetail.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Production/InterventionDecisions.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/WorkOrder/WorkOrderDashboard.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/WorkOrder/WorkOrderDetail.razor",
+      "Beep.OilandGas.Web/Program.cs",
+      "Beep.OilandGas.Web/Services/CorrectivePlanWorkspaceState.cs",
+      "Beep.OilandGas.Web/Services/DataManagementService.cs",
+      "Beep.OilandGas.Web/Services/DevelopmentDraftWorkspaceState.cs",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs",
+      "Beep.OilandGas.Web/Services/DevelopmentWellEvidenceState.cs",
+      "Beep.OilandGas.Web/Services/FieldSelectionState.cs",
+      "Beep.OilandGas.Web/Services/InvestigatorAssignmentState.cs",
+      "Beep.OilandGas.Web/Services/LifeCycleService.cs",
+      "Beep.OilandGas.Web/Services/PermitApplicationCommandState.cs",
+      "Beep.OilandGas.Web/Services/PermitApplicationInboxState.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/IHierarchyConfigurationStore.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "IHierarchyConfigurationStore"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Program.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryHierarchyConfigurationStore.cs",
+      "Beep.OilandGas.LifeCycle/Services/AccessControl/AssetHierarchyService.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/IncidentReportTime.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "IncidentReportTime"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/HseReportJurisdictionTests.cs",
+      "Beep.OilandGas.Web/Pages/PPDM39/BusinessProcess/HSEIncidents.razor"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/InitialCompanyProvisionRequest.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "InitialCompanyProvisionRequest",
+      "InitialCompanyProvisionReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Identity/InitialCompanyProvisionController.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryRoleAssignmentService.Company.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryCompanyAccessTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/InitialCompanySetupTests.cs",
+      "Beep.OilandGas.Web/Pages/InitialCompanySetup.razor",
+      "Beep.OilandGas.Web/Services/CompanySetupIntentStore.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/InvestigatorAssignmentReviewValidator.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "InvestigatorAssignmentReviewValidator"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.Client/App/Services/Field/HseIncidentClient.cs",
+      "Beep.OilandGas.Web/Services/CorrectivePlanIntentStore.cs",
+      "Beep.OilandGas.Web/Services/CorrectivePlanWorkspaceState.cs",
+      "Beep.OilandGas.Web/Services/InvestigatorAssignmentIntentStore.cs",
+      "Beep.OilandGas.Web/Services/InvestigatorAssignmentState.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/InvoiceAgingSummary.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "InvoiceAgingSummary"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/InvoiceAgingSummary.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IInvoiceService.cs",
+      "Beep.OilandGas.Accounting/Services/InvoiceService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceDraftTests.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/InvoiceApprovalResult.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "InvoiceApprovalResult"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/InvoiceApprovalResult.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IInvoiceService.cs",
+      "Beep.OilandGas.Accounting/Services/InvoiceService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceDraftTests.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/InvoicePaymentStatus.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "InvoicePaymentStatus"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/InvoicePaymentStatus.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IInvoiceService.cs",
+      "Beep.OilandGas.Accounting/Services/InvoiceService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceDraftTests.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/JournalEntry.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "JournalEntry"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/JournalEntry.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CompanyFinancialCanonicalOwnershipTests.cs",
+      "Beep.OilandGas.ApiService.Tests/ProductionAccountingControllerFacadeCompatibilityTests.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs",
+      "Beep.OilandGas.ProductionAccounting/Services/ProductionAccountingService.ControllerFacade.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/JournalEntryApprovalResult.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "JournalEntryApprovalResult"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/JournalEntryApprovalResult.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CompanyFinancialCanonicalOwnershipTests.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/ModuleBindingRequest.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "ModuleBindingRequest",
+      "ModuleDatabaseSummary",
+      "ModuleOwnershipRequest",
+      "ModulePlanRequest",
+      "ModuleSeedRequest",
+      "ModuleSeedSummary"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/LocalDbDriverTests.cs",
+      "Beep.OilandGas.ApiService.Tests/ModuleRepositorySeedingTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SystemSetupTargetTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/ModuleRepositoryController.cs",
+      "Beep.OilandGas.ApiService/Controllers/SystemSetupRepositoryController.cs",
+      "Beep.OilandGas.ApiService/Services/ModuleBindingService.cs",
+      "Beep.OilandGas.Web/Pages/Admin/ModuleDatabases.razor",
+      "Beep.OilandGas.Web/Pages/SystemSetupRepository.razor",
+      "Beep.OilandGas.Web/Services/ModuleDatabaseClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/PaymentApplicationRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "PaymentApplicationRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/PaymentApplicationRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IARService.cs",
+      "Beep.OilandGas.Accounting/Services/ARService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/PaymentApplicationResult.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "PaymentApplicationResult"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/PaymentApplicationResult.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IARService.cs",
+      "Beep.OilandGas.Accounting/Services/ARService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/PermitApplicationCatalog.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "PermitApplicationCatalog"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Permits/PermitsController.cs",
+      "Beep.OilandGas.Web/Services/IPermitServiceClient.cs",
+      "Beep.OilandGas.Web/Services/PermitServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/PermitApplicationCommandRecovery.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "PermitApplicationCommandRecovery"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Permits/PermitsController.cs",
+      "Beep.OilandGas.Client/App/Services/Permits/IPermitsService.cs",
+      "Beep.OilandGas.Client/App/Services/Permits/PermitsService.cs",
+      "Beep.OilandGas.Repository.Tests/PermitApplicationWorkflowStateTests.cs",
+      "Beep.OilandGas.Repository.Tests/PermitDocumentProviderHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/PermitProviderHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/PermitReviewedCommandApiTests.cs",
+      "Beep.OilandGas.Web/Services/IPermitServiceClient.cs",
+      "Beep.OilandGas.Web/Services/PermitServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/PermitApplicationSchema.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "PermitApplicationSchema"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.PPDM39.DataManagement/Core/Metadata/PermitApplicationNativeMetadata.cs",
+      "Beep.OilandGas.PPDM39/Core/PPDMGenericRepository.cs",
+      "Beep.OilandGas.PermitsAndApplications/Modules/PermitsModule.cs",
+      "Beep.OilandGas.Repository.Tests/PermitDocumentStagingTests.cs",
+      "Beep.OilandGas.Repository.Tests/PermitRepositoryMutationAdmissionTests.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/PersonaModels.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "AppPersona",
+      "AppPersonaAudit",
+      "AppPersonaPreference",
+      "AppUserPersona",
+      "CompanyPersonaWorkspaceReview",
+      "PersonaCatalogUpdate",
+      "PersonaPreferenceUpdate",
+      "PersonaProfileResult",
+      "PersonaProfileUpdate",
+      "RoleWorkspaceChoice",
+      "RoleWorkspaceMappingRequest",
+      "RoleWorkspaceReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanyRoleRecipientTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesJournalProcessHttpTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesPaymentInboxTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesReceivableWorkflowTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentAssignedReviewTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentAssignedSourceTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentRoutingTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentStageApiTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentReviewCatalogTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentReviewDecisionTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentReviewProgressTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingCompletionAcceptanceApiJourney.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingCompletionDecisionApiJourney.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingCompletionRecipientTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingCompletionRoutingApiJourney.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingDailyReportConflictApiJourney.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingDailyReportCorrectionApiJourney.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingDailyReportPageApiJourney.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingExecutionAssignmentApiJourney.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingExecutionRecipientTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingExecutionStartApiTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingProgramAssignedReviewApiTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingProgramRecipientTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingReportingClosureApiJourney.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingReportingReassignmentApiJourney.cs",
+      "Beep.OilandGas.ApiService.Tests/FieldRevenueSourceTests.cs",
+      "Beep.OilandGas.ApiService.Tests/InvoiceVarianceStepEvidenceTests.cs",
+      "Beep.OilandGas.ApiService.Tests/PersonasAuthorizationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/RepositoryRegistrationHttpTests.cs",
+      "Beep.OilandGas.ApiService.Tests/RolePersonaRoutingTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SetupRepositorySqlServerTests.cs",
+      "Beep.OilandGas.ApiService.Tests/WorkflowInboxHttpTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Identity/PersonasController.cs",
+      "Beep.OilandGas.ApiService/Controllers/WorkflowTasksController.cs",
+      "Beep.OilandGas.ApiService/Hubs/WorkflowNotificationAuthorization.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.Assigned.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyDrillingProgramService.Execution.cs",
+      "Beep.OilandGas.ApiService/Services/DevelopmentAssignedReviewService.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryPersonaTests.cs",
+      "Beep.OilandGas.Repository.Tests/RoleWorkspaceTests.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20260905175050_PersonaExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20260912184711_UserProfileMetadata.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20260912192333_AssetAccessExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20260921080819_FinancialOperationClaims.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005045234_CompanyAccess.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005051826_CompanyRoleRevocation.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005054856_TenantModuleBindings.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005072638_PhysicalModuleTargetOwnership.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005122647_CompanyHierarchyConfiguration.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005132125_CompositeFacilityGrants.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005135359_AssetGrantRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261028124523_CompanyMembershipRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261028223214_CompanyPersonaScope.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/OracleRepositoryDbContextModelSnapshot.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20260905175045_PersonaExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20260912184652_UserProfileMetadata.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20260912192316_AssetAccessExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20260921080755_FinancialOperationClaims.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005045231_CompanyAccess.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005051822_CompanyRoleRevocation.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005054852_TenantModuleBindings.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005072634_PhysicalModuleTargetOwnership.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005122643_CompanyHierarchyConfiguration.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005132121_CompositeFacilityGrants.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005135357_AssetGrantRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261028124514_CompanyMembershipRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261028223210_CompanyPersonaScope.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/PostgreSqlRepositoryDbContextModelSnapshot.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20260905175015_PersonaExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20260912184634_UserProfileMetadata.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20260912192147_AssetAccessExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20260921080731_FinancialOperationClaims.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005045154_CompanyAccess.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005051805_CompanyRoleRevocation.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005054834_TenantModuleBindings.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005072608_PhysicalModuleTargetOwnership.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005122617_CompanyHierarchyConfiguration.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005132117_CompositeFacilityGrants.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005135355_AssetGrantRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261028124456_CompanyMembershipRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261028223152_CompanyPersonaScope.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/SqlServerRepositoryDbContextModelSnapshot.cs",
+      "Beep.OilandGas.Repository/PersonaMapping.cs",
+      "Beep.OilandGas.Repository/RepositoryAccessService.cs",
+      "Beep.OilandGas.Repository/RepositoryPersonaService.Workspaces.cs",
+      "Beep.OilandGas.Repository/RepositoryPersonaService.cs",
+      "Beep.OilandGas.Web.Auth.Tests/CompanyPersonaContextTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/ConstructionEvidenceScreenTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DataAnalystWorkspaceTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentAssignedReviewStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentInvestmentAssignedStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingAssignedCompletionStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingCompletionAssignedStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingCompletionDecisionStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingCompletionRoutingStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingCompletionSubmissionStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingDailyReportConflictStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingDailyReportStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingExecutionAssignedStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingExecutionAssignmentStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingExecutionStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingProgramAssignedReviewStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingReportingClosureStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/DrillingReportingReassignmentStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/EngineeringWorkspaceLandingTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/ExecutivePortfolioLandingTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/ExplorationPersonaLandingTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/FieldEngineerWorkspaceTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/HsePersonaLandingTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/LandingWorkspaceRefreshTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/MaintenanceRecordedWorkLandingTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/PersonaTaskInboxStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/PersonaWorkspaceTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/ProductionPersonaRouteTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkflowAdminWorkspaceTests.cs",
+      "Beep.OilandGas.Web/Pages/Admin/AccessControl/UserRoles.razor",
+      "Beep.OilandGas.Web/Services/PersonaClient.cs",
+      "Beep.OilandGas.Web/Services/PersonaContextService.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/PPDMFieldEligibility.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "CompanyFieldEligibilityRules",
+      "HseCaseRestrictionReadRule",
+      "ICompanyFieldEligibility",
+      "PPDMFieldEligibilityConfiguration"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Program.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyMaintenanceQualifiedAssetEvidenceReader.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyMaintenanceWellEvidenceReader.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyWorkOrderFieldReview.cs",
+      "Beep.OilandGas.ApiService/Services/PPDMAssetGrantTargetVerifier.cs",
+      "Beep.OilandGas.ApiService/Services/PPDMCompanyFieldEligibility.cs",
+      "Beep.OilandGas.ApiService/Services/PPDMCompanyFieldInterestReview.cs",
+      "Beep.OilandGas.ApiService/Services/PPDMCompanyLeaseDataAccess.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyFieldEligibilityTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyPPDMTestFixture.cs",
+      "Beep.OilandGas.Repository.Tests/PermitDocumentProviderHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/PermitProviderHttpTests.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/ProcessStartSourceReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "ProcessStartSourceReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/BusinessProcess/BusinessProcessController.cs",
+      "Beep.OilandGas.ApiService/Services/ProcessStartSources.cs",
+      "Beep.OilandGas.Web.Auth.Tests/ProcessDefinitionDetailStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/ProcessDefinitionRenderingTests.cs",
+      "Beep.OilandGas.Web/Components/BusinessProcess/ProcessStartSourcePanel.razor",
+      "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.cs",
+      "Beep.OilandGas.Web/Services/IBusinessProcessServiceClient.cs",
+      "Beep.OilandGas.Web/Services/ProcessDefinitionDetailState.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/ProcessTransitionReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "JournalSourceLineReview",
+      "JournalSourceReview",
+      "ProcessTransitionChoice",
+      "ProcessTransitionReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/ProcessTransitionReviewTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/BusinessProcess/BusinessProcessController.cs",
+      "Beep.OilandGas.ApiService/Services/ProcessTransitionReviews.cs",
+      "Beep.OilandGas.Web.Auth.Tests/JournalSourceReviewPanelTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/ProcessInstanceDetailStateTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/ProcessTransitionResponseTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderSourceReviewPanelTests.cs",
+      "Beep.OilandGas.Web/Components/BusinessProcess/JournalSourceReviewPanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/StateTransitionPanel.razor",
+      "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderSourceReviewPanel.razor",
+      "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.cs",
+      "Beep.OilandGas.Web/Services/IRecordedProcessClient.cs",
+      "Beep.OilandGas.Web/Services/ProcessInstanceDetailState.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/ProductionInterventionNativeDecision.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "ProductionInterventionNativeCommand",
+      "ProductionInterventionNativeRecovery",
+      "ProductionInterventionNativeReview",
+      "ProductionInterventionNativeSchema",
+      "WELL_INTERVENTION_INTENT",
+      "WELL_INTERVENTION_RESULT"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Field/ProductionController.cs",
+      "Beep.OilandGas.LifeCycle/Services/Production/PPDMProductionService.InterventionDecisions.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/Metadata/ProductionInterventionNativeMetadata.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Modules/CorePpdmModule.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceHandoffHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/ProductionInterventionHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/ProductionInterventionNativeDecisionTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/ProductionInterventionPageTests.cs",
+      "Beep.OilandGas.Web/Services/IProductionServiceClient.cs",
+      "Beep.OilandGas.Web/Services/ProductionInterventionDecisionState.cs",
+      "Beep.OilandGas.Web/Services/ProductionServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/PurchaseOrderInventoryLinkCycle.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "PurchaseOrderInventoryLinkCycleAction",
+      "PurchaseOrderInventoryLinkCycleCommand",
+      "PurchaseOrderInventoryLinkCycleResult",
+      "PurchaseOrderInventoryLinkCycleReview",
+      "PurchaseOrderInventoryLinkCycleSubmission"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.Accounting/Services/PurchaseOrderService.InventoryLinkCycle.cs",
+      "Beep.OilandGas.ApiService.Tests/InventoryLinkCycleHttpTests.cs",
+      "Beep.OilandGas.ApiService.Tests/InventoryLinkCycleTests.cs",
+      "Beep.OilandGas.ApiService.Tests/ReceiverAccountantHandoffTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/InventoryController.CompanySources.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyInventoryReads.cs",
+      "Beep.OilandGas.Web.Auth.Tests/InventoryLinkCycleScreenTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/InventoryLinkCycleWorkspaceTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/ProcurementStockCoordinationTests.cs",
+      "Beep.OilandGas.Web/Components/BusinessProcess/InventoryLinkCyclePanel.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Accounting/ProcurementWorkbench.razor",
+      "Beep.OilandGas.Web/Services/AccountingServiceClient.Inventory.cs",
+      "Beep.OilandGas.Web/Services/IAccountingServiceClient.cs",
+      "Beep.OilandGas.Web/Services/PurchaseOrderWorkspaceState.LinkCycle.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/PurchaseOrderInventoryLinkResolution.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "PurchaseOrderInventoryLinkResolution"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/InventoryController.CompanySources.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyInventoryReads.cs",
+      "Beep.OilandGas.Web.Auth.Tests/InventoryLinkDecisionScreenTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/InventoryLinkDecisionWorkspaceTests.cs",
+      "Beep.OilandGas.Web/Services/AccountingServiceClient.Inventory.cs",
+      "Beep.OilandGas.Web/Services/IAccountingServiceClient.cs",
+      "Beep.OilandGas.Web/Services/PurchaseOrderWorkspaceState.LinkPreparation.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/PurchaseReceiptDecisionReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "PurchaseReceiptDecisionResult",
+      "PurchaseReceiptDecisionReview",
+      "PurchaseReceiptDecisionSubmission"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/PurchaseReceiptDecisionHttpTests.cs",
+      "Beep.OilandGas.ApiService.Tests/ReceiverAccountantHandoffTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/PurchaseOrderController.cs",
+      "Beep.OilandGas.Web.Auth.Tests/InventoryLinkDecisionWorkspaceTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/InventoryLinkPreparationWorkspaceTests.cs",
+      "Beep.OilandGas.Web/Services/AccountingServiceClient.cs",
+      "Beep.OilandGas.Web/Services/IAccountingServiceClient.cs",
+      "Beep.OilandGas.Web/Services/PurchaseOrderWorkspaceState.ReceiptDecision.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/PurchaseReceiptStockIntentPage.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "PurchaseReceiptStockIntentPage"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.Accounting/Services/InventoryService.StockRecovery.cs",
+      "Beep.OilandGas.ApiService.Tests/PurchaseReceiptStockRecoveryTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Accounting/Traditional/InventoryController.CompanySources.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyInventoryReads.cs",
+      "Beep.OilandGas.Web.Auth.Tests/ReceiptStockWorkspaceTests.cs",
+      "Beep.OilandGas.Web/Services/AccountingServiceClient.Inventory.cs",
+      "Beep.OilandGas.Web/Services/IAccountingServiceClient.cs",
+      "Beep.OilandGas.Web/Services/InventoryWorkspaceState.Stock.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/RecordedSourceId.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "RecordedSourceId"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/AccountingSourceHttpTests.cs",
+      "Beep.OilandGas.ApiService/Services/RecordedSourceRouteIds.cs",
+      "Beep.OilandGas.Web/Pages/PPDM39/Accounting/CompanyAccountingProcessDetail.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Accounting/PayablesWorkbench.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Accounting/ProcurementWorkbench.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Accounting/ReceiptStockWorkbench.razor",
+      "Beep.OilandGas.Web/Pages/PPDM39/Accounting/WarehouseWorkbench.razor"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/RepositoryAccountDeletion.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "RepositoryAccountDeletion"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/ApiIdentityPipelineTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/RepositoryAccountController.cs",
+      "Beep.OilandGas.Web.Auth.Tests/RepositoryAccountTests.cs",
+      "Beep.OilandGas.Web/Services/RepositoryAccountClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/RepositoryAccountRefusals.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "RepositoryAccountRefusals"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/ApiIdentityPipelineTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/RepositoryAccountController.cs",
+      "Beep.OilandGas.Web.Auth.Tests/RepositoryAccountTests.cs",
+      "Beep.OilandGas.Web/Services/RepositoryAccountClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/RepositoryModels.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "AppModuleConnection",
+      "ModuleDatabaseBinding",
+      "OilGasUser",
+      "RepositoryBootstrap"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/ApiIdentityPipelineTests.cs",
+      "Beep.OilandGas.ApiService.Tests/AssetApplicationAuthorizationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/AssetDatabaseScopeTests.cs",
+      "Beep.OilandGas.ApiService.Tests/AssetRolePermissionStoreTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanyDevelopmentFacilityCreationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanyDevelopmentFacilityEditServiceTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanyRoleRecipientTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanyWorkOrderListReviewTests.cs",
+      "Beep.OilandGas.ApiService.Tests/ComplianceIdentityReaderTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CsvImportJobTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentAfeApiTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentDraftAuthorityTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentFacilityEvidenceHttpTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentApiTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentInvestmentRoutingTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentReviewCatalogTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingExecutionStartApiTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingProgramApiTests.cs",
+      "Beep.OilandGas.ApiService.Tests/DrillingProgramAssignedReviewApiTests.cs",
+      "Beep.OilandGas.ApiService.Tests/FieldRevenueSourceTests.cs",
+      "Beep.OilandGas.ApiService.Tests/Infrastructure/TestCompanyModules.cs",
+      "Beep.OilandGas.ApiService.Tests/LocalDbDriverTests.cs",
+      "Beep.OilandGas.ApiService.Tests/ModuleRepositorySeedingTests.cs",
+      "Beep.OilandGas.ApiService.Tests/PersonasAuthorizationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/RepositoryAssetAccessStoreTests.cs",
+      "Beep.OilandGas.ApiService.Tests/RepositoryRoleExtensionTests.cs",
+      "Beep.OilandGas.ApiService.Tests/RepositoryUserProfileTests.cs",
+      "Beep.OilandGas.ApiService.Tests/RolePersonaRoutingTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SetupDriverBeepLoaderTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SetupRepositorySqlServerTests.cs",
+      "Beep.OilandGas.ApiService.Tests/UserProfileAuthorizationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/WorkflowInboxHttpTests.cs",
+      "Beep.OilandGas.ApiService/Services/ModuleBindingService.cs",
+      "Beep.OilandGas.ApiService/Services/ModuleConnectionResolver.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryCanonicalUserStore.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryRoleAssignmentService.Company.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryRoleAssignmentService.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryUserService.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyAssetAccessTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyHazopAuthorityTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyHseRowAccessTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyHseWorkflowHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyHseWorkflowServiceTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAcceptanceHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceCompleteApprovalHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceHandoffHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceReturnPolicyTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyModuleConnectionTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyPPDMTestFixture.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyPermitApplicationDataAccessTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyPersonnelIdentityHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyRecordedApprovalHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyWorkOrderBudgetHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyWorkOrderCompletionDecisionHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyWorkOrderCompletionHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyWorkOrderReturnAcceptanceHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyWorkSubmissionRecoveryHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/DevelopmentFacilityNativeHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/HseClosureConcurrencyQualification.cs",
+      "Beep.OilandGas.Repository.Tests/HseClosureProviderQualificationTests.cs",
+      "Beep.OilandGas.Repository.Tests/LocalDbInstallationTests.cs",
+      "Beep.OilandGas.Repository.Tests/ModuleDatabaseTargetTests.cs",
+      "Beep.OilandGas.Repository.Tests/PermitDocumentProviderHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/PermitProviderHttpTests.cs",
+      "Beep.OilandGas.Repository.Tests/ProductionInterventionNativeDecisionTests.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryAccountProfileTests.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryAdministrationTests.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryBootstrapTests.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryCompanyAccessTests.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryMigrationTests.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryPersonaTests.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryRegistrationTests.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryTenantBindingTests.cs",
+      "Beep.OilandGas.Repository.Tests/RoleWorkspaceTests.cs",
+      "Beep.OilandGas.Repository/AssetAccessMapping.cs",
+      "Beep.OilandGas.Repository/CompanyAccessMapping.cs",
+      "Beep.OilandGas.Repository/HierarchyConfigurationMapping.cs",
+      "Beep.OilandGas.Repository/IdentityExtensionMapping.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20260905143749_InitialRepository.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20260905143749_InitialRepository.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20260905150500_IdentityExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20260905155046_UserExtension.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20260905175050_PersonaExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20260912184711_UserProfileMetadata.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20260912192333_AssetAccessExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20260921080819_FinancialOperationClaims.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005045234_CompanyAccess.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005051826_CompanyRoleRevocation.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005054856_TenantModuleBindings.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005072638_PhysicalModuleTargetOwnership.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005122647_CompanyHierarchyConfiguration.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005132125_CompositeFacilityGrants.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261005135359_AssetGrantRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261028124523_CompanyMembershipRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/20261028223214_CompanyPersonaScope.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/Oracle/OracleRepositoryDbContextModelSnapshot.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20260905143745_InitialRepository.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20260905143745_InitialRepository.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20260905150455_IdentityExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20260905155042_UserExtension.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20260905175045_PersonaExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20260912184652_UserProfileMetadata.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20260912192316_AssetAccessExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20260921080755_FinancialOperationClaims.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005045231_CompanyAccess.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005051822_CompanyRoleRevocation.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005054852_TenantModuleBindings.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005072634_PhysicalModuleTargetOwnership.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005122643_CompanyHierarchyConfiguration.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005132121_CompositeFacilityGrants.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261005135357_AssetGrantRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261028124514_CompanyMembershipRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/20261028223210_CompanyPersonaScope.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/PostgreSql/PostgreSqlRepositoryDbContextModelSnapshot.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20260905143742_InitialRepository.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20260905143742_InitialRepository.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20260905150451_IdentityExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20260905155038_UserExtension.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20260905175015_PersonaExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20260912184634_UserProfileMetadata.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20260912192147_AssetAccessExtensions.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20260921080731_FinancialOperationClaims.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005045154_CompanyAccess.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005051805_CompanyRoleRevocation.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005054834_TenantModuleBindings.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005072608_PhysicalModuleTargetOwnership.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005122617_CompanyHierarchyConfiguration.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005132117_CompositeFacilityGrants.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261005135355_AssetGrantRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261028124456_CompanyMembershipRetirement.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/20261028223152_CompanyPersonaScope.Designer.cs",
+      "Beep.OilandGas.Repository/Migrations/SqlServer/SqlServerRepositoryDbContextModelSnapshot.cs",
+      "Beep.OilandGas.Repository/PersonaMapping.cs",
+      "Beep.OilandGas.Repository/RepositoryBootstrapService.cs",
+      "Beep.OilandGas.Repository/RepositoryDbContext.cs",
+      "Beep.OilandGas.Repository/RepositoryServiceRegistration.cs",
+      "Beep.OilandGas.Web/Services/ModuleDatabaseClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/RepositoryRbacModels.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "AssignCompanyRoleRequest",
+      "AssignRoleRequest",
+      "GrantPermissionRequest",
+      "RepositoryPermission",
+      "RepositoryRoleDetails",
+      "RepositoryRolePermission",
+      "RepositoryUserRole"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Identity/RoleAssignmentController.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryRoleAssignmentService.Company.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryRoleAssignmentService.cs",
+      "Beep.OilandGas.Repository.Tests/RepositoryCompanyAccessTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/CompanyMembershipSetupTests.cs",
+      "Beep.OilandGas.Web/Pages/CompanyMembershipSetup.razor",
+      "Beep.OilandGas.Web/Services/CompanySetupIntentStore.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/RepositoryRegistrationResponse.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "RepositoryRegistrationResponse"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/RepositoryRoleRequest.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "RepositoryRoleRequest",
+      "RepositoryRoleSummary"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/RepositoryRegistrationHttpTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Identity/RepositoryRolesController.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryRoleAssignmentService.cs",
+      "Beep.OilandGas.Repository/RepositoryRoleCatalogService.cs",
+      "Beep.OilandGas.Web.Auth.Tests/CompanyMembershipSetupTests.cs",
+      "Beep.OilandGas.Web/Pages/Admin/AccessControl/UserRoles.razor",
+      "Beep.OilandGas.Web/Pages/CompanyMembershipSetup.razor",
+      "Beep.OilandGas.Web/Services/UserAdministrationClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/RepositoryUserAccess.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "RepositoryUserAccess"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/ApiIdentityPipelineTests.cs",
+      "Beep.OilandGas.ApiService.Tests/MigrationAdministratorAuthorityTests.cs",
+      "Beep.OilandGas.ApiService.Tests/MigrationDispatchAuthorityTests.cs",
+      "Beep.OilandGas.ApiService.Tests/MigrationDispatchHttpTests.cs",
+      "Beep.OilandGas.ApiService.Tests/PersonasAuthorizationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/RepositoryClaimsTransformationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/RepositoryRegistrationHttpTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SchemaMigrationHttpAuthorizationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SystemSetupRecordStoreTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SystemSetupTargetTests.cs",
+      "Beep.OilandGas.ApiService.Tests/UnavailableExecutionTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/RepositoryAccountController.cs",
+      "Beep.OilandGas.Repository.Tests/RoleWorkspaceTests.cs",
+      "Beep.OilandGas.Repository/RepositoryAccessService.cs",
+      "Beep.OilandGas.Web.Auth.Tests/RepositoryAccountTests.cs",
+      "Beep.OilandGas.Web/Services/RepositoryAccountClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/RepositoryUserModels.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "RepositoryUserSummary",
+      "RepositoryUserUpdate"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/RepositoryRegistrationHttpTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Identity/UserManagementController.cs",
+      "Beep.OilandGas.ApiService/Services/RepositoryUserService.cs",
+      "Beep.OilandGas.Web.Auth.Tests/CompanyMembershipSetupTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/UserAdministrationStateTests.cs",
+      "Beep.OilandGas.Web/Pages/Admin/AccessControl/UserRoles.razor",
+      "Beep.OilandGas.Web/Pages/Admin/AccessControl/Users.razor",
+      "Beep.OilandGas.Web/Pages/CompanyMembershipSetup.razor",
+      "Beep.OilandGas.Web/Services/UserAdministrationClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/RevenueDeliveryAcceptanceSavedReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "RevenueDeliveryAcceptanceSavedReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/FieldRevenueSourceTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/Field/FieldRevenueSourceController.cs",
+      "Beep.OilandGas.ApiService/Services/CompanyFieldRevenueReads.DeliveryIntent.cs",
+      "Beep.OilandGas.Web/Services/AccountingServiceClient.RevenueSources.cs",
+      "Beep.OilandGas.Web/Services/IAccountingServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/SALES_JOURNAL_POSTING_OUTCOME.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "SALES_JOURNAL_POSTING_OUTCOME"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.Accounting/Services/ARService.CompanyJournalPosting.cs",
+      "Beep.OilandGas.Accounting/Services/JournalEntryService.CompanyPostingConfirmation.cs",
+      "Beep.OilandGas.Accounting/Services/JournalEntryService.CompanyPostingSchema.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanyFinancialCanonicalOwnershipTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesJournalPostingHttpTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesJournalPostingTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesJournalProcessHttpTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesJournalWorkflowSourceTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesPostedLedgerTests.cs",
+      "Beep.OilandGas.ProductionAccounting/Modules/ProductionAccountingFinancialManifest.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/SetupDriverItem.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "SetupDriverItem"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/SetupBootstrapAccessTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SetupDriverBeepLoaderTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SetupFirstRunHttpIntegrationTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/SetupBootstrapDriverController.cs",
+      "Beep.OilandGas.ApiService/Controllers/SetupDriverController.cs",
+      "Beep.OilandGas.ApiService/Services/SetupDriverService.cs",
+      "Beep.OilandGas.Web.Auth.Tests/SetupDriversTests.cs",
+      "Beep.OilandGas.Web/Pages/SetupBootstrapDrivers.razor",
+      "Beep.OilandGas.Web/Pages/SetupDrivers.razor",
+      "Beep.OilandGas.Web/Services/SetupBootstrapDriverClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/SetupRepositoryConnection.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "SetupRepositoryConnectionCreate",
+      "SetupRepositoryConnectionOption",
+      "SetupRepositoryConnectionSelection",
+      "SetupRepositoryConnectionTest"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/SetupFirstRunHttpIntegrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SetupProtectedBeepConnectionTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SetupRepositoryConnectionTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/SetupBootstrapRepositoryController.cs",
+      "Beep.OilandGas.ApiService/Services/SetupRepositoryConnectionCreationService.cs",
+      "Beep.OilandGas.ApiService/Services/SetupRepositoryConnectionSelectionService.cs",
+      "Beep.OilandGas.Web.Auth.Tests/SetupDriversTests.cs",
+      "Beep.OilandGas.Web/Pages/SetupBootstrapDrivers.razor",
+      "Beep.OilandGas.Web/Services/SetupBootstrapDriverClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/SetupRepositoryMigration.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "SetupRepositoryMigrationPlan",
+      "SetupRepositoryMigrationRequest",
+      "SetupRepositoryMigrationResult"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/SetupFirstRunHttpIntegrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SetupRepositoryMigrationTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/SetupBootstrapRepositoryController.cs",
+      "Beep.OilandGas.ApiService/Services/SetupRepositoryMigrationService.cs",
+      "Beep.OilandGas.Web.Auth.Tests/SetupDriversTests.cs",
+      "Beep.OilandGas.Web/Pages/SetupBootstrapDrivers.razor",
+      "Beep.OilandGas.Web/Services/SetupBootstrapDriverClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/SYSTEM_SETUP_RECORD.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "SYSTEM_SETUP_RECORD"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/SetupDriverBeepLoaderTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SystemSetupRecordStoreTests.cs",
+      "Beep.OilandGas.ApiService.Tests/SystemSetupTargetTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/DataManagementController.cs",
+      "Beep.OilandGas.ApiService/Services/SystemSetupRecordStore.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Modules/SystemSetupModule.cs",
+      "Beep.OilandGas.PPDM39/Core/PPDMGenericRepository.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/SystemSetupConnectionSelection.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "SystemSetupConnectionSelection"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/SystemSetupConnectionController.cs",
+      "Beep.OilandGas.ApiService/Services/SystemSetupConnectionSelectionService.cs",
+      "Beep.OilandGas.Web.Auth.Tests/SystemSetupRepositoryTests.cs",
+      "Beep.OilandGas.Web/Pages/SystemSetupRepository.razor"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/UpdateARInvoiceRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "UpdateARInvoiceRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/UpdateARInvoiceRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IARService.cs",
+      "Beep.OilandGas.Accounting/Services/ARService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/UpdateGLAccountRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "UpdateGLAccountRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/UpdateGLAccountRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/CompanyFinancialCanonicalOwnershipTests.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs",
+      "Beep.OilandGas.ProductionAccounting/Core/Interfaces/IGLAccountService.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/UpdateInvoiceRequest.cs",
+    "namespace": "Beep.OilandGas.Models.Data.Accounting",
+    "types": [
+      "UpdateInvoiceRequest"
+    ],
+    "proposed_owner": "Beep.OilandGas.Accounting",
+    "basis": "HEAD contains same filename; compare declarations/history before accepting",
+    "historical_candidates": [
+      "Beep.OilandGas.Accounting/Data/Accounting/UpdateInvoiceRequest.cs"
+    ],
+    "callers": [
+      "Beep.OilandGas.Accounting/Core/Interfaces/IInvoiceService.cs",
+      "Beep.OilandGas.Accounting/Services/InvoiceService.cs",
+      "Beep.OilandGas.ApiService.Tests/CommercialIntentMigrationTests.cs",
+      "Beep.OilandGas.ApiService.Tests/CompanySalesInvoiceDraftTests.cs",
+      "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaBoundary.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/UserRoleChangeRequest.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "UserRoleChangeRequest"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Identity/UserManagementController.cs",
+      "Beep.OilandGas.Web/Services/UserAdministrationClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/WellTestReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "WellTestReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/Field/ProductionController.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WellTestReviewStateTests.cs",
+      "Beep.OilandGas.Web/Services/IProductionServiceClient.cs",
+      "Beep.OilandGas.Web/Services/ProductionServiceClient.cs",
+      "Beep.OilandGas.Web/Services/WellTestReviewState.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/WorkflowInboxReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "WorkflowInboxReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService.Tests/DrillingExecutionAssignmentNativeTests.cs",
+      "Beep.OilandGas.ApiService.Tests/FieldRevenueSourceTests.cs",
+      "Beep.OilandGas.ApiService.Tests/InvoiceVarianceStepEvidenceTests.cs",
+      "Beep.OilandGas.ApiService.Tests/WorkflowTaskProcessAdmissionTests.cs",
+      "Beep.OilandGas.ApiService/Controllers/WorkflowTasksController.cs",
+      "Beep.OilandGas.Web.Auth.Tests/PersonaTaskInboxStateTests.cs",
+      "Beep.OilandGas.Web/Services/PersonaTaskInboxState.cs",
+      "Beep.OilandGas.Web/Services/UnifiedTaskInboxService.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/WorkOrderProcessReview.cs",
+    "namespace": "TheTechIdea.Data.OilGas",
+    "types": [
+      "WorkOrderProcessLink",
+      "WorkOrderProcessReview"
+    ],
+    "proposed_owner": null,
+    "basis": "Original scan incorrectly treated the retiring project as its own restoration target; resolve from dependency and feature ownership",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.ApiService/Controllers/WorkOrder/WorkOrderController.cs",
+      "Beep.OilandGas.ApiService/Services/WorkOrderProcessReviews.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderInspectionRenderingTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderInterventionDetailTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderProcessReviewTests.cs",
+      "Beep.OilandGas.Web/Services/IWorkOrderServiceClient.cs",
+      "Beep.OilandGas.Web/Services/WorkOrderDetailState.cs",
+      "Beep.OilandGas.Web/Services/WorkOrderServiceClient.cs"
+    ],
+    "status": "Unresolved: former central namespace is not ownership evidence"
+  },
+  {
+    "source": "TheTechIdea.Data/OilGas/WorkOrderSchema.cs",
+    "namespace": "Beep.OilandGas.Models.Data.WorkOrder",
+    "types": [
+      "WorkOrderSchema"
+    ],
+    "proposed_owner": "Beep.OilandGas.ProductionOperations",
+    "basis": "Proposed from namespace/domain; confirm dependency direction before moving",
+    "historical_candidates": [],
+    "callers": [
+      "Beep.OilandGas.PPDM39.DataManagement/Modules/CorePpdmModule.cs",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceReturnPolicyTests.cs",
+      "Beep.OilandGas.Web.Auth.Tests/WorkOrderInspectionSchemaTests.cs"
+    ],
+    "status": "Pending ownership/dependency review"
+  }
+]

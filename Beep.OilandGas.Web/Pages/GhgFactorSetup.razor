@@ -1,6 +1,8 @@
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.HSE.Models
 @page "/setup/ghg-factors"
 @using System.Text.Json
-@using TheTechIdea.Data.OilGas
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]
 @inject ApiClient Api
 @inject ILogger<GhgFactorSetup> Logger

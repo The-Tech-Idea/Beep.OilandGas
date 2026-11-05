@@ -1,8 +1,9 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Refusals;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field;
 

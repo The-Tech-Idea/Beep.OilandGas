@@ -1,5 +1,5 @@
+using Beep.OilandGas.PermitsAndApplications.Models;
 using Beep.OilandGas.PPDM39.Core;
-using TheTechIdea.Data.OilGas;
 using System;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;

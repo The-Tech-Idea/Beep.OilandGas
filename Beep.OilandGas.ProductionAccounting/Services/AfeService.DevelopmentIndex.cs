@@ -1,9 +1,13 @@
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DevelopmentPlanning.Models;
 using System.Data;
 using System.Text.Json;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ProductionAccounting.Services;
 public partial class AfeService
 {

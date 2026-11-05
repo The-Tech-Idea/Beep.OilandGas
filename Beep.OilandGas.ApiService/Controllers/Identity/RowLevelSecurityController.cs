@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.UserManagement.Contracts.Services;
 using Beep.OilandGas.UserManagement.Models.Requests.UserManagement;

@@ -1,9 +1,9 @@
+using Beep.OilandGas.LeaseAcquisition.Models;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.LeaseAcquisition.Services;
 

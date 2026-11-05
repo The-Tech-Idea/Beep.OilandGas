@@ -1,50 +1,37 @@
+using Beep.OilandGas.Models.Data.NodalAnalysis;
+using Beep.OilandGas.NodalAnalysis.Calculations;
 using Xunit;
 
 namespace Beep.OilandGas.NodalAnalysis.Tests;
 
-/// <summary>
-/// Golden-vector tests for the Fetkovich IPR correlation.
-/// Fetkovich: q = C × (Pr² - Pwf²)^n
-/// </summary>
 public class FetkovichIPRTests
 {
     [Fact]
-    public void Fetkovich_AtReservoirPressure_ReturnsZero()
+    public void Fetkovich_AtZeroFlow_ReturnsReservoirPressure()
     {
-        double pr = 3000.0;
-        double pwf = 3000.0;
-        double c = 0.001;
-        double n = 1.0;
-
-        var q = NodalAnalysis.Calculations.IPRCalculator.CalculateFetkovichIPR(pr, pwf, c, n);
-
-        Assert.Equal(0.0, q, 3);
+        // Recorded test points follow q=0.001*(3000^2-Pwf^2).
+        var curve=IPRCalculator.GenerateFetkovichIPR(new ReservoirProperties{ReservoirPressure=3000},[(3240,2400),(7560,1200)],9000,2);
+        Assert.Equal(0,curve[0].FlowRate);
+        Assert.Equal(3000,curve[0].FlowingBottomholePressure,6);
     }
 
     [Fact]
-    public void Fetkovich_AtZeroFlowingPressure_ReturnsMaximum()
+    public void Fetkovich_AtAof_ReturnsZeroFlowingPressure()
     {
-        double pr = 2500.0;
-        double pwf = 0.0;
-        double c = 0.001;
-        double n = 1.0;
-
-        var q = NodalAnalysis.Calculations.IPRCalculator.CalculateFetkovichIPR(pr, pwf, c, n);
-
-        // q = 0.001 × (2500² - 0²)^1 = 0.001 × 6,250,000 = 6,250
-        Assert.True(q > 6000 && q < 6500, $"Expected ~6250, got {q:F0}");
+        // qMax=0.001*2500^2=6250; exact positive-pressure observations determine C and n.
+        var curve=IPRCalculator.GenerateFetkovichIPR(new ReservoirProperties{ReservoirPressure=2500},[(2250,2000),(5250,1000)],6250,2);
+        Assert.Equal(6250,curve[^1].FlowRate,6);
+        Assert.InRange(curve[^1].FlowingBottomholePressure,0,0.001);
     }
 
     [Fact]
-    public void Fetkovich_ExponentLessThanOne_CurvesDownward()
+    public void Fetkovich_FractionalExponent_RecoversRecordedReferencePressure()
     {
-        double pr = 2000.0;
-        double c = 0.01;
-        double n = 0.5;
-
-        var qLinear = NodalAnalysis.Calculations.IPRCalculator.CalculateFetkovichIPR(pr, 1000.0, c, 1.0);
-        var qFrac = NodalAnalysis.Calculations.IPRCalculator.CalculateFetkovichIPR(pr, 1000.0, c, n);
-
-        Assert.True(qFrac > qLinear, "n < 1 should give higher mid-curve flow than n = 1 (greater curvature)");
+        // C=0.01,n=0.5: q(1600)=12 and q(1000)=sqrt(300), at Pr=2000.
+        const double referenceFlow=17.32050807568877;
+        var curve=IPRCalculator.GenerateFetkovichIPR(new ReservoirProperties{ReservoirPressure=2000},[(12,1600),(referenceFlow,1000)],referenceFlow,2);
+        Assert.Equal(referenceFlow,curve[^1].FlowRate,8);
+        Assert.Equal(1000,curve[^1].FlowingBottomholePressure,6);
+        Assert.True(curve[1].FlowingBottomholePressure>curve[^1].FlowingBottomholePressure);
     }
 }

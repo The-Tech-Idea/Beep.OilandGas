@@ -1,3 +1,4 @@
+using Beep.OilandGas.Repository.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -383,7 +384,7 @@ public class ModuleSetupOrchestratorTests
     {
         var calls = new List<string>();
         var sut = Build(new OrderRecorder("A", 1, calls),
-            new OkModule("RENAMED", 2, 1, typeof(TheTechIdea.Data.OilGas.AppRoleExtension)));
+            new OkModule("RENAMED", 2, 1, typeof(Beep.OilandGas.Repository.Models.AppRoleExtension)));
         await Assert.ThrowsAsync<ArgumentException>(() => selective
             ? sut.RunSeedForModulesAsync(["A", "RENAMED"], "db", "actor")
             : sut.RunSeedAsync("db", "actor"));

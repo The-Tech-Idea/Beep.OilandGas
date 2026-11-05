@@ -1,6 +1,7 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.LifeCycle.Models;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.Web.Auth.Tests;
 public sealed class ProcessTransitionResponseTests

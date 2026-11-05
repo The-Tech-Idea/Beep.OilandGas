@@ -1,10 +1,11 @@
-param([string]$DataAssemblyPath)
+param([string]$ModelsAssemblyPath)
+. (Join-Path $PSScriptRoot 'RestoredOwnerFixtureReferences.ps1')
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path $PSScriptRoot -Parent
-if (-not $DataAssemblyPath) {
-    $DataAssemblyPath = Join-Path $repositoryRoot 'Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/TheTechIdea.Data.dll'
+if (-not $ModelsAssemblyPath) {
+    $ModelsAssemblyPath = Join-Path $repositoryRoot 'Beep.OilandGas.Models/bin/Debug/net10.0/Beep.OilandGas.Models.dll'
 }
-if (-not (Test-Path -LiteralPath $DataAssemblyPath)) { throw 'Provide an actual compiled TheTechIdea.Data assembly; this check does not replace missing projects.' }
+if (-not (Test-Path -LiteralPath $ModelsAssemblyPath)) { throw 'Provide an actual compiled restored Models assembly; this check does not replace missing projects.' }
 # Compile actual state/context sources with an explicit typed-client/auth fixture. No transport, Razor, host or OIDC claim.
 $checkDirectory = Join-Path ([IO.Path]::GetTempPath()) "oilgas-company-process-reads-$([Guid]::NewGuid().ToString('N'))"
 [void](New-Item -ItemType Directory -Path $checkDirectory)
@@ -13,8 +14,8 @@ $group = $project.SelectNodes("/Project/ItemGroup")[1]
 foreach ($source in @('Beep.OilandGas.LifeCycle/Services/Processes/BoundProcessService.cs','Beep.OilandGas.ApiService.Tests/CompanyAccountingProcessReadTests.cs','Beep.OilandGas.ApiService/Services/CompanyProcessReadService.cs', 'Beep.OilandGas.ApiService.Tests/CompanyProcessReadTests.cs')) {
     $node = $project.CreateElement('Compile'); $node.SetAttribute('Include', (Join-Path $repositoryRoot $source)); [void]$group.AppendChild($node)
 }
-$reference = $project.CreateElement('Reference'); $reference.SetAttribute('Include', 'TheTechIdea.Data')
-$hint = $project.CreateElement('HintPath'); $hint.InnerText = (Resolve-Path -LiteralPath $DataAssemblyPath).Path
+$reference = $project.CreateElement('Reference'); $reference.SetAttribute('Include', 'Beep.OilandGas.Models')
+$hint = $project.CreateElement('HintPath'); $hint.InnerText = (Resolve-Path -LiteralPath $ModelsAssemblyPath).Path
 [void]$reference.AppendChild($hint); [void]$group.AppendChild($reference)
 foreach ($modelName in @('Beep.OilandGas.Models', 'Beep.OilandGas.PPDM.Models', 'DataManagementModels')) {
     $actualModelPath = Join-Path $repositoryRoot "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/$modelName.dll"
@@ -23,6 +24,7 @@ foreach ($modelName in @('Beep.OilandGas.Models', 'Beep.OilandGas.PPDM.Models', 
     $modelHint = $project.CreateElement('HintPath'); $modelHint.InnerText = $actualModelPath
     [void]$modelReference.AppendChild($modelHint); [void]$group.AppendChild($modelReference)
 }
-$projectPath = Join-Path $checkDirectory 'CompanyProcessReads.csproj'; $project.Save($projectPath)
+$projectPath = Join-Path $checkDirectory 'CompanyProcessReads.csproj'; Add-OilGasRestoredOwnerReferences -Project $project -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
+$project.Save($projectPath)
 dotnet test $projectPath --logger 'console;verbosity=normal'
 if ($LASTEXITCODE -ne 0) { throw "Process detail-state check failed with exit $LASTEXITCODE." }

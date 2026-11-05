@@ -1,6 +1,6 @@
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.ModuleSetup;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Modules;
 

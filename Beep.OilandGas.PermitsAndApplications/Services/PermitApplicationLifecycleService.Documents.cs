@@ -1,3 +1,6 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Data.Company;
 using System.Data;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using System.Text.Json;
@@ -8,7 +11,6 @@ using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.Models.Core.Interfaces;
 using TheTechIdea.Beep;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.PermitsAndApplications.Services;
 

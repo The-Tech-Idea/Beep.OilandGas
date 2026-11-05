@@ -1,4 +1,7 @@
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DevelopmentPlanning.Models;
 namespace Beep.OilandGas.Web.Services;
 public sealed class AfeServiceClient(ApiClient api):IAfeServiceClient
 {

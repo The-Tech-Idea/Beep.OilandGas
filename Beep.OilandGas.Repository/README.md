@@ -89,7 +89,7 @@ No schema, SQL or live migration is added; business/module schemas remain Beep M
 
 [Implementation 45](../Plans/FrameworkAppEnhancement/Implementation-45-Company-Hierarchy-Configuration.md)
 implements canonical company hierarchy configuration in this existing repository.
-TheTechIdea.Data owns its entities/DTOs/store contract. Current company Administrator
+Repository entities and DTOs belong to Beep.OilandGas.Repository; shared access contracts belong to Beep.OilandGas.Models. Current company Administrator
 commands use one serializable EF transaction for the aggregate and immutable audit
 revision, server-derived metadata and expected-revision checks. Configuration reads
 require active membership; administrative reads additionally require Administrator.
@@ -155,7 +155,7 @@ authority, reviewed subtype/component/status/date-zone configuration and complet
 LAND keys. Evaluation reads recorded status and raw calculated interest without
 financial/title inference. The Beep repository's mutation callback snapshots full
 keys and rechecks current actor, Administrator/resource access, associations and
-references after preparation. Active shared lease contracts move to TheTechIdea.Data.
+references after preparation. Active shared lease contracts move to the existing module owners and Beep.OilandGas.Models shared contracts.
 **1302 focused checks pass**, adding 67, with zero failures/skips. Two exact edited Razor
 fragments compile against MudBlazor 9.7.0 with zero warnings/errors. Sequential
 multi-record writes still need atomicity/idempotency/concurrency/readback and real
@@ -525,7 +525,7 @@ are not used for this filtering. Empty persona input selects the stored profile;
 missing/inactive profiles and inactive users are forbidden. This covers pending
 cross-persona tasks, not aggregation of all approval/access-review sources.
 
-Inbox contracts now live in TheTechIdea.Data. The Web client no longer converts
+Inbox contracts now live in the existing module owners and Beep.OilandGas.Models shared contracts. The Web client no longer converts
 API errors into empty results, uses a distinct list endpoint, and encodes query
 parameters. The inbox page requires authentication, no longer hardcodes a persona,
 and clears stale tasks on refresh failure. Current responses use process/step IDs
@@ -656,7 +656,7 @@ APP_* services, DTOs, routes or business-database authentication stores. Existin
 user, persona and RBAC APIs now use canonical shared contracts. Old standalone
 library implementations are not the application role source of truth.
 
-Use canonical shared contracts/entities in TheTechIdea.Data, Identity-backed API
+Use canonical shared contracts/entities in the existing module owners and Beep.OilandGas.Models shared contracts, Identity-backed API
 services, and typed Web clients. Persona profiles and preferences are account
 extensions, not role/permission grants. Keep IdentityServer authentication-only.
 Keep EF installation for the default repository and BeepDM migration/routing for
@@ -664,7 +664,7 @@ selected module databases. No automatic old-data import is required. Database
 deletion or destructive cleanup still requires explicit approval.
 
 Canonical persona backend is now implemented: AppPersona, AppUserPersona,
-AppPersonaPreference and AppPersonaAudit live in TheTechIdea.Data and map to
+AppPersonaPreference and AppPersonaAudit live in the existing module owners and Beep.OilandGas.Models shared contracts and map to
 APP_PERSONA, APP_USER_PERSONA, APP_PERSONA_PREFERENCE and APP_PERSONA_AUDIT.
 Identity user foreign keys enforce account ownership. Profiles/preferences use
 optimistic concurrency and audit writes share the same SaveChanges transaction.
@@ -696,7 +696,7 @@ verification remain incomplete.
 The repository is separate from user-selected BeepDM module databases. It owns
 application authorization accounts and standard ASP.NET Identity tables, not
 IdentityServer credentials or PPDM domain tables. Shared entities live in
-TheTechIdea.Data. No Web project should reference this EF project.
+the existing module owners and Beep.OilandGas.Models shared contracts. No Web project should reference this EF project.
 
 ## Providers
 
@@ -835,7 +835,7 @@ character values are ignored without preventing registration. Request-body profi
 fields are ignored. Accounts are never matched by email: two different subjects may
 share an email and remain separate accounts, with only the first receiving Admin.
 Repeated registration does not overwrite locally maintained profile metadata.
-The shared ExternalRegistrationProfile contract lives in TheTechIdea.Data.
+The shared ExternalRegistrationProfile contract lives in the existing module owners and Beep.OilandGas.Models shared contracts.
 LocalDB tests and the HTTP registration fixture verify these rules; all 29 repository
 tests and 836 API tests passed (TestResults/registration-profile-repository.log and
 registration-profile-api.log). No schema changes or development users were created
@@ -1531,7 +1531,7 @@ Identity, with optional APP_ROLE descriptions and no writes during catalog reads
 The user-role screen consumes both canonical catalogs through its typed client.
 Role-assignment and permission endpoints now use RepositoryUserRole,
 RepositoryRolePermission, RepositoryRoleDetails and RepositoryPermission contracts
-from TheTechIdea.Data. The API no longer registers IRoleAssignmentService or maps
+from the existing module owners and Beep.OilandGas.Models shared contracts. The API no longer registers IRoleAssignmentService or maps
 to the old UserManagement AppRole models. The unused IdentityServiceClient and
 its interface were removed. Grant/revoke requests cannot supply their audit actor;
 all four controller mutations reject a missing local actor before accessing storage.

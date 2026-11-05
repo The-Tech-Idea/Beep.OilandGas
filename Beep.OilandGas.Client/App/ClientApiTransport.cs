@@ -1,10 +1,11 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
 using System.Text;
 using System.Text.Json;
 using Beep.OilandGas.Client.Authentication;
 using Beep.OilandGas.Client.Exceptions;
 using Beep.OilandGas.Client.Models;
 using Microsoft.Extensions.Logging;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Client.App;
 

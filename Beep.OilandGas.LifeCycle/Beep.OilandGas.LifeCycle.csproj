@@ -8,7 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TheTechIdea.Data\TheTechIdea.Data.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.Decommissioning\Beep.OilandGas.Decommissioning.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.DevelopmentPlanning\Beep.OilandGas.DevelopmentPlanning.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.Drawing\Beep.OilandGas.Drawing.csproj" />
@@ -51,4 +50,8 @@
     <PackageReference Include="TheTechIdea.Beep.JsonLoader" Version="2.0.4" />
   </ItemGroup>
 
+  
+  <ItemGroup>
+    <ProjectReference Include="../Beep.OilandGas.HSE/Beep.OilandGas.HSE.csproj" />
+  </ItemGroup>
 </Project>

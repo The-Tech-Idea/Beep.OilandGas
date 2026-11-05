@@ -1,3 +1,9 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.DevelopmentPlanning.Models;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
+using Beep.OilandGas.DrillingAndConstruction.Models;
 using System.Text.Json;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Web.Auth.Tests;
@@ -7,7 +13,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using MudBlazor.Services;
-using TheTechIdea.Data.OilGas;
 using TheTechIdeaWeb.Diagnostics;
 
 namespace WorkflowProtectedTab;

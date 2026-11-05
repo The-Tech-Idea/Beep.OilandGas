@@ -1,3 +1,4 @@
+using Beep.OilandGas.PermitsAndApplications.Models;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
 using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
@@ -15,7 +16,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Validation
             ENVIRONMENTAL_PERMIT_APPLICATION? environmentalApplication,
             INJECTION_PERMIT_APPLICATION? injectionApplication)
         {
-            TheTechIdea.Data.OilGas.PermitApplicationSupportingRecords.RequireParent(application, drillingApplication, environmentalApplication, injectionApplication);
+            Beep.OilandGas.PermitsAndApplications.Models.PermitApplicationSupportingRecords.RequireParent(application, drillingApplication, environmentalApplication, injectionApplication);
             Application = application;
             Attachments = attachments;
             RequiredForms = requiredForms;

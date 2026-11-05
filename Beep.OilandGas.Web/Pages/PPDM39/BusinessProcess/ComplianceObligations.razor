@@ -1,8 +1,13 @@
+@using Beep.OilandGas.Models.Data.Lease
+@using Beep.OilandGas.Models.Data.Field
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Models.Data.Compliance
+@using Beep.OilandGas.Models.Core.Interfaces
+@using Beep.OilandGas.Models.Data.Company
 @page "/ppdm39/compliance/obligations"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @using Beep.OilandGas.Client.App
 @using Beep.OilandGas.Web.Services
-@using TheTechIdea.Data.OilGas
 @implements IDisposable
 @inject CompanyClientContext Company
 @inject IFieldSelectionContext Fields

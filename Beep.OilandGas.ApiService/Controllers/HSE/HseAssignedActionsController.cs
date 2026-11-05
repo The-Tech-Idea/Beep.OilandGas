@@ -1,9 +1,9 @@
+using Beep.OilandGas.HSE.Models;
 using Beep.OilandGas.ApiService.Attributes;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Data.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Controllers.HSE;
 

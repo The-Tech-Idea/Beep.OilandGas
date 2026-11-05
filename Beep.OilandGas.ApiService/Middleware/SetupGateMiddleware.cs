@@ -1,6 +1,6 @@
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Http;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Middleware
 {

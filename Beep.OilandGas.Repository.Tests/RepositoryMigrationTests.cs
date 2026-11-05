@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -54,7 +57,7 @@ public class RepositoryMigrationTests
         Assert.Contains(migration.UpOperations.OfType<CreateIndexOperation>(), index => index.IsUnique && index.Columns.SequenceEqual(new[] { "TENANT_ID", "ORGANIZATION_ID" }));
         var mapped = context.Model.FindEntityType(typeof(Beep.OilandGas.Models.Data.Security.ORGANIZATION_HIERARCHY_CONFIG))!;
         Assert.True(mapped.FindProperty("REVISION")!.IsConcurrencyToken);
-        Assert.Equal(typeof(TheTechIdea.Data.OilGas.AppTenant).Assembly, mapped.ClrType.Assembly);
+        Assert.Equal(typeof(Beep.OilandGas.Models.Data.AccessControl.AppTenant).Assembly, mapped.ClrType.Assembly);
         Assert.All(mapped.GetForeignKeys(), key => Assert.Equal(DeleteBehavior.Restrict, key.DeleteBehavior));
     }
     [Theory]
@@ -155,11 +158,11 @@ public class RepositoryMigrationTests
             Assert.Contains(table, script);
         Assert.DoesNotContain("CREATE TABLE WELL", script);
         Assert.Contains("__EFMigrationsHistory", script);
-        var asset = context.Model.FindEntityType(typeof(TheTechIdea.Data.OilGas.AppUserAssetAccess))!;
+        var asset = context.Model.FindEntityType(typeof(Beep.OilandGas.Models.Data.AccessControl.AppUserAssetAccess))!;
         Assert.Equal("APP_USER_ASSET_ACCESS", asset.GetTableName());
         Assert.True(asset.FindProperty("ConcurrencyStamp")!.IsConcurrencyToken);
         Assert.Equal(64, asset.FindProperty("DatabaseScope")!.GetMaxLength());
-        Assert.Contains(asset.GetForeignKeys(), key => key.PrincipalEntityType.ClrType == typeof(TheTechIdea.Data.OilGas.OilGasUser)
+        Assert.Contains(asset.GetForeignKeys(), key => key.PrincipalEntityType.ClrType == typeof(Beep.OilandGas.Repository.Models.OilGasUser)
             && key.DeleteBehavior == DeleteBehavior.Restrict);
     }
 

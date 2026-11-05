@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using System.Data;
 using TheTechIdea.Beep;
 using TheTechIdea.Beep.ConfigUtil;

@@ -1,8 +1,10 @@
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.ProductionOperations.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Web.Services;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.Web.Auth.Tests;
 public sealed class WorkOrderMaterialAllocationStateTests

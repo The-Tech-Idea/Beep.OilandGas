@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using Beep.OilandGas.Models.Data.WorkOrder;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Web.Services;
@@ -18,10 +21,10 @@ public sealed class WorkOrderInspectionCommandTests
         var request=new AddWorkOrderInspectionRequirementRequest{FieldId="field",CondSeq=1,CondType=type,RequiredText="Recorded phase requirement",Jurisdiction="Reported authority",RegulatoryRef="reference",PermitPrerequisiteKind=prerequisite,ApplicableStage=stage};
         if(!valid){Assert.Throws<InvalidOperationException>(()=>WorkOrderInspectionRules.PrepareRequirement(request,"order","planner","inspection",DateTime.UtcNow));return;}
         var row=WorkOrderInspectionRules.PrepareRequirement(request,"order","planner","inspection",DateTime.UtcNow);Assert.Equal(stage,row.APPLICABLE_STAGE);Assert.Equal(stage,WorkOrderInspectionRules.Project(row).ApplicableStage);
-        var immutable=WorkOrderInspectionRules.RequirementRevision(row);var source=WorkOrderInspectionRules.Revision(row);var legacy=TheTechIdea.Data.OilGas.CompanyInventorySourceReview.Copy(row);legacy.APPLICABLE_STAGE=null;
+        var immutable=WorkOrderInspectionRules.RequirementRevision(row);var source=WorkOrderInspectionRules.Revision(row);var legacy=Beep.OilandGas.Models.Data.Accounting.CompanyInventorySourceReview.Copy(row);legacy.APPLICABLE_STAGE=null;
         Assert.NotEqual(immutable,WorkOrderInspectionRules.RequirementRevision(legacy));Assert.NotEqual(source,WorkOrderInspectionRules.Revision(legacy));Assert.DoesNotContain("APPLICABLE_STAGE",System.Text.Json.JsonSerializer.Serialize(legacy));Assert.DoesNotContain("ApplicableStage",System.Text.Json.JsonSerializer.Serialize(WorkOrderInspectionRules.Project(legacy)));
         var recorded=WorkOrderInspectionRules.PrepareResult(row,ResultRequest(row),"technician",DateTime.UtcNow);Assert.Equal(stage,recorded.APPLICABLE_STAGE);Assert.Equal(immutable,WorkOrderInspectionRules.RequirementRevision(recorded));WorkOrderInspectionRules.RequireReadback(recorded,recorded);
-        var changed=TheTechIdea.Data.OilGas.CompanyInventorySourceReview.Copy(recorded);changed.APPLICABLE_STAGE=null;Assert.Throws<InvalidOperationException>(()=>WorkOrderInspectionRules.RequireReadback(recorded,changed));
+        var changed=Beep.OilandGas.Models.Data.Accounting.CompanyInventorySourceReview.Copy(recorded);changed.APPLICABLE_STAGE=null;Assert.Throws<InvalidOperationException>(()=>WorkOrderInspectionRules.RequireReadback(recorded,changed));
     }
     [Theory][InlineData(true)][InlineData(false)]
     public async Task ExplicitPrerequisiteCommandsNeedExistingAppPermissionAndFreezeTheirKind(bool permitted)

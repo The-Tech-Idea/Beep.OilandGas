@@ -1,10 +1,15 @@
+@using Beep.OilandGas.Models.Data.Lease
+@using Beep.OilandGas.Models.Data.Field
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Models.Core.Interfaces
+@using Beep.OilandGas.Models.Data.Company
 @page "/ppdm39/hse/incident-detail"
 @attribute [Authorize]
 @inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
 @inject Beep.OilandGas.Web.Services.IHSEServiceClient HSEClient
 @inject NavigationManager NavigationManager
 @inject Beep.OilandGas.Client.App.CompanyClientContext Company
-@inject TheTechIdea.Data.OilGas.IFieldSelectionContext Fields
+@inject Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext Fields
 @inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
 @inject ILogger<HSEIncidentDetail> Logger
 @implements IDisposable
@@ -162,7 +167,6 @@
 @using Beep.OilandGas.Models.Data.HSE
 @using Beep.OilandGas.Models.Data.Process
 @using Beep.OilandGas.Models.Data.Security
-@using TheTechIdea.Data.OilGas
 
 @code {
     [Parameter, SupplyParameterFromQuery(Name = "incidentId")] public string Id { get; set; } = string.Empty;

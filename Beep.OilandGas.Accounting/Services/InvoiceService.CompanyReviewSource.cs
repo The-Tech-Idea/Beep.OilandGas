@@ -1,6 +1,8 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 using System.Text.Json;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.Accounting.Services;
 public partial class InvoiceService
 {

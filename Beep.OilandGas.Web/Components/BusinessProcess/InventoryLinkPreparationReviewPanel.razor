@@ -1,7 +1,8 @@
+@using Beep.OilandGas.Models.Data.Accounting
+@using Beep.OilandGas.Models.Data.Company
 @namespace Beep.OilandGas.Web.Components.BusinessProcess
 @using Microsoft.AspNetCore.Components
 @using MudBlazor
-@using TheTechIdea.Data.OilGas
 @if(Review is {} review)
 {
     var line=review.Purchase.Lines.Single(row=>row.PO_LINE_ITEM_ID==review.LineId);var item=review.Target.Item;

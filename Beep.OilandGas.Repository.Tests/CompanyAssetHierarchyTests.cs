@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.ApiService.Controllers.AccessControl;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
@@ -11,7 +12,6 @@ using Microsoft.EntityFrameworkCore;
 using Moq;
 using System.Security.Claims;
 using TheTechIdea.Beep.ConfigUtil;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Fixture = Beep.OilandGas.Repository.Tests.CompanyPPDMRowAccessTests.Fixture;
 
@@ -71,7 +71,7 @@ public sealed class CompanyAssetHierarchyTests
         using var f = await Fixture.Create(); await f.Grant("FIELD", "A", inherit: true);
         f.Rows.Add(Row("FIELD", "A"));
         foreach (var table in new[] { "WELL", "POOL", "FACILITY" })
-            f.Rows.AddRange([Row(table), Row(table, "foreign", "other"), Row(table, "inactive", active: "N"), Row(table, "other-field", field: "B")]);
+            f.Rows.AddRange([Row(table), Row(table,"foreign","other",field:table=="FACILITY"?"B":"A"), Row(table,"inactive",active:"N"), Row(table,"other-field",field:"B")]);
         var service = Service(f); var hierarchy = await service.GetAssetHierarchyAsync("company");
         Assert.Equal("ORGANIZATION", hierarchy!.AssetType); Assert.False(hierarchy.UserHasAccess); Assert.Null(hierarchy.AssetName);
         var field = Assert.Single(hierarchy.Children); Assert.Equal("A", field.AssetId); Assert.Equal("Stored field", field.AssetName);
@@ -98,12 +98,13 @@ public sealed class CompanyAssetHierarchyTests
     [InlineData("FIELD", "missing")] [InlineData("FIELD", "inactive")]
     [InlineData("WELL", "missing")] [InlineData("WELL", "inactive")] [InlineData("WELL", "foreign")]
     [InlineData("POOL", "missing")] [InlineData("POOL", "inactive")] [InlineData("POOL", "foreign")]
-    [InlineData("FACILITY", "missing")] [InlineData("FACILITY", "inactive")] [InlineData("FACILITY", "foreign")]
+    [InlineData("FACILITY", "missing")] [InlineData("FACILITY", "inactive")] [InlineData("FACILITY", "foreign-field")]
     public async Task Roots_and_paths_never_fabricate_an_asset_from_a_registry_record_or_caller_id(string table, string reason)
     {
         using var f = await Fixture.Create(); await f.Grant("FIELD", "A", inherit: true);
         if (table != "FACILITY") await f.Grant(table, "asset");
-        if (reason != "missing") f.Rows.Add(Row(table, company: reason == "foreign" ? "other" : "company", active: reason == "inactive" ? "N" : "Y"));
+        if (reason != "missing") f.Rows.Add(Row(table,company:reason=="foreign"?"other":"company",
+            field:reason=="foreign-field"?"B":"A",active:reason=="inactive"?"N":"Y"));
         var service = Service(f); var facility = table == "FACILITY" ? "gas" : null;
         Assert.Null(await service.GetAssetHierarchyAsync("company", "asset", table, facility));
         Assert.Empty(await service.GetAssetPathAsync("asset", table, facilityType: facility));

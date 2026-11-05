@@ -1,5 +1,6 @@
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Repository;
-using TheTechIdea.Data.OilGas;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;

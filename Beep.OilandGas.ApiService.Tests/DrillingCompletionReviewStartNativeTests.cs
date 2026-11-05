@@ -1,3 +1,8 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DrillingAndConstruction.Models;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Data;
 using System.Text.Json;
@@ -5,7 +10,6 @@ using Beep.OilandGas.LifeCycle.Data.Tables;
 using Beep.OilandGas.LifeCycle.Services.Processes;
 using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.Models.Data.Process;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;

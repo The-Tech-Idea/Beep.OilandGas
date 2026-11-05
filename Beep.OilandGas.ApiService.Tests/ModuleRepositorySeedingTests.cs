@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using System.Data;
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers;
@@ -20,7 +23,6 @@ using TheTechIdea.Beep.Tools;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.Editor;
 using BeepDataSourceType = TheTechIdea.Beep.Utilities.DataSourceType;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;

@@ -1,8 +1,10 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.LifeCycle.Models;
 using System.Text.Json;
 using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.Models.Data.Process;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.Web.Services;
 public sealed class ProcessDefinitionDetailState:IDisposable
 {

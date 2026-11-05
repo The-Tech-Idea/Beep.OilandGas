@@ -1,4 +1,5 @@
 param([Parameter(Mandatory=$true)][string]$FixtureAssemblyPath)
+. (Join-Path $PSScriptRoot 'RestoredOwnerFixtureReferences.ps1')
 $ErrorActionPreference='Stop'
 $repositoryRoot=Split-Path $PSScriptRoot -Parent
 $fixture=(Resolve-Path -LiteralPath $FixtureAssemblyPath).Path
@@ -7,8 +8,8 @@ $directory=Join-Path ([IO.Path]::GetTempPath()) "oilgas-protected-tab-$([Guid]::
 [void](New-Item -ItemType Directory -Path $directory)
 [xml]$project='<Project Sdk="Microsoft.NET.Sdk.Web"><PropertyGroup><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><RootNamespace>WorkflowProtectedTab</RootNamespace><StartupObject>WorkflowProtectedTab.Host</StartupObject></PropertyGroup><ItemGroup/></Project>'
 $group=$project.SelectSingleNode('/Project/ItemGroup')
-$canonicalData=Join-Path $repositoryRoot 'TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll'
-$fixtureData=Join-Path $runtime 'TheTechIdea.Data.dll'
+$canonicalData=Join-Path $repositoryRoot 'Beep.OilandGas.Models/bin/Debug/net10.0/Beep.OilandGas.Models.dll'
+$fixtureData=Join-Path $runtime 'Beep.OilandGas.Models.dll'
 if((Get-FileHash -LiteralPath $canonicalData).Hash -ne (Get-FileHash -LiteralPath $fixtureData).Hash){throw 'Build a focused runtime using the current canonical Data assembly before starting its browser host.'}
 $dataReferences=@{}
 foreach($reference in [Reflection.Assembly]::LoadFile($canonicalData).GetReferencedAssemblies()){$dataReferences[$reference.Name]=$reference}
@@ -33,7 +34,8 @@ $mud=$project.CreateElement('PackageReference');$mud.SetAttribute('Include','Mud
 foreach($file in Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'WorkflowProtectedTab') -File){Copy-Item -LiteralPath $file.FullName -Destination (Join-Path $directory $file.Name)}
 $styleDirectory=Join-Path $directory 'wwwroot/css';[void](New-Item -ItemType Directory -Path $styleDirectory -Force)
 Copy-Item -LiteralPath (Join-Path $repositoryRoot 'Beep.OilandGas.Web/wwwroot/css/app.css') -Destination (Join-Path $styleDirectory 'app.css')
-$projectPath=Join-Path $directory 'WorkflowProtectedTab.csproj';$project.Save($projectPath)
+$projectPath=Join-Path $directory 'WorkflowProtectedTab.csproj';Add-OilGasRestoredOwnerReferences -Project $project -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
+$project.Save($projectPath)
 Write-Output "Isolated browser host: $directory"
 Write-Output "Fixture runtime: $runtime"
 dotnet run --project $projectPath

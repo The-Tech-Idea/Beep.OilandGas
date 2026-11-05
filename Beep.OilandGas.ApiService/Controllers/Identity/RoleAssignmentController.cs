@@ -1,7 +1,9 @@
 using Beep.OilandGas.ApiService.Data;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.ApiService.Services;
 using Beep.Foundation.IdentityServer.Shared.Authentication;
-using TheTechIdea.Data.OilGas;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -28,7 +30,7 @@ public class RoleAssignmentController : ControllerBase
         _failures = failures;
     }
 
-    // ── Catalog ─────────────────────────────────────────────────────────────
+    // â”€â”€ Catalog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>Get the full role catalog.</summary>
     [HttpGet("catalog")]
@@ -46,7 +48,7 @@ public class RoleAssignmentController : ControllerBase
         return Ok(await _roleService.GetPermissionCatalogAsync()); 
     }
 
-    // ── Role assignments ─────────────────────────────────────────────────────
+    // â”€â”€ Role assignments â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>Get all active role assignments for a user (Administrator; the route id names the subject).</summary>
     [HttpGet("users/{targetUserId}/assignments")]
@@ -92,7 +94,7 @@ public class RoleAssignmentController : ControllerBase
         catch (DbUpdateException duplicate) when (UniqueKeyViolation.Is(duplicate)) { return GrantChanged(duplicate, "revoking a role assignment"); }
     }
 
-    // ── Role permissions ─────────────────────────────────────────────────────
+    // â”€â”€ Role permissions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     // Repository administration is independently checked by the service. Scope in the URL is a selector, not authority.
     [HttpGet("tenants/{tenantId}/companies/{businessAssociateId}/users/{targetUserId}/access")]
@@ -222,7 +224,7 @@ public class RoleAssignmentController : ControllerBase
         catch (DbUpdateException duplicate) when (UniqueKeyViolation.Is(duplicate)) { return GrantChanged(duplicate, "revoking a permission from a role"); }
     }
 
-    // A grant somebody else changed first — a stale version, or the same row written twice — is the administrator's to
+    // A grant somebody else changed first â€” a stale version, or the same row written twice â€” is the administrator's to
     // reload. Any other refused save is a failure and goes on to the API's handler (OILGAS-CATCH-01: every refused save was
     // answered "the grant changed", unreported).
     private ConflictObjectResult GrantChanged(DbUpdateException refused, string operation)

@@ -1,4 +1,5 @@
-using PermitApplicationSummary = TheTechIdea.Data.OilGas.PermitApplicationSummary;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using PermitApplicationSummary = Beep.OilandGas.PermitsAndApplications.Models.PermitApplicationSummary;
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers.Permits;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -9,7 +10,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Xunit;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Tests;
 

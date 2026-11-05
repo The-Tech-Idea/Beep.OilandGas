@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Models.Processes;
 
 namespace Beep.OilandGas.LifeCycle.Services.Processes;
@@ -32,9 +34,9 @@ public partial class ProcessDefinitionInitializer
         ProcessId="ACCT_SALES_JOURNAL_REVIEW_POST",Version="1.0.0",ProcessName="Company sales journal review and posting",ProcessType="FINANCIAL",EntityType="JOURNAL_ENTRY",IsActive=true,
         Description="Observe the original independent journal decision, then the separately authorized native posting. Rejection skips posting and returns to the original maker. Workflow completion performs no financial mutation or payment.",
         Steps=[
-            new(){StepId="JOURNAL_REVIEW",StepName="Independent journal decision",SequenceNumber=1,StepType="APPROVAL",RequiresApproval=true,IsRequired=true,RequiredRoles=["Accountant"],NextStepId="JOURNAL_POSTING",StepConfiguration=new(){[TheTechIdea.Data.OilGas.CompanyAccountingStepEvidence.ConfigurationKey]=TheTechIdea.Data.OilGas.CompanyAccountingSourceTypes.Approval("JOURNAL_ENTRY")}},
-            new(){StepId="JOURNAL_POSTING",StepName="Confirm separate native posting",SequenceNumber=2,StepType="ACTION",RequiresApproval=false,IsRequired=true,RequiredRoles=["Accountant"],StepConfiguration=new(){[TheTechIdea.Data.OilGas.CompanyAccountingStepEvidence.ConfigurationKey]=TheTechIdea.Data.OilGas.CompanyAccountingSourceTypes.JournalPosting}},
-            new(){StepId="JOURNAL_REJECTION_REVIEW",StepName="Original maker rejection review",SequenceNumber=3,StepType="ACTION",RequiresApproval=false,IsRequired=true,RequiredRoles=["Accountant"],StepConfiguration=new(){[TheTechIdea.Data.OilGas.CompanyAccountingStepEvidence.ConfigurationKey]=TheTechIdea.Data.OilGas.CompanyAccountingSourceTypes.RejectionReview("JOURNAL_ENTRY")}}
+            new(){StepId="JOURNAL_REVIEW",StepName="Independent journal decision",SequenceNumber=1,StepType="APPROVAL",RequiresApproval=true,IsRequired=true,RequiredRoles=["Accountant"],NextStepId="JOURNAL_POSTING",StepConfiguration=new(){[Beep.OilandGas.Models.Data.Accounting.CompanyAccountingStepEvidence.ConfigurationKey]=Beep.OilandGas.Models.Data.Accounting.CompanyAccountingSourceTypes.Approval("JOURNAL_ENTRY")}},
+            new(){StepId="JOURNAL_POSTING",StepName="Confirm separate native posting",SequenceNumber=2,StepType="ACTION",RequiresApproval=false,IsRequired=true,RequiredRoles=["Accountant"],StepConfiguration=new(){[Beep.OilandGas.Models.Data.Accounting.CompanyAccountingStepEvidence.ConfigurationKey]=Beep.OilandGas.Models.Data.Accounting.CompanyAccountingSourceTypes.JournalPosting}},
+            new(){StepId="JOURNAL_REJECTION_REVIEW",StepName="Original maker rejection review",SequenceNumber=3,StepType="ACTION",RequiresApproval=false,IsRequired=true,RequiredRoles=["Accountant"],StepConfiguration=new(){[Beep.OilandGas.Models.Data.Accounting.CompanyAccountingStepEvidence.ConfigurationKey]=Beep.OilandGas.Models.Data.Accounting.CompanyAccountingSourceTypes.RejectionReview("JOURNAL_ENTRY")}}
         ]
     };
 

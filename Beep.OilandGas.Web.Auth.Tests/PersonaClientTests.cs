@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using System.Net;
 using System.Text.Json;
 using Beep.OilandGas.Web.Services;

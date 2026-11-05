@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using Beep.OilandGas.Models.Core.Refusals;
 using System.Runtime.InteropServices;
 using System.Reflection;
@@ -10,7 +12,6 @@ using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.DriversConfigurations;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Tools;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Services;
 

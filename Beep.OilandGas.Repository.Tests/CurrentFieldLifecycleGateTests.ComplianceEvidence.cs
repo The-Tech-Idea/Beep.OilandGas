@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.Compliance;
 using System.Net;
 using System.Net.Http.Json;
 using Beep.OilandGas.ApiService.Controllers.Compliance;
@@ -12,7 +15,6 @@ using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 using Moq;
 using Xunit;
 

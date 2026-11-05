@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.Repository;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -22,7 +24,7 @@ public sealed class FinancialOperationClaimTests
                 await setup.Database.EnsureCreatedAsync();
                 Assert.True(await new FinancialOperationClaimStore(setup).InitializeAsync("royalty:one", "setup"));
             }
-            async Task<TheTechIdea.Data.OilGas.FinancialClaimHandle?> Acquire(string owner)
+            async Task<Beep.OilandGas.Repository.Models.FinancialClaimHandle?> Acquire(string owner)
             {
                 await using var db = Open(connection);
                 return await new FinancialOperationClaimStore(db).TryAcquireAsync("royalty:one", 0, owner);

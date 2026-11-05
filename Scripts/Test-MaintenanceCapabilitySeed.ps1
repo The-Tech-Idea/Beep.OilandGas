@@ -1,4 +1,5 @@
-param([Parameter(Mandatory)][string]$DataAssemblyPath)
+param([Parameter(Mandatory)][string]$ModelsAssemblyPath)
+. (Join-Path $PSScriptRoot 'RestoredOwnerFixtureReferences.ps1')
 $ErrorActionPreference='Stop'
 $repositoryRoot=Split-Path $PSScriptRoot -Parent
 $checkDirectory=Join-Path ([IO.Path]::GetTempPath()) ('oilgas-maintenance-capabilities-'+[guid]::NewGuid().ToString('N'))
@@ -10,10 +11,11 @@ foreach($path in @('Beep.OilandGas.UserManagement/Services/DefaultSecuritySeedSe
     $entry=$project.CreateElement('Compile');$entry.SetAttribute('Include',(Join-Path $repositoryRoot $path));[void]$group.AppendChild($entry)
 }
 foreach($dependency in Get-ChildItem (Join-Path $repositoryRoot 'Beep.OilandGas.UserManagement/bin/Debug/net10.0') -Filter '*.dll'){
-    if($dependency.Name -eq 'TheTechIdea.Data.dll'){continue}
+    if($dependency.Name -eq 'Beep.OilandGas.Models.dll'){continue}
     $entry=$project.CreateElement('Reference');$entry.SetAttribute('Include',$dependency.BaseName);$hint=$project.CreateElement('HintPath');$hint.InnerText=$dependency.FullName;[void]$entry.AppendChild($hint);[void]$group.AppendChild($entry)
 }
-$entry=$project.CreateElement('Reference');$entry.SetAttribute('Include','TheTechIdea.Data');$hint=$project.CreateElement('HintPath');$hint.InnerText=(Resolve-Path -LiteralPath $DataAssemblyPath).Path;[void]$entry.AppendChild($hint);$aliases=$project.CreateElement('Aliases');$aliases.InnerText='actualData';[void]$entry.AppendChild($aliases);[void]$group.AppendChild($entry)
+$entry=$project.CreateElement('Reference');$entry.SetAttribute('Include','Beep.OilandGas.Models');$hint=$project.CreateElement('HintPath');$hint.InnerText=(Resolve-Path -LiteralPath $ModelsAssemblyPath).Path;[void]$entry.AppendChild($hint);$aliases=$project.CreateElement('Aliases');$aliases.InnerText='actualOwners';[void]$entry.AppendChild($aliases);[void]$group.AppendChild($entry)
+Add-OilGasRestoredOwnerReferences -Project $project -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
 $project.Save((Join-Path $checkDirectory 'MaintenanceCapabilities.csproj'))
 [IO.File]::WriteAllText((Join-Path $checkDirectory 'CapabilitySeedTests.cs'),@'
 using System.Reflection;

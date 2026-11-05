@@ -1,9 +1,15 @@
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DrillingAndConstruction.Models;
+using Beep.OilandGas.Repository.Models;
 using System.Security.Claims;
 using System.Text.Json;
 using Beep.OilandGas.LifeCycle.Services.Processes;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using Microsoft.EntityFrameworkCore;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Services;
 public interface IDrillingProgramAssignedReviewReader
 {

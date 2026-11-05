@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.EconomicAnalysis;
 using Xunit;
 
 namespace Beep.OilandGas.EconomicAnalysis.Tests;
@@ -6,20 +7,20 @@ namespace Beep.OilandGas.EconomicAnalysis.Tests;
 public class NPVTests
 {
     [Fact]
-    public void NPV_PositiveCashFlows_ReturnsPositiveValue()
+    public void NPV_FourAnnualReceiptsAtTenPercent_RemainsBelowInvestment()
     {
-        double[] cashFlows = { -1000, 300, 300, 300, 300 };
+        CashFlow[] cashFlows = [new(0, -1000), new(1, 300), new(2, 300), new(3, 300), new(4, 300)];
         double discountRate = 0.10;
 
         var npv = EconomicAnalysis.Calculations.EconomicCalculator.CalculateNPV(cashFlows, discountRate);
 
-        Assert.True(npv > 0, "Positive cash flows at 10% should give positive NPV");
+        Assert.Equal(-49.0404, npv, 4); // Four discounted receipts do not recover the initial investment.
     }
 
     [Fact]
     public void NPV_ZeroCashFlows_ReturnsNegativeInvestment()
     {
-        double[] cashFlows = { -1000, 0, 0, 0, 0 };
+        CashFlow[] cashFlows = [new(0, -1000), new(1, 0), new(2, 0), new(3, 0), new(4, 0)];
         double discountRate = 0.10;
 
         var npv = EconomicAnalysis.Calculations.EconomicCalculator.CalculateNPV(cashFlows, discountRate);
@@ -30,7 +31,7 @@ public class NPVTests
     [Fact]
     public void IRR_PositiveNPV_ReturnsAboveDiscountRate()
     {
-        double[] cashFlows = { -1000, 400, 400, 400, 400 };
+        CashFlow[] cashFlows = [new(0, -1000), new(1, 400), new(2, 400), new(3, 400), new(4, 400)];
 
         var irr = EconomicAnalysis.Calculations.EconomicCalculator.CalculateIRR(cashFlows);
 

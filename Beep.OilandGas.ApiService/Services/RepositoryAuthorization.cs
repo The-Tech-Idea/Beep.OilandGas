@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using System.Security.Claims;
 using Beep.Foundation.IdentityServer.Shared.Identity;
 using Microsoft.AspNetCore.Authorization;

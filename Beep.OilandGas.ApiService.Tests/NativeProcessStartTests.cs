@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 #if WORKFLOW_INBOX_FOCUSED
 using System.Data;
 using System.Text.Json;

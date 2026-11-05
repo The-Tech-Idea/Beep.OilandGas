@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
 using System.Text.Json;
 using Beep.OilandGas.Models.Constants;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -5,7 +7,6 @@ using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data.HSE;
 using Beep.OilandGas.Models.Data.Security;
 using Beep.OilandGas.PPDM39.Models;
-using TheTechIdea.Data.OilGas;
 using static Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader;
 
 namespace Beep.OilandGas.ApiService.Services;

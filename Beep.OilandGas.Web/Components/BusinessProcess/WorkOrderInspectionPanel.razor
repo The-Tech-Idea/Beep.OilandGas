@@ -1,3 +1,5 @@
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.PPDM39.DataManagement.Models
 @namespace Beep.OilandGas.Web.Components.BusinessProcess
 @using Microsoft.AspNetCore.Components
 @using MudBlazor
@@ -86,7 +88,7 @@
     [Parameter] public WorkOrderDetailModel Source {get;set;}=null!;
     [Parameter,EditorRequired] public WorkOrderInspectionState Review {get;set;}=null!;
     [Parameter] public bool ReadOnly {get;set;}
-    [Parameter] public TheTechIdea.Data.OilGas.CompanyMaintenanceInspectionReview? AssignedReview {get;set;}
+    [Parameter] public Beep.OilandGas.Models.Data.WorkOrder.CompanyMaintenanceInspectionReview? AssignedReview {get;set;}
     private WorkOrderDetailModel? _loaded;
     private bool _loading,_busy,_disposed;
     private string? _error;

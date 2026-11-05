@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -1028,7 +1029,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         {
             if (config == null)
                 return Task.FromResult(new ConnectionTestResult { Success = false, Message = "Connection configuration is required" });
-            if (!TheTechIdea.Data.OilGas.BeepConnectionName.IsValid(config.ConnectionName))
+            if (!Beep.OilandGas.Models.Data.DataManagement.BeepConnectionName.IsValid(config.ConnectionName))
                 return Task.FromResult(new ConnectionTestResult { Success = false, Message = "Use a connection name with letters, digits and underscores, starting with a letter or underscore." });
             _logger.LogInformation("Testing connection to {Host} ({DatabaseType})", MaskConnectionInfo(config.Host), config.DatabaseType);
             try
@@ -1052,7 +1053,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             if (config == null)
                 return new SaveConnectionResult { Success = false, Message = "Connection configuration is required" };
 
-            if (!TheTechIdea.Data.OilGas.BeepConnectionName.IsValid(config.ConnectionName))
+            if (!Beep.OilandGas.Models.Data.DataManagement.BeepConnectionName.IsValid(config.ConnectionName))
                 return new SaveConnectionResult { Success = false, Message = "Use a connection name with letters, digits and underscores, starting with a letter or underscore." };
 
             _logger.LogInformation("Saving connection {ConnectionName}", MaskConnectionInfo(config.ConnectionName));
@@ -1101,7 +1102,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         {
             if (string.IsNullOrWhiteSpace(originalConnectionName) || config == null)
                 return new SaveConnectionResult { Success = false, Message = "Original connection name and configuration are required" };
-            if (!TheTechIdea.Data.OilGas.BeepConnectionName.IsValid(config.ConnectionName))
+            if (!Beep.OilandGas.Models.Data.DataManagement.BeepConnectionName.IsValid(config.ConnectionName))
                 return new SaveConnectionResult { Success = false, Message = "Use a connection name with letters, digits and underscores, starting with a letter or underscore." };
 
             _logger.LogInformation("Updating connection {OriginalName} → {NewName}", MaskConnectionInfo(originalConnectionName), MaskConnectionInfo(config.ConnectionName));

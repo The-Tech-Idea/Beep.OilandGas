@@ -1,5 +1,11 @@
 #if WORKFLOW_INBOX_FOCUSED
-extern alias actualData;
+extern alias actualOwners;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using System.Data;
 using System.Text.Json;
 using Beep.OilandGas.PPDM39.Core;
@@ -12,10 +18,9 @@ using TheTechIdea.Beep.Utilities;
 using TheTechIdea.Beep.Tools;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using TheTechIdea.Beep.ConfigUtil;
-using TheTechIdea.Data.OilGas;
 using Xunit;
-using Permit=actualData::Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_EXECUTION_PERMIT;
-using Detail=actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderDetailModel;
+using Permit=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WORK_ORDER_EXECUTION_PERMIT;
+using Detail=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderDetailModel;
 namespace Beep.OilandGas.ApiService.Tests;
 
 public sealed class WorkOrderExecutionPermitTests
@@ -39,11 +44,11 @@ public sealed class WorkOrderExecutionPermitTests
         {Owned(context);Assert.Contains(original.Acceptance,complete.Review.CurrentDocumentAcceptance!.Select(row=>row.Acceptance));await guard();if(++documentReads==3 && mode=="document-after")throw new InvalidOperationException("Changed current document");});
         identities.Setup(value=>value.RequireExecutionReviewerIdentityCoreAsync(It.IsAny<FieldSelectionReview>(),It.IsAny<CompanyPersonnelIdentityCatalog>(),It.IsAny<CompanyNativePersonFacts>(),It.IsAny<string>(),It.IsAny<DateTime>(),It.IsAny<DateTime>(),It.IsAny<Func<Task>>())).Returns(async(FieldSelectionReview context,CompanyPersonnelIdentityCatalog catalog,CompanyNativePersonFacts person,string reviewer,DateTime from,DateTime to,Func<Task> guard)=>
         {Owned(context);Assert.NotEqual(context.ActorUserId,reviewer);await guard();if(++identityReads==3 && mode=="identity-after")throw new InvalidOperationException("Changed current reviewer identity");});
-        Task<(Detail,IReadOnlyList<actualData::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition>)> Read(bool owned)
+        Task<(Detail,IReadOnlyList<actualOwners::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition>)> Read(bool owned)
         {
             if(owned)PPDMDataSourceTransaction.RequireOwned(f.Native.Source.Object,IsolationLevel.Serializable);else PPDMDataSourceTransaction.RequireIdle(f.Native.Source.Object);
             var order=CompanyInventorySourceReview.Copy(complete.Review.CurrentSource.Order);if(++sourceReads==5 && mode=="source-after")order.Instructions="Changed original scope";
-            return Task.FromResult<(Detail,IReadOnlyList<actualData::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition>)>((order,complete.Review.CurrentSource.Inspections));
+            return Task.FromResult<(Detail,IReadOnlyList<actualOwners::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition>)>((order,complete.Review.CurrentSource.Inspections));
         }
         Task Stock(CompanyWorkOrderExecutionPermitApprovalReview original){PPDMDataSourceTransaction.RequireIdle(f.Native.Source.Object);Assert.Equal(JsonSerializer.Serialize(decision.Review),JsonSerializer.Serialize(original));if(++stockReads==2 && mode=="stock-after")throw new InvalidOperationException("Separate stock changed after core snapshot");return Task.CompletedTask;}
         Task<bool> OwnedStock(CompanyWorkOrderExecutionPermitApprovalReview original){Owned(executor);ownedStockReads++;if(mode=="recorded-after" && ownedStockReads==2)stored.SCOPE_DESCRIPTION="Changed approved scope";return Task.FromResult(mode=="separate-stock"?false:mode=="stock-boundary"?ownedStockReads==1:true);}
@@ -72,10 +77,10 @@ public sealed class WorkOrderExecutionPermitTests
             if(reads==2 && !changed){borrowed!.Instructions="Provider object changed during closing authority";changed=true;}
             return Task.CompletedTask;
         }
-        Task<(Detail Order,IReadOnlyList<actualData::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition> Requirements)> Current()
+        Task<(Detail Order,IReadOnlyList<actualOwners::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition> Requirements)> Current()
         {
             reads++;borrowed=CompanyInventorySourceReview.Copy(complete.Review.CurrentSource.Order);
-            return Task.FromResult<(Detail,IReadOnlyList<actualData::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition>)>((borrowed,complete.Review.CurrentSource.Inspections.ToArray()));
+            return Task.FromResult<(Detail,IReadOnlyList<actualOwners::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition>)>((borrowed,complete.Review.CurrentSource.Inspections.ToArray()));
         }
         var result=await f.Owner.ReadExecutionRequirementsAsync(context,decision.ProposalReference(),Guard,Current);
         result.Require(context.Company,"executor",decision.ProposalReference());
@@ -88,9 +93,9 @@ public sealed class WorkOrderExecutionPermitTests
     {
         var f=new Fixture();var complete=WorkOrderCompleteApprovalFixture.Create(mode=="phase-aware");var decision=new CompanyWorkOrderExecutionPermitDecision(complete.Review,Guid.NewGuid(),"Approve","Private approver rationale");f.Native.Rows.Add(decision.Prepare(complete.Pending,DateTime.UtcNow));var context=complete.Review.Context with{ActorUserId="executor",Revision="execution-view-authority"};var reads=0;
         Task Guard()=>mode=="revoked"?Task.FromException(new UnauthorizedAccessException("Revoked current execution-view authority")):Task.CompletedTask;
-        Task<(Detail Order,IReadOnlyList<actualData::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition> Requirements)> Current()
+        Task<(Detail Order,IReadOnlyList<actualOwners::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition> Requirements)> Current()
         {
-            reads++;var rows=complete.Review.CurrentSource.Inspections.Select(row=>mode=="changed" || mode=="drift" && reads==2?row with{RequiredText="Changed native requirement"}:mode=="failed-pre-start" && row.CondSeq==1?row with{Status="FAIL",ResultText="Current pre-start failure"}:row).ToArray();var order=CompanyInventorySourceReview.Copy(complete.Review.CurrentSource.Order);if(mode=="order-changed")order.Instructions="Changed approved order scope";if(mode=="order-reordered" && reads==2)order.Components.Reverse();return Task.FromResult<(Detail,IReadOnlyList<actualData::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition>)>((order,rows));
+            reads++;var rows=complete.Review.CurrentSource.Inspections.Select(row=>mode=="changed" || mode=="drift" && reads==2?row with{RequiredText="Changed native requirement"}:mode=="failed-pre-start" && row.CondSeq==1?row with{Status="FAIL",ResultText="Current pre-start failure"}:row).ToArray();var order=CompanyInventorySourceReview.Copy(complete.Review.CurrentSource.Order);if(mode=="order-changed")order.Instructions="Changed approved order scope";if(mode=="order-reordered" && reads==2)order.Components.Reverse();return Task.FromResult<(Detail,IReadOnlyList<actualOwners::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition>)>((order,rows));
         }
         var error=await Record.ExceptionAsync(async()=>{var result=await f.Owner.ReadExecutionRequirementsAsync(context,decision.ProposalReference(),Guard,Current);result.Require(context.Company,"executor",decision.ProposalReference());Assert.Equal(mode is "changed" or "failed-pre-start" or "order-changed",result.Blockers.Count>0);Assert.DoesNotContain(decision.Rationale,JsonSerializer.Serialize(result));if(mode=="phase-aware")Assert.Equal("UNRECORDED",result.Requirements.Single(row=>row.InspectionId=="future-operation").Status);});
         if(mode is "drift" or "revoked")Assert.NotNull(error);else Assert.Null(error);Assert.Equal(mode=="revoked"?0:2,reads);Assert.Equal(0,f.Native.Writes);Assert.Empty(f.Native.Transactions);
@@ -183,23 +188,23 @@ public sealed class WorkOrderExecutionPermitTests
     [Theory][InlineData("current")][InlineData("missing-reader")][InlineData("missing-proof")]
     public async Task VersionedNativeIssueRetainsRequirementProofAndUsesOriginalVersionForIndependentReview(string mode)
     {
-        var f=new Fixture();var pending=actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId=f.Intent.Task.FieldId,CondSeq=1,CondType="PRE_START",RequiredText="Original immutable requirement",Jurisdiction=f.Intent.Jurisdiction,RegulatoryRef=f.Intent.IsolationReference,PermitPrerequisiteKind="ISOLATION"},f.Intent.Task.WorkOrderId,"requirement-author","requirement",DateTime.UtcNow);var rows=new[]{actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(pending)};f.Evidence=f.Evidence with{Inspections=rows,SnapshotRevision=CompanyMaintenanceInspectionReview.Revision(f.Evidence.Stage,f.Evidence.InspectionDatabase,f.Evidence.Order,rows)};f.Intent=f.Intent with{InspectionRevision=f.Evidence.SnapshotRevision,RequirementEvidenceVersion=1};var receipt=await f.Issue();receipt.Require(f.Intent);f.Intent.RequireRecorded(Assert.Single(f.Native.Rows.OfType<Permit>()));Assert.Equal(1,f.Native.Writes);
+        var f=new Fixture();var pending=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId=f.Intent.Task.FieldId,CondSeq=1,CondType="PRE_START",RequiredText="Original immutable requirement",Jurisdiction=f.Intent.Jurisdiction,RegulatoryRef=f.Intent.IsolationReference,PermitPrerequisiteKind="ISOLATION"},f.Intent.Task.WorkOrderId,"requirement-author","requirement",DateTime.UtcNow);var rows=new[]{actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(pending)};f.Evidence=f.Evidence with{Inspections=rows,SnapshotRevision=CompanyMaintenanceInspectionReview.Revision(f.Evidence.Stage,f.Evidence.InspectionDatabase,f.Evidence.Order,rows)};f.Intent=f.Intent with{InspectionRevision=f.Evidence.SnapshotRevision,RequirementEvidenceVersion=1};var receipt=await f.Issue();receipt.Require(f.Intent);f.Intent.RequireRecorded(Assert.Single(f.Native.Rows.OfType<Permit>()));Assert.Equal(1,f.Native.Writes);
         var current=f.Intent.Context with{ActorUserId="independent",Revision="review-authority"};var stage=f.Evidence.Stage with{Context=current};var observed=f.Evidence with{Stage=stage,SnapshotRevision=CompanyMaintenanceInspectionReview.Revision(stage,f.Evidence.InspectionDatabase,f.Evidence.Order,rows)};if(mode=="missing-proof"){var missing=rows.Select(row=>row with{RequirementRevision=null}).ToArray();observed=observed with{Inspections=missing,SnapshotRevision=CompanyMaintenanceInspectionReview.Revision(stage,observed.InspectionDatabase,observed.Order,missing)};}
         Func<Task<CompanyMaintenanceInspectionReview>>? readVersioned=mode=="missing-reader"?null:()=>Task.FromResult(observed);var error=await Record.ExceptionAsync(async()=>{var review=await f.Owner.ReviewApprovalAsync(current,new(f.Intent.Task,f.Intent.IntentId),f.Authority,()=>throw new Exception("Cannot substitute legacy source for versioned proposal"),readVersioned);review.Require(current.Company,current.ActorUserId,new(f.Intent.Task,f.Intent.IntentId));Assert.Equal(rows[0].RequirementRevision,Assert.Single(review.CurrentSource.Inspections).RequirementRevision);});if(mode=="current")Assert.Null(error);else Assert.IsType<InvalidOperationException>(error);Assert.Equal(1,f.Native.Writes);
     }
     [Theory][InlineData(0)][InlineData(1)]
     public async Task RetainedIssuePoliciesCannotAdoptExplicitPhaseApplicability(int version)
     {
-        var f=new Fixture();var pending=actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId=f.Intent.Task.FieldId,CondSeq=1,CondType="OPERATIONAL",RequiredText="Work performed before submission",Jurisdiction=f.Intent.Jurisdiction,ApplicableStage="WORK_SUBMISSION"},f.Intent.Task.WorkOrderId,"requirement-author","requirement",DateTime.UtcNow);
-        var rows=new[]{actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(pending)};f.Evidence=f.Evidence with{Inspections=rows,SnapshotRevision=CompanyMaintenanceInspectionReview.Revision(f.Evidence.Stage,f.Evidence.InspectionDatabase,f.Evidence.Order,rows)};f.Intent=f.Intent with{InspectionRevision=f.Evidence.SnapshotRevision,RequirementEvidenceVersion=version};
+        var f=new Fixture();var pending=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId=f.Intent.Task.FieldId,CondSeq=1,CondType="OPERATIONAL",RequiredText="Work performed before submission",Jurisdiction=f.Intent.Jurisdiction,ApplicableStage="WORK_SUBMISSION"},f.Intent.Task.WorkOrderId,"requirement-author","requirement",DateTime.UtcNow);
+        var rows=new[]{actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(pending)};f.Evidence=f.Evidence with{Inspections=rows,SnapshotRevision=CompanyMaintenanceInspectionReview.Revision(f.Evidence.Stage,f.Evidence.InspectionDatabase,f.Evidence.Order,rows)};f.Intent=f.Intent with{InspectionRevision=f.Evidence.SnapshotRevision,RequirementEvidenceVersion=version};
         await Assert.ThrowsAsync<InvalidOperationException>(()=>f.Issue());Assert.Equal(0,f.Native.Writes);Assert.Empty(f.Native.Rows);
     }
     [Fact]
     public async Task PhaseAwareNativeIssueAndOriginalRecoveryKeepFutureRequirementsUnperformed()
     {
-        var f=new Fixture();var pending=actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId=f.Intent.Task.FieldId,CondSeq=1,CondType="PRE_START",RequiredText="Original classified pre-start",Jurisdiction=f.Intent.Jurisdiction,ApplicableStage="PRE_START"},f.Intent.Task.WorkOrderId,"requirement-author","pre",DateTime.UtcNow);
-        var future=actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId=f.Intent.Task.FieldId,CondSeq=2,CondType="OPERATIONAL",RequiredText="Inspect actual work before submission",Jurisdiction=f.Intent.Jurisdiction,ApplicableStage="WORK_SUBMISSION"},f.Intent.Task.WorkOrderId,"requirement-author","future",DateTime.UtcNow);
-        var rows=new[]{actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(pending),actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(future)};f.Evidence=f.Evidence with{Inspections=rows,SnapshotRevision=CompanyMaintenanceInspectionReview.Revision(f.Evidence.Stage,f.Evidence.InspectionDatabase,f.Evidence.Order,rows)};f.Intent=f.Intent with{InspectionRevision=f.Evidence.SnapshotRevision,RequirementEvidenceVersion=2};var receipt=await f.Issue();receipt.Require(f.Intent);Assert.Equal(receipt,await f.Recover());Assert.Equal(1,f.Native.Writes);
+        var f=new Fixture();var pending=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId=f.Intent.Task.FieldId,CondSeq=1,CondType="PRE_START",RequiredText="Original classified pre-start",Jurisdiction=f.Intent.Jurisdiction,ApplicableStage="PRE_START"},f.Intent.Task.WorkOrderId,"requirement-author","pre",DateTime.UtcNow);
+        var future=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId=f.Intent.Task.FieldId,CondSeq=2,CondType="OPERATIONAL",RequiredText="Inspect actual work before submission",Jurisdiction=f.Intent.Jurisdiction,ApplicableStage="WORK_SUBMISSION"},f.Intent.Task.WorkOrderId,"requirement-author","future",DateTime.UtcNow);
+        var rows=new[]{actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(pending),actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.ProjectWithRequirementProof(future)};f.Evidence=f.Evidence with{Inspections=rows,SnapshotRevision=CompanyMaintenanceInspectionReview.Revision(f.Evidence.Stage,f.Evidence.InspectionDatabase,f.Evidence.Order,rows)};f.Intent=f.Intent with{InspectionRevision=f.Evidence.SnapshotRevision,RequirementEvidenceVersion=2};var receipt=await f.Issue();receipt.Require(f.Intent);Assert.Equal(receipt,await f.Recover());Assert.Equal(1,f.Native.Writes);
         var reviewer=f.Intent.Context with{ActorUserId="independent",Revision="independent-authority"};var query=new CompanyWorkOrderExecutionPermitReference(f.Intent.Task,f.Intent.IntentId);Task<CompanyMaintenanceInspectionReview> Current(){var stage=f.Evidence.Stage with{Context=f.Evidence.Stage.Context with{ActorUserId="independent"}};return Task.FromResult(f.Evidence with{Stage=stage,SnapshotRevision=CompanyMaintenanceInspectionReview.Revision(stage,f.Evidence.InspectionDatabase,f.Evidence.Order,f.Evidence.Inspections)});}
         var review=await f.Owner.ReviewApprovalAsync(reviewer,query,()=>Task.CompletedTask,()=>throw new InvalidOperationException("Phase-aware review cannot fall back to legacy source"),Current);Assert.Equal(7,review.PrerequisiteEvidenceVersion);Assert.Equal(2,review.Proposal.RequirementEvidenceVersion);Assert.Equal("UNRECORDED",review.CurrentSource.Inspections.Single(row=>row.InspectionId=="future").Status);Assert.Equal(1,f.Native.Writes);
     }
@@ -207,11 +212,11 @@ public sealed class WorkOrderExecutionPermitTests
     [Theory][InlineData("accepted")][InlineData("unlabelled")][InlineData("issuer")][InlineData("reference")][InlineData("jurisdiction")][InlineData("duplicate")][InlineData("future")]
     public void PrerequisiteProjectionUsesExactIndependentRecordedReferencesAndKeepsInventorySeparate(string fault)
     {
-        var f=new Fixture();var utc=DateTime.UtcNow;var rows=new List<actualData::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition>();var seq=0;
+        var f=new Fixture();var utc=DateTime.UtcNow;var rows=new List<actualOwners::Beep.OilandGas.Models.Data.WorkOrder.InspectionCondition>();var seq=0;
         foreach(var pair in new[]{("ISOLATION",f.Intent.IsolationReference),("RISK",f.Intent.RiskReference),("PERSONNEL",f.Intent.PersonnelReference),("MATERIAL",f.Intent.MaterialReference)})
         {
-            var row=actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId="field",CondSeq=++seq,CondType="PRE_START",RequiredText="Explicit prerequisite",Jurisdiction=fault=="jurisdiction"?"other":f.Intent.Jurisdiction,RegulatoryRef=fault=="reference"?"other":pair.Item2,PermitPrerequisiteKind=fault=="unlabelled"?null:pair.Item1},f.Intent.Task.WorkOrderId,"planner","inspection-"+seq,utc.AddMinutes(-2));
-            var result=actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareResult(row,new(){FieldId="field",InspectionId=row.INSPECTION_ID,ExpectedSourceRevision=actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.Revision(row),Result="PASS",Notes="Recorded evidence"},fault=="issuer"?"issuer":"independent",fault=="future"?utc.AddMinutes(2):utc.AddMinutes(-1));rows.Add(actualData::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.Project(result));
+            var row=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareRequirement(new(){FieldId="field",CondSeq=++seq,CondType="PRE_START",RequiredText="Explicit prerequisite",Jurisdiction=fault=="jurisdiction"?"other":f.Intent.Jurisdiction,RegulatoryRef=fault=="reference"?"other":pair.Item2,PermitPrerequisiteKind=fault=="unlabelled"?null:pair.Item1},f.Intent.Task.WorkOrderId,"planner","inspection-"+seq,utc.AddMinutes(-2));
+            var result=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.PrepareResult(row,new(){FieldId="field",InspectionId=row.INSPECTION_ID,ExpectedSourceRevision=actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.Revision(row),Result="PASS",Notes="Recorded evidence"},fault=="issuer"?"issuer":"independent",fault=="future"?utc.AddMinutes(2):utc.AddMinutes(-1));rows.Add(actualOwners::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderInspectionRules.Project(result));
         }
         if(fault=="duplicate")rows.Add(rows[0] with{InspectionId="another-inspection",CondSeq=5});var source=f.Evidence with{Inspections=rows,SnapshotRevision=CompanyMaintenanceInspectionReview.Revision(f.Evidence.Stage,f.Evidence.InspectionDatabase,f.Evidence.Order,rows)};var proposal=f.Intent with{InspectionRevision=source.SnapshotRevision};var evidence=CompanyWorkOrderPermitPrerequisiteEvidence.Read(proposal,source,utc);Assert.Equal(4,evidence.Count);Assert.Equal(fault=="accepted",evidence.All(value=>value.Accepted));if(fault is not ("accepted" or "duplicate"))Assert.All(evidence,item=>Assert.False(item.Accepted));
         var blockers=CompanyWorkOrderExecutionPermitApprovalReview.GetBlockers(proposal,source,source,utc,1);Assert.Contains(blockers,value=>value.Contains("inventory quantity",StringComparison.Ordinal));if(fault=="accepted")Assert.DoesNotContain(blockers,value=>value.Contains("inspection acceptance is not yet",StringComparison.Ordinal));

@@ -1,10 +1,14 @@
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Repository.Models;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Refusals;
 using Microsoft.EntityFrameworkCore;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Services;
 

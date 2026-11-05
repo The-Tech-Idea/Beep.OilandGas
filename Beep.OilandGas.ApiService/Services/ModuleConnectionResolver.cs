@@ -1,7 +1,9 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Repository.Models;
 using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Repository;
 using Microsoft.EntityFrameworkCore;
-using TheTechIdea.Data.OilGas;
 using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.ApiService.Services;
@@ -31,7 +33,7 @@ public sealed class ModuleConnectionResolver(RepositoryDbContext repository, IDM
         return result;
     }
 
-    public async Task<TheTechIdea.Data.OilGas.AssetDatabaseScope> ResolveAssetScopeAsync()
+    public async Task<Beep.OilandGas.Models.Data.AccessControl.AssetDatabaseScope> ResolveAssetScopeAsync()
     {
         var current = await ResolveBindingSnapshotAsync(["PPDM_CORE"], null);
         return new(current.ConnectionName, current.Fingerprint);

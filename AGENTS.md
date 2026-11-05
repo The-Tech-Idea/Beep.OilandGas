@@ -14,9 +14,9 @@ TheTechIdeaWeb is a **.NET 10 Aspire-orchestrated** solution with multiple Blazo
 
 ### 2) Data Ownership (Mandatory)
 
-- **TheTechIdea.Data is the single source of truth for domain data.**
-- All EF Core entities, DTOs, enums, and data contracts for shared business modules live in TheTechIdea.Data.
-- ApiService can define service-layer orchestration, validators, and interfaces, but must not duplicate domain models already owned by TheTechIdea.Data.
+- **Each existing module/project owns its domain data classes.**
+- Restore entities, DTOs, enums and domain rules to their existing owning projects. Genuinely shared contracts use an existing dependency-safe contract owner; confirm ownership and avoid circular references.
+- ApiService orchestrates existing module owners and must not duplicate their models. TheTechIdea.Data has been removed under the module ownership restoration plan; final verification is tracked separately.
 
 ### 3) BeepDiA Administrative Boundary
 
@@ -29,7 +29,7 @@ TheTechIdeaWeb is a **.NET 10 Aspire-orchestrated** solution with multiple Blazo
 - **Beep.Foundation.IdentityServer is authentication-only.**
 - IdentityServer is responsible for user/company sign-in, token issuance, and client authentication trust.
 - **Authorization (roles, permissions, policy decisions) belongs to the CLIENT APP** and uses **standard ASP.NET Core roles** (`[Authorize(Roles = "...")]`, `<AuthorizeView Roles="...">`, `User.IsInRole(...)`).
-- Client app roles are sourced from the **client app's own RBAC tables** (e.g. `AspNetUserRoles` for TheTechIdeaWeb apps, `PlatformAdmins` for Beep.EventsRegistration) — NOT from IdentityServer's `role` claim.
+- Client app roles are sourced from the **client app's own RBAC tables** (e.g. `AspNetUserRoles` for TheTechIdeaWeb apps, `PlatformAdmins` for Beep.EventsRegistration) â€” NOT from IdentityServer's `role` claim.
 - Do not move business authorization logic into IdentityServer, and do not move it to ApiService either. The client app owns authorization; the API enforces authorization for its own endpoints independently.
 
 ### 4a) Standard ASP.NET Roles Pattern (Mandatory)
@@ -49,21 +49,21 @@ This pattern keeps IdentityServer auth-only, keeps authorization in the client a
 
 ## Key Architecture Rules
 
-- **Blazor frontends never access databases directly** — use typed API clients
+- **Blazor frontends never access databases directly** â€” use typed API clients
 - **ApiService is the canonical data gateway for all client apps**
-- **TheTechIdea.Data owns shared entities/DTOs/enums for EF Core and API contracts**
+- **Existing owning projects own their entities/DTOs/enums and API contracts; avoid duplicate definitions**
 - **IdentityServer handles authentication only; client apps handle authorization using standard ASP.NET Core roles**
 - **Each client app implements the canonical IClaimsTransformation bridge** so IdentityServer's auth-only tokens work with standard `[Authorize(Roles=...)]` guards
-- **MudBlazor first** — prefer MudBlazor components and theme system over custom HTML/CSS
-- **Theme-driven CSS only** — all custom CSS must reference `--mud-palette-*` tokens, never hardcoded hex
-- **One theme source per experience root** — no page-local `new MudTheme` palettes
+- **MudBlazor first** â€” prefer MudBlazor components and theme system over custom HTML/CSS
+- **Theme-driven CSS only** â€” all custom CSS must reference `--mud-palette-*` tokens, never hardcoded hex
+- **One theme source per experience root** â€” no page-local `new MudTheme` palettes
 - **BrandingConfig is the single source of truth** for colors, typography, logos
 
 ## End-to-End Workflow
 
-1. Define or update entity/DTO/enum in TheTechIdea.Data.
+1. Define or update the entity/DTO/enum in its existing owning project.
 2. Apply EF Core migration from the API data layer setup.
-3. Implement/extend ApiService endpoint + service logic using TheTechIdea.Data models.
+3. Implement/extend ApiService endpoint + service logic using the existing owning project models.
 4. Enforce authorization in ApiService (role/permission checks sourced from data model).
 5. Consume endpoint from clients through typed HTTP clients.
 6. Implement admin workflows primarily in BeepDiA for product/offer/management operations.
@@ -76,9 +76,9 @@ This pattern keeps IdentityServer auth-only, keeps authorization in the client a
 - No direct DB access from Blazor projects.
 - Prefer additive API versioning when changing externally consumed contracts.
 - For admin features that alter persistent business state, implement API-first then consume from BeepDiA/Web.
-- **CSS in ONE file** — all custom CSS goes in `wwwroot/css/app.css`. No `<style>` blocks in `.razor` files.
-- **JS in ONE file** — all custom JavaScript goes in `wwwroot/js/site.js`. No `<script>` blocks in `.razor` files.
-- **All colors via `--mud-palette-*` tokens** — never hardcode hex in `Style=""` attributes. Use MudBlazor `Color` props, `terminal-*` CSS classes, or `var(--mud-palette-*)` references.
+- **CSS in ONE file** â€” all custom CSS goes in `wwwroot/css/app.css`. No `<style>` blocks in `.razor` files.
+- **JS in ONE file** â€” all custom JavaScript goes in `wwwroot/js/site.js`. No `<script>` blocks in `.razor` files.
+- **All colors via `--mud-palette-*` tokens** â€” never hardcode hex in `Style=""` attributes. Use MudBlazor `Color` props, `terminal-*` CSS classes, or `var(--mud-palette-*)` references.
 
 ## Skills
 
@@ -97,7 +97,7 @@ Before modifying code in these areas, read the corresponding skill:
 ## Theme & Branding
 
 - All theme classes live in `TheTechIdeaWeb.ThemeBranding` (shared library with MudBlazor reference)
-- Use `BrandingConfigMudThemeMapper.CreateMudTheme()` for ALL BrandingConfig→MudTheme mapping
+- Use `BrandingConfigMudThemeMapper.CreateMudTheme()` for ALL BrandingConfigâ†’MudTheme mapping
 - Use `BrandingConfig.GetRtlClone()` for RTL font adjustments
 - Use `BrandingConfigLoader.LoadFromFile()` for loading theme JSON
 - CSS must use `--mud-palette-*` variables, not custom `--primary`/`--surface`

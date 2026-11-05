@@ -1,3 +1,11 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Core.Interfaces;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.HSE.Models;
 using System.Text.Json;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Constants;
@@ -9,7 +17,6 @@ using Beep.OilandGas.PPDM39.Models;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using Fixture = Beep.OilandGas.Repository.Tests.CompanyPPDMRowAccessTests.Fixture;
 
@@ -99,7 +106,7 @@ public sealed class CompanyIncidentCommandTests
     [InlineData("lost-commit")]
     public async Task ReportCommandOwnsAllRecordsAndReconcilesOriginalIntent(string mode)
     {
-        using var f = await Ready(); f.IncidentProjectionEnabled = true;
+        using var f = await Ready(); f.NativeProjectionEnabled = true;
         f.Db.RoleClaims.Add(new Microsoft.AspNetCore.Identity.IdentityRoleClaim<string> { RoleId = "admin", ClaimType = "permission", ClaimValue = "HSE.ReportIncident" });
         await f.Db.SaveChangesAsync();
         f.Rows.AddRange([new HSE_INCIDENT_SET { INCIDENT_SET_ID = "SET", ACTIVE_IND = "Y" },
@@ -233,7 +240,7 @@ public sealed class CompanyIncidentCommandTests
 #if BEEP_SECURE_CONNECTIONS
     internal static void EnableReportOptionProjections(Fixture f)
     {
-        f.IncidentProjectionEnabled = true;
+        f.NativeProjectionEnabled = true;
         f.Source.Setup(source => source.GetEntityStructure(It.IsAny<TheTechIdea.Beep.DataBase.EntityStructure>(), true)).Returns((TheTechIdea.Beep.DataBase.EntityStructure requested, bool _) =>
             new TheTechIdea.Beep.Tools.ClassCreator(f.Editor.Object).ConvertToEntityStructure(typeof(HSE_INCIDENT).Assembly.GetType("Beep.OilandGas.PPDM39.Models." + requested.EntityName)!));
     }
@@ -366,7 +373,7 @@ public sealed class CompanyIncidentCommandTests
             if (f.Source.Invocations.Any(call => call.Method.Name == "GetEntityAsync" && call.Arguments[0] as string == "HSE_INCIDENT_CAUSE")) cause.REMARK = "Changed cause";
             return Task.CompletedTask;
         };
-        if (scenario == "missing-projection") f.IncidentProjectionEnabled = false;
+        if (scenario == "missing-projection") f.NativeProjectionEnabled = false;
         if (scenario == "permission") { f.Db.RoleClaims.Remove(f.Db.RoleClaims.Single(row => row.ClaimValue == "HSE.ManageIncidents")); await f.Db.SaveChangesAsync(); }
         var context = (await CompanyCorrectiveActionAuthorityTests.Profile(f).GetCurrentFieldSelectionAsync()).SelectionContext!;
         if (scenario is "recorded" or "retired-parent")
@@ -389,7 +396,7 @@ public sealed class CompanyIncidentCommandTests
     {
         using var f = await Ready(); EnableReportOptionProjections(f);
         if (mode == "changed-state") f.Rows.OfType<HSE_INCIDENT_RESPONSE>().Single(row => row.INCIDENT_ID == "local" && row.RESPONSE_TYPE == "STATUS").RESPONSE_RESULT = IncidentState.UnderInvestigation;
-        if (mode == "missing-projection") f.IncidentProjectionEnabled = false;
+        if (mode == "missing-projection") f.NativeProjectionEnabled = false;
         if (mode == "permission")
         {
             f.Db.RoleClaims.Remove(f.Db.RoleClaims.Single(row => row.ClaimValue == "HSE.ManageIncidents"));
@@ -408,7 +415,7 @@ public sealed class CompanyIncidentCommandTests
     [Fact]
     public async Task ReportOptionsRefuseAProviderWithoutAcknowledgedProjection()
     {
-        using var f = await Ready(); EnableReportOptionProjections(f); f.IncidentProjectionEnabled = false;
+        using var f = await Ready(); EnableReportOptionProjections(f); f.NativeProjectionEnabled = false;
         f.Db.RoleClaims.Add(new Microsoft.AspNetCore.Identity.IdentityRoleClaim<string> { RoleId = "admin", ClaimType = "permission", ClaimValue = "HSE.ReportIncident" });
         await f.Db.SaveChangesAsync();
         var review = (await CompanyCorrectiveActionAuthorityTests.Profile(f).GetCurrentFieldSelectionAsync()).SelectionContext!;

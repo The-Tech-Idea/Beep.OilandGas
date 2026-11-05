@@ -7,40 +7,42 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 
 public static class ModuleSchemaBoundary
 {
-    private static readonly Type[] FinancialReadContracts =
-    [
-        typeof(Beep.OilandGas.Models.Data.Accounting.CreateInvoiceRequest),
-        typeof(Beep.OilandGas.Models.Data.Accounting.UpdateInvoiceRequest),
-        typeof(Beep.OilandGas.Models.Data.Accounting.CreateInvoicePaymentRequest),
-        typeof(Beep.OilandGas.Models.Data.Accounting.InvoiceApprovalResult),
-        typeof(Beep.OilandGas.Models.Data.Accounting.InvoiceAgingSummary),
-        typeof(Beep.OilandGas.Models.Data.Accounting.InvoicePaymentStatus),
-        typeof(Beep.OilandGas.Models.Data.Accounting.CreateARInvoiceRequest),
-        typeof(Beep.OilandGas.Models.Data.Accounting.UpdateARInvoiceRequest),
-        typeof(Beep.OilandGas.Models.Data.Accounting.CreateARPaymentRequest),
-        typeof(Beep.OilandGas.Models.Data.Accounting.CreateARCreditMemoRequest),
-        typeof(Beep.OilandGas.Models.Data.Accounting.ARApprovalResult),
-        typeof(Beep.OilandGas.Models.Data.Accounting.ARAgingSummary),
-        typeof(Beep.OilandGas.Models.Data.Accounting.CustomerSummary),
-        typeof(Beep.OilandGas.Models.Data.Accounting.PaymentApplicationItem),
-        typeof(Beep.OilandGas.Models.Data.Accounting.PaymentApplicationRequest),
-        typeof(Beep.OilandGas.Models.Data.Accounting.PaymentApplicationResult),
-        typeof(Beep.OilandGas.Models.Data.Accounting.ARInvoice),
-        typeof(Beep.OilandGas.Models.Data.Accounting.ARInvoiceResponse),
-        typeof(Beep.OilandGas.Models.Data.Accounting.CreateGLAccountRequest),
-        typeof(Beep.OilandGas.Models.Data.Accounting.UpdateGLAccountRequest),
-        typeof(Beep.OilandGas.Models.Data.Accounting.GLAccount),
-        typeof(Beep.OilandGas.Models.Data.Accounting.GLAccountResponse),
-        typeof(Beep.OilandGas.Models.Data.Accounting.CreateJournalEntryRequest),
-        typeof(Beep.OilandGas.Models.Data.Accounting.JournalEntryLineData),
-        typeof(Beep.OilandGas.Models.Data.Accounting.JournalEntry),
-        typeof(Beep.OilandGas.Models.Data.Accounting.JournalEntryLine),
-        typeof(Beep.OilandGas.Models.Data.Accounting.JournalEntryApprovalResult),
-        typeof(JournalPostingEvidence)
-    ];
+    // Policy names avoid a dependency from setup infrastructure onto feature assemblies.
+    private static readonly HashSet<string> FinancialReadContractNames = new(StringComparer.Ordinal)
+    {
+        "CreateInvoiceRequest",
+        "UpdateInvoiceRequest",
+        "CreateInvoicePaymentRequest",
+        "InvoiceApprovalResult",
+        "InvoiceAgingSummary",
+        "InvoicePaymentStatus",
+        "CreateARInvoiceRequest",
+        "UpdateARInvoiceRequest",
+        "CreateARPaymentRequest",
+        "CreateARCreditMemoRequest",
+        "ARApprovalResult",
+        "ARAgingSummary",
+        "CustomerSummary",
+        "PaymentApplicationItem",
+        "PaymentApplicationRequest",
+        "PaymentApplicationResult",
+        "ARInvoice",
+        "ARInvoiceResponse",
+        "CreateGLAccountRequest",
+        "UpdateGLAccountRequest",
+        "GLAccount",
+        "GLAccountResponse",
+        "CreateJournalEntryRequest",
+        "JournalEntryLineData",
+        "JournalEntry",
+        "JournalEntryLine",
+        "JournalEntryApprovalResult",
+        "JournalPostingEvidence",
+    };
     private static readonly string[] RepositoryNamespaces =
     {
         "Beep.OilandGas.Models.Data.Security",
+        "Beep.OilandGas.Repository.Models",
         "Beep.OilandGas.UserManagement.Models.Identity",
         "Microsoft.AspNetCore.Identity"
     };
@@ -48,8 +50,11 @@ public static class ModuleSchemaBoundary
     public static void Validate(IEnumerable<Type> entityTypes)
     {
         if (entityTypes.Any(type =>
-            FinancialReadContracts.Contains(type) ||
-            (type.Namespace=="TheTechIdea.Data.OilGas" || (type.Namespace?.StartsWith("TheTechIdea.Data.OilGas.",StringComparison.Ordinal) ?? false)) &&
+            (FinancialReadContractNames.Contains(type.Name) &&
+             (type.Namespace == "Beep.OilandGas.Models.Data.Accounting" ||
+              type.Namespace == "Beep.OilandGas.Accounting.Models" ||
+              type.FullName == "Beep.OilandGas.Models.Data.ProductionAccounting.JournalPostingEvidence")) ||
+            ApplicationContractSchemaPolicy.AppliesTo(type) &&
             (!typeof(Beep.OilandGas.Models.Data.ModelEntityBase).IsAssignableFrom(type) || !type.GetProperties().Any(property=>property.IsDefined(typeof(System.ComponentModel.DataAnnotations.KeyAttribute),true))) ||
             RepositoryNamespaces.Any(ns =>
             string.Equals(type.Namespace, ns, StringComparison.Ordinal) ||

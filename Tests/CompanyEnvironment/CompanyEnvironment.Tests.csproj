@@ -21,17 +21,12 @@
     <Compile Include="../../Beep.OilandGas.ApiService/Controllers/CompanyEnvironmentController.cs" Link="CompanyEnvironmentController.cs" />
     <Compile Include="../../Beep.OilandGas.Repository/RepositoryCompanyContext.cs" Link="RepositoryCompanyContext.cs" />
     <Compile Include="../../Beep.OilandGas.Repository/RepositoryTenantContext.cs" Link="RepositoryTenantContext.cs" />
-    <Compile Include="../../TheTechIdea.Data/OilGas/CompanyEnvironmentPreview.cs" Link="CompanyEnvironmentPreview.cs" />
-    <Compile Include="../../TheTechIdea.Data/OilGas/CompanyOrganizationReview.cs" Link="CompanyOrganizationReview.cs" />
-    <Compile Include="../../TheTechIdea.Data/OilGas/CompanyEnvironmentIdentity.cs" Link="CompanyEnvironmentIdentity.cs" />
-    <Compile Include="../../TheTechIdea.Data/OilGas/SystemSetupConfiguration.cs" Link="SystemSetupConfiguration.cs" />
-    <Compile Include="../../TheTechIdea.Data/OilGas/GhgFactorCatalog.cs" Link="GhgFactorCatalog.cs" />
-    <Compile Include="../../TheTechIdea.Data/OilGas/GhgArithmeticCheck.cs" Link="GhgArithmeticCheck.cs" />
-    <Compile Include="../../TheTechIdea.Data/OilGas/FieldGhgProductionSources.cs" Link="FieldGhgProductionSources.cs" />
-    <Compile Include="../../TheTechIdea.Data/OilGas/FieldSelectionReview.cs" Link="FieldSelectionReview.cs" />
-    <Compile Include="../../TheTechIdea.Data/OilGas/CompanyGhgCatalogSelection.cs" Link="CompanyGhgCatalogSelection.cs" />
-    <Compile Include="../../TheTechIdea.Data/OilGas/COMPANY_GHG_CATALOG_SELECTION.cs" Link="COMPANY_GHG_CATALOG_SELECTION.cs" />
-    <Compile Include="../../TheTechIdea.Data/OilGas/COMPANY_OILGAS_ENVIRONMENT.cs" Link="COMPANY_OILGAS_ENVIRONMENT.cs" />
-    <Compile Include="../../TheTechIdea.Data/OilGas/CompanyAccessModels.cs" Link="CompanyAccessModels.cs" />
+
+  </ItemGroup>
+  <ItemGroup><ProjectReference Include="../../Beep.OilandGas.Models/Beep.OilandGas.Models.csproj" /></ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../Beep.OilandGas.HSE/Beep.OilandGas.HSE.csproj" />
+    <ProjectReference Include="../../Beep.OilandGas.PPDM39.DataManagement/Beep.OilandGas.PPDM39.DataManagement.csproj" />
   </ItemGroup>
 </Project>

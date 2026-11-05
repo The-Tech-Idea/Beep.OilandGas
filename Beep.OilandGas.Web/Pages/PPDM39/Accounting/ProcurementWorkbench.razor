@@ -1,3 +1,8 @@
+@using Beep.OilandGas.Models.Data.Accounting
+@using Beep.OilandGas.Models.Data.Company
+@using Beep.OilandGas.PPDM39.DataManagement.Models
+@using Beep.OilandGas.Models.Data.Common
+@using Beep.OilandGas.Accounting.Models
 @page "/procurement"
 @page "/procurement/orders/{Id}"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
@@ -115,9 +120,9 @@
         <InventoryLinkDecisionReviewPanel Review="_state.LinkDecisionReview" />
         @if(_state.LinkDecisionReview is not null)
         {
-            <MudSelect T="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkDecision" @bind-Value="_linkChoice" Label="Explicit independent decision" Required="true" Disabled="(_state.LinkDecisionBlocked || _state.LinkCycleBlocked)">
-                <MudSelectItem T="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkDecision" Value="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkDecision.Approve">Approve and apply reviewed reference</MudSelectItem>
-                <MudSelectItem T="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkDecision" Value="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkDecision.Reject">Reject and preserve current reference</MudSelectItem>
+            <MudSelect T="Beep.OilandGas.Models.Data.Accounting.PurchaseOrderInventoryLinkDecision" @bind-Value="_linkChoice" Label="Explicit independent decision" Required="true" Disabled="(_state.LinkDecisionBlocked || _state.LinkCycleBlocked)">
+                <MudSelectItem T="Beep.OilandGas.Models.Data.Accounting.PurchaseOrderInventoryLinkDecision" Value="Beep.OilandGas.Models.Data.Accounting.PurchaseOrderInventoryLinkDecision.Approve">Approve and apply reviewed reference</MudSelectItem>
+                <MudSelectItem T="Beep.OilandGas.Models.Data.Accounting.PurchaseOrderInventoryLinkDecision" Value="Beep.OilandGas.Models.Data.Accounting.PurchaseOrderInventoryLinkDecision.Reject">Reject and preserve current reference</MudSelectItem>
             </MudSelect>
             <MudTextField T="string" @bind-Value="_decisionReason" Label="Independent decision reason" Required="true" MaxLength="512" Disabled="(_state.LinkDecisionBlocked || _state.LinkCycleBlocked)" />
             <MudButton OnClick="RecordLinkDecision" Disabled="@((_state.LinkDecisionBlocked || _state.LinkCycleBlocked) || !Enum.IsDefined(_linkChoice) || string.IsNullOrWhiteSpace(_decisionReason))">Save independent decision</MudButton>
@@ -140,9 +145,9 @@
         <MudButton OnClick="LoadLinkCycleHistory" Disabled="@(CycleControlsBlocked || string.IsNullOrWhiteSpace(_cycleLine))">Review complete cycle history</MudButton>
         @if(CycleAllowed)
         {
-            <MudSelect T="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkCycleAction" Value="_cycleAction" ValueChanged="CycleActionChanged" Label="Explicit cycle action" Required="true" Disabled="CycleControlsBlocked">
-                <MudSelectItem T="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkCycleAction" Value="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkCycleAction.ReopenResolved">Reopen independently resolved cycle</MudSelectItem>
-                <MudSelectItem T="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkCycleAction" Value="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkCycleAction.SupersedePending">Supersede pending preparation</MudSelectItem>
+            <MudSelect T="Beep.OilandGas.Accounting.Models.PurchaseOrderInventoryLinkCycleAction" Value="_cycleAction" ValueChanged="CycleActionChanged" Label="Explicit cycle action" Required="true" Disabled="CycleControlsBlocked">
+                <MudSelectItem T="Beep.OilandGas.Accounting.Models.PurchaseOrderInventoryLinkCycleAction" Value="Beep.OilandGas.Accounting.Models.PurchaseOrderInventoryLinkCycleAction.ReopenResolved">Reopen independently resolved cycle</MudSelectItem>
+                <MudSelectItem T="Beep.OilandGas.Accounting.Models.PurchaseOrderInventoryLinkCycleAction" Value="Beep.OilandGas.Accounting.Models.PurchaseOrderInventoryLinkCycleAction.SupersedePending">Supersede pending preparation</MudSelectItem>
             </MudSelect>
             <MudButton OnClick="ReviewLinkCycle" Disabled="@(CycleControlsBlocked || string.IsNullOrWhiteSpace(_cycleLine) || !Enum.IsDefined(_cycleAction))">Review cycle reopening</MudButton>
         }
@@ -164,8 +169,8 @@
     private string _linkLine="",_linkTarget="",_linkReason="";
     private string _decisionLine="",_decisionReason="";
     private string _cycleLine="",_cycleReason="";
-    private TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkCycleAction _cycleAction;
-    private TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkDecision _linkChoice;
+    private Beep.OilandGas.Accounting.Models.PurchaseOrderInventoryLinkCycleAction _cycleAction;
+    private Beep.OilandGas.Models.Data.Accounting.PurchaseOrderInventoryLinkDecision _linkChoice;
     private decimal _accepted,_rejected;
     private string? _error;
     public override Task SetParametersAsync(ParameterView parameters){if(!parameters.TryGetValue<string?>(nameof(Id),out _))Id=null;return base.SetParametersAsync(parameters);}
@@ -174,7 +179,7 @@
     private bool CycleAllowed=>InventoryAllowed && Company.Selection!.Permissions.Contains("Procurement.ReopenInventoryLink",StringComparer.Ordinal);
     private bool CycleControlsBlocked=>Workspace.WarehouseWorkBlocked || _busy || _state is null || _state.LinkCycleBlocked || _state.LinkDecisionBlocked || _state.LinkPreparationBlocked || _state.ReceiverBusy || _state.HasUnconfirmedReceiverIntent || _state.InventoryLinkBusy;
     private void CycleLineChanged(string value){_state!.ClearLinkCycleReview();_cycleLine=value;_cycleReason="";_cycleAction=0;_error=null;}
-    private void CycleActionChanged(TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkCycleAction value){_state!.ClearLinkCycleReview();_cycleAction=value;_cycleReason="";_error=null;}
+    private void CycleActionChanged(Beep.OilandGas.Accounting.Models.PurchaseOrderInventoryLinkCycleAction value){_state!.ClearLinkCycleReview();_cycleAction=value;_cycleReason="";_error=null;}
     private async Task RequireCycleAuthority(bool mutation)
     {
         await RequireDecisionAuthority(false);if(mutation && !CycleAllowed)throw new InvalidOperationException("Current company cycle work requires Procurement.ReopenInventoryLink.");
@@ -253,7 +258,7 @@
     }
     protected override Task OnParametersSetAsync()
     {
-        try{if(!string.IsNullOrWhiteSpace(Id))Id=TheTechIdea.Data.OilGas.RecordedSourceId.FromDetailLocation(Navigation.Uri,Navigation.BaseUri,"procurement/orders/");}
+        try{if(!string.IsNullOrWhiteSpace(Id))Id=Beep.OilandGas.Models.Data.Common.RecordedSourceId.FromDetailLocation(Navigation.Uri,Navigation.BaseUri,"procurement/orders/");}
         catch(FormatException){_state?.Clear();_error="The recorded source address is invalid. Open it again from the company queue.";return Task.CompletedTask;}
         return Reload();
     }

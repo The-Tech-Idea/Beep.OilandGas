@@ -1,7 +1,9 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Accounting.Models;
 using System.Security.Claims;
 using Beep.OilandGas.Models.Processes;
 using System.Text.Json;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Services;
 
 /// <summary>Standard app-role checks and recorded maker/checker constraints for the existing process step gate.</summary>

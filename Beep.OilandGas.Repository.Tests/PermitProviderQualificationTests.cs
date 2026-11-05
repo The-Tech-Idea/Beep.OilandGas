@@ -1,3 +1,9 @@
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 #if RECORDED_APPROVAL_HTTP_FOCUSED
 using System.Data;
 using System.Globalization;
@@ -36,7 +42,6 @@ using TheTechIdea.Beep.Logger;
 using TheTechIdea.Beep.Report;
 using TheTechIdea.Beep.Tools;
 using TheTechIdea.Beep.Utilities;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.Repository.Tests;
@@ -899,6 +904,7 @@ public sealed partial class PermitProviderQualificationTests
         public Action<IPPDMEntity>? PreparingDocument;
         public Func<Task>? BeforeCommand;
         public Func<Task>? CommandGuard;
+        public Mock<TheTechIdeaWeb.Diagnostics.IFailureReporter> Failures = new();
         public PermitApplicationLifecycleService Service = null!;
         public PPDMGenericRepository ReceiptRepository = null!;
     }
@@ -961,7 +967,7 @@ public sealed partial class PermitProviderQualificationTests
             if(row is Beep.OilandGas.PPDM39.Models.RM_FILE_CONTENT && fixture.InterruptDocument){fixture.DocumentInterrupted=true;throw new InvalidOperationException("Controlled failure after two native document writes.");}
             if (row is PERMIT_APPLICATION_COMMAND && fixture.InterruptReceipt) { fixture.Interrupted = true; throw new InvalidOperationException("Controlled interruption before receipt persistence."); }
         });
-        fixture.Service = new PermitApplicationLifecycleService(editor, columns.Object, defaults.Object, metadata.Object, access.Object);
+        fixture.Service = new PermitApplicationLifecycleService(editor, columns.Object, defaults.Object, metadata.Object, access.Object, failures: fixture.Failures.Object);
         fixture.ReceiptRepository = new PPDMGenericRepository(editor, actualColumns, defaults.Object, metadata.Object, typeof(PERMIT_APPLICATION_COMMAND), source.DatasourceName,
             nameof(PERMIT_APPLICATION_COMMAND), rowAccess: new ActivePermitFixtureReads(scope));
         return fixture;

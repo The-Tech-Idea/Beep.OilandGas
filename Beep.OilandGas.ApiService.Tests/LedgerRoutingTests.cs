@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core;
@@ -479,7 +480,7 @@ public sealed class LedgerRoutingTests
         var payments = new APPaymentService(editor.Object, columns, defaults, metadata.Object, posting,
             NullLogger<APPaymentService>.Instance, resolveConnection: Resolve);
         await Assert.ThrowsAsync<InvalidOperationException>(() => payment
-            ? (Task)payments.GetPaymentByIdAsync("payment") : invoices.GetBillByIdAsync(new TheTechIdea.Data.OilGas.CompanyScope("tenant","company"),"invoice"));
+            ? (Task)payments.GetPaymentByIdAsync("payment") : invoices.GetBillByIdAsync(new Beep.OilandGas.Models.Data.AccessControl.CompanyScope("tenant","company"),"invoice"));
         Assert.Equal(1, calls);
         editor.VerifyNoOtherCalls();
         metadata.VerifyNoOtherCalls();

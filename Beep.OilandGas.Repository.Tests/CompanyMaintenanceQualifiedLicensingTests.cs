@@ -1,9 +1,13 @@
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.WorkOrder;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
 using System.Text.Json;
 using Beep.OilandGas.PPDM39.Models;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using TheTechIdea.Beep.DataBase;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 using ReviewFixture=Beep.OilandGas.Repository.Tests.CompanyMaintenanceQualifiedAssetTests.ReviewFixture;
 namespace Beep.OilandGas.Repository.Tests;
@@ -120,7 +124,7 @@ public sealed partial class CompanyMaintenanceQualifiedLicensingTests
         using var f=await Ready();var identity=await f.Read();
         if(fault=="missing-licence-schema")f.Native.Source.Setup(source=>source.CheckEntityExist(It.IsAny<string>())).Returns((string table)=>table!="FACILITY_LICENSE");
         else f.Native.Source.Setup(source=>source.GetEntityStructure(It.IsAny<EntityStructure>(),true)).Returns((EntityStructure requested,bool _)=>{var type=typeof(FACILITY).Assembly.GetType("Beep.OilandGas.PPDM39.Models."+requested.EntityName)!;var shape=f.Native.Editor.Object.classCreator.ConvertToEntityStructure(type);var keys=f.Native.Metadata.Object.GetPrimaryKeyColumnsAsync(requested.EntityName).GetAwaiter().GetResult().ToArray();foreach(var field in shape.Fields)field.IsKey=keys.Contains(field.FieldName,StringComparer.Ordinal) && !(requested.EntityName=="FACILITY_LIC_STATUS" && field.FieldName=="STATUS_ID");return shape;});
-        var before=Reads(f);await Assert.ThrowsAsync<InvalidOperationException>(()=>f.Owner.ReadMaintenanceQualifiedLicensingAsync(f.Context,f.Order,identity,f.Guard));Assert.Equal(before,Reads(f));Assert.Empty(f.Native.Writes);
+        var before=Reads(f);await Assert.ThrowsAsync<Beep.OilandGas.PPDM39.Core.NativeSchemaCompatibilityException>(()=>f.Owner.ReadMaintenanceQualifiedLicensingAsync(f.Context,f.Order,identity,f.Guard));Assert.Equal(before,Reads(f));Assert.Empty(f.Native.Writes);
     }
     [Fact]
     public async Task MultipleRecordedLicenceCandidatesArePreservedWithoutAnArbitraryChosenLicence()

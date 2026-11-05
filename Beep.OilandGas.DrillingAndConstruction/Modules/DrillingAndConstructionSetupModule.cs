@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DrillingAndConstruction.Models;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.ModuleSetup;
 using System;
@@ -21,8 +23,8 @@ namespace Beep.OilandGas.DrillingAndConstruction.Modules
         private static readonly IReadOnlyList<Type> _entityTypes = new List<Type>
         {
             typeof(DRILLING_PROGRAM),
-            typeof(TheTechIdea.Data.OilGas.DRILLING_OPERATION),
-            typeof(TheTechIdea.Data.OilGas.DRILLING_DAILY_REPORT),
+            typeof(Beep.OilandGas.DrillingAndConstruction.Models.DRILLING_OPERATION),
+            typeof(Beep.OilandGas.DrillingAndConstruction.Models.DRILLING_DAILY_REPORT),
             typeof(DRILLING_ACTIVITY),
             typeof(DRILLING_FLUID),
             typeof(DRILLING_BIT),

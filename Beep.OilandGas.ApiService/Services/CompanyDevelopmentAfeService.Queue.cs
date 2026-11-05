@@ -1,8 +1,10 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.DevelopmentPlanning.Models;
 using System.Security.Claims;
 using System.Text.Json;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using Beep.OilandGas.ProductionAccounting.Services;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Services;
 public sealed partial class CompanyDevelopmentAfeService
 {

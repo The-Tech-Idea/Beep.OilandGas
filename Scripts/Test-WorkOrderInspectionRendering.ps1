@@ -1,10 +1,11 @@
-param([string]$DataAssemblyPath)
+param([string]$ModelsAssemblyPath)
+. (Join-Path $PSScriptRoot 'RestoredOwnerFixtureReferences.ps1')
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path $PSScriptRoot -Parent
-if (-not $DataAssemblyPath) {
-    $DataAssemblyPath = Join-Path $repositoryRoot 'Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/TheTechIdea.Data.dll'
+if (-not $ModelsAssemblyPath) {
+    $ModelsAssemblyPath = Join-Path $repositoryRoot 'Beep.OilandGas.Models/bin/Debug/net10.0/Beep.OilandGas.Models.dll'
 }
-if (-not (Test-Path -LiteralPath $DataAssemblyPath)) { throw 'Provide an actual compiled TheTechIdea.Data assembly; this check does not replace missing projects.' }
+if (-not (Test-Path -LiteralPath $ModelsAssemblyPath)) { throw 'Provide an actual compiled restored Models assembly; this check does not replace missing projects.' }
 # Actual inspection component, current Data sources and typed-client read fixture; no HTTP, parent-page or browser/authorization claim.
 $checkDirectory = Join-Path ([IO.Path]::GetTempPath()) "oilgas-inspection-render-$([Guid]::NewGuid().ToString('N'))"
 [void](New-Item -ItemType Directory -Path $checkDirectory)
@@ -21,8 +22,8 @@ foreach ($component in @('Beep.OilandGas.Web.Auth.Tests/Fixtures/WorkOrderQueueR
 foreach ($source in @('Beep.OilandGas.Web/Services/WorkOrderListState.cs','Beep.OilandGas.Web.Auth.Tests/WorkOrderQueueRenderingTests.cs','Beep.OilandGas.Web.Auth.Tests/WorkOrderInspectionRenderingTests.cs','Beep.OilandGas.Web/Services/IWorkOrderServiceClient.cs','Beep.OilandGas.Web/Services/WorkOrderInspectionState.cs','Beep.OilandGas.Client/App/CompanyClientContext.cs')) {
     $node = $project.CreateElement('Compile'); $node.SetAttribute('Include', (Join-Path $repositoryRoot $source)); [void]$group.AppendChild($node)
 }
-$reference = $project.CreateElement('Reference'); $reference.SetAttribute('Include', 'TheTechIdea.Data')
-$hint = $project.CreateElement('HintPath'); $hint.InnerText = (Resolve-Path -LiteralPath $DataAssemblyPath).Path
+$reference = $project.CreateElement('Reference'); $reference.SetAttribute('Include', 'Beep.OilandGas.Models')
+$hint = $project.CreateElement('HintPath'); $hint.InnerText = (Resolve-Path -LiteralPath $ModelsAssemblyPath).Path
 [void]$reference.AppendChild($hint); [void]$group.AppendChild($reference)
 foreach ($modelName in @('Beep.OilandGas.Models', 'Beep.OilandGas.PPDM.Models', 'DataManagementModels', 'DataManagementEngine', 'Beep.OilandGas.PPDM39')) {
     $actualModelPath = Join-Path $repositoryRoot "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/$modelName.dll"
@@ -30,9 +31,10 @@ foreach ($modelName in @('Beep.OilandGas.Models', 'Beep.OilandGas.PPDM.Models', 
     $modelReference = $project.CreateElement('Reference'); $modelReference.SetAttribute('Include', $modelName)
     $modelHint = $project.CreateElement('HintPath'); $modelHint.InnerText = $actualModelPath
     [void]$modelReference.AppendChild($modelHint);
-    if($modelName -eq "Beep.OilandGas.Models"){$aliases=$project.CreateElement("Aliases");$aliases.InnerText="legacyModels";[void]$modelReference.AppendChild($aliases)}
+    if($modelName -eq "Beep.OilandGas.Models"){$aliases=$project.CreateElement("Aliases");$aliases.InnerText="actualModels";[void]$modelReference.AppendChild($aliases)}
     [void]$group.AppendChild($modelReference)
 }
-$projectPath = Join-Path $checkDirectory 'InspectionRendering.csproj'; $project.Save($projectPath)
+$projectPath = Join-Path $checkDirectory 'InspectionRendering.csproj'; Add-OilGasRestoredOwnerReferences -Project $project -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
+$project.Save($projectPath)
 dotnet test $projectPath --logger 'console;verbosity=normal'
 if ($LASTEXITCODE -ne 0) { throw "Inspection rendering check failed with exit $LASTEXITCODE." }

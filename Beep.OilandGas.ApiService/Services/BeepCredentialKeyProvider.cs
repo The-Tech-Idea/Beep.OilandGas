@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.Company;
 #if BEEP_SECURE_CONNECTIONS || BEEP_SOURCE_TEST
 using System.Security.Cryptography;
 using Microsoft.Extensions.Configuration;

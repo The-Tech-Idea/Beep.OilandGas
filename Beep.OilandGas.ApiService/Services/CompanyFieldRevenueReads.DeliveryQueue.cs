@@ -1,6 +1,9 @@
+using Beep.OilandGas.Models.Data.AccessControl;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.ProductionAccounting.Models;
 using System.Security.Claims;
 using System.Text.Json;
-using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Services;
 
 public sealed partial class CompanyFieldRevenueReads

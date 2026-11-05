@@ -1,7 +1,7 @@
+using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.Web.Services;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.AspNetCore.DataProtection;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 namespace Beep.OilandGas.Web.Auth.Tests;
 public sealed class DevelopmentFacilityEditJournalTests

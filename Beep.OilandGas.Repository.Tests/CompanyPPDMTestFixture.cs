@@ -1,3 +1,6 @@
+using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.PPDM39.DataManagement.Models;
+using Beep.OilandGas.Repository.Models;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,7 +26,6 @@ using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.Repository.Tests;
@@ -79,7 +81,9 @@ public sealed partial class CompanyPPDMRowAccessTests
         public bool IgnoreFilters { get; set; }
         public bool ObligationProjectionAsDictionary { get; set; }
 #if BEEP_SECURE_CONNECTIONS
-        public bool IncidentProjectionEnabled { get; set; }
+        // This controlled source implements full observable native-row projections.
+        // Negative provider-capability scenarios explicitly disable support.
+        public bool NativeProjectionEnabled { get; set; } = true;
 #endif
         public bool IgnoreEligibilityFilters { get; set; }
         public bool IgnoreInterestFilters { get; set; }
@@ -96,12 +100,14 @@ public sealed partial class CompanyPPDMRowAccessTests
             if (boundedPages) Source.As<TheTechIdea.Beep.DataBase.IBoundedPagedDataSource>();
 #if BEEP_SECURE_CONNECTIONS
             var projection = Source.As<TheTechIdea.Beep.DataBase.IOwnedEntityProjectionDataSource>();
-            projection.SetupGet(value => value.SupportsOwnedEntityProjections).Returns(() => IncidentProjectionEnabled);
+            projection.SetupGet(value => value.SupportsOwnedEntityProjections).Returns(() => NativeProjectionEnabled);
             projection.Setup(value => value.ReadEntityProjectionAsync(It.IsAny<string>(), It.IsAny<List<AppFilter>>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(async (string table, List<AppFilter> filters, IReadOnlyList<string> _, CancellationToken _) => {
                     var rows = (IEnumerable<object>)await Source.Object.GetEntityAsync(table, filters);
                     return new TheTechIdea.Beep.DataBase.EntityReadResult(new ErrorsInfo { Flag = Errors.Ok }, rows.Select(row =>
-                        (object)row.GetType().GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+                        row is IDictionary<string,object> nativeProjection
+                            ? (object)new Dictionary<string,object>(nativeProjection,StringComparer.Ordinal)
+                            : row.GetType().GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
                             .Where(property => property.CanRead && property.GetIndexParameters().Length == 0)
                             .ToDictionary(property => property.Name, property => property.GetValue(row)!)));
                 });

@@ -1,4 +1,7 @@
-using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.PPDM39.Core.Security;
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Field;
+using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.Core;
 using System;

@@ -1,4 +1,5 @@
-param([Parameter(Mandatory)][string]$DataAssemblyPath, [string]$Filter)
+param([Parameter(Mandatory)][string]$ModelsAssemblyPath, [string]$Filter)
+. (Join-Path $PSScriptRoot 'RestoredOwnerFixtureReferences.ps1')
 $ErrorActionPreference='Stop';$repositoryRoot=Split-Path $PSScriptRoot -Parent
 $checkDirectory=Join-Path ([IO.Path]::GetTempPath()) ('oilgas-maintenance-client-'+[guid]::NewGuid().ToString('N'));[void](New-Item -ItemType Directory -Path $checkDirectory)
 # Current full workflow client plus controlled HTTP/account/diagnostics seams; no server/provider/browser/OIDC claim.
@@ -20,17 +21,18 @@ foreach($source in @('Beep.OilandGas.Web/Services/WorkOrderExecutionPermitState.
     $node=$project.CreateElement('Compile');$node.SetAttribute('Include',(Join-Path $repositoryRoot $source));[void]$group.AppendChild($node)
 }
 $dependencies=Join-Path $repositoryRoot 'Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0'
-foreach($name in @('TheTechIdea.Data','Beep.OilandGas.Models','Beep.OilandGas.PPDM.Models','DataManagementModels')){
-    $path=if($name -eq 'TheTechIdea.Data'){(Resolve-Path -LiteralPath $DataAssemblyPath).Path}else{Join-Path $dependencies ($name+'.dll')}
+foreach($name in @('Beep.OilandGas.Models','Beep.OilandGas.Models','Beep.OilandGas.PPDM.Models','DataManagementModels')){
+    $path=if($name -eq 'Beep.OilandGas.Models'){(Resolve-Path -LiteralPath $ModelsAssemblyPath).Path}else{Join-Path $dependencies ($name+'.dll')}
     $node=$project.CreateElement('Reference');$node.SetAttribute('Include',$name);$hint=$project.CreateElement('HintPath');$hint.InnerText=$path;[void]$node.AppendChild($hint)
-    if($name -eq 'TheTechIdea.Data'){$alias=$project.CreateElement('Aliases');$alias.InnerText='global,actualData';[void]$node.AppendChild($alias)}
+    if($name -eq 'Beep.OilandGas.Models'){$alias=$project.CreateElement('Aliases');$alias.InnerText='global,actualOwners';[void]$node.AppendChild($alias)}
     [void]$group.AppendChild($node)
 }
 @'
-extern alias actualData;
-global using ProcessInstanceRequest = actualData::Beep.OilandGas.Models.Data.Process.ProcessInstanceRequest;
+extern alias actualOwners;
+global using ProcessInstanceRequest = actualOwners::Beep.OilandGas.Models.Data.Process.ProcessInstanceRequest;
 '@ | Set-Content (Join-Path $checkDirectory 'ActualContracts.cs') -Encoding utf8
-$path=Join-Path $checkDirectory 'MaintenanceClient.csproj';$project.Save($path)
+$path=Join-Path $checkDirectory 'MaintenanceClient.csproj';Add-OilGasRestoredOwnerReferences -Project $project -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
+$project.Save($path)
 if($Filter -eq 'FullyQualifiedName~CompanyHseWorkflowClientTests'){
     foreach($node in @($group.SelectNodes('Compile'))){
         $name=[IO.Path]::GetFileName($node.GetAttribute('Include'))
@@ -42,7 +44,8 @@ if($Filter -eq 'FullyQualifiedName~CompanyHseWorkflowClientTests'){
     Get-ChildItem (Join-Path $repositoryRoot 'Beep.OilandGas.Web/Services') -Filter 'BusinessProcessServiceClient.*.cs' | ForEach-Object {
         if($_.FullName -notin $existing){$node=$project.CreateElement('Compile');$node.SetAttribute('Include',$_.FullName);[void]$group.AppendChild($node)}
     }
-    $project.Save($path)
+    Add-OilGasRestoredOwnerReferences -Project $project -RepositoryRoot (Split-Path $PSScriptRoot -Parent)
+$project.Save($path)
 }
 if($Filter){dotnet test $path --filter $Filter --logger 'console;verbosity=normal'}else{dotnet test $path --logger 'console;verbosity=normal'}
 if($LASTEXITCODE -ne 0){throw "Maintenance workflow client check failed: $checkDirectory"}
